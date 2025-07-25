@@ -101,6 +101,12 @@ abstract class AppLocalizations {
   /// **'Life Pilot'**
   String get appTitle;
 
+  /// Label for language
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
   /// ==========================================================================
   ///
   /// In en, this message translates to:
@@ -112,6 +118,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login'**
   String get login;
+
+  /// Label for login anonymously
+  ///
+  /// In en, this message translates to:
+  /// **'Login as Guest'**
+  String get loginAnonymously;
 
   /// Label for logout
   ///
@@ -191,6 +203,12 @@ abstract class AppLocalizations {
   /// **'Register'**
   String get register;
 
+  /// Label for back
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
   /// Label for login error
   ///
   /// In en, this message translates to:
@@ -232,6 +250,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'pageRelated'**
   String get pageRelated;
+
+  /// Label for Settings
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// Label for Personal Event
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Event'**
+  String get personal_event;
+
+  /// Label for Recommended Event
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended Event'**
+  String get recommended_event;
+
+  /// Label for Recommended Attractions
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended Attractions'**
+  String get recommended_attractions;
+
+  /// Label for Memory Trace
+  ///
+  /// In en, this message translates to:
+  /// **'Memory Trace'**
+  String get memory_trace;
+
+  /// Label for Account Records
+  ///
+  /// In en, this message translates to:
+  /// **'Account Records'**
+  String get account_records;
+
+  /// Label for Points Record
+  ///
+  /// In en, this message translates to:
+  /// **'Points Record'**
+  String get points_record;
+
+  /// Label for Game
+  ///
+  /// In en, this message translates to:
+  /// **'Game'**
+  String get game;
+
+  /// Label for AI
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get ai;
+
+  /// ==========================================================================
+  ///
+  /// In en, this message translates to:
+  /// **'pageRecommendedEvent'**
+  String get pageRecommendedEvent;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

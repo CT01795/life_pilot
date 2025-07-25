@@ -2,12 +2,16 @@
   "@@locale": "en",
   "appTitle": "Life Pilot",
   "@appTitle": {"description": "Label for app title"},
+  "language": "Language",
+  "@language": {"description": "Label for language"},
 
   "loginRelated": "loginRelated",
   "@loginRelated": {"description": "=========================================================================="},
 
   "login": "Login",
   "@login": {"description": "Label for login"},
+  "loginAnonymously": "Login as Guest",
+  "@loginAnonymously": {"description": "Label for login anonymously"},
   "logout": "Logout",
   "@logout": {"description": "Label for logout"},
   "resetPassword": "Reset Password",
@@ -34,6 +38,8 @@
   "@password": {"description": "Label for password"},
   "register": "Register",
   "@register": {"description": "Label for register"},
+  "back": "Back",
+  "@back": {"description": "Label for back"},
   "loginError": "Login failed. Please try again.",
   "@loginError": {"description": "Label for login error"},
   "logoutError": "Logout failed. Please try again.",
@@ -48,5 +54,27 @@
   "@unknownError": {"description": "Label for unknown error"},
 
   "pageRelated": "pageRelated",
-  "@pageRelated": {"description": "=========================================================================="}
+  "@pageRelated": {"description": "=========================================================================="},
+  "settings": "Settings",
+  "@settings": {"description": "Label for Settings"},
+  "personal_event": "Personal Event",
+  "@personal_event": {"description": "Label for Personal Event"},
+  "recommended_event": "Recommended Event",
+  "@recommended_event": {"description": "Label for Recommended Event"},
+  "recommended_attractions": "Recommended Attractions",
+  "@recommended_attractions": {"description": "Label for Recommended Attractions"},
+  "memory_trace": "Memory Trace",
+  "@memory_trace": {"description": "Label for Memory Trace"},
+  "account_records": "Account Records",
+  "@account_records": {"description": "Label for Account Records"},
+  "points_record": "Points Record",
+  "@points_record": {"description": "Label for Points Record"},
+  "game": "Game",
+  "@game": {"description": "Label for Game"},
+  "ai": "AI",
+  "@ai": {"description": "Label for AI"},
+
+  "pageRecommendedEvent": "pageRecommendedEvent",
+  "@pageRecommendedEvent": {"description": "=========================================================================="}
+  
 }

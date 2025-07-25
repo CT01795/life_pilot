@@ -2,12 +2,16 @@
   "@@locale": "zh",
   "appTitle": "生活導航",
   "@appTitle": {"description": "Label for app title"},
+  "language": "語言",
+  "@language": {"description": "Label for language"},
 
   "loginRelated": "loginRelated",
   "@loginRelated": {"description": "=========================================================================="},
 
   "login": "登入",
   "@login": {"description": "Label for login"},
+  "loginAnonymously": "訪客登入",
+  "@loginAnonymously": {"description": "Label for login anonymously"},
   "logout": "登出",
   "@logout": {"description": "Label for logout"},
   "resetPassword": "重設密碼",
@@ -34,6 +38,8 @@
   "@password": {"description": "Label for password"},
   "register": "註冊",
   "@register": {"description": "Label for register"},
+  "back": "返回",
+  "@back": {"description": "Label for back"},
   "loginError": "登入失敗，請再試一次。",
   "@loginError": {"description": "Label for login error"},
   "logoutError": "登出失敗，請再試一次。",
@@ -48,5 +54,27 @@
   "@unknownError": {"description": "Label for unknown error"},
 
   "pageRelated": "pageRelated",
-  "@pageRelated": {"description": "=========================================================================="}
+  "@pageRelated": {"description": "=========================================================================="},
+  "settings": "設定",
+  "@settings": {"description": "Label for Settings"},
+  "personal_event": "行事曆",
+  "@personal_event": {"description": "Label for Personal Event"},
+  "recommended_event": "推薦活動",
+  "@recommended_event": {"description": "Label for Recommended Event"},
+  "recommended_attractions": "推薦景點",
+  "@recommended_attractions": {"description": "Label for Recommended Attractions"},
+  "memory_trace": "回憶走廊",
+  "@memory_trace": {"description": "Label for Memory Trace"},
+  "account_records": "記帳",
+  "@account_records": {"description": "Label for Account Records"},
+  "points_record": "積分",
+  "@points_record": {"description": "Label for Points Record"},
+  "game": "遊戲",
+  "@game": {"description": "Label for Game"},
+  "ai": "AI助理",
+  "@ai": {"description": "Label for AI"},
+
+  "pageRecommendedEvent": "pageRecommendedEvent",
+  "@pageRecommendedEvent": {"description": "=========================================================================="}
+  
 }

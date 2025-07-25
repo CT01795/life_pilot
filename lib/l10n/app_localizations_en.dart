@@ -12,10 +12,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Life Pilot';
 
   @override
+  String get language => 'Language';
+
+  @override
   String get loginRelated => 'loginRelated';
 
   @override
   String get login => 'Login';
+
+  @override
+  String get loginAnonymously => 'Login as Guest';
 
   @override
   String get logout => 'Logout';
@@ -57,6 +63,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get register => 'Register';
 
   @override
+  String get back => 'Back';
+
+  @override
   String get loginError => 'Login failed. Please try again.';
 
   @override
@@ -76,4 +85,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pageRelated => 'pageRelated';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get personal_event => 'Personal Event';
+
+  @override
+  String get recommended_event => 'Recommended Event';
+
+  @override
+  String get recommended_attractions => 'Recommended Attractions';
+
+  @override
+  String get memory_trace => 'Memory Trace';
+
+  @override
+  String get account_records => 'Account Records';
+
+  @override
+  String get points_record => 'Points Record';
+
+  @override
+  String get game => 'Game';
+
+  @override
+  String get ai => 'AI';
+
+  @override
+  String get pageRecommendedEvent => 'pageRecommendedEvent';
 }

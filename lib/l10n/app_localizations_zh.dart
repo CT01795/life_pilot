@@ -12,10 +12,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => '生活導航';
 
   @override
+  String get language => '語言';
+
+  @override
   String get loginRelated => 'loginRelated';
 
   @override
   String get login => '登入';
+
+  @override
+  String get loginAnonymously => '訪客登入';
 
   @override
   String get logout => '登出';
@@ -57,6 +63,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get register => '註冊';
 
   @override
+  String get back => '返回';
+
+  @override
   String get loginError => '登入失敗，請再試一次。';
 
   @override
@@ -76,4 +85,34 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pageRelated => 'pageRelated';
+
+  @override
+  String get settings => '設定';
+
+  @override
+  String get personal_event => '行事曆';
+
+  @override
+  String get recommended_event => '推薦活動';
+
+  @override
+  String get recommended_attractions => '推薦景點';
+
+  @override
+  String get memory_trace => '回憶走廊';
+
+  @override
+  String get account_records => '記帳';
+
+  @override
+  String get points_record => '積分';
+
+  @override
+  String get game => '遊戲';
+
+  @override
+  String get ai => 'AI助理';
+
+  @override
+  String get pageRecommendedEvent => 'pageRecommendedEvent';
 }

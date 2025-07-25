@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
 
-class AuthService {
+class ServiceAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // 共用的空值檢查
@@ -16,7 +16,8 @@ class AuthService {
   }
 
   // 共用的錯誤處理邏輯
-  static String _handleFirebaseAuthException(FirebaseAuthException e, String defaultError) {
+  static String _handleFirebaseAuthException(
+      FirebaseAuthException e, String defaultError) {
     Logger().d("Error: $e ${e.code}");
     switch (e.code) {
       case 'user-not-found':
@@ -59,6 +60,18 @@ class AuthService {
       // 捕捉其他類型的錯誤
       Logger().d("Unexpected error: $e");
       return 'loginError'; // 其他錯誤
+    }
+  }
+
+  static Future<String?> anonymousLogin() async {
+    try {
+      await _auth.signInAnonymously();
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _handleFirebaseAuthException(e, 'loginError');
+    } catch (e) {
+      Logger().d("Unexpected error: $e");
+      return 'loginError';
     }
   }
 
@@ -114,6 +127,6 @@ class AuthService {
   }
 
   static Future<String?> currentAccount() async {
-    return _auth.currentUser!.email;
+    return _auth.currentUser?.email;
   }
 }
