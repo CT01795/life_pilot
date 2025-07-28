@@ -18,10 +18,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginRelated => 'loginRelated';
 
   @override
-  String get login => 'Login';
+  String get login => '  Login  ';
 
   @override
-  String get loginAnonymously => 'Login as Guest';
+  String get loginAnonymously => 'Guest Login';
 
   @override
   String get logout => 'Logout';
@@ -60,7 +60,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get password => 'Password';
 
   @override
-  String get register => 'Register';
+  String get register => '  Register  ';
 
   @override
   String get back => 'Back';
@@ -90,13 +90,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
-  String get personal_event => 'Personal Event';
+  String get personal_event => 'Personal';
 
   @override
-  String get recommended_event => 'Recommended Event';
+  String get recommended_event => 'Event';
 
   @override
-  String get recommended_attractions => 'Recommended Attractions';
+  String get recommended_attractions => 'Attractions';
 
   @override
   String get memory_trace => 'Memory Trace';

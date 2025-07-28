@@ -8,7 +8,7 @@
   "loginRelated": "loginRelated",
   "@loginRelated": {"description": "=========================================================================="},
 
-  "login": "登入",
+  "login": "\u00A0\u00A0登入\u00A0\u00A0",
   "@login": {"description": "Label for login"},
   "loginAnonymously": "訪客登入",
   "@loginAnonymously": {"description": "Label for login anonymously"},
@@ -36,7 +36,7 @@
   "@email": {"description": "Label for email"},
   "password": "密碼",
   "@password": {"description": "Label for password"},
-  "register": "註冊",
+  "register": "\u00A0\u00A0註冊\u00A0\u00A0",
   "@register": {"description": "Label for register"},
   "back": "返回",
   "@back": {"description": "Label for back"},

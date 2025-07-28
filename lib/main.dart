@@ -6,7 +6,6 @@ import 'package:life_pilot/pages/page_main.dart';
 import 'package:life_pilot/pages/page_register.dart';
 import 'package:life_pilot/providers/locale_provider.dart';
 import 'package:life_pilot/utils/ui_common_app_bar.dart';
-import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -55,6 +54,12 @@ class _MyAppState extends State<MyApp> {
         builder: (context, localeProvider, child) {
       return MaterialApp(
         title: 'Life Pilot',
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.5),
+            child: child!,
+          );
+        },
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -66,7 +71,59 @@ class _MyAppState extends State<MyApp> {
           Locale('zh'),
         ],
         locale: localeProvider.locale, // 從 provider 拿 locale
-        theme: ThemeData(primarySwatch: Colors.blue),
+        theme: ThemeData(
+          primaryColor: Color(0xFF0066CC),
+          scaffoldBackgroundColor: Colors.white,
+          textTheme: Theme.of(context).textTheme.apply(
+                //fontSizeFactor: 1.5,
+                bodyColor: Colors.black87,
+                displayColor: Colors.black87,
+              ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white, // 文字色
+              backgroundColor: Color(0xFF0066CC), // 主按鈕背景
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: Color(0xFF0066CC), // 藍色文字
+              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Color(0xFF00BFA6), // 綠色文字
+              side: const BorderSide(color: Color(0xFF00BFA6)),
+            ),
+          ),
+          iconTheme: const IconThemeData(size: 36),
+          appBarTheme: AppBarTheme(
+            backgroundColor: Color(0xFF0066CC),
+            iconTheme: IconThemeData(color: Colors.white), // ✅ icon 改白色
+            titleTextStyle: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // ✅ title 文字也白色
+            ),
+            actionsIconTheme: IconThemeData(color: Colors.white), // ✅ Action icons
+            foregroundColor: Colors.white, // ✅ 針對 PopupMenuButton 的預設文字色
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            floatingLabelStyle: TextStyle(color: Color(0xFF0066CC)), // 浮起來的 label 色
+            labelStyle: TextStyle(color: Colors.grey[700]),          // 原本的 label 色
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.blueGrey),
+            ),
+            //enabledBorder: OutlineInputBorder(
+            //  borderSide: BorderSide(color: Colors.grey.shade400),
+            //),
+            //border: OutlineInputBorder(),
+          ),
+        ),
         debugShowCheckedModeBanner: false,
         home: AuthCheckPage(
           setLocale: (locale) {
@@ -91,7 +148,7 @@ enum AuthPage { login, register, pageMain }
 class _AuthCheckPageState extends State<AuthCheckPage> {
   AuthPage currentPage = AuthPage.login;
   Map<String, String> registerBackData = {'email': '', 'password': ''};
-  List<Widget> _appBarPages = [];  // <== 這裡改成成員變數
+  List<Widget> _appBarPages = []; // <== 這裡改成成員變數
 
   void _goToRegister([String? email, String? password]) {
     setState(() {
@@ -178,8 +235,12 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
       case AuthPage.pageMain:
         bodyWidget = PageMain(
           onPagesChanged: (pages) {
-            setState(() {
-              _appBarPages = pages;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _appBarPages = pages;
+                });
+              }
             });
           },
         );
@@ -193,7 +254,9 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
         onLocaleToggle: widget.setLocale,
         account: auth.isLoggedIn ? auth.currentAccount : null,
         onLogout: auth.isLoggedIn ? _logout : null,
-        pages: currentPage == AuthPage.pageMain ? _appBarPages : null,  // <== 只有 pageMain 顯示選單
+        pages: currentPage == AuthPage.pageMain
+            ? _appBarPages
+            : null, // <== 只有 pageMain 顯示選單
       ),
       body: bodyWidget,
     );

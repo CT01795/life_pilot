@@ -116,13 +116,13 @@ abstract class AppLocalizations {
   /// Label for login
   ///
   /// In en, this message translates to:
-  /// **'Login'**
+  /// **'  Login  '**
   String get login;
 
   /// Label for login anonymously
   ///
   /// In en, this message translates to:
-  /// **'Login as Guest'**
+  /// **'Guest Login'**
   String get loginAnonymously;
 
   /// Label for logout
@@ -200,7 +200,7 @@ abstract class AppLocalizations {
   /// Label for register
   ///
   /// In en, this message translates to:
-  /// **'Register'**
+  /// **'  Register  '**
   String get register;
 
   /// Label for back
@@ -260,19 +260,19 @@ abstract class AppLocalizations {
   /// Label for Personal Event
   ///
   /// In en, this message translates to:
-  /// **'Personal Event'**
+  /// **'Personal'**
   String get personal_event;
 
   /// Label for Recommended Event
   ///
   /// In en, this message translates to:
-  /// **'Recommended Event'**
+  /// **'Event'**
   String get recommended_event;
 
   /// Label for Recommended Attractions
   ///
   /// In en, this message translates to:
-  /// **'Recommended Attractions'**
+  /// **'Attractions'**
   String get recommended_attractions;
 
   /// Label for Memory Trace

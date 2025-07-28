@@ -18,7 +18,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginRelated => 'loginRelated';
 
   @override
-  String get login => '登入';
+  String get login => '  登入  ';
 
   @override
   String get loginAnonymously => '訪客登入';
@@ -60,7 +60,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get password => '密碼';
 
   @override
-  String get register => '註冊';
+  String get register => '  註冊  ';
 
   @override
   String get back => '返回';

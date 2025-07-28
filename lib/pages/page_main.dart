@@ -15,6 +15,7 @@ class PageMain extends StatefulWidget {
 
 class _PageMainState extends State<PageMain> {
   String? _selectedPage;
+  Locale? _lastLocale;
 
   @override
   void initState() {
@@ -30,6 +31,17 @@ class _PageMainState extends State<PageMain> {
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final currentLocale = Localizations.localeOf(context);
+    if (_lastLocale != currentLocale && _selectedPage != null) {
+      _lastLocale = currentLocale;
+      _updatePagesChanged(_selectedPage!);
+    }
+  }
+
   // 產生 DropdownButton 並通知外層
   void _updatePagesChanged(String selected) {
     final auth = Provider.of<ControllerAuth>(context, listen: false);
@@ -37,7 +49,7 @@ class _PageMainState extends State<PageMain> {
 
     final pages = [
       _buildDropdown(loc, auth.isAnonymous, selected),
-      kGapW16,
+      kGapW8,
     ];
 
     widget.onPagesChanged?.call(pages);
@@ -50,18 +62,24 @@ class _PageMainState extends State<PageMain> {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: selected,
+        style: const TextStyle( // ✅ 修改這裡
+          color: Colors.white, // 選單文字色
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+        ),
+        dropdownColor: Color(0xFF0066CC), // ✅ 背景色
+        iconEnabledColor: Colors.white, // ✅ 下拉箭頭顏色
         items: pageTitles.entries.map((entry) {
           return DropdownMenuItem<String>(
             value: entry.key,
-            child: Text(entry.value, style: const TextStyle(fontSize: 14)),
+            child: Text(entry.value),
           );
         }).toList(),
         onChanged: (value) {
           if (value != null && value != _selectedPage) {
-            setState(() {
-              _selectedPage = value;
-            });
+            _selectedPage = value;
             _updatePagesChanged(value);
+            setState(() {});
           }
         },
       ),

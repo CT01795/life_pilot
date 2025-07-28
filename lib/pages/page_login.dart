@@ -11,7 +11,8 @@ class PageLogin extends StatefulWidget {
   final String? email; // 新增 email 欄位來儲存傳入的 email
   final String? password;
   final void Function(String? email, String? password)? onNavigateToRegister;
-  const PageLogin({super.key, this.email, this.password, this.onNavigateToRegister});
+  const PageLogin(
+      {super.key, this.email, this.password, this.onNavigateToRegister});
 
   @override
   State<PageLogin> createState() => _PageLoginState();
@@ -78,10 +79,11 @@ class _PageLoginState extends State<PageLogin> {
     final loc = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(10),
         child: Column(
           children: [
             InputField(controller: _emailController, labelText: loc.email),
+            kGapH16,
             InputField(
                 controller: _passwordController,
                 labelText: loc.password,
@@ -91,9 +93,8 @@ class _PageLoginState extends State<PageLogin> {
               ActionButton(label: loc.login, onPressed: _login), // 使用共用的按鈕組件
               kGapW16,
               ActionButton(
-                  label: loc.resetPassword,
-                  onPressed: _resetPassword), // 使用共用的按鈕組件
-              kGapW16,
+                  label: loc.loginAnonymously, onPressed: _anonymousLogin),
+              //kGapW8,
               TextButton(
                 onPressed: () {
                   widget.onNavigateToRegister?.call(
@@ -103,13 +104,15 @@ class _PageLoginState extends State<PageLogin> {
                 },
                 child: Text(loc.register),
               ),
-              kGapW16,
+            ]),
+            kGapH16,
+            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               TextButton(
-                onPressed: _anonymousLogin,
-                child: Text(loc.loginAnonymously),
-              ),
-              kGapW16,
-            ])
+                onPressed: _resetPassword,
+                child: Text(loc.resetPassword),
+              ), // 使用共用的按鈕組件
+            ]),
+            kGapH16,
           ],
         ),
       ),

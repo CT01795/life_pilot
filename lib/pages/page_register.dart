@@ -60,6 +60,7 @@ class _PageRegisterState extends State<PageRegister> {
         child: Column(
           children: [
             InputField(controller: _emailController, labelText: loc.email),
+            kGapH16,
             InputField(
                 controller: _passwordController,
                 labelText: loc.password,
@@ -69,7 +70,7 @@ class _PageRegisterState extends State<PageRegister> {
               children: [
                 ActionButton(
                 label: loc.register, onPressed: _register), // 使用共用的按鈕組件
-                kGapW16,
+                kGapW8,
                 TextButton(
                   onPressed: () {
                     widget.onBack(
