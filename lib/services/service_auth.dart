@@ -3,8 +3,6 @@ import 'package:logger/logger.dart';
 
 class ServiceAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // 共用的空值檢查
   static String? _checkEmptyFields(String email, String password) {
     if (email.isEmpty) {
       return 'noEmailError';
@@ -15,7 +13,6 @@ class ServiceAuth {
     return null;
   }
 
-  // 共用的錯誤處理邏輯
   static String _handleFirebaseAuthException(
       FirebaseAuthException e, String defaultError) {
     Logger().d("Error: $e ${e.code}");
@@ -39,12 +36,10 @@ class ServiceAuth {
     }
   }
 
-  /// 檢查是否已登入
   static Future<bool> isLoggedIn() async {
     return _auth.currentUser != null;
   }
 
-  /// 登入
   static Future<String?> login(String email, String password) async {
     final emptyCheckResult = _checkEmptyFields(email, password);
     if (emptyCheckResult != null) {
@@ -57,9 +52,8 @@ class ServiceAuth {
     } on FirebaseAuthException catch (e) {
       return _handleFirebaseAuthException(e, 'loginError');
     } catch (e) {
-      // 捕捉其他類型的錯誤
       Logger().d("Unexpected error: $e");
-      return 'loginError'; // 其他錯誤
+      return 'loginError'; 
     }
   }
 
@@ -75,7 +69,6 @@ class ServiceAuth {
     }
   }
 
-  /// 重設密碼
   static Future<String?> resetPassword(String email) async {
     if (email.isEmpty) {
       return 'noEmailError';
@@ -87,9 +80,8 @@ class ServiceAuth {
     } on FirebaseAuthException catch (e) {
       return _handleFirebaseAuthException(e, 'loginError');
     } catch (e) {
-      // 捕捉其他類型的錯誤
       Logger().d("Unexpected error: $e");
-      return 'loginError'; // 其他錯誤
+      return 'loginError'; 
     }
   }
 
@@ -102,27 +94,23 @@ class ServiceAuth {
     try {
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
-      // 發送電子郵件驗證
       await userCredential.user?.sendEmailVerification();
       return null;
     } on FirebaseAuthException catch (e) {
       return _handleFirebaseAuthException(e, 'registerError');
     } catch (e) {
-      // 捕捉其他類型的錯誤
       Logger().d("Unexpected error: $e");
-      return 'registerError'; // 其他錯誤
+      return 'registerError'; 
     }
   }
 
-  /// 登出
   static Future<String?> logout() async {
     try {
       await _auth.signOut();
       return null;
     } catch (e) {
-      // 捕捉其他類型的錯誤
       Logger().d("Unexpected error: $e");
-      return 'logoutError'; // 其他錯誤
+      return 'logoutError'; 
     }
   }
 

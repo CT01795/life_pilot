@@ -44,14 +44,12 @@ void showLoginError(BuildContext context, String result, AppLocalizations loc) {
       errorMessage = loc.unknownError;
   }
 
-  // 顯示錯誤訊息
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(errorMessage)),
   );
 }
 
 void showMessage(BuildContext context, String message) {
-  // 顯示訊息
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(message)),
   );

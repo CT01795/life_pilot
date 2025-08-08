@@ -43,9 +43,13 @@ dependencies:
   firebase_auth: ^5.7.0
   firebase_storage: ^12.4.10
   supabase_flutter: ^2.9.1
-  flutter_gen: ^5.11.0
+  flutter_gen: ^5.10.0
   logger: ^2.6.1
   provider: ^6.1.5
+  uuid: ^4.5.1
+  excel: ^4.0.6
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

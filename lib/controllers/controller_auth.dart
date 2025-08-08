@@ -7,11 +7,11 @@ class ControllerAuth extends ChangeNotifier {
   bool isLoading = true;
   bool isLoggedIn = false;
   String? currentAccount;
-  bool isAnonymous = false; // ✅ 加上這一行
+  bool isAnonymous = false;
 
   Future<void> checkLoginStatus() async {
     isLoading = true;
-    notifyListeners(); // 通知畫面顯示 loading 狀態
+    notifyListeners();
 
     final user = FirebaseAuth.instance.currentUser;
     isLoggedIn = user != null;
@@ -28,7 +28,7 @@ class ControllerAuth extends ChangeNotifier {
   Future<String?> anonymousLogin() async {
     final result = await ServiceAuth.anonymousLogin();
     if (result == null) {
-      await checkLoginStatus(); // 更新登入狀態
+      await checkLoginStatus(); 
     }
     return result;
   }

@@ -269,6 +269,12 @@ abstract class AppLocalizations {
   /// **'Event'**
   String get recommended_event;
 
+  /// Label for no Recommended Event
+  ///
+  /// In en, this message translates to:
+  /// **'No event'**
+  String get recommended_event_zero;
+
   /// Label for Recommended Attractions
   ///
   /// In en, this message translates to:
@@ -310,6 +316,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'pageRecommendedEvent'**
   String get pageRecommendedEvent;
+
+  /// Label for search
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// Label for Toggle View
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle View'**
+  String get toggle_view;
+
+  /// Label for export excel
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export_excel;
+
+  /// Label for add event
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get event_add;
+
+  /// Label for add event ok
+  ///
+  /// In en, this message translates to:
+  /// **'Event added'**
+  String get event_add_ok;
+
+  /// Label for no_events_to_export
+  ///
+  /// In en, this message translates to:
+  /// **'❌ No events to export'**
+  String get no_events_to_export;
+
+  /// Label for export_failed
+  ///
+  /// In en, this message translates to:
+  /// **'❌ Export failed'**
+  String get export_failed;
+
+  /// Label for export_success
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Export successful'**
+  String get export_success;
+
+  /// Label for not_support_export
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Not support export'**
+  String get not_support_export;
+
+  /// Label for excel_column_header_activity_name
+  ///
+  /// In en, this message translates to:
+  /// **'Activity name_______________________'**
+  String get excel_column_header_activity_name;
+
+  /// Label for excel_column_header_keywords
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords_______________________'**
+  String get excel_column_header_keywords;
+
+  /// Label for excel_column_header_city
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get excel_column_header_city;
+
+  /// Label for excel_column_header_location
+  ///
+  /// In en, this message translates to:
+  /// **'Location____________________'**
+  String get excel_column_header_location;
+
+  /// Label for excel_column_header_fee
+  ///
+  /// In en, this message translates to:
+  /// **'fee'**
+  String get excel_column_header_fee;
+
+  /// Label for excel_column_header_start_date
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date__'**
+  String get excel_column_header_start_date;
+
+  /// Label for excel_column_header_start_time
+  ///
+  /// In en, this message translates to:
+  /// **'Start Time'**
+  String get excel_column_header_start_time;
+
+  /// Label for excel_column_header_end_date
+  ///
+  /// In en, this message translates to:
+  /// **'End Date__'**
+  String get excel_column_header_end_date;
+
+  /// Label for excel_column_header_end_time
+  ///
+  /// In en, this message translates to:
+  /// **'End Time'**
+  String get excel_column_header_end_time;
+
+  /// Label for excel_column_header_description
+  ///
+  /// In en, this message translates to:
+  /// **'Description______'**
+  String get excel_column_header_description;
+
+  /// Label for excel_column_header_sponsor
+  ///
+  /// In en, this message translates to:
+  /// **'Sponsor'**
+  String get excel_column_header_sponsor;
+
+  /// Label for downloaded
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Downloaded'**
+  String get downloaded;
+
+  /// Label for activity_name
+  ///
+  /// In en, this message translates to:
+  /// **'Activity name'**
+  String get activity_name;
+
+  /// Label for keywords
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords'**
+  String get keywords;
+
+  /// Label for city
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get city;
+
+  /// Label for location
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// Label for fee
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get fee;
+
+  /// Label for start_date
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get start_date;
+
+  /// Label for start_time
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get start_time;
+
+  /// Label for end_date
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get end_date;
+
+  /// Label for end_time
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get end_time;
+
+  /// Label for description
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// Label for sponsor
+  ///
+  /// In en, this message translates to:
+  /// **'Sponsor'**
+  String get sponsor;
+
+  /// Label for master_url
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get master_url;
+
+  /// Label for sub_url
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get sub_url;
+
+  /// Label for event_saved
+  ///
+  /// In en, this message translates to:
+  /// **'Event saved'**
+  String get event_saved;
+
+  /// Label for event_save_error
+  ///
+  /// In en, this message translates to:
+  /// **'Activity name cannot be empty'**
+  String get event_save_error;
+
+  /// Label for event_add_edit
+  ///
+  /// In en, this message translates to:
+  /// **'Add/Edit'**
+  String get event_add_edit;
+
+  /// Label for event_add_sub
+  ///
+  /// In en, this message translates to:
+  /// **'Add detailed activities'**
+  String get event_add_sub;
+
+  /// Label for Detailed activities
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed activities'**
+  String get event_sub;
+
+  /// Label for save
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// Label for search_keywords
+  ///
+  /// In en, this message translates to:
+  /// **'Keyword search (blank separated)'**
+  String get search_keywords;
+
+  /// Label for date_clear
+  ///
+  /// In en, this message translates to:
+  /// **'Date clear'**
+  String get date_clear;
+
+  /// Label for event_add_tp_plan_error
+  ///
+  /// In en, this message translates to:
+  /// **'Add it repeatedly'**
+  String get event_add_tp_plan_error;
+
+  /// Label for add
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// Label for cancel
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Label for delete
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// Label for event_delete
+  ///
+  /// In en, this message translates to:
+  /// **'Delete event'**
+  String get event_delete;
+
+  /// Label for delete_ok
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion completed'**
+  String get delete_ok;
+
+  /// Label for delete_error
+  ///
+  /// In en, this message translates to:
+  /// **'Delete failed'**
+  String get delete_error;
+
+  /// Label for click_here_to_see_more
+  ///
+  /// In en, this message translates to:
+  /// **'See more...'**
+  String get click_here_to_see_more;
+
+  /// Label for close
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// Label for url
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get url;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

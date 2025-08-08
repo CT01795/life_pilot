@@ -4,8 +4,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:life_pilot/firebase_options.dart';
 import 'package:life_pilot/pages/page_main.dart';
 import 'package:life_pilot/pages/page_register.dart';
-import 'package:life_pilot/providers/locale_provider.dart';
-import 'package:life_pilot/utils/ui_common_app_bar.dart';
+import 'package:life_pilot/providers/provider_locale.dart';
+import 'package:life_pilot/utils/utils_class_main_page_bar.dart';
+import 'package:life_pilot/utils/utils_gaps.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,12 +17,10 @@ import 'pages/page_login.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 初始化 Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 初始化 Supabase
   await Supabase.initialize(
     url: 'https://ccktdpycnferbrjrdtkp.supabase.co',
     anonKey:
@@ -34,7 +33,7 @@ void main() async {
         ChangeNotifierProvider(
             create: (_) => ControllerAuth()..checkLoginStatus()),
         ChangeNotifierProvider(
-            create: (_) => LocaleProvider(locale: Locale('zh'))), // 提供初始語言設置
+            create: (_) => ProviderLocale(locale: Locale('zh'))),  
       ],
       child: MyApp(),
     ),
@@ -50,13 +49,13 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<LocaleProvider>(// 使用 Consumer 來監聽 LocaleProvider
-        builder: (context, localeProvider, child) {
+    return Consumer<ProviderLocale>(
+        builder: (context, providerLocale, child) {
       return MaterialApp(
         title: 'Life Pilot',
         builder: (context, child) {
           return MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.5),
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.5),),
             child: child!,
           );
         },
@@ -70,20 +69,20 @@ class _MyAppState extends State<MyApp> {
           Locale('en'),
           Locale('zh'),
         ],
-        locale: localeProvider.locale, // 從 provider 拿 locale
+        locale: providerLocale.locale, 
         theme: ThemeData(
           primaryColor: Color(0xFF0066CC),
           scaffoldBackgroundColor: Colors.white,
           textTheme: Theme.of(context).textTheme.apply(
-                //fontSizeFactor: 1.5,
+                fontSizeFactor: 1.1,
                 bodyColor: Colors.black87,
                 displayColor: Colors.black87,
               ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white, // 文字色
-              backgroundColor: Color(0xFF0066CC), // 主按鈕背景
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              foregroundColor: Colors.white, 
+              backgroundColor: Color(0xFF0066CC), 
+              padding: kGapEIH12V8,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
@@ -91,7 +90,6 @@ class _MyAppState extends State<MyApp> {
           textButtonTheme: TextButtonThemeData(
             style: TextButton.styleFrom(
               foregroundColor: Color(0xFF0066CC), // 藍色文字
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           outlinedButtonTheme: OutlinedButtonThemeData(
@@ -103,31 +101,25 @@ class _MyAppState extends State<MyApp> {
           iconTheme: const IconThemeData(size: 36),
           appBarTheme: AppBarTheme(
             backgroundColor: Color(0xFF0066CC),
-            iconTheme: IconThemeData(color: Colors.white), // ✅ icon 改白色
+            iconTheme: IconThemeData(color: Colors.white), 
+            actionsIconTheme: IconThemeData(color: Colors.black), 
             titleTextStyle: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white, // ✅ title 文字也白色
+              color: Colors.white, 
             ),
-            actionsIconTheme: IconThemeData(color: Colors.white), // ✅ Action icons
-            foregroundColor: Colors.white, // ✅ 針對 PopupMenuButton 的預設文字色
+            foregroundColor: Colors.white,
           ),
           inputDecorationTheme: InputDecorationTheme(
-            floatingLabelStyle: TextStyle(color: Color(0xFF0066CC)), // 浮起來的 label 色
-            labelStyle: TextStyle(color: Colors.grey[700]),          // 原本的 label 色
+            floatingLabelStyle: TextStyle(color: Color(0xFF0066CC)), 
+            labelStyle: TextStyle(color: Colors.grey[700]),          
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.blueGrey),
             ),
-            //enabledBorder: OutlineInputBorder(
-            //  borderSide: BorderSide(color: Colors.grey.shade400),
-            //),
-            //border: OutlineInputBorder(),
           ),
         ),
         debugShowCheckedModeBanner: false,
         home: AuthCheckPage(
           setLocale: (locale) {
-            localeProvider.setLocale(locale); // 改變 provider 狀態
+            providerLocale.setLocale(locale); 
           },
         ),
       );
@@ -146,9 +138,10 @@ class AuthCheckPage extends StatefulWidget {
 enum AuthPage { login, register, pageMain }
 
 class _AuthCheckPageState extends State<AuthCheckPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!; 
   AuthPage currentPage = AuthPage.login;
   Map<String, String> registerBackData = {'email': '', 'password': ''};
-  List<Widget> _appBarPages = []; // <== 這裡改成成員變數
+  List<Widget> _appBarPages = [];
 
   void _goToRegister([String? email, String? password]) {
     setState(() {
@@ -168,14 +161,12 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
 
   void _logout() async {
     final auth = Provider.of<ControllerAuth>(context, listen: false);
-    // 儲存目前帳號 email
     final currentEmail = auth.currentAccount != null &&
             auth.currentAccount!.isNotEmpty &&
             !auth.isAnonymous
         ? auth.currentAccount
         : '';
     await auth.logout(context);
-    // 把 email 帶回 login 頁
     setState(() {
       registerBackData['email'] = currentEmail!;
       currentPage = AuthPage.login;
@@ -184,10 +175,9 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
     final auth = Provider.of<ControllerAuth>(context);
-    final localeProvider =
-        Provider.of<LocaleProvider>(context); // 獲取 LocaleProvider
+    final providerLocale =
+        Provider.of<ProviderLocale>(context); 
     if (auth.isLoading) return Center(child: CircularProgressIndicator());
 
     Widget bodyWidget;
@@ -197,7 +187,6 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
 
     if (loggedIn) {
       if (currentPage != AuthPage.pageMain) {
-        // 如果之前不是pageMain，改成pageMain
         WidgetsBinding.instance.addPostFrameCallback((_) {
           setState(() {
             currentPage = AuthPage.pageMain;
@@ -248,15 +237,15 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
     }
 
     return Scaffold(
-      appBar: CommonAppBar(
+      appBar: MainPageBar(
         title: loc.appTitle,
-        currentLocale: localeProvider.locale, // <== 這個很重要
+        currentLocale: providerLocale.locale, 
         onLocaleToggle: widget.setLocale,
         account: auth.isLoggedIn ? auth.currentAccount : null,
         onLogout: auth.isLoggedIn ? _logout : null,
         pages: currentPage == AuthPage.pageMain
             ? _appBarPages
-            : null, // <== 只有 pageMain 顯示選單
+            : null, 
       ),
       body: bodyWidget,
     );
