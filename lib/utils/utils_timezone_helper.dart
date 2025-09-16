@@ -1,6 +1,5 @@
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:logger/logger.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/foundation.dart' show kIsWeb;
