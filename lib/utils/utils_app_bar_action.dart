@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_recommended_event.dart';
+import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/page_recommended_event_add.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_class_event_card.dart';
-import 'package:life_pilot/utils/utils_class_event_card_graph.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_gaps.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_widgets.dart';
 import 'package:provider/provider.dart';
 
-import 'utils_export.dart';
+import '../export/export.dart';
 
+// --- Build White AppBar ---
 AppBar buildWhiteAppBar(
   BuildContext context, {
   required String title,
@@ -22,9 +22,10 @@ AppBar buildWhiteAppBar(
   required void Function(void Function()) setState,
   required bool isEditable,
   VoidCallback? onAdd,
+  required String tableName,
 }) {
   return AppBar(
-      title: Text(''),
+      title: Text(constEmpty),
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
       elevation: 0,
@@ -36,9 +37,11 @@ AppBar buildWhiteAppBar(
         setState: setState,
         isEditable: isEditable,
         onAdd: onAdd,
+        tableName: tableName,
       ));
 }
 
+// --- Build AppBar Actions ---
 List<Widget> buildAppBarActions(
   BuildContext context, {
   required bool enableSearchAndExport,
@@ -47,44 +50,49 @@ List<Widget> buildAppBarActions(
   required void Function(VoidCallback fn) setState,
   required bool isEditable,
   VoidCallback? onAdd,
+  required String tableName,
 }) {
   final auth = Provider.of<ControllerAuth>(context);
   final loc = AppLocalizations.of(context)!;
-  List<Widget> tmp = [
-    if (enableSearchAndExport)
-      IconButton(
-        icon: const Icon(Icons.search),
-        tooltip: loc.search,
-        onPressed: () => handler.onSearchToggle(),
-      ),
-    if (auth.currentAccount == 'minavi@alumni.nccu.edu.tw')
-      IconButton(
-        icon: Icon(isGridView ? Icons.view_agenda : Icons.view_list),
-        tooltip: loc.toggle_view,
-        onPressed: () => handler.onToggleView(),
-      ),
-    if (enableSearchAndExport)
-      IconButton(
-        icon: const Icon(Icons.download),
-        tooltip: loc.export_excel,
-        onPressed: () => handler.onExport(),
-      ),
-    if (isEditable && onAdd != null)
-      IconButton(
-        icon: const Icon(Icons.add),
-        tooltip: loc.event_add,
-        onPressed: onAdd,
-      ),
-  ];
-  return tmp;
+
+  List<Widget> actions = [];
+
+  if (enableSearchAndExport) {
+    actions.add(IconButton(
+      icon: const Icon(Icons.search),
+      tooltip: loc.search,
+      onPressed: handler.onSearchToggle,
+    ));
+  }
+  if (auth.currentAccount == constSysAdminEmail) {
+    actions.add(IconButton(
+      icon: Icon(isGridView ? Icons.view_agenda : Icons.view_list),
+      tooltip: loc.toggle_view,
+      onPressed: handler.onToggleView,
+    ));
+  }
+  if (enableSearchAndExport) {
+    actions.add(IconButton(
+      icon: const Icon(Icons.download),
+      tooltip: loc.export_excel,
+      onPressed: () => handler.onExport(tableName),
+    ));
+  }
+  if (isEditable && onAdd != null) {
+    actions.add(IconButton(
+      icon: const Icon(Icons.add),
+      tooltip: loc.event_add,
+      onPressed: onAdd,
+    ));
+  }
+
+  return actions;
 }
 
+// --- AppBar Actions Handler Class ---
 class AppBarActionsHandler {
   final BuildContext context;
-  AppLocalizations get loc => AppLocalizations.of(context)!;
   ServiceStorage? serviceStorage;
-  bool isGridView = true;
-  bool showSearchPanel = false;
   final VoidCallback refreshCallback;
   final void Function(void Function()) setState;
 
@@ -93,6 +101,8 @@ class AppBarActionsHandler {
 
   final void Function(bool) onToggleGridView;
   final void Function(bool) onToggleShowSearch;
+
+  AppLocalizations get loc => AppLocalizations.of(context)!;
 
   AppBarActionsHandler({
     required this.context,
@@ -111,10 +121,11 @@ class AppBarActionsHandler {
     });
   }
 
-  Future<void> onExport() async {
+  Future<void> onExport(String tableName) async {
     try {
-      final events = await serviceStorage?.getRecommendedEvents();
-      if (events!.isEmpty) {
+      final events =
+          await serviceStorage?.getRecommendedEvents(tableName: tableName);
+      if (events == null || events.isEmpty) {
         showSnackBar(context, loc.no_events_to_export);
         return;
       }
@@ -130,13 +141,11 @@ class AppBarActionsHandler {
     });
   }
 
-  Future<RecommendedEvent?> onAddEvent(BuildContext context) {
-    return Navigator.push<RecommendedEvent?>(
+  Future<Event?> onAddEvent(BuildContext context, String tableName) {
+    return Navigator.push<Event?>(
       context,
       MaterialPageRoute(
-        builder: (context) => PageRecommendedEventAdd(
-          existingRecommendedEvent: null,
-        ),
+        builder: (context) => PageRecommendedEventAdd(tableName: tableName),
       ),
     ).then((newEvent) {
       if (newEvent != null) {
@@ -147,6 +156,7 @@ class AppBarActionsHandler {
   }
 }
 
+// --- Build Search Panel Widget ---
 Widget buildSearchPanel({
   required TextEditingController searchController,
   required String searchKeywords,
@@ -171,9 +181,10 @@ Widget buildSearchPanel({
             suffixIcon: searchKeywords.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear),
+                    tooltip: loc.clear,
                     onPressed: () {
                       setState(() {
-                        onSearchKeywordsChanged('');
+                        onSearchKeywordsChanged(constEmpty);
                         searchController.clear();
                       });
                     },
@@ -187,7 +198,7 @@ Widget buildSearchPanel({
             });
           },
         ),
-        kGapH8,
+        kGapH8(),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -200,7 +211,7 @@ Widget buildSearchPanel({
                 onDateChanged: onStartDateChanged,
               ),
             ),
-            kGapW16,
+            kGapW16(),
             Expanded(
               child: widgetBuildDateButton(
                 context: context,
@@ -217,14 +228,186 @@ Widget buildSearchPanel({
   );
 }
 
+// ------------------------------
+// ✅ 共用 Trailing Checkbox & Edit 按鈕
+// ------------------------------
+Widget buildEventTrailing({
+  required BuildContext context,
+  required Event event,
+  required Set<String> selectedEventIds,
+  required bool isEditable,
+  required void Function(void Function()) setState,
+  required VoidCallback refreshCallback,
+  required ServiceStorage? serviceStorage,
+  required String tableName,
+  required String toTableNamme,
+}) {
+  final loc = AppLocalizations.of(context)!;
+  final auth = Provider.of<ControllerAuth>(context);
+
+  return StatefulBuilder(builder: (context, localSetState) {
+    final isChecked = selectedEventIds.contains(event.id);
+    return Transform.scale(
+      scale: 1.2,
+      child: Row(
+        children: [
+          if (auth.currentAccount == event.account)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: loc.edit,
+              onPressed: isEditable
+                  ? () => onEditEvent(
+                        context: context,
+                        event: event,
+                        setState: setState,
+                        refreshCallback: refreshCallback,
+                        tableName: tableName,
+                      )
+                  : null,
+            ),
+          if (!auth.isAnonymous)
+            Checkbox(
+              value: isChecked,
+              onChanged: (value) async {
+                await onCheckboxChanged(
+                  context: context,
+                  serviceStorage: serviceStorage!,
+                  value: value,
+                  event: event,
+                  selectedEventIds: selectedEventIds,
+                  setState: (fn) {
+                    fn();
+                    localSetState(() {});
+                  },
+                  addedMessage: loc.event_add_ok,
+                  tableName: tableName,
+                  toTableNamme: toTableNamme,
+                );
+              },
+            ),
+          kGapW24(),
+        ],
+      ),
+    );
+  });
+}
+
+// ------------------------------
+// 📋 Event ListView / GridView
+// ------------------------------
+class EventList extends StatelessWidget {
+  final List<Event> events;
+  final bool isGridView;
+  final Set<String> selectedEventIds;
+  final Set<String> removedEventIds;
+  final bool isEditable;
+  final ServiceStorage? serviceStorage;
+  final void Function(void Function()) setState;
+  final ScrollController scrollController;
+  final VoidCallback refreshCallback;
+  final String tableName;
+  final String toTableNamme;
+
+  const EventList({
+    super.key,
+    required this.events,
+    required this.isGridView,
+    required this.selectedEventIds,
+    required this.removedEventIds,
+    required this.isEditable,
+    this.serviceStorage,
+    required this.setState,
+    required this.scrollController,
+    required this.refreshCallback,
+    required this.tableName,
+    required this.toTableNamme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      key: PageStorageKey(tableName), //'recommended_event_list'
+      controller: scrollController,
+      itemCount: events.length,
+      itemBuilder: (context, index) {
+        final event = events[index];
+        final trailing = buildEventTrailing(
+          context: context,
+          event: event,
+          selectedEventIds: selectedEventIds,
+          isEditable: isEditable,
+          setState: setState,
+          refreshCallback: refreshCallback,
+          serviceStorage: serviceStorage,
+          tableName: tableName,
+          toTableNamme: toTableNamme,
+        );
+
+        if (isGridView) {
+          return EventCardGraph(
+            event: event,
+            index: index,
+            onTap: () {
+              showDialog(
+                context: context,
+                barrierColor: const Color.fromARGB(102, 255, 255, 255), // 透明白
+                builder: (_) => EventImageDialog(event: event),
+              );
+            },
+            onDelete: () => onRemoveEvent(
+              context: context,
+              event: event,
+              serviceStorage: serviceStorage,
+              removedEventIds: removedEventIds,
+              setState: setState,
+              tableName: tableName,
+            ),
+            trailing: trailing,
+          );
+        } else {
+          return EventCard(
+            event: event,
+            index: index,
+            onTap: isEditable
+                ? () => onEditEvent(
+                      context: context,
+                      event: event,
+                      setState: setState,
+                      refreshCallback: refreshCallback,
+                      tableName: tableName,
+                    )
+                : null,
+            onDelete: isEditable
+                ? () => onRemoveEvent(
+                      context: context,
+                      event: event,
+                      serviceStorage: serviceStorage,
+                      removedEventIds: removedEventIds,
+                      setState: setState,
+                      tableName: tableName,
+                    )
+                : null,
+            trailing: trailing,
+          );
+        }
+      },
+    );
+  }
+}
+
+// ------------------------------
+// ✅ Utility Functions
+// ------------------------------
 Future<void> onCheckboxChanged({
   required BuildContext context,
   required ServiceStorage serviceStorage,
   required bool? value,
-  required RecommendedEvent event,
+  required Event event,
   required Set<String> selectedEventIds,
   required void Function(void Function()) setState,
   required String addedMessage,
+  required String tableName,
+  required String toTableNamme,
 }) async {
   await handleCheckboxChanged(
     context: context,
@@ -234,20 +417,24 @@ Future<void> onCheckboxChanged({
     selectedEventIds: selectedEventIds,
     setState: setState,
     addedMessage: addedMessage,
+    tableName: tableName,
+    toTableNamme: toTableNamme,
   );
 }
 
 Future<void> onEditEvent({
   required BuildContext context,
-  required RecommendedEvent event,
+  required Event event,
   required void Function(void Function()) setState,
   required VoidCallback refreshCallback,
+  required String tableName,
 }) async {
-  final updatedEvent = await Navigator.push<RecommendedEvent?>(
+  final updatedEvent = await Navigator.push<Event?>(
     context,
     MaterialPageRoute(
       builder: (context) => PageRecommendedEventAdd(
         existingRecommendedEvent: event,
+        tableName: tableName,
       ),
     ),
   );
@@ -259,16 +446,17 @@ Future<void> onEditEvent({
 
 Future<void> onRemoveEvent({
   required BuildContext context,
-  required RecommendedEvent event,
+  required Event event,
   ServiceStorage? serviceStorage,
   required Set<String> removedEventIds,
   required void Function(void Function()) setState,
+  required String tableName,
 }) async {
   await handleRemoveEvent(
     context: context,
     event: event,
     onDelete: () async {
-      await serviceStorage?.deleteRecommendedEvent(event);
+      await serviceStorage?.deleteRecommendedEvent(event, tableName);
     },
     onSuccessSetState: () {
       setState(() {
@@ -278,8 +466,8 @@ Future<void> onRemoveEvent({
   );
 }
 
-List<RecommendedEvent> filterEvents({
-  required List<RecommendedEvent> events,
+List<Event> filterEvents({
+  required List<Event> events,
   required Set<String> removedEventIds,
   required String searchKeywords,
   DateTime? startDate,
@@ -302,7 +490,7 @@ List<RecommendedEvent> filterEvents({
           e.description.toLowerCase().contains(word) ||
           e.fee.toLowerCase().contains(word) ||
           e.unit.toLowerCase().contains(word) ||
-          e.subRecommendedEvents.any(
+          e.subEvents.any(
             (se) =>
                 se.city.toLowerCase().contains(word) ||
                 se.location.toLowerCase().contains(word) ||
@@ -332,181 +520,8 @@ List<RecommendedEvent> filterEvents({
   }).toList();
 }
 
-class EventList extends StatelessWidget {
-  final List<RecommendedEvent> events;
-  final bool isGridView;
-  final Set<String> selectedEventIds;
-  final Set<String> removedEventIds;
-  final bool isEditable;
-  final ServiceStorage? serviceStorage;
-  final void Function(void Function()) setState;
-  final ScrollController scrollController;
-  final VoidCallback refreshCallback;
-
-  const EventList({
-    super.key,
-    required this.events,
-    required this.isGridView,
-    required this.selectedEventIds,
-    required this.removedEventIds,
-    required this.isEditable,
-    this.serviceStorage,
-    required this.setState,
-    required this.scrollController,
-    required this.refreshCallback,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final auth = Provider.of<ControllerAuth>(context);
-    if (isGridView) {
-      return ListView.builder(
-        key: PageStorageKey('recommended_event_list'),
-        controller: scrollController,
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final event = events[index];
-          return EventCardGraph(
-            event: event,
-            index: index,
-            onTap: () {
-              showDialog(
-                context: context,
-                // ignore: deprecated_member_use
-                barrierColor: Colors.black.withOpacity(0.4),
-                builder: (_) => EventImageDialog(event: event),
-              );
-            },
-            onDelete: () async => await onRemoveEvent(
-              context: context,
-              event: event,
-              serviceStorage: serviceStorage,
-              removedEventIds: removedEventIds,
-              setState: setState,
-            ),
-            trailing: StatefulBuilder(
-              builder: (context, localSetState) {
-                final isChecked = selectedEventIds.contains(event.id);
-                return Transform.scale(
-                  scale: 1.5,
-                  child: Row(
-                    children: [
-                      if (auth.currentAccount == event.account)
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () async {
-                            await onEditEvent(
-                              context: context,
-                              event: event,
-                              setState: setState,
-                              refreshCallback: refreshCallback,
-                            );
-                          },
-                        ),
-                      if (!auth.isAnonymous)
-                        Checkbox(
-                          value: isChecked,
-                          onChanged: (value) async {
-                            await onCheckboxChanged(
-                                context: context,
-                                serviceStorage: serviceStorage!,
-                                value: value,
-                                event: event,
-                                selectedEventIds: selectedEventIds,
-                                setState: (fn) {
-                                  fn();
-                                  localSetState(() {});
-                                },
-                                addedMessage: loc.event_add_ok);
-                          },
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      );
-    } else {
-      return ListView.builder(
-        key: PageStorageKey('recommended_event_list'),
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final event = events[index];
-          return EventCard(
-            event: event,
-            index: index,
-            onTap: isEditable
-                ? () async => await onEditEvent(
-                      context: context,
-                      event: event,
-                      setState: setState,
-                      refreshCallback: refreshCallback,
-                    )
-                : null,
-            onDelete: isEditable
-                ? () async => await onRemoveEvent(
-                      context: context,
-                      event: event,
-                      serviceStorage: serviceStorage,
-                      removedEventIds: removedEventIds,
-                      setState: setState,
-                    )
-                : null,
-            trailing: StatefulBuilder(
-              builder: (context, localSetState) {
-                final isChecked = selectedEventIds.contains(event.id);
-                return Transform.scale(
-                  scale: 1.5,
-                  child: Row(
-                    children: [
-                      if (auth.currentAccount == event.account)
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: isEditable
-                              ? () async {
-                                  await onEditEvent(
-                                    context: context,
-                                    event: event,
-                                    setState: setState,
-                                    refreshCallback: refreshCallback,
-                                  );
-                                }
-                              : null,
-                        ),
-                      Checkbox(
-                        value: isChecked,
-                        onChanged: (value) async {
-                          await onCheckboxChanged(
-                            context: context,
-                            serviceStorage: serviceStorage!,
-                            value: value,
-                            event: event,
-                            selectedEventIds: selectedEventIds,
-                            setState: (fn) {
-                              fn();
-                              localSetState(() {});
-                            },
-                            addedMessage: loc.event_add_ok,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      );
-    }
-  }
-}
-
 void scrollToEventById({
-  required List<RecommendedEvent> events,
+  required List<Event> events,
   required ScrollController scrollController,
   required String eventId,
   double itemHeight = 120.0,

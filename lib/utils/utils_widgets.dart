@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/utils_gaps.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 
 Widget widgetBuildDateButton({
   required BuildContext context,
@@ -17,7 +17,7 @@ Widget widgetBuildDateButton({
           icon: Icon(icon),
           label: Text(date == null
               ? label
-              : "${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}"),
+              : "${date.month.toString().padLeft(2, constZero)}/${date.day.toString().padLeft(2, constZero)}"),
           onPressed: () async {
             DateTime? picked = await showDatePicker(
               context: context,

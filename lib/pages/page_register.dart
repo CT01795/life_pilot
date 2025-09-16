@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/services/service_auth.dart';
-import 'package:life_pilot/utils/utils_gaps.dart';
-import 'package:life_pilot/utils/utils_handler_message.dart';
+import 'package:life_pilot/utils/utils_common_function.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_class_input_field.dart';
 import 'package:provider/provider.dart';
 
@@ -26,8 +26,8 @@ class _PageRegisterState extends State<PageRegister> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = widget.email ?? '';
-    _passwordController.text = widget.password ?? '';
+    _emailController.text = widget.email ?? constEmpty;
+    _passwordController.text = widget.password ?? constEmpty;
   }
 
   @override
@@ -62,17 +62,17 @@ class _PageRegisterState extends State<PageRegister> {
           child: Column(
             children: [
               InputField(controller: _emailController, labelText: loc.email),
-              kGapH16,
+              kGapH16(),
               InputField(
                   controller: _passwordController,
                   labelText: loc.password,
                   obscureText: true),
-              kGapH16,
+              kGapH16(),
               Row(
                 children: [
                   ActionButton(
                       label: loc.register, onPressed: _register), 
-                  kGapW8,
+                  kGapW8(),
                   TextButton(
                     onPressed: () {
                       widget.onBack(

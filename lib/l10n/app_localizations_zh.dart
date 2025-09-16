@@ -132,7 +132,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_add => '新增活動';
 
   @override
-  String get event_add_ok => '已新增活動';
+  String get event_add_ok => '✅ 已新增活動';
 
   @override
   String get no_events_to_export => '❌ 沒有可匯出的活動';
@@ -222,7 +222,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sub_url => '連結';
 
   @override
-  String get event_saved => '活動已儲存';
+  String get event_saved => '✅ 活動已儲存';
 
   @override
   String get event_save_error => '活動名稱不可為空';
@@ -252,6 +252,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get add => '新增';
 
   @override
+  String get edit => '編輯';
+
+  @override
   String get cancel => '取消';
 
   @override
@@ -261,10 +264,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_delete => '刪除活動';
 
   @override
-  String get delete_ok => '刪除完成';
+  String get delete_ok => '✅ 刪除完成';
 
   @override
-  String get delete_error => '刪除失敗';
+  String get delete_error => '❌ 刪除失敗';
 
   @override
   String get click_here_to_see_more => '點我看更多';
@@ -274,4 +277,133 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get url => '網址';
+
+  @override
+  String get speak => '語音輸入';
+
+  @override
+  String get speak_up => '說出來';
+
+  @override
+  String get pagCalendar => 'pagCalendar';
+
+  @override
+  String get week_day_sun => '日';
+
+  @override
+  String get week_day_mon => '一';
+
+  @override
+  String get week_day_tue => '二';
+
+  @override
+  String get week_day_wed => '三';
+
+  @override
+  String get week_day_thu => '四';
+
+  @override
+  String get week_day_fri => '五';
+
+  @override
+  String get week_day_sat => '六';
+
+  @override
+  String get year => '年';
+
+  @override
+  String get month => '月';
+
+  @override
+  String get confirm => '確定';
+
+  @override
+  String get confirm_delete => '確定刪除?';
+
+  @override
+  String get set_alarm => '設定鬧鐘';
+
+  @override
+  String get cancel_alarm => '取消鬧鐘';
+
+  @override
+  String get set_alarm_completed => '✅ 設定鬧鐘完成';
+
+  @override
+  String get previous_month => '上一個月';
+
+  @override
+  String get today => '今日';
+
+  @override
+  String get next_month => '下一個月';
+
+  @override
+  String get clear => '清除';
+
+  @override
+  String get repeat_options => '重複次數';
+
+  @override
+  String get repeat_options_once => '僅一次';
+
+  @override
+  String get repeat_options_every_day => '每天';
+
+  @override
+  String get repeat_options_every_week => '每週';
+
+  @override
+  String get repeat_options_every_two_weeks => '每兩週';
+
+  @override
+  String get repeat_options_every_month => '每月';
+
+  @override
+  String get repeat_options_every_two_months => '每兩個月';
+
+  @override
+  String get repeat_options_every_year => '每年';
+
+  @override
+  String get repeat_options_every => '每';
+
+  @override
+  String get reminder_options => '提醒時間';
+
+  @override
+  String get reminder_options_15_minutes_before => '15分鐘前';
+
+  @override
+  String get reminder_options_30_minutes_before => '30分鐘前';
+
+  @override
+  String get reminder_options_1_hour_before => '1小時前';
+
+  @override
+  String get reminder_options_default_same_day_8am => '當天早上8點';
+
+  @override
+  String get reminder_options_default_day_before_8am => '前1天早上8點';
+
+  @override
+  String get reminder_options_2_days_before => '2天前';
+
+  @override
+  String get reminder_options_1_week_before => '1週前';
+
+  @override
+  String get reminder_options_2_weeks_before => '2週前';
+
+  @override
+  String get reminder_options_1_month_before => '1個月前';
+
+  @override
+  String get event_reminder => '活動提醒';
+
+  @override
+  String get event_reminder_today => '今日活動提醒';
+
+  @override
+  String get event_reminder_desc => '提醒你即將開始的活動';
 }

@@ -45,5 +45,18 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>RequiresMicrophoneForVoiceInput</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>RequiresVoiceRecognition</string>
+
+	<key>NSUserNotificationUsageDescription</key>
+	<string>WeWillUseNotificationsToRemindYouOfEventsAndSchedules</string>
+
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

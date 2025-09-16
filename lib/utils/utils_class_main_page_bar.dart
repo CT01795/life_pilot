@@ -32,7 +32,7 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: theme.primaryColor, 
       iconTheme: theme.iconTheme, 
-      titleTextStyle: theme.textTheme.titleLarge?.copyWith(color: Colors.white), 
+      //titleTextStyle: theme.textTheme.titleLarge?.copyWith(color: Colors.white), 
       title: Text((auth.currentAccount?.contains('@') ?? false)
             ? auth.currentAccount!.split('@')[0]
             : auth.currentAccount ?? title),

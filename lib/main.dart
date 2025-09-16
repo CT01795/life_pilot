@@ -1,12 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/firebase_options.dart';
 import 'package:life_pilot/pages/page_main.dart';
 import 'package:life_pilot/pages/page_register.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
+import 'package:life_pilot/notification/notification.dart';
 import 'package:life_pilot/utils/utils_class_main_page_bar.dart';
-import 'package:life_pilot/utils/utils_gaps.dart';
+import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/utils_timezone_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,26 +17,36 @@ import 'controllers/controller_auth.dart';
 import 'l10n/app_localizations.dart';
 import 'pages/page_login.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // ✅ 初始化時區
+  //tz.initializeTimeZones();
+  //tz.setLocalLocation(tz.getLocation(constTzLocation));
+  constTzLocation = await setTimezoneFromDevice(); // ✅ 自動偵測並設定時區
 
+  // 只呼叫一次 NotificationService 的初始化
+  await MyCustomNotification.initialize();
+
+  // ✅ 初始化 Firebase、Supabase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await Supabase.initialize(
-    url: 'https://ccktdpycnferbrjrdtkp.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNja3RkcHljbmZlcmJyanJkdGtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNTU0NTIsImV4cCI6MjA2ODgzMTQ1Mn0.jsuY3AvuhRlCwuGKmcq_hyj1ViLRX18kmQs5YYnFwR4',
+    url: constSupabaseUrl,
+    anonKey: constSupabaseAnonKey,
   );
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-            create: (_) => ControllerAuth()..checkLoginStatus()),
+          create: (_) => ControllerAuth()..checkLoginStatus()),
         ChangeNotifierProvider(
-            create: (_) => ProviderLocale(locale: Locale('zh'))),  
+          create: (_) => ProviderLocale(locale: Locale(constLocaleZh))),  
+        ChangeNotifierProvider(
+          create: (_) => ControllerCalendar(tableName: constTableCalendarEvents)),  
       ],
       child: MyApp(),
     ),
@@ -52,7 +65,8 @@ class _MyAppState extends State<MyApp> {
     return Consumer<ProviderLocale>(
         builder: (context, providerLocale, child) {
       return MaterialApp(
-        title: 'Life Pilot',
+        navigatorKey: navigatorKey,
+        title: constAppTitle,
         builder: (context, child) {
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.5),),
@@ -66,8 +80,8 @@ class _MyAppState extends State<MyApp> {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [
-          Locale('en'),
-          Locale('zh'),
+          Locale(constLocaleEn),
+          Locale(constLocaleZh),
         ],
         locale: providerLocale.locale, 
         theme: ThemeData(
@@ -140,20 +154,22 @@ enum AuthPage { login, register, pageMain }
 class _AuthCheckPageState extends State<AuthCheckPage> {
   AppLocalizations get loc => AppLocalizations.of(context)!; 
   AuthPage currentPage = AuthPage.login;
-  Map<String, String> registerBackData = {'email': '', 'password': ''};
+  Map<String, String> registerBackData = {constEmail: constEmpty, constPassword: constEmpty};
   List<Widget> _appBarPages = [];
 
   void _goToRegister([String? email, String? password]) {
+    if (!mounted) return;
     setState(() {
-      registerBackData['email'] = email!;
-      registerBackData['password'] = password!;
+      registerBackData[constEmail] = email!;
+      registerBackData[constPassword] = password!;
       currentPage = AuthPage.register;
     });
   }
 
   void _goBackToLogin(String? email, String? password) {
-    registerBackData['email'] = email!;
-    registerBackData['password'] = password!;
+    registerBackData[constEmail] = email!;
+    registerBackData[constPassword] = password!;
+    if (!mounted) return;
     setState(() {
       currentPage = AuthPage.login;
     });
@@ -165,10 +181,11 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
             auth.currentAccount!.isNotEmpty &&
             !auth.isAnonymous
         ? auth.currentAccount
-        : '';
+        : constEmpty;
     await auth.logout(context);
+    if (!mounted) return;
     setState(() {
-      registerBackData['email'] = currentEmail!;
+      registerBackData[constEmail] = currentEmail!;
       currentPage = AuthPage.login;
     });
   }
@@ -188,6 +205,7 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
     if (loggedIn) {
       if (currentPage != AuthPage.pageMain) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           setState(() {
             currentPage = AuthPage.pageMain;
           });
@@ -196,6 +214,7 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
     } else {
       if (currentPage == AuthPage.pageMain) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           setState(() {
             currentPage = AuthPage.login;
           });
@@ -207,16 +226,16 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
     switch (currentPage) {
       case AuthPage.login:
         bodyWidget = PageLogin(
-          email: registerBackData['email'],
-          password: registerBackData['password'],
+          email: registerBackData[constEmail],
+          password: registerBackData[constPassword],
           onNavigateToRegister: _goToRegister,
         );
         break;
 
       case AuthPage.register:
         bodyWidget = PageRegister(
-          email: registerBackData['email'],
-          password: registerBackData['password'],
+          email: registerBackData[constEmail],
+          password: registerBackData[constPassword],
           onBack: _goBackToLogin,
         );
         break;
@@ -225,11 +244,10 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
         bodyWidget = PageMain(
           onPagesChanged: (pages) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                setState(() {
-                  _appBarPages = pages;
-                });
-              }
+              if (!mounted) return;
+              setState(() {
+                _appBarPages = pages;
+              });
             });
           },
         );

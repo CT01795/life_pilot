@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/services/service_auth.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 
 class ControllerAuth extends ChangeNotifier {
   //----------------------「Auth 狀態管理器」管理登入狀態、登出等全局驗證狀態 ----------------------
@@ -19,7 +20,7 @@ class ControllerAuth extends ChangeNotifier {
     if (user != null && !user.isAnonymous) {
       currentAccount = user.email;
     } else if (isAnonymous) {
-      currentAccount = 'Guest';
+      currentAccount = constGuest;
     }
     isLoading = false;
     notifyListeners();

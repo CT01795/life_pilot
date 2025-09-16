@@ -1,120 +1,116 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:logger/logger.dart';
 
 class ServiceAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static String? _checkEmptyFields(String email, String password) {
-    if (email.isEmpty) {
-      return 'noEmailError';
-    }
-    if (password.isEmpty) {
-      return 'noPasswordError';
-    }
-    return null;
-  }
 
-  static String _handleFirebaseAuthException(
-      FirebaseAuthException e, String defaultError) {
-    Logger().d("Error: $e ${e.code}");
-    switch (e.code) {
-      case 'user-not-found':
-      case 'wrong-password':
-      case 'invalid-credential':
-        return 'wrongUserPassword'; // 帳號密碼錯誤
-      case 'too-many-requests':
-        return 'tooManyRequests'; // 登入過於頻繁
-      case 'network-request-failed':
-        return 'networkError'; // 網路錯誤
-      case 'invalid-email':
-        return 'invalidEmail'; // 帳號格式錯誤
-      case 'email-already-in-use':
-        return 'emailAlreadyInUse'; // 帳號已經被人註冊
-      case 'weak-password':
-        return 'weakPassword'; // Password should be at least 6 characters
-      default:
-        return defaultError; // 其他錯誤
-    }
-  }
-
+  // 🔐 Check if user is logged in
   static Future<bool> isLoggedIn() async {
     return _auth.currentUser != null;
   }
 
-  static Future<String?> login(String email, String password) async {
-    final emptyCheckResult = _checkEmptyFields(email, password);
-    if (emptyCheckResult != null) {
-      return emptyCheckResult;
-    }
-
-    try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _handleFirebaseAuthException(e, 'loginError');
-    } catch (e) {
-      Logger().d("Unexpected error: $e");
-      return 'loginError'; 
-    }
+  // 📧 Get current user's email
+  static Future<String?> currentAccount() async {
+    return _auth.currentUser?.email;
   }
 
-  static Future<String?> anonymousLogin() async {
-    try {
-      await _auth.signInAnonymously();
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _handleFirebaseAuthException(e, 'loginError');
-    } catch (e) {
-      Logger().d("Unexpected error: $e");
-      return 'loginError';
+  // 🔑 Login with email/password
+  static Future<String?> login(String email, String password) async {
+    final error = _checkEmptyFields(email, password);
+    if (error != null) {
+      return error ;
     }
+
+    return _handle(() async {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+    }, defaultError: ErrorFields.loginError);
+  }
+
+  // 🧑‍🦯 Login anonymously
+  static Future<String?> anonymousLogin() async {
+    return _handle(() async {
+      await _auth.signInAnonymously();
+    }, defaultError: ErrorFields.loginError);
+  }
+
+  static Future<String?> register(String email, String password) async {
+    final error = _checkEmptyFields(email, password);
+    if (error != null) {
+      return error;
+    }
+
+    return _handle(() async {
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await userCredential.user?.sendEmailVerification();
+    }, defaultError: ErrorFields.registerError);
   }
 
   static Future<String?> resetPassword(String email) async {
     if (email.isEmpty) {
-      return 'noEmailError';
+      return ErrorFields.noEmailError;
     }
 
-    try {
+    return _handle(() async {
       await _auth.sendPasswordResetEmail(email: email);
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _handleFirebaseAuthException(e, 'loginError');
-    } catch (e) {
-      Logger().d("Unexpected error: $e");
-      return 'loginError'; 
-    }
-  }
+    }, defaultError: ErrorFields.loginError);
+  }  
 
-  static Future<String?> register(String email, String password) async {
-    final emptyCheckResult = _checkEmptyFields(email, password);
-    if (emptyCheckResult != null) {
-      return emptyCheckResult;
-    }
-
-    try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
-      await userCredential.user?.sendEmailVerification();
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _handleFirebaseAuthException(e, 'registerError');
-    } catch (e) {
-      Logger().d("Unexpected error: $e");
-      return 'registerError'; 
-    }
-  }
-
+  // 🚪 Sign out
   static Future<String?> logout() async {
-    try {
+    return _handle(() async {
       await _auth.signOut();
+    }, defaultError: ErrorFields.logoutError);
+  }
+
+  // -------------------------
+  // 🔧 Private Helper Methods
+  // -------------------------
+  static String? _checkEmptyFields(String email, String password) {
+    if (email.isEmpty) {
+      return ErrorFields.noEmailError;
+    }
+    if (password.isEmpty) {
+      return ErrorFields.noPasswordError;
+    }
+    return null;
+  }
+
+  static Future<String?> _handle(
+    Future<void> Function() action, {
+    required String defaultError,
+  }) async {
+    try {
+      await action();
       return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapFirebaseAuthError(e, defaultError);
     } catch (e) {
-      Logger().d("Unexpected error: $e");
-      return 'logoutError'; 
+      Logger().d("${ErrorFields.unexpectedError}: $e");
+      return defaultError;
     }
   }
 
-  static Future<String?> currentAccount() async {
-    return _auth.currentUser?.email;
+  static String _mapFirebaseAuthError(
+      FirebaseAuthException e, String defaultError) {
+    Logger().d("${ErrorFields.authError}: ${e.code}");
+
+    switch (e.code) {
+      case ErrorFields.userNotFoundError:
+      case ErrorFields.wrongPasswordError:
+      case ErrorFields.invalidCredentialError:
+        return ErrorFields.wrongUserPassword; // 帳號密碼錯誤
+      case ErrorFields.tooManyRequestsError: // 登入過於頻繁
+      case ErrorFields.networkRequestFailedError: //網路錯誤
+      case ErrorFields.invalidEmailError: // 帳號格式錯誤
+      case ErrorFields.emailAlreadyInUseError: // 帳號已經被人註冊
+      case ErrorFields.weakPasswordError: // Password should be at least 6 characters
+        return e.code; 
+      default:
+        return defaultError; // 其他錯誤
+    }
   }
 }

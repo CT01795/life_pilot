@@ -344,7 +344,7 @@ abstract class AppLocalizations {
   /// Label for add event ok
   ///
   /// In en, this message translates to:
-  /// **'Event added'**
+  /// **'✅ Event added'**
   String get event_add_ok;
 
   /// Label for no_events_to_export
@@ -524,7 +524,7 @@ abstract class AppLocalizations {
   /// Label for event_saved
   ///
   /// In en, this message translates to:
-  /// **'Event saved'**
+  /// **'✅ Event saved'**
   String get event_saved;
 
   /// Label for event_save_error
@@ -560,7 +560,7 @@ abstract class AppLocalizations {
   /// Label for search_keywords
   ///
   /// In en, this message translates to:
-  /// **'Keyword search (blank separated)'**
+  /// **'Keyword (blank separated)'**
   String get search_keywords;
 
   /// Label for date_clear
@@ -580,6 +580,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add'**
   String get add;
+
+  /// Label for edit
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
 
   /// Label for cancel
   ///
@@ -602,13 +608,13 @@ abstract class AppLocalizations {
   /// Label for delete_ok
   ///
   /// In en, this message translates to:
-  /// **'Deletion completed'**
+  /// **'✅ Deletion completed'**
   String get delete_ok;
 
   /// Label for delete_error
   ///
   /// In en, this message translates to:
-  /// **'Delete failed'**
+  /// **'❌ Delete failed'**
   String get delete_error;
 
   /// Label for click_here_to_see_more
@@ -628,6 +634,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'URL'**
   String get url;
+
+  /// Label for speak
+  ///
+  /// In en, this message translates to:
+  /// **'Voice input'**
+  String get speak;
+
+  /// Label for speak_up
+  ///
+  /// In en, this message translates to:
+  /// **'Speak up'**
+  String get speak_up;
+
+  /// ==========================================================================
+  ///
+  /// In en, this message translates to:
+  /// **'pagCalendar'**
+  String get pagCalendar;
+
+  /// Label for week_day_sun
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get week_day_sun;
+
+  /// Label for week_day_mon
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get week_day_mon;
+
+  /// Label for week_day_tue
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get week_day_tue;
+
+  /// Label for week_day_wed
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get week_day_wed;
+
+  /// Label for week_day_thu
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get week_day_thu;
+
+  /// Label for week_day_fri
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get week_day_fri;
+
+  /// Label for week_day_sat
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get week_day_sat;
+
+  /// Label for year
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get year;
+
+  /// Label for month
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get month;
+
+  /// Label for confirm
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// Label for confirm_delete
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm delete?'**
+  String get confirm_delete;
+
+  /// Label for set_alarm
+  ///
+  /// In en, this message translates to:
+  /// **'Set alarm'**
+  String get set_alarm;
+
+  /// Label for cancel_alarm
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel alarm'**
+  String get cancel_alarm;
+
+  /// Label for set_alarm_completed
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Set alarm completed'**
+  String get set_alarm_completed;
+
+  /// Label for previous_month
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get previous_month;
+
+  /// Label for today
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// Label for next_month
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get next_month;
+
+  /// Label for clear
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// Label for repeat_options
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat times'**
+  String get repeat_options;
+
+  /// Label for repeat_options_once
+  ///
+  /// In en, this message translates to:
+  /// **'Once'**
+  String get repeat_options_once;
+
+  /// Label for repeat_options_every_day
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get repeat_options_every_day;
+
+  /// Label for repeat_options_every_week
+  ///
+  /// In en, this message translates to:
+  /// **'Every week'**
+  String get repeat_options_every_week;
+
+  /// Label for repeat_options_every_two_weeks
+  ///
+  /// In en, this message translates to:
+  /// **'Every two weeks'**
+  String get repeat_options_every_two_weeks;
+
+  /// Label for repeat_options_every_month
+  ///
+  /// In en, this message translates to:
+  /// **'Every month'**
+  String get repeat_options_every_month;
+
+  /// Label for repeat_options_every_two_months
+  ///
+  /// In en, this message translates to:
+  /// **'Every two months'**
+  String get repeat_options_every_two_months;
+
+  /// Label for repeat_options_every_year
+  ///
+  /// In en, this message translates to:
+  /// **'Every year'**
+  String get repeat_options_every_year;
+
+  /// Label for repeat_options_every
+  ///
+  /// In en, this message translates to:
+  /// **'Every'**
+  String get repeat_options_every;
+
+  /// Label for reminder_options
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder time'**
+  String get reminder_options;
+
+  /// Label for reminder_options_15_minutes_before
+  ///
+  /// In en, this message translates to:
+  /// **'15 minutes before'**
+  String get reminder_options_15_minutes_before;
+
+  /// Label for reminder_options_30_minutes_before
+  ///
+  /// In en, this message translates to:
+  /// **'30 minutes before'**
+  String get reminder_options_30_minutes_before;
+
+  /// Label for reminder_options_1_hour_before
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour before'**
+  String get reminder_options_1_hour_before;
+
+  /// Label for reminder_options_default_same_day_8am
+  ///
+  /// In en, this message translates to:
+  /// **'Sam day 8 am'**
+  String get reminder_options_default_same_day_8am;
+
+  /// Label for reminder_options_default_day_before_8am
+  ///
+  /// In en, this message translates to:
+  /// **'1 day before 8 am'**
+  String get reminder_options_default_day_before_8am;
+
+  /// Label for reminder_options_2_days_before
+  ///
+  /// In en, this message translates to:
+  /// **'2 days before'**
+  String get reminder_options_2_days_before;
+
+  /// Label for reminder_options_1_week_before
+  ///
+  /// In en, this message translates to:
+  /// **'1 week before'**
+  String get reminder_options_1_week_before;
+
+  /// Label for reminder_options_2_weeks_before
+  ///
+  /// In en, this message translates to:
+  /// **'2 weeks before'**
+  String get reminder_options_2_weeks_before;
+
+  /// Label for reminder_options_1_month_before
+  ///
+  /// In en, this message translates to:
+  /// **'1 month before'**
+  String get reminder_options_1_month_before;
+
+  /// Label for event_reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Event reminder'**
+  String get event_reminder;
+
+  /// Label for event_reminder_today
+  ///
+  /// In en, this message translates to:
+  /// **'Today event reminder'**
+  String get event_reminder_today;
+
+  /// Label for event_reminder_desc
+  ///
+  /// In en, this message translates to:
+  /// **'Remind you of upcoming events'**
+  String get event_reminder_desc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

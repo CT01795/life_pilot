@@ -3,11 +3,12 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_recommended_event.dart';
+import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 import 'package:path_provider/path_provider.dart';
 
-Future<void> exportRecommendedEventsToExcel(BuildContext context, List<RecommendedEvent> events) async {
+Future<void> exportRecommendedEventsToExcel(BuildContext context, List<Event> events) async {
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];
     final loc = AppLocalizations.of(context)!;
@@ -35,10 +36,10 @@ Future<void> exportRecommendedEventsToExcel(BuildContext context, List<Recommend
             TextCellValue(e.description), TextCellValue(e.unit),
         ]);
 
-        for (final sub in e.subRecommendedEvents) {
+        for (final sub in e.subEvents) {
             sheet.appendRow([
                 TextCellValue('  └ ${sub.name}'), TextCellValue(sub.type),
-                TextCellValue(''), TextCellValue(sub.location), TextCellValue(sub.fee),
+                TextCellValue(constEmpty), TextCellValue(sub.location), TextCellValue(sub.fee),
                 TextCellValue(_formatDate(sub.startDate)), TextCellValue(_formatTime(context, sub.startTime)),
                 TextCellValue(_formatDate(sub.endDate)), TextCellValue(_formatTime(context, sub.endTime)),
                 TextCellValue(sub.description), TextCellValue(sub.unit),
@@ -77,10 +78,10 @@ Future<io.File> _saveToFile(String filename, Uint8List bytes) async {
 
 String _formatDate(DateTime? date) {
     return date != null
-        ? '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}'
-        : '';
+        ? '${date.year}-${date.month.toString().padLeft(2, constZero)}-${date.day.toString().padLeft(2, constZero)}'
+        : constEmpty;
 }
 
 String _formatTime(BuildContext context, TimeOfDay? time) {
-    return time != null ? time.format(context) : '';
+    return time != null ? time.format(context) : constEmpty;
 }

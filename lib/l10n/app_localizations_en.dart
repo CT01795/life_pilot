@@ -132,7 +132,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_add => 'Add';
 
   @override
-  String get event_add_ok => 'Event added';
+  String get event_add_ok => '✅ Event added';
 
   @override
   String get no_events_to_export => '❌ No events to export';
@@ -222,7 +222,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sub_url => 'Link';
 
   @override
-  String get event_saved => 'Event saved';
+  String get event_saved => '✅ Event saved';
 
   @override
   String get event_save_error => 'Activity name cannot be empty';
@@ -240,7 +240,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
-  String get search_keywords => 'Keyword search (blank separated)';
+  String get search_keywords => 'Keyword (blank separated)';
 
   @override
   String get date_clear => 'Date clear';
@@ -252,6 +252,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'Add';
 
   @override
+  String get edit => 'Edit';
+
+  @override
   String get cancel => 'Cancel';
 
   @override
@@ -261,10 +264,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_delete => 'Delete event';
 
   @override
-  String get delete_ok => 'Deletion completed';
+  String get delete_ok => '✅ Deletion completed';
 
   @override
-  String get delete_error => 'Delete failed';
+  String get delete_error => '❌ Delete failed';
 
   @override
   String get click_here_to_see_more => 'See more...';
@@ -274,4 +277,133 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get url => 'URL';
+
+  @override
+  String get speak => 'Voice input';
+
+  @override
+  String get speak_up => 'Speak up';
+
+  @override
+  String get pagCalendar => 'pagCalendar';
+
+  @override
+  String get week_day_sun => 'Sun';
+
+  @override
+  String get week_day_mon => 'Mon';
+
+  @override
+  String get week_day_tue => 'Tue';
+
+  @override
+  String get week_day_wed => 'Wed';
+
+  @override
+  String get week_day_thu => 'Thu';
+
+  @override
+  String get week_day_fri => 'Fri';
+
+  @override
+  String get week_day_sat => 'Sat';
+
+  @override
+  String get year => 'Year';
+
+  @override
+  String get month => 'Month';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get confirm_delete => 'Confirm delete?';
+
+  @override
+  String get set_alarm => 'Set alarm';
+
+  @override
+  String get cancel_alarm => 'Cancel alarm';
+
+  @override
+  String get set_alarm_completed => '✅ Set alarm completed';
+
+  @override
+  String get previous_month => 'Previous month';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get next_month => 'Next month';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get repeat_options => 'Repeat times';
+
+  @override
+  String get repeat_options_once => 'Once';
+
+  @override
+  String get repeat_options_every_day => 'Every day';
+
+  @override
+  String get repeat_options_every_week => 'Every week';
+
+  @override
+  String get repeat_options_every_two_weeks => 'Every two weeks';
+
+  @override
+  String get repeat_options_every_month => 'Every month';
+
+  @override
+  String get repeat_options_every_two_months => 'Every two months';
+
+  @override
+  String get repeat_options_every_year => 'Every year';
+
+  @override
+  String get repeat_options_every => 'Every';
+
+  @override
+  String get reminder_options => 'Reminder time';
+
+  @override
+  String get reminder_options_15_minutes_before => '15 minutes before';
+
+  @override
+  String get reminder_options_30_minutes_before => '30 minutes before';
+
+  @override
+  String get reminder_options_1_hour_before => '1 hour before';
+
+  @override
+  String get reminder_options_default_same_day_8am => 'Sam day 8 am';
+
+  @override
+  String get reminder_options_default_day_before_8am => '1 day before 8 am';
+
+  @override
+  String get reminder_options_2_days_before => '2 days before';
+
+  @override
+  String get reminder_options_1_week_before => '1 week before';
+
+  @override
+  String get reminder_options_2_weeks_before => '2 weeks before';
+
+  @override
+  String get reminder_options_1_month_before => '1 month before';
+
+  @override
+  String get event_reminder => 'Event reminder';
+
+  @override
+  String get event_reminder_today => 'Today event reminder';
+
+  @override
+  String get event_reminder_desc => 'Remind you of upcoming events';
 }
