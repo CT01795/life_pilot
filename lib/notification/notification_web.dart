@@ -4,8 +4,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' hide DateUtils;
 // ignore: deprecated_member_use
-import 'package:js/js_util.dart';
-// ignore: deprecated_member_use
 import 'package:js/js_util.dart' as js_util;
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
@@ -13,7 +11,7 @@ import 'package:life_pilot/notification/notification_common.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:logger/logger.dart';
+import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils, DateTimeExtension, TimeOfDayExtension;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:life_pilot/notification/notification_common.dart' as snc;
@@ -26,17 +24,42 @@ class NotificationOptions {
   external factory NotificationOptions({String? body});
 }
 
-@JS('Notification')
-@staticInterop
-class JsNotification {
-  external factory JsNotification(String title, [NotificationOptions? options]);
+class JsNotificationStatic {
+  static String? get permission {
+    final value = js_util.getProperty(js_util.globalThis, 'Notification');
+    if (value == null) return null;
+
+    final permission = js_util.getProperty(value, 'permission');
+    return permission is String ? permission : null;
+  }
+  static Future<String?> requestPermission() async {
+    final notif = js_util.getProperty(js_util.globalThis, 'Notification');
+    if (notif == null) return null;
+    final promise = js_util.callMethod(notif, 'requestPermission', []);
+    final result = await js_util.promiseToFuture(promise);
+    return result is String ? result : null;
+  }
+  static bool get supported => js_util.hasProperty(js_util.globalThis, 'Notification');
 }
 
-extension JsNotificationStatic on JsNotification {
-  static String get permission => js_util.getProperty(js_util.globalThis, 'Notification.permission');
-  static Future<String> requestPermission() =>
-      promiseToFuture(js_util.callMethod(js_util.globalThis, 'Notification.requestPermission', []));
-  static bool get supported => js_util.hasProperty(js_util.globalThis, 'Notification');
+// 在這裡提供開通知的方法，用 new Notification(...) 形式
+void showWebNotification(String title, String? body, String tooltip) {
+  if (!JsNotificationStatic.supported) return;
+
+  // 如果沒權限，就先要求
+  final perm = JsNotificationStatic.permission;
+  if (perm != 'granted') {
+    JsNotificationStatic.requestPermission().then((p) {
+      if (p == 'granted') {
+        MyCustomNotification.showMyCustomNotification(title, body ?? constEmpty, tooltip);
+      } else {
+        // 權限被拒，或使用者沒回應
+        logger.w('Notification permission denied or not granted');
+      }
+    });
+  } else {
+    MyCustomNotification.showMyCustomNotification(title, body ?? constEmpty, tooltip);
+  }
 }
 
 class MyCustomNotification {
@@ -62,8 +85,7 @@ class MyCustomNotification {
         continue;
       }
       final reminderDuration = snc.ReminderUtils.getReminderDuration(option);
-      Logger().log(Level.debug,
-          "reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
+      logger.d("reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
 
       if (kIsWeb) {
         showTodayEventsWebNotification(loc, tableName);
@@ -80,30 +102,16 @@ class MyCustomNotification {
     if (todayEvents == null || todayEvents.isEmpty) return;
 
     try {
-      if (JsNotificationStatic.supported && JsNotificationStatic.permission != constGranted) {
-        final permission = await JsNotificationStatic.requestPermission();
-        await promiseToFuture(permission);
-        if (permission != constGranted) {
-          // ⛔ 使用者未允許
-          Logger().log(Level.warning, "Notification permission denied.");
-        }
-      }
-      Logger().log(Level.info, "Notification permission granted.");
-    } catch (e) {
-      Logger().log(
-          Level.debug, 'Failed to open exact alarm settings: ${e.toString()}');
-    }
-
-    if (JsNotificationStatic.supported && JsNotificationStatic.permission == constGranted) {
       String title = '\t\t\t\t\t\t\t\t${loc.event_reminder}:';
       final body = todayEvents
-          .map((e) =>
-              '${e.startDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()} ${e.name}')
-          .join('\n');
+        .map((e) =>
+            '${e.startDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()} ${e.name}')
+        .join('\n');
       Timer(Duration(seconds: 1),
-          () => showMyCustomNotification(title, body, loc.close));
-    } else {
-      Logger().log(Level.warning, "Notification not supported or not granted.");
+        () => showWebNotification(title, body, loc.close));
+      logger.d("Notification permission granted.");
+    } catch (e) {
+      logger.e('Failed to open exact alarm settings: ${e.toString()}');
     }
   }
 
@@ -122,7 +130,7 @@ class MyCustomNotification {
       String title, String body, String toolTip) {
     final overlay = currentOverlay;
     if (overlay == null) {
-      Logger().log(Level.warning, "No overlay available");
+      logger.w("No overlay available");
       return;
     }
 
@@ -172,7 +180,15 @@ class MyCustomNotification {
     overlay.insert(overlayEntry);
 
     Future.delayed(Duration(seconds: 10), () {
-      overlayEntry.remove();
+      if (overlayEntry.mounted) {
+        try {
+          overlayEntry.remove();
+        } catch (e) {
+          logger.e('Failed to remove overlayEntry: $e');
+        }
+      } else {
+        logger.w('OverlayEntry already removed or unmounted.');
+      }
     });
   }
 

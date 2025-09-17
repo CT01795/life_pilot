@@ -7,7 +7,7 @@ import 'package:life_pilot/pages/page_main.dart';
 import 'package:life_pilot/pages/page_register.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/notification/notification.dart';
-import 'package:life_pilot/utils/utils_class_main_page_bar.dart';
+import 'package:life_pilot/utils/utils_main_page_bar.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_timezone_helper.dart';
 import 'package:provider/provider.dart';
@@ -21,12 +21,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // ✅ 初始化時區
-  //tz.initializeTimeZones();
-  //tz.setLocalLocation(tz.getLocation(constTzLocation));
   constTzLocation = await setTimezoneFromDevice(); // ✅ 自動偵測並設定時區
-
-  // 只呼叫一次 NotificationService 的初始化
-  await MyCustomNotification.initialize();
 
   // ✅ 初始化 Firebase、Supabase
   await Firebase.initializeApp(
@@ -38,11 +33,14 @@ void main() async {
     anonKey: constSupabaseAnonKey,
   );
 
+  // 只呼叫一次 NotificationService 的初始化
+  await MyCustomNotification.initialize();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => ControllerAuth()..checkLoginStatus()),
+          create: (_) => ControllerAuth()),
         ChangeNotifierProvider(
           create: (_) => ProviderLocale(locale: Locale(constLocaleZh))),  
         ChangeNotifierProvider(
@@ -131,6 +129,10 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         debugShowCheckedModeBanner: false,
+        debugShowMaterialGrid: false,
+        showPerformanceOverlay: false,
+        checkerboardRasterCacheImages: false,
+        checkerboardOffscreenLayers: false,
         home: AuthCheckPage(
           setLocale: (locale) {
             providerLocale.setLocale(locale); 
@@ -156,6 +158,18 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
   AuthPage currentPage = AuthPage.login;
   Map<String, String> registerBackData = {constEmail: constEmpty, constPassword: constEmpty};
   List<Widget> _appBarPages = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // ✅ 延遲初始化 login 檢查，避免在 widget 還沒 mount 就觸發
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<ControllerAuth>(context, listen: false).checkLoginStatus();
+      }
+    });
+  }
 
   void _goToRegister([String? email, String? password]) {
     if (!mounted) return;

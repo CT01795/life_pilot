@@ -7,9 +7,9 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/page_recommended_event_add.dart';
 import 'package:life_pilot/notification/notification.dart';
-import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_widgets_calendar.dart';
+import 'package:life_pilot/utils/utils_calendar_widgets.dart';
+import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils, showMonthYearPicker, DateOnlyCompare;
 
 class PageCalendar extends StatefulWidget {
   const PageCalendar({super.key});
@@ -61,8 +61,8 @@ class _PageCalendarState extends State<PageCalendar> {
 
       for (final event in todayEvents) {
         final end = event.endDate ?? event.startDate;
-        if (isSameDayFutureTime(event.startDate, event.startTime, today) ||
-            isSameDayFutureTime(end, event.endTime, today) ||
+        if (DateOnlyCompare.isSameDayFutureTime(event.startDate, event.startTime, today) ||
+            DateOnlyCompare.isSameDayFutureTime(end, event.endTime, today) ||
             (event.startDate != null &&
                 event.startDate!.isBefore(todayDateOnly) &&
                 end != null &&
@@ -78,80 +78,81 @@ class _PageCalendarState extends State<PageCalendar> {
     AppLocalizations loc = AppLocalizations.of(context)!;
     double buttonSize = MediaQuery.of(context).size.shortestSide * 0.1;
     return AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          DateTime currentMonth = _controller.currentMonth;
-          String monthLabel = DateFormat('y / M').format(currentMonth);
-          // 🔁 這邊移進來了，確保每次 currentMonth 變動時都會重新判斷
-          bool isCurrentMonth = currentMonth.year == DateTime.now().year &&
-              currentMonth.month == DateTime.now().month;
-          Color monthColor = isCurrentMonth ? Colors.blueAccent : Colors.black;
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Colors.transparent, // 移除底色
-              title: CalendarAppBar(
-                monthLabel: monthLabel,
-                monthColor: monthColor,
-                buttonSize: buttonSize,
-                loc: loc,
-                onPrevious: () async {
-                  await _controller.goToPreviousMonth(_pageController);
-                },
-                onNext: () async {
-                  await _controller.goToNextMonth(_pageController);
-                },
-                onToday: () async {
-                  await _controller.goToToday(_pageController);
-                },
-                onAddEvent: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => PageRecommendedEventAdd(
-                              existingRecommendedEvent: null,
-                              tableName: _controller.tableName,
-                              initialDate: _controller.currentMonth,
-                            )),
-                  ).then((value) async {
-                    if (value != null && value is Event) {
-                      // 👇 更新快取讓畫面即時刷新
-                      _controller.updateCachedEvent(value, value); // 第二參數 新增/修改
-                      await _controller
-                          .goToMonth(DateUtils.monthOnly(value.startDate!));
-                    }
-                  });
-                },
-                onMonthTap: () async {
-                  await showMonthYearPicker(
-                    context: context,
-                    initialDate: _controller.currentMonth,
-                    onChanged: (newDate) async {
-                      await _controller.goToMonth(newDate);
-                    },
-                  );
-                },
-              ),
-              centerTitle: true,
+      animation: _controller,
+      builder: (context, _) {
+        DateTime currentMonth = _controller.currentMonth;
+        String monthLabel = DateFormat('y / M').format(currentMonth);
+        // 🔁 這邊移進來了，確保每次 currentMonth 變動時都會重新判斷
+        bool isCurrentMonth = currentMonth.year == DateTime.now().year &&
+            currentMonth.month == DateTime.now().month;
+        Color monthColor = isCurrentMonth ? Colors.blueAccent : Colors.black;
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.transparent, // 移除底色
+            title: CalendarAppBar(
+              monthLabel: monthLabel,
+              monthColor: monthColor,
+              buttonSize: buttonSize,
+              loc: loc,
+              onPrevious: () async {
+                await _controller.goToPreviousMonth(_pageController);
+              },
+              onNext: () async {
+                await _controller.goToNextMonth(_pageController);
+              },
+              onToday: () async {
+                await _controller.goToToday(_pageController);
+              },
+              onAddEvent: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => PageRecommendedEventAdd(
+                            existingRecommendedEvent: null,
+                            tableName: _controller.tableName,
+                            initialDate: _controller.currentMonth,
+                          )),
+                ).then((value) async {
+                  if (value != null && value is Event) {
+                    // 👇 更新快取讓畫面即時刷新
+                    _controller.updateCachedEvent(value, value); // 第二參數 新增/修改
+                    await _controller
+                        .goToMonth(DateUtils.monthOnly(value.startDate!));
+                  }
+                });
+              },
+              onMonthTap: () async {
+                await showMonthYearPicker(
+                  context: context,
+                  initialDate: _controller.currentMonth,
+                  onChanged: (newDate) async {
+                    await _controller.goToMonth(newDate);
+                  },
+                );
+              },
             ),
-            body: Stack(
-              children: [
-                CalendarBody(
-                  controller: _controller,
-                  pageController: _pageController,
-                  loc: loc,
-                ),
-                if (_controller.isLoading)
-                  Positioned.fill(
-                    child: Container(
-                      color: const Color.fromARGB(153, 255, 255, 255),
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+            centerTitle: true,
+          ),
+          body: Stack(
+            children: [
+              CalendarBody(
+                controller: _controller,
+                pageController: _pageController,
+                loc: loc,
+              ),
+              if (_controller.isLoading)
+                Positioned.fill(
+                  child: Container(
+                    color: const Color.fromARGB(153, 255, 255, 255),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
                     ),
                   ),
-              ],
-            ),
-          );
-        });
+                ),
+            ],
+          ),
+        );
+      }
+    );
   }
 }

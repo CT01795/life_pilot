@@ -4,7 +4,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/services/service_auth.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_class_input_field.dart';
+import 'package:life_pilot/utils/utils_input_field.dart';
 import 'package:provider/provider.dart';
 
 class PageRegister extends StatefulWidget {

@@ -4,10 +4,10 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/page_recommended_event_add.dart';
 import 'package:life_pilot/services/service_storage.dart';
-import 'package:life_pilot/utils/utils_class_event_card.dart';
+import 'package:life_pilot/utils/utils_event_card.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_widgets.dart';
+import 'package:life_pilot/utils/utils_event_widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../export/export.dart';
@@ -240,7 +240,7 @@ Widget buildEventTrailing({
   required VoidCallback refreshCallback,
   required ServiceStorage? serviceStorage,
   required String tableName,
-  required String toTableNamme,
+  required String toTableName,
 }) {
   final loc = AppLocalizations.of(context)!;
   final auth = Provider.of<ControllerAuth>(context);
@@ -281,7 +281,7 @@ Widget buildEventTrailing({
                   },
                   addedMessage: loc.event_add_ok,
                   tableName: tableName,
-                  toTableNamme: toTableNamme,
+                  toTableName: toTableName,
                 );
               },
             ),
@@ -306,7 +306,7 @@ class EventList extends StatelessWidget {
   final ScrollController scrollController;
   final VoidCallback refreshCallback;
   final String tableName;
-  final String toTableNamme;
+  final String toTableName;
 
   const EventList({
     super.key,
@@ -320,7 +320,7 @@ class EventList extends StatelessWidget {
     required this.scrollController,
     required this.refreshCallback,
     required this.tableName,
-    required this.toTableNamme,
+    required this.toTableName,
   });
 
   @override
@@ -340,7 +340,7 @@ class EventList extends StatelessWidget {
           refreshCallback: refreshCallback,
           serviceStorage: serviceStorage,
           tableName: tableName,
-          toTableNamme: toTableNamme,
+          toTableName: toTableName,
         );
 
         if (isGridView) {
@@ -407,7 +407,7 @@ Future<void> onCheckboxChanged({
   required void Function(void Function()) setState,
   required String addedMessage,
   required String tableName,
-  required String toTableNamme,
+  required String toTableName,
 }) async {
   await handleCheckboxChanged(
     context: context,
@@ -418,7 +418,7 @@ Future<void> onCheckboxChanged({
     setState: setState,
     addedMessage: addedMessage,
     tableName: tableName,
-    toTableNamme: toTableNamme,
+    toTableName: toTableName,
   );
 }
 

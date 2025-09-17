@@ -8,7 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:logger/logger.dart';
+import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils, DateTimeExtension, TimeOfDayExtension;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -49,8 +49,7 @@ class MyCustomNotification {
       final body = snc.ReminderUtils.getReminderLabel(loc, option);
 
       final reminderDuration = snc.ReminderUtils.getReminderDuration(option);
-      Logger().log(Level.debug,
-          "reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
+      logger.d("reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
 
       if (defaultTargetPlatform == TargetPlatform.android) {
         final details = _buildAndroidNotificationDetails(

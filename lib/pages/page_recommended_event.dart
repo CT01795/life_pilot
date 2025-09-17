@@ -3,7 +3,7 @@ import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/services/service_storage.dart';
-import 'package:life_pilot/utils/utils_app_bar_action.dart';
+import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +16,7 @@ class PageRecommendedEvent extends StatefulWidget {
 
 class _PageRecommendedEventState extends State<PageRecommendedEvent> {
   String tableName = constTableRecommendedEvents;
-  String toTableNamme = constTableCalendarEvents;
+  String toTableName = constTableCalendarEvents;
   late final ServiceStorage _service;
   late final ScrollController _scrollController;
   late AppBarActionsHandler _handler;
@@ -145,7 +145,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
                   scrollController: _scrollController,
                   refreshCallback: _loadEvents,
                   tableName: tableName,
-                  toTableNamme: toTableNamme,
+                  toTableName: toTableName,
                 ),
             ),
           ],

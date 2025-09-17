@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/notification/notification_common.dart';
-import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:uuid/uuid.dart';
 
@@ -113,7 +113,7 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json[EventFields.id],
+      id: json[EventFields.id] ?? constEmpty,
       masterGraphUrl: json[EventFields.masterGraphUrl],
       masterUrl: json[EventFields.masterUrl],
       startDate: fromStringOrNull(json[EventFields.startDate]),
@@ -271,7 +271,7 @@ class SubEventItem {
 
   factory SubEventItem.fromJson(Map<String, dynamic> json) {
     return SubEventItem(
-      id: json[EventFields.id],
+      id: json[EventFields.id] ?? constEmpty,
       masterGraphUrl: json[EventFields.masterGraphUrl],
       masterUrl: json[EventFields.masterUrl],
       startDate: fromStringOrNull(json[EventFields.startDate]),

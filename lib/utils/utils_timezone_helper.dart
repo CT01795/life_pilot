@@ -1,6 +1,5 @@
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:logger/logger.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -26,18 +25,18 @@ Future<String> setTimezoneFromDevice(
       } else {
         tzName = fallbackTz;
       }
-      logger.e('🌐 Web 時區設定為 $tzName');
+      logger.d('Web 時區設定為 $tzName');
     } else {
       // ✅ Mobile 使用 flutter_timezone_plus
       tzName = (await FlutterTimezone.getLocalTimezone()).toString();
-      logger.e('📱 裝置時區為 $tzName');
+      logger.d('裝置時區為 $tzName');
     }
 
     tz.setLocalLocation(tz.getLocation(tzName));
     return tzName;
   } catch (ex, stackTrace) {
     tz.setLocalLocation(tz.getLocation(fallbackTz));
-    logger.e('⚠️ 取得設備時區錯誤，使用預設 $fallbackTz', error: ex, stackTrace: stackTrace);
+    logger.e('取得設備時區錯誤，使用預設 $fallbackTz', error: ex, stackTrace: stackTrace);
     return fallbackTz;
   }
 }

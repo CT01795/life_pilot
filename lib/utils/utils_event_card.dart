@@ -4,7 +4,8 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_widgets.dart';
+import 'package:life_pilot/utils/utils_date_time.dart' show formatEventDateTime;
+import 'package:life_pilot/utils/utils_event_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 

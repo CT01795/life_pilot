@@ -1,19 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
-import 'package:logger/logger.dart';
 
 class ServiceAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // 🔐 Check if user is logged in
-  static Future<bool> isLoggedIn() async {
-    return _auth.currentUser != null;
-  }
+  static bool isLoggedIn() => _auth.currentUser != null;
 
-  // 📧 Get current user's email
-  static Future<String?> currentAccount() async {
-    return _auth.currentUser?.email;
-  }
+  static String? currentAccount() => _auth.currentUser?.email;
 
   // 🔑 Login with email/password
   static Future<String?> login(String email, String password) async {
@@ -89,14 +84,14 @@ class ServiceAuth {
     } on FirebaseAuthException catch (e) {
       return _mapFirebaseAuthError(e, defaultError);
     } catch (e) {
-      Logger().d("${ErrorFields.unexpectedError}: $e");
+      logger.e("${ErrorFields.unexpectedError}: $e");
       return defaultError;
     }
   }
 
   static String _mapFirebaseAuthError(
       FirebaseAuthException e, String defaultError) {
-    Logger().d("${ErrorFields.authError}: ${e.code}");
+    logger.d("${ErrorFields.authError}: ${e.code}");
 
     switch (e.code) {
       case ErrorFields.userNotFoundError:

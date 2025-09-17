@@ -11,8 +11,9 @@ class ControllerAuth extends ChangeNotifier {
   bool isAnonymous = false;
 
   Future<void> checkLoginStatus() async {
+    // 🟡 延後通知，先更新狀態，不要立即 notify
     isLoading = true;
-    notifyListeners();
+    //notifyListeners();
 
     final user = FirebaseAuth.instance.currentUser;
     isLoggedIn = user != null;
@@ -23,6 +24,7 @@ class ControllerAuth extends ChangeNotifier {
       currentAccount = constGuest;
     }
     isLoading = false;
+    // ✅ 等全部狀態都準備好再一次性更新 UI
     notifyListeners();
   }
 
@@ -38,11 +40,17 @@ class ControllerAuth extends ChangeNotifier {
       {VoidCallback? onLogoutComplete}) async {
     await ServiceAuth.logout();
     isLoggedIn = false;
+    isAnonymous = false;
     currentAccount = null;
     notifyListeners();
 
+    // 🟢 使用 WidgetsBinding 保證畫面已經 mount，再執行登出邏輯（例如跳頁）
     if (onLogoutComplete != null) {
-      Future.microtask(onLogoutComplete); // ✅ 確保等畫面準備好再切換頁面
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          onLogoutComplete();
+        }
+      });
     }
   }
 }
