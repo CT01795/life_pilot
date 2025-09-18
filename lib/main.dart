@@ -18,7 +18,7 @@ import 'l10n/app_localizations.dart';
 import 'pages/page_login.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-void main() async {
+void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
   // ✅ 初始化時區
   constTzLocation = await setTimezoneFromDevice(); // ✅ 自動偵測並設定時區
