@@ -23,8 +23,9 @@ void toggleLocale(ProviderLocale providerLocale) {
 }
 
 void showSnackBar(BuildContext context, String message) {
-  if (context.mounted) { 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  if (context.mounted) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -40,7 +41,7 @@ Future<void> handleCheckboxChanged({
   required String tableName,
   required String toTableName,
 }) async {
-  ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
+  ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
   final now = DateUtils.dateOnly(DateTime.now());
   final loc = AppLocalizations.of(context)!;
   if (value == true) {
@@ -91,9 +92,7 @@ Future<void> handleCheckboxChanged({
             ..location =
                 tmpEvent.location.isEmpty ? event.location : tmpEvent.location
             ..unit = tmpEvent.unit.isEmpty ? event.unit : tmpEvent.unit
-            ..account =
-                tmpEvent.account!.isEmpty ? event.account : tmpEvent.account;
-
+            ..account = auth.currentAccount;
           await serviceStorage.deleteRecommendedEvent(subEvent, toTableName);
           await serviceStorage.saveRecommendedEvent(
               context, subEvent, true, toTableName);
@@ -108,6 +107,7 @@ Future<void> handleCheckboxChanged({
             newEndDate: event.endDate != null && !event.endDate!.isAfter(now)
                 ? now
                 : event.endDate);
+        updatedEvent.account = auth.currentAccount;
         await serviceStorage.deleteRecommendedEvent(updatedEvent, toTableName);
         await serviceStorage.saveRecommendedEvent(
             context, updatedEvent, true, toTableName);
@@ -119,7 +119,7 @@ Future<void> handleCheckboxChanged({
       await serviceStorage.saveRecommendedEvent(
           context, event, true, toTableName);
     }
-    if (!context.mounted) return;  // 確保 context 還存在
+    if (!context.mounted) return; // 確保 context 還存在
     showSnackBar(context, addedMessage);
   } else {
     setState(() {
