@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide Notification;
+import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification.dart';
@@ -6,6 +7,7 @@ import 'package:life_pilot/services/service_holiday.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends ChangeNotifier {
@@ -115,7 +117,7 @@ class ControllerCalendar extends ChangeNotifier {
     return weeks;
   }
 
-  Future<void> loadEvents() async {
+  Future<void> loadEvents(String? user) async {
     if (isLoading) return; // 防止重複執行
 
     isLoading = true;
@@ -128,7 +130,7 @@ class ControllerCalendar extends ChangeNotifier {
 
       // 1. 先從服務端拉事件
       final allEvents =
-          await service.getRecommendedEvents(tableName: tableName, dateS: start, dateE: end);
+          await service.getRecommendedEvents(tableName: tableName, dateS: start, dateE: end, inputUser: user);
       events = allEvents ?? []; // ✅ 更新 List<Event> 給 UI 使用
 
       // 2. 再呼叫 HolidayService 抓假日事件
@@ -173,7 +175,7 @@ class ControllerCalendar extends ChangeNotifier {
   String _monthKey(DateTime date) =>
       "${date.year}-${date.month.toString().padLeft(2, constZero)}";
 
-  Future<void> goToMonth(DateTime newMonth) async {
+  Future<void> goToMonth(DateTime newMonth, String? user) async {
     currentMonth = newMonth;
     final key = _monthKey(newMonth);
     if (_cachedEvents.containsKey(key)) {
@@ -192,23 +194,23 @@ class ControllerCalendar extends ChangeNotifier {
 
       notifyListeners(); // 更新畫面
     } else {
-      await loadEvents();
+      await loadEvents(user);
     }
   }
 
-  Future<void> goToToday(PageController controller) async {
+  Future<void> goToToday(PageController controller, String? user) async {
     currentMonth = DateUtils.dateOnly(DateTime.now());
-    await goToMonth(currentMonth);
+    await goToMonth(currentMonth, user);
   }
 
-  Future<void> goToPreviousMonth(PageController controller) async {
+  Future<void> goToPreviousMonth(PageController controller, String? user) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month - 1);
-    await goToMonth(currentMonth);
+    await goToMonth(currentMonth, user);
   }
 
-  Future<void> goToNextMonth(PageController controller) async {
+  Future<void> goToNextMonth(PageController controller, String? user) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month + 1);
-    await goToMonth(currentMonth);
+    await goToMonth(currentMonth, user);
   }
 
   List<Event> getEventsOfDay(DateTime date) {
@@ -255,6 +257,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> checkAndGenerateNextEvents(BuildContext context) async {
+    ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
     final loc = AppLocalizations.of(context)!;
     final DateTime today = DateTime.now();
 
@@ -279,7 +282,7 @@ class ControllerCalendar extends ChangeNotifier {
       );
 
       await service.saveRecommendedEvent(context, newEvent, true, tableName);
-      await MyCustomNotification.scheduleEventReminders(loc, newEvent, tableName);
+      await MyCustomNotification.scheduleEventReminders(loc, newEvent, tableName, auth.currentAccount);
 
       // 更新舊事件的 repeatOption 為 'once'
       final updatedOldEvent = event.copyWith(newRepeatOptions: RepeatRule.once, // 更新 repeatOptions
@@ -289,7 +292,7 @@ class ControllerCalendar extends ChangeNotifier {
       await service.saveRecommendedEvent(context, updatedOldEvent, false, tableName);
     }
 
-    await loadEvents();
+    await loadEvents(auth.currentAccount);
   }
 
   // 判斷是否為同一天

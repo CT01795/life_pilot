@@ -27,7 +27,7 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final providerLocale = Provider.of<ProviderLocale>(context);
-    final auth = Provider.of<ControllerAuth>(context);
+    final auth = Provider.of<ControllerAuth>(context,listen:false);
     final theme = Theme.of(context); 
     return AppBar(
       backgroundColor: theme.primaryColor, 

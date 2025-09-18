@@ -119,7 +119,7 @@ class BaseEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<ControllerAuth>(context);
+    final auth = Provider.of<ControllerAuth>(context,listen:false);
     final loc = AppLocalizations.of(context)!;
 
     Widget content = Padding(

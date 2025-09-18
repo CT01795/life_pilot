@@ -52,7 +52,7 @@ List<Widget> buildAppBarActions(
   VoidCallback? onAdd,
   required String tableName,
 }) {
-  final auth = Provider.of<ControllerAuth>(context);
+  final auth = Provider.of<ControllerAuth>(context,listen:false);
   final loc = AppLocalizations.of(context)!;
 
   List<Widget> actions = [];
@@ -102,6 +102,7 @@ class AppBarActionsHandler {
   final void Function(bool) onToggleGridView;
   final void Function(bool) onToggleShowSearch;
 
+  ControllerAuth get _auth => Provider.of<ControllerAuth>(context,listen:false);
   AppLocalizations get loc => AppLocalizations.of(context)!;
 
   AppBarActionsHandler({
@@ -124,7 +125,7 @@ class AppBarActionsHandler {
   Future<void> onExport(String tableName) async {
     try {
       final events =
-          await serviceStorage?.getRecommendedEvents(tableName: tableName);
+          await serviceStorage?.getRecommendedEvents(tableName: tableName, inputUser: _auth.currentAccount);
       if (events == null || events.isEmpty) {
         showSnackBar(context, loc.no_events_to_export);
         return;
@@ -243,7 +244,7 @@ Widget buildEventTrailing({
   required String toTableName,
 }) {
   final loc = AppLocalizations.of(context)!;
-  final auth = Provider.of<ControllerAuth>(context);
+  final auth = Provider.of<ControllerAuth>(context,listen:false);
 
   return StatefulBuilder(builder: (context, localSetState) {
     final isChecked = selectedEventIds.contains(event.id);

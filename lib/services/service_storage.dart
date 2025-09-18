@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide DateUtils;
+import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification.dart';
@@ -8,6 +9,7 @@ import 'package:life_pilot/utils/utils_date_time.dart'
     show DateUtils, DateTimeExtension;
 import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:life_pilot/utils/utils_mobile.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceStorage {
@@ -20,7 +22,8 @@ class ServiceStorage {
       {required String tableName,
       DateTime? dateS,
       DateTime? dateE,
-      String? id}) async {
+      String? id,
+      String? inputUser,}) async {
     final today = DateUtils.dateOnly(DateTime.now());
     final inputDateS = (dateS ?? today).formatDateString();
     final inputDateE =
@@ -32,6 +35,7 @@ class ServiceStorage {
         'inputid': id,
         'inputdates': inputDateS, // 傳 YYYY-MM-DD 格式給 SQL
         'inputdatee': inputDateE, // 傳 YYYY-MM-DD 格式給 SQL
+        'inputuser': inputUser,
       }
     });
 
@@ -44,6 +48,7 @@ class ServiceStorage {
   Future<void> saveRecommendedEvent(
       BuildContext context, Event event, bool isNew, String tableName) async {
     try {
+      ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
       AppLocalizations loc = AppLocalizations.of(context)!;
       _validateEvent(event, loc);
       if (isNew || event.reminderOptions.isEmpty) {
@@ -71,7 +76,7 @@ class ServiceStorage {
       await MyCustomNotification.cancelEventReminders(event); // 移除舊通知（根據 id）
       await checkExactAlarmPermission(context);
       await MyCustomNotification.scheduleEventReminders(
-          loc, event, tableName); // 新的排程
+          loc, event, tableName, auth.currentAccount); // 新的排程
     } catch (ex, stacktrace) {
       logger.e("saveRecommendedEvent error", error: ex, stackTrace: stacktrace);
       rethrow;

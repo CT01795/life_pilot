@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
+import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
@@ -11,6 +12,7 @@ import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:life_pilot/utils/utils_event_card.dart';
 import 'package:life_pilot/utils/utils_mobile.dart';
+import 'package:provider/provider.dart';
 
 import '../notification/notification.dart';
 
@@ -42,6 +44,7 @@ Future<bool> showConfirmationDialog({
 
 Future<bool> showCalendarEventsDialog(
     BuildContext context, ControllerCalendar controller, DateTime date) async {
+  ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
   final loc = AppLocalizations.of(context)!;
   final dateOnly = DateUtils.dateOnly(date);
   // 篩選包含該日期的事件
@@ -60,7 +63,7 @@ Future<bool> showCalendarEventsDialog(
       ),
     );
     if (result != null && result is Event) {
-      controller.goToMonth(DateUtils.monthOnly(result.startDate!));
+      controller.goToMonth(DateUtils.monthOnly(result.startDate!), auth.currentAccount);
       return true;
     }
     return false;
@@ -111,7 +114,7 @@ Future<bool> showCalendarEventsDialog(
                           ).then((value) {
                             if (value != null && value is Event) {
                               controller.goToMonth(
-                                  DateUtils.monthOnly(value.startDate!));
+                                  DateUtils.monthOnly(value.startDate!), auth.currentAccount);
                               Navigator.pop(context, true); // ✅ 回傳 true 給外層
                             }
                           });
@@ -149,7 +152,7 @@ Future<bool> showCalendarEventsDialog(
 
                                     if (updated) {
                                       // 有更新鬧鐘設定，重新載入事件並刷新 UI
-                                      await controller.loadEvents();
+                                      await controller.loadEvents(auth.currentAccount);
                                       // 呼叫 setState 讓 Dialog 內容重新渲染（Dialog 內部 StatefulBuilder）
                                       // 這裡簡單用 Navigator.pop 讓 Dialog 關閉，然後重新開啟，或用 setState 刷新列表
                                       await MyCustomNotification
@@ -157,7 +160,7 @@ Future<bool> showCalendarEventsDialog(
                                       await checkExactAlarmPermission(context);
                                       await MyCustomNotification
                                           .scheduleEventReminders(loc, event,
-                                              controller.tableName); // 安排新通知
+                                              controller.tableName, auth.currentAccount); // 安排新通知
                                       Navigator.pop(
                                           context); // 關閉事件 Dialog，回到上一頁
                                     }
@@ -184,12 +187,12 @@ Future<bool> showCalendarEventsDialog(
                                       controller.updateCachedEvent(
                                           event, updated); // 🛠 更新快取
                                       await controller
-                                          .loadEvents(); // 重新載入資料，確保資料最新
+                                          .loadEvents(auth.currentAccount); // 重新載入資料，確保資料最新
                                       await controller
                                           .checkAndGenerateNextEvents(
                                               context); // 使用最新資料
                                       controller.goToMonth(DateUtils.monthOnly(
-                                          updated.startDate!));
+                                          updated.startDate!), auth.currentAccount);
                                       Navigator.pop(context,
                                           true); // ✅ 回傳 true 讓外層 refresh
                                     }
@@ -230,7 +233,7 @@ Future<bool> showCalendarEventsDialog(
                                       await controller.service
                                           .deleteRecommendedEvent(
                                               event, controller.tableName);
-                                      await controller.loadEvents(); // ✅ 等待載入完成
+                                      await controller.loadEvents(auth.currentAccount); // ✅ 等待載入完成
                                       Navigator.pop(context, true); // ✅ 回傳 true
                                     }
                                   },
@@ -276,6 +279,7 @@ Future<bool> showCalendarEventsDialog(
 
 Future<bool> showAlarmSettingsDialog(
     BuildContext context, Event event, ControllerCalendar controller) async {
+  ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);     
   final loc = AppLocalizations.of(context)!;
 
   final Map<RepeatRule, String> repeatOptionsLabels = {
@@ -414,7 +418,7 @@ Future<bool> showAlarmSettingsDialog(
   // 更新事件提醒設定
   await controller.service
       .saveRecommendedEvent(context, updatedEvent, false, controller.tableName);
-  await controller.loadEvents();
+  await controller.loadEvents(auth.currentAccount);
 
   if (repeat.key().startsWith('every')) {
     await controller.checkAndGenerateNextEvents(context);

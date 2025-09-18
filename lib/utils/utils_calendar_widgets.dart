@@ -1,10 +1,12 @@
 // --- AppBar Widget ---
 import 'package:flutter/material.dart' hide DateUtils;
+import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils;
 import 'package:life_pilot/utils/utils_show_dialog.dart';
+import 'package:provider/provider.dart';
 
 class CalendarAppBar extends StatelessWidget {
   final String monthLabel;
@@ -36,7 +38,8 @@ class CalendarAppBar extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: Icon(Icons.arrow_left_rounded, size: buttonSize * 1.2, color: monthColor),
+          icon: Icon(Icons.arrow_left_rounded,
+              size: buttonSize * 1.2, color: monthColor),
           tooltip: loc.previous_month,
           onPressed: onPrevious,
         ),
@@ -57,7 +60,8 @@ class CalendarAppBar extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: Icon(Icons.arrow_right_rounded, size: buttonSize * 1.2, color: monthColor),
+          icon: Icon(Icons.arrow_right_rounded,
+              size: buttonSize * 1.2, color: monthColor),
           tooltip: loc.next_month,
           onPressed: onNext,
         ),
@@ -86,6 +90,7 @@ class CalendarBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:true);
     final displayedMonth = controller.currentMonth;
 
     bool isCurrentMonth = displayedMonth.year == DateTime.now().year &&
@@ -93,7 +98,8 @@ class CalendarBody extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double availableHeight = constraints.maxHeight - kToolbarHeight - 15;
+        final double availableHeight =
+            constraints.maxHeight - kToolbarHeight - 15;
 
         return Column(
           children: [
@@ -104,18 +110,22 @@ class CalendarBody extends StatelessWidget {
               child: GestureDetector(
                 onVerticalDragEnd: (details) async {
                   if (details.primaryVelocity == null) return;
-                  if (details.primaryVelocity! < 0) { // 往上滑，模擬往右滑，切換到下一個月
-                    await controller.goToNextMonth(pageController);
-                  } else if (details.primaryVelocity! > 0) { // 往下滑，模擬往左滑，切換到上一個月
-                    await controller.goToPreviousMonth(pageController);
+                  if (details.primaryVelocity! < 0) {
+                    // 往上滑，模擬往右滑，切換到下一個月
+                    await controller.goToNextMonth(pageController, auth.currentAccount);
+                  } else if (details.primaryVelocity! > 0) {
+                    // 往下滑，模擬往左滑，切換到上一個月
+                    await controller.goToPreviousMonth(pageController, auth.currentAccount);
                   }
                 },
                 onHorizontalDragEnd: (details) async {
                   if (details.primaryVelocity == null) return;
-                  if (details.primaryVelocity! < 0) { // 向左滑 ➜ 下一個月
-                    await controller.goToNextMonth(pageController);
-                  } else if (details.primaryVelocity! > 0) { // 向右滑 ➜ 上一個月
-                    await controller.goToPreviousMonth(pageController);
+                  if (details.primaryVelocity! < 0) {
+                    // 向左滑 ➜ 下一個月
+                    await controller.goToNextMonth(pageController, auth.currentAccount);
+                  } else if (details.primaryVelocity! > 0) {
+                    // 向右滑 ➜ 上一個月
+                    await controller.goToPreviousMonth(pageController, auth.currentAccount);
                   }
                 },
                 child: PageView.builder(
@@ -126,7 +136,7 @@ class CalendarBody extends StatelessWidget {
                     DateTime newMonth = DateTime(
                         ControllerCalendar.baseDate.year + (index ~/ 12),
                         index % 12 + 1);
-                    controller.goToMonth(newMonth);
+                    controller.goToMonth(newMonth, auth.currentAccount);
                   },
                   itemBuilder: (context, index) {
                     return CalendarMonthView(
@@ -159,7 +169,8 @@ class WeekDayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final labelSize = (screenHeight > screenWidth ? screenWidth : screenHeight) * 0.05;
+    final labelSize =
+        (screenHeight > screenWidth ? screenWidth : screenHeight) * 0.05;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -174,7 +185,8 @@ class WeekDayHeader extends StatelessWidget {
           loc.week_day_sat
         ][index];
 
-        bool isTodayWeekDay = isCurrentMonth && DateTime.now().weekday == index + 1;
+        bool isTodayWeekDay =
+            isCurrentMonth && DateTime.now().weekday == index + 1;
 
         return Expanded(
           child: Container(
@@ -251,15 +263,17 @@ class WeekRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:true);
     final screenWidth = MediaQuery.of(context).size.width;
     final cellWidth = screenWidth / 7;
-   
+
     // 1. 先從 controller 取得當月所有事件，並按週、日分組過的快取資料
     final calendarWeeks = controller.getCalendarDays(displayedMonth);
     final weekIndex = calendarWeeks.indexWhere((w) => w.first == week.first);
 
     // 2. 取出該週每一天的事件列表，已經預先分好組
-    final weekEvents = controller.getWeekEventRows(displayedMonth)[weekIndex] ?? [];
+    final weekEvents =
+        controller.getWeekEventRows(displayedMonth)[weekIndex] ?? [];
 
     return Stack(
       children: [
@@ -273,15 +287,18 @@ class WeekRow extends StatelessWidget {
             return Expanded(
               child: GestureDetector(
                 onTap: () async {
-                  final shouldReload = await showCalendarEventsDialog(context, controller, date);
+                  final shouldReload = await showCalendarEventsDialog(
+                      context, controller, date);
                   if (shouldReload) {
-                    await controller.loadEvents(); // 🔁 統一更新
+                    await controller.loadEvents(auth.currentAccount); // 🔁 統一更新
                   }
                 },
                 child: Container(
                   margin: kGapEI0,
                   decoration: BoxDecoration(
-                    color: isFromOtherMonth ? Colors.grey[100] : Colors.transparent,
+                    color: isFromOtherMonth
+                        ? Colors.grey[100]
+                        : Colors.transparent,
                     border: Border.all(color: Colors.black12),
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -307,7 +324,9 @@ class WeekRow extends StatelessWidget {
                           : Text(
                               '${date.day}',
                               style: TextStyle(
-                                color: isFromOtherMonth ? Colors.grey : Colors.black,
+                                color: isFromOtherMonth
+                                    ? Colors.grey
+                                    : Colors.black,
                               ),
                             ),
                     ],
@@ -347,12 +366,16 @@ class WeekRow extends StatelessWidget {
                   visibleStart,
                 );
                 if (shouldReload) {
-                  await controller.loadEvents();
+                  await controller.loadEvents(auth.currentAccount);
                 }
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: event.isTaiwanHoliday ? Colors.redAccent :(event.isHoliday ? Colors.transparent :Colors.lightBlue),
+                  color: event.isTaiwanHoliday
+                      ? Colors.redAccent
+                      : (event.isHoliday
+                          ? Colors.transparent
+                          : Colors.lightBlue),
                   borderRadius: BorderRadiusDirectional.horizontal(
                     start: (start.isAtSameMomentAs(visibleStart)
                         ? const Radius.circular(2)
@@ -370,7 +393,9 @@ class WeekRow extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 9,
-                      color: !event.isTaiwanHoliday && event.isHoliday ? Colors.grey :Colors.white,
+                      color: !event.isTaiwanHoliday && event.isHoliday
+                          ? Colors.grey
+                          : Colors.white,
                       overflow: TextOverflow.clip, //.ellipsis,
                     ),
                     maxLines: 1,

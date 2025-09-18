@@ -20,12 +20,12 @@ class _PageMainState extends State<PageMain> {
   PageType? _selectedPage;
   Locale? _lastLocale;
   AppLocalizations get loc => AppLocalizations.of(context)!;
-  bool get isAnonymous => Provider.of<ControllerAuth>(context, listen: false).isAnonymous;
+  late ControllerAuth _auth;
 
   late final Map<PageType, WidgetBuilder> _pageMap = {
-    PageType.personalEvent: (_) => const PageCalendar(),
+    PageType.personalEvent: (_) => PageCalendar(),
     PageType.settings: (_) => const PageA(),
-    PageType.recommendedEvent: (_) => const PageRecommendedEvent(),
+    PageType.recommendedEvent: (_) => PageRecommendedEvent(),
     PageType.recommendedAttractions: (_) => const PageA(),
     PageType.memoryTrace: (_) => const PageA(),
     PageType.accountRecords: (_) => const PageA(),
@@ -34,21 +34,23 @@ class _PageMainState extends State<PageMain> {
     PageType.ai: (_) => const PageA(),
   };
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final defaultPage = isAnonymous ? PageType.recommendedEvent : PageType.personalEvent;
-      setState(() {
-        _selectedPage = defaultPage ;
-      });
-      _updatePagesChanged(defaultPage);
-    });
-  }
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _auth = Provider.of<ControllerAuth>(context,listen:true);
+    if (_initialized) return;
+    _initialized = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final defaultPage =
+          _auth.isAnonymous ? PageType.recommendedEvent : PageType.personalEvent;
+      setState(() {
+        _selectedPage = defaultPage;
+      });
+      _updatePagesChanged(defaultPage);
+    });
 
     final currentLocale = Localizations.localeOf(context);
     if (_lastLocale != currentLocale && _selectedPage != null) {
@@ -58,10 +60,8 @@ class _PageMainState extends State<PageMain> {
   }
 
   void _updatePagesChanged(PageType selected) {
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
-
     final pages = [
-      _buildDropdown(loc, auth.isAnonymous, selected),
+      _buildDropdown(loc, _auth.isAnonymous, selected),
       kGapW8(),
     ];
 
@@ -103,9 +103,7 @@ class _PageMainState extends State<PageMain> {
   }
 
   List<PageType> _getPageTitles(AppLocalizations loc, bool isAnonymous) {
-    return isAnonymous
-      ? [PageType.recommendedEvent]
-      : PageType.values;
+    return isAnonymous ? [PageType.recommendedEvent] : PageType.values;
   }
 
   @override

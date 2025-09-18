@@ -21,6 +21,7 @@ class PageLogin extends StatefulWidget {
 class _PageLoginState extends State<PageLogin> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  late ControllerAuth _auth;
   AppLocalizations get loc => AppLocalizations.of(context)!; 
 
   @override
@@ -28,6 +29,15 @@ class _PageLoginState extends State<PageLogin> {
     super.initState();
     _emailController.text = widget.email ?? constEmpty; 
     _passwordController.text = widget.password ?? constEmpty;
+  }
+
+  bool _initialized = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _auth = Provider.of<ControllerAuth>(context,listen:true);
+    if (_initialized) return;
+    _initialized = true;
   }
 
   @override
@@ -44,8 +54,7 @@ class _PageLoginState extends State<PageLogin> {
     );
 
     if (result == null) {
-      final auth = Provider.of<ControllerAuth>(context, listen: false);
-      await auth.checkLoginStatus(); 
+      await _auth.checkLoginStatus(); 
       // 登入成功後會在外層重新渲染畫面，不用 Navigator.pushReplacement 了
     } else {
       showLoginError(context, result, loc); 
@@ -53,8 +62,7 @@ class _PageLoginState extends State<PageLogin> {
   }
 
   void _anonymousLogin() async {
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
-    final result = await auth.anonymousLogin();
+    final result = await _auth.anonymousLogin();
     if (result != null) {
       showLoginError(context, result, loc);
     }

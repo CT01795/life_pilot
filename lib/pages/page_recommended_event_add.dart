@@ -396,7 +396,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
+    final auth = Provider.of<ControllerAuth>(context,listen:false);
     final event = Event(
       id: widget.existingRecommendedEvent != null
           ? widget.existingRecommendedEvent!.id

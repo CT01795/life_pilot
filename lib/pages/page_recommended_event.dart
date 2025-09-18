@@ -15,6 +15,9 @@ class PageRecommendedEvent extends StatefulWidget {
 }
 
 class _PageRecommendedEventState extends State<PageRecommendedEvent> {
+  bool _initialized = false;
+  late ControllerAuth _auth;
+
   String tableName = constTableRecommendedEvents;
   String toTableName = constTableCalendarEvents;
   late final ServiceStorage _service;
@@ -41,11 +44,19 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
     super.initState();
     _service = ServiceStorage();
     _scrollController = ScrollController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _auth = Provider.of<ControllerAuth>(context,listen:true);
+    if (_initialized) return;
+    _initialized = true;
 
     _handler = AppBarActionsHandler(
       serviceStorage: _service,
       context: context,
-      refreshCallback: _loadEvents,
+      refreshCallback: () => _loadEvents(_auth.currentAccount),
       setState: setState,
       isGridViewGetter: () => isGridView,
       showSearchPanelGetter: () => _showSearchPanel,
@@ -60,12 +71,12 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       },
     );
 
-    _loadEvents();
+    _loadEvents(_auth.currentAccount);
   }
 
-  Future<void> _loadEvents() async {
+  Future<void> _loadEvents(String? user) async {
     final recommended =
-        await _service.getRecommendedEvents(tableName: tableName);
+        await _service.getRecommendedEvents(tableName: tableName, inputUser: user);
     if (mounted) {
       setState(() {
         _events = recommended!;
@@ -99,8 +110,6 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
 
   @override
   Widget build(BuildContext context) {
-    bool isAnonymous = Provider.of<ControllerAuth>(context).isAnonymous;
-
     return PageStorage(
       bucket: _bucket,
       child: Scaffold(
@@ -111,9 +120,9 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
           isGridView: isGridView,
           handler: _handler,
           setState: setState,
-          isEditable: !isAnonymous,
+          isEditable: !_auth.isAnonymous,
           onAdd:
-              isAnonymous ? null : () => _handler.onAddEvent(context, tableName),
+              _auth.isAnonymous ? null : () => _handler.onAddEvent(context, tableName),
           tableName: tableName,
         ),
         body: Column(
@@ -139,11 +148,11 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
                   isGridView: isGridView,
                   selectedEventIds: selectedEventIds,
                   removedEventIds: removedEventIds,
-                  isEditable: !isAnonymous,
+                  isEditable: !_auth.isAnonymous,
                   serviceStorage: _service,
                   setState: setState,
                   scrollController: _scrollController,
-                  refreshCallback: _loadEvents,
+                  refreshCallback: () => _loadEvents(_auth.currentAccount),
                   tableName: tableName,
                   toTableName: toTableName,
                 ),

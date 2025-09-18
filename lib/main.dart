@@ -18,7 +18,7 @@ import 'l10n/app_localizations.dart';
 import 'pages/page_login.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-void main() async { 
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // ✅ 初始化時區
   constTzLocation = await setTimezoneFromDevice(); // ✅ 自動偵測並設定時區
@@ -39,12 +39,12 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ControllerAuth()),
         ChangeNotifierProvider(
-          create: (_) => ControllerAuth()),
+            create: (_) => ProviderLocale(locale: Locale(constLocaleZh))),
         ChangeNotifierProvider(
-          create: (_) => ProviderLocale(locale: Locale(constLocaleZh))),  
-        ChangeNotifierProvider(
-          create: (_) => ControllerCalendar(tableName: constTableCalendarEvents)),  
+            create: (_) =>
+                ControllerCalendar(tableName: constTableCalendarEvents)),
       ],
       child: MyApp(),
     ),
@@ -60,14 +60,15 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProviderLocale>(
-        builder: (context, providerLocale, child) {
+    return Consumer<ProviderLocale>(builder: (context, providerLocale, child) {
       return MaterialApp(
         navigatorKey: navigatorKey,
         title: constAppTitle,
         builder: (context, child) {
           return MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.5),),
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(1.5),
+            ),
             child: child!,
           );
         },
@@ -81,7 +82,7 @@ class _MyAppState extends State<MyApp> {
           Locale(constLocaleEn),
           Locale(constLocaleZh),
         ],
-        locale: providerLocale.locale, 
+        locale: providerLocale.locale,
         theme: ThemeData(
           primaryColor: Color(0xFF0066CC),
           scaffoldBackgroundColor: Colors.white,
@@ -92,8 +93,8 @@ class _MyAppState extends State<MyApp> {
               ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white, 
-              backgroundColor: Color(0xFF0066CC), 
+              foregroundColor: Colors.white,
+              backgroundColor: Color(0xFF0066CC),
               padding: kGapEIH12V8,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
@@ -113,16 +114,16 @@ class _MyAppState extends State<MyApp> {
           iconTheme: const IconThemeData(size: 36),
           appBarTheme: AppBarTheme(
             backgroundColor: Color(0xFF0066CC),
-            iconTheme: IconThemeData(color: Colors.white), 
-            actionsIconTheme: IconThemeData(color: Colors.black), 
+            iconTheme: IconThemeData(color: Colors.white),
+            actionsIconTheme: IconThemeData(color: Colors.black),
             titleTextStyle: TextStyle(
-              color: Colors.white, 
+              color: Colors.white,
             ),
             foregroundColor: Colors.white,
           ),
           inputDecorationTheme: InputDecorationTheme(
-            floatingLabelStyle: TextStyle(color: Color(0xFF0066CC)), 
-            labelStyle: TextStyle(color: Colors.grey[700]),          
+            floatingLabelStyle: TextStyle(color: Color(0xFF0066CC)),
+            labelStyle: TextStyle(color: Colors.grey[700]),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.blueGrey),
             ),
@@ -135,7 +136,7 @@ class _MyAppState extends State<MyApp> {
         checkerboardOffscreenLayers: false,
         home: AuthCheckPage(
           setLocale: (locale) {
-            providerLocale.setLocale(locale); 
+            providerLocale.setLocale(locale);
           },
         ),
       );
@@ -154,19 +155,27 @@ class AuthCheckPage extends StatefulWidget {
 enum AuthPage { login, register, pageMain }
 
 class _AuthCheckPageState extends State<AuthCheckPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!; 
+  late ControllerAuth _auth;
+  AppLocalizations get loc => AppLocalizations.of(context)!;
+  bool _initialized = false;
   AuthPage currentPage = AuthPage.login;
-  Map<String, String> registerBackData = {constEmail: constEmpty, constPassword: constEmpty};
+  Map<String, String> registerBackData = {
+    constEmail: constEmpty,
+    constPassword: constEmpty
+  };
   List<Widget> _appBarPages = [];
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _auth = Provider.of<ControllerAuth>(context, listen: true);
+    if (_initialized) return;
+    _initialized = true;
 
     // ✅ 延遲初始化 login 檢查，避免在 widget 還沒 mount 就觸發
     Future.microtask(() {
       if (mounted) {
-        Provider.of<ControllerAuth>(context, listen: false).checkLoginStatus();
+        _auth.checkLoginStatus();
       }
     });
   }
@@ -190,13 +199,12 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
   }
 
   void _logout() async {
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
-    final currentEmail = auth.currentAccount != null &&
-            auth.currentAccount!.isNotEmpty &&
-            !auth.isAnonymous
-        ? auth.currentAccount
+    final currentEmail = _auth.currentAccount != null &&
+            _auth.currentAccount!.isNotEmpty &&
+            !_auth.isAnonymous
+        ? _auth.currentAccount
         : constEmpty;
-    await auth.logout(context);
+    await _auth.logout(context);
     if (!mounted) return;
     setState(() {
       registerBackData[constEmail] = currentEmail!;
@@ -206,15 +214,13 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<ControllerAuth>(context);
-    final providerLocale =
-        Provider.of<ProviderLocale>(context); 
-    if (auth.isLoading) return Center(child: CircularProgressIndicator());
+    final providerLocale = Provider.of<ProviderLocale>(context);
+    if (_auth.isLoading) return Center(child: CircularProgressIndicator());
 
     Widget bodyWidget;
 
     // 登入狀態決定 currentPage，不直接改 currentPage，避免 rebuild 問題
-    final bool loggedIn = auth.isLoggedIn;
+    final bool loggedIn = _auth.isLoggedIn;
 
     if (loggedIn) {
       if (currentPage != AuthPage.pageMain) {
@@ -271,13 +277,11 @@ class _AuthCheckPageState extends State<AuthCheckPage> {
     return Scaffold(
       appBar: MainPageBar(
         title: loc.appTitle,
-        currentLocale: providerLocale.locale, 
+        currentLocale: providerLocale.locale,
         onLocaleToggle: widget.setLocale,
-        account: auth.isLoggedIn ? auth.currentAccount : null,
-        onLogout: auth.isLoggedIn ? _logout : null,
-        pages: currentPage == AuthPage.pageMain
-            ? _appBarPages
-            : null, 
+        account: _auth.isLoggedIn ? _auth.currentAccount : null,
+        onLogout: _auth.isLoggedIn ? _logout : null,
+        pages: currentPage == AuthPage.pageMain ? _appBarPages : null,
       ),
       body: bodyWidget,
     );

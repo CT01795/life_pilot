@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide DateUtils;
+import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
@@ -8,6 +9,7 @@ import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:life_pilot/utils/utils_show_dialog.dart';
 import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
 
 final Logger logger = Logger(); // 只建立一次，全域可用
 
@@ -38,11 +40,12 @@ Future<void> handleCheckboxChanged({
   required String tableName,
   required String toTableName,
 }) async {
+  ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
   final now = DateUtils.dateOnly(DateTime.now());
   final loc = AppLocalizations.of(context)!;
   if (value == true) {
     final existingEvents = await serviceStorage.getRecommendedEvents(
-        tableName: toTableName, id: event.id);
+        tableName: toTableName, id: event.id, inputUser: auth.currentAccount);
 
     final isAlreadyAdded =
         existingEvents?.any((e) => e.id == event.id) ?? false;

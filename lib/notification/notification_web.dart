@@ -71,7 +71,7 @@ class MyCustomNotification {
 
   // 根據 event.reminderOptions 安排通知
   static Future<void> scheduleEventReminders(
-      AppLocalizations loc, Event event, String tableName) async {
+      AppLocalizations loc, Event event, String tableName, String? user) async {
     if (event.startDate == null ||
         event.startTime == null) {
       return;
@@ -88,16 +88,16 @@ class MyCustomNotification {
       logger.d("reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
 
       if (kIsWeb) {
-        showTodayEventsWebNotification(loc, tableName);
+        showTodayEventsWebNotification(loc, tableName, user);
         return; // Web 單次執行完畢，結束方法
       }
     }
   }
 
   static Future<void> showTodayEventsWebNotification(
-      AppLocalizations loc, String tableName) async {
+      AppLocalizations loc, String tableName, String? user) async {
     final todayEvents = await ServiceStorage().getRecommendedEvents(
-        tableName: tableName, dateS: DateTime.now(), dateE: DateTime.now());
+        tableName: tableName, dateS: DateTime.now(), dateE: DateTime.now(), inputUser: user);
 
     if (todayEvents == null || todayEvents.isEmpty) return;
 
