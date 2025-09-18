@@ -4,7 +4,9 @@ import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification.dart';
 import 'package:life_pilot/notification/notification_common.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils, DateTimeExtension;
+import 'package:life_pilot/utils/utils_date_time.dart'
+    show DateUtils, DateTimeExtension;
+import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:life_pilot/utils/utils_mobile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,8 +22,7 @@ class ServiceStorage {
       DateTime? dateE,
       String? id}) async {
     final today = DateUtils.dateOnly(DateTime.now());
-    final inputDateS =
-        (dateS ?? today).formatDateString();
+    final inputDateS = (dateS ?? today).formatDateString();
     final inputDateE =
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
@@ -45,12 +46,16 @@ class ServiceStorage {
     try {
       AppLocalizations loc = AppLocalizations.of(context)!;
       _validateEvent(event, loc);
-      if (isNew) {
+      if (isNew || event.reminderOptions.isEmpty) {
         event.reminderOptions = [
           ReminderOption.oneHour, // 事件開始前1小時
           ReminderOption.sameDay8am,
           ReminderOption.dayBefore8am // 前一天早上8點
         ];
+      }
+
+      if (event.repeatOptions.key().isEmpty) {
+        event.repeatOptions = RepeatRule.once;
       }
 
       _normalizeEventDates(event);
@@ -65,7 +70,8 @@ class ServiceStorage {
       // 🔥 加入通知邏輯
       await MyCustomNotification.cancelEventReminders(event); // 移除舊通知（根據 id）
       await checkExactAlarmPermission(context);
-      await MyCustomNotification.scheduleEventReminders(loc, event, tableName); // 新的排程
+      await MyCustomNotification.scheduleEventReminders(
+          loc, event, tableName); // 新的排程
     } catch (ex, stacktrace) {
       logger.e("saveRecommendedEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
