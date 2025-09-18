@@ -116,6 +116,7 @@ Future<void> handleCheckboxChanged({
       if (event.startDate != null && !event.startDate!.isAfter(now)) {
         event.startDate = now;
       }
+      event.account = auth.currentAccount;
       await serviceStorage.saveRecommendedEvent(
           context, event, true, toTableName);
     }

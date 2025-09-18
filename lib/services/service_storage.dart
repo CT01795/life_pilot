@@ -18,12 +18,13 @@ class ServiceStorage {
 
   List<Event>? allEvents;
 
-  Future<List<Event>?> getRecommendedEvents(
-      {required String tableName,
-      DateTime? dateS,
-      DateTime? dateE,
-      String? id,
-      String? inputUser,}) async {
+  Future<List<Event>?> getRecommendedEvents({
+    required String tableName,
+    DateTime? dateS,
+    DateTime? dateE,
+    String? id,
+    String? inputUser,
+  }) async {
     final today = DateUtils.dateOnly(DateTime.now());
     final inputDateS = (dateS ?? today).formatDateString();
     final inputDateE =
@@ -48,7 +49,7 @@ class ServiceStorage {
   Future<void> saveRecommendedEvent(
       BuildContext context, Event event, bool isNew, String tableName) async {
     try {
-      ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
+      ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
       AppLocalizations loc = AppLocalizations.of(context)!;
       _validateEvent(event, loc);
       if (isNew || event.reminderOptions.isEmpty) {
@@ -65,12 +66,16 @@ class ServiceStorage {
 
       _normalizeEventDates(event);
       _normalizeSubEventsDates(event.subEvents);
-
+      event.account = auth.currentAccount;
       final Map<String, dynamic> data = event.toJson();
       if (isNew) {
         await _client.from(tableName).insert([data]); //'recommended_events'
       } else {
-        await _client.from(tableName).update(data).eq(EventFields.id, event.id);
+        var query = _client.from(tableName).update(data).eq(EventFields.id, event.id);
+        if (event.account != null && event.account!.isNotEmpty) {
+          query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
+        }
+        await query;
       }
       // 🔥 加入通知邏輯
       await MyCustomNotification.cancelEventReminders(event); // 移除舊通知（根據 id）
@@ -86,10 +91,11 @@ class ServiceStorage {
   Future<void> deleteRecommendedEvent(Event event, String tableName) async {
     try {
       await MyCustomNotification.cancelEventReminders(event); // 取消通知
-      await _client
-          .from(tableName)
-          .delete()
-          .eq(EventFields.id, event.id); //'recommended_events'
+      var query = _client.from(tableName).delete().eq(EventFields.id, event.id);
+      if (event.account != null && event.account!.isNotEmpty) {
+        query = query.eq(EventFields.account, event.account!);
+      }
+      await query;
     } catch (ex, stacktrace) {
       logger.e("deleteRecommendedEvent error",
           error: ex, stackTrace: stacktrace);
