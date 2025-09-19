@@ -42,7 +42,7 @@ Widget widgetBuildDateButton({
 }
 
 Widget widgetBuildTypeTags(String types) {
-  final typeList = types.split(RegExp(r'[,，]')).map((e) => e.trim()).where((e) => e.isNotEmpty).take(3).toList();
+  final typeList = types.split(RegExp(r'[\s,，]')).map((e) => e.trim()).where((e) => e.isNotEmpty).take(3).toList(); // \s 表示任何空白字元（空格、Tab、換行）
   return Wrap(
     spacing: 8,
     runSpacing: 4,

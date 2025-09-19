@@ -25,11 +25,6 @@ class EventCardUtils {
     return Text('${formatEventDateTime(e, constStartToS)}${formatEventDateTime(e, constEndToE)}');
   }
 
-  static Widget buildFeeTypeText(var e) {
-    if (e.fee.isEmpty && e.type.isEmpty) return const SizedBox.shrink();
-    return Text('${e.fee.isNotEmpty ? '${e.fee}．' : constEmpty}${e.type}');
-  }
-
   static Widget buildLocationText(var e) {
     if (e.city.isEmpty && e.location.isEmpty) return const SizedBox.shrink();
     return Text('${e.city}．${e.location}');
@@ -63,7 +58,7 @@ class EventCardUtils {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (masterUrl?.isNotEmpty == true) buildLink(context, loc, masterUrl!),
-        kGapW8(),
+        /*kGapW8(),
         if (fee.isNotEmpty)
           Padding(
             padding: kGapEIT4,
@@ -74,7 +69,7 @@ class EventCardUtils {
           Padding(
             padding: kGapEIT4,
             child: widgetBuildTypeTags(type),
-          ),
+          ),*/
       ],
     );
   }
@@ -129,7 +124,8 @@ class BaseEventCard extends StatelessWidget {
         children: [
           EventCardUtils.buildEventHeader(event.name, trailing: trailing),
           EventCardUtils.buildDateRange(event),
-          if (showFeeType) EventCardUtils.buildFeeTypeText(event),
+          if (showFeeType && event.fee.isNotEmpty) widgetBuildTypeTags(event.fee),
+          if (showFeeType && event.type.isNotEmpty) widgetBuildTypeTags(event.type),
           if (showLocation && (event.city.isNotEmpty || event.location.isNotEmpty))
             EventCardUtils.buildLocationText(event),
           if (showMasterUrlLink || showFeeType)
@@ -212,7 +208,8 @@ class _SubEventCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           EventCardUtils.buildDateRange(subEvent),
-          EventCardUtils.buildFeeTypeText(subEvent),
+          if(subEvent.fee.isNotEmpty) widgetBuildTypeTags(subEvent.fee),
+          if(subEvent.type.isNotEmpty) widgetBuildTypeTags(subEvent.type),
           if (showLocation) EventCardUtils.buildLocationText(subEvent),
           if (subEvent.masterUrl?.isNotEmpty == true)
             EventCardUtils.buildLink(context, loc, subEvent.masterUrl!),
@@ -280,7 +277,7 @@ class EventCardGraph extends StatelessWidget {
       onTap: onTap,
       onDelete: onDelete,
       showLocation: true,
-      showFeeType: false,
+      showFeeType: true,
       showSubEvents: false,
       showMasterUrlLink: true,
       useCardContainer: true,
