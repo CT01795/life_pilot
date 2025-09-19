@@ -309,7 +309,7 @@ class EventCalendarCard extends StatelessWidget {
       onTap: onTap,
       onDelete: onDelete,
       showLocation: true,
-      showFeeType: false,
+      showFeeType: true,
       showSubEvents: true,
       showMasterUrlLink: true,
       useCardContainer: false,
