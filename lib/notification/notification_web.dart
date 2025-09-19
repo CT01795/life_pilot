@@ -11,10 +11,9 @@ import 'package:life_pilot/notification/notification_common.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils, DateTimeExtension, TimeOfDayExtension;
+import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:life_pilot/notification/notification_common.dart' as snc;
 
 @anonymous
 @JS()
@@ -77,20 +76,9 @@ class MyCustomNotification {
       return;
     }
 
-    DateTime targetDT = DateUtils.getDateTime(event.startDate, event.startTime);
-    for (final option in event.reminderOptions) {
-      final reminderTime = _calculateReminderTime(option, event, targetDT);
-      if (reminderTime.isBefore(DateTime.now())) {
-        // 避免過去的通知
-        continue;
-      }
-      final reminderDuration = snc.ReminderUtils.getReminderDuration(option);
-      logger.d("reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
-
-      if (kIsWeb) {
-        showTodayEventsWebNotification(loc, tableName, user);
-        return; // Web 單次執行完畢，結束方法
-      }
+    if (kIsWeb) {
+      showTodayEventsWebNotification(loc, tableName, user);
+      return; // Web 單次執行完畢，結束方法
     }
   }
 
@@ -190,21 +178,5 @@ class MyCustomNotification {
         logger.w('OverlayEntry already removed or unmounted.');
       }
     });
-  }
-
-  // --- 私有方法 ---
-  static DateTime _calculateReminderTime(
-      ReminderOption option, Event event, DateTime targetTime) {
-    switch (option) {
-      case ReminderOption.sameDay8am:
-        return DateUtils.getDateTime(
-            event.startDate, TimeOfDay(hour: 8, minute: 0));
-      case ReminderOption.dayBefore8am:
-        return DateUtils.getDateTime(
-            event.startDate!.subtract(Duration(days: 1)),
-            TimeOfDay(hour: 8, minute: 0));
-      default:
-        return targetTime.subtract(snc.ReminderUtils.getReminderDuration(option));
-    }
   }
 }
