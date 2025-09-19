@@ -5,6 +5,7 @@ import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification.dart';
 import 'package:life_pilot/notification/notification_common.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart'
     show DateUtils, DateTimeExtension;
 import 'package:life_pilot/utils/utils_enum.dart';
@@ -49,15 +50,20 @@ class ServiceStorage {
   Future<void> approvalRecommendedEvent(
       BuildContext context, Event event, String tableName) async {
     try {
+      String? realAccount = event.account;
+      if (event.account == constGuest) {
+        event.account = constSysAdminEmail;
+      }
       final Map<String, dynamic> data = event.toJson();
       var query =
           _client.from(tableName).update(data).eq(EventFields.id, event.id);
-      if (event.account != null && event.account!.isNotEmpty) {
+      if (realAccount != null && realAccount.isNotEmpty && realAccount != constGuest) {
         query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
       }
       await query;
     } catch (ex, stacktrace) {
-      logger.e("approvalRecommendedEvent error", error: ex, stackTrace: stacktrace);
+      logger.e("approvalRecommendedEvent error",
+          error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
@@ -90,7 +96,7 @@ class ServiceStorage {
       } else {
         var query =
             _client.from(tableName).update(data).eq(EventFields.id, event.id);
-        if (event.account != null && event.account!.isNotEmpty) {
+        if (auth.currentAccount != constSysAdminEmail && event.account != null && event.account!.isNotEmpty) {
           query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
         }
         await query;
@@ -106,11 +112,12 @@ class ServiceStorage {
     }
   }
 
-  Future<void> deleteRecommendedEvent(Event event, String tableName) async {
+  Future<void> deleteRecommendedEvent(BuildContext context, Event event, String tableName) async {
     try {
+      ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
       await MyCustomNotification.cancelEventReminders(event); // 取消通知
       var query = _client.from(tableName).delete().eq(EventFields.id, event.id);
-      if (event.account != null && event.account!.isNotEmpty) {
+      if (auth.currentAccount != constSysAdminEmail && event.account != null && event.account!.isNotEmpty) {
         query = query.eq(EventFields.account, event.account!);
       }
       await query;

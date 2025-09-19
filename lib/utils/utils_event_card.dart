@@ -165,7 +165,7 @@ class BaseEventCard extends StatelessWidget {
       child: Stack(
         children: [
           container,
-          if (auth.currentAccount == event.account && onDelete != null)
+          if ((auth.currentAccount == constSysAdminEmail || auth.currentAccount == event.account) && onDelete != null)
             PositionedDirectional(
               end: kGapW24().width,
               bottom: kGapH8().height, //bottom

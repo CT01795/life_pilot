@@ -120,9 +120,9 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
           isGridView: isGridView,
           handler: _handler,
           setState: setState,
-          isEditable: !_auth.isAnonymous,
+          isEditable: true, //!_auth.isAnonymous,
           onAdd:
-              _auth.isAnonymous ? null : () => _handler.onAddEvent(context, tableName),
+              () => _handler.onAddEvent(context, tableName), //_auth.isAnonymous ? null : 
           tableName: tableName,
         ),
         body: Column(
@@ -148,7 +148,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
                   isGridView: isGridView,
                   selectedEventIds: selectedEventIds,
                   removedEventIds: removedEventIds,
-                  isEditable: !_auth.isAnonymous,
+                  isEditable: true, //!_auth.isAnonymous,
                   serviceStorage: _service,
                   setState: setState,
                   scrollController: _scrollController,

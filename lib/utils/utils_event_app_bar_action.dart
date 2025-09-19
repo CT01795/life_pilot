@@ -78,7 +78,7 @@ List<Widget> buildAppBarActions(
       onPressed: () => handler.onExport(tableName),
     ));
   }
-  if (isEditable && onAdd != null) {
+  if (onAdd != null) {
     actions.add(IconButton(
       icon: const Icon(Icons.add),
       tooltip: loc.event_add,
@@ -472,7 +472,7 @@ Future<void> onRemoveEvent({
     context: context,
     event: event,
     onDelete: () async {
-      await serviceStorage?.deleteRecommendedEvent(event, tableName);
+      await serviceStorage?.deleteRecommendedEvent(context, event, tableName);
     },
     onSuccessSetState: () {
       setState(() {

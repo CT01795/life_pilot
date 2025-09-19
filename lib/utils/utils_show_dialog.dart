@@ -233,7 +233,7 @@ Future<bool> showCalendarEventsDialog(
                                     );
                                     if (confirm == true) {
                                       await controller.service
-                                          .deleteRecommendedEvent(
+                                          .deleteRecommendedEvent(context,
                                               event, controller.tableName);
                                       await controller.loadEvents(auth.currentAccount, providerLocale.locale); // ✅ 等待載入完成
                                       Navigator.pop(context, true); // ✅ 回傳 true

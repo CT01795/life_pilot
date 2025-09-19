@@ -8,6 +8,7 @@ import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
+import 'package:life_pilot/utils/utils_show_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
@@ -157,7 +158,9 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
       setState(() {
         if (index == null) {
           isStart ? startDate = picked : endDate = picked;
-          if (startDate != null && endDate != null && startDate!.isAfter(endDate!)) {
+          if (startDate != null &&
+              endDate != null &&
+              startDate!.isAfter(endDate!)) {
             endDate = startDate;
           }
         } else {
@@ -165,7 +168,9 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
               ? subEvents[index].startDate = picked
               : subEvents[index].endDate = picked;
 
-          if (subEvents[index].startDate != null && subEvents[index].endDate != null && subEvents[index].startDate!.isAfter(subEvents[index].endDate!)) {
+          if (subEvents[index].startDate != null &&
+              subEvents[index].endDate != null &&
+              subEvents[index].startDate!.isAfter(subEvents[index].endDate!)) {
             subEvents[index].endDate = subEvents[index].startDate;
           }
         }
@@ -384,7 +389,25 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.pinkAccent),
                   tooltip: loc.delete,
-                  onPressed: () => setState(() => subEvents.removeAt(index)),
+                  onPressed: () async {
+                    final event =
+                        subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
+                    final shouldDelete = await showConfirmationDialog(
+                      context: context,
+                      content:
+                          'No. ${index + 1} ${event.name} ${loc.delete}？',
+                      confirmText: loc.delete,
+                      cancelText: loc.cancel,
+                    );
+
+                    if (shouldDelete == true) {
+                      try {
+                        setState(() => subEvents.removeAt(index));
+                      } catch (e) {
+                        showSnackBar(context, '${loc.delete_error}: $e');
+                      }
+                    }
+                  },
                 ),
               ],
             ),
@@ -396,7 +419,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final auth = Provider.of<ControllerAuth>(context,listen:false);
+    final auth = Provider.of<ControllerAuth>(context, listen: false);
     final event = Event(
       id: widget.existingRecommendedEvent != null
           ? widget.existingRecommendedEvent!.id

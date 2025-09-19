@@ -82,7 +82,7 @@ Future<void> handleCheckboxChanged({
                 tmpEvent.location.isEmpty ? event.location : tmpEvent.location
             ..unit = tmpEvent.unit.isEmpty ? event.unit : tmpEvent.unit
             ..account = auth.currentAccount;
-          await serviceStorage.deleteRecommendedEvent(subEvent, toTableName);
+          await serviceStorage.deleteRecommendedEvent(context, subEvent, toTableName);
           await serviceStorage.saveRecommendedEvent(
               context, subEvent, true, toTableName);
         }
@@ -97,7 +97,7 @@ Future<void> handleCheckboxChanged({
                 ? now
                 : event.endDate);
         updatedEvent.account = auth.currentAccount;
-        await serviceStorage.deleteRecommendedEvent(updatedEvent, toTableName);
+        await serviceStorage.deleteRecommendedEvent(context, updatedEvent, toTableName);
         await serviceStorage.saveRecommendedEvent(
             context, updatedEvent, true, toTableName);
       }
