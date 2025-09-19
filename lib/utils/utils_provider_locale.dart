@@ -14,7 +14,7 @@ class LanguageToggleDropdown extends StatelessWidget {
   String getLanguageDisplayName(String code) {
     switch (code) {
       case constLocaleEn:
-        return 'English';
+        return 'EN';
       case constLocaleZh:
         return '中文';
       case constLocaleJa:
@@ -32,15 +32,18 @@ class LanguageToggleDropdown extends StatelessWidget {
       child: DropdownButton<Locale>(
         value: currentLocale,
         dropdownColor: Colors.blueGrey[900],
-        // 自訂選擇區顯示的 Widget
+        alignment: Alignment.centerRight, // Flutter 3.7+ 支援，靠右顯示 dropdown 的選單
+        icon: Icon(Icons.arrow_drop_down, color: Colors.white), // 自訂下拉箭頭顏色
         selectedItemBuilder: (BuildContext context) {
           return supportedLocales.map<Widget>((Locale locale) {
             return Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end, // 靠右顯示
               children: [
-                Icon(Icons.language, color: Colors.white),
+                Icon(Icons.language, color: Colors.white, size: 30),
                 Text(
                   getLanguageDisplayName(locale.languageCode),
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ],
             );

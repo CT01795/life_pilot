@@ -36,6 +36,10 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
             : auth.currentAccount ?? title),
       actions: [
         if (pages != null) ...pages!, 
+        LanguageToggleDropdown(
+          currentLocale: currentLocale,
+          onLocaleToggle: onLocaleToggle,
+        ),
         if ((auth.currentAccount != null && auth.currentAccount!.isNotEmpty))...[
           IconButton(
             icon: Icon(Icons.exit_to_app),
@@ -43,11 +47,7 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: onLogout,
             color: Colors.white, 
           ),
-        ],        
-        LanguageToggleDropdown(
-          currentLocale: currentLocale,
-          onLocaleToggle: onLocaleToggle,
-        ),
+        ],
       ],
     );
   }
