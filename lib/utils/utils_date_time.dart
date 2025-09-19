@@ -45,7 +45,7 @@ String formatEventDateTime(dynamic event, String type) {
       if (DateOnlyCompare.isSameTime(event.startTime, event.endTime)) {
         return constEmpty;
       }
-      return event.endTime == null ? constEmpty : ' - ${DateFormat(constDateFormatHHmm).format(event.endTime)}';
+      return event.endTime == null ? constEmpty : ' - ${DateFormat(constDateFormatHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
     } else if (DateOnlyCompare.isSameYear(event.startDate, event.endDate)) {
       return event.endTime == null ? ' - ${DateFormat(constDateFormatMMdd).format(DateUtils.getDateTime(event.endDate, event.endTime))}' : ' - ${DateFormat(constDateFormatMMddHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
     }else{
