@@ -2,25 +2,14 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
-import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:life_pilot/utils/utils_show_dialog.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
 final Logger logger = Logger(); // 只建立一次，全域可用
-
-// Toggle App Language
-void toggleLocale(ProviderLocale providerLocale) {
-  final supportedLocales = [Locale(constLocaleEn), Locale(constLocaleZh)];
-  final currentIndex = supportedLocales
-      .indexWhere((l) => l.languageCode == providerLocale.locale.languageCode);
-  final nextIndex = (currentIndex + 1) % supportedLocales.length;
-  providerLocale.setLocale(supportedLocales[nextIndex]);
-}
 
 void showSnackBar(BuildContext context, String message) {
   if (context.mounted) {

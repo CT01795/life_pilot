@@ -12,12 +12,20 @@ const List<String> constRealHolidaysTaiwan = [
 ];
 const String constLocaleZh = 'zh';
 const String constLocaleEn = 'en';
+const String constLocaleJa = 'ja';
+const String constLocaleKo = 'ko';
 const String constEmail = 'email';
 const String constPassword = 'password';
 const String constEmpty = '';
 const String constTableCalendarEvents = "calendar_events";
 const String constTableRecommendedEvents = "recommended_events";
-
+// 支援語言清單
+final supportedLocales = [
+  Locale(constLocaleEn),
+  Locale(constLocaleZh),
+  Locale(constLocaleJa),
+  Locale(constLocaleKo),
+];
 //---------------------------------------- auth ----------------------------------------
 const String constGuest = 'Guest';
 

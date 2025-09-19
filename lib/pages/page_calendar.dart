@@ -8,6 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/page_recommended_event_add.dart';
 import 'package:life_pilot/notification/notification.dart';
+import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_calendar_widgets.dart';
 import 'package:life_pilot/utils/utils_date_time.dart'
@@ -27,8 +28,9 @@ class _PageCalendarState extends State<PageCalendar> {
   late final PageController _pageController;
   bool _initialized = false;
   late ControllerAuth _auth;
+  late ProviderLocale _providerLocale;
   AppLocalizations get _loc => AppLocalizations.of(context)!;
-
+  
   @override
   void initState() {
     super.initState();
@@ -39,14 +41,15 @@ class _PageCalendarState extends State<PageCalendar> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _auth = Provider.of<ControllerAuth>(context, listen:true);
+    _auth = Provider.of<ControllerAuth>(context, listen: true);
+    _providerLocale = Provider.of<ProviderLocale>(context, listen: true);
     if (_initialized) return;
     _initialized = true;
 
     // 等下一幀再載入資料（防止 build 前操作）
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await _controller.loadEvents(_auth.currentAccount);
+      await _controller.loadEvents(_auth.currentAccount, _providerLocale.locale);
       // 這裡呼叫，確保資料載入完成後發通知
       await _notifyTodayEvents(_loc, _auth.currentAccount);
 
@@ -109,15 +112,15 @@ class _PageCalendarState extends State<PageCalendar> {
                 loc: _loc,
                 onPrevious: () async {
                   await _controller.goToPreviousMonth(
-                      _pageController, _auth.currentAccount);
+                      _pageController, _auth.currentAccount, _providerLocale.locale);
                 },
                 onNext: () async {
                   await _controller.goToNextMonth(
-                      _pageController, _auth.currentAccount);
+                      _pageController, _auth.currentAccount, _providerLocale.locale);
                 },
                 onToday: () async {
                   await _controller.goToToday(
-                      _pageController, _auth.currentAccount);
+                      _pageController, _auth.currentAccount, _providerLocale.locale);
                 },
                 onAddEvent: () {
                   Navigator.push(
@@ -134,7 +137,7 @@ class _PageCalendarState extends State<PageCalendar> {
                       _controller.updateCachedEvent(value, value); // 第二參數 新增/修改
                       await _controller.goToMonth(
                           DateUtils.monthOnly(value.startDate!),
-                          _auth.currentAccount);
+                          _auth.currentAccount, _providerLocale.locale);
                     }
                   });
                 },
@@ -143,7 +146,8 @@ class _PageCalendarState extends State<PageCalendar> {
                     context: context,
                     initialDate: _controller.currentMonth,
                     onChanged: (newDate) async {
-                      await _controller.goToMonth(newDate, _auth.currentAccount);
+                      await _controller.goToMonth(
+                          newDate, _auth.currentAccount, _providerLocale.locale);
                     },
                   );
                 },

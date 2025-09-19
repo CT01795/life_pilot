@@ -3,6 +3,7 @@ import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification.dart';
+import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/services/service_holiday.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_const.dart';
@@ -117,7 +118,7 @@ class ControllerCalendar extends ChangeNotifier {
     return weeks;
   }
 
-  Future<void> loadEvents(String? user) async {
+  Future<void> loadEvents(String? user, Locale locale) async {
     if (isLoading) return; // 防止重複執行
 
     isLoading = true;
@@ -134,7 +135,7 @@ class ControllerCalendar extends ChangeNotifier {
       events = allEvents ?? []; // ✅ 更新 List<Event> 給 UI 使用
 
       // 2. 再呼叫 HolidayService 抓假日事件
-      final holidays = await HolidayService.fetchHolidays(start.subtract(Duration(days:2)), end.add(Duration(days:2)));
+      final holidays = await HolidayService.fetchHolidays(start.subtract(Duration(days:2)), end.add(Duration(days:2)), locale);
       events.addAll(holidays);
 
       // 3. 排序（選擇性，依需求排序事件）
@@ -175,7 +176,7 @@ class ControllerCalendar extends ChangeNotifier {
   String _monthKey(DateTime date) =>
       "${date.year}-${date.month.toString().padLeft(2, constZero)}";
 
-  Future<void> goToMonth(DateTime newMonth, String? user) async {
+  Future<void> goToMonth(DateTime newMonth, String? user, Locale locale) async {
     currentMonth = newMonth;
     final key = _monthKey(newMonth);
     if (_cachedEvents.containsKey(key)) {
@@ -194,23 +195,23 @@ class ControllerCalendar extends ChangeNotifier {
 
       notifyListeners(); // 更新畫面
     } else {
-      await loadEvents(user);
+      await loadEvents(user, locale);
     }
   }
 
-  Future<void> goToToday(PageController controller, String? user) async {
+  Future<void> goToToday(PageController controller, String? user, Locale locale) async {
     currentMonth = DateUtils.dateOnly(DateTime.now());
-    await goToMonth(currentMonth, user);
+    await goToMonth(currentMonth, user, locale);
   }
 
-  Future<void> goToPreviousMonth(PageController controller, String? user) async {
+  Future<void> goToPreviousMonth(PageController controller, String? user, Locale locale) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month - 1);
-    await goToMonth(currentMonth, user);
+    await goToMonth(currentMonth, user, locale);
   }
 
-  Future<void> goToNextMonth(PageController controller, String? user) async {
+  Future<void> goToNextMonth(PageController controller, String? user, Locale locale) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month + 1);
-    await goToMonth(currentMonth, user);
+    await goToMonth(currentMonth, user, locale);
   }
 
   List<Event> getEventsOfDay(DateTime date) {
@@ -257,6 +258,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> checkAndGenerateNextEvents(BuildContext context) async {
+    ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: false);
     ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
     final loc = AppLocalizations.of(context)!;
     final DateTime today = DateTime.now();
@@ -292,7 +294,7 @@ class ControllerCalendar extends ChangeNotifier {
       await service.saveRecommendedEvent(context, updatedOldEvent, false, tableName);
     }
 
-    await loadEvents(auth.currentAccount);
+    await loadEvents(auth.currentAccount, providerLocale.locale);
   }
 
   // 判斷是否為同一天

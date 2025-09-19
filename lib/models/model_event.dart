@@ -35,6 +35,7 @@ class EventFields {
   static const String reminderOptions = 'reminder_options';
   static const String isHoliday = "is_holiday";
   static const String isTaiwanHoliday = "is_taiwan_holiday";
+  static const String isApproved = "is_approved";
 }
 
 class Event {
@@ -58,6 +59,7 @@ class Event {
   List<ReminderOption> reminderOptions;
   bool isHoliday;
   bool isTaiwanHoliday;
+  bool isApproved;
 
   Event({
     String? id,
@@ -80,9 +82,11 @@ class Event {
     this.reminderOptions = const [ReminderOption.dayBefore8am],
     bool? isHoliday,
     bool? isTaiwanHoliday,
+    bool? isApproved,
   })  : id = id ?? _uuid.v4(),
         isHoliday = isHoliday ?? false,
         isTaiwanHoliday = isTaiwanHoliday ?? false,
+        isApproved = isApproved ?? false,
         subEvents = subEvents ?? [];
 
   Map<String, dynamic> toJson() {
@@ -108,6 +112,7 @@ class Event {
           reminderOptions.map((e) => e.toKey()).toList(),
       EventFields.isHoliday: isHoliday,
       EventFields.isTaiwanHoliday: isTaiwanHoliday,
+      EventFields.isApproved: isApproved,
     };
   }
 
@@ -142,6 +147,9 @@ class Event {
       isTaiwanHoliday: json[EventFields.isTaiwanHoliday] is bool
           ? json[EventFields.isTaiwanHoliday] as bool
           : false,
+      isApproved: json[EventFields.isApproved] is bool
+          ? json[EventFields.isApproved] as bool
+          : false,
     );
   }
 
@@ -174,6 +182,7 @@ class Event {
       reminderOptions: newReminderOptions ?? reminderOptions,
       isHoliday: isHoliday,
       isTaiwanHoliday: isTaiwanHoliday,
+      isApproved: isApproved,
     );
   }
 
@@ -219,6 +228,7 @@ class SubEventItem {
   List<ReminderOption> reminderOptions;
   bool isHoliday;
   bool isTaiwanHoliday;
+  bool isApproved;
 
   SubEventItem({
     String? id,
@@ -240,9 +250,11 @@ class SubEventItem {
     this.reminderOptions = const [ReminderOption.dayBefore8am],
     bool? isHoliday,
     bool? isTaiwanHoliday,
+    bool? isApproved,
   })  : id = id ?? _uuid.v4(),
         isHoliday = isHoliday ?? false,
-        isTaiwanHoliday = isTaiwanHoliday ?? false;
+        isTaiwanHoliday = isTaiwanHoliday ?? false,
+        isApproved = isApproved ?? false;
 
   Map<String, dynamic> toJson() {
     return {
@@ -266,6 +278,7 @@ class SubEventItem {
           reminderOptions.map((e) => e.toKey()).toList(),
       EventFields.isHoliday: isHoliday,
       EventFields.isTaiwanHoliday: isTaiwanHoliday,
+      EventFields.isApproved: isApproved,
     };
   }
 
@@ -295,6 +308,9 @@ class SubEventItem {
           : false,
       isTaiwanHoliday: json[EventFields.isTaiwanHoliday] is bool
           ? json[EventFields.isTaiwanHoliday] as bool
+          : false,
+      isApproved: json[EventFields.isApproved] is bool
+          ? json[EventFields.isApproved] as bool
           : false,
     );
   }
@@ -326,6 +342,7 @@ class SubEventItem {
       reminderOptions: newReminderOptions ?? reminderOptions,
       isHoliday: isHoliday,
       isTaiwanHoliday: isTaiwanHoliday,
+      isApproved: isApproved,
     );
   }
 
@@ -350,6 +367,7 @@ class SubEventItem {
         repeatOptions: repeatOptions,
         reminderOptions: reminderOptions,
         isHoliday: isHoliday,
-        isTaiwanHoliday: isTaiwanHoliday);
+        isTaiwanHoliday: isTaiwanHoliday,
+        isApproved: isApproved);
   }
 }

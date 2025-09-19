@@ -252,20 +252,6 @@ Widget buildEventTrailing({
       scale: 1.2,
       child: Row(
         children: [
-          if (auth.currentAccount == event.account)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: loc.edit,
-              onPressed: isEditable
-                  ? () => onEditEvent(
-                        context: context,
-                        event: event,
-                        setState: setState,
-                        refreshCallback: refreshCallback,
-                        tableName: tableName,
-                      )
-                  : null,
-            ),
           if (!auth.isAnonymous)
             Checkbox(
               value: isChecked,
@@ -283,6 +269,35 @@ Widget buildEventTrailing({
                   addedMessage: loc.event_add_ok,
                   tableName: tableName,
                   toTableName: toTableName,
+                );
+              },
+            ),
+          if (auth.currentAccount == event.account)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: loc.edit,
+              onPressed: isEditable
+                  ? () => onEditEvent(
+                        context: context,
+                        event: event,
+                        setState: setState,
+                        refreshCallback: refreshCallback,
+                        tableName: tableName,
+                      )
+                  : null,
+            ),
+          if (!event.isApproved && auth.currentAccount == constSysAdminEmail)
+            IconButton(
+              icon: const Icon(Icons.task_alt),
+              tooltip: loc.review,
+              onPressed: () async {
+                setState(() {
+                  event.isApproved = true;
+                });
+                await ServiceStorage().approvalRecommendedEvent(
+                  context,
+                  event,
+                  tableName,
                 );
               },
             ),

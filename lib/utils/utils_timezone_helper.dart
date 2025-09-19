@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -22,6 +24,8 @@ Future<String> setTimezoneFromDevice(
         tzName = 'America/New_York';
       } else if (tzName == 'JST') {
         tzName = 'Asia/Tokyo';
+      } else if (tzName == 'KST') {
+        tzName = 'Asia/Seoul';
       } else {
         tzName = fallbackTz;
       }
@@ -41,14 +45,19 @@ Future<String> setTimezoneFromDevice(
   }
 }
 
-String getCalendarIdByTimezone(String tzName) {
-  if (tzName.contains('Taipei') || tzName.contains('CST')) {
-    return 'zh.taiwan%23holiday%40group.v.calendar.google.com';
-  } else if (tzName.contains('New_York') || tzName.contains('EST')) {
-    return 'en.usa%23holiday%40group.v.calendar.google.com';
+String getCalendarIdByTimezone(String tzName, Locale locale) {
+  String languageCode = locale.languageCode;
+  String regionCode;
+  if (tzName.contains('New_York') || tzName.contains('EST')) {
+    regionCode = 'usa';
+  } else if (tzName.contains('Taipei') || tzName.contains('CST')) {
+    regionCode = 'taiwan';
   } else if (tzName.contains('Tokyo') || tzName.contains('JST')) {
-    return 'ja.japanese%23holiday%40group.v.calendar.google.com';
+    regionCode = 'japanese';
+  } else if (tzName.contains('Seoul') || tzName.contains('KST')) {
+    regionCode = 'south_korea';
   } else {
-    return 'zh.taiwan%23holiday%40group.v.calendar.google.com'; // 預設
+    regionCode = 'taiwan'; // 預設地區
   }
+  return '$languageCode.$regionCode%23holiday%40group.v.calendar.google.com';
 }

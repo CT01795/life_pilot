@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/utils/utils_const.dart';
@@ -13,10 +14,15 @@ class HolidayService {
     "兒童節",
     "清明節",
     "除夕",
+    "New Year",
+    "Children",
+    "Tomb Sweeping",
+    "New Year's Eve",
   };
 
-  static Future<List<Event>> fetchHolidays(DateTime start, DateTime end) async {
-    final String calendarId = getCalendarIdByTimezone(constTzLocation);
+  static Future<List<Event>> fetchHolidays(
+      DateTime start, DateTime end, Locale locale) async {
+    final String calendarId = getCalendarIdByTimezone(constTzLocation, locale);
     final url = Uri.parse(
       'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events?'
       'key=$_apiKey&'
@@ -34,24 +40,26 @@ class HolidayService {
       final data = json.decode(response.body);
       final List items = data['items'];
       List<Event> events = [];
-      
+
       DateTime? tmpStart;
       DateTime? tmpEnd;
       String currentSummary = constEmpty;
-      
+
       for (final item in items) {
         final DateTime date = DateTime.parse(item['start']['date']);
         String summary = item['summary'];
         // 如果是台灣假日，使用你定義的 const summary 名稱
         final mappedSummary = constRealHolidaysTaiwan.firstWhere(
-          (holidayName) => summary.contains(holidayName) && !summary.contains("補假"),
+          (holidayName) =>
+              summary.contains(holidayName) && !summary.contains("補假"),
           orElse: () => summary,
         );
 
         final bool isTaiwanHoliday = constRealHolidaysTaiwan
             .any((name) => mappedSummary.contains(name)); // 🟡 判斷是否為放假日
-        
-        if (_mergeHolidayKeywords.any((keyword) => mappedSummary.contains(keyword))) {
+
+        if (_mergeHolidayKeywords
+            .any((keyword) => mappedSummary.contains(keyword))) {
           if (currentSummary == mappedSummary || currentSummary.isEmpty) {
             tmpStart ??= date;
             tmpEnd = date;
@@ -59,7 +67,8 @@ class HolidayService {
             continue;
           } else {
             // 先儲存前一個連假
-            events.add(_createMergedHoliday(tmpStart!, tmpEnd!, currentSummary));
+            events
+                .add(_createMergedHoliday(tmpStart!, tmpEnd!, currentSummary));
             // 開始新的合併區間
             tmpStart = date;
             tmpEnd = date;
@@ -75,7 +84,7 @@ class HolidayService {
           tmpEnd = null;
           currentSummary = constEmpty;
         }
-        
+
         final holidayEvent = Event(
           id: 'holiday_${date.toIso8601String()}',
           startDate: date,
@@ -101,7 +110,8 @@ class HolidayService {
     }
   }
 
-  static Event _createMergedHoliday(DateTime start, DateTime end, String summary) {
+  static Event _createMergedHoliday(
+      DateTime start, DateTime end, String summary) {
     return Event(
       id: 'holiday_${start.toIso8601String()}',
       startDate: start,
@@ -114,4 +124,3 @@ class HolidayService {
     );
   }
 }
-

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils;
 import 'package:life_pilot/utils/utils_show_dialog.dart';
@@ -91,6 +92,7 @@ class CalendarBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:true);
+    ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: true);
     final displayedMonth = controller.currentMonth;
 
     bool isCurrentMonth = displayedMonth.year == DateTime.now().year &&
@@ -112,20 +114,20 @@ class CalendarBody extends StatelessWidget {
                   if (details.primaryVelocity == null) return;
                   if (details.primaryVelocity! < 0) {
                     // 往上滑，模擬往右滑，切換到下一個月
-                    await controller.goToNextMonth(pageController, auth.currentAccount);
+                    await controller.goToNextMonth(pageController, auth.currentAccount, providerLocale.locale);
                   } else if (details.primaryVelocity! > 0) {
                     // 往下滑，模擬往左滑，切換到上一個月
-                    await controller.goToPreviousMonth(pageController, auth.currentAccount);
+                    await controller.goToPreviousMonth(pageController, auth.currentAccount, providerLocale.locale);
                   }
                 },
                 onHorizontalDragEnd: (details) async {
                   if (details.primaryVelocity == null) return;
                   if (details.primaryVelocity! < 0) {
                     // 向左滑 ➜ 下一個月
-                    await controller.goToNextMonth(pageController, auth.currentAccount);
+                    await controller.goToNextMonth(pageController, auth.currentAccount, providerLocale.locale);
                   } else if (details.primaryVelocity! > 0) {
                     // 向右滑 ➜ 上一個月
-                    await controller.goToPreviousMonth(pageController, auth.currentAccount);
+                    await controller.goToPreviousMonth(pageController, auth.currentAccount, providerLocale.locale);
                   }
                 },
                 child: PageView.builder(
@@ -136,7 +138,7 @@ class CalendarBody extends StatelessWidget {
                     DateTime newMonth = DateTime(
                         ControllerCalendar.baseDate.year + (index ~/ 12),
                         index % 12 + 1);
-                    controller.goToMonth(newMonth, auth.currentAccount);
+                    controller.goToMonth(newMonth, auth.currentAccount, providerLocale.locale);
                   },
                   itemBuilder: (context, index) {
                     return CalendarMonthView(
@@ -264,6 +266,7 @@ class WeekRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:true);
+    ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: true);
     final screenWidth = MediaQuery.of(context).size.width;
     final cellWidth = screenWidth / 7;
 
@@ -290,7 +293,7 @@ class WeekRow extends StatelessWidget {
                   final shouldReload = await showCalendarEventsDialog(
                       context, controller, date);
                   if (shouldReload) {
-                    await controller.loadEvents(auth.currentAccount); // 🔁 統一更新
+                    await controller.loadEvents(auth.currentAccount, providerLocale.locale); // 🔁 統一更新
                   }
                 },
                 child: Container(
@@ -366,7 +369,7 @@ class WeekRow extends StatelessWidget {
                   visibleStart,
                 );
                 if (shouldReload) {
-                  await controller.loadEvents(auth.currentAccount);
+                  await controller.loadEvents(auth.currentAccount, providerLocale.locale);
                 }
               },
               child: Container(

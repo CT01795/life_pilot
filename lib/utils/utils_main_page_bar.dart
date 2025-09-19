@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/providers/provider_locale.dart';
-import 'package:life_pilot/utils/utils_common_function.dart';
+import 'package:life_pilot/utils/utils_provider_locale.dart';
 import 'package:provider/provider.dart';
 
 class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
@@ -26,7 +25,6 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final providerLocale = Provider.of<ProviderLocale>(context);
     final auth = Provider.of<ControllerAuth>(context,listen:false);
     final theme = Theme.of(context); 
     return AppBar(
@@ -46,13 +44,9 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
             color: Colors.white, 
           ),
         ],        
-        IconButton(
-          icon: Icon(Icons.language),
-          tooltip: loc.language,
-          onPressed:  () {
-            toggleLocale(providerLocale);
-          },
-          color: Colors.white, 
+        LanguageToggleDropdown(
+          currentLocale: currentLocale,
+          onLocaleToggle: onLocaleToggle,
         ),
       ],
     );

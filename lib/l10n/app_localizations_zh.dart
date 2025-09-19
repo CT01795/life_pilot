@@ -255,6 +255,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get edit => '編輯';
 
   @override
+  String get review => '審核';
+
+  @override
   String get cancel => '取消';
 
   @override

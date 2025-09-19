@@ -78,10 +78,7 @@ class _MyAppState extends State<MyApp> {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale(constLocaleEn),
-          Locale(constLocaleZh),
-        ],
+        supportedLocales: supportedLocales,
         locale: providerLocale.locale,
         theme: ThemeData(
           primaryColor: Color(0xFF0066CC),

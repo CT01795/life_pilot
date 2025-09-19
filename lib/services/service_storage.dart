@@ -46,6 +46,22 @@ class ServiceStorage {
     return allEvents;
   }
 
+  Future<void> approvalRecommendedEvent(
+      BuildContext context, Event event, String tableName) async {
+    try {
+      final Map<String, dynamic> data = event.toJson();
+      var query =
+          _client.from(tableName).update(data).eq(EventFields.id, event.id);
+      if (event.account != null && event.account!.isNotEmpty) {
+        query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
+      }
+      await query;
+    } catch (ex, stacktrace) {
+      logger.e("approvalRecommendedEvent error", error: ex, stackTrace: stacktrace);
+      rethrow;
+    }
+  }
+
   Future<void> saveRecommendedEvent(
       BuildContext context, Event event, bool isNew, String tableName) async {
     try {
@@ -67,11 +83,13 @@ class ServiceStorage {
       _normalizeEventDates(event);
       _normalizeSubEventsDates(event.subEvents);
       event.account = auth.currentAccount;
+      event.isApproved = false;
       final Map<String, dynamic> data = event.toJson();
       if (isNew) {
         await _client.from(tableName).insert([data]); //'recommended_events'
       } else {
-        var query = _client.from(tableName).update(data).eq(EventFields.id, event.id);
+        var query =
+            _client.from(tableName).update(data).eq(EventFields.id, event.id);
         if (event.account != null && event.account!.isNotEmpty) {
           query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
         }

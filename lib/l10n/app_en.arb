@@ -168,6 +168,8 @@
   "@add": {"description": "Label for add"},
   "edit": "Edit",
   "@edit": {"description": "Label for edit"},
+  "review": "Review",
+  "@review": {"description": "Label for review"},
   "cancel": "Cancel",
   "@cancel": {"description": "Label for cancel"},
   "delete": "Delete",
