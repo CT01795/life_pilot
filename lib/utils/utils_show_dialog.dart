@@ -407,11 +407,7 @@ Future<bool> showAlarmSettingsDialog(
     return false;
   }
   final repeat = RepeatRuleExtension.fromKey(result['repeat'] as String);
-  final reminderKeys = (result['reminders'] as List)
-    .whereType<String>()
-    .toList();
-  final reminders = reminderKeys
-    .map((key) => ReminderOptionExtension.fromKey(key))
+  final reminders = (result['reminders'] as List)
     .whereType<ReminderOption>()
     .toList();
 
