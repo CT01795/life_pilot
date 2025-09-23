@@ -91,8 +91,9 @@ class CalendarBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:true);
-    ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: true);
+    ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: true);
+    ProviderLocale providerLocale =
+        Provider.of<ProviderLocale>(context, listen: true);
     final displayedMonth = controller.currentMonth;
 
     bool isCurrentMonth = displayedMonth.year == DateTime.now().year &&
@@ -114,20 +115,24 @@ class CalendarBody extends StatelessWidget {
                   if (details.primaryVelocity == null) return;
                   if (details.primaryVelocity! < 0) {
                     // 往上滑，模擬往右滑，切換到下一個月
-                    await controller.goToNextMonth(pageController, auth.currentAccount, providerLocale.locale);
+                    await controller.goToNextMonth(pageController,
+                        auth.currentAccount, providerLocale.locale);
                   } else if (details.primaryVelocity! > 0) {
                     // 往下滑，模擬往左滑，切換到上一個月
-                    await controller.goToPreviousMonth(pageController, auth.currentAccount, providerLocale.locale);
+                    await controller.goToPreviousMonth(pageController,
+                        auth.currentAccount, providerLocale.locale);
                   }
                 },
                 onHorizontalDragEnd: (details) async {
                   if (details.primaryVelocity == null) return;
                   if (details.primaryVelocity! < 0) {
                     // 向左滑 ➜ 下一個月
-                    await controller.goToNextMonth(pageController, auth.currentAccount, providerLocale.locale);
+                    await controller.goToNextMonth(pageController,
+                        auth.currentAccount, providerLocale.locale);
                   } else if (details.primaryVelocity! > 0) {
                     // 向右滑 ➜ 上一個月
-                    await controller.goToPreviousMonth(pageController, auth.currentAccount, providerLocale.locale);
+                    await controller.goToPreviousMonth(pageController,
+                        auth.currentAccount, providerLocale.locale);
                   }
                 },
                 child: PageView.builder(
@@ -138,7 +143,8 @@ class CalendarBody extends StatelessWidget {
                     DateTime newMonth = DateTime(
                         ControllerCalendar.baseDate.year + (index ~/ 12),
                         index % 12 + 1);
-                    controller.goToMonth(newMonth, auth.currentAccount, providerLocale.locale);
+                    controller.goToMonth(
+                        newMonth, auth.currentAccount, providerLocale.locale);
                   },
                   itemBuilder: (context, index) {
                     return CalendarMonthView(
@@ -242,6 +248,7 @@ class CalendarMonthView extends StatelessWidget {
             controller: controller,
             displayedMonth: displayedMonth,
             loc: loc,
+            weekRowKey: GlobalKey(), // ✅ 傳入一個 key（可共用或為每週新建）
           ),
         );
       }).toList(),
@@ -254,6 +261,7 @@ class WeekRow extends StatelessWidget {
   final ControllerCalendar controller;
   final DateTime displayedMonth;
   final AppLocalizations loc;
+  final GlobalKey weekRowKey; // ✅ 提升為屬性
 
   const WeekRow({
     super.key,
@@ -261,12 +269,14 @@ class WeekRow extends StatelessWidget {
     required this.controller,
     required this.displayedMonth,
     required this.loc,
+    required this.weekRowKey,
   });
 
   @override
   Widget build(BuildContext context) {
-    ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:true);
-    ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: true);
+    ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: true);
+    ProviderLocale providerLocale =
+        Provider.of<ProviderLocale>(context, listen: true);
     final screenWidth = MediaQuery.of(context).size.width;
     final cellWidth = screenWidth / 7;
 
@@ -277,10 +287,10 @@ class WeekRow extends StatelessWidget {
     // 2. 取出該週每一天的事件列表，已經預先分好組
     final weekEvents =
         controller.getWeekEventRows(displayedMonth)[weekIndex] ?? [];
-
     return Stack(
       children: [
         Row(
+          key: weekRowKey,
           children: week.map((date) {
             bool isFromOtherMonth = date.month != displayedMonth.month;
             bool isToday = date.day == DateTime.now().day &&
@@ -290,10 +300,21 @@ class WeekRow extends StatelessWidget {
             return Expanded(
               child: GestureDetector(
                 onTap: () async {
-                  final shouldReload = await showCalendarEventsDialog(
-                      context, controller, date);
+                  // ✅ 若點到的是不同月份，就先載入該月份資料
+                  await handleCrossMonthTap(
+                    context: context,
+                    tappedDate: date,
+                    displayedMonth: displayedMonth,
+                    controller: controller,
+                    auth: auth,
+                    providerLocale: providerLocale,
+                  );
+
+                  final shouldReload =
+                      await showCalendarEventsDialog(context, controller, date);
                   if (shouldReload) {
-                    await controller.loadEvents(auth.currentAccount, providerLocale.locale); // 🔁 統一更新
+                    await controller.loadEvents(
+                        auth.currentAccount, providerLocale.locale); // 🔁 統一更新
                   }
                 },
                 child: Container(
@@ -363,13 +384,38 @@ class WeekRow extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapDown: (details) async {
+                final RenderBox? box = weekRowKey.currentContext
+                    ?.findRenderObject() as RenderBox?;
+                if (box == null) return;
+
+                // 把全域點擊座標轉成在整週格子中的相對座標
+                final localOffset = box.globalToLocal(details.globalPosition);
+                final tapX = localOffset.dx;
+
+                // 算出第幾格（哪一天）
+                final tappedIndex = (tapX / cellWidth).floor().clamp(0, 6);
+                final tappedDate = week.first.add(Duration(days: tappedIndex));
+
+                // ✅ 若點到的是不同月份，就先載入那個月份的資料
+                await handleCrossMonthTap(
+                  context: context,
+                  tappedDate: tappedDate,
+                  displayedMonth: displayedMonth,
+                  controller: controller,
+                  auth: auth,
+                  providerLocale: providerLocale,
+                );
+
+                // 4. 呼叫 dialog，並傳入正確的日期
                 final shouldReload = await showCalendarEventsDialog(
                   context,
                   controller,
-                  visibleStart,
+                  tappedDate,
                 );
+
                 if (shouldReload) {
-                  await controller.loadEvents(auth.currentAccount, providerLocale.locale);
+                  await controller.loadEvents(
+                      auth.currentAccount, providerLocale.locale);
                 }
               },
               child: Container(
@@ -410,6 +456,32 @@ class WeekRow extends StatelessWidget {
           );
         })
       ],
+    );
+  }
+}
+
+Future<void> handleCrossMonthTap({
+  required BuildContext context,
+  required DateTime tappedDate,
+  required DateTime displayedMonth,
+  required ControllerCalendar controller,
+  required ControllerAuth auth,
+  required ProviderLocale providerLocale,
+}) async {
+  if (tappedDate.month != displayedMonth.month || tappedDate.year != displayedMonth.year) {
+    //先確認其他月份的資料
+    await controller.goToMonth(
+      DateTime(tappedDate.year, tappedDate.month),
+      auth.currentAccount,
+      providerLocale.locale,
+      notify: false,
+    );
+    //再回到原本的位置
+    await controller.goToMonth(
+      displayedMonth,
+      auth.currentAccount,
+      providerLocale.locale,
+      notify: false,
     );
   }
 }

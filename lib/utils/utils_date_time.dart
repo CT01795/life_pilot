@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import 'package:life_pilot/utils/utils_const.dart';
 
-
 class DateOnlyCompare {
   static bool isSameDayFutureTime(DateTime? a, TimeOfDay? time, DateTime? b) {
     if (a == null || b == null) return false;
@@ -21,7 +20,11 @@ class DateOnlyCompare {
   }
 
   static bool isSameDay(DateTime? a, DateTime? b) {
-    if (a == null || b == null) return true;
+    if (a == null || b == null) {
+      a ??= b;
+      b ??= a;
+      return true;
+    }
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
@@ -39,31 +42,39 @@ class DateOnlyCompare {
 
 String formatEventDateTime(dynamic event, String type) {
   final bool isStart = type == constStartToS;
-  if(!isStart){
+  if (!isStart) {
     // End 處理：檢查與 start 是否同日
     if (DateOnlyCompare.isSameDay(event.startDate, event.endDate)) {
       if (DateOnlyCompare.isSameTime(event.startTime, event.endTime)) {
         return constEmpty;
       }
-      return event.endTime == null ? constEmpty : ' - ${DateFormat(constDateFormatHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
+      //event.endDate ??= event.startDate;
+      return event.endTime == null
+          ? constEmpty
+          : ' - ${DateFormat(constDateFormatHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
     } else if (DateOnlyCompare.isSameYear(event.startDate, event.endDate)) {
-      return event.endTime == null ? ' - ${DateFormat(constDateFormatMMdd).format(DateUtils.getDateTime(event.endDate, event.endTime))}' : ' - ${DateFormat(constDateFormatMMddHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
-    }else{
-      return event.endTime == null ? ' - ${DateFormat(constDateFormatyyyyMMdd).format(DateUtils.getDateTime(event.endDate, event.endTime))}' : ' - ${DateFormat(constDateFormatyyyyMMddHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
+      return event.endTime == null
+          ? ' - ${DateFormat(constDateFormatMMdd).format(DateUtils.getDateTime(event.endDate, event.endTime))}'
+          : ' - ${DateFormat(constDateFormatMMddHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
+    } else {
+      return event.endTime == null
+          ? ' - ${DateFormat(constDateFormatyyyyMMdd).format(DateUtils.getDateTime(event.endDate, event.endTime))}'
+          : ' - ${DateFormat(constDateFormatyyyyMMddHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
     }
   }
 
-  bool isNotMidnight(TimeOfDay? time) =>
-      time != null;
+  bool isNotMidnight(TimeOfDay? time) => time != null;
   if (DateOnlyCompare.isSameYear(event.startDate, DateTime.now())) {
     if (isNotMidnight(event.startTime)) {
-      return DateFormat(constDateFormatMMddHHmm).format(DateUtils.getDateTime(event.startDate, event.startTime));
+      return DateFormat(constDateFormatMMddHHmm)
+          .format(DateUtils.getDateTime(event.startDate, event.startTime));
     } else {
       return DateFormat(constDateFormatMMdd).format(event.startDate!);
     }
   } else {
     if (isNotMidnight(event.startTime)) {
-      return DateFormat(constDateFormatyyyyMMddHHmm).format(DateUtils.getDateTime(event.startDate,event.startTime));
+      return DateFormat(constDateFormatyyyyMMddHHmm)
+          .format(DateUtils.getDateTime(event.startDate, event.startTime));
     } else {
       return DateFormat(constDateFormatyyyyMMdd).format(event.startDate);
     }
@@ -80,19 +91,28 @@ class DateUtils {
   }
 
   static DateTime getDateTime(DateTime? dt, TimeOfDay? td) {
-    if (dt == null) {
+    if (dt == null && td == null) {
       return DateTime.now();
-    }
-    if (td == null) {
+    } else if (dt != null && td == null) {
       return dt;
+    } else if (dt == null && td != null) {
+      var now = DateTime.now();
+      return DateTime(
+        now.year,
+        now.month,
+        now.day,
+        td.hour,
+        td.minute,
+      );
+    } else {
+      return DateTime(
+        dt!.year,
+        dt.month,
+        dt.day,
+        td!.hour,
+        td.minute,
+      );
     }
-    return DateTime(
-      dt.year,
-      dt.month,
-      dt.day,
-      td.hour,
-      td.minute,
-    );
   }
 }
 

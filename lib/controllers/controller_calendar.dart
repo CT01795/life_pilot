@@ -91,7 +91,6 @@ class ControllerCalendar extends ChangeNotifier {
     return !(aEnd.isBefore(bStart) || aStart.isAfter(bEnd));
   }
 
-
   List<List<DateTime>> getCalendarDays(DateTime month) {
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
     final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
@@ -118,11 +117,14 @@ class ControllerCalendar extends ChangeNotifier {
     return weeks;
   }
 
-  Future<void> loadEvents(String? user, Locale locale) async {
+  Future<void> loadEvents(String? user, Locale locale,
+      {bool notify = true}) async {
     if (isLoading) return; // 防止重複執行
 
     isLoading = true;
-    notifyListeners(); // 通知 View 更新
+    if (notify) {
+      notifyListeners(); // 通知 View 更新
+    }
 
     try {
       final calendarWeeks = getCalendarDays(currentMonth);
@@ -130,16 +132,19 @@ class ControllerCalendar extends ChangeNotifier {
       DateTime end = calendarWeeks.last.last;
 
       // 1. 先從服務端拉事件
-      final allEvents =
-          await service.getRecommendedEvents(tableName: tableName, dateS: start, dateE: end, inputUser: user);
+      final allEvents = await service.getRecommendedEvents(
+          tableName: tableName, dateS: start, dateE: end, inputUser: user);
       events = allEvents ?? []; // ✅ 更新 List<Event> 給 UI 使用
 
       // 2. 再呼叫 HolidayService 抓假日事件
-      final holidays = await HolidayService.fetchHolidays(start.subtract(Duration(days:2)), end.add(Duration(days:2)), locale);
+      final holidays = await HolidayService.fetchHolidays(
+          start.subtract(Duration(days: 2)),
+          end.add(Duration(days: 2)),
+          locale);
       events.addAll(holidays);
 
       // 3. 排序（選擇性，依需求排序事件）
-    events.sort((a, b) => a.startDate!.compareTo(b.startDate!));
+      events.sort((a, b) => a.startDate!.compareTo(b.startDate!));
 
       // ✅ 分組儲存進快取
       _cachedEvents[_monthKey(currentMonth)] =
@@ -148,7 +153,9 @@ class ControllerCalendar extends ChangeNotifier {
       rethrow;
     } finally {
       isLoading = false;
-      notifyListeners(); // 通知 View 更新
+      if (notify) {
+        notifyListeners(); // 通知 View 更新
+      }
     }
   }
 
@@ -176,7 +183,8 @@ class ControllerCalendar extends ChangeNotifier {
   String _monthKey(DateTime date) =>
       "${date.year}-${date.month.toString().padLeft(2, constZero)}";
 
-  Future<void> goToMonth(DateTime newMonth, String? user, Locale locale) async {
+  Future<void> goToMonth(DateTime newMonth, String? user, Locale locale,
+      {bool notify = true}) async {
     currentMonth = newMonth;
     final key = _monthKey(newMonth);
     if (_cachedEvents.containsKey(key)) {
@@ -193,23 +201,28 @@ class ControllerCalendar extends ChangeNotifier {
       // 移除重複事件
       events = allEvents.toSet().toList();
 
-      notifyListeners(); // 更新畫面
+      if (notify) {
+        notifyListeners(); // 更新畫面
+      }
     } else {
-      await loadEvents(user, locale);
+      await loadEvents(user, locale, notify: notify);
     }
   }
 
-  Future<void> goToToday(PageController controller, String? user, Locale locale) async {
+  Future<void> goToToday(
+      PageController controller, String? user, Locale locale) async {
     currentMonth = DateUtils.dateOnly(DateTime.now());
     await goToMonth(currentMonth, user, locale);
   }
 
-  Future<void> goToPreviousMonth(PageController controller, String? user, Locale locale) async {
+  Future<void> goToPreviousMonth(
+      PageController controller, String? user, Locale locale) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month - 1);
     await goToMonth(currentMonth, user, locale);
   }
 
-  Future<void> goToNextMonth(PageController controller, String? user, Locale locale) async {
+  Future<void> goToNextMonth(
+      PageController controller, String? user, Locale locale) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month + 1);
     await goToMonth(currentMonth, user, locale);
   }
@@ -236,11 +249,17 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   void updateCachedEvent(Event oldEvent, Event newEvent) {
-    final oldStartDateS = oldEvent.startDate != null ? _monthKey(oldEvent.startDate!) : null; // e.g., '2025-09'
-    final newStartDateS = newEvent.startDate != null ? _monthKey(newEvent.startDate!) : null;
+    final oldStartDateS = oldEvent.startDate != null
+        ? _monthKey(oldEvent.startDate!)
+        : null; // e.g., '2025-09'
+    final newStartDateS =
+        newEvent.startDate != null ? _monthKey(newEvent.startDate!) : null;
 
-    final oldEndDateS = oldEvent.endDate != null ? _monthKey(oldEvent.endDate!) : null; // e.g., '2025-09'
-    final newEndDateS = newEvent.endDate != null ? _monthKey(newEvent.endDate!) : null;
+    final oldEndDateS = oldEvent.endDate != null
+        ? _monthKey(oldEvent.endDate!)
+        : null; // e.g., '2025-09'
+    final newEndDateS =
+        newEvent.endDate != null ? _monthKey(newEvent.endDate!) : null;
 
     // 移除快取
     if (oldStartDateS != null && _cachedEvents.containsKey(oldStartDateS)) {
@@ -258,8 +277,9 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> checkAndGenerateNextEvents(BuildContext context) async {
-    ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: false);
-    ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
+    ProviderLocale providerLocale =
+        Provider.of<ProviderLocale>(context, listen: false);
+    ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
     final loc = AppLocalizations.of(context)!;
     final DateTime today = DateTime.now();
 
@@ -268,14 +288,13 @@ class ControllerCalendar extends ChangeNotifier {
       if (repeat == RepeatRule.once) continue;
 
       final DateTime startDate = event.startDate!;
-      
+
       // 如果今天已經是事件發生日，就生成下一個
       if (!isSameDay(today, startDate)) continue;
 
       final DateTime nextStart = repeat.getNextDate(startDate);
-      final DateTime? nextEnd = event.endDate != null
-          ? repeat.getNextDate(event.endDate!)
-          : null;
+      final DateTime? nextEnd =
+          event.endDate != null ? repeat.getNextDate(event.endDate!) : null;
 
       final newEvent = event.copyWith(
         newId: Uuid().v4(),
@@ -284,14 +303,17 @@ class ControllerCalendar extends ChangeNotifier {
       );
 
       await service.saveRecommendedEvent(context, newEvent, true, tableName);
-      await MyCustomNotification.scheduleEventReminders(loc, newEvent, tableName, auth.currentAccount);
+      await MyCustomNotification.scheduleEventReminders(
+          loc, newEvent, tableName, auth.currentAccount);
 
       // 更新舊事件的 repeatOption 為 'once'
-      final updatedOldEvent = event.copyWith(newRepeatOptions: RepeatRule.once, // 更新 repeatOptions
+      final updatedOldEvent = event.copyWith(
+        newRepeatOptions: RepeatRule.once, // 更新 repeatOptions
       );
 
       // 儲存更新後的舊事件
-      await service.saveRecommendedEvent(context, updatedOldEvent, false, tableName);
+      await service.saveRecommendedEvent(
+          context, updatedOldEvent, false, tableName);
     }
 
     await loadEvents(auth.currentAccount, providerLocale.locale);
