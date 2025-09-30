@@ -102,7 +102,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recommended_attractions => 'おすすめの観光地';
 
   @override
+  String get recommended_attractions_zero => '現在、おすすめのスポットはありません';
+
+  @override
   String get memory_trace => '思い出の回廊';
+
+  @override
+  String get memory_trace_zero => 'さあ、思い出を追加しよう！';
 
   @override
   String get account_records => '収支記録';
@@ -133,6 +139,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get event_add_ok => '✅ イベントを追加しました';
+
+  @override
+  String get event_add_error => 'このイベントを繰り返して追加しますか';
+
+  @override
+  String get memory_add => '思い出を追加';
+
+  @override
+  String get memory_add_ok => '✅ 思い出が追加されました';
+
+  @override
+  String get memory_add_error => 'もう一度思い出を追加しますか';
 
   @override
   String get no_events_to_export => '❌ エクスポートするイベントがありません';
@@ -244,9 +262,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get date_clear => '日付をクリア';
-
-  @override
-  String get event_add_tp_plan_error => 'このイベントを繰り返して追加しますか';
 
   @override
   String get add => '追加';

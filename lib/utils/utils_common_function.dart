@@ -3,11 +3,13 @@ import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/services/service_storage.dart';
+import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
 import 'package:life_pilot/utils/utils_show_dialog.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 final Logger logger = Logger(); // 只建立一次，全域可用
 
@@ -21,7 +23,6 @@ void showSnackBar(BuildContext context, String message) {
 // 勾選 Checkbox 時的邏輯處理
 Future<void> handleCheckboxChanged({
   required BuildContext context,
-  required ServiceStorage serviceStorage,
   required bool? value,
   required Event event,
   required Set<String> selectedEventIds,
@@ -31,10 +32,11 @@ Future<void> handleCheckboxChanged({
   required String toTableName,
 }) async {
   ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
+  final service = Provider.of<ServiceStorage>(context, listen: false);
   final now = DateUtils.dateOnly(DateTime.now());
   final loc = AppLocalizations.of(context)!;
   if (value == true) {
-    final existingEvents = await serviceStorage.getRecommendedEvents(
+    final existingEvents = await service.getRecommendedEvents(
         tableName: toTableName, id: event.id, inputUser: auth.currentAccount);
 
     final isAlreadyAdded =
@@ -43,8 +45,8 @@ Future<void> handleCheckboxChanged({
     final shouldAdd = await showConfirmationDialog(
       context: context,
       content: isAlreadyAdded
-          ? loc.event_add_tp_plan_error
-          : '${loc.event_add}「${event.name}」？',
+          ? (tableName == constTableCalendarEvents ? loc.memory_add_error : loc.event_add_error)
+          : '${tableName == constTableCalendarEvents ? loc.memory_add : loc.event_add}「${event.name}」？',
       confirmText: loc.add,
       cancelText: loc.cancel,
     );
@@ -57,7 +59,17 @@ Future<void> handleCheckboxChanged({
       selectedEventIds.add(event.id);
     });
 
-    if (isAlreadyAdded) {
+    if (!isAlreadyAdded || tableName == constTableRecommendedAttractions) {
+      if (toTableName != constTableMemoryTrace && event.startDate != null && !event.startDate!.isAfter(now)) {
+        event.startDate = now;
+      }
+      event.account = auth.currentAccount;
+      if (tableName == constTableRecommendedAttractions) { //如果是安排景點，視同都是新的事件處理
+        event.id = Uuid().v4();
+      }
+      await service.saveRecommendedEvent(
+          context, event, true, toTableName);
+    } else {
       List<SubEventItem> sortedSubEvents = List.from(event.subEvents);
       sortedSubEvents.sort((a, b) => a.startDate!.compareTo(b.startDate!));
       sortedSubEvents.removeWhere((subEvent) =>
@@ -82,8 +94,9 @@ Future<void> handleCheckboxChanged({
                 tmpEvent.location.isEmpty ? event.location : tmpEvent.location
             ..unit = tmpEvent.unit.isEmpty ? event.unit : tmpEvent.unit
             ..account = auth.currentAccount;
-          await serviceStorage.deleteRecommendedEvent(context, subEvent, toTableName);
-          await serviceStorage.saveRecommendedEvent(
+          await service.deleteRecommendedEvent(
+              context, subEvent, toTableName);
+          await service.saveRecommendedEvent(
               context, subEvent, true, toTableName);
         }
       } else {
@@ -97,17 +110,11 @@ Future<void> handleCheckboxChanged({
                 ? now
                 : event.endDate);
         updatedEvent.account = auth.currentAccount;
-        await serviceStorage.deleteRecommendedEvent(context, updatedEvent, toTableName);
-        await serviceStorage.saveRecommendedEvent(
+        await service.deleteRecommendedEvent(
+            context, updatedEvent, toTableName);
+        await service.saveRecommendedEvent(
             context, updatedEvent, true, toTableName);
       }
-    } else {
-      if (event.startDate != null && !event.startDate!.isAfter(now)) {
-        event.startDate = now;
-      }
-      event.account = auth.currentAccount;
-      await serviceStorage.saveRecommendedEvent(
-          context, event, true, toTableName);
     }
     if (!context.mounted) return; // 確保 context 還存在
     showSnackBar(context, addedMessage);
@@ -169,7 +176,7 @@ List<SubEventItem> sortSubEvents(List<SubEventItem> list) {
     final aStartTime = a.startTime ?? const TimeOfDay(hour: 23, minute: 59);
     final bStartTime = b.startTime ?? const TimeOfDay(hour: 23, minute: 59);
     final cmpStartTime =
-        DateOnlyCompare.compareTimeOfDay(aStartTime, bStartTime);
+        DateTimeCompare.compareTimeOfDay(aStartTime, bStartTime);
     if (cmpStartTime != 0) return cmpStartTime;
 
     final aEnd = a.endDate ?? DateTime(9999);
@@ -179,13 +186,14 @@ List<SubEventItem> sortSubEvents(List<SubEventItem> list) {
 
     final aEndTime = a.endTime ?? const TimeOfDay(hour: 23, minute: 59);
     final bEndTime = b.endTime ?? const TimeOfDay(hour: 23, minute: 59);
-    return DateOnlyCompare.compareTimeOfDay(aEndTime, bEndTime);
+    return DateTimeCompare.compareTimeOfDay(aEndTime, bEndTime);
   });
   return list;
 }
 
 // 登入錯誤顯示
-void showLoginError(BuildContext context, String result, AppLocalizations loc) {
+void showLoginError(BuildContext context, String result) {
+  AppLocalizations loc = AppLocalizations.of(context)!;
   final errorMessages = {
     ErrorFields.wrongUserPassword: loc.wrongUserPassword,
     ErrorFields.tooManyRequestsError: loc.tooManyRequests,
@@ -202,4 +210,11 @@ void showLoginError(BuildContext context, String result, AppLocalizations loc) {
   };
   final errorMessage = errorMessages[result] ?? loc.unknownError;
   showSnackBar(context, errorMessage);
+}
+
+Future<List<Event>> loadEvents(String tableName, {required BuildContext context}) async {
+   ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
+   final service = Provider.of<ServiceStorage>(context, listen: false);
+  final recommended = await service.getRecommendedEvents(tableName: tableName, inputUser: auth.currentAccount);
+  return recommended ?? [];
 }

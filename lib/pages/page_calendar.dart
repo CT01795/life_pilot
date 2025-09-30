@@ -2,18 +2,14 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/page_recommended_event_add.dart';
 import 'package:life_pilot/notification/notification.dart';
-import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_calendar_widgets.dart';
-import 'package:life_pilot/utils/utils_date_time.dart'
-    show DateUtils, showMonthYearPicker, DateOnlyCompare;
-import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/utils_date_time.dart';
 
 class PageCalendar extends StatefulWidget {
   const PageCalendar({super.key});
@@ -27,10 +23,10 @@ class _PageCalendarState extends State<PageCalendar> {
   late final ControllerCalendar _controller;
   late final PageController _pageController;
   bool _initialized = false;
-  late ControllerAuth _auth;
-  late ProviderLocale _providerLocale;
   AppLocalizations get _loc => AppLocalizations.of(context)!;
-  
+  Set<String> selectedEventIds = {};
+  Set<String> removedEventIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -41,17 +37,15 @@ class _PageCalendarState extends State<PageCalendar> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _auth = Provider.of<ControllerAuth>(context, listen: true);
-    _providerLocale = Provider.of<ProviderLocale>(context, listen: true);
     if (_initialized) return;
     _initialized = true;
 
     // 等下一幀再載入資料（防止 build 前操作）
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await _controller.loadEvents(_auth.currentAccount, _providerLocale.locale);
+      await _controller.loadEvents(context: context);
       // 這裡呼叫，確保資料載入完成後發通知
-      await _notifyTodayEvents(_loc, _auth.currentAccount);
+      await _notifyTodayEvents(context: context);
 
       // 🔥 每次啟動 app 就檢查是否需要產生下一筆事件
       await _controller.checkAndGenerateNextEvents(context);
@@ -65,10 +59,9 @@ class _PageCalendarState extends State<PageCalendar> {
     super.dispose();
   }
 
-  Future<void> _notifyTodayEvents(AppLocalizations loc, String? user) async {
+  Future<void> _notifyTodayEvents({required BuildContext context}) async {
     if (kIsWeb) {
-      MyCustomNotification.showTodayEventsWebNotification(
-          loc, _controller.tableName, user);
+      MyCustomNotification.showTodayEventsWebNotification(_controller.tableName, context:context);
     } else if (Platform.isAndroid) {
       // 從 _controller 拿今天的事件清單
       final today = DateTime.now();
@@ -77,14 +70,15 @@ class _PageCalendarState extends State<PageCalendar> {
 
       for (final event in todayEvents) {
         final end = event.endDate ?? event.startDate;
-        if (DateOnlyCompare.isSameDayFutureTime(
+        if (DateTimeCompare.isSameDayFutureTime(
                 event.startDate, event.startTime, today) ||
-            DateOnlyCompare.isSameDayFutureTime(end, event.endTime, today) ||
+            DateTimeCompare.isSameDayFutureTime(end, event.endTime, today) ||
             (event.startDate != null &&
                 event.startDate!.isBefore(todayDateOnly) &&
                 end != null &&
                 end.isAfter(todayDateOnly))) {
-          await MyCustomNotification.showImmediateNotification(loc, event);
+          await MyCustomNotification.showImmediateNotification(event,
+              context: context);
         }
       }
     }
@@ -99,28 +93,24 @@ class _PageCalendarState extends State<PageCalendar> {
           DateTime currentMonth = _controller.currentMonth;
           String monthLabel = DateFormat('y / M').format(currentMonth);
           // 🔁 這邊移進來了，確保每次 currentMonth 變動時都會重新判斷
-          bool isCurrentMonth = currentMonth.year == DateTime.now().year &&
-              currentMonth.month == DateTime.now().month;
+          bool isCurrentMonth = DateTimeCompare.isCurrentMonth(currentMonth);
           Color monthColor = isCurrentMonth ? Colors.blueAccent : Colors.black;
           return Scaffold(
             appBar: AppBar(
               backgroundColor: Colors.transparent, // 移除底色
               title: CalendarAppBar(
+                context: context,
                 monthLabel: monthLabel,
                 monthColor: monthColor,
                 buttonSize: buttonSize,
-                loc: _loc,
                 onPrevious: () async {
-                  await _controller.goToPreviousMonth(
-                      _pageController, _auth.currentAccount, _providerLocale.locale);
+                  await _controller.goToPreviousMonth(context: context);
                 },
                 onNext: () async {
-                  await _controller.goToNextMonth(
-                      _pageController, _auth.currentAccount, _providerLocale.locale);
+                  await _controller.goToNextMonth(context: context);
                 },
                 onToday: () async {
-                  await _controller.goToToday(
-                      _pageController, _auth.currentAccount, _providerLocale.locale);
+                  await _controller.goToToday(context: context);
                 },
                 onAddEvent: () {
                   Navigator.push(
@@ -129,15 +119,15 @@ class _PageCalendarState extends State<PageCalendar> {
                         builder: (context) => PageRecommendedEventAdd(
                               existingRecommendedEvent: null,
                               tableName: _controller.tableName,
-                              initialDate: _controller.currentMonth,
+                              initialDate: _controller.currentMonth.month == DateTime.now().month ? DateTime.now() : _controller.currentMonth,
                             )),
                   ).then((value) async {
                     if (value != null && value is Event) {
                       // 👇 更新快取讓畫面即時刷新
-                      _controller.updateCachedEvent(value, value); // 第二參數 新增/修改
+                      _controller.updateCachedEvent(value); // 第二參數 新增/修改
                       await _controller.goToMonth(
                           DateUtils.monthOnly(value.startDate!),
-                          _auth.currentAccount, _providerLocale.locale);
+                          context: context);
                     }
                   });
                 },
@@ -146,8 +136,7 @@ class _PageCalendarState extends State<PageCalendar> {
                     context: context,
                     initialDate: _controller.currentMonth,
                     onChanged: (newDate) async {
-                      await _controller.goToMonth(
-                          newDate, _auth.currentAccount, _providerLocale.locale);
+                      await _controller.goToMonth(newDate, context: context);
                     },
                   );
                 },
@@ -159,7 +148,9 @@ class _PageCalendarState extends State<PageCalendar> {
                 CalendarBody(
                     controller: _controller,
                     pageController: _pageController,
-                    loc: _loc),
+                    loc: _loc,
+                    selectedEventIds: selectedEventIds,
+                    removedEventIds: removedEventIds),
                 if (_controller.isLoading)
                   Positioned.fill(
                     child: Container(

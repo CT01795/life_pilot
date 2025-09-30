@@ -5,15 +5,16 @@ import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils;
+import 'package:life_pilot/utils/utils_date_time.dart'
+    show DateUtils, DateTimeCompare;
 import 'package:life_pilot/utils/utils_show_dialog.dart';
 import 'package:provider/provider.dart';
 
 class CalendarAppBar extends StatelessWidget {
+  final BuildContext context;
   final String monthLabel;
   final Color monthColor;
   final double buttonSize;
-  final AppLocalizations loc;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onToday;
@@ -22,10 +23,10 @@ class CalendarAppBar extends StatelessWidget {
 
   const CalendarAppBar({
     super.key,
+    required this.context,
     required this.monthLabel,
     required this.monthColor,
     required this.buttonSize,
-    required this.loc,
     required this.onPrevious,
     required this.onNext,
     required this.onToday,
@@ -35,6 +36,7 @@ class CalendarAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocalizations loc = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -81,23 +83,22 @@ class CalendarBody extends StatelessWidget {
   final ControllerCalendar controller;
   final PageController pageController;
   final AppLocalizations loc;
+  final Set<String> selectedEventIds;
+  final Set<String> removedEventIds;
 
-  const CalendarBody({
-    super.key,
-    required this.controller,
-    required this.pageController,
-    required this.loc,
-  });
+  const CalendarBody(
+      {super.key,
+      required this.controller,
+      required this.pageController,
+      required this.loc,
+      required this.selectedEventIds,
+      required this.removedEventIds});
 
   @override
   Widget build(BuildContext context) {
-    ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: true);
-    ProviderLocale providerLocale =
-        Provider.of<ProviderLocale>(context, listen: true);
     final displayedMonth = controller.currentMonth;
 
-    bool isCurrentMonth = displayedMonth.year == DateTime.now().year &&
-        displayedMonth.month == DateTime.now().month;
+    bool isCurrentMonth = DateTimeCompare.isCurrentMonth(displayedMonth);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -115,24 +116,20 @@ class CalendarBody extends StatelessWidget {
                   if (details.primaryVelocity == null) return;
                   if (details.primaryVelocity! < 0) {
                     // 往上滑，模擬往右滑，切換到下一個月
-                    await controller.goToNextMonth(pageController,
-                        auth.currentAccount, providerLocale.locale);
+                    await controller.goToNextMonth(context: context);
                   } else if (details.primaryVelocity! > 0) {
                     // 往下滑，模擬往左滑，切換到上一個月
-                    await controller.goToPreviousMonth(pageController,
-                        auth.currentAccount, providerLocale.locale);
+                    await controller.goToPreviousMonth(context: context);
                   }
                 },
                 onHorizontalDragEnd: (details) async {
                   if (details.primaryVelocity == null) return;
                   if (details.primaryVelocity! < 0) {
                     // 向左滑 ➜ 下一個月
-                    await controller.goToNextMonth(pageController,
-                        auth.currentAccount, providerLocale.locale);
+                    await controller.goToNextMonth(context: context);
                   } else if (details.primaryVelocity! > 0) {
                     // 向右滑 ➜ 上一個月
-                    await controller.goToPreviousMonth(pageController,
-                        auth.currentAccount, providerLocale.locale);
+                    await controller.goToPreviousMonth(context: context);
                   }
                 },
                 child: PageView.builder(
@@ -143,15 +140,15 @@ class CalendarBody extends StatelessWidget {
                     DateTime newMonth = DateTime(
                         ControllerCalendar.baseDate.year + (index ~/ 12),
                         index % 12 + 1);
-                    controller.goToMonth(
-                        newMonth, auth.currentAccount, providerLocale.locale);
+                    controller.goToMonth(newMonth, context: context);
                   },
                   itemBuilder: (context, index) {
                     return CalendarMonthView(
-                      controller: controller,
-                      displayedMonth: displayedMonth,
-                      loc: loc,
-                    );
+                        controller: controller,
+                        displayedMonth: displayedMonth,
+                        loc: loc,
+                        selectedEventIds: selectedEventIds,
+                        removedEventIds: removedEventIds);
                   },
                 ),
               ),
@@ -227,13 +224,16 @@ class CalendarMonthView extends StatelessWidget {
   final ControllerCalendar controller;
   final DateTime displayedMonth;
   final AppLocalizations loc;
+  final Set<String> selectedEventIds;
+  final Set<String> removedEventIds;
 
-  const CalendarMonthView({
-    super.key,
-    required this.controller,
-    required this.displayedMonth,
-    required this.loc,
-  });
+  const CalendarMonthView(
+      {super.key,
+      required this.controller,
+      required this.displayedMonth,
+      required this.loc,
+      required this.selectedEventIds,
+      required this.removedEventIds});
 
   @override
   Widget build(BuildContext context) {
@@ -244,12 +244,13 @@ class CalendarMonthView extends StatelessWidget {
 
         return Expanded(
           child: WeekRow(
-            week: week,
-            controller: controller,
-            displayedMonth: displayedMonth,
-            loc: loc,
-            weekRowKey: GlobalKey(), // ✅ 傳入一個 key（可共用或為每週新建）
-          ),
+              week: week,
+              controller: controller,
+              displayedMonth: displayedMonth,
+              loc: loc,
+              weekRowKey: GlobalKey(), // ✅ 傳入一個 key（可共用或為每週新建）
+              selectedEventIds: selectedEventIds,
+              removedEventIds: removedEventIds),
         );
       }).toList(),
     );
@@ -262,15 +263,18 @@ class WeekRow extends StatelessWidget {
   final DateTime displayedMonth;
   final AppLocalizations loc;
   final GlobalKey weekRowKey; // ✅ 提升為屬性
+  final Set<String> selectedEventIds;
+  final Set<String> removedEventIds;
 
-  const WeekRow({
-    super.key,
-    required this.week,
-    required this.controller,
-    required this.displayedMonth,
-    required this.loc,
-    required this.weekRowKey,
-  });
+  const WeekRow(
+      {super.key,
+      required this.week,
+      required this.controller,
+      required this.displayedMonth,
+      required this.loc,
+      required this.weekRowKey,
+      required this.selectedEventIds,
+      required this.removedEventIds});
 
   @override
   Widget build(BuildContext context) {
@@ -310,11 +314,10 @@ class WeekRow extends StatelessWidget {
                     providerLocale: providerLocale,
                   );
 
-                  final shouldReload =
-                      await showCalendarEventsDialog(context, controller, date);
+                  final shouldReload = await showCalendarEventsDialog(context,
+                      controller, date, selectedEventIds, removedEventIds);
                   if (shouldReload) {
-                    await controller.loadEvents(
-                        auth.currentAccount, providerLocale.locale); // 🔁 統一更新
+                    await controller.loadEvents(context: context); // 🔁 統一更新
                   }
                 },
                 child: Container(
@@ -384,8 +387,8 @@ class WeekRow extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapDown: (details) async {
-                final RenderBox? box = weekRowKey.currentContext
-                    ?.findRenderObject() as RenderBox?;
+                final RenderBox? box =
+                    weekRowKey.currentContext?.findRenderObject() as RenderBox?;
                 if (box == null) return;
 
                 // 把全域點擊座標轉成在整週格子中的相對座標
@@ -407,15 +410,11 @@ class WeekRow extends StatelessWidget {
                 );
 
                 // 4. 呼叫 dialog，並傳入正確的日期
-                final shouldReload = await showCalendarEventsDialog(
-                  context,
-                  controller,
-                  tappedDate,
-                );
+                final shouldReload = await showCalendarEventsDialog(context,
+                    controller, tappedDate, selectedEventIds, removedEventIds);
 
                 if (shouldReload) {
-                  await controller.loadEvents(
-                      auth.currentAccount, providerLocale.locale);
+                  await controller.loadEvents(context: context);
                 }
               },
               child: Container(
@@ -468,19 +467,18 @@ Future<void> handleCrossMonthTap({
   required ControllerAuth auth,
   required ProviderLocale providerLocale,
 }) async {
-  if (tappedDate.month != displayedMonth.month || tappedDate.year != displayedMonth.year) {
+  if (tappedDate.month != displayedMonth.month ||
+      tappedDate.year != displayedMonth.year) {
     //先確認其他月份的資料
     await controller.goToMonth(
       DateTime(tappedDate.year, tappedDate.month),
-      auth.currentAccount,
-      providerLocale.locale,
+      context: context,
       notify: false,
     );
     //再回到原本的位置
     await controller.goToMonth(
       displayedMonth,
-      auth.currentAccount,
-      providerLocale.locale,
+      context: context,
       notify: false,
     );
   }

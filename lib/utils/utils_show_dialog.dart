@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification_common.dart';
 import 'package:life_pilot/pages/page_recommended_event_add.dart';
-import 'package:life_pilot/providers/provider_locale.dart';
+import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:life_pilot/utils/utils_enum.dart';
+import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
 import 'package:life_pilot/utils/utils_event_card.dart';
-import 'package:life_pilot/utils/utils_mobile.dart';
 import 'package:provider/provider.dart';
-
-import '../notification/notification.dart';
 
 // 通用的確認 Dialog
 Future<bool> showConfirmationDialog({
@@ -25,28 +22,32 @@ Future<bool> showConfirmationDialog({
   required String cancelText,
 }) async {
   return await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      content: Text(content),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(confirmText, style: TextStyle(color: Colors.red)),
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => AlertDialog(
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(confirmText, style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(cancelText, style: TextStyle(color: Colors.black)),
+            ),
+          ],
         ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelText, style: TextStyle(color: Colors.black)),
-        ),
-      ],
-    ),
-  ) ??
-  false;
+      ) ??
+      false;
 }
 
 Future<bool> showCalendarEventsDialog(
-    BuildContext context, ControllerCalendar controller, DateTime date) async {
-  ControllerAuth auth = Provider.of<ControllerAuth>(context,listen:false);
-  ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: false);
+    BuildContext context,
+    ControllerCalendar controller,
+    DateTime date,
+    Set<String> selectedEventIds,
+    Set<String> removedEventIds) async {
+  final tableName = constTableCalendarEvents;
   final loc = AppLocalizations.of(context)!;
   final dateOnly = DateUtils.dateOnly(date);
   // 篩選包含該日期的事件
@@ -65,7 +66,8 @@ Future<bool> showCalendarEventsDialog(
       ),
     );
     if (result != null && result is Event) {
-      controller.goToMonth(DateUtils.monthOnly(result.startDate!), auth.currentAccount, providerLocale.locale);
+      controller.goToMonth(DateUtils.monthOnly(result.startDate!),
+          context: context);
       return true;
     }
     return false;
@@ -76,204 +78,136 @@ Future<bool> showCalendarEventsDialog(
     context: context,
     barrierDismissible: true,
     builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: kGapEIH6,
-        child: Stack(
-          children: [
-            // 內容區塊
-            SingleChildScrollView(
-              child: Container(
-                padding: kGapEI0,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(
-                        DateFormat(constDateFormatMMdd).format(date),
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
-                      IconButton(
-                        icon:
-                            Icon(Icons.add, size: IconTheme.of(context).size!),
-                        tooltip: loc.add,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => PageRecommendedEventAdd(
-                                      existingRecommendedEvent: null,
-                                      tableName: controller.tableName,
-                                      initialDate: date,
-                                    )),
-                          ).then((value) {
-                            if (value != null && value is Event) {
-                              controller.goToMonth(
-                                  DateUtils.monthOnly(value.startDate!), auth.currentAccount, providerLocale.locale);
-                              Navigator.pop(context, true); // ✅ 回傳 true 給外層
-                            }
-                          });
-                        },
-                      ),
-                    ]),
+      return StatefulBuilder(builder: (context, setState) {
+        // 每次build時都重新抓當天事件，確保資料最新
+        final updatedEventsOfDay = controller.getEventsOfDay(dateOnly);
 
-                    // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
-                    ...eventsOfDay.map((event) => EventCalendarCard(
-                          event: event,
-                          index: 0,
-                          onTap: () => Navigator.pop(context),
-                          trailing: Wrap(
-                            spacing: 4,
-                            children: [
-                              if (!event.isHoliday)
-                                // ⏰ 鬧鐘
-                                IconButton(
-                                  icon: Icon(
-                                    event.reminderOptions.isNotEmpty
-                                        ? Icons.alarm_on_rounded
-                                        : Icons.alarm_rounded,
-                                    size: event.reminderOptions.isNotEmpty
-                                        ? IconTheme.of(context).size! * 1.2
-                                        : IconTheme.of(context).size!,
-                                    color: event.reminderOptions.isNotEmpty
-                                        ? Colors.blue
-                                        : Colors.black,
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: kGapEIH6,
+          child: Stack(
+            children: [
+              // 內容區塊
+              SingleChildScrollView(
+                child: Container(
+                  padding: kGapEI0,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              DateFormat(constDateFormatMMdd).format(date),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  tooltip: loc.set_alarm,
-                                  onPressed: () async {
-                                    final updated =
-                                        await showAlarmSettingsDialog(
-                                            context, event, controller);
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.add,
+                                  size: IconTheme.of(context).size!),
+                              tooltip: loc.add,
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          PageRecommendedEventAdd(
+                                            existingRecommendedEvent: null,
+                                            tableName: controller.tableName,
+                                            initialDate: date,
+                                          )),
+                                ).then((value) {
+                                  if (value != null && value is Event) {
+                                    controller.goToMonth(
+                                        DateUtils.monthOnly(value.startDate!),
+                                        context: context);
+                                    Navigator.pop(
+                                        context, true); // ✅ 回傳 true 給外層
+                                  }
+                                });
+                              },
+                            ),
+                          ]),
 
-                                    if (updated) {
-                                      // 有更新鬧鐘設定，重新載入事件並刷新 UI
-                                      await controller.loadEvents(auth.currentAccount, providerLocale.locale);
-                                      // 呼叫 setState 讓 Dialog 內容重新渲染（Dialog 內部 StatefulBuilder）
-                                      // 這裡簡單用 Navigator.pop 讓 Dialog 關閉，然後重新開啟，或用 setState 刷新列表
-                                      await MyCustomNotification
-                                          .cancelEventReminders(event); // 取消舊通知
-                                      await checkExactAlarmPermission(context);
-                                      await MyCustomNotification
-                                          .scheduleEventReminders(loc, event,
-                                              controller.tableName, auth.currentAccount); // 安排新通知
-                                      Navigator.pop(
-                                          context); // 關閉事件 Dialog，回到上一頁
-                                    }
+                      if (updatedEventsOfDay.isNotEmpty)
+                        // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
+                        ...updatedEventsOfDay.map((event) => EventCalendarCard(
+                              tableName: tableName,
+                              event: event,
+                              index: 0,
+                              onTap: () => Navigator.pop(context),
+                              onDelete: event.isHoliday
+                                  ? null
+                                  : () async {
+                                      await onRemoveEvent(
+                                        context: context,
+                                        event: event,
+                                        removedEventIds: removedEventIds,
+                                        setState: (fn) => setState(fn),
+                                        tableName: controller.tableName,
+                                      );
+                                    await controller.loadEvents(context: context);
+                                    setState(() {}); // 觸發重繪
                                   },
-                                ),
-                              if (!event.isHoliday)
-                                // ✏️ 編輯
-                                IconButton(
-                                  icon: Icon(Icons.edit,
-                                      size: IconTheme.of(context).size!),
-                                  tooltip: loc.edit,
-                                  onPressed: () async {
-                                    final updated = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            PageRecommendedEventAdd(
-                                          existingRecommendedEvent: event,
-                                          tableName: controller.tableName,
-                                        ),
-                                      ),
-                                    );
-                                    if (updated != null && updated is Event) {
-                                      controller.updateCachedEvent(
-                                          event, updated); // 🛠 更新快取
-                                      await controller
-                                          .loadEvents(auth.currentAccount, providerLocale.locale); // 重新載入資料，確保資料最新
-                                      await controller
-                                          .checkAndGenerateNextEvents(
-                                              context); // 使用最新資料
-                                      controller.goToMonth(DateUtils.monthOnly(
-                                          updated.startDate!), auth.currentAccount, providerLocale.locale);
-                                      Navigator.pop(context,
-                                          true); // ✅ 回傳 true 讓外層 refresh
-                                    }
-                                  },
-                                ),
-                              if (!event.isHoliday)
-                                // 🗑️ 刪除
-                                IconButton(
-                                  icon: Icon(Icons.delete,
-                                      size: IconTheme.of(context).size!),
-                                  tooltip: loc.delete,
-                                  onPressed: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(loc.confirm_delete),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, true),
-                                              child: Text(loc.delete,
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, false),
-                                              child: Text(loc.cancel,
-                                                  style: TextStyle(
-                                                      color: Colors.black)),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                    if (confirm == true) {
-                                      await controller.service
-                                          .deleteRecommendedEvent(context,
-                                              event, controller.tableName);
-                                      await controller.loadEvents(auth.currentAccount, providerLocale.locale); // ✅ 等待載入完成
-                                      Navigator.pop(context, true); // ✅ 回傳 true
-                                    }
-                                  },
-                                ),
-                            ],
-                          ),
-                        )),
-                  ],
+                              trailing: buildEventTrailing(
+                                context: context,
+                                event: event,
+                                selectedEventIds: selectedEventIds,
+                                setState: (fn) {
+                                  fn();
+                                },
+                                refreshCallback: () async {
+                                  await controller.loadEvents(context: context);
+                                  controller.goToMonth(
+                                      DateUtils.monthOnly(event.startDate!),
+                                      context: context);
+                                  setState(() {}); // 觸發重繪
+                                },
+                                tableName: controller.tableName,
+                                toTableName:
+                                    constTableMemoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
+                              ),
+                            )),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // 右上角關閉按鈕
-            PositionedDirectional(
-              end: kGapEI2.right,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                      color: Colors.black26,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.close, size: IconTheme.of(context).size!),
-                  tooltip: loc.close,
-                  onPressed: () =>
-                      Navigator.pop(context, false), // ✅ 明確回傳 false
+              // 右上角關閉按鈕
+              PositionedDirectional(
+                end: kGapEI2.right,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                        color: Colors.black26,
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.close, size: IconTheme.of(context).size!),
+                    tooltip: loc.close,
+                    onPressed: () =>
+                        Navigator.pop(context, false), // ✅ 明確回傳 false
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+        );
+      });
     },
   );
   return result == true; // 預設 null 或 false 都視為沒變更
@@ -281,10 +215,8 @@ Future<bool> showCalendarEventsDialog(
 
 Future<bool> showAlarmSettingsDialog(
     BuildContext context, Event event, ControllerCalendar controller) async {
-  ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false); 
-  ProviderLocale providerLocale = Provider.of<ProviderLocale>(context, listen: false);    
   final loc = AppLocalizations.of(context)!;
-
+  final service = Provider.of<ServiceStorage>(context, listen: false);
   final Map<RepeatRule, String> repeatOptionsLabels = {
     RepeatRule.once: loc.repeat_options_once,
     RepeatRule.everyDay: loc.repeat_options_every_day,
@@ -317,6 +249,7 @@ Future<bool> showAlarmSettingsDialog(
 
   final result = await showDialog(
     context: context,
+    barrierDismissible: true,
     builder: (context) {
       return AlertDialog(
         //title: Text(loc.set_alarm),
@@ -407,28 +340,27 @@ Future<bool> showAlarmSettingsDialog(
     return false;
   }
   final repeat = RepeatRuleExtension.fromKey(result['repeat'] as String);
-  final reminders = (result['reminders'] as List)
-    .whereType<ReminderOption>()
-    .toList();
+  final reminders =
+      (result['reminders'] as List).whereType<ReminderOption>().toList();
 
   Event updatedEvent =
       event.copyWith(newReminderOptions: reminders, newRepeatOptions: repeat);
 
   // 更新事件提醒設定
-  await controller.service
-      .saveRecommendedEvent(context, updatedEvent, false, controller.tableName);
-  await controller.loadEvents(auth.currentAccount, providerLocale.locale);
+  await service.saveRecommendedEvent(
+      context, updatedEvent, false, controller.tableName);
+  await controller.loadEvents(context: context);
 
   if (repeat.key().startsWith('every')) {
     await controller.checkAndGenerateNextEvents(context);
   }
 
   showSnackBar(
-    context,
-    reminders.isNotEmpty
-      ? '${loc.set_alarm} '
-          '${reminders.map((key) => reminderOptionLabels[key] ?? key).join(", ")}'
-      : loc.cancel_alarm);
+      context,
+      reminders.isNotEmpty
+          ? '${loc.set_alarm} '
+              '${reminders.map((key) => reminderOptionLabels[key] ?? key).join(", ")}'
+          : loc.cancel_alarm);
 
   return true; // 表示有更新
 }

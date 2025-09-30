@@ -285,11 +285,23 @@ abstract class AppLocalizations {
   /// **'Attractions'**
   String get recommended_attractions;
 
+  /// Label for no recommended_attractions
+  ///
+  /// In en, this message translates to:
+  /// **'No recommended places at the moment'**
+  String get recommended_attractions_zero;
+
   /// Label for Memory Trace
   ///
   /// In en, this message translates to:
   /// **'Memory Trace'**
   String get memory_trace;
+
+  /// Label for no memory_trace
+  ///
+  /// In en, this message translates to:
+  /// **'Go add some memories!'**
+  String get memory_trace_zero;
 
   /// Label for Account Records
   ///
@@ -350,6 +362,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'✅ Event added'**
   String get event_add_ok;
+
+  /// Label for event_add_error
+  ///
+  /// In en, this message translates to:
+  /// **'Add it repeatedly'**
+  String get event_add_error;
+
+  /// Label for memory_add
+  ///
+  /// In en, this message translates to:
+  /// **'Add Memory'**
+  String get memory_add;
+
+  /// Label for memory_add ok
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Memory Added'**
+  String get memory_add_ok;
+
+  /// Label for memory_add_error
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to add the memory again'**
+  String get memory_add_error;
 
   /// Label for no_events_to_export
   ///
@@ -572,12 +608,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Date clear'**
   String get date_clear;
-
-  /// Label for event_add_tp_plan_error
-  ///
-  /// In en, this message translates to:
-  /// **'Add it repeatedly'**
-  String get event_add_tp_plan_error;
 
   /// Label for add
   ///

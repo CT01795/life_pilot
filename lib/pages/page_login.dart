@@ -57,14 +57,14 @@ class _PageLoginState extends State<PageLogin> {
       await _auth.checkLoginStatus(); 
       // 登入成功後會在外層重新渲染畫面，不用 Navigator.pushReplacement 了
     } else {
-      showLoginError(context, result, loc); 
+      showLoginError(context, result); 
     }
   }
 
   void _anonymousLogin() async {
     final result = await _auth.anonymousLogin();
     if (result != null) {
-      showLoginError(context, result, loc);
+      showLoginError(context, result);
     }
   }
 
@@ -74,7 +74,7 @@ class _PageLoginState extends State<PageLogin> {
     if (result == null) {
       showSnackBar(context, loc.resetPasswordEmail);
     } else {
-      showLoginError(context, result, loc); 
+      showLoginError(context, result); 
     }
   }
 

@@ -102,7 +102,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recommended_attractions => '推薦景點';
 
   @override
+  String get recommended_attractions_zero => '目前沒有推薦景點';
+
+  @override
   String get memory_trace => '回憶走廊';
+
+  @override
+  String get memory_trace_zero => '去創造更多回憶吧！';
 
   @override
   String get account_records => '記帳';
@@ -133,6 +139,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get event_add_ok => '✅ 已新增活動';
+
+  @override
+  String get event_add_error => '要重複新增活動嗎';
+
+  @override
+  String get memory_add => '新增回憶';
+
+  @override
+  String get memory_add_ok => '✅ 已新增回憶';
+
+  @override
+  String get memory_add_error => '要重複新增回憶嗎';
 
   @override
   String get no_events_to_export => '❌ 沒有可匯出的活動';
@@ -244,9 +262,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get date_clear => '清除日期';
-
-  @override
-  String get event_add_tp_plan_error => '要重複新增活動嗎';
 
   @override
   String get add => '新增';

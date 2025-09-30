@@ -7,8 +7,19 @@ const String constSupabaseAnonKey =
 const String constAppTitle = 'Life Pilot';
 String constTzLocation = 'Asia/Taipei';
 const List<String> constRealHolidaysTaiwan = [
-  "元旦", "春節", "除夕", "和平紀念日", "兒童節", "清明節", "勞動節", "端午節",
-  "教師節", "中秋節", "國慶日", "台灣光復節", "行憲紀念日",
+  "元旦",
+  "春節",
+  "除夕",
+  "和平紀念日",
+  "兒童節",
+  "清明節",
+  "勞動節",
+  "端午節",
+  "教師節",
+  "中秋節",
+  "國慶日",
+  "台灣光復節",
+  "行憲紀念日",
 ];
 const String constLocaleZh = 'zh';
 const String constLocaleEn = 'en';
@@ -19,6 +30,8 @@ const String constPassword = 'password';
 const String constEmpty = '';
 const String constTableCalendarEvents = "calendar_events";
 const String constTableRecommendedEvents = "recommended_events";
+const String constTableRecommendedAttractions = "recommended_attractions";
+const String constTableMemoryTrace = "memory_trace";
 // 支援語言清單
 final supportedLocales = [
   Locale(constLocaleEn),
@@ -67,6 +80,8 @@ const kGapEIH8V4 = EdgeInsets.symmetric(horizontal: 8, vertical: 4);
 const kGapEIH8V16 = EdgeInsets.symmetric(horizontal: 8, vertical: 16);
 const kGapEIH12V8 = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
 const kGapEIL20R0T6B0 = EdgeInsetsDirectional.only(start: 20, top: 6);
-const kGapEIL4R4T4B8 = EdgeInsetsDirectional.only(start: 4, end: 4, top: 4, bottom: 8);
-const kGapEIL1R1T8B1 = EdgeInsetsDirectional.only(start: 1, end: 1, top: 8, bottom: 1);
+const kGapEIL4R4T4B8 =
+    EdgeInsetsDirectional.only(start: 4, end: 4, top: 4, bottom: 8);
+const kGapEIL1R1T8B1 =
+    EdgeInsetsDirectional.only(start: 1, end: 1, top: 8, bottom: 1);
 const kGapEIR3 = EdgeInsetsDirectional.only(end: 3);

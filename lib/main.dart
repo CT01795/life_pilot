@@ -7,6 +7,7 @@ import 'package:life_pilot/pages/page_main.dart';
 import 'package:life_pilot/pages/page_register.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/notification/notification.dart';
+import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_main_page_bar.dart';
 import 'package:life_pilot/utils/utils_const.dart';
 import 'package:life_pilot/utils/utils_timezone_helper.dart';
@@ -39,6 +40,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider<ServiceStorage>(create: (_) => ServiceStorage()),
         ChangeNotifierProvider(create: (_) => ControllerAuth()),
         ChangeNotifierProvider(
             create: (_) => ProviderLocale(locale: Locale(constLocaleZh))),

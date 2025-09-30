@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart' hide Notification;
 import 'package:life_pilot/controllers/controller_auth.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/notification/notification.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
@@ -12,7 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends ChangeNotifier {
-  final ServiceStorage service = ServiceStorage();
   final String tableName;
 
   late DateTime currentMonth;
@@ -117,8 +115,7 @@ class ControllerCalendar extends ChangeNotifier {
     return weeks;
   }
 
-  Future<void> loadEvents(String? user, Locale locale,
-      {bool notify = true}) async {
+  Future<void> loadEvents({required BuildContext context, bool notify = true}) async {
     if (isLoading) return; // 防止重複執行
 
     isLoading = true;
@@ -127,6 +124,11 @@ class ControllerCalendar extends ChangeNotifier {
     }
 
     try {
+      final service = Provider.of<ServiceStorage>(context, listen: false); 
+      final auth = Provider.of<ControllerAuth>(context, listen: false);
+      final localeProvider = Provider.of<ProviderLocale>(context, listen: false);
+      final user = auth.currentAccount;
+      final locale = localeProvider.locale;
       final calendarWeeks = getCalendarDays(currentMonth);
       DateTime start = calendarWeeks.first.first;
       DateTime end = calendarWeeks.last.last;
@@ -183,8 +185,8 @@ class ControllerCalendar extends ChangeNotifier {
   String _monthKey(DateTime date) =>
       "${date.year}-${date.month.toString().padLeft(2, constZero)}";
 
-  Future<void> goToMonth(DateTime newMonth, String? user, Locale locale,
-      {bool notify = true}) async {
+  Future<void> goToMonth(DateTime newMonth,
+      {required BuildContext context, bool notify = true}) async {
     currentMonth = newMonth;
     final key = _monthKey(newMonth);
     if (_cachedEvents.containsKey(key)) {
@@ -205,26 +207,23 @@ class ControllerCalendar extends ChangeNotifier {
         notifyListeners(); // 更新畫面
       }
     } else {
-      await loadEvents(user, locale, notify: notify);
+      await loadEvents(context: context, notify: notify);
     }
   }
 
-  Future<void> goToToday(
-      PageController controller, String? user, Locale locale) async {
+  Future<void> goToToday({required BuildContext context}) async {
     currentMonth = DateUtils.dateOnly(DateTime.now());
-    await goToMonth(currentMonth, user, locale);
+    await goToMonth(currentMonth, context: context);
   }
 
-  Future<void> goToPreviousMonth(
-      PageController controller, String? user, Locale locale) async {
+  Future<void> goToPreviousMonth({required BuildContext context}) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month - 1);
-    await goToMonth(currentMonth, user, locale);
+    await goToMonth(currentMonth, context: context);
   }
 
-  Future<void> goToNextMonth(
-      PageController controller, String? user, Locale locale) async {
+  Future<void> goToNextMonth({required BuildContext context}) async {
     currentMonth = DateTime(currentMonth.year, currentMonth.month + 1);
-    await goToMonth(currentMonth, user, locale);
+    await goToMonth(currentMonth, context: context);
   }
 
   List<Event> getEventsOfDay(DateTime date) {
@@ -248,39 +247,24 @@ class ControllerCalendar extends ChangeNotifier {
     return [];
   }
 
-  void updateCachedEvent(Event oldEvent, Event newEvent) {
-    final oldStartDateS = oldEvent.startDate != null
-        ? _monthKey(oldEvent.startDate!)
-        : null; // e.g., '2025-09'
-    final newStartDateS =
-        newEvent.startDate != null ? _monthKey(newEvent.startDate!) : null;
+  void updateCachedEvent(Event event) {
+    final startDateS =
+        event.startDate != null ? _monthKey(event.startDate!) : null;
 
-    final oldEndDateS = oldEvent.endDate != null
-        ? _monthKey(oldEvent.endDate!)
-        : null; // e.g., '2025-09'
-    final newEndDateS =
-        newEvent.endDate != null ? _monthKey(newEvent.endDate!) : null;
+    final endDateS =
+        event.endDate != null ? _monthKey(event.endDate!) : null;
 
     // 移除快取
-    if (oldStartDateS != null && _cachedEvents.containsKey(oldStartDateS)) {
-      _cachedEvents.remove(oldStartDateS);
+    if (startDateS != null && _cachedEvents.containsKey(startDateS)) {
+      _cachedEvents.remove(startDateS);
     }
-    if (newStartDateS != null && _cachedEvents.containsKey(newStartDateS)) {
-      _cachedEvents.remove(newStartDateS);
-    }
-    if (oldEndDateS != null && _cachedEvents.containsKey(oldEndDateS)) {
-      _cachedEvents.remove(oldEndDateS);
-    }
-    if (newEndDateS != null && _cachedEvents.containsKey(newEndDateS)) {
-      _cachedEvents.remove(newEndDateS);
+    if (endDateS != null && _cachedEvents.containsKey(endDateS)) {
+      _cachedEvents.remove(endDateS);
     }
   }
 
   Future<void> checkAndGenerateNextEvents(BuildContext context) async {
-    ProviderLocale providerLocale =
-        Provider.of<ProviderLocale>(context, listen: false);
-    ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
-    final loc = AppLocalizations.of(context)!;
+    final service = Provider.of<ServiceStorage>(context, listen: false); // ✅ 這裡從 context 抓
     final DateTime today = DateTime.now();
 
     for (final event in events) {
@@ -303,8 +287,7 @@ class ControllerCalendar extends ChangeNotifier {
       );
 
       await service.saveRecommendedEvent(context, newEvent, true, tableName);
-      await MyCustomNotification.scheduleEventReminders(
-          loc, newEvent, tableName, auth.currentAccount);
+      await MyCustomNotification.scheduleEventReminders(newEvent, tableName, context:context);
 
       // 更新舊事件的 repeatOption 為 'once'
       final updatedOldEvent = event.copyWith(
@@ -316,7 +299,7 @@ class ControllerCalendar extends ChangeNotifier {
           context, updatedOldEvent, false, tableName);
     }
 
-    await loadEvents(auth.currentAccount, providerLocale.locale);
+    await loadEvents(context: context);
   }
 
   // 判斷是否為同一天

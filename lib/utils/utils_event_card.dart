@@ -14,7 +14,8 @@ class EventCardUtils {
     return Row(
       children: [
         Expanded(
-          child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          child:
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
         if (trailing != null) trailing,
       ],
@@ -22,7 +23,8 @@ class EventCardUtils {
   }
 
   static Widget buildDateRange(var e) {
-    return Text('${formatEventDateTime(e, constStartToS)}${formatEventDateTime(e, constEndToE)}');
+    return Text(
+        '${formatEventDateTime(e, constStartToS)}${formatEventDateTime(e, constEndToE)}');
   }
 
   static Widget buildLocationText(var e) {
@@ -30,7 +32,13 @@ class EventCardUtils {
     return Text('${e.city}．${e.location}');
   }
 
-  static Widget buildLink(BuildContext context, AppLocalizations loc, String url) {
+  static Widget buildDescText(var e) {
+    if (e.isEmpty) return const SizedBox.shrink();
+    return Text('$e');
+  }
+
+  static Widget buildLink(
+      BuildContext context, AppLocalizations loc, String url) {
     return InkWell(
       onTap: () async {
         final uri = Uri.parse(url);
@@ -53,11 +61,13 @@ class EventCardUtils {
     String? masterUrl,
     required String fee,
     required String type,
+    required String desc,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (masterUrl?.isNotEmpty == true) buildLink(context, loc, masterUrl!),
+        if (desc.isNotEmpty) buildDescText(desc),
         /*kGapW8(),
         if (fee.isNotEmpty)
           Padding(
@@ -89,32 +99,26 @@ abstract class EventBase {
 }
 
 class BaseEventCard extends StatelessWidget {
+  final String tableName;
   final Event event;
   final Widget? trailing;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
-  final bool showLocation;
-  final bool showFeeType;
   final bool showSubEvents;
-  final bool showMasterUrlLink;
-  final bool useCardContainer;
 
   const BaseEventCard({
     super.key,
+    required this.tableName,
     required this.event,
     this.trailing,
     this.onTap,
     this.onDelete,
-    this.showLocation = true,
-    this.showFeeType = true,
-    this.showSubEvents = true,
-    this.showMasterUrlLink = true,
-    this.useCardContainer = true,
+    this.showSubEvents = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<ControllerAuth>(context,listen:false);
+    final auth = Provider.of<ControllerAuth>(context, listen: false);
     final loc = AppLocalizations.of(context)!;
 
     Widget content = Padding(
@@ -123,18 +127,24 @@ class BaseEventCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           EventCardUtils.buildEventHeader(event.name, trailing: trailing),
-          EventCardUtils.buildDateRange(event),
-          if (showFeeType && event.fee.isNotEmpty) widgetBuildTypeTags(event.fee),
-          if (showFeeType && event.type.isNotEmpty) widgetBuildTypeTags(event.type),
-          if (showLocation && (event.city.isNotEmpty || event.location.isNotEmpty))
+          if (tableName != constTableRecommendedAttractions)
+            EventCardUtils.buildDateRange(event),
+          if (event.fee.isNotEmpty) widgetBuildTypeTags(event.fee),
+          if (event.type.isNotEmpty) widgetBuildTypeTags(event.type),
+          if (event.city.isNotEmpty || event.location.isNotEmpty)
             EventCardUtils.buildLocationText(event),
-          if (showMasterUrlLink || showFeeType)
+          if ((event.masterUrl != null && event.masterUrl!.isNotEmpty) ||
+              event.fee.isNotEmpty ||
+              event.type.isNotEmpty ||
+              event.description.isNotEmpty)
             EventCardUtils.buildMetaRow(
               context: context,
               loc: loc,
-              masterUrl: showMasterUrlLink ? event.masterUrl : null,
-              fee: showFeeType ? event.fee : constEmpty,
-              type: showFeeType ? event.type : constEmpty,
+              masterUrl: event.masterUrl != null && event.masterUrl!.isNotEmpty ? event.masterUrl : null,
+              fee: event.fee.isNotEmpty ? event.fee : constEmpty,
+              type: event.type.isNotEmpty ? event.type : constEmpty,
+              desc:
+                  event.description.isNotEmpty ? event.description : constEmpty,
             ),
           if (showSubEvents)
             ...event.subEvents.map(
@@ -147,10 +157,11 @@ class BaseEventCard extends StatelessWidget {
       ),
     );
 
-    Widget container = useCardContainer
+    Widget container = tableName != constTableCalendarEvents
         ? Card(
             margin: kGapEIH8V16,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             color: Colors.grey.shade100,
             elevation: 4,
             child: content,
@@ -161,11 +172,13 @@ class BaseEventCard extends StatelessWidget {
           );
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: event.subEvents.isNotEmpty ? onTap : null,
       child: Stack(
         children: [
           container,
-          if ((auth.currentAccount == constSysAdminEmail || auth.currentAccount == event.account) && onDelete != null)
+          if ((auth.currentAccount == constSysAdminEmail ||
+                  auth.currentAccount == event.account) &&
+              onDelete != null)
             PositionedDirectional(
               end: kGapW24().width,
               bottom: kGapH8().height, //bottom
@@ -193,8 +206,9 @@ class _SubEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final showLocation = (subEvent.city.isNotEmpty || subEvent.location.isNotEmpty) &&
-        subEvent.location != parentLocation;
+    final showLocation =
+        (subEvent.city.isNotEmpty || subEvent.location.isNotEmpty) &&
+            subEvent.location != parentLocation;
 
     return Container(
       width: double.infinity,
@@ -208,8 +222,8 @@ class _SubEventCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           EventCardUtils.buildDateRange(subEvent),
-          if(subEvent.fee.isNotEmpty) widgetBuildTypeTags(subEvent.fee),
-          if(subEvent.type.isNotEmpty) widgetBuildTypeTags(subEvent.type),
+          if (subEvent.fee.isNotEmpty) widgetBuildTypeTags(subEvent.fee),
+          if (subEvent.type.isNotEmpty) widgetBuildTypeTags(subEvent.type),
           if (showLocation) EventCardUtils.buildLocationText(subEvent),
           if (subEvent.masterUrl?.isNotEmpty == true)
             EventCardUtils.buildLink(context, loc, subEvent.masterUrl!),
@@ -220,8 +234,8 @@ class _SubEventCard extends StatelessWidget {
 }
 
 /// 各種原本的卡片，都改成包裝 BaseEventCard，設定不同參數即可
-
 class EventCard extends StatelessWidget {
+  final String tableName;
   final Event event;
   final int index;
   final VoidCallback? onTap;
@@ -230,6 +244,7 @@ class EventCard extends StatelessWidget {
 
   const EventCard({
     super.key,
+    required this.tableName,
     required this.event,
     required this.index,
     this.onTap,
@@ -240,28 +255,27 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BaseEventCard(
+      tableName: tableName,
       event: event,
       trailing: trailing,
       onTap: onTap,
       onDelete: onDelete,
-      showLocation: true,
-      showFeeType: true,
       showSubEvents: true,
-      showMasterUrlLink: true,
-      useCardContainer: true,
     );
   }
 }
 
-class EventCardGraph extends StatelessWidget {
+class EventCardDetail extends StatelessWidget {
+  final String tableName;
   final Event event;
   final int index;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final Widget? trailing;
 
-  const EventCardGraph({
+  const EventCardDetail({
     super.key,
+    required this.tableName,
     required this.event,
     required this.index,
     this.onTap,
@@ -272,20 +286,18 @@ class EventCardGraph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BaseEventCard(
+      tableName: tableName,
       event: event,
       trailing: trailing,
       onTap: onTap,
       onDelete: onDelete,
-      showLocation: true,
-      showFeeType: true,
       showSubEvents: false,
-      showMasterUrlLink: true,
-      useCardContainer: true,
     );
   }
 }
 
 class EventCalendarCard extends StatelessWidget {
+  final String tableName;
   final Event event;
   final int index;
   final VoidCallback? onTap;
@@ -294,6 +306,7 @@ class EventCalendarCard extends StatelessWidget {
 
   const EventCalendarCard({
     super.key,
+    required this.tableName,
     required this.event,
     required this.index,
     required this.onTap,
@@ -304,15 +317,12 @@ class EventCalendarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BaseEventCard(
+      tableName: tableName,
       event: event,
       trailing: trailing,
       onTap: onTap,
       onDelete: onDelete,
-      showLocation: true,
-      showFeeType: true,
       showSubEvents: true,
-      showMasterUrlLink: true,
-      useCardContainer: false,
     );
   }
 }
@@ -321,8 +331,10 @@ class EventCalendarCard extends StatelessWidget {
 /// 只要確保你在程式中統一使用 BaseEventCard 替代原本重複的卡片實作，就可以有效減少重複代碼。
 
 class EventImageDialog extends StatelessWidget {
+  final String tableName;
   final Event event;
-  const EventImageDialog({super.key, required this.event});
+  const EventImageDialog(
+      {super.key, required this.tableName, required this.event});
 
   @override
   Widget build(BuildContext context) {
@@ -334,6 +346,7 @@ class EventImageDialog extends StatelessWidget {
         children: [
           SingleChildScrollView(
             child: EventCard(
+              tableName: tableName,
               event: event,
               index: 0,
               onTap: () => Navigator.pop(context),

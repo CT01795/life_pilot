@@ -28,8 +28,7 @@ class MyCustomNotification {
   }
 
   // 根據 event.reminderOptions 安排通知
-  static Future<void> scheduleEventReminders(
-      AppLocalizations loc, Event event, String tableName, String? user) async {
+  static Future<void> scheduleEventReminders(Event event, String tableName, {required BuildContext context}) async {
     if (event.startDate == null || event.startTime == null) {
       return;
     }
@@ -42,6 +41,7 @@ class MyCustomNotification {
         continue;
       }
 
+      final loc = AppLocalizations.of(context)!;
       final id =
           snc.ReminderUtils.generateNotificationId(event.id, option.toKey());
       final title =
@@ -68,14 +68,13 @@ class MyCustomNotification {
     }
   }
 
-  static Future<void> showTodayEventsWebNotification(
-      AppLocalizations loc, String tableName, String? user) async {
+  static Future<void> showTodayEventsWebNotification(String tableName, {required BuildContext context}) async {
     // 空實作，避免編譯錯誤
     return;
   }
 
-  static Future<void> showImmediateNotification(
-      AppLocalizations loc, Event event) async {
+  static Future<void> showImmediateNotification(Event event, {required BuildContext context}) async {
+    AppLocalizations loc = AppLocalizations.of(context)!;
     // 通知ID，建議用事件ID或其它唯一數字
     final int notificationId =
         snc.ReminderUtils.generateNotificationId(event.id, 'immediate');

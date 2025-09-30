@@ -15,7 +15,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceStorage {
   final _client = Supabase.instance.client;
-  ServiceStorage();
 
   List<Event>? allEvents;
 
@@ -27,7 +26,7 @@ class ServiceStorage {
     String? inputUser,
   }) async {
     final today = DateUtils.dateOnly(DateTime.now());
-    final inputDateS = (dateS ?? today).formatDateString();
+    final inputDateS = (dateS ?? (tableName == constTableMemoryTrace ? today.subtract(Duration(days:365)) : today)).formatDateString();
     final inputDateE =
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
@@ -57,7 +56,9 @@ class ServiceStorage {
       final Map<String, dynamic> data = event.toJson();
       var query =
           _client.from(tableName).update(data).eq(EventFields.id, event.id);
-      if (realAccount != null && realAccount.isNotEmpty && realAccount != constGuest) {
+      if (realAccount != null &&
+          realAccount.isNotEmpty &&
+          realAccount != constGuest) {
         query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
       }
       await query;
@@ -74,7 +75,8 @@ class ServiceStorage {
       ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
       AppLocalizations loc = AppLocalizations.of(context)!;
       _validateEvent(event, loc);
-      if (isNew || event.reminderOptions.isEmpty) {
+      if ((isNew || event.reminderOptions.isEmpty) &&
+          tableName != constTableRecommendedAttractions) {
         event.reminderOptions = [
           ReminderOption.oneHour, // 事件開始前1小時
           ReminderOption.sameDay8am,
@@ -96,28 +98,35 @@ class ServiceStorage {
       } else {
         var query =
             _client.from(tableName).update(data).eq(EventFields.id, event.id);
-        if (auth.currentAccount != constSysAdminEmail && event.account != null && event.account!.isNotEmpty) {
+        if (auth.currentAccount != constSysAdminEmail &&
+            event.account != null &&
+            event.account!.isNotEmpty) {
           query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
         }
         await query;
       }
       // 🔥 加入通知邏輯
+      if (tableName == constTableRecommendedAttractions) {
+        return;
+      }
       await MyCustomNotification.cancelEventReminders(event); // 移除舊通知（根據 id）
       await checkExactAlarmPermission(context);
-      await MyCustomNotification.scheduleEventReminders(
-          loc, event, tableName, auth.currentAccount); // 新的排程
+      await MyCustomNotification.scheduleEventReminders(event, tableName, context: context); // 新的排程
     } catch (ex, stacktrace) {
       logger.e("saveRecommendedEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
 
-  Future<void> deleteRecommendedEvent(BuildContext context, Event event, String tableName) async {
+  Future<void> deleteRecommendedEvent(
+      BuildContext context, Event event, String tableName) async {
     try {
       ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
       await MyCustomNotification.cancelEventReminders(event); // 取消通知
       var query = _client.from(tableName).delete().eq(EventFields.id, event.id);
-      if (auth.currentAccount != constSysAdminEmail && event.account != null && event.account!.isNotEmpty) {
+      if (auth.currentAccount != constSysAdminEmail &&
+          event.account != null &&
+          event.account!.isNotEmpty) {
         query = query.eq(EventFields.account, event.account!);
       }
       await query;

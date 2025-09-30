@@ -47,7 +47,7 @@ class _PageRegisterState extends State<PageRegister> {
       final auth = Provider.of<ControllerAuth>(context,listen:false);
       await auth.checkLoginStatus();
     } else {
-      showLoginError(context, result, loc); 
+      showLoginError(context, result); 
     }
   }
 

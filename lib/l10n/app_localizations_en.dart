@@ -102,7 +102,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recommended_attractions => 'Attractions';
 
   @override
+  String get recommended_attractions_zero => 'No recommended places at the moment';
+
+  @override
   String get memory_trace => 'Memory Trace';
+
+  @override
+  String get memory_trace_zero => 'Go add some memories!';
 
   @override
   String get account_records => 'Account Records';
@@ -133,6 +139,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_add_ok => '✅ Event added';
+
+  @override
+  String get event_add_error => 'Add it repeatedly';
+
+  @override
+  String get memory_add => 'Add Memory';
+
+  @override
+  String get memory_add_ok => '✅ Memory Added';
+
+  @override
+  String get memory_add_error => 'Do you want to add the memory again';
 
   @override
   String get no_events_to_export => '❌ No events to export';
@@ -244,9 +262,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get date_clear => 'Date clear';
-
-  @override
-  String get event_add_tp_plan_error => 'Add it repeatedly';
 
   @override
   String get add => 'Add';

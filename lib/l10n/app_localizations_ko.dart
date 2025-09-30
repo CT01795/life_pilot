@@ -102,7 +102,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recommended_attractions => '추천 명소';
 
   @override
+  String get recommended_attractions_zero => '현재 추천할 장소가 없습니다';
+
+  @override
   String get memory_trace => '추억의 회랑';
+
+  @override
+  String get memory_trace_zero => '어서 추억을 추가해봐요!';
 
   @override
   String get account_records => '가계부 기록';
@@ -133,6 +139,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get event_add_ok => '✅ 이벤트가 추가되었습니다';
+
+  @override
+  String get event_add_error => '이 이벤트를 반복하여 추가해도 괜찮습니까';
+
+  @override
+  String get memory_add => '추억 추가';
+
+  @override
+  String get memory_add_ok => '✅ 추억이 추가되었습니다';
+
+  @override
+  String get memory_add_error => '추억을 다시 추가하시겠습니까';
 
   @override
   String get no_events_to_export => '❌ 내보낼 이벤트가 없습니다';
@@ -244,9 +262,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get date_clear => '날짜 초기화';
-
-  @override
-  String get event_add_tp_plan_error => '이 이벤트를 반복하여 추가해도 괜찮습니까';
 
   @override
   String get add => '추가';

@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:life_pilot/utils/utils_const.dart';
 
-class DateOnlyCompare {
+class DateTimeCompare {
   static bool isSameDayFutureTime(DateTime? a, TimeOfDay? time, DateTime? b) {
     if (a == null || b == null) return false;
     return a.year == b.year &&
@@ -38,21 +38,25 @@ class DateOnlyCompare {
     final bMinutes = b.hour * 60 + b.minute;
     return aMinutes.compareTo(bMinutes);
   }
+
+  static bool isCurrentMonth(DateTime currentMonth) {
+    return currentMonth.year == DateTime.now().year && currentMonth.month == DateTime.now().month;
+  }
 }
 
 String formatEventDateTime(dynamic event, String type) {
   final bool isStart = type == constStartToS;
   if (!isStart) {
     // End 處理：檢查與 start 是否同日
-    if (DateOnlyCompare.isSameDay(event.startDate, event.endDate)) {
-      if (DateOnlyCompare.isSameTime(event.startTime, event.endTime)) {
+    if (DateTimeCompare.isSameDay(event.startDate, event.endDate)) {
+      if (DateTimeCompare.isSameTime(event.startTime, event.endTime)) {
         return constEmpty;
       }
       //event.endDate ??= event.startDate;
       return event.endTime == null
           ? constEmpty
           : ' - ${DateFormat(constDateFormatHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
-    } else if (DateOnlyCompare.isSameYear(event.startDate, event.endDate)) {
+    } else if (DateTimeCompare.isSameYear(event.startDate, event.endDate)) {
       return event.endTime == null
           ? ' - ${DateFormat(constDateFormatMMdd).format(DateUtils.getDateTime(event.endDate, event.endTime))}'
           : ' - ${DateFormat(constDateFormatMMddHHmm).format(DateUtils.getDateTime(event.endDate, event.endTime))}';
@@ -64,7 +68,7 @@ String formatEventDateTime(dynamic event, String type) {
   }
 
   bool isNotMidnight(TimeOfDay? time) => time != null;
-  if (DateOnlyCompare.isSameYear(event.startDate, DateTime.now())) {
+  if (DateTimeCompare.isSameYear(event.startDate, DateTime.now())) {
     if (isNotMidnight(event.startTime)) {
       return DateFormat(constDateFormatMMddHHmm)
           .format(DateUtils.getDateTime(event.startDate, event.startTime));
@@ -148,6 +152,7 @@ Future<void> showMonthYearPicker({
 
   await showDialog(
     context: context,
+    barrierDismissible: true,
     builder: (context) {
       return AlertDialog(
         backgroundColor: Colors.white,
