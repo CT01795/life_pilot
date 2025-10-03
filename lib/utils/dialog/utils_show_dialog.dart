@@ -2,27 +2,34 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/notification/notification_common.dart';
-import 'package:life_pilot/pages/page_recommended_event_add.dart';
+import 'package:life_pilot/my_app.dart';
+import 'package:life_pilot/notification/core/reminder_option.dart';
+import 'package:life_pilot/pages/page_event_add.dart';
 import 'package:life_pilot/services/service_storage.dart';
+import 'package:life_pilot/utils/widget/utils_calendar_widgets.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
-import 'package:life_pilot/utils/utils_enum.dart';
+import 'package:life_pilot/utils/core/utils_enum.dart';
 import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
 import 'package:life_pilot/utils/utils_event_card.dart';
-import 'package:provider/provider.dart';
 
 // 通用的確認 Dialog
 Future<bool> showConfirmationDialog({
-  required BuildContext context,
   required String content,
   required String confirmText,
   required String cancelText,
 }) async {
+  final navigator = navigatorKey.currentState;
+  if (navigator == null) {
+    // 沒有 navigator，直接回傳 false 或 throw
+    return false;
+  }
+
   return await showDialog<bool>(
-        context: context,
+        context: navigator.context,
         barrierDismissible: true,
         builder: (context) => AlertDialog(
           content: Text(content),
@@ -41,33 +48,44 @@ Future<bool> showConfirmationDialog({
       false;
 }
 
-Future<bool> showCalendarEventsDialog(
-    BuildContext context,
-    ControllerCalendar controller,
-    DateTime date,
-    Set<String> selectedEventIds,
-    Set<String> removedEventIds) async {
+Future<bool> showCalendarEventsDialog({
+  required DateTime date,
+  required Set<String> selectedEventIds,
+  required Set<String> removedEventIds,
+  required AppLocalizations loc,
+}) async {
+  ControllerCalendar controller = getIt<ControllerCalendar>();
   final tableName = constTableCalendarEvents;
-  final loc = AppLocalizations.of(context)!;
   final dateOnly = DateUtils.dateOnly(date);
+
+  //如果點到的是跨月日期，先載入那月資料 ——
+  if (date.month != controller.currentMonth.month ||
+      date.year != controller.currentMonth.year) {
+    // ✅ 若點到的是不同月份，就先載入那個月份的資料
+    await handleCrossMonthTap(
+      tappedDate: date,
+      displayedMonth: controller.currentMonth,
+    );
+  }
+
   // 篩選包含該日期的事件
   final eventsOfDay = controller.getEventsOfDay(dateOnly);
 
   // ✅ 如果沒有事件，直接跳轉新增事件頁
   if (eventsOfDay.isEmpty) {
-    final result = await Navigator.push(
-      context,
+    final result = await navigatorKey.currentState!.push(
       MaterialPageRoute(
-        builder: (context) => PageRecommendedEventAdd(
-          existingRecommendedEvent: null,
+        builder: (_) => PageEventAdd(
+          existingEvent: null,
           tableName: controller.tableName,
           initialDate: date,
         ),
       ),
     );
     if (result != null && result is Event) {
-      controller.goToMonth(DateUtils.monthOnly(result.startDate!),
-          context: context);
+      controller.goToMonth(
+        month: DateUtils.monthOnly(result.startDate!),
+      );
       return true;
     }
     return false;
@@ -75,7 +93,7 @@ Future<bool> showCalendarEventsDialog(
 
   // ✅ 有事件時，顯示 Dialog
   final result = await showDialog<bool>(
-    context: context,
+    context: navigatorKey.currentState!.context,
     barrierDismissible: true,
     builder: (context) {
       return StatefulBuilder(builder: (context, setState) {
@@ -119,16 +137,17 @@ Future<bool> showCalendarEventsDialog(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          PageRecommendedEventAdd(
-                                            existingRecommendedEvent: null,
+                                          PageEventAdd(
+                                            existingEvent: null,
                                             tableName: controller.tableName,
                                             initialDate: date,
                                           )),
                                 ).then((value) {
                                   if (value != null && value is Event) {
                                     controller.goToMonth(
-                                        DateUtils.monthOnly(value.startDate!),
-                                        context: context);
+                                      month:
+                                          DateUtils.monthOnly(value.startDate!),
+                                    );
                                     Navigator.pop(
                                         context, true); // ✅ 回傳 true 給外層
                                   }
@@ -136,7 +155,6 @@ Future<bool> showCalendarEventsDialog(
                               },
                             ),
                           ]),
-
                       if (updatedEventsOfDay.isNotEmpty)
                         // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
                         ...updatedEventsOfDay.map((event) => EventCalendarCard(
@@ -148,32 +166,33 @@ Future<bool> showCalendarEventsDialog(
                                   ? null
                                   : () async {
                                       await onRemoveEvent(
-                                        context: context,
                                         event: event,
                                         removedEventIds: removedEventIds,
                                         setState: (fn) => setState(fn),
                                         tableName: controller.tableName,
+                                        loc: loc
                                       );
-                                    await controller.loadEvents(context: context);
-                                    setState(() {}); // 觸發重繪
-                                  },
+                                      await controller.loadCalendarEvents();
+                                      setState(() {}); // 觸發重繪
+                                    },
                               trailing: buildEventTrailing(
-                                context: context,
                                 event: event,
                                 selectedEventIds: selectedEventIds,
                                 setState: (fn) {
                                   fn();
                                 },
                                 refreshCallback: () async {
-                                  await controller.loadEvents(context: context);
+                                  await controller.loadCalendarEvents();
                                   controller.goToMonth(
-                                      DateUtils.monthOnly(event.startDate!),
-                                      context: context);
+                                    month:
+                                        DateUtils.monthOnly(event.startDate!),
+                                  );
                                   setState(() {}); // 觸發重繪
                                 },
                                 tableName: controller.tableName,
                                 toTableName:
                                     constTableMemoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
+                                loc: loc,
                               ),
                             )),
                     ],
@@ -214,9 +233,9 @@ Future<bool> showCalendarEventsDialog(
 }
 
 Future<bool> showAlarmSettingsDialog(
-    BuildContext context, Event event, ControllerCalendar controller) async {
-  final loc = AppLocalizations.of(context)!;
-  final service = Provider.of<ServiceStorage>(context, listen: false);
+    {required Event event, required AppLocalizations loc}) async {
+  ControllerCalendar controller = getIt<ControllerCalendar>();
+  final service = getIt<ServiceStorage>();
   final Map<RepeatRule, String> repeatOptionsLabels = {
     RepeatRule.once: loc.repeat_options_once,
     RepeatRule.everyDay: loc.repeat_options_every_day,
@@ -248,7 +267,7 @@ Future<bool> showAlarmSettingsDialog(
   };
 
   final result = await showDialog(
-    context: context,
+    context: navigatorKey.currentState!.context,
     barrierDismissible: true,
     builder: (context) {
       return AlertDialog(
@@ -347,17 +366,19 @@ Future<bool> showAlarmSettingsDialog(
       event.copyWith(newReminderOptions: reminders, newRepeatOptions: repeat);
 
   // 更新事件提醒設定
-  await service.saveRecommendedEvent(
-      context, updatedEvent, false, controller.tableName);
-  await controller.loadEvents(context: context);
+  await service.saveEvent(
+      event: updatedEvent,
+      isNew: false,
+      tableName: controller.tableName,
+      loc: loc);
+  await controller.loadCalendarEvents();
 
   if (repeat.key().startsWith('every')) {
-    await controller.checkAndGenerateNextEvents(context);
+    await controller.checkAndGenerateNextEvents(loc: loc);
   }
 
   showSnackBar(
-      context,
-      reminders.isNotEmpty
+      message: reminders.isNotEmpty
           ? '${loc.set_alarm} '
               '${reminders.map((key) => reminderOptionLabels[key] ?? key).join(", ")}'
           : loc.cancel_alarm);

@@ -1,40 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/generic/generic_event_page.dart';
 import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:provider/provider.dart';
 
 class PageMemoryTrace extends StatelessWidget {
   const PageMemoryTrace({super.key});
 
+  static const String _tableName = constTableMemoryTrace;
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final tableName = constTableMemoryTrace;
-
     return Provider<String>.value(
-      value: constTableMemoryTrace, // 注入 tableName
+      value: _tableName, // 注入 tableName
       child: GenericEventPage(
         title: loc.memory_trace,
-        tableName: constTableMemoryTrace,
+        tableName: _tableName,
         emptyText: loc.memory_trace_zero,
         searchPanelBuilder: buildSearchPanel,
-        listBuilder: (
-          events,
-          controller,
-          refreshCallback,
-          selected,
-          removed,
-          setState,
-        ) {
+        listBuilder: ({
+          required List<Event> filteredEvents,
+          required ScrollController scrollController,
+          required VoidCallback refreshCallback,
+          required Set<String> selectedEventIds,
+          required Set<String> removedEventIds,
+          required void Function(void Function()) setState,
+        }) {
           return EventList(
-            tableName: tableName,
+            tableName: _tableName,
             toTableName: constEmpty,
-            events: events,
-            selectedEventIds: selected,
-            removedEventIds: removed,
-            scrollController: controller,
+            filteredEvents: filteredEvents,
+            selectedEventIds: selectedEventIds,
+            removedEventIds: removedEventIds,
+            scrollController: scrollController,
             refreshCallback: refreshCallback,
             setState: setState,
           );

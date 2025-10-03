@@ -2,41 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/notification/notification_common.dart';
+import 'package:life_pilot/models/model_event_fields.dart';
+import 'package:life_pilot/models/model_event_sub_item.dart';
+import 'package:life_pilot/notification/core/reminder_option.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_enum.dart';
-import 'package:life_pilot/utils/utils_show_dialog.dart';
-import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_enum.dart';
+import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:uuid/uuid.dart';
 
 final uuid = const Uuid();
 
-class PageRecommendedEventAdd extends StatefulWidget {
+class PageEventAdd extends StatefulWidget {
   final String tableName;
-  final Event? existingRecommendedEvent;
+  final Event? existingEvent;
   final DateTime? initialDate;
 
-  const PageRecommendedEventAdd({
+  const PageEventAdd({
     super.key,
     required this.tableName,
-    this.existingRecommendedEvent,
+    this.existingEvent,
     this.initialDate,
   });
 
   @override
-  State<PageRecommendedEventAdd> createState() =>
-      _PageRecommendedEventAddState();
+  State<PageEventAdd> createState() => _PageEventAddState();
 }
 
-class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
+class _PageEventAddState extends State<PageEventAdd> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  late AppLocalizations _loc;
+  ControllerAuth get _auth => getIt<ControllerAuth>();
 
   DateTime? startDate;
   DateTime? endDate;
@@ -49,7 +51,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
   String description = constEmpty;
   String fee = constEmpty;
   String unit = constEmpty;
-  List<SubEventItem> subEvents = [];
+  List<EventSubItem> subEvents = [];
 
   String? masterGraphUrl;
   String? masterUrl;
@@ -76,7 +78,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
     super.initState();
     _speech = stt.SpeechToText();
     _flutterTts = FlutterTts();
-    final e = widget.existingRecommendedEvent;
+    final e = widget.existingEvent;
     if (e != null) {
       masterGraphUrl = e.masterGraphUrl;
       masterUrl = e.masterUrl;
@@ -109,6 +111,12 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
     _initController(EventFields.fee, e?.fee ?? constEmpty);
     _initController(EventFields.unit, e?.unit ?? constEmpty);
     _initController(EventFields.masterUrl, e?.masterUrl ?? constEmpty);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loc = AppLocalizations.of(context)!;
   }
 
   Future<void> _startListening(
@@ -245,7 +253,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
   Widget _buildDateTile(DateTime? date, VoidCallback onTap, String type) {
     final text = date != null
         ? '${date.year}/${date.month.toString().padLeft(2, constZero)}/${date.day.toString().padLeft(2, constZero)}'
-        : (type == constStartToS ? loc.start_date : loc.end_date);
+        : (type == constStartToS ? _loc.start_date : _loc.end_date);
     return ListTile(
       contentPadding: kGapEI0,
       visualDensity: VisualDensity(horizontal: -4, vertical: -2),
@@ -257,7 +265,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
 
   Widget _buildTimeTile(TimeOfDay? time, VoidCallback onTap, String type) {
     final text = time?.format(context) ??
-        (type == constStartToS ? loc.start_time : loc.end_time);
+        (type == constStartToS ? _loc.start_time : _loc.end_time);
     return ListTile(
       contentPadding: kGapEI0,
       visualDensity: VisualDensity(horizontal: -4, vertical: -2),
@@ -281,7 +289,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
         if ((_controllers[key]?.text.isNotEmpty ?? false))
           IconButton(
             icon: const Icon(Icons.volume_up),
-            tooltip: loc.speak_up,
+            tooltip: _loc.speak_up,
             onPressed: () async {
               final textToSpeak = _controllers[key]?.text ?? constEmpty;
               if (textToSpeak.isNotEmpty) {
@@ -308,7 +316,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
             color:
                 _isListening && _currentListeningKey == key ? Colors.red : null,
           ),
-          tooltip: loc.speak, // 或 "語音輸入"
+          tooltip: _loc.speak, // 或 "語音輸入"
           onPressed: () async {
             if (_isListening && _currentListeningKey == key) {
               await _stopListening();
@@ -350,32 +358,32 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
             _buildDateTimeRow(index: index),
             _buildTextField(
                 key: '${EventFields.location}_sub_$index',
-                label: loc.location,
+                label: _loc.location,
                 onChanged: (v) => setState(() => d.location = v)),
             _buildTextField(
                 key: '${EventFields.name}_sub_$index',
-                label: loc.activity_name,
+                label: _loc.activity_name,
                 onChanged: (v) => setState(() => d.name = v)),
             _buildTextField(
                 key: '${EventFields.type}_sub_$index',
-                label: loc.keywords,
+                label: _loc.keywords,
                 onChanged: (v) => setState(() => d.type = v)),
             _buildTextField(
                 key: '${EventFields.masterUrl}_sub_$index',
-                label: loc.sub_url,
+                label: _loc.sub_url,
                 onChanged: (v) => setState(() => d.masterUrl = v)),
             _buildTextField(
                 key: '${EventFields.description}_sub_$index',
-                label: loc.description,
+                label: _loc.description,
                 onChanged: (v) => setState(() => d.description = v),
                 maxLines: 2),
             _buildTextField(
                 key: '${EventFields.fee}_sub_$index',
-                label: loc.fee,
+                label: _loc.fee,
                 onChanged: (v) => setState(() => d.fee = v)),
             _buildTextField(
                 key: '${EventFields.unit}_sub_$index',
-                label: loc.sponsor,
+                label: _loc.sponsor,
                 onChanged: (v) => setState(() => d.unit = v)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -388,23 +396,21 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.pinkAccent),
-                  tooltip: loc.delete,
+                  tooltip: _loc.delete,
                   onPressed: () async {
                     final event =
                         subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
                     final shouldDelete = await showConfirmationDialog(
-                      context: context,
-                      content:
-                          'No. ${index + 1} ${event.name} ${loc.delete}？',
-                      confirmText: loc.delete,
-                      cancelText: loc.cancel,
+                      content: 'No. ${index + 1} ${event.name} ${_loc.delete}？',
+                      confirmText: _loc.delete,
+                      cancelText: _loc.cancel,
                     );
 
                     if (shouldDelete == true) {
                       try {
                         setState(() => subEvents.removeAt(index));
                       } catch (e) {
-                        showSnackBar(context, '${loc.delete_error}: $e');
+                        showSnackBar(message: '${_loc.delete_error}: $e');
                       }
                     }
                   },
@@ -419,11 +425,14 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
-    final event = Event(
-      id: widget.existingRecommendedEvent != null
-          ? widget.existingRecommendedEvent!.id
-          : uuid.v4(),
+    final newEvent = Event(
+      subEvents: subEvents
+          .map((d) => d.id.isEmpty ? d.copyWith(newId: uuid.v4()) : d)
+          .toList(),
+    );
+
+    newEvent.setFromForm(
+      id: widget.existingEvent?.id ?? uuid.v4(),
       masterGraphUrl: masterGraphUrl,
       masterUrl: masterUrl,
       startDate: startDate,
@@ -437,22 +446,19 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
       description: description,
       fee: fee,
       unit: unit,
-      subEvents: subEvents
-          .map((d) => d.id.isEmpty ? d.copyWith(newId: uuid.v4()) : d)
-          .toList(),
-      account: auth.currentAccount,
-      reminderOptions: widget.existingRecommendedEvent == null
-          ? reminderOptions
-          : widget.existingRecommendedEvent!.reminderOptions,
-      repeatOptions: widget.existingRecommendedEvent == null
-          ? repeatOptions
-          : widget.existingRecommendedEvent!.repeatOptions,
+      account: _auth.currentAccount,
+      repeatOptions: widget.existingEvent?.repeatOptions ?? repeatOptions,
+      reminderOptions: widget.existingEvent?.reminderOptions ?? reminderOptions,
     );
-    await ServiceStorage().saveRecommendedEvent(context, event,
-        widget.existingRecommendedEvent == null, widget.tableName);
-    showSnackBar(context, loc.event_saved);
 
-    Navigator.pop(context, event);
+    await getIt<ServiceStorage>().saveEvent(
+        event: newEvent,
+        isNew: widget.existingEvent == null,
+        tableName: widget.tableName,
+        loc: _loc);
+    showSnackBar(message: _loc.event_saved);
+
+    Navigator.pop(context, newEvent);
   }
 
   @override
@@ -469,14 +475,14 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.event_add_edit),
+        title: Text(_loc.event_add_edit),
         actions: [
           TextButton(
             onPressed: _submit,
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
             ),
-            child: Text(loc.save),
+            child: Text(_loc.save),
           ),
         ],
       ),
@@ -490,50 +496,53 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
               _buildDateTimeRow(),
               _buildTextField(
                   key: EventFields.city,
-                  label: loc.city,
+                  label: _loc.city,
                   onChanged: (v) => setState(() => city = v)),
               _buildTextField(
                   key: EventFields.location,
-                  label: loc.location,
+                  label: _loc.location,
                   onChanged: (v) => setState(() => location = v)),
               _buildTextField(
                   key: EventFields.name,
-                  label: loc.activity_name,
+                  label: _loc.activity_name,
                   onChanged: (v) => setState(() => name = v)),
               _buildTextField(
                   key: EventFields.type,
-                  label: loc.keywords,
+                  label: _loc.keywords,
                   onChanged: (v) => setState(() => type = v)),
               _buildTextField(
                   key: EventFields.masterUrl,
-                  label: loc.master_url,
+                  label: _loc.master_url,
                   onChanged: (v) => setState(() => masterUrl = v)),
               _buildTextField(
                   key: EventFields.description,
-                  label: loc.description,
+                  label: _loc.description,
                   onChanged: (v) => setState(() => description = v),
                   maxLines: 2),
               _buildTextField(
                   key: EventFields.fee,
-                  label: loc.fee,
+                  label: _loc.fee,
                   onChanged: (v) => setState(() => fee = v)),
               _buildTextField(
                   key: EventFields.unit,
-                  label: loc.sponsor,
+                  label: _loc.sponsor,
                   onChanged: (v) => setState(() => unit = v)),
               kGapH16(),
-              Text(loc.event_sub),
+              Text(_loc.event_sub),
               ...List.generate(subEvents.length, _buildSubEventCard),
               ElevatedButton.icon(
                 onPressed: () {
-                  setState(() => subEvents.add(SubEventItem(
-                      id: uuid.v4(),
-                      startDate: startDate,
-                      endDate: endDate,
-                      startTime: startTime,
-                      endTime: endTime,
-                      city: city,
-                      location: location)));
+                  final newSub = EventSubItem(id: uuid.v4())
+                    ..startDate = startDate
+                    ..endDate = endDate
+                    ..startTime = startTime
+                    ..endTime = endTime
+                    ..city = city
+                    ..location = location;
+                  setState(() {
+                    subEvents.add(newSub);
+                  });
+                  // 自動滑到最下
                   Future.delayed(const Duration(milliseconds: 300), () {
                     if (_scrollController.hasClients) {
                       _scrollController.animateTo(
@@ -545,7 +554,7 @@ class _PageRecommendedEventAddState extends State<PageRecommendedEventAdd> {
                   });
                 },
                 icon: const Icon(Icons.add),
-                label: Text(loc.event_add_sub),
+                label: Text(_loc.event_add_sub),
               ),
             ],
           ),

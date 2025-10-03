@@ -7,7 +7,7 @@ import 'package:life_pilot/pages/specific/page_memory_trace.dart';
 import 'package:life_pilot/pages/specific/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/specific/page_recommended_event.dart';
 import 'package:life_pilot/pages/page_type.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:provider/provider.dart';
 
 class PageMain extends StatefulWidget {
@@ -21,11 +21,12 @@ class PageMain extends StatefulWidget {
 class _PageMainState extends State<PageMain> {
   PageType? _selectedPage;
   Locale? _lastLocale;
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  bool _initialized = false;
+  late AppLocalizations _loc;
   late ControllerAuth _auth;
 
   late final Map<PageType, WidgetBuilder> _pageMap = {
-    PageType.personalEvent: (_) => PageCalendar(),
+    PageType.personalEvent: (_) => const PageCalendar(),
     PageType.settings: (_) => const PageA(),
     PageType.recommendedEvent: (_) => PageRecommendedEvent(),
     PageType.recommendedAttractions: (_) => PageRecommendedAttractions(),
@@ -36,63 +37,66 @@ class _PageMainState extends State<PageMain> {
     PageType.ai: (_) => const PageA(),
   };
 
-  bool _initialized = false;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _auth = Provider.of<ControllerAuth>(context,listen:true);
-    if (_initialized) return;
-    _initialized = true;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final defaultPage =
-          _auth.isAnonymous ? PageType.recommendedEvent : PageType.personalEvent;
-      setState(() {
-        _selectedPage = defaultPage;
+    _loc = AppLocalizations.of(context)!;
+    _auth = Provider.of<ControllerAuth>(context, listen: false);
+    // 初始化選擇頁面 (只初始化一次)
+    if (!_initialized) {
+      _initialized = true;
+      final defaultPage = _auth.isAnonymous
+          ? PageType.recommendedEvent
+          : PageType.personalEvent;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _selectedPage = defaultPage;
+        });
+        _updatePagesChanged(selected: defaultPage);
       });
-      _updatePagesChanged(defaultPage, context: context);
-    });
+    }
 
+    // 監聽 locale 變化
     final currentLocale = Localizations.localeOf(context);
     if (_lastLocale != currentLocale && _selectedPage != null) {
       _lastLocale = currentLocale;
-      _updatePagesChanged(_selectedPage!, context: context);
+      _updatePagesChanged(selected: _selectedPage!);
     }
   }
 
-  void _updatePagesChanged(PageType selected,{required BuildContext context}) {
+  void _updatePagesChanged({required PageType selected}) {
     final pages = [
-      _buildDropdown(selected, context: context),
+      _buildDropdown(selected: selected),
       kGapW8(),
     ];
 
     widget.onPagesChanged?.call(pages);
   }
 
-  Widget _buildDropdown(PageType selected, {required BuildContext context}) {
-    
-    final pageTitles = _getPageTitles(context: context); //loc, isAnonymous
-
+  Widget _buildDropdown({required PageType selected}) {
+    final pageTitles = _auth.isAnonymous
+        ? [PageType.recommendedEvent, PageType.recommendedAttractions]
+        : PageType.values;
     return DropdownButtonHideUnderline(
       child: DropdownButton<PageType>(
         value: selected,
         style: const TextStyle(
           color: Colors.white,
         ),
-        dropdownColor: Color(0xFF0066CC),
+        dropdownColor: const Color(0xFF0066CC),
         iconEnabledColor: Colors.white,
         items: pageTitles.map((pageType) {
           return DropdownMenuItem<PageType>(
             value: pageType,
-            child: Text(pageType.title(loc)),
+            child: Text(pageType.title(_loc)),
           );
         }).toList(),
         onChanged: (value) {
           if (value != null && value != _selectedPage) {
-            _selectedPage = value;
-            _updatePagesChanged(value, context: context);
-            setState(() {});
+            setState(() {
+              _selectedPage = value;
+            });
+            _updatePagesChanged(selected: value);
           }
         },
       ),
@@ -102,11 +106,6 @@ class _PageMainState extends State<PageMain> {
   Widget _buildSelectedPage() {
     final builder = _pageMap[_selectedPage];
     return builder != null ? builder(context) : const SizedBox.shrink();
-  }
-
-  List<PageType> _getPageTitles({required BuildContext context}) {
-    ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
-    return auth.isAnonymous ? [PageType.recommendedEvent] : PageType.values;
   }
 
   @override

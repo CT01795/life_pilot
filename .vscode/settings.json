@@ -30,5 +30,6 @@
         "supabase",
         "USERPROFILE",
         "XVCJ"
-    ]
+    ],
+    "commentTranslate.hover.enabled": false
 }

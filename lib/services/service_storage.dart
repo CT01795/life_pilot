@@ -1,16 +1,17 @@
-import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/notification/notification.dart';
-import 'package:life_pilot/notification/notification_common.dart';
+import 'package:life_pilot/models/model_event_fields.dart';
+import 'package:life_pilot/models/model_event_sub_item.dart';
+import 'package:life_pilot/notification/notification_entry.dart';
+import 'package:life_pilot/notification/core/reminder_option.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart'
-    show DateUtils, DateTimeExtension;
-import 'package:life_pilot/utils/utils_enum.dart';
-import 'package:life_pilot/utils/utils_mobile.dart';
-import 'package:provider/provider.dart';
+    show DateTimeExtension, DateUtils;
+import 'package:life_pilot/utils/core/utils_enum.dart';
+import 'package:life_pilot/utils/platform/utils_mobile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceStorage {
@@ -18,7 +19,8 @@ class ServiceStorage {
 
   List<Event>? allEvents;
 
-  Future<List<Event>?> getRecommendedEvents({
+  // 📌 取得推薦事件 (由 Supabase 的 RPC 呼叫)
+  Future<List<Event>?> getEvents({
     required String tableName,
     DateTime? dateS,
     DateTime? dateE,
@@ -26,7 +28,11 @@ class ServiceStorage {
     String? inputUser,
   }) async {
     final today = DateUtils.dateOnly(DateTime.now());
-    final inputDateS = (dateS ?? (tableName == constTableMemoryTrace ? today.subtract(Duration(days:365)) : today)).formatDateString();
+    final inputDateS = (dateS ??
+            (tableName == constTableMemoryTrace
+                ? today.subtract(Duration(days: 365))
+                : today))
+        .formatDateString();
     final inputDateE =
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
@@ -46,8 +52,9 @@ class ServiceStorage {
     return allEvents;
   }
 
-  Future<void> approvalRecommendedEvent(
-      BuildContext context, Event event, String tableName) async {
+  // ✅ 核准事件 (由管理者)
+  Future<void> approvalEvent(
+      {required Event event, required String tableName}) async {
     try {
       String? realAccount = event.account;
       if (event.account == constGuest) {
@@ -63,20 +70,23 @@ class ServiceStorage {
       }
       await query;
     } catch (ex, stacktrace) {
-      logger.e("approvalRecommendedEvent error",
+      logger.e("approvalEvent error",
           error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
 
-  Future<void> saveRecommendedEvent(
-      BuildContext context, Event event, bool isNew, String tableName) async {
+  // 💾 儲存（新增或更新）事件 + 排程通知
+  Future<void> saveEvent(
+      {required Event event,
+      required bool isNew,
+      required String tableName,
+      required AppLocalizations loc}) async {
     try {
-      ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
-      AppLocalizations loc = AppLocalizations.of(context)!;
+      ControllerAuth auth = getIt<ControllerAuth>();
       _validateEvent(event, loc);
       if ((isNew || event.reminderOptions.isEmpty) &&
-          tableName != constTableRecommendedAttractions) {
+          tableName == constTableCalendarEvents) {
         event.reminderOptions = [
           ReminderOption.oneHour, // 事件開始前1小時
           ReminderOption.sameDay8am,
@@ -105,24 +115,28 @@ class ServiceStorage {
         }
         await query;
       }
+
       // 🔥 加入通知邏輯
-      if (tableName == constTableRecommendedAttractions) {
+      if (tableName != constTableCalendarEvents) {
         return;
       }
-      await MyCustomNotification.cancelEventReminders(event); // 移除舊通知（根據 id）
-      await checkExactAlarmPermission(context);
-      await MyCustomNotification.scheduleEventReminders(event, tableName, context: context); // 新的排程
+      await NotificationEntryImpl.cancelEventReminders(
+          event: event); // 移除舊通知（根據 id）
+      await checkExactAlarmPermission();
+      await NotificationEntryImpl.scheduleEventReminders(
+          event: event, tableName: tableName, loc: loc); // 新的排程
     } catch (ex, stacktrace) {
-      logger.e("saveRecommendedEvent error", error: ex, stackTrace: stacktrace);
+      logger.e("saveEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
 
-  Future<void> deleteRecommendedEvent(
-      BuildContext context, Event event, String tableName) async {
+  // ❌ 刪除推薦事件
+  Future<void> deleteEvent(
+      {required Event event, required String tableName}) async {
     try {
-      ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
-      await MyCustomNotification.cancelEventReminders(event); // 取消通知
+      ControllerAuth auth = getIt<ControllerAuth>();
+      await NotificationEntryImpl.cancelEventReminders(event: event); // 取消通知
       var query = _client.from(tableName).delete().eq(EventFields.id, event.id);
       if (auth.currentAccount != constSysAdminEmail &&
           event.account != null &&
@@ -131,7 +145,7 @@ class ServiceStorage {
       }
       await query;
     } catch (ex, stacktrace) {
-      logger.e("deleteRecommendedEvent error",
+      logger.e("deleteEvent error",
           error: ex, stackTrace: stacktrace);
       rethrow;
     }
@@ -155,7 +169,7 @@ class ServiceStorage {
     }
   }
 
-  void _normalizeSubEventsDates(List<SubEventItem> subEvents) {
+  void _normalizeSubEventsDates(List<EventSubItem> subEvents) {
     for (final subEvent in subEvents) {
       if (subEvent.endDate != null &&
           !subEvent.endDate!.isAfter(subEvent.startDate!)) {

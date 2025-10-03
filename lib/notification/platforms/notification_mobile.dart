@@ -1,20 +1,20 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_date_time.dart' show DateUtils, DateTimeExtension, TimeOfDayExtension;
+import 'package:life_pilot/notification/core/reminder_option.dart';
+import 'package:life_pilot/notification/core/reminder_utils.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/utils_date_time.dart'
+    show DateUtils, DateTimeExtension, TimeOfDayExtension;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:life_pilot/notification/notification_common.dart' as snc;
 
-class MyCustomNotification {
+class NotificationEntryImpl {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
@@ -28,7 +28,10 @@ class MyCustomNotification {
   }
 
   // 根據 event.reminderOptions 安排通知
-  static Future<void> scheduleEventReminders(Event event, String tableName, {required BuildContext context}) async {
+  static Future<void> scheduleEventReminders(
+      {required Event event,
+      required String tableName,
+      required AppLocalizations loc}) async {
     if (event.startDate == null || event.startTime == null) {
       return;
     }
@@ -41,17 +44,14 @@ class MyCustomNotification {
         continue;
       }
 
-      final loc = AppLocalizations.of(context)!;
-      final id =
-          snc.ReminderUtils.generateNotificationId(event.id, option.toKey());
+      final id = ReminderUtils.generateNotificationId(
+          eventId: event.id, optionKey: option.toKey());
       final title =
-          '${loc.event_reminder}: ${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()} ${event.name}';
-      final body = snc.ReminderUtils.getReminderLabel(loc, option);
+          '${loc.event_reminder}: ${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime?.formatTimeString()} ${event.name}';
+      final body =
+          ReminderUtils.getReminderLabel(loc: loc, reminderOption: option);
 
-      final reminderDuration = snc.ReminderUtils.getReminderDuration(option);
-      logger.d("reminderDuration = $reminderDuration, option = $option,  now ${DateTime.now()}, expect notify time $reminderTime, event time ${event.startDate!.formatDateString()} ${event.startTime!.formatTimeString()}");
-
-      if (defaultTargetPlatform == TargetPlatform.android) {
+      if (Platform.isAndroid) {
         final details = _buildAndroidNotificationDetails(
             channelId: 'event_channel',
             channelName: loc.event_reminder_desc,
@@ -68,20 +68,21 @@ class MyCustomNotification {
     }
   }
 
-  static Future<void> showTodayEventsWebNotification(String tableName, {required BuildContext context}) async {
+  static Future<void> showTodayEventsWebNotification(
+      {required String tableName, required AppLocalizations loc}) async {
     // 空實作，避免編譯錯誤
     return;
   }
 
-  static Future<void> showImmediateNotification(Event event, {required BuildContext context}) async {
-    AppLocalizations loc = AppLocalizations.of(context)!;
+  static Future<void> showImmediateNotification(
+      {required Event event, required AppLocalizations loc}) async {
     // 通知ID，建議用事件ID或其它唯一數字
-    final int notificationId =
-        snc.ReminderUtils.generateNotificationId(event.id, 'immediate');
+    final int notificationId = ReminderUtils.generateNotificationId(
+        eventId: event.id, optionKey: 'immediate');
 
     // 通知標題
     final String title =
-        '${loc.event_reminder_today} ${event.startTime == null ? constEmpty : event.startTime!.formatTimeString()} ${event.name}';
+        '${loc.event_reminder_today} ${event.startTime == null ? constEmpty : event.startTime?.formatTimeString()} ${event.name}';
     // 通知內容
     final String body = constEmpty;
 
@@ -96,22 +97,20 @@ class MyCustomNotification {
       title,
       body,
       NotificationDetails(android: details),
-      payload: event.id, // 可帶參數，點通知時用
+      payload: event.id.toString(), // 可帶參數，點通知時用
     );
   }
 
   // 取消與此事件相關的所有提醒通知
-  static Future<void> cancelEventReminders(Event event) async {
+  static Future<void> cancelEventReminders({required Event event}) async {
     for (final option in event.reminderOptions) {
-      await _plugin.cancel(
-          snc.ReminderUtils.generateNotificationId(event.id, option.toKey()));
+      await _plugin.cancel(ReminderUtils.generateNotificationId(
+          eventId: event.id, optionKey: option.toKey()));
     }
   }
 
-  static void showMyCustomNotification(
-      String title, String body, String toolTip) {
-      
-  }
+  static void showNotificationWeb(
+      {required String title, required String body, required String tooltip}) {}
 
   // --- 私有方法 ---
   static Future<void> _requestPermissions() async {
@@ -159,18 +158,17 @@ class MyCustomNotification {
   }
 
   static DateTime _calculateReminderTime(
-      snc.ReminderOption option, Event event, DateTime targetTime) {
+      ReminderOption option, Event event, DateTime targetTime) {
     switch (option) {
-      case snc.ReminderOption.sameDay8am:
+      case ReminderOption.sameDay8am:
         return DateUtils.getDateTime(
             event.startDate, TimeOfDay(hour: 8, minute: 0));
-      case snc.ReminderOption.dayBefore8am:
+      case ReminderOption.dayBefore8am:
         return DateUtils.getDateTime(
             event.startDate!.subtract(Duration(days: 1)),
             TimeOfDay(hour: 8, minute: 0));
       default:
-        return targetTime
-            .subtract(snc.ReminderUtils.getReminderDuration(option));
+        return targetTime.subtract(ReminderUtils.getReminderDuration(option));
     }
   }
 }

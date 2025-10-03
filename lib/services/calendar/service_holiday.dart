@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_timezone_helper.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_timezone_helper.dart';
 
 class HolidayService {
   static const String _apiKey =
@@ -86,16 +86,15 @@ class HolidayService {
         }
 
         final holidayEvent = Event(
-          id: 'holiday_${date.toIso8601String()}',
-          startDate: date,
-          endDate: date,
-          startTime: null,
-          endTime: null,
-          name: mappedSummary,
-          isTaiwanHoliday: isTaiwanHoliday, // <-- ✅ 你可以加這欄位來標示是否為假日
-          isHoliday: true, // <-- ✅ 你可以加這欄位來標示是否為假日
-        );
-
+            id: 'holiday_${start.toIso8601String()}',
+          )
+            ..startDate = date
+            ..endDate = date
+            ..startTime = null
+            ..endTime = null
+            ..name = mappedSummary
+            ..isTaiwanHoliday = isTaiwanHoliday
+            ..isHoliday = true;
         events.add(holidayEvent); 
       }
 
@@ -114,13 +113,13 @@ class HolidayService {
       DateTime start, DateTime end, String summary) {
     return Event(
       id: 'holiday_${start.toIso8601String()}',
-      startDate: start,
-      endDate: end,
-      startTime: null,
-      endTime: null,
-      name: summary,
-      isTaiwanHoliday: true,
-      isHoliday: true,
-    );
+    )
+      ..startDate = start
+      ..endDate = end
+      ..startTime = null
+      ..endTime = null
+      ..name = summary
+      ..isTaiwanHoliday = true
+      ..isHoliday = true;
   }
 }

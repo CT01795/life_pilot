@@ -2,29 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/notification/notification.dart';
-import 'package:life_pilot/pages/page_recommended_event_add.dart';
+import 'package:life_pilot/my_app.dart';
+import 'package:life_pilot/notification/notification_entry.dart';
+import 'package:life_pilot/pages/page_event_add.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_event_card.dart';
-import 'package:life_pilot/utils/utils_event_widgets.dart';
-import 'package:life_pilot/utils/utils_show_dialog.dart';
-import 'package:provider/provider.dart';
-
-import '../export/export.dart';
-import 'utils_mobile.dart';
+import 'package:life_pilot/utils/widget/utils_event_widgets.dart';
+import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
+import '../export/export_entry.dart';
+import 'platform/utils_mobile.dart';
 
 // --- Build White AppBar ---
-AppBar buildWhiteAppBar(
-  BuildContext context, {
+AppBar buildWhiteAppBar({
   required String title,
   bool enableSearchAndExport = false,
   required AppBarActionsHandler handler,
   required void Function(void Function()) setState,
   VoidCallback? onAdd,
   required String tableName,
+  required AppLocalizations loc,
 }) {
   return AppBar(
       title: Text(constEmpty),
@@ -32,26 +32,24 @@ AppBar buildWhiteAppBar(
       foregroundColor: Colors.black,
       elevation: 0,
       actions: buildAppBarActions(
-        context,
         enableSearchAndExport: enableSearchAndExport,
         handler: handler,
         setState: setState,
         onAdd: onAdd,
         tableName: tableName,
+        loc: loc
       ));
 }
 
 // --- Build AppBar Actions ---
-List<Widget> buildAppBarActions(
-  BuildContext context, {
+List<Widget> buildAppBarActions({
   required bool enableSearchAndExport,
   required AppBarActionsHandler handler,
   required void Function(VoidCallback fn) setState,
   VoidCallback? onAdd,
   required String tableName,
+  required AppLocalizations loc,
 }) {
-  final loc = AppLocalizations.of(context)!;
-
   List<Widget> actions = [];
 
   if (enableSearchAndExport) {
@@ -81,7 +79,6 @@ List<Widget> buildAppBarActions(
 
 // --- AppBar Actions Handler Class ---
 class AppBarActionsHandler {
-  final BuildContext context;
   final void Function(void Function()) setState;
 
   bool Function() showSearchPanelGetter;
@@ -92,18 +89,16 @@ class AppBarActionsHandler {
   final String tableName;
   final void Function(List<Event>) updateEvents;
 
-  ControllerAuth get _auth =>
-      Provider.of<ControllerAuth>(context, listen: false);
-  AppLocalizations get loc => AppLocalizations.of(context)!;
-  ServiceStorage get service =>
-      Provider.of<ServiceStorage>(context, listen: false);
+  ControllerAuth get _auth => getIt<ControllerAuth>();
+  AppLocalizations loc;
+  ServiceStorage get service => getIt<ServiceStorage>();
   AppBarActionsHandler({
-    required this.context,
     required this.setState,
     required this.showSearchPanelGetter,
     required this.onToggleShowSearch,
     required this.tableName,
     required this.updateEvents,
+    required this.loc,
   });
 
   void onSearchToggle() {
@@ -114,37 +109,34 @@ class AppBarActionsHandler {
 
   Future<void> refreshCallback() async {
     try {
-      final events = await loadEvents(tableName, context: context);
-      if (context.mounted) {
-        // ✅ 更新外部頁面事件狀態
-        setState(() {
-          updateEvents(events);
-        });
-      }
+      final events = await loadEvents(tableName: tableName);
+      // ✅ 更新外部頁面事件狀態
+      setState(() {
+        updateEvents(events);
+      });
     } catch (e) {
-      showSnackBar(context, "Failed to load events: $e");
+      showSnackBar(message: "Failed to load events: $e");
     }
   }
 
   Future<void> onExport() async {
     try {
-      final events = await service.getRecommendedEvents(
+      final events = await service.getEvents(
           tableName: tableName, inputUser: _auth.currentAccount);
       if (events == null || events.isEmpty) {
-        showSnackBar(context, loc.no_events_to_export);
+        showSnackBar(message: loc.no_events_to_export);
         return;
       }
-      await exportRecommendedEventsToExcel(context, events);
+      await exportEventsToExcel(events: events, loc: loc);
     } catch (e) {
-      showSnackBar(context, "${loc.export_failed}：$e");
+      showSnackBar(message: "${loc.export_failed}：$e");
     }
   }
 
   Future<Event?> onAddEvent() {
-    return Navigator.push<Event?>(
-      context,
+    return navigatorKey.currentState!.push<Event?>(
       MaterialPageRoute(
-        builder: (context) => PageRecommendedEventAdd(tableName: tableName),
+        builder: (_) => PageEventAdd(tableName: tableName),
       ),
     ).then((newEvent) async {
       if (newEvent != null) {
@@ -161,17 +153,15 @@ Widget buildSearchPanel({
   required String searchKeywords,
   required void Function(String) onSearchKeywordsChanged,
   required void Function(void Function()) setState,
-  required BuildContext context,
 
   // 新增這三個參數為 optional
   DateTime? startDate,
   DateTime? endDate,
   void Function(DateTime?)? onStartDateChanged,
   void Function(DateTime?)? onEndDateChanged,
+  required String tableName,
+  required AppLocalizations loc,
 }) {
-  final tableName = Provider.of<String>(context, listen: false); // 直接拿
-  final loc = AppLocalizations.of(context)!;
-
   return Padding(
     padding: kGapEI12,
     child: Column(
@@ -213,21 +203,21 @@ Widget buildSearchPanel({
             children: [
               Expanded(
                 child: widgetBuildDateButton(
-                  context: context,
                   date: startDate,
                   label: loc.start_date,
                   icon: Icons.date_range,
                   onDateChanged: onStartDateChanged,
+                  loc: loc
                 ),
               ),
               kGapW16(),
               Expanded(
                 child: widgetBuildDateButton(
-                  context: context,
                   date: endDate,
                   label: loc.end_date,
                   icon: Icons.date_range,
                   onDateChanged: onEndDateChanged,
+                  loc: loc
                 ),
               ),
             ],
@@ -242,18 +232,17 @@ Widget buildSearchPanel({
 // ✅ 共用 Trailing Checkbox & Edit 按鈕
 // ------------------------------
 Widget buildEventTrailing({
-  required BuildContext context,
   required Event event,
   required Set<String> selectedEventIds,
   required void Function(void Function()) setState,
   required VoidCallback refreshCallback,
   required String tableName,
   required String toTableName,
+  required AppLocalizations loc,
 }) {
-  final loc = AppLocalizations.of(context)!;
-  final auth = Provider.of<ControllerAuth>(context, listen: false);
-  final controller = Provider.of<ControllerCalendar>(context, listen: false);
-  final service = Provider.of<ServiceStorage>(context, listen: false);
+  ControllerCalendar controller = getIt<ControllerCalendar>();
+  final auth = getIt<ControllerAuth>();
+  final service = getIt<ServiceStorage>();
 
   return StatefulBuilder(builder: (context, localSetState) {
     final isChecked = selectedEventIds.contains(event.id);
@@ -266,7 +255,6 @@ Widget buildEventTrailing({
               value: isChecked,
               onChanged: (value) async {
                 await onCheckboxChanged(
-                  context: context,
                   value: value,
                   event: event,
                   selectedEventIds: selectedEventIds,
@@ -277,6 +265,7 @@ Widget buildEventTrailing({
                   addedMessage: loc.event_add_ok,
                   tableName: tableName,
                   toTableName: toTableName,
+                  loc: loc
                 );
               },
             ),
@@ -297,19 +286,18 @@ Widget buildEventTrailing({
               tooltip: loc.set_alarm,
               onPressed: () async {
                 final updated =
-                    await showAlarmSettingsDialog(context, event, controller);
+                    await showAlarmSettingsDialog(event: event, loc: loc);
 
                 if (updated) {
                   // 有更新鬧鐘設定，重新載入事件並刷新 UI
-                  await controller.loadEvents(context: context);
+                  await controller.loadCalendarEvents();
                   // 呼叫 setState 讓 Dialog 內容重新渲染（Dialog 內部 StatefulBuilder）
                   // 這裡簡單用 Navigator.pop 讓 Dialog 關閉，然後重新開啟，或用 setState 刷新列表
-                  await MyCustomNotification.cancelEventReminders(
-                      event); // 取消舊通知
-                  await checkExactAlarmPermission(context);
-                  await MyCustomNotification.scheduleEventReminders(
-                      event, controller.tableName,
-                      context: context); // 安排新通知
+                  await NotificationEntryImpl.cancelEventReminders(
+                      event: event); // 取消舊通知
+                  await checkExactAlarmPermission();
+                  await NotificationEntryImpl.scheduleEventReminders(
+                      event: event, tableName: controller.tableName, loc: loc); // 安排新通知
                   Navigator.pop(context); // 關閉事件 Dialog，回到上一頁
                 }
               },
@@ -319,7 +307,6 @@ Widget buildEventTrailing({
               icon: const Icon(Icons.edit),
               tooltip: loc.edit,
               onPressed: () => onEditEvent(
-                context: context,
                 event: event,
                 setState: setState,
                 refreshCallback: refreshCallback,
@@ -337,10 +324,9 @@ Widget buildEventTrailing({
                 setState(() {
                   event.isApproved = true;
                 });
-                await service.approvalRecommendedEvent(
-                  context,
-                  event,
-                  tableName,
+                await service.approvalEvent(
+                  event: event,
+                  tableName: tableName,
                 );
               },
             ),
@@ -355,7 +341,7 @@ Widget buildEventTrailing({
 // 📋 Event ListView / GridView
 // ------------------------------
 class EventList extends StatelessWidget {
-  final List<Event> events;
+  final List<Event> filteredEvents;
   final Set<String> selectedEventIds;
   final Set<String> removedEventIds;
   final ServiceStorage? serviceStorage;
@@ -367,7 +353,7 @@ class EventList extends StatelessWidget {
 
   const EventList({
     super.key,
-    required this.events,
+    required this.filteredEvents,
     required this.selectedEventIds,
     required this.removedEventIds,
     this.serviceStorage,
@@ -380,21 +366,22 @@ class EventList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
+    final auth = getIt<ControllerAuth>();
+    AppLocalizations loc = AppLocalizations.of(context)!;
     return ListView.builder(
       key: PageStorageKey(tableName), //'recommended_event_list'
       controller: scrollController,
-      itemCount: events.length,
+      itemCount: filteredEvents.length,
       itemBuilder: (context, index) {
-        final event = events[index];
+        final event = filteredEvents[index];
         final trailing = buildEventTrailing(
-          context: context,
           event: event,
           selectedEventIds: selectedEventIds,
           setState: setState,
           refreshCallback: refreshCallback,
           tableName: tableName,
           toTableName: toTableName,
+          loc: loc,
         );
 
         return EventCardDetail(
@@ -415,11 +402,11 @@ class EventList extends StatelessWidget {
                       tableName != constTableMemoryTrace)
               ? () async {
                   await onRemoveEvent(
-                    context: context,
                     event: event,
                     removedEventIds: removedEventIds,
                     setState: setState,
                     tableName: tableName,
+                    loc: loc
                   );
                 }
               : null,
@@ -434,7 +421,6 @@ class EventList extends StatelessWidget {
 // ✅ Utility Functions
 // ------------------------------
 Future<void> onCheckboxChanged({
-  required BuildContext context,
   required bool? value,
   required Event event,
   required Set<String> selectedEventIds,
@@ -442,9 +428,9 @@ Future<void> onCheckboxChanged({
   required String addedMessage,
   required String tableName,
   required String toTableName,
+  required AppLocalizations loc
 }) async {
   await handleCheckboxChanged(
-    context: context,
     value: value,
     event: event,
     selectedEventIds: selectedEventIds,
@@ -452,21 +438,20 @@ Future<void> onCheckboxChanged({
     addedMessage: addedMessage,
     tableName: tableName,
     toTableName: toTableName,
+    loc: loc,
   );
 }
 
 Future<void> onEditEvent({
-  required BuildContext context,
   required Event event,
   required void Function(void Function()) setState,
   required VoidCallback refreshCallback,
   required String tableName,
 }) async {
-  final updatedEvent = await Navigator.push<Event?>(
-    context,
+  final updatedEvent = await navigatorKey.currentState!.push<Event?>(
     MaterialPageRoute(
-      builder: (context) => PageRecommendedEventAdd(
-        existingRecommendedEvent: event,
+      builder: (_) => PageEventAdd(
+        existingEvent: event,
         tableName: tableName,
       ),
     ),
@@ -478,24 +463,24 @@ Future<void> onEditEvent({
 }
 
 Future<void> onRemoveEvent({
-  required BuildContext context,
   required Event event,
   required Set<String> removedEventIds,
   required void Function(void Function()) setState,
   required String tableName,
+  required AppLocalizations loc
 }) async {
-  final service = Provider.of<ServiceStorage>(context, listen: false);
+  final service = getIt<ServiceStorage>();
   await handleRemoveEvent(
-    context: context,
     event: event,
     onDelete: () async {
-      await service.deleteRecommendedEvent(context, event, tableName);
+      await service.deleteEvent(event: event, tableName: tableName);
     },
     onSuccessSetState: () {
       setState(() {
         removedEventIds.add(event.id);
       });
     },
+    loc: loc
   );
 }
 

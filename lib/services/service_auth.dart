@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_enum.dart';
+import 'package:life_pilot/utils/core/utils_enum.dart';
 
 class ServiceAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -44,6 +44,7 @@ class ServiceAuth {
     }, defaultError: ErrorFields.registerError);
   }
 
+  // 🔄 重設密碼
   static Future<String?> resetPassword(String email) async {
     if (email.isEmpty) {
       return ErrorFields.noEmailError;

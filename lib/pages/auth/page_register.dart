@@ -3,13 +3,13 @@ import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/services/service_auth.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_input_field.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/widget/utils_input_field.dart';
 import 'package:provider/provider.dart';
 
 class PageRegister extends StatefulWidget {
-  final String? email; 
-  final String? password; 
+  final String? email;
+  final String? password;
   final void Function(String email, String password) onBack;
   const PageRegister(
       {super.key, this.email, this.password, required this.onBack});
@@ -19,15 +19,22 @@ class PageRegister extends StatefulWidget {
 }
 
 class _PageRegisterState extends State<PageRegister> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  AppLocalizations get loc => AppLocalizations.of(context)!; 
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+  late AppLocalizations _loc;
 
   @override
   void initState() {
     super.initState();
-    _emailController.text = widget.email ?? constEmpty;
-    _passwordController.text = widget.password ?? constEmpty;
+    _emailController = TextEditingController(text: widget.email ?? constEmpty);
+    _passwordController =
+        TextEditingController(text: widget.password ?? constEmpty);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loc = AppLocalizations.of(context)!;
   }
 
   @override
@@ -39,39 +46,38 @@ class _PageRegisterState extends State<PageRegister> {
 
   void _register() async {
     final result = await ServiceAuth.register(
-      _emailController.text,
-      _passwordController.text,
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
     );
 
     if (result == null) {
-      final auth = Provider.of<ControllerAuth>(context,listen:false);
+      final auth = context.read<ControllerAuth>();
       await auth.checkLoginStatus();
     } else {
-      showLoginError(context, result); 
+      showLoginError(message: result, loc: _loc);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Theme.of(context).scaffoldBackgroundColor, 
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Theme(
-        data: Theme.of(context), 
+        data: Theme.of(context),
         child: SingleChildScrollView(
           padding: kGapEI12,
           child: Column(
             children: [
-              InputField(controller: _emailController, labelText: loc.email),
+              InputField(controller: _emailController, labelText: _loc.email),
               kGapH16(),
               InputField(
                   controller: _passwordController,
-                  labelText: loc.password,
+                  labelText: _loc.password,
                   obscureText: true),
               kGapH16(),
               Row(
                 children: [
-                  ActionButton(
-                      label: loc.register, onPressed: _register), 
+                  ActionButton(label: _loc.register, onPressed: _register),
                   kGapW8(),
                   TextButton(
                     onPressed: () {
@@ -80,7 +86,7 @@ class _PageRegisterState extends State<PageRegister> {
                         _passwordController.text,
                       );
                     },
-                    child: Text(loc.back),
+                    child: Text(_loc.back),
                   ),
                 ],
               ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 
 class LanguageToggleDropdown extends StatelessWidget {
   final Locale currentLocale;

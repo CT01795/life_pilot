@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/my_app.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 
 Widget widgetBuildDateButton({
-  required BuildContext context,
   required DateTime? date,
   required String label,
   required IconData icon,
   required void Function(DateTime?) onDateChanged,
+  required AppLocalizations loc,
 }) {
-  final loc = AppLocalizations.of(context)!;
   return Row(
     children: [
       Expanded(
@@ -20,7 +20,7 @@ Widget widgetBuildDateButton({
               : "${date.month.toString().padLeft(2, constZero)}/${date.day.toString().padLeft(2, constZero)}"),
           onPressed: () async {
             DateTime? picked = await showDatePicker(
-              context: context,
+              context: navigatorKey.currentState!.context,
               initialDate: date ?? DateTime.now(),
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),

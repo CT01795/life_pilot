@@ -1,37 +1,86 @@
-import 'package:flutter/material.dart' hide Notification;
+import 'package:flutter/material.dart' hide Notification, DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/notification/notification.dart';
+import 'package:life_pilot/notification/notification_entry.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
-import 'package:life_pilot/services/service_holiday.dart';
+import 'package:life_pilot/services/calendar/service_holiday.dart';
 import 'package:life_pilot/services/service_storage.dart';
-import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_enum.dart';
-import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/utils_date_time.dart';
+import 'package:life_pilot/utils/core/utils_enum.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends ChangeNotifier {
   final String tableName;
 
   late DateTime currentMonth;
+  List<Event> events = [];
+  bool isLoading = false; // ⬅️ 新增 loading 旗標
+
+  // 給 PageView 初始用的基準年月
+  static final DateTime baseDate = DateTime(1911, 1);
+  // [事件快取結構]：{年月字串 : Map<週索引, Map<日索引, List<Event>>>}
+  final Map<String, Map<int, Map<int, List<Event>>>> _cachedEvents = {};
 
   ControllerCalendar({required this.tableName}) {
     currentMonth = DateUtils.dateOnly(DateTime.now());
   }
 
-  List<Event> events = [];
-  bool isLoading = false; // ⬅️ 新增 loading 旗標
-
-  // 給 PageView 初始用的基準年月
-  static DateTime baseDate = DateTime(1911, 1);
-
   int get initialPage {
     return (currentMonth.year - baseDate.year) * 12 + (currentMonth.month - 1);
   }
 
-  // [事件快取結構]：{年月字串 : Map<週索引, Map<日索引, List<Event>>>}
-  final Map<String, Map<int, Map<int, List<Event>>>> _cachedEvents = {};
+  void clearAll() {
+    events.clear();
+    _cachedEvents.clear();
+    isLoading = false;
+    notifyListeners(); // 清除畫面
+  }
 
+  // 將日期轉為 key 格式 yyyy-MM
+  String _monthKey(DateTime date) =>
+      "${date.year}-${date.month.toString().padLeft(2, constZero)}";
+
+  // 取得完整月曆格子（含上月與下月填充週）
+  List<List<DateTime>> getCalendarDays(DateTime month) {
+    final firstDayOfMonth = DateTime(month.year, month.month, 1);
+    final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
+
+    final int startOffset = firstDayOfMonth.weekday % 7;
+    final DateTime startDate = firstDayOfMonth.subtract(Duration(days: startOffset));
+
+    final int endOffset = 6 - (lastDayOfMonth.weekday % 7);
+    final DateTime endDate = lastDayOfMonth.add(Duration(days: endOffset));
+
+    List<List<DateTime>> weeks = [];
+    List<DateTime> currentWeek = [];
+
+    for (DateTime date = startDate;
+        !date.isAfter(endDate);
+        date = date.add(Duration(days: 1))) {
+      currentWeek.add(date);
+      if (currentWeek.length == 7) {
+        weeks.add(currentWeek);
+        currentWeek = [];
+      }
+    }
+
+    return weeks;
+  }
+
+  // 工具方法：檢查兩個事件是否跨日重疊
+  bool isOverlapping(Event a, Event b) {
+    final aStart = DateUtils.dateOnly(a.startDate!);
+    final aEnd = DateUtils.dateOnly(a.endDate ?? a.startDate!);
+    final bStart = DateUtils.dateOnly(b.startDate!);
+    final bEnd = DateUtils.dateOnly(b.endDate ?? b.startDate!);
+
+    return !(aEnd.isBefore(bStart) || aStart.isAfter(bEnd));
+  }
+
+  // 拿到該月每週對應的事件層級（含排版 rowIndex）
   Map<int, List<EventWithRow>> getWeekEventRows(DateTime month) {
     final calendarWeeks = getCalendarDays(month);
     final weekEventRows = <int, List<EventWithRow>>{};
@@ -79,62 +128,25 @@ class ControllerCalendar extends ChangeNotifier {
     return weekEventRows;
   }
 
-  // 工具方法：檢查兩個事件是否跨日重疊
-  bool isOverlapping(Event a, Event b) {
-    final aStart = DateUtils.dateOnly(a.startDate!);
-    final aEnd = DateUtils.dateOnly(a.endDate ?? a.startDate!);
-    final bStart = DateUtils.dateOnly(b.startDate!);
-    final bEnd = DateUtils.dateOnly(b.endDate ?? b.startDate!);
-
-    return !(aEnd.isBefore(bStart) || aStart.isAfter(bEnd));
-  }
-
-  List<List<DateTime>> getCalendarDays(DateTime month) {
-    final firstDayOfMonth = DateTime(month.year, month.month, 1);
-    final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
-
-    int startOffset = firstDayOfMonth.weekday % 7;
-    DateTime startDate = firstDayOfMonth.subtract(Duration(days: startOffset));
-
-    int endOffset = 6 - (lastDayOfMonth.weekday % 7);
-    DateTime endDate = lastDayOfMonth.add(Duration(days: endOffset));
-
-    List<List<DateTime>> weeks = [];
-    List<DateTime> currentWeek = [];
-
-    for (DateTime date = startDate;
-        !date.isAfter(endDate);
-        date = date.add(Duration(days: 1))) {
-      currentWeek.add(date);
-      if (currentWeek.length == 7) {
-        weeks.add(currentWeek);
-        currentWeek = [];
-      }
-    }
-
-    return weeks;
-  }
-
-  Future<void> loadEvents({required BuildContext context, bool notify = true}) async {
+  // 載入月曆事件（含服務端與假日）
+  Future<void> loadCalendarEvents({bool notify = true}) async {
     if (isLoading) return; // 防止重複執行
 
     isLoading = true;
-    if (notify) {
-      notifyListeners(); // 通知 View 更新
-    }
+    if (notify) notifyListeners();
 
     try {
-      final service = Provider.of<ServiceStorage>(context, listen: false); 
-      final auth = Provider.of<ControllerAuth>(context, listen: false);
-      final localeProvider = Provider.of<ProviderLocale>(context, listen: false);
+      final ServiceStorage service = getIt<ServiceStorage>();
+      final ControllerAuth auth = getIt<ControllerAuth>();
+      final ProviderLocale localeProvider = getIt<ProviderLocale>();
       final user = auth.currentAccount;
       final locale = localeProvider.locale;
       final calendarWeeks = getCalendarDays(currentMonth);
-      DateTime start = calendarWeeks.first.first;
-      DateTime end = calendarWeeks.last.last;
+      final DateTime start = calendarWeeks.first.first;
+      final DateTime end = calendarWeeks.last.last;
 
       // 1. 先從服務端拉事件
-      final allEvents = await service.getRecommendedEvents(
+      final allEvents = await service.getEvents(
           tableName: tableName, dateS: start, dateE: end, inputUser: user);
       events = allEvents ?? []; // ✅ 更新 List<Event> 給 UI 使用
 
@@ -161,6 +173,7 @@ class ControllerCalendar extends ChangeNotifier {
     }
   }
 
+  // 依照週、日將事件分組
   Map<int, Map<int, List<Event>>> _groupEventsByWeekAndDay(
       List<List<DateTime>> weeks, List<Event> events) {
     final Map<int, Map<int, List<Event>>> result = {};
@@ -182,13 +195,10 @@ class ControllerCalendar extends ChangeNotifier {
     return result;
   }
 
-  String _monthKey(DateTime date) =>
-      "${date.year}-${date.month.toString().padLeft(2, constZero)}";
-
-  Future<void> goToMonth(DateTime newMonth,
-      {required BuildContext context, bool notify = true}) async {
-    currentMonth = newMonth;
-    final key = _monthKey(newMonth);
+  // 跳轉月並同步資料（若有快取則不重新拉）
+  Future<void> goToMonth({required DateTime month, bool notify = true}) async {
+    currentMonth = month;
+    final key = _monthKey(month);
     if (_cachedEvents.containsKey(key)) {
       // ✅ 同步更新 events（這是你缺的）
       final allCached = _cachedEvents[key]!;
@@ -207,28 +217,26 @@ class ControllerCalendar extends ChangeNotifier {
         notifyListeners(); // 更新畫面
       }
     } else {
-      await loadEvents(context: context, notify: notify);
+      await loadCalendarEvents(notify: notify);
     }
   }
 
-  Future<void> goToToday({required BuildContext context}) async {
-    currentMonth = DateUtils.dateOnly(DateTime.now());
-    await goToMonth(currentMonth, context: context);
-  }
-
-  Future<void> goToPreviousMonth({required BuildContext context}) async {
-    currentMonth = DateTime(currentMonth.year, currentMonth.month - 1);
-    await goToMonth(currentMonth, context: context);
-  }
-
-  Future<void> goToNextMonth({required BuildContext context}) async {
-    currentMonth = DateTime(currentMonth.year, currentMonth.month + 1);
-    await goToMonth(currentMonth, context: context);
-  }
-
+  // 查詢特定日期的事件
   List<Event> getEventsOfDay(DateTime date) {
     final key = _monthKey(date);
-    final weeks = _cachedEvents[key];
+    Map<int, Map<int, List<Event>>>? weeks = _cachedEvents[key];
+
+    if (weeks == null) {
+      // 嘗試查前一月或後一月
+      final DateTime prev = DateTime(date.year, date.month - 1);
+      final DateTime next = DateTime(date.year, date.month + 1);
+      if (_cachedEvents.containsKey(_monthKey(next))) {
+        weeks = _cachedEvents[_monthKey(next)];
+      } else if (_cachedEvents.containsKey(_monthKey(prev))) {
+        weeks = _cachedEvents[_monthKey(prev)];
+      }
+    }
+
     if (weeks == null) return [];
 
     // 計算該日期在月曆中是第幾週第幾天
@@ -247,12 +255,12 @@ class ControllerCalendar extends ChangeNotifier {
     return [];
   }
 
+  // 清除該事件相關月份的快取
   void updateCachedEvent(Event event) {
     final startDateS =
         event.startDate != null ? _monthKey(event.startDate!) : null;
 
-    final endDateS =
-        event.endDate != null ? _monthKey(event.endDate!) : null;
+    final endDateS = event.endDate != null ? _monthKey(event.endDate!) : null;
 
     // 移除快取
     if (startDateS != null && _cachedEvents.containsKey(startDateS)) {
@@ -263,22 +271,24 @@ class ControllerCalendar extends ChangeNotifier {
     }
   }
 
-  Future<void> checkAndGenerateNextEvents(BuildContext context) async {
-    final service = Provider.of<ServiceStorage>(context, listen: false); // ✅ 這裡從 context 抓
+  Future<void> checkAndGenerateNextEvents(
+      {required AppLocalizations loc}) async {
+    final service = getIt<ServiceStorage>();
     final DateTime today = DateTime.now();
+    final Set<String> dirtyMonths = {};
 
     for (final event in events) {
-      final repeat = event.repeatOptions;
-      if (repeat == RepeatRule.once) continue;
+      if (event.repeatOptions == RepeatRule.once) continue;
 
       final DateTime startDate = event.startDate!;
 
       // 如果今天已經是事件發生日，就生成下一個
-      if (!isSameDay(today, startDate)) continue;
+      if (!DateTimeCompare.isSameDay(today, startDate)) continue;
 
-      final DateTime nextStart = repeat.getNextDate(startDate);
-      final DateTime? nextEnd =
-          event.endDate != null ? repeat.getNextDate(event.endDate!) : null;
+      final DateTime nextStart = event.repeatOptions.getNextDate(startDate);
+      final DateTime? nextEnd = event.endDate != null
+          ? event.repeatOptions.getNextDate(event.endDate!)
+          : null;
 
       final newEvent = event.copyWith(
         newId: Uuid().v4(),
@@ -286,8 +296,10 @@ class ControllerCalendar extends ChangeNotifier {
         newEndDate: nextEnd,
       );
 
-      await service.saveRecommendedEvent(context, newEvent, true, tableName);
-      await MyCustomNotification.scheduleEventReminders(newEvent, tableName, context:context);
+      await service.saveEvent(
+          event: newEvent, isNew: true, tableName: tableName, loc: loc);
+      await NotificationEntryImpl.scheduleEventReminders(
+          event: newEvent, tableName: tableName, loc: loc);
 
       // 更新舊事件的 repeatOption 為 'once'
       final updatedOldEvent = event.copyWith(
@@ -295,16 +307,18 @@ class ControllerCalendar extends ChangeNotifier {
       );
 
       // 儲存更新後的舊事件
-      await service.saveRecommendedEvent(
-          context, updatedOldEvent, false, tableName);
+      await service.saveEvent(
+          event: updatedOldEvent, isNew: false, tableName: tableName, loc: loc);
+
+      dirtyMonths.add(_monthKey(startDate));
+      dirtyMonths.add(_monthKey(nextStart));
     }
 
-    await loadEvents(context: context);
-  }
-
-  // 判斷是否為同一天
-  bool isSameDay(DateTime a, DateTime b) {
-    return (a.year == b.year && a.month == b.month && a.day == b.day);
+    // 清除快取（僅影響有修改的月份）
+    for (final key in dirtyMonths) {
+      if (_cachedEvents.containsKey(key)) _cachedEvents.remove(key);
+    }
+    await loadCalendarEvents();
   }
 }
 

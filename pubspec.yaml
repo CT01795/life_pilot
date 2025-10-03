@@ -61,6 +61,7 @@ dependencies:
   http: ^1.5.0
   geolocator: ^14.0.2
   flutter_timezone: ^4.1.1
+  get_it: ^8.2.0
 
 dev_dependencies:
   flutter_test:

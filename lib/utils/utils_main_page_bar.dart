@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/utils_provider_locale.dart';
+import 'package:life_pilot/utils/widget/utils_provider_locale.dart';
 import 'package:provider/provider.dart';
 
 class MainPageBar extends StatelessWidget implements PreferredSizeWidget {

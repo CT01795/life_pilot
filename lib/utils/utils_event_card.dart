@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_sub_item.dart';
+import 'package:life_pilot/my_app.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart' show formatEventDateTime;
-import 'package:life_pilot/utils/utils_event_widgets.dart';
-import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/widget/utils_event_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EventCardUtils {
@@ -37,13 +39,12 @@ class EventCardUtils {
     return Text('$e');
   }
 
-  static Widget buildLink(
-      BuildContext context, AppLocalizations loc, String url) {
+  static Widget buildLink(AppLocalizations loc, String url) {
     return InkWell(
       onTap: () async {
         final uri = Uri.parse(url);
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-        showSnackBar(context, '${loc.url}: $url');
+        showSnackBar(message: '${loc.url}: $url');
       },
       child: Text(
         loc.click_here_to_see_more,
@@ -56,7 +57,6 @@ class EventCardUtils {
   }
 
   static Widget buildMetaRow({
-    required BuildContext context,
     required AppLocalizations loc,
     String? masterUrl,
     required String fee,
@@ -66,7 +66,7 @@ class EventCardUtils {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (masterUrl?.isNotEmpty == true) buildLink(context, loc, masterUrl!),
+        if (masterUrl?.isNotEmpty == true) buildLink(loc, masterUrl!),
         if (desc.isNotEmpty) buildDescText(desc),
         /*kGapW8(),
         if (fee.isNotEmpty)
@@ -93,7 +93,7 @@ abstract class EventBase {
   String get city;
   String get location;
   String? get masterUrl;
-  List<SubEventItem> get subEvents;
+  List<EventSubItem> get subEvents;
   String get account;
   // 時間相關方法等
 }
@@ -118,7 +118,7 @@ class BaseEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<ControllerAuth>(context, listen: false);
+    final auth = getIt<ControllerAuth>();
     final loc = AppLocalizations.of(context)!;
 
     Widget content = Padding(
@@ -138,7 +138,6 @@ class BaseEventCard extends StatelessWidget {
               event.type.isNotEmpty ||
               event.description.isNotEmpty)
             EventCardUtils.buildMetaRow(
-              context: context,
               loc: loc,
               masterUrl: event.masterUrl != null && event.masterUrl!.isNotEmpty ? event.masterUrl : null,
               fee: event.fee.isNotEmpty ? event.fee : constEmpty,
@@ -195,7 +194,7 @@ class BaseEventCard extends StatelessWidget {
 }
 
 class _SubEventCard extends StatelessWidget {
-  final SubEventItem subEvent;
+  final EventSubItem subEvent;
   final String parentLocation;
 
   const _SubEventCard({
@@ -226,7 +225,7 @@ class _SubEventCard extends StatelessWidget {
           if (subEvent.type.isNotEmpty) widgetBuildTypeTags(subEvent.type),
           if (showLocation) EventCardUtils.buildLocationText(subEvent),
           if (subEvent.masterUrl?.isNotEmpty == true)
-            EventCardUtils.buildLink(context, loc, subEvent.masterUrl!),
+            EventCardUtils.buildLink(loc, subEvent.masterUrl!),
         ],
       ),
     );
@@ -329,7 +328,6 @@ class EventCalendarCard extends StatelessWidget {
 
 /// 其他原本沒有改動的類別保持不變，例如 EventImageDialog, FullScreenImageViewer
 /// 只要確保你在程式中統一使用 BaseEventCard 替代原本重複的卡片實作，就可以有效減少重複代碼。
-
 class EventImageDialog extends StatelessWidget {
   final String tableName;
   final Event event;
@@ -355,14 +353,14 @@ class EventImageDialog extends StatelessWidget {
           PositionedDirectional(
             end: kGapW8().width,
             top: kGapH8().height,
-            child: _buildCloseButton(context, loc),
+            child: _buildCloseButton(loc),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCloseButton(BuildContext context, AppLocalizations loc) {
+  Widget _buildCloseButton(AppLocalizations loc) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -377,7 +375,7 @@ class EventImageDialog extends StatelessWidget {
       child: IconButton(
         icon: const Icon(Icons.close),
         tooltip: loc.close,
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => navigatorKey.currentState?.pop(),
       ),
     );
   }

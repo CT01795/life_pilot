@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_sub_item.dart';
+import 'package:life_pilot/my_app.dart';
 import 'package:life_pilot/services/service_storage.dart';
-import 'package:life_pilot/utils/utils_const.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
-import 'package:life_pilot/utils/utils_enum.dart';
-import 'package:life_pilot/utils/utils_show_dialog.dart';
+import 'package:life_pilot/utils/core/utils_enum.dart';
+import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 final Logger logger = Logger(); // 只建立一次，全域可用
 
-void showSnackBar(BuildContext context, String message) {
-  if (context.mounted) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
+void showSnackBar({required String message}) {
+  scaffoldMessengerKey.currentState?.showSnackBar(
+    SnackBar(content: Text(message)),
+  );
 }
 
 // 勾選 Checkbox 時的邏輯處理
 Future<void> handleCheckboxChanged({
-  required BuildContext context,
   required bool? value,
   required Event event,
   required Set<String> selectedEventIds,
@@ -30,22 +30,23 @@ Future<void> handleCheckboxChanged({
   required String addedMessage,
   required String tableName,
   required String toTableName,
+  required AppLocalizations loc,
 }) async {
-  ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
-  final service = Provider.of<ServiceStorage>(context, listen: false);
+  ControllerAuth auth = getIt<ControllerAuth>();
+  final service = getIt<ServiceStorage>();
   final now = DateUtils.dateOnly(DateTime.now());
-  final loc = AppLocalizations.of(context)!;
   if (value == true) {
-    final existingEvents = await service.getRecommendedEvents(
+    final existingEvents = await service.getEvents(
         tableName: toTableName, id: event.id, inputUser: auth.currentAccount);
 
     final isAlreadyAdded =
         existingEvents?.any((e) => e.id == event.id) ?? false;
 
     final shouldAdd = await showConfirmationDialog(
-      context: context,
       content: isAlreadyAdded
-          ? (tableName == constTableCalendarEvents ? loc.memory_add_error : loc.event_add_error)
+          ? (tableName == constTableCalendarEvents
+              ? loc.memory_add_error
+              : loc.event_add_error)
           : '${tableName == constTableCalendarEvents ? loc.memory_add : loc.event_add}「${event.name}」？',
       confirmText: loc.add,
       cancelText: loc.cancel,
@@ -60,17 +61,20 @@ Future<void> handleCheckboxChanged({
     });
 
     if (!isAlreadyAdded || tableName == constTableRecommendedAttractions) {
-      if (toTableName != constTableMemoryTrace && event.startDate != null && !event.startDate!.isAfter(now)) {
+      if (toTableName != constTableMemoryTrace &&
+          event.startDate != null &&
+          !event.startDate!.isAfter(now)) {
         event.startDate = now;
       }
       event.account = auth.currentAccount;
-      if (tableName == constTableRecommendedAttractions) { //如果是安排景點，視同都是新的事件處理
+      if (tableName == constTableRecommendedAttractions) {
+        //如果是安排景點，視同都是新的事件處理
         event.id = Uuid().v4();
       }
-      await service.saveRecommendedEvent(
-          context, event, true, toTableName);
+      await service.saveEvent(
+          event: event, isNew: true, tableName: toTableName, loc: loc);
     } else {
-      List<SubEventItem> sortedSubEvents = List.from(event.subEvents);
+      List<EventSubItem> sortedSubEvents = List.from(event.subEvents);
       sortedSubEvents.sort((a, b) => a.startDate!.compareTo(b.startDate!));
       sortedSubEvents.removeWhere((subEvent) =>
           subEvent.startDate != null &&
@@ -94,10 +98,10 @@ Future<void> handleCheckboxChanged({
                 tmpEvent.location.isEmpty ? event.location : tmpEvent.location
             ..unit = tmpEvent.unit.isEmpty ? event.unit : tmpEvent.unit
             ..account = auth.currentAccount;
-          await service.deleteRecommendedEvent(
-              context, subEvent, toTableName);
-          await service.saveRecommendedEvent(
-              context, subEvent, true, toTableName);
+          await service.deleteEvent(
+              event: subEvent, tableName: toTableName);
+          await service.saveEvent(
+              event: subEvent, isNew: true, tableName: toTableName, loc: loc);
         }
       } else {
         event.subEvents = sortedSubEvents;
@@ -110,14 +114,13 @@ Future<void> handleCheckboxChanged({
                 ? now
                 : event.endDate);
         updatedEvent.account = auth.currentAccount;
-        await service.deleteRecommendedEvent(
-            context, updatedEvent, toTableName);
-        await service.saveRecommendedEvent(
-            context, updatedEvent, true, toTableName);
+        await service.deleteEvent(
+            event: updatedEvent, tableName: toTableName);
+        await service.saveEvent(
+            event: updatedEvent, isNew: true, tableName: toTableName, loc: loc);
       }
     }
-    if (!context.mounted) return; // 確保 context 還存在
-    showSnackBar(context, addedMessage);
+    showSnackBar(message: addedMessage);
   } else {
     setState(() {
       selectedEventIds.remove(event.id);
@@ -127,14 +130,12 @@ Future<void> handleCheckboxChanged({
 
 // 移除事件邏輯
 Future<void> handleRemoveEvent({
-  required BuildContext context,
   required Event event,
   required Future<void> Function() onDelete,
   required VoidCallback onSuccessSetState,
+  required AppLocalizations loc,
 }) async {
-  final loc = AppLocalizations.of(context)!;
   final shouldDelete = await showConfirmationDialog(
-    context: context,
     content: '${loc.event_delete}「${event.name}」？',
     confirmText: loc.delete,
     cancelText: loc.cancel,
@@ -144,9 +145,9 @@ Future<void> handleRemoveEvent({
     try {
       await onDelete();
       onSuccessSetState();
-      showSnackBar(context, loc.delete_ok);
+      showSnackBar(message: loc.delete_ok);
     } catch (e) {
-      showSnackBar(context, '${loc.delete_error}: $e');
+      showSnackBar(message: '${loc.delete_error}: $e');
     }
   }
 }
@@ -166,7 +167,7 @@ List<Event> filterValidEvents(List<Event> events) {
   }).toList();
 }
 
-List<SubEventItem> sortSubEvents(List<SubEventItem> list) {
+List<EventSubItem> sortSubEvents(List<EventSubItem> list) {
   list.sort((a, b) {
     final aStart = a.startDate ?? DateTime(9999);
     final bStart = b.startDate ?? DateTime(9999);
@@ -192,8 +193,7 @@ List<SubEventItem> sortSubEvents(List<SubEventItem> list) {
 }
 
 // 登入錯誤顯示
-void showLoginError(BuildContext context, String result) {
-  AppLocalizations loc = AppLocalizations.of(context)!;
+void showLoginError({required String message, required AppLocalizations loc}) {
   final errorMessages = {
     ErrorFields.wrongUserPassword: loc.wrongUserPassword,
     ErrorFields.tooManyRequestsError: loc.tooManyRequests,
@@ -208,13 +208,14 @@ void showLoginError(BuildContext context, String result) {
     ErrorFields.registerError: loc.registerError,
     ErrorFields.logoutError: loc.logoutError,
   };
-  final errorMessage = errorMessages[result] ?? loc.unknownError;
-  showSnackBar(context, errorMessage);
+  final errorMessage = errorMessages[message] ?? loc.unknownError;
+  showSnackBar(message: errorMessage);
 }
 
-Future<List<Event>> loadEvents(String tableName, {required BuildContext context}) async {
-   ControllerAuth auth = Provider.of<ControllerAuth>(context, listen: false);
-   final service = Provider.of<ServiceStorage>(context, listen: false);
-  final recommended = await service.getRecommendedEvents(tableName: tableName, inputUser: auth.currentAccount);
+Future<List<Event>> loadEvents({required String tableName}) async {
+  ControllerAuth auth = getIt<ControllerAuth>();
+  final service = getIt<ServiceStorage>();
+  final recommended = await service.getEvents(
+      tableName: tableName, inputUser: auth.currentAccount);
   return recommended ?? [];
 }

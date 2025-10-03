@@ -1,9 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/main.dart';
-
-BuildContext? get currentContext => navigatorKey.currentContext;
-OverlayState? get currentOverlay => navigatorKey.currentState?.overlay;
 
 enum ReminderOption {
   fifteenMin,
@@ -63,7 +58,7 @@ extension ReminderOptionExtension on ReminderOption {
     }
   }
 
-  static ReminderOption? fromKey(String key) {
+  static ReminderOption? fromKey({required String key}) {
     switch (key) {
       case '15_min':
         return ReminderOption.fifteenMin;
@@ -88,60 +83,8 @@ extension ReminderOptionExtension on ReminderOption {
     }
   }
 
-  String getNotificationLabel(AppLocalizations loc) {
+  String getNotificationLabel({required AppLocalizations loc}) {
     switch (this) {
-      case ReminderOption.fifteenMin:
-        return loc.reminder_options_15_minutes_before;
-      case ReminderOption.thirtyMin:
-        return loc.reminder_options_30_minutes_before;
-      case ReminderOption.oneHour:
-        return loc.reminder_options_1_hour_before;
-      case ReminderOption.sameDay8am:
-        return loc.reminder_options_default_same_day_8am;
-      case ReminderOption.dayBefore8am:
-        return loc.reminder_options_default_day_before_8am;
-      case ReminderOption.twoDays:
-        return loc.reminder_options_2_days_before;
-      case ReminderOption.oneWeek:
-        return loc.reminder_options_1_week_before;
-      case ReminderOption.twoWeeks:
-        return loc.reminder_options_2_weeks_before;
-      case ReminderOption.oneMonth:
-        return loc.reminder_options_1_month_before;
-    }
-  }
-}
-
-class ReminderUtils {
-  // 用 eventId + reminderOption 組合產生 notification ID
-  static int generateNotificationId(String eventId, String option) =>
-    eventId.hashCode ^ option.hashCode;
-
-  // 將 option 字串轉為時間差
-  static Duration getReminderDuration(ReminderOption option) {
-    switch (option) {
-      case ReminderOption.fifteenMin:
-        return const Duration(minutes: 15);
-      case ReminderOption.thirtyMin:
-        return const Duration(minutes: 30);
-      case ReminderOption.oneHour:
-        return const Duration(hours: 1);
-      case ReminderOption.twoDays:
-        return const Duration(days: 2);
-      case ReminderOption.oneWeek:
-        return const Duration(days: 7);
-      case ReminderOption.twoWeeks:
-        return const Duration(days: 14);
-      case ReminderOption.oneMonth:
-        return const Duration(days: 30);
-      default:
-        return Duration.zero;
-    }
-  }
-
-  //顯示用的提醒文字（可客製化）
-  static String getReminderLabel(AppLocalizations loc, ReminderOption option) {
-    switch (option) {
       case ReminderOption.fifteenMin:
         return loc.reminder_options_15_minutes_before;
       case ReminderOption.thirtyMin:

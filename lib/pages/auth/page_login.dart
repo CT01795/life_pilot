@@ -3,12 +3,12 @@ import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/services/service_auth.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/utils_const.dart';
-import 'package:life_pilot/utils/utils_input_field.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/widget/utils_input_field.dart';
 import 'package:provider/provider.dart';
 
 class PageLogin extends StatefulWidget {
-  final String? email; 
+  final String? email;
   final String? password;
   final void Function(String? email, String? password)? onNavigateToRegister;
   const PageLogin(
@@ -22,22 +22,20 @@ class _PageLoginState extends State<PageLogin> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   late ControllerAuth _auth;
-  AppLocalizations get loc => AppLocalizations.of(context)!; 
+  late AppLocalizations _loc;
 
   @override
   void initState() {
     super.initState();
-    _emailController.text = widget.email ?? constEmpty; 
+    _emailController.text = widget.email ?? constEmpty;
     _passwordController.text = widget.password ?? constEmpty;
   }
 
-  bool _initialized = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _auth = Provider.of<ControllerAuth>(context,listen:true);
-    if (_initialized) return;
-    _initialized = true;
+    _loc = AppLocalizations.of(context)!;
+    _auth = Provider.of<ControllerAuth>(context, listen: true);
   }
 
   @override
@@ -48,34 +46,47 @@ class _PageLoginState extends State<PageLogin> {
   }
 
   void _login() async {
+    FocusScope.of(context).unfocus(); // 收鍵盤
     final result = await ServiceAuth.login(
-      _emailController.text,
-      _passwordController.text,
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
     );
 
+
     if (result == null) {
-      await _auth.checkLoginStatus(); 
+      await _auth.checkLoginStatus();
       // 登入成功後會在外層重新渲染畫面，不用 Navigator.pushReplacement 了
     } else {
-      showLoginError(context, result); 
+      showLoginError(message: result, loc: _loc);
     }
   }
 
   void _anonymousLogin() async {
+    FocusScope.of(context).unfocus();
     final result = await _auth.anonymousLogin();
+
+
     if (result != null) {
-      showLoginError(context, result);
+      showLoginError(message: result, loc: _loc);
     }
   }
 
   void _resetPassword() async {
-    final result = await ServiceAuth.resetPassword(_emailController.text);
+    final result = await ServiceAuth.resetPassword(_emailController.text.trim());
 
     if (result == null) {
-      showSnackBar(context, loc.resetPasswordEmail);
+      showSnackBar(message: _loc.resetPasswordEmail);
     } else {
-      showLoginError(context, result); 
+      showLoginError(message: result, loc: _loc);
     }
+  }
+
+  // 🔁 導航到註冊頁
+  void _navigateToRegister() {
+    widget.onNavigateToRegister?.call(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
   }
 
   @override
@@ -85,34 +96,29 @@ class _PageLoginState extends State<PageLogin> {
         padding: kGapEI12,
         child: Column(
           children: [
-            InputField(controller: _emailController, labelText: loc.email),
+            InputField(controller: _emailController, labelText: _loc.email),
             kGapH16(),
             InputField(
                 controller: _passwordController,
-                labelText: loc.password,
+                labelText: _loc.password,
                 obscureText: true),
             kGapH16(),
             Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-              ActionButton(label: loc.login, onPressed: _login), 
+              ActionButton(label: _loc.login, onPressed: _login),
               kGapW16(),
               ActionButton(
-                  label: loc.loginAnonymously, onPressed: _anonymousLogin),
+                  label: _loc.loginAnonymously, onPressed: _anonymousLogin),
             ]),
             kGapH16(),
             Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               TextButton(
                 onPressed: _resetPassword,
-                child: Text(loc.resetPassword),
-              ), 
+                child: Text(_loc.resetPassword),
+              ),
               kGapW16(),
               TextButton(
-                onPressed: () {
-                  widget.onNavigateToRegister?.call(
-                    _emailController.text,
-                    _passwordController.text,
-                  );
-                },
-                child: Text(loc.register),
+                onPressed: _navigateToRegister,
+                child: Text(_loc.register),
               ),
             ]),
             kGapH16(),
