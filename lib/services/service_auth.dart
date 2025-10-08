@@ -11,10 +11,11 @@ class ServiceAuth {
   static String? currentAccount() => _auth.currentUser?.email;
 
   // 🔑 Login with email/password
-  static Future<String?> login(String email, String password) async {
-    final error = _checkEmptyFields(email, password);
+  static Future<String?> login(
+      {required String email, required String password}) async {
+    final error = _checkEmptyFields(email: email, password: password);
     if (error != null) {
-      return error ;
+      return error;
     }
 
     return _handle(() async {
@@ -29,8 +30,9 @@ class ServiceAuth {
     }, defaultError: ErrorFields.loginError);
   }
 
-  static Future<String?> register(String email, String password) async {
-    final error = _checkEmptyFields(email, password);
+  static Future<String?> register(
+      {required String email, required String password}) async {
+    final error = _checkEmptyFields(email: email, password: password);
     if (error != null) {
       return error;
     }
@@ -45,7 +47,7 @@ class ServiceAuth {
   }
 
   // 🔄 重設密碼
-  static Future<String?> resetPassword(String email) async {
+  static Future<String?> resetPassword({required String email}) async {
     if (email.isEmpty) {
       return ErrorFields.noEmailError;
     }
@@ -53,7 +55,7 @@ class ServiceAuth {
     return _handle(() async {
       await _auth.sendPasswordResetEmail(email: email);
     }, defaultError: ErrorFields.loginError);
-  }  
+  }
 
   // 🚪 Sign out
   static Future<String?> logout() async {
@@ -65,7 +67,8 @@ class ServiceAuth {
   // -------------------------
   // 🔧 Private Helper Methods
   // -------------------------
-  static String? _checkEmptyFields(String email, String password) {
+  static String? _checkEmptyFields(
+      {required String email, required String password}) {
     if (email.isEmpty) {
       return ErrorFields.noEmailError;
     }
@@ -103,8 +106,9 @@ class ServiceAuth {
       case ErrorFields.networkRequestFailedError: //網路錯誤
       case ErrorFields.invalidEmailError: // 帳號格式錯誤
       case ErrorFields.emailAlreadyInUseError: // 帳號已經被人註冊
-      case ErrorFields.weakPasswordError: // Password should be at least 6 characters
-        return e.code; 
+      case ErrorFields
+            .weakPasswordError: // Password should be at least 6 characters
+        return e.code;
       default:
         return defaultError; // 其他錯誤
     }

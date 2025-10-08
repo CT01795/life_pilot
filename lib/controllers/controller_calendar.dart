@@ -21,15 +21,21 @@ class ControllerCalendar extends ChangeNotifier {
 
   // 給 PageView 初始用的基準年月
   static final DateTime baseDate = DateTime(1911, 1);
+
+  int get pageIndex =>
+      (currentMonth.year - baseDate.year) * 12 + (currentMonth.month - 1);
+
+  DateTime pageIndexToMonth({required int index}) {
+    final year = baseDate.year + (index ~/ 12);
+    final month = (index % 12) + 1;
+    return DateTime(year, month);
+  }
+
   // [事件快取結構]：{年月字串 : Map<週索引, Map<日索引, List<Event>>>}
   final Map<String, Map<int, Map<int, List<Event>>>> _cachedEvents = {};
 
   ControllerCalendar({required this.tableName}) {
     currentMonth = DateUtils.dateOnly(DateTime.now());
-  }
-
-  int get initialPage {
-    return (currentMonth.year - baseDate.year) * 12 + (currentMonth.month - 1);
   }
 
   void clearAll() {
@@ -44,12 +50,13 @@ class ControllerCalendar extends ChangeNotifier {
       "${date.year}-${date.month.toString().padLeft(2, constZero)}";
 
   // 取得完整月曆格子（含上月與下月填充週）
-  List<List<DateTime>> getCalendarDays(DateTime month) {
+  List<List<DateTime>> getCalendarDays({required DateTime month}) {
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
     final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
 
     final int startOffset = firstDayOfMonth.weekday % 7;
-    final DateTime startDate = firstDayOfMonth.subtract(Duration(days: startOffset));
+    final DateTime startDate =
+        firstDayOfMonth.subtract(Duration(days: startOffset));
 
     final int endOffset = 6 - (lastDayOfMonth.weekday % 7);
     final DateTime endDate = lastDayOfMonth.add(Duration(days: endOffset));
@@ -71,7 +78,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 工具方法：檢查兩個事件是否跨日重疊
-  bool isOverlapping(Event a, Event b) {
+  bool isOverlapping({required Event a, required Event b}) {
     final aStart = DateUtils.dateOnly(a.startDate!);
     final aEnd = DateUtils.dateOnly(a.endDate ?? a.startDate!);
     final bStart = DateUtils.dateOnly(b.startDate!);
@@ -81,8 +88,8 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 拿到該月每週對應的事件層級（含排版 rowIndex）
-  Map<int, List<EventWithRow>> getWeekEventRows(DateTime month) {
-    final calendarWeeks = getCalendarDays(month);
+  Map<int, List<EventWithRow>> getWeekEventRows({required DateTime month}) {
+    final calendarWeeks = getCalendarDays(month: month);
     final weekEventRows = <int, List<EventWithRow>>{};
 
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
@@ -102,7 +109,7 @@ class ControllerCalendar extends ChangeNotifier {
         bool placed = false;
 
         for (final row in rows) {
-          if (!row.any((e) => isOverlapping(e, event))) {
+          if (!row.any((e) => isOverlapping(a: e, b: event))) {
             row.add(event);
             placed = true;
             break;
@@ -141,7 +148,7 @@ class ControllerCalendar extends ChangeNotifier {
       final ProviderLocale localeProvider = getIt<ProviderLocale>();
       final user = auth.currentAccount;
       final locale = localeProvider.locale;
-      final calendarWeeks = getCalendarDays(currentMonth);
+      final calendarWeeks = getCalendarDays(month: currentMonth);
       final DateTime start = calendarWeeks.first.first;
       final DateTime end = calendarWeeks.last.last;
 
@@ -162,7 +169,7 @@ class ControllerCalendar extends ChangeNotifier {
 
       // ✅ 分組儲存進快取
       _cachedEvents[_monthKey(currentMonth)] =
-          _groupEventsByWeekAndDay(calendarWeeks, events);
+          _groupEventsByWeekAndDay(weeks: calendarWeeks, events: events);
     } catch (e) {
       rethrow;
     } finally {
@@ -175,7 +182,7 @@ class ControllerCalendar extends ChangeNotifier {
 
   // 依照週、日將事件分組
   Map<int, Map<int, List<Event>>> _groupEventsByWeekAndDay(
-      List<List<DateTime>> weeks, List<Event> events) {
+      {required List<List<DateTime>> weeks, required List<Event> events}) {
     final Map<int, Map<int, List<Event>>> result = {};
 
     for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
@@ -222,7 +229,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 查詢特定日期的事件
-  List<Event> getEventsOfDay(DateTime date) {
+  List<Event> getEventsOfDay({required DateTime date}) {
     final key = _monthKey(date);
     Map<int, Map<int, List<Event>>>? weeks = _cachedEvents[key];
 
@@ -240,7 +247,7 @@ class ControllerCalendar extends ChangeNotifier {
     if (weeks == null) return [];
 
     // 計算該日期在月曆中是第幾週第幾天
-    final calendarWeeks = getCalendarDays(date);
+    final calendarWeeks = getCalendarDays(month: date);
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
       final week = calendarWeeks[weekIndex];
       for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
@@ -256,7 +263,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 清除該事件相關月份的快取
-  void updateCachedEvent(Event event) {
+  void updateCachedEvent({required Event event}) {
     final startDateS =
         event.startDate != null ? _monthKey(event.startDate!) : null;
 

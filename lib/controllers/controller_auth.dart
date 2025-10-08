@@ -32,7 +32,7 @@ class ControllerAuth extends ChangeNotifier {
     // 🟡 延後通知，先更新狀態，不要立即 notify
     _isLoading = true;
     notifyListeners();
-    
+
     final user = FirebaseAuth.instance.currentUser;
     final prevAccount = _currentAccount; // 👈 比對用
 
@@ -57,17 +57,30 @@ class ControllerAuth extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String?> anonymousLogin() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<String?> login(
+      {required String email, required String password}) async {
+    final result = await ServiceAuth.login(
+      email: email,
+      password: password,
+    );
 
+    if (result == null) {
+      await checkLoginStatus();
+      // 登入成功後會在外層重新渲染畫面，不用 Navigator.pushReplacement 了
+    }
+    return result;
+  }
+
+  Future<String?> anonymousLogin() async {
     final result = await ServiceAuth.anonymousLogin();
     if (result == null) {
       await checkLoginStatus();
     }
+    return result;
+  }
 
-    _isLoading = false;
-    notifyListeners();
+  Future<String?> resetPassword({required String email}) async {
+    final result = await ServiceAuth.resetPassword(email: email);
     return result;
   }
 
@@ -76,7 +89,9 @@ class ControllerAuth extends ChangeNotifier {
     notifyListeners();
 
     await ServiceAuth.logout();
-    if(_currentAccount != null && !_isAnonymous) _registerBackData[constEmail] = _currentAccount!;
+    if (_currentAccount != null && !_isAnonymous) {
+      _registerBackData[constEmail] = _currentAccount!;
+    }
     _clearUserData();
 
     getIt<ControllerCalendar>().clearAll(); // 🧹 登出也清除資料
@@ -112,8 +127,22 @@ class ControllerAuth extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPage(AuthPage page) {
+  void setPage({required AuthPage page}) {
     _currentPage = page;
     notifyListeners();
+  }
+
+  Future<String?> register(
+      {required String email, required String password}) async {
+    final result = await ServiceAuth.register(
+      email: email,
+      password: password,
+    );
+
+    if (result == null) {
+      await checkLoginStatus();
+      // 登入成功後會在外層重新渲染畫面，不用 Navigator.pushReplacement
+    }
+    return result;
   }
 }

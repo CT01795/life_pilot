@@ -12,7 +12,7 @@ import 'package:life_pilot/utils/widget/utils_event_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EventCardUtils {
-  static Widget buildEventHeader(String title, {Widget? trailing}) {
+  static Widget buildEventHeader({required String title, Widget? trailing}) {
     return Row(
       children: [
         Expanded(
@@ -24,22 +24,23 @@ class EventCardUtils {
     );
   }
 
-  static Widget buildDateRange(var e) {
+  static Widget buildDateRange({var event}) {
     return Text(
-        '${formatEventDateTime(e, constStartToS)}${formatEventDateTime(e, constEndToE)}');
+        '${formatEventDateTime(event, constStartToS)}${formatEventDateTime(event, constEndToE)}');
   }
 
-  static Widget buildLocationText(var e) {
-    if (e.city.isEmpty && e.location.isEmpty) return const SizedBox.shrink();
-    return Text('${e.city}．${e.location}');
+  static Widget buildLocationText({var event}) {
+    if (event.city.isEmpty && event.location.isEmpty) return const SizedBox.shrink();
+    return Text('${event.city}．${event.location}');
   }
 
-  static Widget buildDescText(var e) {
-    if (e.isEmpty) return const SizedBox.shrink();
-    return Text('$e');
+  static Widget buildDescText({var desc}) {
+    if (desc.isEmpty) return const SizedBox.shrink();
+    return Text('$desc');
   }
 
-  static Widget buildLink(AppLocalizations loc, String url) {
+  static Widget buildLink(
+      {required AppLocalizations loc, required String url}) {
     return InkWell(
       onTap: () async {
         final uri = Uri.parse(url);
@@ -66,8 +67,8 @@ class EventCardUtils {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (masterUrl?.isNotEmpty == true) buildLink(loc, masterUrl!),
-        if (desc.isNotEmpty) buildDescText(desc),
+        if (masterUrl?.isNotEmpty == true) buildLink(loc: loc, url: masterUrl!),
+        if (desc.isNotEmpty) buildDescText(desc: desc),
         /*kGapW8(),
         if (fee.isNotEmpty)
           Padding(
@@ -126,20 +127,22 @@ class BaseEventCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          EventCardUtils.buildEventHeader(event.name, trailing: trailing),
+          EventCardUtils.buildEventHeader(title: event.name, trailing: trailing),
           if (tableName != constTableRecommendedAttractions)
-            EventCardUtils.buildDateRange(event),
-          if (event.fee.isNotEmpty) widgetBuildTypeTags(event.fee),
-          if (event.type.isNotEmpty) widgetBuildTypeTags(event.type),
+            EventCardUtils.buildDateRange(event: event),
+          if (event.fee.isNotEmpty) widgetBuildTypeTags(types: event.fee),
+          if (event.type.isNotEmpty) widgetBuildTypeTags(types: event.type),
           if (event.city.isNotEmpty || event.location.isNotEmpty)
-            EventCardUtils.buildLocationText(event),
+            EventCardUtils.buildLocationText(event: event),
           if ((event.masterUrl != null && event.masterUrl!.isNotEmpty) ||
               event.fee.isNotEmpty ||
               event.type.isNotEmpty ||
               event.description.isNotEmpty)
             EventCardUtils.buildMetaRow(
               loc: loc,
-              masterUrl: event.masterUrl != null && event.masterUrl!.isNotEmpty ? event.masterUrl : null,
+              masterUrl: event.masterUrl != null && event.masterUrl!.isNotEmpty
+                  ? event.masterUrl
+                  : null,
               fee: event.fee.isNotEmpty ? event.fee : constEmpty,
               type: event.type.isNotEmpty ? event.type : constEmpty,
               desc:
@@ -220,12 +223,12 @@ class _SubEventCard extends StatelessWidget {
             "👉 ${subEvent.name}",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          EventCardUtils.buildDateRange(subEvent),
-          if (subEvent.fee.isNotEmpty) widgetBuildTypeTags(subEvent.fee),
-          if (subEvent.type.isNotEmpty) widgetBuildTypeTags(subEvent.type),
-          if (showLocation) EventCardUtils.buildLocationText(subEvent),
+          EventCardUtils.buildDateRange(event: subEvent),
+          if (subEvent.fee.isNotEmpty) widgetBuildTypeTags(types: subEvent.fee),
+          if (subEvent.type.isNotEmpty) widgetBuildTypeTags(types: subEvent.type),
+          if (showLocation) EventCardUtils.buildLocationText(event: subEvent),
           if (subEvent.masterUrl?.isNotEmpty == true)
-            EventCardUtils.buildLink(loc, subEvent.masterUrl!),
+            EventCardUtils.buildLink(loc: loc, url: subEvent.masterUrl!),
         ],
       ),
     );
@@ -353,14 +356,14 @@ class EventImageDialog extends StatelessWidget {
           PositionedDirectional(
             end: kGapW8().width,
             top: kGapH8().height,
-            child: _buildCloseButton(loc),
+            child: _buildCloseButton(loc: loc),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCloseButton(AppLocalizations loc) {
+  Widget _buildCloseButton({required AppLocalizations loc}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,

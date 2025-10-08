@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/services/service_auth.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/widget/utils_input_field.dart';
@@ -21,6 +20,7 @@ class PageRegister extends StatefulWidget {
 class _PageRegisterState extends State<PageRegister> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
+  late ControllerAuth _auth;
   late AppLocalizations _loc;
 
   @override
@@ -35,6 +35,7 @@ class _PageRegisterState extends State<PageRegister> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loc = AppLocalizations.of(context)!;
+    _auth = Provider.of<ControllerAuth>(context, listen: false);
   }
 
   @override
@@ -42,20 +43,6 @@ class _PageRegisterState extends State<PageRegister> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  void _register() async {
-    final result = await ServiceAuth.register(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    if (result == null) {
-      final auth = context.read<ControllerAuth>();
-      await auth.checkLoginStatus();
-    } else {
-      showLoginError(message: result, loc: _loc);
-    }
   }
 
   @override
@@ -77,7 +64,17 @@ class _PageRegisterState extends State<PageRegister> {
               kGapH16(),
               Row(
                 children: [
-                  ActionButton(label: _loc.register, onPressed: _register),
+                  ActionButton(
+                    label: _loc.register, 
+                    onPressed: () async {
+                      FocusScope.of(context).unfocus();
+                      final error = await _auth.register(
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text.trim());
+                      if (error != null && error.isNotEmpty) {
+                        showLoginError(message: error, loc: _loc);
+                      }
+                    }),
                   kGapW8(),
                   TextButton(
                     onPressed: () {

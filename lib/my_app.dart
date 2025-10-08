@@ -103,7 +103,7 @@ class _MyAppState extends State<MyApp> {
           checkerboardRasterCacheImages: false,
           checkerboardOffscreenLayers: false,
           home: PageAuthCheck(
-            setLocale: providerLocale.setLocale,
+            setLocale: (value) => providerLocale.setLocale(locale: value),
           ),
         );
       })

@@ -50,8 +50,6 @@ Future<bool> showConfirmationDialog({
 
 Future<bool> showCalendarEventsDialog({
   required DateTime date,
-  required Set<String> selectedEventIds,
-  required Set<String> removedEventIds,
   required AppLocalizations loc,
 }) async {
   ControllerCalendar controller = getIt<ControllerCalendar>();
@@ -69,7 +67,7 @@ Future<bool> showCalendarEventsDialog({
   }
 
   // 篩選包含該日期的事件
-  final eventsOfDay = controller.getEventsOfDay(dateOnly);
+  final eventsOfDay = controller.getEventsOfDay(date: dateOnly);
 
   // ✅ 如果沒有事件，直接跳轉新增事件頁
   if (eventsOfDay.isEmpty) {
@@ -98,7 +96,7 @@ Future<bool> showCalendarEventsDialog({
     builder: (context) {
       return StatefulBuilder(builder: (context, setState) {
         // 每次build時都重新抓當天事件，確保資料最新
-        final updatedEventsOfDay = controller.getEventsOfDay(dateOnly);
+        final updatedEventsOfDay = controller.getEventsOfDay(date: dateOnly);
 
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -165,19 +163,19 @@ Future<bool> showCalendarEventsDialog({
                               onDelete: event.isHoliday
                                   ? null
                                   : () async {
-                                      await onRemoveEvent(
-                                        event: event,
-                                        removedEventIds: removedEventIds,
-                                        setState: (fn) => setState(fn),
-                                        tableName: controller.tableName,
-                                        loc: loc
-                                      );
-                                      await controller.loadCalendarEvents();
-                                      setState(() {}); // 觸發重繪
-                                    },
+                                    final service = getIt<ServiceStorage>();
+                                    await handleRemoveEvent(
+                                      event: event,
+                                      onDelete: () async {
+                                        await service.deleteEvent(event: event, tableName: tableName);
+                                      },
+                                      loc: loc
+                                    );
+                                    Navigator.pop(context, true); // ✅ 回傳 true 給外層
+
+                                  },
                               trailing: buildEventTrailing(
                                 event: event,
-                                selectedEventIds: selectedEventIds,
                                 setState: (fn) {
                                   fn();
                                 },
@@ -187,7 +185,7 @@ Future<bool> showCalendarEventsDialog({
                                     month:
                                         DateUtils.monthOnly(event.startDate!),
                                   );
-                                  setState(() {}); // 觸發重繪
+                                  Navigator.pop(context, true); // ✅ 回傳 true 給外層
                                 },
                                 tableName: controller.tableName,
                                 toTableName:

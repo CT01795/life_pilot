@@ -22,6 +22,7 @@ void main() async {
   await Supabase.initialize(
     url: constSupabaseUrl,
     anonKey: constSupabaseAnonKey,
+    debug: true, // 可選，用於除錯
   );
 
   // 只呼叫一次 NotificationService 的初始化

@@ -6,13 +6,15 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 
-Future<void> exportEventsToExcel({required List<Event> events, required AppLocalizations loc}) async {  final bytes = buildExcelBytes(events: events, loc: loc);
+Future<void> exportEventsToExcel(
+    {required List<Event> events, required AppLocalizations loc}) async {
+  final bytes = buildExcelBytes(events: events, loc: loc);
   final filename = 'events_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-  _downloadOnWeb(filename, bytes);
+  _downloadOnWeb(filename: filename, data: bytes);
   showSnackBar(message: '${loc.downloaded}：$filename');
 }
 
-void _downloadOnWeb(String filename, Uint8List data) {
+void _downloadOnWeb({required String filename, required Uint8List data}) {
   final blob = html.Blob([data]);
   final url = html.Url.createObjectUrlFromBlob(blob);
   html.AnchorElement(href: url)

@@ -47,7 +47,7 @@ class ServiceStorage {
     });
 
     allEvents = (response as List)
-        .map((e) => Event.fromJson(e as Map<String, dynamic>))
+        .map((e) => Event.fromJson(json: e as Map<String, dynamic>))
         .toList();
     return allEvents;
   }
@@ -70,8 +70,7 @@ class ServiceStorage {
       }
       await query;
     } catch (ex, stacktrace) {
-      logger.e("approvalEvent error",
-          error: ex, stackTrace: stacktrace);
+      logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
@@ -84,7 +83,7 @@ class ServiceStorage {
       required AppLocalizations loc}) async {
     try {
       ControllerAuth auth = getIt<ControllerAuth>();
-      _validateEvent(event, loc);
+      _validateEvent(event: event, loc: loc);
       if ((isNew || event.reminderOptions.isEmpty) &&
           tableName == constTableCalendarEvents) {
         event.reminderOptions = [
@@ -98,8 +97,8 @@ class ServiceStorage {
         event.repeatOptions = RepeatRule.once;
       }
 
-      _normalizeEventDates(event);
-      _normalizeSubEventsDates(event.subEvents);
+      _normalizeEventDates(event: event);
+      _normalizeSubEventsDates(subEvents: event.subEvents);
       event.account = auth.currentAccount;
       event.isApproved = false;
       final Map<String, dynamic> data = event.toJson();
@@ -145,20 +144,19 @@ class ServiceStorage {
       }
       await query;
     } catch (ex, stacktrace) {
-      logger.e("deleteEvent error",
-          error: ex, stackTrace: stacktrace);
+      logger.e("deleteEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
 
   // --- 私有方法 ---
-  void _validateEvent(Event event, AppLocalizations loc) {
+  void _validateEvent({required Event event, required AppLocalizations loc}) {
     if (event.name.isEmpty) {
       throw Exception(loc.event_save_error);
     }
   }
 
-  void _normalizeEventDates(Event event) {
+  void _normalizeEventDates({required Event event}) {
     if (event.endDate != null && !event.endDate!.isAfter(event.startDate!)) {
       event.endDate = null;
     }
@@ -169,7 +167,7 @@ class ServiceStorage {
     }
   }
 
-  void _normalizeSubEventsDates(List<EventSubItem> subEvents) {
+  void _normalizeSubEventsDates({required List<EventSubItem> subEvents}) {
     for (final subEvent in subEvents) {
       if (subEvent.endDate != null &&
           !subEvent.endDate!.isAfter(subEvent.startDate!)) {

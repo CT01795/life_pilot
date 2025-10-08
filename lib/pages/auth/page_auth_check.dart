@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/auth/page_login.dart';
-import 'package:life_pilot/pages/auth/page_register.dart';
+import 'package:life_pilot/pages/auth/page_register_here.dart';
 import 'package:life_pilot/pages/page_main.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
@@ -26,9 +26,14 @@ class _PageAuthCheckState extends State<PageAuthCheck> {
     super.didChangeDependencies();
     _loc = AppLocalizations.of(context)!;
     if (!_hasChecked) {
-      final auth = Provider.of<ControllerAuth>(context, listen: false);
-      auth.checkLoginStatus(); // ✅ 啟動時檢查登入狀態
       _hasChecked = true;
+
+      // ✅ 延後檢查登入狀態，避免在 build 階段觸發 notifyListeners()
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final auth = Provider.of<ControllerAuth>(context, listen: false);
+        auth.checkLoginStatus();
+      });
     }
   }
 

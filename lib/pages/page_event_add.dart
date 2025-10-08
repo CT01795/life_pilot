@@ -67,7 +67,8 @@ class _PageEventAddState extends State<PageEventAdd> {
   String _lastWords = constEmpty;
   late FlutterTts _flutterTts;
 
-  void _initController(String key, [String initialValue = constEmpty]) {
+  void _initController(
+      {required String key, String? initialValue = constEmpty}) {
     if (!_controllers.containsKey(key)) {
       _controllers[key] = TextEditingController(text: initialValue);
     }
@@ -103,14 +104,14 @@ class _PageEventAddState extends State<PageEventAdd> {
       endDate = startDate;
     }
 
-    _initController(EventFields.city, e?.city ?? constEmpty);
-    _initController(EventFields.location, e?.location ?? constEmpty);
-    _initController(EventFields.name, e?.name ?? constEmpty);
-    _initController(EventFields.type, e?.type ?? constEmpty);
-    _initController(EventFields.description, e?.description ?? constEmpty);
-    _initController(EventFields.fee, e?.fee ?? constEmpty);
-    _initController(EventFields.unit, e?.unit ?? constEmpty);
-    _initController(EventFields.masterUrl, e?.masterUrl ?? constEmpty);
+    _initController(key: EventFields.city, initialValue: e?.city ?? constEmpty);
+    _initController(key: EventFields.location, initialValue: e?.location ?? constEmpty);
+    _initController(key: EventFields.name, initialValue: e?.name ?? constEmpty);
+    _initController(key: EventFields.type, initialValue: e?.type ?? constEmpty);
+    _initController(key: EventFields.description, initialValue: e?.description ?? constEmpty);
+    _initController(key: EventFields.fee, initialValue: e?.fee ?? constEmpty);
+    _initController(key: EventFields.unit, initialValue: e?.unit ?? constEmpty);
+    _initController(key: EventFields.masterUrl, initialValue: e?.masterUrl ?? constEmpty);
   }
 
   @override
@@ -219,38 +220,35 @@ class _PageEventAddState extends State<PageEventAdd> {
         Row(
           children: [
             Expanded(
-                child: _buildDateTile(
-                    dStart,
-                    () => _pickDate(isStart: true, index: index),
-                    constStartToS)),
+                child: _buildDateTile(date: dStart,
+                    onTap: () => _pickDate(isStart: true, index: index),
+                    type: constStartToS)),
             const Text(' ~ '),
             Expanded(
-                child: _buildDateTile(
-                    dEnd,
-                    () => _pickDate(isStart: false, index: index),
-                    constEndToE)),
+                child: _buildDateTile(date: dEnd,
+                    onTap: () => _pickDate(isStart: false, index: index),
+                    type: constEndToE)),
           ],
         ),
         Row(
           children: [
             Expanded(
-                child: _buildTimeTile(
-                    tStart,
-                    () => _pickTime(isStart: true, index: index),
-                    constStartToS)),
+                child: _buildTimeTile(time: tStart,
+                    onTap: () => _pickTime(isStart: true, index: index),
+                    type: constStartToS)),
             const Text(' ~ '),
             Expanded(
-                child: _buildTimeTile(
-                    tEnd,
-                    () => _pickTime(isStart: false, index: index),
-                    constEndToE)),
+                child: _buildTimeTile(time: tEnd,
+                    onTap: () => _pickTime(isStart: false, index: index),
+                    type: constEndToE)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildDateTile(DateTime? date, VoidCallback onTap, String type) {
+  Widget _buildDateTile(
+      {DateTime? date, required VoidCallback onTap, required String type}) {
     final text = date != null
         ? '${date.year}/${date.month.toString().padLeft(2, constZero)}/${date.day.toString().padLeft(2, constZero)}'
         : (type == constStartToS ? _loc.start_date : _loc.end_date);
@@ -263,7 +261,8 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
   }
 
-  Widget _buildTimeTile(TimeOfDay? time, VoidCallback onTap, String type) {
+  Widget _buildTimeTile(
+      {TimeOfDay? time, required VoidCallback onTap, required String type}) {
     final text = time?.format(context) ??
         (type == constStartToS ? _loc.start_time : _loc.end_time);
     return ListTile(
@@ -281,7 +280,7 @@ class _PageEventAddState extends State<PageEventAdd> {
     required ValueChanged<String> onChanged,
     int maxLines = 1,
   }) {
-    _initController(key, constEmpty); // 確保 controller 有初始化
+    _initController(key: key, initialValue: constEmpty); // 確保 controller 有初始化
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -340,7 +339,7 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
   }
 
-  Widget _buildSubEventCard(int index) {
+  Widget _buildSubEventCard({required int index}) {
     final d = subEvents[index];
 
     // 確保 subEvent 也有 id，沒的話補一個
@@ -529,7 +528,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                   onChanged: (v) => setState(() => unit = v)),
               kGapH16(),
               Text(_loc.event_sub),
-              ...List.generate(subEvents.length, _buildSubEventCard),
+              ...List.generate(subEvents.length, (index) => _buildSubEventCard(index: index)),
               ElevatedButton.icon(
                 onPressed: () {
                   final newSub = EventSubItem(id: uuid.v4())

@@ -25,7 +25,6 @@ void showSnackBar({required String message}) {
 Future<void> handleCheckboxChanged({
   required bool? value,
   required Event event,
-  required Set<String> selectedEventIds,
   required void Function(void Function()) setState,
   required String addedMessage,
   required String tableName,
@@ -55,10 +54,6 @@ Future<void> handleCheckboxChanged({
     if (shouldAdd != true) {
       return;
     }
-
-    setState(() {
-      selectedEventIds.add(event.id);
-    });
 
     if (!isAlreadyAdded || tableName == constTableRecommendedAttractions) {
       if (toTableName != constTableMemoryTrace &&
@@ -98,8 +93,7 @@ Future<void> handleCheckboxChanged({
                 tmpEvent.location.isEmpty ? event.location : tmpEvent.location
             ..unit = tmpEvent.unit.isEmpty ? event.unit : tmpEvent.unit
             ..account = auth.currentAccount;
-          await service.deleteEvent(
-              event: subEvent, tableName: toTableName);
+          await service.deleteEvent(event: subEvent, tableName: toTableName);
           await service.saveEvent(
               event: subEvent, isNew: true, tableName: toTableName, loc: loc);
         }
@@ -114,17 +108,12 @@ Future<void> handleCheckboxChanged({
                 ? now
                 : event.endDate);
         updatedEvent.account = auth.currentAccount;
-        await service.deleteEvent(
-            event: updatedEvent, tableName: toTableName);
+        await service.deleteEvent(event: updatedEvent, tableName: toTableName);
         await service.saveEvent(
             event: updatedEvent, isNew: true, tableName: toTableName, loc: loc);
       }
     }
     showSnackBar(message: addedMessage);
-  } else {
-    setState(() {
-      selectedEventIds.remove(event.id);
-    });
   }
 }
 
@@ -132,7 +121,6 @@ Future<void> handleCheckboxChanged({
 Future<void> handleRemoveEvent({
   required Event event,
   required Future<void> Function() onDelete,
-  required VoidCallback onSuccessSetState,
   required AppLocalizations loc,
 }) async {
   final shouldDelete = await showConfirmationDialog(
@@ -144,7 +132,6 @@ Future<void> handleRemoveEvent({
   if (shouldDelete == true) {
     try {
       await onDelete();
-      onSuccessSetState();
       showSnackBar(message: loc.delete_ok);
     } catch (e) {
       showSnackBar(message: '${loc.delete_error}: $e');
@@ -153,7 +140,7 @@ Future<void> handleRemoveEvent({
 }
 
 // 過濾仍有效的事件
-List<Event> filterValidEvents(List<Event> events) {
+List<Event> filterValidEvents({required List<Event> events}) {
   final day = DateUtils.dateOnly(DateTime.now()).add(Duration(days: -1));
 
   return events.where((event) {
@@ -167,7 +154,7 @@ List<Event> filterValidEvents(List<Event> events) {
   }).toList();
 }
 
-List<EventSubItem> sortSubEvents(List<EventSubItem> list) {
+List<EventSubItem> sortSubEvents({required List<EventSubItem> list}) {
   list.sort((a, b) {
     final aStart = a.startDate ?? DateTime(9999);
     final bStart = b.startDate ?? DateTime(9999);

@@ -74,7 +74,7 @@ mixin EventBase {
     this.reminderOptions = reminderOptions;
   }
 
-  void initializeFromParent(EventBase parent) {
+  void initializeFromParent({required EventBase parent}) {
     startDate = parent.startDate;
     endDate = parent.endDate;
     startTime = parent.startTime;
@@ -109,7 +109,7 @@ mixin EventBase {
     };
   }
 
-  void fromJsonBase(Map<String, dynamic> json) {
+  void fromJsonBase({required Map<String, dynamic> json}) {
     id = json[EventFields.id] ?? _uuid.v4();
     masterGraphUrl = json[EventFields.masterGraphUrl];
     masterUrl = json[EventFields.masterUrl];
@@ -127,7 +127,8 @@ mixin EventBase {
     account = json[EventFields.account] ?? constEmpty;
     repeatOptions =
         RepeatRuleExtension.fromKey(json[EventFields.repeatOptions]);
-    reminderOptions = Event.parseReminderOptions(json[EventFields.reminderOptions]);
+    reminderOptions =
+        Event.parseReminderOptions(jsonValue: json[EventFields.reminderOptions]);
     isHoliday = json[EventFields.isHoliday] == true;
     isTaiwanHoliday = json[EventFields.isTaiwanHoliday] == true;
     isApproved = json[EventFields.isApproved] == true;

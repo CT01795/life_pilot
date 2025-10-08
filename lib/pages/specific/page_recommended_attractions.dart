@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/controllers/controller_generic_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event.dart';
 import 'package:life_pilot/pages/generic/generic_event_page.dart';
@@ -14,8 +15,11 @@ class PageRecommendedAttractions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return Provider<String>.value(
-      value: _tableName, // 注入 tableName
+    return ChangeNotifierProvider(
+      create: (_) => ControllerGenericEvent(
+        tableName: _tableName,
+        toTableName: constTableCalendarEvents, // 如果沒有轉移 table，也可以直接設 constEmpty
+      )..loadEvents(), // 初始化後就載入資料
       child: GenericEventPage(
         title: loc.recommended_attractions,
         tableName: _tableName,

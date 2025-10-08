@@ -7,7 +7,7 @@ class ProviderLocale extends ChangeNotifier {
 
   Locale get locale => _locale;
 
-  void setLocale(Locale locale) {
+  void setLocale({required Locale locale}) {
     if (_locale == locale) return; // 避免重複通知
     _locale = locale;
     notifyListeners();

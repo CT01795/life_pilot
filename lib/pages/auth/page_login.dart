@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/services/service_auth.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/widget/utils_input_field.dart';
@@ -35,7 +34,7 @@ class _PageLoginState extends State<PageLogin> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loc = AppLocalizations.of(context)!;
-    _auth = Provider.of<ControllerAuth>(context, listen: true);
+    _auth = Provider.of<ControllerAuth>(context, listen: false);
   }
 
   @override
@@ -43,42 +42,6 @@ class _PageLoginState extends State<PageLogin> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  void _login() async {
-    FocusScope.of(context).unfocus(); // 收鍵盤
-    final result = await ServiceAuth.login(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-
-    if (result == null) {
-      await _auth.checkLoginStatus();
-      // 登入成功後會在外層重新渲染畫面，不用 Navigator.pushReplacement 了
-    } else {
-      showLoginError(message: result, loc: _loc);
-    }
-  }
-
-  void _anonymousLogin() async {
-    FocusScope.of(context).unfocus();
-    final result = await _auth.anonymousLogin();
-
-
-    if (result != null) {
-      showLoginError(message: result, loc: _loc);
-    }
-  }
-
-  void _resetPassword() async {
-    final result = await ServiceAuth.resetPassword(_emailController.text.trim());
-
-    if (result == null) {
-      showSnackBar(message: _loc.resetPasswordEmail);
-    } else {
-      showLoginError(message: result, loc: _loc);
-    }
   }
 
   // 🔁 導航到註冊頁
@@ -104,15 +67,42 @@ class _PageLoginState extends State<PageLogin> {
                 obscureText: true),
             kGapH16(),
             Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-              ActionButton(label: _loc.login, onPressed: _login),
+              ActionButton(
+                  label: _loc.login,
+                  onPressed: () async {
+                    FocusScope.of(context).unfocus();
+                    final error = await _auth.login(
+                        email: _emailController.text.trim(),
+                        password: _passwordController.text.trim());
+                    if (error != null && error.isNotEmpty) {
+                      showLoginError(message: error, loc: _loc);
+                    }
+                  }),
               kGapW16(),
               ActionButton(
-                  label: _loc.loginAnonymously, onPressed: _anonymousLogin),
+                label: _loc.loginAnonymously,
+                onPressed: () async {
+                  FocusScope.of(context).unfocus();
+                  final error = await _auth.anonymousLogin();
+                  if (error != null) {
+                    showLoginError(message: error, loc: _loc);
+                  }
+                },
+              ),
             ]),
             kGapH16(),
             Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               TextButton(
-                onPressed: _resetPassword,
+                onPressed: () async {
+                  FocusScope.of(context).unfocus();
+                  final error = await _auth.resetPassword(
+                      email: _emailController.text.trim());
+                  if (error != null && error.isNotEmpty) {
+                    showLoginError(message: error, loc: _loc);
+                  } else {
+                    showSnackBar(message: _loc.resetPasswordEmail);
+                  }
+                },
                 child: Text(_loc.resetPassword),
               ),
               kGapW16(),

@@ -1,12 +1,14 @@
 // --- AppBar Widget ---
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_calendar.dart';
+import 'package:life_pilot/controllers/controller_calendar_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart'
     show DateUtils, DateTimeCompare;
 import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
+import 'package:provider/provider.dart';
 
 class CalendarAppBar extends StatelessWidget {
   final String monthLabel;
@@ -79,23 +81,15 @@ class CalendarAppBar extends StatelessWidget {
 class CalendarBody extends StatelessWidget {
   final PageController pageController;
   final AppLocalizations loc;
-  final Set<String> selectedEventIds;
-  final Set<String> removedEventIds;
 
   const CalendarBody(
       {super.key,
       required this.pageController,
-      required this.loc,
-      required this.selectedEventIds,
-      required this.removedEventIds});
+      required this.loc,});
 
   @override
   Widget build(BuildContext context) {
-    ControllerCalendar controller = getIt<ControllerCalendar>();
-    final displayedMonth = controller.currentMonth;
-
-    bool isCurrentMonth = DateTimeCompare.isCurrentMonth(displayedMonth);
-
+    final controller = context.watch<ControllerCalendarView>().data;
     return LayoutBuilder(
       builder: (context, constraints) {
         final double availableHeight =
@@ -103,59 +97,24 @@ class CalendarBody extends StatelessWidget {
 
         return Column(
           children: [
-            WeekDayHeader(loc: loc, isCurrentMonth: isCurrentMonth),
+            WeekDayHeader(loc: loc, isCurrentMonth: DateTimeCompare.isCurrentMonth(controller.currentMonth)),
             // 顯示日曆的每一行
             SizedBox(
               height: availableHeight,
-              child: GestureDetector(
-                onVerticalDragEnd: (details) async {
-                  if (details.primaryVelocity == null) return;
-                  if (details.primaryVelocity! < 0) {
-                    // 往上滑，模擬往右滑，切換到下一個月
-                    await controller.goToMonth(
-                        month: DateTime(controller.currentMonth.year,
-                            controller.currentMonth.month + 1));
-                  } else if (details.primaryVelocity! > 0) {
-                    // 往下滑，模擬往左滑，切換到上一個月
-                    await controller.goToMonth(
-                        month: DateTime(controller.currentMonth.year,
-                            controller.currentMonth.month - 1));
-                  }
+              child: PageView.builder(
+                controller: pageController,
+                onPageChanged: (index) async {
+                  final newMonth = controller.pageIndexToMonth(index: index);
+                  await controller.goToMonth(
+                    month: newMonth,
+                  );
                 },
-                onHorizontalDragEnd: (details) async {
-                  if (details.primaryVelocity == null) return;
-                  if (details.primaryVelocity! < 0) {
-                    // 向左滑 ➜ 下一個月
-                    await controller.goToMonth(
-                        month: DateTime(controller.currentMonth.year,
-                            controller.currentMonth.month + 1));
-                  } else if (details.primaryVelocity! > 0) {
-                    // 向右滑 ➜ 上一個月
-                    await controller.goToMonth(
-                        month: DateTime(controller.currentMonth.year,
-                            controller.currentMonth.month - 1));
-                  }
+                itemBuilder: (context, index) {
+                  final monthToShow = controller.pageIndexToMonth(index: index);
+                  return CalendarMonthView(
+                      displayedMonth: monthToShow,
+                      loc: loc);
                 },
-                child: PageView.builder(
-                  key: PageStorageKey(controller.tableName), //'pageCalendar'
-                  controller: pageController,
-                  physics: const NeverScrollableScrollPhysics(), // ✅ 禁用滑動
-                  onPageChanged: (index) {
-                    DateTime newMonth = DateTime(
-                        ControllerCalendar.baseDate.year + (index ~/ 12),
-                        index % 12 + 1);
-                    controller.goToMonth(
-                      month: newMonth,
-                    );
-                  },
-                  itemBuilder: (context, index) {
-                    return CalendarMonthView(
-                        displayedMonth: displayedMonth,
-                        loc: loc,
-                        selectedEventIds: selectedEventIds,
-                        removedEventIds: removedEventIds);
-                  },
-                ),
               ),
             ),
           ],
@@ -228,20 +187,16 @@ class WeekDayHeader extends StatelessWidget {
 class CalendarMonthView extends StatelessWidget {
   final DateTime displayedMonth;
   final AppLocalizations loc;
-  final Set<String> selectedEventIds;
-  final Set<String> removedEventIds;
 
   const CalendarMonthView(
       {super.key,
       required this.displayedMonth,
-      required this.loc,
-      required this.selectedEventIds,
-      required this.removedEventIds});
+      required this.loc,});
 
   @override
   Widget build(BuildContext context) {
     ControllerCalendar controller = getIt<ControllerCalendar>();
-    final weeks = controller.getCalendarDays(displayedMonth);
+    final weeks = controller.getCalendarDays(month: displayedMonth);
     // ✅ 建立 key 映射，每週一個 GlobalKey
     final Map<String, GlobalKey> weekKeys = {
       for (var week in weeks) week.first.toIso8601String(): GlobalKey()
@@ -258,8 +213,7 @@ class CalendarMonthView extends StatelessWidget {
               loc: loc,
               weekRowKey: weekKeys[
                   week.first.toIso8601String()]!, // ✅ 傳入一個 key（可共用或為每週新建）
-              selectedEventIds: selectedEventIds,
-              removedEventIds: removedEventIds),
+              ),
         );
       }).toList(),
     );
@@ -271,17 +225,12 @@ class WeekRow extends StatelessWidget {
   final DateTime displayedMonth;
   final AppLocalizations loc;
   final GlobalKey weekRowKey; // ✅ 提升為屬性
-  final Set<String> selectedEventIds;
-  final Set<String> removedEventIds;
-
   const WeekRow(
       {super.key,
       required this.week,
       required this.displayedMonth,
       required this.loc,
-      required this.weekRowKey,
-      required this.selectedEventIds,
-      required this.removedEventIds});
+      required this.weekRowKey,});
 
   @override
   Widget build(BuildContext context) {
@@ -290,12 +239,12 @@ class WeekRow extends StatelessWidget {
     final cellWidth = screenWidth / 7;
 
     // 1. 先從 controller 取得當月所有事件，並按週、日分組過的快取資料
-    final calendarWeeks = controller.getCalendarDays(displayedMonth);
+    final calendarWeeks = controller.getCalendarDays(month: displayedMonth);
     final weekIndex = calendarWeeks.indexWhere((w) => w.first == week.first);
 
     // 2. 取出該週每一天的事件列表，已經預先分好組
     final weekEvents =
-        controller.getWeekEventRows(displayedMonth)[weekIndex] ?? [];
+        controller.getWeekEventRows(month: displayedMonth)[weekIndex] ?? [];
     return Stack(
       children: [
         Row(
@@ -317,8 +266,6 @@ class WeekRow extends StatelessWidget {
 
                   final shouldReload = await showCalendarEventsDialog(
                       date: date,
-                      selectedEventIds: selectedEventIds,
-                      removedEventIds: removedEventIds,
                       loc: loc);
                   if (shouldReload) {
                     await controller.loadCalendarEvents(); // 🔁 統一更新
@@ -412,8 +359,6 @@ class WeekRow extends StatelessWidget {
                 // 4. 呼叫 dialog，並傳入正確的日期
                 final shouldReload = await showCalendarEventsDialog(
                     date: tappedDate,
-                    selectedEventIds: selectedEventIds,
-                    removedEventIds: removedEventIds,
                     loc: loc);
 
                 if (shouldReload) {

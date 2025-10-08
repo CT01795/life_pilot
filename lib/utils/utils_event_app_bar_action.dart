@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
+import 'package:life_pilot/controllers/controller_generic_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/models/model_event.dart';
@@ -13,6 +14,7 @@ import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_event_card.dart';
 import 'package:life_pilot/utils/widget/utils_event_widgets.dart';
 import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
+import 'package:provider/provider.dart';
 import '../export/export_entry.dart';
 import 'platform/utils_mobile.dart';
 
@@ -53,18 +55,18 @@ List<Widget> buildAppBarActions({
   List<Widget> actions = [];
 
   if (enableSearchAndExport) {
-    actions.add(IconButton(
-      icon: const Icon(Icons.search),
-      tooltip: loc.search,
-      onPressed: handler.onSearchToggle,
-    ));
-  }
-  if (enableSearchAndExport) {
-    actions.add(IconButton(
-      icon: const Icon(Icons.download),
-      tooltip: loc.export_excel,
-      onPressed: () => handler.onExport(),
-    ));
+    actions.addAll(
+      [IconButton(
+        icon: const Icon(Icons.search),
+        tooltip: loc.search,
+        onPressed: handler.onSearchToggle,
+      ),
+      IconButton(
+        icon: const Icon(Icons.download),
+        tooltip: loc.export_excel,
+        onPressed: () => handler.onExport(),
+      )]
+    );
   }
   if (onAdd != null) {
     actions.add(IconButton(
@@ -131,19 +133,6 @@ class AppBarActionsHandler {
     } catch (e) {
       showSnackBar(message: "${loc.export_failed}：$e");
     }
-  }
-
-  Future<Event?> onAddEvent() {
-    return navigatorKey.currentState!.push<Event?>(
-      MaterialPageRoute(
-        builder: (_) => PageEventAdd(tableName: tableName),
-      ),
-    ).then((newEvent) async {
-      if (newEvent != null) {
-        await refreshCallback(); // 新增完也自動刷新
-      }
-      return newEvent;
-    });
   }
 }
 
@@ -233,7 +222,6 @@ Widget buildSearchPanel({
 // ------------------------------
 Widget buildEventTrailing({
   required Event event,
-  required Set<String> selectedEventIds,
   required void Function(void Function()) setState,
   required VoidCallback refreshCallback,
   required String tableName,
@@ -245,19 +233,17 @@ Widget buildEventTrailing({
   final service = getIt<ServiceStorage>();
 
   return StatefulBuilder(builder: (context, localSetState) {
-    final isChecked = selectedEventIds.contains(event.id);
     return Transform.scale(
       scale: 1.2,
       child: Row(
         children: [
           if (!auth.isAnonymous && tableName != constTableMemoryTrace)
             Checkbox(
-              value: isChecked,
+              value: false,
               onChanged: (value) async {
-                await onCheckboxChanged(
+                await handleCheckboxChanged(
                   value: value,
                   event: event,
-                  selectedEventIds: selectedEventIds,
                   setState: (fn) {
                     fn();
                     localSetState(() {});
@@ -376,7 +362,6 @@ class EventList extends StatelessWidget {
         final event = filteredEvents[index];
         final trailing = buildEventTrailing(
           event: event,
-          selectedEventIds: selectedEventIds,
           setState: setState,
           refreshCallback: refreshCallback,
           tableName: tableName,
@@ -401,14 +386,16 @@ class EventList extends StatelessWidget {
                   (auth.currentAccount == constSysAdminEmail &&
                       tableName != constTableMemoryTrace)
               ? () async {
-                  await onRemoveEvent(
-                    event: event,
-                    removedEventIds: removedEventIds,
-                    setState: setState,
-                    tableName: tableName,
-                    loc: loc
-                  );
+                final controller = context.read<ControllerGenericEvent>();
+                final shouldDelete = await showConfirmationDialog(
+                  content: '${loc.event_delete}「${event.name}」？',
+                  confirmText: loc.delete,
+                  cancelText: loc.cancel,
+                );
+                if (shouldDelete == true) {
+                  await controller.deleteEvent(event, loc); // ✅ 使用封裝後的刪除邏輯
                 }
+              }
               : null,
           trailing: trailing,
         );
@@ -420,28 +407,6 @@ class EventList extends StatelessWidget {
 // ------------------------------
 // ✅ Utility Functions
 // ------------------------------
-Future<void> onCheckboxChanged({
-  required bool? value,
-  required Event event,
-  required Set<String> selectedEventIds,
-  required void Function(void Function()) setState,
-  required String addedMessage,
-  required String tableName,
-  required String toTableName,
-  required AppLocalizations loc
-}) async {
-  await handleCheckboxChanged(
-    value: value,
-    event: event,
-    selectedEventIds: selectedEventIds,
-    setState: setState,
-    addedMessage: addedMessage,
-    tableName: tableName,
-    toTableName: toTableName,
-    loc: loc,
-  );
-}
-
 Future<void> onEditEvent({
   required Event event,
   required void Function(void Function()) setState,
@@ -460,82 +425,6 @@ Future<void> onEditEvent({
   if (updatedEvent != null) {
     refreshCallback();
   }
-}
-
-Future<void> onRemoveEvent({
-  required Event event,
-  required Set<String> removedEventIds,
-  required void Function(void Function()) setState,
-  required String tableName,
-  required AppLocalizations loc
-}) async {
-  final service = getIt<ServiceStorage>();
-  await handleRemoveEvent(
-    event: event,
-    onDelete: () async {
-      await service.deleteEvent(event: event, tableName: tableName);
-    },
-    onSuccessSetState: () {
-      setState(() {
-        removedEventIds.add(event.id);
-      });
-    },
-    loc: loc
-  );
-}
-
-List<Event> filterEvents({
-  required List<Event> events,
-  required Set<String> removedEventIds,
-  required String searchKeywords,
-  DateTime? startDate,
-  DateTime? endDate,
-}) {
-  final keywords = searchKeywords
-      .toLowerCase()
-      .split(RegExp(r'\s+'))
-      .where((word) => word.isNotEmpty)
-      .toList();
-
-  return events.where((e) {
-    if (removedEventIds.contains(e.id)) return false;
-
-    bool matchesKeywords = keywords.every((word) {
-      return e.city.toLowerCase().contains(word) ||
-          e.location.toLowerCase().contains(word) ||
-          e.name.toLowerCase().contains(word) ||
-          e.type.toLowerCase().contains(word) ||
-          e.description.toLowerCase().contains(word) ||
-          e.fee.toLowerCase().contains(word) ||
-          e.unit.toLowerCase().contains(word) ||
-          e.subEvents.any(
-            (se) =>
-                se.city.toLowerCase().contains(word) ||
-                se.location.toLowerCase().contains(word) ||
-                se.name.toLowerCase().contains(word) ||
-                se.type.toLowerCase().contains(word) ||
-                se.description.toLowerCase().contains(word) ||
-                se.fee.toLowerCase().contains(word) ||
-                se.unit.toLowerCase().contains(word),
-          );
-    });
-
-    e.endDate = e.endDate ?? e.startDate;
-    e.endTime = e.endTime ?? e.startTime;
-    bool matchesDate = true;
-    if (startDate != null &&
-        e.endDate != null &&
-        e.endDate!.isBefore(startDate)) {
-      matchesDate = false;
-    }
-    if (endDate != null &&
-        e.startDate != null &&
-        e.startDate!.isAfter(endDate)) {
-      matchesDate = false;
-    }
-
-    return matchesKeywords && matchesDate;
-  }).toList();
 }
 
 void scrollToEventById({

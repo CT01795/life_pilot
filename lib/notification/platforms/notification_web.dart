@@ -26,23 +26,36 @@ class NotificationOptions {
 
 class JsNotificationStatic {
   static String? get permission {
-    final value = js_util.getProperty(js_util.globalThis, 'Notification');
-    if (value == null) return null;
+    try {
+      final value = js_util.getProperty(js_util.globalThis, 'Notification');
+      if (value == null) return null;
 
-    final permission = js_util.getProperty(value, 'permission');
-    return permission is String ? permission : null;
+      final permission = js_util.getProperty(value, 'permission');
+      return permission is String ? permission : (permission?.toString());
+    } catch (e) {
+      return null;
+    }
   }
 
   static Future<String?> requestPermission() async {
-    final notif = js_util.getProperty(js_util.globalThis, 'Notification');
-    if (notif == null) return null;
-    final promise = js_util.callMethod(notif, 'requestPermission', []);
-    final result = await js_util.promiseToFuture(promise);
-    return result is String ? result : null;
+    try {
+      final notif = js_util.getProperty(js_util.globalThis, 'Notification');
+      if (notif == null) return null;
+      final promise = js_util.callMethod(notif, 'requestPermission', []);
+      final result = await js_util.promiseToFuture(promise);
+      return result is String ? result : (result?.toString());
+    } catch (e) {
+      return null;
+    }
   }
 
-  static bool get supported =>
-      js_util.hasProperty(js_util.globalThis, 'Notification');
+  static bool get supported  {
+    try {
+      return js_util.hasProperty(js_util.globalThis, 'Notification');
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 class NotificationEntryImpl {

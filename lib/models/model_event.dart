@@ -11,8 +11,8 @@ class Event with EventBase {
   Event({
     String? id,
     List<EventSubItem>? subEvents,
-  }) : subEvents = subEvents ?? [], // ✅ 明確初始化
-       super() {
+  })  : subEvents = subEvents ?? [], // ✅ 明確初始化
+        super() {
     this.id = id ?? this.id;
   }
 
@@ -24,11 +24,11 @@ class Event with EventBase {
     };
   }
 
-  factory Event.fromJson(Map<String, dynamic> json) {
+  factory Event.fromJson({required Map<String, dynamic> json}) {
     final event = Event();
-    event.fromJsonBase(json);
+    event.fromJsonBase(json: json);
     event.subEvents = (json[EventFields.subEvents] as List<dynamic>?)
-            ?.map((e) => EventSubItem.fromJson(e))
+            ?.map((e) => EventSubItem.fromJson(json: e))
             .toList() ??
         [];
     return event;
@@ -45,28 +45,28 @@ class Event with EventBase {
       id: newId ?? id,
       subEvents: subEvents,
     )
-     ..masterGraphUrl = masterGraphUrl
-     ..masterUrl = masterUrl
-     ..startDate = newStartDate ?? startDate
-     ..endDate = newEndDate ?? endDate
-     ..startTime = startTime
-     ..endTime = endTime
-     ..city = city
-     ..location = location
-     ..name = name
-     ..type = type
-     ..description = description
-     ..fee = fee
-     ..unit = unit
-     ..account = account
-     ..repeatOptions = newRepeatOptions ?? repeatOptions
-     ..reminderOptions = newReminderOptions ?? reminderOptions
-     ..isHoliday = isHoliday
-     ..isTaiwanHoliday = isTaiwanHoliday
-     ..isApproved = isApproved;
+      ..masterGraphUrl = masterGraphUrl
+      ..masterUrl = masterUrl
+      ..startDate = newStartDate ?? startDate
+      ..endDate = newEndDate ?? endDate
+      ..startTime = startTime
+      ..endTime = endTime
+      ..city = city
+      ..location = location
+      ..name = name
+      ..type = type
+      ..description = description
+      ..fee = fee
+      ..unit = unit
+      ..account = account
+      ..repeatOptions = newRepeatOptions ?? repeatOptions
+      ..reminderOptions = newReminderOptions ?? reminderOptions
+      ..isHoliday = isHoliday
+      ..isTaiwanHoliday = isTaiwanHoliday
+      ..isApproved = isApproved;
   }
 
-  static List<ReminderOption> parseReminderOptions(dynamic jsonValue) {
+  static List<ReminderOption> parseReminderOptions({dynamic jsonValue}) {
     if (jsonValue == null) return const [ReminderOption.dayBefore8am];
     if (jsonValue is String) {
       try {

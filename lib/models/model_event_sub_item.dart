@@ -7,16 +7,16 @@ import 'model_event_base.dart';
 
 final _uuid = const Uuid();
 
-class EventSubItem  with EventBase {
+class EventSubItem with EventBase {
   EventSubItem({String? id}) {
     this.id = id ?? _uuid.v4(); // 使用 EventBase 提供的 id
   }
 
-  Map<String, dynamic> toJson()  => toJsonBase();
+  Map<String, dynamic> toJson() => toJsonBase();
 
-  factory EventSubItem.fromJson(Map<String, dynamic> json) {
+  factory EventSubItem.fromJson({required Map<String, dynamic> json}) {
     final item = EventSubItem();
-    item.fromJsonBase(json);
+    item.fromJsonBase(json: json);
     return item;
   }
 
@@ -49,25 +49,27 @@ class EventSubItem  with EventBase {
       ..isApproved = isApproved;
   }
 
-  Event toEvent() => Event(id: id, subEvents: [],
-    )
-      ..masterGraphUrl = masterGraphUrl
-      ..masterUrl = masterUrl
-      ..startDate = startDate
-      ..endDate = endDate
-      ..startTime = startTime
-      ..endTime = endTime
-      ..city = city
-      ..location = location
-      ..name = name
-      ..type = type
-      ..description = description
-      ..fee = fee
-      ..unit = unit
-      ..account = account
-      ..repeatOptions = repeatOptions
-      ..reminderOptions = reminderOptions
-      ..isHoliday = isHoliday
-      ..isTaiwanHoliday = isTaiwanHoliday
-      ..isApproved = isApproved;
+  Event toEvent() => Event(
+        id: id,
+        subEvents: [],
+      )
+        ..masterGraphUrl = masterGraphUrl
+        ..masterUrl = masterUrl
+        ..startDate = startDate
+        ..endDate = endDate
+        ..startTime = startTime
+        ..endTime = endTime
+        ..city = city
+        ..location = location
+        ..name = name
+        ..type = type
+        ..description = description
+        ..fee = fee
+        ..unit = unit
+        ..account = account
+        ..repeatOptions = repeatOptions
+        ..reminderOptions = reminderOptions
+        ..isHoliday = isHoliday
+        ..isTaiwanHoliday = isTaiwanHoliday
+        ..isApproved = isApproved;
 }

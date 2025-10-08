@@ -68,7 +68,7 @@ class HolidayService {
           } else {
             // 先儲存前一個連假
             events
-                .add(_createMergedHoliday(tmpStart!, tmpEnd!, currentSummary));
+                .add(_createMergedHoliday(start: tmpStart!, end: tmpEnd!, summary: currentSummary));
             // 開始新的合併區間
             tmpStart = date;
             tmpEnd = date;
@@ -79,28 +79,28 @@ class HolidayService {
 
         // 若之前有合併中的假期，先結束它
         if (tmpStart != null && tmpEnd != null && currentSummary.isNotEmpty) {
-          events.add(_createMergedHoliday(tmpStart, tmpEnd, currentSummary));
+          events.add(_createMergedHoliday(start: tmpStart, end: tmpEnd, summary: currentSummary));
           tmpStart = null;
           tmpEnd = null;
           currentSummary = constEmpty;
         }
 
         final holidayEvent = Event(
-            id: 'holiday_${start.toIso8601String()}',
-          )
-            ..startDate = date
-            ..endDate = date
-            ..startTime = null
-            ..endTime = null
-            ..name = mappedSummary
-            ..isTaiwanHoliday = isTaiwanHoliday
-            ..isHoliday = true;
-        events.add(holidayEvent); 
+          id: 'holiday_${start.toIso8601String()}',
+        )
+          ..startDate = date
+          ..endDate = date
+          ..startTime = null
+          ..endTime = null
+          ..name = mappedSummary
+          ..isTaiwanHoliday = isTaiwanHoliday
+          ..isHoliday = true;
+        events.add(holidayEvent);
       }
 
       // 收尾，加入最後一組合併假期
       if (tmpStart != null && tmpEnd != null && currentSummary.isNotEmpty) {
-        events.add(_createMergedHoliday(tmpStart, tmpEnd, currentSummary));
+        events.add(_createMergedHoliday(start: tmpStart, end: tmpEnd, summary: currentSummary));
       }
 
       return events; // ✅ 回傳假日清單
@@ -110,7 +110,7 @@ class HolidayService {
   }
 
   static Event _createMergedHoliday(
-      DateTime start, DateTime end, String summary) {
+      {required DateTime start, required DateTime end, required String summary}) {
     return Event(
       id: 'holiday_${start.toIso8601String()}',
     )
