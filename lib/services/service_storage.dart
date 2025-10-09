@@ -1,9 +1,8 @@
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/models/model_event_fields.dart';
-import 'package:life_pilot/models/model_event_sub_item.dart';
 import 'package:life_pilot/notification/notification_entry.dart';
 import 'package:life_pilot/notification/core/reminder_option.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
@@ -17,10 +16,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceStorage {
   final _client = Supabase.instance.client;
 
-  List<Event>? allEvents;
+  List<EventItem>? allEvents;
 
   // 📌 取得推薦事件 (由 Supabase 的 RPC 呼叫)
-  Future<List<Event>?> getEvents({
+  Future<List<EventItem>?> getEvents({
     required String tableName,
     DateTime? dateS,
     DateTime? dateE,
@@ -47,14 +46,14 @@ class ServiceStorage {
     });
 
     allEvents = (response as List)
-        .map((e) => Event.fromJson(json: e as Map<String, dynamic>))
+        .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList();
     return allEvents;
   }
 
   // ✅ 核准事件 (由管理者)
   Future<void> approvalEvent(
-      {required Event event, required String tableName}) async {
+      {required EventItem event, required String tableName}) async {
     try {
       String? realAccount = event.account;
       if (event.account == constGuest) {
@@ -77,7 +76,7 @@ class ServiceStorage {
 
   // 💾 儲存（新增或更新）事件 + 排程通知
   Future<void> saveEvent(
-      {required Event event,
+      {required EventItem event,
       required bool isNew,
       required String tableName,
       required AppLocalizations loc}) async {
@@ -132,7 +131,7 @@ class ServiceStorage {
 
   // ❌ 刪除推薦事件
   Future<void> deleteEvent(
-      {required Event event, required String tableName}) async {
+      {required EventItem event, required String tableName}) async {
     try {
       ControllerAuth auth = getIt<ControllerAuth>();
       await NotificationEntryImpl.cancelEventReminders(event: event); // 取消通知
@@ -150,13 +149,13 @@ class ServiceStorage {
   }
 
   // --- 私有方法 ---
-  void _validateEvent({required Event event, required AppLocalizations loc}) {
+  void _validateEvent({required EventItem event, required AppLocalizations loc}) {
     if (event.name.isEmpty) {
       throw Exception(loc.event_save_error);
     }
   }
 
-  void _normalizeEventDates({required Event event}) {
+  void _normalizeEventDates({required EventItem event}) {
     if (event.endDate != null && !event.endDate!.isAfter(event.startDate!)) {
       event.endDate = null;
     }
@@ -167,7 +166,7 @@ class ServiceStorage {
     }
   }
 
-  void _normalizeSubEventsDates({required List<EventSubItem> subEvents}) {
+  void _normalizeSubEventsDates({required List<EventItem> subEvents}) {
     for (final subEvent in subEvents) {
       if (subEvent.endDate != null &&
           !subEvent.endDate!.isAfter(subEvent.startDate!)) {

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
-import 'package:life_pilot/controllers/controller_generic_event.dart';
+import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/my_app.dart';
 import 'package:life_pilot/notification/notification_entry.dart';
 import 'package:life_pilot/pages/page_event_add.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
-import 'package:life_pilot/utils/utils_event_card.dart';
 import 'package:life_pilot/utils/widget/utils_event_widgets.dart';
 import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
-import 'package:provider/provider.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_dialog.dart';
 import '../export/export_entry.dart';
 import 'platform/utils_mobile.dart';
 
@@ -89,7 +89,7 @@ class AppBarActionsHandler {
 
   // ✅ 模組化新增：共用 tableName、_events 狀態
   final String tableName;
-  final void Function(List<Event>) updateEvents;
+  final void Function(List<EventItem>) updateEvents;
 
   ControllerAuth get _auth => getIt<ControllerAuth>();
   AppLocalizations loc;
@@ -221,7 +221,7 @@ Widget buildSearchPanel({
 // ✅ 共用 Trailing Checkbox & Edit 按鈕
 // ------------------------------
 Widget buildEventTrailing({
-  required Event event,
+  required EventItem event,
   required void Function(void Function()) setState,
   required VoidCallback refreshCallback,
   required String tableName,
@@ -327,7 +327,7 @@ Widget buildEventTrailing({
 // 📋 Event ListView / GridView
 // ------------------------------
 class EventList extends StatelessWidget {
-  final List<Event> filteredEvents;
+  final List<EventItem> filteredEvents;
   final Set<String> selectedEventIds;
   final Set<String> removedEventIds;
   final ServiceStorage? serviceStorage;
@@ -336,6 +336,7 @@ class EventList extends StatelessWidget {
   final VoidCallback refreshCallback;
   final String tableName;
   final String toTableName;
+  final ControllerEvent controllerEvent;
 
   const EventList({
     super.key,
@@ -348,6 +349,7 @@ class EventList extends StatelessWidget {
     required this.refreshCallback,
     required this.tableName,
     required this.toTableName,
+    required this.controllerEvent
   });
 
   @override
@@ -369,9 +371,9 @@ class EventList extends StatelessWidget {
           loc: loc,
         );
 
-        return EventCardDetail(
+        return WidgetsEventCard(
+          eventController: controllerEvent.eventController(event),
           tableName: tableName,
-          event: event,
           index: index,
           onTap: () {
             showDialog(
@@ -379,25 +381,25 @@ class EventList extends StatelessWidget {
               barrierDismissible: true,
               barrierColor: const Color.fromARGB(200, 128, 128, 128), // 透明灰
               builder: (_) =>
-                  EventImageDialog(tableName: tableName, event: event),
+                  WidgetsEventDialog(tableName: tableName, eventController: controllerEvent.eventController(event)),
             );
           },
           onDelete: auth.currentAccount == event.account ||
                   (auth.currentAccount == constSysAdminEmail &&
                       tableName != constTableMemoryTrace)
               ? () async {
-                final controller = context.read<ControllerGenericEvent>();
                 final shouldDelete = await showConfirmationDialog(
                   content: '${loc.event_delete}「${event.name}」？',
                   confirmText: loc.delete,
                   cancelText: loc.cancel,
                 );
                 if (shouldDelete == true) {
-                  await controller.deleteEvent(event, loc); // ✅ 使用封裝後的刪除邏輯
+                  await controllerEvent.deleteEvent(event, loc); // ✅ 使用封裝後的刪除邏輯
                 }
               }
               : null,
           trailing: trailing,
+          showSubEvents: false,
         );
       },
     );
@@ -408,12 +410,12 @@ class EventList extends StatelessWidget {
 // ✅ Utility Functions
 // ------------------------------
 Future<void> onEditEvent({
-  required Event event,
+  required EventItem event,
   required void Function(void Function()) setState,
   required VoidCallback refreshCallback,
   required String tableName,
 }) async {
-  final updatedEvent = await navigatorKey.currentState!.push<Event?>(
+  final updatedEvent = await navigatorKey.currentState!.push<EventItem?>(
     MaterialPageRoute(
       builder: (_) => PageEventAdd(
         existingEvent: event,
@@ -428,7 +430,7 @@ Future<void> onEditEvent({
 }
 
 void scrollToEventById({
-  required List<Event> events,
+  required List<EventItem> events,
   required ScrollController scrollController,
   required String eventId,
   double itemHeight = 120.0,

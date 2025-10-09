@@ -2,7 +2,7 @@ import 'package:flutter/material.dart' hide Notification, DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/notification/notification_entry.dart';
 import 'package:life_pilot/providers/provider_locale.dart';
 import 'package:life_pilot/services/calendar/service_holiday.dart';
@@ -16,7 +16,7 @@ class ControllerCalendar extends ChangeNotifier {
   final String tableName;
 
   late DateTime currentMonth;
-  List<Event> events = [];
+  List<EventItem> events = [];
   bool isLoading = false; // ⬅️ 新增 loading 旗標
 
   // 給 PageView 初始用的基準年月
@@ -32,7 +32,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // [事件快取結構]：{年月字串 : Map<週索引, Map<日索引, List<Event>>>}
-  final Map<String, Map<int, Map<int, List<Event>>>> _cachedEvents = {};
+  final Map<String, Map<int, Map<int, List<EventItem>>>> _cachedEvents = {};
 
   ControllerCalendar({required this.tableName}) {
     currentMonth = DateUtils.dateOnly(DateTime.now());
@@ -78,7 +78,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 工具方法：檢查兩個事件是否跨日重疊
-  bool isOverlapping({required Event a, required Event b}) {
+  bool isOverlapping({required EventItem a, required EventItem b}) {
     final aStart = DateUtils.dateOnly(a.startDate!);
     final aEnd = DateUtils.dateOnly(a.endDate ?? a.startDate!);
     final bStart = DateUtils.dateOnly(b.startDate!);
@@ -103,7 +103,7 @@ class ControllerCalendar extends ChangeNotifier {
         return !(end.isBefore(weekStart) || start.isAfter(weekEnd));
       }).toList();
 
-      final List<List<Event>> rows = [];
+      final List<List<EventItem>> rows = [];
 
       for (final event in eventsThisWeek) {
         bool placed = false;
@@ -181,9 +181,9 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 依照週、日將事件分組
-  Map<int, Map<int, List<Event>>> _groupEventsByWeekAndDay(
-      {required List<List<DateTime>> weeks, required List<Event> events}) {
-    final Map<int, Map<int, List<Event>>> result = {};
+  Map<int, Map<int, List<EventItem>>> _groupEventsByWeekAndDay(
+      {required List<List<DateTime>> weeks, required List<EventItem> events}) {
+    final Map<int, Map<int, List<EventItem>>> result = {};
 
     for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
       final week = weeks[weekIndex];
@@ -209,7 +209,7 @@ class ControllerCalendar extends ChangeNotifier {
     if (_cachedEvents.containsKey(key)) {
       // ✅ 同步更新 events（這是你缺的）
       final allCached = _cachedEvents[key]!;
-      final allEvents = <Event>[];
+      final allEvents = <EventItem>[];
 
       for (var week in allCached.values) {
         for (var dayEvents in week.values) {
@@ -229,9 +229,9 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 查詢特定日期的事件
-  List<Event> getEventsOfDay({required DateTime date}) {
+  List<EventItem> getEventsOfDay({required DateTime date}) {
     final key = _monthKey(date);
-    Map<int, Map<int, List<Event>>>? weeks = _cachedEvents[key];
+    Map<int, Map<int, List<EventItem>>>? weeks = _cachedEvents[key];
 
     if (weeks == null) {
       // 嘗試查前一月或後一月
@@ -263,7 +263,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // 清除該事件相關月份的快取
-  void updateCachedEvent({required Event event}) {
+  void updateCachedEvent({required EventItem event}) {
     final startDateS =
         event.startDate != null ? _monthKey(event.startDate!) : null;
 
@@ -330,7 +330,7 @@ class ControllerCalendar extends ChangeNotifier {
 }
 
 class EventWithRow {
-  final Event event;
+  final EventItem event;
   final int rowIndex;
 
   EventWithRow({required this.event, required this.rowIndex});

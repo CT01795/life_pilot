@@ -2,11 +2,13 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
+import 'package:life_pilot/models/model_event_base.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
+import 'package:life_pilot/utils/utils_date_time.dart';
 
 Uint8List buildExcelBytes(
-    {required List<Event> events, required AppLocalizations loc}) {
+    {required List<EventItem> events, required AppLocalizations loc}) {
   final excel = Excel.createExcel();
   final sheet = excel['Sheet1'];
 
@@ -34,20 +36,20 @@ Uint8List buildExcelBytes(
   return Uint8List.fromList(excel.encode()!);
 }
 
-void appendEventRow({required Sheet sheet, required var event,
+void appendEventRow({required Sheet sheet, required EventBase event,
   String indent = constEmpty}) 
 {
   sheet.appendRow([
     TextCellValue('$indent${event.name}'),
     TextCellValue(event.type),
-    TextCellValue(event.city ?? constEmpty),
-    TextCellValue(event.location ?? constEmpty),
-    TextCellValue(event.fee ?? constEmpty),
-    TextCellValue(event.startDate?.formatDateString()),
+    TextCellValue(event.city),
+    TextCellValue(event.location),
+    TextCellValue(event.fee),
+    TextCellValue(event.startDate?.formatDateString() ?? constEmpty),
     TextCellValue(event.startTime?.formatTimeString() ?? constEmpty),
-    TextCellValue(event.endDate?.formatDateString()),
+    TextCellValue(event.endDate?.formatDateString() ?? constEmpty),
     TextCellValue(event.endTime?.formatTimeString() ?? constEmpty),
-    TextCellValue(event.description ?? constEmpty),
-    TextCellValue(event.unit ?? constEmpty),
+    TextCellValue(event.description),
+    TextCellValue(event.unit),
   ]);
 }

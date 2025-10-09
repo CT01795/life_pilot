@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/controller_auth.dart';
+import 'package:life_pilot/controllers/controller_page_event_add.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/models/model_event_fields.dart';
-import 'package:life_pilot/models/model_event_sub_item.dart';
-import 'package:life_pilot/notification/core/reminder_option.dart';
-import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
-import 'package:life_pilot/utils/core/utils_enum.dart';
 import 'package:life_pilot/utils/dialog/utils_show_dialog.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:uuid/uuid.dart';
-
-final uuid = const Uuid();
+import 'package:provider/provider.dart';
 
 class PageEventAdd extends StatefulWidget {
   final String tableName;
-  final Event? existingEvent;
+  final EventItem? existingEvent;
   final DateTime? initialDate;
 
   const PageEventAdd({
@@ -35,83 +26,18 @@ class PageEventAdd extends StatefulWidget {
 }
 
 class _PageEventAddState extends State<PageEventAdd> {
+  late ControllerPageEventAdd controller;
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   late AppLocalizations _loc;
-  ControllerAuth get _auth => getIt<ControllerAuth>();
-
-  DateTime? startDate;
-  DateTime? endDate;
-  TimeOfDay? startTime;
-  TimeOfDay? endTime;
-  String city = constEmpty;
-  String location = constEmpty;
-  String name = constEmpty;
-  String type = constEmpty;
-  String description = constEmpty;
-  String fee = constEmpty;
-  String unit = constEmpty;
-  List<EventSubItem> subEvents = [];
-
-  String? masterGraphUrl;
-  String? masterUrl;
-  String? account = constEmpty;
-  RepeatRule repeatOptions = RepeatRule.once;
-  List<ReminderOption> reminderOptions = const [ReminderOption.dayBefore8am];
-  DateTime? reminderTime;
-
-  String? _currentListeningKey;
-  final Map<String, TextEditingController> _controllers = {};
-  late stt.SpeechToText _speech;
-  bool _isListening = false;
-  String _lastWords = constEmpty;
-  late FlutterTts _flutterTts;
-
-  void _initController(
-      {required String key, String? initialValue = constEmpty}) {
-    if (!_controllers.containsKey(key)) {
-      _controllers[key] = TextEditingController(text: initialValue);
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    _speech = stt.SpeechToText();
-    _flutterTts = FlutterTts();
-    final e = widget.existingEvent;
-    if (e != null) {
-      masterGraphUrl = e.masterGraphUrl;
-      masterUrl = e.masterUrl;
-      startDate = e.startDate;
-      endDate = e.endDate;
-      startTime = e.startTime;
-      endTime = e.endTime;
-      city = e.city;
-      location = e.location;
-      name = e.name;
-      type = e.type;
-      description = e.description;
-      fee = e.fee;
-      unit = e.unit;
-      subEvents = List.from(e.subEvents);
-      account = e.account;
-      reminderOptions = e.reminderOptions;
-      repeatOptions = e.repeatOptions;
-    } else {
-      startDate = widget.initialDate ?? DateTime.now();
-      startTime = TimeOfDay.fromDateTime(DateTime.now());
-      endDate = startDate;
-    }
-
-    _initController(key: EventFields.city, initialValue: e?.city ?? constEmpty);
-    _initController(key: EventFields.location, initialValue: e?.location ?? constEmpty);
-    _initController(key: EventFields.name, initialValue: e?.name ?? constEmpty);
-    _initController(key: EventFields.type, initialValue: e?.type ?? constEmpty);
-    _initController(key: EventFields.description, initialValue: e?.description ?? constEmpty);
-    _initController(key: EventFields.fee, initialValue: e?.fee ?? constEmpty);
-    _initController(key: EventFields.unit, initialValue: e?.unit ?? constEmpty);
-    _initController(key: EventFields.masterUrl, initialValue: e?.masterUrl ?? constEmpty);
+    controller = ControllerPageEventAdd(
+      tableName: widget.tableName,
+      existingEvent: widget.existingEvent,
+    );
   }
 
   @override
@@ -120,100 +46,18 @@ class _PageEventAddState extends State<PageEventAdd> {
     _loc = AppLocalizations.of(context)!;
   }
 
-  Future<void> _startListening(
-      ValueChanged<String> onResult, String key) async {
-    bool available = await _speech.initialize();
-    if (!available) return;
-    setState(() {
-      _isListening = true;
-      _currentListeningKey = key;
-    });
-    _speech.listen(
-      onResult: (result) {
-        setState(() {
-          _lastWords = result.recognizedWords;
-          onResult(_lastWords); // ⬅️ 呼叫 callback 寫入欄位
-        });
-      },
-      listenOptions: stt.SpeechListenOptions(
-        listenMode: stt.ListenMode.dictation, // 可選，加強聽寫效果
-      ),
-    );
-  }
-
-  Future<void> _stopListening() async {
-    await _speech.stop();
-    setState(() {
-      _isListening = false;
-      _currentListeningKey = null;
-    });
-  }
-
-  Future<void> _pickDate({required bool isStart, int? index}) async {
-    final initial = isStart
-        ? (index == null ? startDate : subEvents[index].startDate) ??
-            DateTime.now()
-        : (index == null ? endDate : subEvents[index].endDate) ??
-            DateTime.now();
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime.now().subtract(const Duration(days: 1800)),
-      lastDate: DateTime.now().add(const Duration(days: 1800)),
-    );
-
-    if (picked != null) {
-      setState(() {
-        if (index == null) {
-          isStart ? startDate = picked : endDate = picked;
-          if (startDate != null &&
-              endDate != null &&
-              startDate!.isAfter(endDate!)) {
-            endDate = startDate;
-          }
-        } else {
-          isStart
-              ? subEvents[index].startDate = picked
-              : subEvents[index].endDate = picked;
-
-          if (subEvents[index].startDate != null &&
-              subEvents[index].endDate != null &&
-              subEvents[index].startDate!.isAfter(subEvents[index].endDate!)) {
-            subEvents[index].endDate = subEvents[index].startDate;
-          }
-        }
-      });
-    }
-  }
-
-  Future<void> _pickTime({required bool isStart, int? index}) async {
-    final initial = isStart
-        ? (index == null ? startTime : subEvents[index].startTime) ??
-            TimeOfDay.now()
-        : (index == null ? endTime : subEvents[index].endTime) ??
-            TimeOfDay.now();
-
-    final picked = await showTimePicker(context: context, initialTime: initial);
-
-    if (picked != null) {
-      setState(() {
-        if (index == null) {
-          isStart ? startTime = picked : endTime = picked;
-        } else {
-          isStart
-              ? subEvents[index].startTime = picked
-              : subEvents[index].endTime = picked;
-        }
-      });
-    }
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    controller.dispose();
+    super.dispose();
   }
 
   Widget _buildDateTimeRow({int? index}) {
-    final dStart = index == null ? startDate : subEvents[index].startDate;
-    final dEnd = index == null ? endDate : subEvents[index].endDate;
-    final tStart = index == null ? startTime : subEvents[index].startTime;
-    final tEnd = index == null ? endTime : subEvents[index].endTime;
+    final dStart = index == null ? controller.startDate : controller.subEvents[index].startDate;
+    final dEnd = index == null ? controller.endDate : controller.subEvents[index].endDate;
+    final tStart = index == null ? controller.startTime : controller.subEvents[index].startTime;
+    final tEnd = index == null ? controller.endTime : controller.subEvents[index].endTime;
 
     return Column(
       children: [
@@ -247,6 +91,66 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
   }
 
+  Future<void> _pickDate({required bool isStart, int? index}) async {
+    final initial = isStart
+        ? (index == null ? controller.startDate : controller.subEvents[index].startDate) ??
+            DateTime.now()
+        : (index == null ? controller.endDate : controller.subEvents[index].endDate) ??
+            DateTime.now();
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 1800)),
+      lastDate: DateTime.now().add(const Duration(days: 1800)),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (index == null) {
+          isStart ? controller.startDate = picked : controller.endDate = picked;
+          if (controller.startDate != null &&
+              controller.endDate != null &&
+              controller.startDate!.isAfter(controller.endDate!)) {
+            controller.endDate = controller.startDate;
+          }
+        } else {
+          isStart
+              ? controller.subEvents[index].startDate = picked
+              : controller.subEvents[index].endDate = picked;
+
+          if (controller.subEvents[index].startDate != null &&
+              controller.subEvents[index].endDate != null &&
+              controller.subEvents[index].startDate!.isAfter(controller.subEvents[index].endDate!)) {
+            controller.subEvents[index].endDate = controller.subEvents[index].startDate;
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _pickTime({required bool isStart, int? index}) async {
+    final initial = isStart
+        ? (index == null ? controller.startTime : controller.subEvents[index].startTime) ??
+            TimeOfDay.now()
+        : (index == null ? controller.endTime : controller.subEvents[index].endTime) ??
+            TimeOfDay.now();
+
+    final picked = await showTimePicker(context: context, initialTime: initial);
+
+    if (picked != null) {
+      setState(() {
+        if (index == null) {
+          isStart ? controller.startTime = picked : controller.endTime = picked;
+        } else {
+          isStart
+              ? controller.subEvents[index].startTime = picked
+              : controller.subEvents[index].endTime = picked;
+        }
+      });
+    }
+  }
+
   Widget _buildDateTile(
       {DateTime? date, required VoidCallback onTap, required String type}) {
     final text = date != null
@@ -274,77 +178,12 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
   }
 
-  Widget _buildTextField({
-    required String key,
-    required String label,
-    required ValueChanged<String> onChanged,
-    int maxLines = 1,
-  }) {
-    _initController(key: key, initialValue: constEmpty); // 確保 controller 有初始化
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 新增朗讀按鈕
-        if ((_controllers[key]?.text.isNotEmpty ?? false))
-          IconButton(
-            icon: const Icon(Icons.volume_up),
-            tooltip: _loc.speak_up,
-            onPressed: () async {
-              final textToSpeak = _controllers[key]?.text ?? constEmpty;
-              if (textToSpeak.isNotEmpty) {
-                await _flutterTts.stop();
-                await _flutterTts.speak(textToSpeak);
-              }
-            },
-          ),
-        Expanded(
-          child: TextFormField(
-            controller: _controllers[key],
-            decoration: InputDecoration(
-              labelText: label,
-              isDense: true,
-              contentPadding: kGapEI3,
-            ), // 讓欄位更緊湊
-            maxLines: maxLines,
-            onChanged: onChanged,
-          ),
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.mic,
-            color:
-                _isListening && _currentListeningKey == key ? Colors.red : null,
-          ),
-          tooltip: _loc.speak, // 或 "語音輸入"
-          onPressed: () async {
-            if (_isListening && _currentListeningKey == key) {
-              await _stopListening();
-            } else {
-              // 如果正在聽其他欄位 → 先停掉
-              if (_isListening) {
-                await _stopListening();
-                await Future.delayed(
-                    const Duration(milliseconds: 200)); // 小延遲保險
-              }
-              await _startListening((text) {
-                setState(() {
-                  _controllers[key]?.text = text;
-                  onChanged(text);
-                });
-              }, key);
-            }
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildSubEventCard({required int index}) {
-    final d = subEvents[index];
+    final d = controller.subEvents[index];
 
     // 確保 subEvent 也有 id，沒的話補一個
     if (d.id.isEmpty) {
-      subEvents[index] = d.copyWith(newId: uuid.v4());
+      controller.subEvents[index] = d.copyWith(newId: controller.uuid.v4());
     }
 
     return Card(
@@ -355,35 +194,56 @@ class _PageEventAddState extends State<PageEventAdd> {
         child: Column(
           children: [
             _buildDateTimeRow(index: index),
-            _buildTextField(
-                key: '${EventFields.location}_sub_$index',
-                label: _loc.location,
-                onChanged: (v) => setState(() => d.location = v)),
-            _buildTextField(
-                key: '${EventFields.name}_sub_$index',
-                label: _loc.activity_name,
-                onChanged: (v) => setState(() => d.name = v)),
-            _buildTextField(
-                key: '${EventFields.type}_sub_$index',
-                label: _loc.keywords,
-                onChanged: (v) => setState(() => d.type = v)),
-            _buildTextField(
-                key: '${EventFields.masterUrl}_sub_$index',
-                label: _loc.sub_url,
-                onChanged: (v) => setState(() => d.masterUrl = v)),
-            _buildTextField(
-                key: '${EventFields.description}_sub_$index',
-                label: _loc.description,
-                onChanged: (v) => setState(() => d.description = v),
-                maxLines: 2),
-            _buildTextField(
-                key: '${EventFields.fee}_sub_$index',
-                label: _loc.fee,
-                onChanged: (v) => setState(() => d.fee = v)),
-            _buildTextField(
-                key: '${EventFields.unit}_sub_$index',
-                label: _loc.sponsor,
-                onChanged: (v) => setState(() => d.unit = v)),
+            SpeechTextField(
+              keyField: '${EventFields.location}_sub_$index',
+              label: _loc.location,
+              onChanged: (v) => setState(() => d.location = v),
+              controller: controller,
+              loc: _loc,
+            ),
+            SpeechTextField(
+              keyField: '${EventFields.name}_sub_$index',
+              label: _loc.activity_name,
+              onChanged: (v) => setState(() => d.name = v),
+              controller: controller,
+              loc: _loc,
+            ),
+            SpeechTextField(
+              keyField: '${EventFields.type}_sub_$index',
+              label: _loc.keywords,
+              onChanged: (v) => setState(() => d.type = v),
+              controller: controller,
+              loc: _loc,
+            ),
+            SpeechTextField(
+              keyField: '${EventFields.masterUrl}_sub_$index',
+              label: _loc.sub_url,
+              onChanged: (v) => setState(() => d.masterUrl = v),
+              controller: controller,
+              loc: _loc,
+            ),
+            SpeechTextField(
+              keyField: '${EventFields.description}_sub_$index',
+              label: _loc.description,
+              onChanged: (v) => setState(() => d.description = v),
+              maxLines: 2,
+              controller: controller,
+              loc: _loc,
+            ),
+            SpeechTextField(
+              keyField: '${EventFields.fee}_sub_$index',
+              label: _loc.fee,
+              onChanged: (v) => setState(() => d.fee = v),
+              controller: controller,
+              loc: _loc,
+            ),
+            SpeechTextField(
+              keyField: '${EventFields.unit}_sub_$index',
+              label: _loc.sponsor,
+              onChanged: (v) => setState(() => d.unit = v),
+              controller: controller,
+              loc: _loc,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -398,7 +258,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                   tooltip: _loc.delete,
                   onPressed: () async {
                     final event =
-                        subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
+                        controller.subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
                     final shouldDelete = await showConfirmationDialog(
                       content: 'No. ${index + 1} ${event.name} ${_loc.delete}？',
                       confirmText: _loc.delete,
@@ -407,7 +267,7 @@ class _PageEventAddState extends State<PageEventAdd> {
 
                     if (shouldDelete == true) {
                       try {
-                        setState(() => subEvents.removeAt(index));
+                        setState(() => controller.subEvents.removeAt(index));
                       } catch (e) {
                         showSnackBar(message: '${_loc.delete_error}: $e');
                       }
@@ -424,33 +284,33 @@ class _PageEventAddState extends State<PageEventAdd> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final newEvent = Event(
-      subEvents: subEvents
-          .map((d) => d.id.isEmpty ? d.copyWith(newId: uuid.v4()) : d)
+    final newEvent = EventItem(
+      subEvents: controller.subEvents
+          .map((d) => d.id.isEmpty ? d.copyWith(newId: controller.uuid.v4()) : d)
           .toList(),
     );
 
     newEvent.setFromForm(
-      id: widget.existingEvent?.id ?? uuid.v4(),
-      masterGraphUrl: masterGraphUrl,
-      masterUrl: masterUrl,
-      startDate: startDate,
-      endDate: endDate,
-      startTime: startTime,
-      endTime: endTime,
-      city: city,
-      location: location,
-      name: name,
-      type: type,
-      description: description,
-      fee: fee,
-      unit: unit,
-      account: _auth.currentAccount,
-      repeatOptions: widget.existingEvent?.repeatOptions ?? repeatOptions,
-      reminderOptions: widget.existingEvent?.reminderOptions ?? reminderOptions,
+      id: widget.existingEvent?.id ?? controller.uuid.v4(),
+      masterGraphUrl: controller.masterGraphUrl,
+      masterUrl: controller.masterUrl,
+      startDate: controller.startDate,
+      endDate: controller.endDate,
+      startTime: controller.startTime,
+      endTime: controller.endTime,
+      city: controller.city,
+      location: controller.location,
+      name: controller.name,
+      type: controller.type,
+      description: controller.description,
+      fee: controller.fee,
+      unit: controller.unit,
+      account: controller.auth.currentAccount,
+      repeatOptions: widget.existingEvent?.repeatOptions ?? controller.repeatOptions,
+      reminderOptions: widget.existingEvent?.reminderOptions ?? controller.reminderOptions,
     );
 
-    await getIt<ServiceStorage>().saveEvent(
+    await controller.storage.saveEvent(
         event: newEvent,
         isNew: widget.existingEvent == null,
         tableName: widget.tableName,
@@ -461,104 +321,196 @@ class _PageEventAddState extends State<PageEventAdd> {
   }
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    for (var c in _controllers.values) {
-      c.dispose();
-    }
-    _flutterTts.stop(); // 停止朗讀
-    super.dispose();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<ControllerPageEventAdd>.value(
+      value: controller,
+      child: Consumer<ControllerPageEventAdd>(
+        builder: (context, ctl, child) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(_loc.event_add_edit),
+              actions: [
+                TextButton(
+                  onPressed: _submit,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(_loc.save),
+                ),
+              ],
+            ),
+            body: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  controller: _scrollController,
+                  padding: kGapEIL4R4T4B8,
+                  children: [
+                    _buildDateTimeRow(),
+                    SpeechTextField(
+                      keyField: EventFields.city,
+                      label: _loc.city,
+                      onChanged: (v) => setState(() => controller.city = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.location,
+                      label: _loc.location,
+                      onChanged: (v) => setState(() => controller.location = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.name,
+                      label: _loc.activity_name,
+                      onChanged: (v) => setState(() => controller.name = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.type,
+                      label: _loc.keywords,
+                      onChanged: (v) => setState(() => controller.type = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.masterUrl,
+                      label: _loc.master_url,
+                      onChanged: (v) => setState(() => controller.masterUrl = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.description,
+                      label: _loc.description,
+                      onChanged: (v) => setState(() => controller.description = v),
+                      maxLines: 2,
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.fee,
+                      label: _loc.fee,
+                      onChanged: (v) => setState(() => controller.fee = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    SpeechTextField(
+                      keyField: EventFields.unit,
+                      label: _loc.sponsor,
+                      onChanged: (v) => setState(() => controller.unit = v),
+                      controller: controller,
+                      loc: _loc,
+                    ),
+                    kGapH16(),
+                    Text(_loc.event_sub),
+                    ...List.generate(controller.subEvents.length, (index) => _buildSubEventCard(index: index)),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final newSub = EventItem(id: controller.uuid.v4())
+                          ..startDate = controller.startDate
+                          ..endDate = controller.endDate
+                          ..startTime = controller.startTime
+                          ..endTime = controller.endTime
+                          ..city = controller.city
+                          ..location = controller.location;
+                        setState(() {
+                          controller.subEvents.add(newSub);
+                        });
+                        // 自動滑到最下
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (_scrollController.hasClients) {
+                            _scrollController.animateTo(
+                              _scrollController.position.maxScrollExtent,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          }
+                        });
+                      },
+                      icon: const Icon(Icons.add),
+                      label: Text(_loc.event_add_sub),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+      )
+    );
   }
+}
+
+class SpeechTextField extends StatelessWidget {
+  final String keyField;
+  final String label;
+  final int maxLines;
+  final ControllerPageEventAdd controller;
+  final AppLocalizations loc;
+  final ValueChanged<String> onChanged;
+
+  const SpeechTextField({super.key, 
+    required this.keyField,
+    required this.label,
+    required this.onChanged,
+    required this.controller,
+    required this.loc,
+    this.maxLines = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_loc.event_add_edit),
-        actions: [
-          TextButton(
-            onPressed: _submit,
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-            ),
-            child: Text(_loc.save),
+    controller.initController(key: keyField, initialValue: '');
+    final ctrl = controller.getController(key: keyField);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (ctrl.text.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.volume_up),
+            tooltip: loc.speak_up,
+            onPressed: () => controller.speakText(text: ctrl.text),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            controller: _scrollController,
-            padding: kGapEIL4R4T4B8,
-            children: [
-              _buildDateTimeRow(),
-              _buildTextField(
-                  key: EventFields.city,
-                  label: _loc.city,
-                  onChanged: (v) => setState(() => city = v)),
-              _buildTextField(
-                  key: EventFields.location,
-                  label: _loc.location,
-                  onChanged: (v) => setState(() => location = v)),
-              _buildTextField(
-                  key: EventFields.name,
-                  label: _loc.activity_name,
-                  onChanged: (v) => setState(() => name = v)),
-              _buildTextField(
-                  key: EventFields.type,
-                  label: _loc.keywords,
-                  onChanged: (v) => setState(() => type = v)),
-              _buildTextField(
-                  key: EventFields.masterUrl,
-                  label: _loc.master_url,
-                  onChanged: (v) => setState(() => masterUrl = v)),
-              _buildTextField(
-                  key: EventFields.description,
-                  label: _loc.description,
-                  onChanged: (v) => setState(() => description = v),
-                  maxLines: 2),
-              _buildTextField(
-                  key: EventFields.fee,
-                  label: _loc.fee,
-                  onChanged: (v) => setState(() => fee = v)),
-              _buildTextField(
-                  key: EventFields.unit,
-                  label: _loc.sponsor,
-                  onChanged: (v) => setState(() => unit = v)),
-              kGapH16(),
-              Text(_loc.event_sub),
-              ...List.generate(subEvents.length, (index) => _buildSubEventCard(index: index)),
-              ElevatedButton.icon(
-                onPressed: () {
-                  final newSub = EventSubItem(id: uuid.v4())
-                    ..startDate = startDate
-                    ..endDate = endDate
-                    ..startTime = startTime
-                    ..endTime = endTime
-                    ..city = city
-                    ..location = location;
-                  setState(() {
-                    subEvents.add(newSub);
-                  });
-                  // 自動滑到最下
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    if (_scrollController.hasClients) {
-                      _scrollController.animateTo(
-                        _scrollController.position.maxScrollExtent,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOut,
-                      );
-                    }
-                  });
-                },
-                icon: const Icon(Icons.add),
-                label: Text(_loc.event_add_sub),
-              ),
-            ],
+        Expanded(
+          child: TextFormField(
+            controller: ctrl,
+            decoration: InputDecoration(
+              labelText: label,
+              isDense: true,
+              contentPadding: kGapEI3,
+            ),
+            maxLines: maxLines,
+            onChanged: onChanged,
           ),
         ),
-      ),
+        IconButton(
+          icon: Icon(
+            Icons.mic,
+            color: controller.isListening && controller.currentListeningKey == keyField
+                ? Colors.red
+                : null,
+          ),
+          tooltip: loc.speak,
+          onPressed: () async {
+            if (controller.isListening && controller.currentListeningKey == keyField) {
+              await controller.stopListening();
+            } else {
+              if (controller.isListening) {
+                await controller.stopListening();
+                await Future.delayed(const Duration(milliseconds: 200));
+              }
+              await controller.startListening(onResult: (text) {
+                ctrl.text += ' $text'; // 加上追加模式
+                onChanged(ctrl.text);
+              }, key: keyField);
+            }
+          },
+        ),
+      ],
     );
   }
 }

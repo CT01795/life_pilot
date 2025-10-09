@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/notification/core/notification_helper.dart';
 import 'package:life_pilot/pages/page_event_add.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
@@ -74,7 +74,7 @@ class ControllerCalendarView extends ChangeNotifier {
     final currentMonth = _dataController.currentMonth;
     final tableName = _dataController.tableName;
 
-    final newEvent = await Navigator.push<Event?>(
+    final newEvent = await Navigator.push<EventItem?>(
       context,
       MaterialPageRoute(
         builder: (_) => PageEventAdd(

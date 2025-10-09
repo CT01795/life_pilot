@@ -9,13 +9,13 @@ import 'package:life_pilot/pages/specific/page_memory_trace.dart';
 import 'package:life_pilot/pages/specific/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/specific/page_recommended_event.dart';
 import 'package:life_pilot/pages/page_type.dart';
+import 'package:life_pilot/providers/provider.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:provider/provider.dart';
 
 class PageMain extends StatefulWidget {
-  final void Function(List<Widget>)? onPagesChanged;
-  const PageMain({super.key, this.onPagesChanged});
+  const PageMain({super.key});
 
   @override
   State<PageMain> createState() => _PageMainState();
@@ -34,7 +34,6 @@ class _PageMainState extends State<PageMain> {
     _controller = ControllerPageMain(
       auth: auth,
       loc: AppLocalizationsZh(), // 先給預設值，避免 late 初始化失敗
-      onPagesChanged: widget.onPagesChanged,
     );
 
     _pageMap = {
@@ -62,17 +61,6 @@ class _PageMainState extends State<PageMain> {
     } else {
       _controller.onLocaleChanged(newLoc: loc, newLocale: locale);
     }
-
-    _controller.onPagesChanged?.call([
-      _buildDropdown(context, _controller),
-      kGapW8(),
-    ]);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -93,27 +81,11 @@ class _PageMainState extends State<PageMain> {
     );
   }
 
-  Widget _buildDropdown(BuildContext context, ControllerPageMain controller) {
-    final options = controller.auth.isAnonymous
-        ? [PageType.recommendedEvent, PageType.recommendedAttractions]
-        : PageType.values;
-
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<PageType>(
-        value: controller.selectedPage,
-        style: const TextStyle(color: Colors.white),
-        dropdownColor: const Color(0xFF0066CC),
-        iconEnabledColor: Colors.white,
-        items: options
-            .map((page) => DropdownMenuItem(
-                  value: page,
-                  child: Text(page.title(loc: controller.loc)),
-                ))
-            .toList(),
-        onChanged: (value) {
-          if (value != null) controller.changePage(newPage: value);
-        },
-      ),
-    );
+  @override
+  void dispose() {
+    // ✅ 清空 appBarWidgets 避免殘留
+    appBarWidgetsProvider.value = [];
+    _controller.dispose();
+    super.dispose();
   }
 }

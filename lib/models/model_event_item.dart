@@ -1,49 +1,47 @@
 import 'dart:convert';
 import 'package:life_pilot/models/model_event_base.dart';
-import 'package:life_pilot/models/model_event_fields.dart';
-import 'package:life_pilot/models/model_event_sub_item.dart';
+import 'package:life_pilot/models/model_event_base_mixin.dart';
 import 'package:life_pilot/notification/core/reminder_option.dart';
 import 'package:life_pilot/utils/core/utils_enum.dart';
 
-class Event with EventBase {
-  List<EventSubItem> subEvents;
+class EventItem with EventBaseMixin implements EventBase {
+  // 用私有變數保存 subEvents
+  List<EventItem> _subEvents = [];
 
-  Event({
+  EventItem({
     String? id,
-    List<EventSubItem>? subEvents,
-  })  : subEvents = subEvents ?? [], // ✅ 明確初始化
-        super() {
+    List<EventItem>? subEvents,
+  })  : super() {
     this.id = id ?? this.id;
+    _subEvents = subEvents ?? [];
   }
 
-  Map<String, dynamic> toJson() {
-    final base = toJsonBase();
-    return {
-      ...base,
-      EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
-    };
+  // ✅ 正確實作 EventBase 要求的 getter/setter
+  @override
+  List<EventItem> get subEvents => _subEvents;
+
+  @override
+  set subEvents(List<EventItem> value) => _subEvents = value;
+
+  Map<String, dynamic> toJson() => toJsonBase();
+
+  factory EventItem.fromJson({required Map<String, dynamic> json}) {
+    final eventItem = EventItem();
+    eventItem.fromJsonBase(json: json);
+    return eventItem;
   }
 
-  factory Event.fromJson({required Map<String, dynamic> json}) {
-    final event = Event();
-    event.fromJsonBase(json: json);
-    event.subEvents = (json[EventFields.subEvents] as List<dynamic>?)
-            ?.map((e) => EventSubItem.fromJson(json: e))
-            .toList() ??
-        [];
-    return event;
-  }
-
-  Event copyWith({
+  EventItem copyWith({
     String? newId,
     DateTime? newStartDate,
     DateTime? newEndDate,
     RepeatRule? newRepeatOptions,
     List<ReminderOption>? newReminderOptions,
+    List<EventItem>? newSubEvents,
   }) {
-    return Event(
+    return EventItem(
       id: newId ?? id,
-      subEvents: subEvents,
+      subEvents: newSubEvents ?? subEvents,
     )
       ..masterGraphUrl = masterGraphUrl
       ..masterUrl = masterUrl

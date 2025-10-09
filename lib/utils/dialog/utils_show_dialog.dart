@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/controller_calendar.dart';
+import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/my_app.dart';
 import 'package:life_pilot/notification/core/reminder_option.dart';
 import 'package:life_pilot/pages/page_event_add.dart';
@@ -14,7 +15,7 @@ import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:life_pilot/utils/core/utils_enum.dart';
 import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
-import 'package:life_pilot/utils/utils_event_card.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
 
 // 通用的確認 Dialog
 Future<bool> showConfirmationDialog({
@@ -51,6 +52,7 @@ Future<bool> showConfirmationDialog({
 Future<bool> showCalendarEventsDialog({
   required DateTime date,
   required AppLocalizations loc,
+  required ControllerEvent controllerEvent,
 }) async {
   ControllerCalendar controller = getIt<ControllerCalendar>();
   final tableName = constTableCalendarEvents;
@@ -80,7 +82,7 @@ Future<bool> showCalendarEventsDialog({
         ),
       ),
     );
-    if (result != null && result is Event) {
+    if (result != null && result is EventItem) {
       controller.goToMonth(
         month: DateUtils.monthOnly(result.startDate!),
       );
@@ -141,7 +143,7 @@ Future<bool> showCalendarEventsDialog({
                                             initialDate: date,
                                           )),
                                 ).then((value) {
-                                  if (value != null && value is Event) {
+                                  if (value != null && value is EventItem) {
                                     controller.goToMonth(
                                       month:
                                           DateUtils.monthOnly(value.startDate!),
@@ -155,9 +157,9 @@ Future<bool> showCalendarEventsDialog({
                           ]),
                       if (updatedEventsOfDay.isNotEmpty)
                         // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
-                        ...updatedEventsOfDay.map((event) => EventCalendarCard(
+                        ...updatedEventsOfDay.map((event) => WidgetsEventCard(
+                              eventController: controllerEvent.eventController(event),
                               tableName: tableName,
-                              event: event,
                               index: 0,
                               onTap: () => Navigator.pop(context),
                               onDelete: event.isHoliday
@@ -231,7 +233,7 @@ Future<bool> showCalendarEventsDialog({
 }
 
 Future<bool> showAlarmSettingsDialog(
-    {required Event event, required AppLocalizations loc}) async {
+    {required EventItem event, required AppLocalizations loc}) async {
   ControllerCalendar controller = getIt<ControllerCalendar>();
   final service = getIt<ServiceStorage>();
   final Map<RepeatRule, String> repeatOptionsLabels = {
@@ -360,7 +362,7 @@ Future<bool> showAlarmSettingsDialog(
   final reminders =
       (result['reminders'] as List).whereType<ReminderOption>().toList();
 
-  Event updatedEvent =
+  EventItem updatedEvent =
       event.copyWith(newReminderOptions: reminders, newRepeatOptions: repeat);
 
   // 更新事件提醒設定

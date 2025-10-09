@@ -3,11 +3,11 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:life_pilot/export/common/export_common.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
 
 Future<void> exportEventsToExcel(
-    {required List<Event> events, required AppLocalizations loc}) async {
+    {required List<EventItem> events, required AppLocalizations loc}) async {
   final bytes = buildExcelBytes(events: events, loc: loc);
   final filename = 'events_${DateTime.now().millisecondsSinceEpoch}.xlsx';
   _downloadOnWeb(filename: filename, data: bytes);

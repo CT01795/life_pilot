@@ -2,8 +2,7 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
-import 'package:life_pilot/models/model_event_sub_item.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/my_app.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
@@ -24,7 +23,7 @@ void showSnackBar({required String message}) {
 // 勾選 Checkbox 時的邏輯處理
 Future<void> handleCheckboxChanged({
   required bool? value,
-  required Event event,
+  required EventItem event,
   required void Function(void Function()) setState,
   required String addedMessage,
   required String tableName,
@@ -69,14 +68,14 @@ Future<void> handleCheckboxChanged({
       await service.saveEvent(
           event: event, isNew: true, tableName: toTableName, loc: loc);
     } else {
-      List<EventSubItem> sortedSubEvents = List.from(event.subEvents);
+      List<EventItem> sortedSubEvents = List.from(event.subEvents);
       sortedSubEvents.sort((a, b) => a.startDate!.compareTo(b.startDate!));
       sortedSubEvents.removeWhere((subEvent) =>
           subEvent.startDate != null &&
           !subEvent.startDate!.isAfter(event.startDate!));
       if (sortedSubEvents.isNotEmpty) {
         for (var tmpEvent in sortedSubEvents) {
-          Event subEvent = tmpEvent.toEvent().copyWith(
+          EventItem subEvent = tmpEvent.copyWith(
                 newStartDate: tmpEvent.startDate != null &&
                         !tmpEvent.startDate!.isAfter(now)
                     ? now
@@ -99,7 +98,7 @@ Future<void> handleCheckboxChanged({
         }
       } else {
         event.subEvents = sortedSubEvents;
-        Event updatedEvent = event.copyWith(
+        EventItem updatedEvent = event.copyWith(
             newStartDate:
                 event.startDate != null && !event.startDate!.isAfter(now)
                     ? now
@@ -119,7 +118,7 @@ Future<void> handleCheckboxChanged({
 
 // 移除事件邏輯
 Future<void> handleRemoveEvent({
-  required Event event,
+  required EventItem event,
   required Future<void> Function() onDelete,
   required AppLocalizations loc,
 }) async {
@@ -140,7 +139,7 @@ Future<void> handleRemoveEvent({
 }
 
 // 過濾仍有效的事件
-List<Event> filterValidEvents({required List<Event> events}) {
+List<EventItem> filterValidEvents({required List<EventItem> events}) {
   final day = DateUtils.dateOnly(DateTime.now()).add(Duration(days: -1));
 
   return events.where((event) {
@@ -154,7 +153,7 @@ List<Event> filterValidEvents({required List<Event> events}) {
   }).toList();
 }
 
-List<EventSubItem> sortSubEvents({required List<EventSubItem> list}) {
+List<EventItem> sortSubEvents({required List<EventItem> list}) {
   list.sort((a, b) {
     final aStart = a.startDate ?? DateTime(9999);
     final bStart = b.startDate ?? DateTime(9999);
@@ -199,7 +198,7 @@ void showLoginError({required String message, required AppLocalizations loc}) {
   showSnackBar(message: errorMessage);
 }
 
-Future<List<Event>> loadEvents({required String tableName}) async {
+Future<List<EventItem>> loadEvents({required String tableName}) async {
   ControllerAuth auth = getIt<ControllerAuth>();
   final service = getIt<ServiceStorage>();
   final recommended = await service.getEvents(

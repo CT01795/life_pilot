@@ -41,29 +41,4 @@ Widget widgetBuildDateButton({
   );
 }
 
-Widget widgetBuildTypeTags({required String types}) {
-  final typeList = types
-      .split(RegExp(r'[\s,，]'))
-      .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
-      .take(3)
-      .toList(); // \s 表示任何空白字元（空格、Tab、換行）
-  return Wrap(
-    spacing: 8,
-    runSpacing: 4,
-    children: typeList.map((type) {
-      return Container(
-        padding: kGapEIH8V4,
-        decoration: BoxDecoration(
-          color: Colors.blue.shade50,
-          border: Border.all(color: Colors.blue),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          type,
-          style: const TextStyle(color: Colors.blue),
-        ),
-      );
-    }).toList(),
-  );
-}
+

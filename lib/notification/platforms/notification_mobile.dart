@@ -4,7 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/notification/core/reminder_option.dart';
 import 'package:life_pilot/notification/core/reminder_utils.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
@@ -29,7 +29,7 @@ class NotificationEntryImpl {
 
   // 根據 event.reminderOptions 安排通知
   static Future<void> scheduleEventReminders(
-      {required Event event,
+      {required EventItem event,
       required String tableName,
       required AppLocalizations loc}) async {
     if (event.startDate == null || event.startTime == null) {
@@ -75,7 +75,7 @@ class NotificationEntryImpl {
   }
 
   static Future<void> showImmediateNotification(
-      {required Event event, required AppLocalizations loc}) async {
+      {required EventItem event, required AppLocalizations loc}) async {
     // 通知ID，建議用事件ID或其它唯一數字
     final int notificationId = ReminderUtils.generateNotificationId(
         eventId: event.id, optionKey: 'immediate');
@@ -102,7 +102,7 @@ class NotificationEntryImpl {
   }
 
   // 取消與此事件相關的所有提醒通知
-  static Future<void> cancelEventReminders({required Event event}) async {
+  static Future<void> cancelEventReminders({required EventItem event}) async {
     for (final option in event.reminderOptions) {
       await _plugin.cancel(ReminderUtils.generateNotificationId(
           eventId: event.id, optionKey: option.toKey()));
@@ -158,7 +158,7 @@ class NotificationEntryImpl {
   }
 
   static DateTime _calculateReminderTime(
-      ReminderOption option, Event event, DateTime targetTime) {
+      ReminderOption option, EventItem event, DateTime targetTime) {
     switch (option) {
       case ReminderOption.sameDay8am:
         return DateUtils.getDateTime(

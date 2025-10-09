@@ -7,7 +7,7 @@ import 'package:js/js_util.dart' as js_util;
 import 'package:life_pilot/controllers/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/notification/core/notification_overlay.dart';
 import 'package:life_pilot/services/service_storage.dart';
 import 'package:life_pilot/utils/utils_common_function.dart';
@@ -67,7 +67,7 @@ class NotificationEntryImpl {
 
   // 根據 event.reminderOptions 安排通知
   static Future<void> scheduleEventReminders({
-    required Event event,
+    required EventItem event,
     required String tableName,
     required AppLocalizations loc,
   }) async {
@@ -93,7 +93,7 @@ class NotificationEntryImpl {
     final user = auth.currentAccount;
     // 取得現在時間
     final now = DateTime.now();
-    List<Event>? todayEvents = await service.getEvents(
+    List<EventItem>? todayEvents = await service.getEvents(
         tableName: tableName, dateS: now, dateE: now, inputUser: user);
 
     if (todayEvents == null || todayEvents.isEmpty) return;
@@ -133,13 +133,13 @@ class NotificationEntryImpl {
   }
 
   static Future<void> showImmediateNotification(
-      {required Event event, required AppLocalizations loc}) async {
+      {required EventItem event, required AppLocalizations loc}) async {
     // 空實作，避免編譯錯誤
     return;
   }
 
   // 取消與此事件相關的所有提醒通知
-  static Future<void> cancelEventReminders({required Event event}) async {
+  static Future<void> cancelEventReminders({required EventItem event}) async {
     // 空實作，避免編譯錯誤
   }
 

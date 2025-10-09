@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/controller_generic_event.dart';
+import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
 import 'package:provider/provider.dart';
 
 typedef EventListBuilder = Widget Function({
-  required List<Event> filteredEvents,
+  required List<EventItem> filteredEvents,
   required ScrollController scrollController,
   required VoidCallback refreshCallback,
   required Set<String> selectedEventIds,
@@ -52,7 +52,7 @@ class GenericEventPage extends StatefulWidget {
 class _GenericEventPageState extends State<GenericEventPage> {
   @override
   Widget build(BuildContext context) {
-    final controller = Provider.of<ControllerGenericEvent>(context);
+    final controller = Provider.of<ControllerEvent>(context);
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: buildWhiteAppBar(

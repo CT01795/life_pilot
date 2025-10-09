@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/controller_calendar.dart';
 import 'package:life_pilot/controllers/controller_calendar_view.dart';
+import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/core/utils_locator.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
@@ -82,10 +83,11 @@ class CalendarBody extends StatelessWidget {
   final PageController pageController;
   final AppLocalizations loc;
 
-  const CalendarBody(
-      {super.key,
-      required this.pageController,
-      required this.loc,});
+  const CalendarBody({
+    super.key,
+    required this.pageController,
+    required this.loc,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +99,10 @@ class CalendarBody extends StatelessWidget {
 
         return Column(
           children: [
-            WeekDayHeader(loc: loc, isCurrentMonth: DateTimeCompare.isCurrentMonth(controller.currentMonth)),
+            WeekDayHeader(
+                loc: loc,
+                isCurrentMonth:
+                    DateTimeCompare.isCurrentMonth(controller.currentMonth)),
             // 顯示日曆的每一行
             SizedBox(
               height: availableHeight,
@@ -112,8 +117,7 @@ class CalendarBody extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final monthToShow = controller.pageIndexToMonth(index: index);
                   return CalendarMonthView(
-                      displayedMonth: monthToShow,
-                      loc: loc);
+                      displayedMonth: monthToShow, loc: loc);
                 },
               ),
             ),
@@ -188,10 +192,11 @@ class CalendarMonthView extends StatelessWidget {
   final DateTime displayedMonth;
   final AppLocalizations loc;
 
-  const CalendarMonthView(
-      {super.key,
-      required this.displayedMonth,
-      required this.loc,});
+  const CalendarMonthView({
+    super.key,
+    required this.displayedMonth,
+    required this.loc,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,12 +213,12 @@ class CalendarMonthView extends StatelessWidget {
 
         return Expanded(
           child: WeekRow(
-              week: week,
-              displayedMonth: displayedMonth,
-              loc: loc,
-              weekRowKey: weekKeys[
-                  week.first.toIso8601String()]!, // ✅ 傳入一個 key（可共用或為每週新建）
-              ),
+            week: week,
+            displayedMonth: displayedMonth,
+            loc: loc,
+            weekRowKey: weekKeys[
+                week.first.toIso8601String()]!, // ✅ 傳入一個 key（可共用或為每週新建）
+          ),
         );
       }).toList(),
     );
@@ -225,12 +230,13 @@ class WeekRow extends StatelessWidget {
   final DateTime displayedMonth;
   final AppLocalizations loc;
   final GlobalKey weekRowKey; // ✅ 提升為屬性
-  const WeekRow(
-      {super.key,
-      required this.week,
-      required this.displayedMonth,
-      required this.loc,
-      required this.weekRowKey,});
+  const WeekRow({
+    super.key,
+    required this.week,
+    required this.displayedMonth,
+    required this.loc,
+    required this.weekRowKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,172 +244,175 @@ class WeekRow extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final cellWidth = screenWidth / 7;
 
-    // 1. 先從 controller 取得當月所有事件，並按週、日分組過的快取資料
-    final calendarWeeks = controller.getCalendarDays(month: displayedMonth);
-    final weekIndex = calendarWeeks.indexWhere((w) => w.first == week.first);
+    return Consumer<ControllerEvent>(builder: (context, controllerEvent, _) {
+      // 1. 先從 controller 取得當月所有事件，並按週、日分組過的快取資料
+      final calendarWeeks = controller.getCalendarDays(month: displayedMonth);
+      final weekIndex = calendarWeeks.indexWhere((w) => w.first == week.first);
 
-    // 2. 取出該週每一天的事件列表，已經預先分好組
-    final weekEvents =
-        controller.getWeekEventRows(month: displayedMonth)[weekIndex] ?? [];
-    return Stack(
-      children: [
-        Row(
-          key: weekRowKey,
-          children: week.map((date) {
-            bool isFromOtherMonth = date.month != displayedMonth.month;
-            bool isToday = date.day == DateTime.now().day &&
-                date.month == DateTime.now().month &&
-                date.year == DateTime.now().year;
+      // 2. 取出該週每一天的事件列表，已經預先分好組
+      final weekEvents =
+          controller.getWeekEventRows(month: displayedMonth)[weekIndex] ?? [];
+      return Stack(
+        children: [
+          Row(
+            key: weekRowKey,
+            children: week.map((date) {
+              bool isFromOtherMonth = date.month != displayedMonth.month;
+              bool isToday = date.day == DateTime.now().day &&
+                  date.month == DateTime.now().month &&
+                  date.year == DateTime.now().year;
 
-            return Expanded(
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    // ✅ 若點到的是不同月份，就先載入該月份資料
+                    await handleCrossMonthTap(
+                      tappedDate: date,
+                      displayedMonth: displayedMonth,
+                    );
+
+                    final shouldReload = await showCalendarEventsDialog(
+                        controllerEvent: controllerEvent, date: date, loc: loc);
+                    if (shouldReload) {
+                      await controller.loadCalendarEvents(); // 🔁 統一更新
+                    }
+                  },
+                  child: Container(
+                    margin: kGapEI0,
+                    decoration: BoxDecoration(
+                      color: isFromOtherMonth
+                          ? Colors.grey[100]
+                          : Colors.transparent,
+                      border: Border.all(color: Colors.black12),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        isToday
+                            ? Container(
+                                padding: kGapEI4,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.blueAccent),
+                                ),
+                                child: Text(
+                                  '${date.day}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                '${date.day}',
+                                style: TextStyle(
+                                  color: isFromOtherMonth
+                                      ? Colors.grey
+                                      : Colors.black,
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          // 3. 使用 controller 已計算的事件分組來畫事件條
+          ...weekEvents.map((eventWithRow) {
+            final event = eventWithRow.event;
+            final rowIndex = eventWithRow.rowIndex;
+
+            final start = DateUtils.dateOnly(event.startDate!);
+            final end = DateUtils.dateOnly(event.endDate ?? event.startDate!);
+            final weekStart = week.first;
+            final weekEnd = week.last;
+
+            final visibleStart = start.isBefore(weekStart) ? weekStart : start;
+            final visibleEnd = end.isAfter(weekEnd) ? weekEnd : end;
+
+            final startIndex = visibleStart.difference(weekStart).inDays;
+            final spanDays = visibleEnd.difference(visibleStart).inDays + 1;
+
+            return PositionedDirectional(
+              top: 28 + 23.0 * rowIndex,
+              start: startIndex * cellWidth,
+              end: (7 - (startIndex + spanDays)) * cellWidth,
+              height: 22,
               child: GestureDetector(
-                onTap: () async {
-                  // ✅ 若點到的是不同月份，就先載入該月份資料
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (details) async {
+                  final RenderBox? box = weekRowKey.currentContext
+                      ?.findRenderObject() as RenderBox?;
+                  if (box == null) return;
+
+                  // 把全域點擊座標轉成在整週格子中的相對座標
+                  final localOffset = box.globalToLocal(details.globalPosition);
+                  final tapX = localOffset.dx;
+
+                  // 算出第幾格（哪一天）
+                  final tappedIndex = (tapX / cellWidth).floor().clamp(0, 6);
+                  final tappedDate =
+                      week.first.add(Duration(days: tappedIndex));
+
+                  // ✅ 若點到的是不同月份，就先載入那個月份的資料
                   await handleCrossMonthTap(
-                    tappedDate: date,
+                    tappedDate: tappedDate,
                     displayedMonth: displayedMonth,
                   );
 
+                  // 4. 呼叫 dialog，並傳入正確的日期
                   final shouldReload = await showCalendarEventsDialog(
-                      date: date,
+                      controllerEvent: controllerEvent,
+                      date: tappedDate,
                       loc: loc);
+
                   if (shouldReload) {
-                    await controller.loadCalendarEvents(); // 🔁 統一更新
+                    await controller.loadCalendarEvents();
                   }
                 },
                 child: Container(
-                  margin: kGapEI0,
                   decoration: BoxDecoration(
-                    color: isFromOtherMonth
-                        ? Colors.grey[100]
-                        : Colors.transparent,
-                    border: Border.all(color: Colors.black12),
-                    borderRadius: BorderRadius.circular(2),
+                    color: event.isTaiwanHoliday
+                        ? Colors.redAccent
+                        : (event.isHoliday
+                            ? Colors.transparent
+                            : Colors.lightBlue),
+                    borderRadius: BorderRadiusDirectional.horizontal(
+                      start: (start.isAtSameMomentAs(visibleStart)
+                          ? const Radius.circular(2)
+                          : Radius.zero),
+                      end: (end.isAtSameMomentAs(visibleEnd)
+                          ? const Radius.circular(2)
+                          : Radius.zero),
+                    ),
                   ),
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      isToday
-                          ? Container(
-                              padding: kGapEI4,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.blueAccent),
-                              ),
-                              child: Text(
-                                '${date.day}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              '${date.day}',
-                              style: TextStyle(
-                                color: isFromOtherMonth
-                                    ? Colors.grey
-                                    : Colors.black,
-                              ),
-                            ),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
+                  alignment: Alignment.centerLeft,
+                  child: Center(
+                    child: Text(
+                      event.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 9,
+                        color: !event.isTaiwanHoliday && event.isHoliday
+                            ? Colors.grey
+                            : Colors.white,
+                        overflow: TextOverflow.clip, //.ellipsis,
+                      ),
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ),
             );
-          }).toList(),
-        ),
-        // 3. 使用 controller 已計算的事件分組來畫事件條
-        ...weekEvents.map((eventWithRow) {
-          final event = eventWithRow.event;
-          final rowIndex = eventWithRow.rowIndex;
-
-          final start = DateUtils.dateOnly(event.startDate!);
-          final end = DateUtils.dateOnly(event.endDate ?? event.startDate!);
-          final weekStart = week.first;
-          final weekEnd = week.last;
-
-          final visibleStart = start.isBefore(weekStart) ? weekStart : start;
-          final visibleEnd = end.isAfter(weekEnd) ? weekEnd : end;
-
-          final startIndex = visibleStart.difference(weekStart).inDays;
-          final spanDays = visibleEnd.difference(visibleStart).inDays + 1;
-
-          return PositionedDirectional(
-            top: 28 + 23.0 * rowIndex,
-            start: startIndex * cellWidth,
-            end: (7 - (startIndex + spanDays)) * cellWidth,
-            height: 22,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: (details) async {
-                final RenderBox? box =
-                    weekRowKey.currentContext?.findRenderObject() as RenderBox?;
-                if (box == null) return;
-
-                // 把全域點擊座標轉成在整週格子中的相對座標
-                final localOffset = box.globalToLocal(details.globalPosition);
-                final tapX = localOffset.dx;
-
-                // 算出第幾格（哪一天）
-                final tappedIndex = (tapX / cellWidth).floor().clamp(0, 6);
-                final tappedDate = week.first.add(Duration(days: tappedIndex));
-
-                // ✅ 若點到的是不同月份，就先載入那個月份的資料
-                await handleCrossMonthTap(
-                  tappedDate: tappedDate,
-                  displayedMonth: displayedMonth,
-                );
-
-                // 4. 呼叫 dialog，並傳入正確的日期
-                final shouldReload = await showCalendarEventsDialog(
-                    date: tappedDate,
-                    loc: loc);
-
-                if (shouldReload) {
-                  await controller.loadCalendarEvents();
-                }
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: event.isTaiwanHoliday
-                      ? Colors.redAccent
-                      : (event.isHoliday
-                          ? Colors.transparent
-                          : Colors.lightBlue),
-                  borderRadius: BorderRadiusDirectional.horizontal(
-                    start: (start.isAtSameMomentAs(visibleStart)
-                        ? const Radius.circular(2)
-                        : Radius.zero),
-                    end: (end.isAtSameMomentAs(visibleEnd)
-                        ? const Radius.circular(2)
-                        : Radius.zero),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                alignment: Alignment.centerLeft,
-                child: Center(
-                  child: Text(
-                    event.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 9,
-                      color: !event.isTaiwanHoliday && event.isHoliday
-                          ? Colors.grey
-                          : Colors.white,
-                      overflow: TextOverflow.clip, //.ellipsis,
-                    ),
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          );
-        })
-      ],
-    );
+          })
+        ],
+      );
+    });
   }
 }
 

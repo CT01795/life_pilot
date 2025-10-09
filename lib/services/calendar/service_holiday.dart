@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
-import 'package:life_pilot/models/model_event.dart';
+import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/core/utils_timezone_helper.dart';
 
@@ -20,7 +20,7 @@ class HolidayService {
     "New Year's Eve",
   };
 
-  static Future<List<Event>> fetchHolidays(
+  static Future<List<EventItem>> fetchHolidays(
       DateTime start, DateTime end, Locale locale) async {
     final String calendarId = getCalendarIdByTimezone(constTzLocation, locale);
     final url = Uri.parse(
@@ -39,7 +39,7 @@ class HolidayService {
 
       final data = json.decode(response.body);
       final List items = data['items'];
-      List<Event> events = [];
+      List<EventItem> events = [];
 
       DateTime? tmpStart;
       DateTime? tmpEnd;
@@ -85,7 +85,7 @@ class HolidayService {
           currentSummary = constEmpty;
         }
 
-        final holidayEvent = Event(
+        final holidayEvent = EventItem(
           id: 'holiday_${start.toIso8601String()}',
         )
           ..startDate = date
@@ -109,9 +109,9 @@ class HolidayService {
     }
   }
 
-  static Event _createMergedHoliday(
+  static EventItem _createMergedHoliday(
       {required DateTime start, required DateTime end, required String summary}) {
-    return Event(
+    return EventItem(
       id: 'holiday_${start.toIso8601String()}',
     )
       ..startDate = start

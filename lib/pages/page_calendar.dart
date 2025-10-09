@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/controller_calendar_view.dart';
+import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/widget/utils_calendar_widgets.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:provider/provider.dart';
@@ -12,8 +14,15 @@ class PageCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return ChangeNotifierProvider<ControllerCalendarView>(
-      create: (_) => ControllerCalendarView(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ControllerCalendarView>(
+          create: (_) => ControllerCalendarView(),
+        ),
+        ChangeNotifierProvider<ControllerEvent>(
+          create: (_) => ControllerEvent(tableName: constTableCalendarEvents, toTableName: constTableMemoryTrace),
+        ),
+      ],
       child: CalendarInitializer(loc: loc),
     );
   }
