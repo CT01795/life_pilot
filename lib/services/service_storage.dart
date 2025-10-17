@@ -29,7 +29,7 @@ class ServiceStorage {
     final today = DateUtils.dateOnly(DateTime.now());
     final inputDateS = (dateS ??
             (tableName == constTableMemoryTrace
-                ? today.subtract(Duration(days: 365))
+                ? DateTime(today.year - 1, today.month, today.day)
                 : today))
         .formatDateString();
     final inputDateE =

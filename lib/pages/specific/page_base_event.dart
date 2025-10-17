@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/controllers/controller_appbar_actions.dart';
 import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event_item.dart';
-import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
 import 'package:provider/provider.dart';
+
+import '../../views/widgets/widgets_appbar.dart';
 
 typedef EventListBuilder = Widget Function({
   required List<EventItem> filteredEvents,
@@ -55,10 +57,10 @@ class _GenericEventPageState extends State<GenericEventPage> {
     final controller = Provider.of<ControllerEvent>(context);
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: buildWhiteAppBar(
+      appBar: widgetsWhiteAppBar(
         title: widget.title,
         enableSearchAndExport: true,
-        handler: AppBarActionsHandler(
+        handler: ControllerAppBarActions(
           setState: setState,
           showSearchPanelGetter: () => controller.showSearchPanel,
           onToggleShowSearch: (value) => controller.toggleSearchPanel(value: value),

@@ -14,7 +14,7 @@ import 'package:life_pilot/utils/utils_common_function.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:life_pilot/utils/utils_date_time.dart';
 import 'package:life_pilot/utils/core/utils_enum.dart';
-import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
+import 'package:life_pilot/views/build_event_trailing.dart';
 import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
 
 // 通用的確認 Dialog

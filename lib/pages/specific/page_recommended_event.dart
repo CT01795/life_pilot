@@ -3,9 +3,11 @@ import 'package:life_pilot/controllers/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/model_event_item.dart';
 import 'package:life_pilot/pages/specific/page_base_event.dart';
-import 'package:life_pilot/utils/utils_event_app_bar_action.dart';
 import 'package:life_pilot/utils/core/utils_const.dart';
 import 'package:provider/provider.dart';
+
+import '../../views/widgets/widgets_event_list.dart';
+import '../../views/widgets/widgets_search_panel.dart';
 
 class PageRecommendedEvent extends StatelessWidget {
   const PageRecommendedEvent({super.key});
@@ -28,7 +30,7 @@ class PageRecommendedEvent extends StatelessWidget {
             tableName: _tableName,
             toTableName: constTableCalendarEvents,
             emptyText: loc.recommended_event_zero,
-            searchPanelBuilder: buildSearchPanel,
+            searchPanelBuilder: widgetsSearchPanel,
             listBuilder: ({
               required List<EventItem> filteredEvents,
               required ScrollController scrollController,
@@ -39,7 +41,7 @@ class PageRecommendedEvent extends StatelessWidget {
             }) {
               final controllerEvent = context
                   .read<ControllerEvent>(); // 取得 Provider 中的 ControllerEvent
-              return EventList(
+              return WidgetsEventList(
                   tableName: _tableName,
                   toTableName: constTableCalendarEvents,
                   filteredEvents: filteredEvents,

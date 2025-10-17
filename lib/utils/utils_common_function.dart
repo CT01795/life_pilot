@@ -35,7 +35,7 @@ Future<void> handleCheckboxChanged({
   final now = DateUtils.dateOnly(DateTime.now());
   if (value == true) {
     final existingEvents = await service.getEvents(
-        tableName: toTableName, id: event.id, inputUser: auth.currentAccount);
+        tableName: toTableName, id: event.id, inputUser: auth.currentAccount, dateS: now.subtract(Duration(days:366)));
 
     final isAlreadyAdded =
         existingEvents?.any((e) => e.id == event.id) ?? false;
@@ -99,6 +99,7 @@ Future<void> handleCheckboxChanged({
       } else {
         event.subEvents = sortedSubEvents;
         EventItem updatedEvent = event.copyWith(
+            newId: Uuid().v4(),
             newStartDate:
                 event.startDate != null && !event.startDate!.isAfter(now)
                     ? now
@@ -107,7 +108,7 @@ Future<void> handleCheckboxChanged({
                 ? now
                 : event.endDate);
         updatedEvent.account = auth.currentAccount;
-        await service.deleteEvent(event: updatedEvent, tableName: toTableName);
+        //await service.deleteEvent(event: updatedEvent, tableName: toTableName);
         await service.saveEvent(
             event: updatedEvent, isNew: true, tableName: toTableName, loc: loc);
       }
