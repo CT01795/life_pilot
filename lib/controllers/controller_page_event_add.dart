@@ -19,7 +19,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   final Uuid uuid = const Uuid();
 
   EventItem? existingEvent;
-
+  final DateTime? initialDate;
   DateTime? startDate;
   DateTime? endDate;
   TimeOfDay? startTime;
@@ -49,6 +49,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   ControllerPageEventAdd({
     required this.tableName,
     this.existingEvent,
+    this.initialDate,
   }) {
     _init();
   }
@@ -74,7 +75,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
       reminderOptions = e.reminderOptions;
       repeatOptions = e.repeatOptions;
     } else {
-      startDate = DateTime.now();
+      startDate = initialDate ?? DateTime.now();
       startTime = TimeOfDay.fromDateTime(DateTime.now());
       endDate = startDate;
     }

@@ -37,6 +37,7 @@ class _PageEventAddState extends State<PageEventAdd> {
     controller = ControllerPageEventAdd(
       tableName: widget.tableName,
       existingEvent: widget.existingEvent,
+      initialDate: widget.initialDate,
     );
   }
 
