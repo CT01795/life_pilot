@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
 import 'package:life_pilot/config/config_app.dart';
@@ -25,8 +26,14 @@ import 'services/export/service_export.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 先載入 .env
-  await dotenv.load(fileName: ".env");
+  // ------------------------------
+  // 1️⃣ 讀環境變數
+  // Web: 用 dart-define
+  // Mobile: 用 .env
+  // ------------------------------
+  if (!kIsWeb) {
+    dotenv.load(fileName: ".env");
+  }
 
   // ✅ 初始化時區
   CalendarConfig.tzLocation =
