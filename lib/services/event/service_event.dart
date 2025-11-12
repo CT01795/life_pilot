@@ -11,7 +11,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceEvent{
   final client = Supabase.instance.client;
   ServiceEvent();
-  
+
+  Future<String> getKey({required String keyName}) async {
+    try {
+      final response = await client.rpc('get_key', params: {'p_key_name': keyName});
+
+      // Supabase RPC 通常回傳 List<dynamic>
+      if (response != null && response is List && response.isNotEmpty) {
+        // 假設 function 回傳 { key: "xxxx" }
+        final data = response.first;
+        if (data is Map<String, dynamic> && data.containsKey('key')) {
+          return data['key'] as String;
+        }
+      }
+
+      return constEmpty;
+    } catch (e) {
+      logger.e('Error fetching key: $e');
+      return constEmpty;
+    }
+  }
+
   // 📌 取得推薦事件 (由 Supabase 的 RPC 呼叫)
   Future<List<EventItem>?> getEvents({
     required String tableName,

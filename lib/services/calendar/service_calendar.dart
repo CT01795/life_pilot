@@ -10,13 +10,13 @@ import 'package:uuid/uuid.dart';
 import '../../core/logger.dart';
 
 class ServiceCalendar {
-
+  
   static Future<List<EventItem>> fetchHolidays(
-      DateTime start, DateTime end, Locale locale) async {
+      DateTime start, DateTime end, Locale locale, String googleApiKey) async {
     final String calendarId = HolidayUtils.getCalendarIdByLocale(CalendarConfig.tzLocation, locale);
     final url = Uri.parse(
       'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events?'
-      'key=${AppConfig.googleApiKey}&'
+      'key=$googleApiKey&'
       'timeMin=${start.toUtc().toIso8601String()}&'
       'timeMax=${end.toUtc().toIso8601String()}&'
       'orderBy=startTime&singleEvents=true',

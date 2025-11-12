@@ -24,13 +24,6 @@ import 'services/export/service_export.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ------------------------------
-  // 1️⃣ 讀環境變數
-  // Web: 用 dart-define
-  // Mobile: 用 .env
-  // ------------------------------
-  await AppConfig.loadEnv();
-
   // ✅ 初始化時區
   CalendarConfig.tzLocation =
       await ServiceTimezone().setTimezoneFromDevice(); // ✅ 自動偵測並設定時區
