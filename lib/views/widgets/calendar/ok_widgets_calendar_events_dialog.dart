@@ -11,7 +11,7 @@ import 'package:life_pilot/pages/event/page_event_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/event/ok_widgets_confirmation_dialog.dart';
 import 'package:life_pilot/views/widgets/event/ok_widgets_event_trailing.dart';
-import 'package:life_pilot/views/widgets/ok_widgets_calendar.dart';
+import 'package:life_pilot/views/widgets/calendar/ok_widgets_calendar.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/date_time.dart';
 import 'package:life_pilot/views/widgets/event/ok_widgets_event_card.dart';

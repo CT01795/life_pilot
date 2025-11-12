@@ -19,11 +19,15 @@ import 'package:life_pilot/services/service_notification/service_notification_fa
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/export/service_export.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 先載入 .env
+  await dotenv.load(fileName: ".env");
+
   // ✅ 初始化時區
   CalendarConfig.tzLocation =
       await ServiceTimezone().setTimezoneFromDevice(); // ✅ 自動偵測並設定時區

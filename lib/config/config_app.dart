@@ -1,8 +1,10 @@
 // 📁 lib/config/app_config.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // 🌍 應用程式主要設定
 @immutable
@@ -28,8 +30,19 @@ class AppConfig {
   ];
 
   // ─────────────── API Keys ───────────────
-  static const String googleApiKey =
-    'AIzaSyAMnaz88TnK9p4hJ31hGZuOlu43gxVx8Ik'; // <-- 金鑰
+  static String get googleApiKey {
+    if (kIsWeb) {
+      // Web: 從 dart-define 讀
+      const key = String.fromEnvironment('GOOGLE_API_KEY');
+      if (key.isEmpty) throw Exception('No Web API Key !');
+      return key;
+    } else {
+      // 手機: 從 .env 讀
+      final key = dotenv.env['GOOGLE_API_KEY'];
+      if (key == null || key.isEmpty) throw Exception('No .env API Key');
+      return key;
+    }
+  } // <-- 金鑰
 }
 
 // 🔑 Supabase 設定
