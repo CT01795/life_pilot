@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/controller_auth.dart';
+import 'package:life_pilot/core/app_navigator.dart';
+import 'package:life_pilot/core/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/core/utils_const.dart';
-import 'package:life_pilot/utils/widget/utils_input_field.dart';
+import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/auth/model_auth_view.dart';
 import 'package:provider/provider.dart';
 
 class PageRegister extends StatefulWidget {
@@ -20,8 +20,9 @@ class PageRegister extends StatefulWidget {
 class _PageRegisterState extends State<PageRegister> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
-  late ControllerAuth _auth;
-  late AppLocalizations _loc;
+  late final FocusNode _emailFocusNode;
+  late final FocusNode _passwordFocusNode;
+  late final ModelAuthView _authView; // ✅ 改用 Model 層來管理 ControllerAuth
 
   @override
   void initState() {
@@ -29,68 +30,99 @@ class _PageRegisterState extends State<PageRegister> {
     _emailController = TextEditingController(text: widget.email ?? constEmpty);
     _passwordController =
         TextEditingController(text: widget.password ?? constEmpty);
+    _emailFocusNode = FocusNode();
+    _passwordFocusNode = FocusNode();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loc = AppLocalizations.of(context)!;
-    _auth = Provider.of<ControllerAuth>(context, listen: false);
+    _authView = context.read<ModelAuthView>(); // ✅ 使用 Model 來統一處理狀態
   }
 
   @override
   void dispose() {
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  Future<void> _tryRegister(AppLocalizations loc) async {
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final error = await _authView.register(email: email, password: password);
+
+    if (!mounted) return;
+
+    if (error?.isNotEmpty ?? false) {
+      AppNavigator.showErrorBar(
+          _authView.showLoginError(message: error!, loc: loc));
+    }
+  }
+
+  void _goBack() {
+    widget.onBack(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: Theme(
-        data: Theme.of(context),
-        child: SingleChildScrollView(
-          padding: kGapEI12,
-          child: Column(
-            children: [
-              InputField(controller: _emailController, labelText: _loc.email),
-              kGapH16(),
-              InputField(
-                  controller: _passwordController,
-                  labelText: _loc.password,
-                  obscureText: true),
-              kGapH16(),
-              Row(
-                children: [
-                  ActionButton(
-                    label: _loc.register, 
-                    onPressed: () async {
-                      FocusScope.of(context).unfocus();
-                      final error = await _auth.register(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim());
-                      if (error != null && error.isNotEmpty) {
-                        showLoginError(message: error, loc: _loc);
-                      }
-                    }),
-                  kGapW8(),
-                  TextButton(
-                    onPressed: () {
-                      widget.onBack(
-                        _emailController.text,
-                        _passwordController.text,
-                      );
-                    },
-                    child: Text(_loc.back),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    // ✅ 只監聽 ProviderLocale 的變化
+    return Consumer<ProviderLocale>(builder: (context, localeProvider, _) {
+      final loc = AppLocalizations.of(context)!;
+
+      return SingleChildScrollView(
+        padding: Insets.all12,
+        child: Column(
+          children: [
+            TextField(
+              controller: _emailController,
+              focusNode: _emailFocusNode,
+              textCapitalization: TextCapitalization.none, //避免 email 被自動大寫
+              keyboardType: TextInputType.emailAddress, //email 鍵盤類型
+              obscureText: false,
+              decoration: InputDecoration(labelText: loc.email),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) {
+                _passwordFocusNode.requestFocus(); // 跳到下一個輸入欄
+              },
+            ),
+            Gaps.h16,
+            TextField(
+              controller: _passwordController,
+              focusNode: _passwordFocusNode,
+              obscureText: true,
+              decoration: InputDecoration(labelText: loc.password),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) async {
+                await _tryRegister(loc);
+              },
+            ),
+            Gaps.h16,
+            Row(
+              children: [
+                ElevatedButton(
+                  child: Text(loc.register),
+                  onPressed: () async {
+                    await _tryRegister(loc);
+                  },
+                ),
+                Gaps.w8,
+                TextButton(
+                  onPressed: _goBack,
+                  child: Text(loc.back),
+                ),
+              ],
+            ),
+          ],
         ),
-      ),
-    );
+      );
+    });
   }
 }

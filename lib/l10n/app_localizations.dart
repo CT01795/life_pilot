@@ -261,59 +261,59 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
-  /// Label for Personal Event
+  /// Label for personalEvent
   ///
   /// In en, this message translates to:
   /// **'Personal'**
-  String get personal_event;
+  String get personalEvent;
 
-  /// Label for Recommended Event
+  /// Label for recommendedEvent
   ///
   /// In en, this message translates to:
   /// **'Event'**
-  String get recommended_event;
+  String get recommendedEvent;
 
-  /// Label for no Recommended Event
+  /// Label for recommendedEventZero
   ///
   /// In en, this message translates to:
   /// **'No event'**
-  String get recommended_event_zero;
+  String get recommendedEventZero;
 
-  /// Label for Recommended Attractions
+  /// Label for recommendedAttractions
   ///
   /// In en, this message translates to:
   /// **'Attractions'**
-  String get recommended_attractions;
+  String get recommendedAttractions;
 
-  /// Label for no recommended_attractions
+  /// Label for recommendedAttractionsZero
   ///
   /// In en, this message translates to:
   /// **'No recommended places at the moment'**
-  String get recommended_attractions_zero;
+  String get recommendedAttractionsZero;
 
-  /// Label for Memory Trace
+  /// Label for memoryTrace
   ///
   /// In en, this message translates to:
   /// **'Memory Trace'**
-  String get memory_trace;
+  String get memoryTrace;
 
-  /// Label for no memory_trace
+  /// Label for memoryTraceZero
   ///
   /// In en, this message translates to:
   /// **'Go add some memories!'**
-  String get memory_trace_zero;
+  String get memoryTraceZero;
 
-  /// Label for Account Records
+  /// Label for accountRecords
   ///
   /// In en, this message translates to:
   /// **'Account Records'**
-  String get account_records;
+  String get accountRecords;
 
-  /// Label for Points Record
+  /// Label for PointsRecord
   ///
   /// In en, this message translates to:
   /// **'Points Record'**
-  String get points_record;
+  String get pointsRecord;
 
   /// Label for Game
   ///
@@ -339,143 +339,149 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get search;
 
-  /// Label for Toggle View
+  /// Label for toggleView
   ///
   /// In en, this message translates to:
   /// **'Toggle View'**
-  String get toggle_view;
+  String get toggleView;
 
-  /// Label for export excel
+  /// Label for exportExcel
   ///
   /// In en, this message translates to:
   /// **'Export'**
-  String get export_excel;
+  String get exportExcel;
 
   /// Label for add event
   ///
   /// In en, this message translates to:
   /// **'Add'**
-  String get event_add;
+  String get eventAdd;
 
   /// Label for add event ok
   ///
   /// In en, this message translates to:
   /// **'✅ Event added'**
-  String get event_add_ok;
+  String get eventAddOk;
 
-  /// Label for event_add_error
+  /// Label for eventAddError
   ///
   /// In en, this message translates to:
   /// **'Add it repeatedly'**
-  String get event_add_error;
+  String get eventAddError;
 
-  /// Label for memory_add
+  /// Label for memoryAdd
   ///
   /// In en, this message translates to:
   /// **'Add Memory'**
-  String get memory_add;
+  String get memoryAdd;
 
-  /// Label for memory_add ok
+  /// Label for memoryAdd ok
   ///
   /// In en, this message translates to:
   /// **'✅ Memory Added'**
-  String get memory_add_ok;
+  String get memoryAddOk;
 
-  /// Label for memory_add_error
+  /// Label for memoryAddError
   ///
   /// In en, this message translates to:
   /// **'Do you want to add the memory again'**
-  String get memory_add_error;
+  String get memoryAddError;
 
-  /// Label for no_events_to_export
+  /// Label for noEventsToExport
   ///
   /// In en, this message translates to:
   /// **'❌ No events to export'**
-  String get no_events_to_export;
+  String get noEventsToExport;
 
-  /// Label for export_failed
+  /// Label for exportFailed
   ///
   /// In en, this message translates to:
   /// **'❌ Export failed'**
-  String get export_failed;
+  String get exportFailed;
 
-  /// Label for export_success
+  /// Label for exportInProgress
+  ///
+  /// In en, this message translates to:
+  /// **'❌ The previous file export is still in progress.'**
+  String get exportInProgress;
+
+  /// Label for exportSuccess
   ///
   /// In en, this message translates to:
   /// **'✅ Export successful'**
-  String get export_success;
+  String get exportSuccess;
 
-  /// Label for not_support_export
+  /// Label for notSupportExport
   ///
   /// In en, this message translates to:
   /// **'⚠️ Not support export'**
-  String get not_support_export;
+  String get notSupportExport;
 
-  /// Label for excel_column_header_activity_name
+  /// Label for excelColumnHeaderActivityName
   ///
   /// In en, this message translates to:
   /// **'Activity name_______________________'**
-  String get excel_column_header_activity_name;
+  String get excelColumnHeaderActivityName;
 
-  /// Label for excel_column_header_keywords
+  /// Label for excelColumnHeaderKeywords
   ///
   /// In en, this message translates to:
   /// **'Keywords_______________________'**
-  String get excel_column_header_keywords;
+  String get excelColumnHeaderKeywords;
 
-  /// Label for excel_column_header_city
+  /// Label for excelColumnHeaderCity
   ///
   /// In en, this message translates to:
   /// **'City'**
-  String get excel_column_header_city;
+  String get excelColumnHeaderCity;
 
-  /// Label for excel_column_header_location
+  /// Label for excelColumnHeaderLocation
   ///
   /// In en, this message translates to:
   /// **'Location____________________'**
-  String get excel_column_header_location;
+  String get excelColumnHeaderLocation;
 
-  /// Label for excel_column_header_fee
+  /// Label for excelColumnHeaderFee
   ///
   /// In en, this message translates to:
-  /// **'fee'**
-  String get excel_column_header_fee;
+  /// **'Fee'**
+  String get excelColumnHeaderFee;
 
-  /// Label for excel_column_header_start_date
+  /// Label for excelColumnHeaderStartDate
   ///
   /// In en, this message translates to:
   /// **'Start Date__'**
-  String get excel_column_header_start_date;
+  String get excelColumnHeaderStartDate;
 
-  /// Label for excel_column_header_start_time
+  /// Label for excelColumnHeaderStartTime
   ///
   /// In en, this message translates to:
   /// **'Start Time'**
-  String get excel_column_header_start_time;
+  String get excelColumnHeaderStartTime;
 
-  /// Label for excel_column_header_end_date
+  /// Label for excelColumnHeaderEndDate
   ///
   /// In en, this message translates to:
   /// **'End Date__'**
-  String get excel_column_header_end_date;
+  String get excelColumnHeaderEndDate;
 
-  /// Label for excel_column_header_end_time
+  /// Label for excelColumnHeaderEndTime
   ///
   /// In en, this message translates to:
   /// **'End Time'**
-  String get excel_column_header_end_time;
+  String get excelColumnHeaderEndTime;
 
-  /// Label for excel_column_header_description
+  /// Label for excelColumnHeaderDescription
   ///
   /// In en, this message translates to:
   /// **'Description______'**
-  String get excel_column_header_description;
+  String get excelColumnHeaderDescription;
 
-  /// Label for excel_column_header_sponsor
+  /// Label for excelColumnHeaderSponsor
   ///
   /// In en, this message translates to:
   /// **'Sponsor'**
-  String get excel_column_header_sponsor;
+  String get excelColumnHeaderSponsor;
 
   /// Label for downloaded
   ///
@@ -483,11 +489,11 @@ abstract class AppLocalizations {
   /// **'✅ Downloaded'**
   String get downloaded;
 
-  /// Label for activity_name
+  /// Label for activityName
   ///
   /// In en, this message translates to:
   /// **'Activity name'**
-  String get activity_name;
+  String get activityName;
 
   /// Label for keywords
   ///
@@ -513,29 +519,29 @@ abstract class AppLocalizations {
   /// **'Fee'**
   String get fee;
 
-  /// Label for start_date
+  /// Label for startDate
   ///
   /// In en, this message translates to:
   /// **'Start date'**
-  String get start_date;
+  String get startDate;
 
-  /// Label for start_time
+  /// Label for startTime
   ///
   /// In en, this message translates to:
   /// **'Start time'**
-  String get start_time;
+  String get startTime;
 
-  /// Label for end_date
+  /// Label for endDate
   ///
   /// In en, this message translates to:
   /// **'End date'**
-  String get end_date;
+  String get endDate;
 
-  /// Label for end_time
+  /// Label for endTime
   ///
   /// In en, this message translates to:
   /// **'End time'**
-  String get end_time;
+  String get endTime;
 
   /// Label for description
   ///
@@ -549,47 +555,47 @@ abstract class AppLocalizations {
   /// **'Sponsor'**
   String get sponsor;
 
-  /// Label for master_url
+  /// Label for masterUrl
   ///
   /// In en, this message translates to:
   /// **'Link'**
-  String get master_url;
+  String get masterUrl;
 
-  /// Label for sub_url
+  /// Label for subUrl
   ///
   /// In en, this message translates to:
   /// **'Link'**
-  String get sub_url;
+  String get subUrl;
 
-  /// Label for event_saved
+  /// Label for eventSaved
   ///
   /// In en, this message translates to:
   /// **'✅ Event saved'**
-  String get event_saved;
+  String get eventSaved;
 
-  /// Label for event_save_error
+  /// Label for eventSaveError
   ///
   /// In en, this message translates to:
   /// **'Activity name cannot be empty'**
-  String get event_save_error;
+  String get eventSaveError;
 
-  /// Label for event_add_edit
+  /// Label for eventAddEdit
   ///
   /// In en, this message translates to:
   /// **'Add/Edit'**
-  String get event_add_edit;
+  String get eventAddEdit;
 
-  /// Label for event_add_sub
+  /// Label for eventAddSub
   ///
   /// In en, this message translates to:
   /// **'Add detailed activities'**
-  String get event_add_sub;
+  String get eventAddSub;
 
   /// Label for Detailed activities
   ///
   /// In en, this message translates to:
   /// **'Detailed activities'**
-  String get event_sub;
+  String get eventSub;
 
   /// Label for save
   ///
@@ -597,17 +603,17 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
-  /// Label for search_keywords
+  /// Label for searchKeywords
   ///
   /// In en, this message translates to:
   /// **'Keyword (blank separated)'**
-  String get search_keywords;
+  String get searchKeywords;
 
-  /// Label for date_clear
+  /// Label for dateClear
   ///
   /// In en, this message translates to:
   /// **'Date clear'**
-  String get date_clear;
+  String get dateClear;
 
   /// Label for add
   ///
@@ -639,29 +645,29 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get delete;
 
-  /// Label for event_delete
+  /// Label for eventDelete
   ///
   /// In en, this message translates to:
   /// **'Delete event'**
-  String get event_delete;
+  String get eventDelete;
 
-  /// Label for delete_ok
+  /// Label for deleteOk
   ///
   /// In en, this message translates to:
   /// **'✅ Deletion completed'**
-  String get delete_ok;
+  String get deleteOk;
 
-  /// Label for delete_error
+  /// Label for deleteError
   ///
   /// In en, this message translates to:
   /// **'❌ Delete failed'**
-  String get delete_error;
+  String get deleteError;
 
-  /// Label for click_here_to_see_more
+  /// Label for clickHereToSeeMore
   ///
   /// In en, this message translates to:
   /// **'See more...'**
-  String get click_here_to_see_more;
+  String get clickHereToSeeMore;
 
   /// Label for close
   ///
@@ -681,11 +687,11 @@ abstract class AppLocalizations {
   /// **'Voice input'**
   String get speak;
 
-  /// Label for speak_up
+  /// Label for speakUp
   ///
   /// In en, this message translates to:
   /// **'Speak up'**
-  String get speak_up;
+  String get speakUp;
 
   /// ==========================================================================
   ///
@@ -693,47 +699,47 @@ abstract class AppLocalizations {
   /// **'pagCalendar'**
   String get pagCalendar;
 
-  /// Label for week_day_sun
+  /// Label for weekDaySun
   ///
   /// In en, this message translates to:
   /// **'Sun'**
-  String get week_day_sun;
+  String get weekDaySun;
 
-  /// Label for week_day_mon
+  /// Label for weekDayMon
   ///
   /// In en, this message translates to:
   /// **'Mon'**
-  String get week_day_mon;
+  String get weekDayMon;
 
-  /// Label for week_day_tue
+  /// Label for weekDayTue
   ///
   /// In en, this message translates to:
   /// **'Tue'**
-  String get week_day_tue;
+  String get weekDayTue;
 
-  /// Label for week_day_wed
+  /// Label for weekDayWed
   ///
   /// In en, this message translates to:
   /// **'Wed'**
-  String get week_day_wed;
+  String get weekDayWed;
 
-  /// Label for week_day_thu
+  /// Label for weekDayThu
   ///
   /// In en, this message translates to:
   /// **'Thu'**
-  String get week_day_thu;
+  String get weekDayThu;
 
-  /// Label for week_day_fri
+  /// Label for weekDayFri
   ///
   /// In en, this message translates to:
   /// **'Fri'**
-  String get week_day_fri;
+  String get weekDayFri;
 
-  /// Label for week_day_sat
+  /// Label for weekDaySat
   ///
   /// In en, this message translates to:
   /// **'Sat'**
-  String get week_day_sat;
+  String get weekDaySat;
 
   /// Label for year
   ///
@@ -753,35 +759,35 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
-  /// Label for confirm_delete
+  /// Label for confirmDelete
   ///
   /// In en, this message translates to:
   /// **'Confirm delete?'**
-  String get confirm_delete;
+  String get confirmDelete;
 
-  /// Label for set_alarm
+  /// Label for setAlarm
   ///
   /// In en, this message translates to:
   /// **'Set alarm'**
-  String get set_alarm;
+  String get setAlarm;
 
-  /// Label for cancel_alarm
+  /// Label for cancelAlarm
   ///
   /// In en, this message translates to:
   /// **'Cancel alarm'**
-  String get cancel_alarm;
+  String get cancelAlarm;
 
-  /// Label for set_alarm_completed
+  /// Label for setAlarmCompleted
   ///
   /// In en, this message translates to:
   /// **'✅ Set alarm completed'**
-  String get set_alarm_completed;
+  String get setAlarmCompleted;
 
-  /// Label for previous_month
+  /// Label for previousMonth
   ///
   /// In en, this message translates to:
   /// **'Previous month'**
-  String get previous_month;
+  String get previousMonth;
 
   /// Label for today
   ///
@@ -789,11 +795,11 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get today;
 
-  /// Label for next_month
+  /// Label for nextMonth
   ///
   /// In en, this message translates to:
   /// **'Next month'**
-  String get next_month;
+  String get nextMonth;
 
   /// Label for clear
   ///
@@ -801,137 +807,137 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get clear;
 
-  /// Label for repeat_options
+  /// Label for repeatOptions
   ///
   /// In en, this message translates to:
   /// **'Repeat times'**
-  String get repeat_options;
+  String get repeatOptions;
 
-  /// Label for repeat_options_once
+  /// Label for repeatOptionsOnce
   ///
   /// In en, this message translates to:
   /// **'Once'**
-  String get repeat_options_once;
+  String get repeatOptionsOnce;
 
-  /// Label for repeat_options_every_day
+  /// Label for repeatOptionsEveryDay
   ///
   /// In en, this message translates to:
   /// **'Every day'**
-  String get repeat_options_every_day;
+  String get repeatOptionsEveryDay;
 
-  /// Label for repeat_options_every_week
+  /// Label for repeatOptionsEveryWeek
   ///
   /// In en, this message translates to:
   /// **'Every week'**
-  String get repeat_options_every_week;
+  String get repeatOptionsEveryWeek;
 
-  /// Label for repeat_options_every_two_weeks
+  /// Label for repeatOptionsEveryTwoWeeks
   ///
   /// In en, this message translates to:
   /// **'Every two weeks'**
-  String get repeat_options_every_two_weeks;
+  String get repeatOptionsEveryTwoWeeks;
 
-  /// Label for repeat_options_every_month
+  /// Label for repeatOptionsEveryMonth
   ///
   /// In en, this message translates to:
   /// **'Every month'**
-  String get repeat_options_every_month;
+  String get repeatOptionsEveryMonth;
 
-  /// Label for repeat_options_every_two_months
+  /// Label for repeatOptionsEveryTwoMonths
   ///
   /// In en, this message translates to:
   /// **'Every two months'**
-  String get repeat_options_every_two_months;
+  String get repeatOptionsEveryTwoMonths;
 
-  /// Label for repeat_options_every_year
+  /// Label for repeatOptionsEveryYear
   ///
   /// In en, this message translates to:
   /// **'Every year'**
-  String get repeat_options_every_year;
+  String get repeatOptionsEveryYear;
 
-  /// Label for repeat_options_every
+  /// Label for repeatOptionsEvery
   ///
   /// In en, this message translates to:
   /// **'Every'**
-  String get repeat_options_every;
+  String get repeatOptionsEvery;
 
-  /// Label for reminder_options
+  /// Label for reminderOptions
   ///
   /// In en, this message translates to:
   /// **'Reminder time'**
-  String get reminder_options;
+  String get reminderOptions;
 
-  /// Label for reminder_options_15_minutes_before
+  /// Label for reminderOptions15MinutesBefore
   ///
   /// In en, this message translates to:
   /// **'15 minutes before'**
-  String get reminder_options_15_minutes_before;
+  String get reminderOptions15MinutesBefore;
 
-  /// Label for reminder_options_30_minutes_before
+  /// Label for reminderOptions30MinutesBefore
   ///
   /// In en, this message translates to:
   /// **'30 minutes before'**
-  String get reminder_options_30_minutes_before;
+  String get reminderOptions30MinutesBefore;
 
-  /// Label for reminder_options_1_hour_before
+  /// Label for reminderOptionsOneHourBefore
   ///
   /// In en, this message translates to:
   /// **'1 hour before'**
-  String get reminder_options_1_hour_before;
+  String get reminderOptionsOneHourBefore;
 
-  /// Label for reminder_options_default_same_day_8am
+  /// Label for reminderOptionsDefaultSameDay8am
   ///
   /// In en, this message translates to:
   /// **'Sam day 8 am'**
-  String get reminder_options_default_same_day_8am;
+  String get reminderOptionsDefaultSameDay8am;
 
-  /// Label for reminder_options_default_day_before_8am
+  /// Label for reminderOptionsDefaultDayBefore8am
   ///
   /// In en, this message translates to:
   /// **'1 day before 8 am'**
-  String get reminder_options_default_day_before_8am;
+  String get reminderOptionsDefaultDayBefore8am;
 
-  /// Label for reminder_options_2_days_before
+  /// Label for reminderOptionsTwoDaysBefore
   ///
   /// In en, this message translates to:
   /// **'2 days before'**
-  String get reminder_options_2_days_before;
+  String get reminderOptionsTwoDaysBefore;
 
-  /// Label for reminder_options_1_week_before
+  /// Label for reminderOptionsOneWeekBefore
   ///
   /// In en, this message translates to:
   /// **'1 week before'**
-  String get reminder_options_1_week_before;
+  String get reminderOptionsOneWeekBefore;
 
-  /// Label for reminder_options_2_weeks_before
+  /// Label for reminderOptionsTwoWeeksBefore
   ///
   /// In en, this message translates to:
   /// **'2 weeks before'**
-  String get reminder_options_2_weeks_before;
+  String get reminderOptionsTwoWeeksBefore;
 
-  /// Label for reminder_options_1_month_before
+  /// Label for reminderOptionsOneMonthBefore
   ///
   /// In en, this message translates to:
   /// **'1 month before'**
-  String get reminder_options_1_month_before;
+  String get reminderOptionsOneMonthBefore;
 
-  /// Label for event_reminder
+  /// Label for eventReminder
   ///
   /// In en, this message translates to:
   /// **'Event reminder'**
-  String get event_reminder;
+  String get eventReminder;
 
-  /// Label for event_reminder_today
+  /// Label for eventReminderToday
   ///
   /// In en, this message translates to:
   /// **'Today event reminder'**
-  String get event_reminder_today;
+  String get eventReminderToday;
 
-  /// Label for event_reminder_desc
+  /// Label for eventReminderDesc
   ///
   /// In en, this message translates to:
   /// **'Remind you of upcoming events'**
-  String get event_reminder_desc;
+  String get eventReminderDesc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

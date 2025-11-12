@@ -14,10 +14,10 @@ enum PageType {
 
 extension PageTypeExtension on PageType {
   //Dart 的 enum 自 2.15 以後有內建 name 屬性，會直接返回 enum 變數名稱字串，因此不用寫明確的 switch：
-  String key() => name; //ex PageType.personalEvent 會返回 'personalEvent'
+  String get key => name; //ex PageType.personalEvent 會返回 'personalEvent'
 
   static final Map<String, PageType> _keyMap = {
-    for (var e in PageType.values) e.key(): e,
+    for (var e in PageType.values) e.key: e,
   };
 
   //fromKey 改寫成 Map 快取（優化搜尋效率）
@@ -26,17 +26,19 @@ extension PageTypeExtension on PageType {
       _keyMap[key] ?? PageType.recommendedEvent;
 
   String title({required AppLocalizations loc}) {
-    final map = {
-      PageType.personalEvent: loc.personal_event,
-      PageType.settings: loc.settings,
-      PageType.recommendedEvent: loc.recommended_event,
-      PageType.recommendedAttractions: loc.recommended_attractions,
-      PageType.memoryTrace: loc.memory_trace,
-      PageType.accountRecords: loc.account_records,
-      PageType.pointsRecord: loc.points_record,
-      PageType.game: loc.game,
-      PageType.ai: loc.ai
-    };
+    final map = _titlesForLocale(loc);
     return map[this]!;
   }
+
+  static Map<PageType, String> _titlesForLocale(AppLocalizations loc) => {
+    PageType.personalEvent: loc.personalEvent,
+    PageType.settings: loc.settings,
+    PageType.recommendedEvent: loc.recommendedEvent,
+    PageType.recommendedAttractions: loc.recommendedAttractions,
+    PageType.memoryTrace: loc.memoryTrace,
+    PageType.accountRecords: loc.accountRecords,
+    PageType.pointsRecord: loc.pointsRecord,
+    PageType.game: loc.game,
+    PageType.ai: loc.ai,
+  };
 }

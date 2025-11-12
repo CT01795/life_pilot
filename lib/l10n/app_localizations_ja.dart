@@ -90,31 +90,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings => '設定';
 
   @override
-  String get personal_event => '個人のイベント';
+  String get personalEvent => '個人のイベント';
 
   @override
-  String get recommended_event => 'おすすめイベント';
+  String get recommendedEvent => 'おすすめイベント';
 
   @override
-  String get recommended_event_zero => '現在おすすめイベントはありません';
+  String get recommendedEventZero => '現在おすすめイベントはありません';
 
   @override
-  String get recommended_attractions => 'おすすめの観光地';
+  String get recommendedAttractions => 'おすすめの観光地';
 
   @override
-  String get recommended_attractions_zero => '現在、おすすめのスポットはありません';
+  String get recommendedAttractionsZero => '現在、おすすめのスポットはありません';
 
   @override
-  String get memory_trace => '思い出の回廊';
+  String get memoryTrace => '思い出の回廊';
 
   @override
-  String get memory_trace_zero => 'さあ、思い出を追加しよう！';
+  String get memoryTraceZero => 'さあ、思い出を追加しよう！';
 
   @override
-  String get account_records => '収支記録';
+  String get accountRecords => '収支記録';
 
   @override
-  String get points_record => 'ポイント記録';
+  String get pointsRecord => 'ポイント記録';
 
   @override
   String get game => 'ゲーム';
@@ -129,79 +129,82 @@ class AppLocalizationsJa extends AppLocalizations {
   String get search => '検索';
 
   @override
-  String get toggle_view => '表示切り替え';
+  String get toggleView => '表示切り替え';
 
   @override
-  String get export_excel => 'Excelにエクスポート';
+  String get exportExcel => 'Excelにエクスポート';
 
   @override
-  String get event_add => 'イベントを追加';
+  String get eventAdd => 'イベントを追加';
 
   @override
-  String get event_add_ok => '✅ イベントを追加しました';
+  String get eventAddOk => '✅ イベントを追加しました';
 
   @override
-  String get event_add_error => 'このイベントを繰り返して追加しますか';
+  String get eventAddError => 'このイベントを繰り返して追加しますか';
 
   @override
-  String get memory_add => '思い出を追加';
+  String get memoryAdd => '思い出を追加';
 
   @override
-  String get memory_add_ok => '✅ 思い出が追加されました';
+  String get memoryAddOk => '✅ 思い出が追加されました';
 
   @override
-  String get memory_add_error => 'もう一度思い出を追加しますか';
+  String get memoryAddError => 'もう一度思い出を追加しますか';
 
   @override
-  String get no_events_to_export => '❌ エクスポートするイベントがありません';
+  String get noEventsToExport => '❌ エクスポートするイベントがありません';
 
   @override
-  String get export_failed => '❌ エクスポート失敗';
+  String get exportFailed => '❌ エクスポート失敗';
 
   @override
-  String get export_success => '✅ エクスポート成功';
+  String get exportInProgress => '❌ 以前のファイルのエクスポートはまだ進行中です。';
 
   @override
-  String get not_support_export => '⚠️ このプラットフォームではエクスポート非対応です';
+  String get exportSuccess => '✅ エクスポート成功';
 
   @override
-  String get excel_column_header_activity_name => 'アクティビティ名_______________________';
+  String get notSupportExport => '⚠️ このプラットフォームではエクスポート非対応です';
 
   @override
-  String get excel_column_header_keywords => 'キーワード_______________________';
+  String get excelColumnHeaderActivityName => 'アクティビティ名_______________________';
 
   @override
-  String get excel_column_header_city => '市区町村';
+  String get excelColumnHeaderKeywords => 'キーワード_______________________';
 
   @override
-  String get excel_column_header_location => '場所____________________';
+  String get excelColumnHeaderCity => '市区町村';
 
   @override
-  String get excel_column_header_fee => '料金';
+  String get excelColumnHeaderLocation => '場所____________________';
 
   @override
-  String get excel_column_header_start_date => '開始日期__';
+  String get excelColumnHeaderFee => '料金';
 
   @override
-  String get excel_column_header_start_time => '開始時間';
+  String get excelColumnHeaderStartDate => '開始日期__';
 
   @override
-  String get excel_column_header_end_date => '終了日__';
+  String get excelColumnHeaderStartTime => '開始時間';
 
   @override
-  String get excel_column_header_end_time => '終了時間';
+  String get excelColumnHeaderEndDate => '終了日__';
 
   @override
-  String get excel_column_header_description => '説明______';
+  String get excelColumnHeaderEndTime => '終了時間';
 
   @override
-  String get excel_column_header_sponsor => '主催者';
+  String get excelColumnHeaderDescription => '説明______';
+
+  @override
+  String get excelColumnHeaderSponsor => '主催者';
 
   @override
   String get downloaded => '✅ ダウンロード済み';
 
   @override
-  String get activity_name => 'アクティビティ名';
+  String get activityName => 'アクティビティ名';
 
   @override
   String get keywords => 'キーワード';
@@ -216,16 +219,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fee => '料金';
 
   @override
-  String get start_date => '開始日期';
+  String get startDate => '開始日期';
 
   @override
-  String get start_time => '開始時間';
+  String get startTime => '開始時間';
 
   @override
-  String get end_date => '終了日';
+  String get endDate => '終了日';
 
   @override
-  String get end_time => '終了時間';
+  String get endTime => '終了時間';
 
   @override
   String get description => '説明';
@@ -234,34 +237,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sponsor => '主催者';
 
   @override
-  String get master_url => 'リンク';
+  String get masterUrl => 'リンク';
 
   @override
-  String get sub_url => 'リンク';
+  String get subUrl => 'リンク';
 
   @override
-  String get event_saved => '✅ イベントを保存しました';
+  String get eventSaved => '✅ イベントを保存しました';
 
   @override
-  String get event_save_error => 'イベント名は空にできません';
+  String get eventSaveError => 'イベント名は空にできません';
 
   @override
-  String get event_add_edit => 'イベントの追加／編集';
+  String get eventAddEdit => 'イベントの追加／編集';
 
   @override
-  String get event_add_sub => 'サブ項目を追加';
+  String get eventAddSub => 'サブ項目を追加';
 
   @override
-  String get event_sub => 'サブイベント';
+  String get eventSub => 'サブイベント';
 
   @override
   String get save => '保存';
 
   @override
-  String get search_keywords => 'キーワード検索（スペースで区切る）';
+  String get searchKeywords => 'キーワード検索（スペースで区切る）';
 
   @override
-  String get date_clear => '日付をクリア';
+  String get dateClear => '日付をクリア';
 
   @override
   String get add => '追加';
@@ -279,16 +282,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get delete => '削除';
 
   @override
-  String get event_delete => 'イベントを削除';
+  String get eventDelete => 'イベントを削除';
 
   @override
-  String get delete_ok => '✅ 削除完了';
+  String get deleteOk => '✅ 削除完了';
 
   @override
-  String get delete_error => '❌ 削除失敗';
+  String get deleteError => '❌ 削除失敗';
 
   @override
-  String get click_here_to_see_more => 'もっと見る';
+  String get clickHereToSeeMore => 'もっと見る';
 
   @override
   String get close => '閉じる';
@@ -300,31 +303,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get speak => '音声入力';
 
   @override
-  String get speak_up => '話してください';
+  String get speakUp => '話してください';
 
   @override
   String get pagCalendar => 'pagCalendar';
 
   @override
-  String get week_day_sun => '日';
+  String get weekDaySun => '日';
 
   @override
-  String get week_day_mon => '月';
+  String get weekDayMon => '月';
 
   @override
-  String get week_day_tue => '火';
+  String get weekDayTue => '火';
 
   @override
-  String get week_day_wed => '水';
+  String get weekDayWed => '水';
 
   @override
-  String get week_day_thu => '木';
+  String get weekDayThu => '木';
 
   @override
-  String get week_day_fri => '金';
+  String get weekDayFri => '金';
 
   @override
-  String get week_day_sat => '土';
+  String get weekDaySat => '土';
 
   @override
   String get year => '年';
@@ -336,92 +339,92 @@ class AppLocalizationsJa extends AppLocalizations {
   String get confirm => '確定';
 
   @override
-  String get confirm_delete => '削除しますか';
+  String get confirmDelete => '削除しますか';
 
   @override
-  String get set_alarm => 'アラーム設定';
+  String get setAlarm => 'アラーム設定';
 
   @override
-  String get cancel_alarm => 'アラームキャンセル';
+  String get cancelAlarm => 'アラームキャンセル';
 
   @override
-  String get set_alarm_completed => '✅ アラームを設定しました';
+  String get setAlarmCompleted => '✅ アラームを設定しました';
 
   @override
-  String get previous_month => '先月';
+  String get previousMonth => '先月';
 
   @override
   String get today => '今日';
 
   @override
-  String get next_month => '来月';
+  String get nextMonth => '来月';
 
   @override
   String get clear => 'クリア';
 
   @override
-  String get repeat_options => '繰り返し回数';
+  String get repeatOptions => '繰り返し回数';
 
   @override
-  String get repeat_options_once => '一度だけ';
+  String get repeatOptionsOnce => '一度だけ';
 
   @override
-  String get repeat_options_every_day => '毎日';
+  String get repeatOptionsEveryDay => '毎日';
 
   @override
-  String get repeat_options_every_week => '每週';
+  String get repeatOptionsEveryWeek => '每週';
 
   @override
-  String get repeat_options_every_two_weeks => '2週間ごと';
+  String get repeatOptionsEveryTwoWeeks => 'Every two weeks';
 
   @override
-  String get repeat_options_every_month => '每月';
+  String get repeatOptionsEveryMonth => '每月';
 
   @override
-  String get repeat_options_every_two_months => '2か月ごと';
+  String get repeatOptionsEveryTwoMonths => '2か月ごと';
 
   @override
-  String get repeat_options_every_year => '每年';
+  String get repeatOptionsEveryYear => '每年';
 
   @override
-  String get repeat_options_every => '每';
+  String get repeatOptionsEvery => '每';
 
   @override
-  String get reminder_options => '通知オプション';
+  String get reminderOptions => '通知オプション';
 
   @override
-  String get reminder_options_15_minutes_before => '15分前';
+  String get reminderOptions15MinutesBefore => '15分前';
 
   @override
-  String get reminder_options_30_minutes_before => '30分前';
+  String get reminderOptions30MinutesBefore => '30分前';
 
   @override
-  String get reminder_options_1_hour_before => '1時間前';
+  String get reminderOptionsOneHourBefore => '1時間前';
 
   @override
-  String get reminder_options_default_same_day_8am => '当日8時';
+  String get reminderOptionsDefaultSameDay8am => '当日8時';
 
   @override
-  String get reminder_options_default_day_before_8am => '前日の8時';
+  String get reminderOptionsDefaultDayBefore8am => '前日の8時';
 
   @override
-  String get reminder_options_2_days_before => '2日前';
+  String get reminderOptionsTwoDaysBefore => '2日前';
 
   @override
-  String get reminder_options_1_week_before => '1週間前';
+  String get reminderOptionsOneWeekBefore => '1週間前';
 
   @override
-  String get reminder_options_2_weeks_before => '2週間前';
+  String get reminderOptionsTwoWeeksBefore => '2週間前';
 
   @override
-  String get reminder_options_1_month_before => '1か月前';
+  String get reminderOptionsOneMonthBefore => '1か月前';
 
   @override
-  String get event_reminder => 'イベント通知';
+  String get eventReminder => 'イベント通知';
 
   @override
-  String get event_reminder_today => '今日のイベント通知';
+  String get eventReminderToday => '今日のイベント通知';
 
   @override
-  String get event_reminder_desc => '間もなく開始するイベントをお知らせします';
+  String get eventReminderDesc => '間もなく開始するイベントをお知らせします';
 }

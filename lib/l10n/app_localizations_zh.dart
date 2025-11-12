@@ -90,31 +90,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings => '設定';
 
   @override
-  String get personal_event => '行事曆';
+  String get personalEvent => '行事曆';
 
   @override
-  String get recommended_event => '推薦活動';
+  String get recommendedEvent => '推薦活動';
 
   @override
-  String get recommended_event_zero => '目前沒有推薦活動';
+  String get recommendedEventZero => '目前沒有推薦活動';
 
   @override
-  String get recommended_attractions => '推薦景點';
+  String get recommendedAttractions => '推薦景點';
 
   @override
-  String get recommended_attractions_zero => '目前沒有推薦景點';
+  String get recommendedAttractionsZero => '目前沒有推薦景點';
 
   @override
-  String get memory_trace => '回憶走廊';
+  String get memoryTrace => '回憶走廊';
 
   @override
-  String get memory_trace_zero => '去創造更多回憶吧！';
+  String get memoryTraceZero => '去創造更多回憶吧！';
 
   @override
-  String get account_records => '記帳';
+  String get accountRecords => '記帳';
 
   @override
-  String get points_record => '積分';
+  String get pointsRecord => '積分';
 
   @override
   String get game => '遊戲';
@@ -129,79 +129,82 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search => '搜尋';
 
   @override
-  String get toggle_view => '切換檢視模式';
+  String get toggleView => '切換檢視模式';
 
   @override
-  String get export_excel => '匯出 Excel';
+  String get exportExcel => '匯出 Excel';
 
   @override
-  String get event_add => '新增活動';
+  String get eventAdd => '新增活動';
 
   @override
-  String get event_add_ok => '✅ 已新增活動';
+  String get eventAddOk => '✅ 已新增活動';
 
   @override
-  String get event_add_error => '要重複新增活動嗎';
+  String get eventAddError => '要重複新增活動嗎';
 
   @override
-  String get memory_add => '新增回憶';
+  String get memoryAdd => '新增回憶';
 
   @override
-  String get memory_add_ok => '✅ 已新增回憶';
+  String get memoryAddOk => '✅ 已新增回憶';
 
   @override
-  String get memory_add_error => '要重複新增回憶嗎';
+  String get memoryAddError => '要重複新增回憶嗎';
 
   @override
-  String get no_events_to_export => '❌ 沒有可匯出的活動';
+  String get noEventsToExport => '❌ 沒有可匯出的活動';
 
   @override
-  String get export_failed => '❌ 匯出失敗';
+  String get exportFailed => '❌ 匯出失敗';
 
   @override
-  String get export_success => '✅ 匯出成功';
+  String get exportInProgress => '❌ 前次匯出尚在執行中';
 
   @override
-  String get not_support_export => '⚠️ 此平台尚未支援匯出';
+  String get exportSuccess => '✅ 匯出成功';
 
   @override
-  String get excel_column_header_activity_name => '活動名稱_______________________';
+  String get notSupportExport => '⚠️ 此平台尚未支援匯出';
 
   @override
-  String get excel_column_header_keywords => '關鍵字_______________________';
+  String get excelColumnHeaderActivityName => '活動名稱_______________________';
 
   @override
-  String get excel_column_header_city => '縣市';
+  String get excelColumnHeaderKeywords => '關鍵字_______________________';
 
   @override
-  String get excel_column_header_location => '地點____________________';
+  String get excelColumnHeaderCity => '縣市';
 
   @override
-  String get excel_column_header_fee => '費用';
+  String get excelColumnHeaderLocation => '地點____________________';
 
   @override
-  String get excel_column_header_start_date => '開始日期__';
+  String get excelColumnHeaderFee => '費用';
 
   @override
-  String get excel_column_header_start_time => '開始時間';
+  String get excelColumnHeaderStartDate => '開始日期__';
 
   @override
-  String get excel_column_header_end_date => '結束日期__';
+  String get excelColumnHeaderStartTime => '開始時間';
 
   @override
-  String get excel_column_header_end_time => '結束時間';
+  String get excelColumnHeaderEndDate => '結束日期__';
 
   @override
-  String get excel_column_header_description => '描述______';
+  String get excelColumnHeaderEndTime => '結束時間';
 
   @override
-  String get excel_column_header_sponsor => '相關單位';
+  String get excelColumnHeaderDescription => '描述______';
+
+  @override
+  String get excelColumnHeaderSponsor => '相關單位';
 
   @override
   String get downloaded => '✅ 已下載';
 
   @override
-  String get activity_name => '活動名稱';
+  String get activityName => '活動名稱';
 
   @override
   String get keywords => '關鍵字';
@@ -216,16 +219,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fee => '費用';
 
   @override
-  String get start_date => '開始日期';
+  String get startDate => '開始日期';
 
   @override
-  String get start_time => '開始時間';
+  String get startTime => '開始時間';
 
   @override
-  String get end_date => '結束日期';
+  String get endDate => '結束日期';
 
   @override
-  String get end_time => '結束時間';
+  String get endTime => '結束時間';
 
   @override
   String get description => '描述';
@@ -234,34 +237,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sponsor => '相關單位';
 
   @override
-  String get master_url => '連結';
+  String get masterUrl => '連結';
 
   @override
-  String get sub_url => '連結';
+  String get subUrl => '連結';
 
   @override
-  String get event_saved => '✅ 活動已儲存';
+  String get eventSaved => '✅ 活動已儲存';
 
   @override
-  String get event_save_error => '活動名稱不可為空';
+  String get eventSaveError => '活動名稱不可為空';
 
   @override
-  String get event_add_edit => '新增／編輯活動';
+  String get eventAddEdit => '新增／編輯活動';
 
   @override
-  String get event_add_sub => '新增細項';
+  String get eventAddSub => '新增細項';
 
   @override
-  String get event_sub => '細項活動';
+  String get eventSub => '細項活動';
 
   @override
   String get save => '儲存';
 
   @override
-  String get search_keywords => '關鍵字搜尋(空白分隔)';
+  String get searchKeywords => '關鍵字搜尋(空白分隔)';
 
   @override
-  String get date_clear => '清除日期';
+  String get dateClear => '清除日期';
 
   @override
   String get add => '新增';
@@ -279,16 +282,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get delete => '刪除';
 
   @override
-  String get event_delete => '刪除活動';
+  String get eventDelete => '刪除活動';
 
   @override
-  String get delete_ok => '✅ 刪除完成';
+  String get deleteOk => '✅ 刪除完成';
 
   @override
-  String get delete_error => '❌ 刪除失敗';
+  String get deleteError => '❌ 刪除失敗';
 
   @override
-  String get click_here_to_see_more => '點我看更多';
+  String get clickHereToSeeMore => '點我看更多';
 
   @override
   String get close => '關閉';
@@ -300,31 +303,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speak => '語音輸入';
 
   @override
-  String get speak_up => '說出來';
+  String get speakUp => '說出來';
 
   @override
   String get pagCalendar => 'pagCalendar';
 
   @override
-  String get week_day_sun => '日';
+  String get weekDaySun => '日';
 
   @override
-  String get week_day_mon => '一';
+  String get weekDayMon => '一';
 
   @override
-  String get week_day_tue => '二';
+  String get weekDayTue => '二';
 
   @override
-  String get week_day_wed => '三';
+  String get weekDayWed => '三';
 
   @override
-  String get week_day_thu => '四';
+  String get weekDayThu => '四';
 
   @override
-  String get week_day_fri => '五';
+  String get weekDayFri => '五';
 
   @override
-  String get week_day_sat => '六';
+  String get weekDaySat => '六';
 
   @override
   String get year => '年';
@@ -336,92 +339,92 @@ class AppLocalizationsZh extends AppLocalizations {
   String get confirm => '確定';
 
   @override
-  String get confirm_delete => '確定刪除?';
+  String get confirmDelete => '確定刪除?';
 
   @override
-  String get set_alarm => '設定鬧鐘';
+  String get setAlarm => '設定鬧鐘';
 
   @override
-  String get cancel_alarm => '取消鬧鐘';
+  String get cancelAlarm => '取消鬧鐘';
 
   @override
-  String get set_alarm_completed => '✅ 設定鬧鐘完成';
+  String get setAlarmCompleted => '✅ 設定鬧鐘完成';
 
   @override
-  String get previous_month => '上一個月';
+  String get previousMonth => '上一個月';
 
   @override
   String get today => '今日';
 
   @override
-  String get next_month => '下一個月';
+  String get nextMonth => '下一個月';
 
   @override
   String get clear => '清除';
 
   @override
-  String get repeat_options => '重複次數';
+  String get repeatOptions => '重複次數';
 
   @override
-  String get repeat_options_once => '僅一次';
+  String get repeatOptionsOnce => '僅一次';
 
   @override
-  String get repeat_options_every_day => '每天';
+  String get repeatOptionsEveryDay => '每天';
 
   @override
-  String get repeat_options_every_week => '每週';
+  String get repeatOptionsEveryWeek => '每週';
 
   @override
-  String get repeat_options_every_two_weeks => '每兩週';
+  String get repeatOptionsEveryTwoWeeks => '每兩週';
 
   @override
-  String get repeat_options_every_month => '每月';
+  String get repeatOptionsEveryMonth => '每月';
 
   @override
-  String get repeat_options_every_two_months => '每兩個月';
+  String get repeatOptionsEveryTwoMonths => '每兩個月';
 
   @override
-  String get repeat_options_every_year => '每年';
+  String get repeatOptionsEveryYear => 'Every year';
 
   @override
-  String get repeat_options_every => '每';
+  String get repeatOptionsEvery => '每';
 
   @override
-  String get reminder_options => '提醒時間';
+  String get reminderOptions => '提醒時間';
 
   @override
-  String get reminder_options_15_minutes_before => '15分鐘前';
+  String get reminderOptions15MinutesBefore => '15分鐘前';
 
   @override
-  String get reminder_options_30_minutes_before => '30分鐘前';
+  String get reminderOptions30MinutesBefore => '30分鐘前';
 
   @override
-  String get reminder_options_1_hour_before => '1小時前';
+  String get reminderOptionsOneHourBefore => '1小時前';
 
   @override
-  String get reminder_options_default_same_day_8am => '當天早上8點';
+  String get reminderOptionsDefaultSameDay8am => '當天早上8點';
 
   @override
-  String get reminder_options_default_day_before_8am => '前1天早上8點';
+  String get reminderOptionsDefaultDayBefore8am => '前1天早上8點';
 
   @override
-  String get reminder_options_2_days_before => '2天前';
+  String get reminderOptionsTwoDaysBefore => '2天前';
 
   @override
-  String get reminder_options_1_week_before => '1週前';
+  String get reminderOptionsOneWeekBefore => '1週前';
 
   @override
-  String get reminder_options_2_weeks_before => '2週前';
+  String get reminderOptionsTwoWeeksBefore => '2週前';
 
   @override
-  String get reminder_options_1_month_before => '1個月前';
+  String get reminderOptionsOneMonthBefore => '1個月前';
 
   @override
-  String get event_reminder => '活動提醒';
+  String get eventReminder => '活動提醒';
 
   @override
-  String get event_reminder_today => '今日活動提醒';
+  String get eventReminderToday => '今日活動提醒';
 
   @override
-  String get event_reminder_desc => '提醒你即將開始的活動';
+  String get eventReminderDesc => '提醒你即將開始的活動';
 }

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:life_pilot/utils/utils_common_function.dart';
-import 'package:life_pilot/utils/core/utils_enum.dart';
+import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/core/logger.dart';
 
 class ServiceAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;

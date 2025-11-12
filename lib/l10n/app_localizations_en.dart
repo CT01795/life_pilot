@@ -90,31 +90,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
-  String get personal_event => 'Personal';
+  String get personalEvent => 'Personal';
 
   @override
-  String get recommended_event => 'Event';
+  String get recommendedEvent => 'Event';
 
   @override
-  String get recommended_event_zero => 'No event';
+  String get recommendedEventZero => 'No event';
 
   @override
-  String get recommended_attractions => 'Attractions';
+  String get recommendedAttractions => 'Attractions';
 
   @override
-  String get recommended_attractions_zero => 'No recommended places at the moment';
+  String get recommendedAttractionsZero => 'No recommended places at the moment';
 
   @override
-  String get memory_trace => 'Memory Trace';
+  String get memoryTrace => 'Memory Trace';
 
   @override
-  String get memory_trace_zero => 'Go add some memories!';
+  String get memoryTraceZero => 'Go add some memories!';
 
   @override
-  String get account_records => 'Account Records';
+  String get accountRecords => 'Account Records';
 
   @override
-  String get points_record => 'Points Record';
+  String get pointsRecord => 'Points Record';
 
   @override
   String get game => 'Game';
@@ -129,79 +129,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get search => 'Search';
 
   @override
-  String get toggle_view => 'Toggle View';
+  String get toggleView => 'Toggle View';
 
   @override
-  String get export_excel => 'Export';
+  String get exportExcel => 'Export';
 
   @override
-  String get event_add => 'Add';
+  String get eventAdd => 'Add';
 
   @override
-  String get event_add_ok => '✅ Event added';
+  String get eventAddOk => '✅ Event added';
 
   @override
-  String get event_add_error => 'Add it repeatedly';
+  String get eventAddError => 'Add it repeatedly';
 
   @override
-  String get memory_add => 'Add Memory';
+  String get memoryAdd => 'Add Memory';
 
   @override
-  String get memory_add_ok => '✅ Memory Added';
+  String get memoryAddOk => '✅ Memory Added';
 
   @override
-  String get memory_add_error => 'Do you want to add the memory again';
+  String get memoryAddError => 'Do you want to add the memory again';
 
   @override
-  String get no_events_to_export => '❌ No events to export';
+  String get noEventsToExport => '❌ No events to export';
 
   @override
-  String get export_failed => '❌ Export failed';
+  String get exportFailed => '❌ Export failed';
 
   @override
-  String get export_success => '✅ Export successful';
+  String get exportInProgress => '❌ The previous file export is still in progress.';
 
   @override
-  String get not_support_export => '⚠️ Not support export';
+  String get exportSuccess => '✅ Export successful';
 
   @override
-  String get excel_column_header_activity_name => 'Activity name_______________________';
+  String get notSupportExport => '⚠️ Not support export';
 
   @override
-  String get excel_column_header_keywords => 'Keywords_______________________';
+  String get excelColumnHeaderActivityName => 'Activity name_______________________';
 
   @override
-  String get excel_column_header_city => 'City';
+  String get excelColumnHeaderKeywords => 'Keywords_______________________';
 
   @override
-  String get excel_column_header_location => 'Location____________________';
+  String get excelColumnHeaderCity => 'City';
 
   @override
-  String get excel_column_header_fee => 'fee';
+  String get excelColumnHeaderLocation => 'Location____________________';
 
   @override
-  String get excel_column_header_start_date => 'Start Date__';
+  String get excelColumnHeaderFee => 'Fee';
 
   @override
-  String get excel_column_header_start_time => 'Start Time';
+  String get excelColumnHeaderStartDate => 'Start Date__';
 
   @override
-  String get excel_column_header_end_date => 'End Date__';
+  String get excelColumnHeaderStartTime => 'Start Time';
 
   @override
-  String get excel_column_header_end_time => 'End Time';
+  String get excelColumnHeaderEndDate => 'End Date__';
 
   @override
-  String get excel_column_header_description => 'Description______';
+  String get excelColumnHeaderEndTime => 'End Time';
 
   @override
-  String get excel_column_header_sponsor => 'Sponsor';
+  String get excelColumnHeaderDescription => 'Description______';
+
+  @override
+  String get excelColumnHeaderSponsor => 'Sponsor';
 
   @override
   String get downloaded => '✅ Downloaded';
 
   @override
-  String get activity_name => 'Activity name';
+  String get activityName => 'Activity name';
 
   @override
   String get keywords => 'Keywords';
@@ -216,16 +219,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fee => 'Fee';
 
   @override
-  String get start_date => 'Start date';
+  String get startDate => 'Start date';
 
   @override
-  String get start_time => 'Start time';
+  String get startTime => 'Start time';
 
   @override
-  String get end_date => 'End date';
+  String get endDate => 'End date';
 
   @override
-  String get end_time => 'End time';
+  String get endTime => 'End time';
 
   @override
   String get description => 'Description';
@@ -234,34 +237,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sponsor => 'Sponsor';
 
   @override
-  String get master_url => 'Link';
+  String get masterUrl => 'Link';
 
   @override
-  String get sub_url => 'Link';
+  String get subUrl => 'Link';
 
   @override
-  String get event_saved => '✅ Event saved';
+  String get eventSaved => '✅ Event saved';
 
   @override
-  String get event_save_error => 'Activity name cannot be empty';
+  String get eventSaveError => 'Activity name cannot be empty';
 
   @override
-  String get event_add_edit => 'Add/Edit';
+  String get eventAddEdit => 'Add/Edit';
 
   @override
-  String get event_add_sub => 'Add detailed activities';
+  String get eventAddSub => 'Add detailed activities';
 
   @override
-  String get event_sub => 'Detailed activities';
+  String get eventSub => 'Detailed activities';
 
   @override
   String get save => 'Save';
 
   @override
-  String get search_keywords => 'Keyword (blank separated)';
+  String get searchKeywords => 'Keyword (blank separated)';
 
   @override
-  String get date_clear => 'Date clear';
+  String get dateClear => 'Date clear';
 
   @override
   String get add => 'Add';
@@ -279,16 +282,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
-  String get event_delete => 'Delete event';
+  String get eventDelete => 'Delete event';
 
   @override
-  String get delete_ok => '✅ Deletion completed';
+  String get deleteOk => '✅ Deletion completed';
 
   @override
-  String get delete_error => '❌ Delete failed';
+  String get deleteError => '❌ Delete failed';
 
   @override
-  String get click_here_to_see_more => 'See more...';
+  String get clickHereToSeeMore => 'See more...';
 
   @override
   String get close => 'Close';
@@ -300,31 +303,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speak => 'Voice input';
 
   @override
-  String get speak_up => 'Speak up';
+  String get speakUp => 'Speak up';
 
   @override
   String get pagCalendar => 'pagCalendar';
 
   @override
-  String get week_day_sun => 'Sun';
+  String get weekDaySun => 'Sun';
 
   @override
-  String get week_day_mon => 'Mon';
+  String get weekDayMon => 'Mon';
 
   @override
-  String get week_day_tue => 'Tue';
+  String get weekDayTue => 'Tue';
 
   @override
-  String get week_day_wed => 'Wed';
+  String get weekDayWed => 'Wed';
 
   @override
-  String get week_day_thu => 'Thu';
+  String get weekDayThu => 'Thu';
 
   @override
-  String get week_day_fri => 'Fri';
+  String get weekDayFri => 'Fri';
 
   @override
-  String get week_day_sat => 'Sat';
+  String get weekDaySat => 'Sat';
 
   @override
   String get year => 'Year';
@@ -336,92 +339,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
-  String get confirm_delete => 'Confirm delete?';
+  String get confirmDelete => 'Confirm delete?';
 
   @override
-  String get set_alarm => 'Set alarm';
+  String get setAlarm => 'Set alarm';
 
   @override
-  String get cancel_alarm => 'Cancel alarm';
+  String get cancelAlarm => 'Cancel alarm';
 
   @override
-  String get set_alarm_completed => '✅ Set alarm completed';
+  String get setAlarmCompleted => '✅ Set alarm completed';
 
   @override
-  String get previous_month => 'Previous month';
+  String get previousMonth => 'Previous month';
 
   @override
   String get today => 'Today';
 
   @override
-  String get next_month => 'Next month';
+  String get nextMonth => 'Next month';
 
   @override
   String get clear => 'Clear';
 
   @override
-  String get repeat_options => 'Repeat times';
+  String get repeatOptions => 'Repeat times';
 
   @override
-  String get repeat_options_once => 'Once';
+  String get repeatOptionsOnce => 'Once';
 
   @override
-  String get repeat_options_every_day => 'Every day';
+  String get repeatOptionsEveryDay => 'Every day';
 
   @override
-  String get repeat_options_every_week => 'Every week';
+  String get repeatOptionsEveryWeek => 'Every week';
 
   @override
-  String get repeat_options_every_two_weeks => 'Every two weeks';
+  String get repeatOptionsEveryTwoWeeks => 'Every two weeks';
 
   @override
-  String get repeat_options_every_month => 'Every month';
+  String get repeatOptionsEveryMonth => 'Every month';
 
   @override
-  String get repeat_options_every_two_months => 'Every two months';
+  String get repeatOptionsEveryTwoMonths => 'Every two months';
 
   @override
-  String get repeat_options_every_year => 'Every year';
+  String get repeatOptionsEveryYear => 'Every year';
 
   @override
-  String get repeat_options_every => 'Every';
+  String get repeatOptionsEvery => 'Every';
 
   @override
-  String get reminder_options => 'Reminder time';
+  String get reminderOptions => 'Reminder time';
 
   @override
-  String get reminder_options_15_minutes_before => '15 minutes before';
+  String get reminderOptions15MinutesBefore => '15 minutes before';
 
   @override
-  String get reminder_options_30_minutes_before => '30 minutes before';
+  String get reminderOptions30MinutesBefore => '30 minutes before';
 
   @override
-  String get reminder_options_1_hour_before => '1 hour before';
+  String get reminderOptionsOneHourBefore => '1 hour before';
 
   @override
-  String get reminder_options_default_same_day_8am => 'Sam day 8 am';
+  String get reminderOptionsDefaultSameDay8am => 'Sam day 8 am';
 
   @override
-  String get reminder_options_default_day_before_8am => '1 day before 8 am';
+  String get reminderOptionsDefaultDayBefore8am => '1 day before 8 am';
 
   @override
-  String get reminder_options_2_days_before => '2 days before';
+  String get reminderOptionsTwoDaysBefore => '2 days before';
 
   @override
-  String get reminder_options_1_week_before => '1 week before';
+  String get reminderOptionsOneWeekBefore => '1 week before';
 
   @override
-  String get reminder_options_2_weeks_before => '2 weeks before';
+  String get reminderOptionsTwoWeeksBefore => '2 weeks before';
 
   @override
-  String get reminder_options_1_month_before => '1 month before';
+  String get reminderOptionsOneMonthBefore => '1 month before';
 
   @override
-  String get event_reminder => 'Event reminder';
+  String get eventReminder => 'Event reminder';
 
   @override
-  String get event_reminder_today => 'Today event reminder';
+  String get eventReminderToday => 'Today event reminder';
 
   @override
-  String get event_reminder_desc => 'Remind you of upcoming events';
+  String get eventReminderDesc => 'Remind you of upcoming events';
 }
