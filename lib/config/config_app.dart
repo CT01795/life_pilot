@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -30,18 +31,38 @@ class AppConfig {
   ];
 
   // ─────────────── API Keys ───────────────
+  static Future<void> loadEnv() async {
+    // 只在本地 debug 時才嘗試讀 .env
+    /*if (!kIsWeb && !kReleaseMode) {
+      try {
+        await dotenv.load(fileName: ".env");
+        logger.d("[DEBUG] .env loaded successfully");
+      } catch (e) {
+        logger.d("[DEBUG] Failed to load .env: $e");
+      }
+    }*/
+  }
+
   static String get googleApiKey {
-    if (kIsWeb) {
-      // Web: 從 dart-define 讀
+    const key = String.fromEnvironment('GOOGLE_API_KEY');
+    if (key.isEmpty) throw Exception("No API key provided via dart-define!");
+    return key;
+    /*if (kIsWeb || kReleaseMode) {
+      // Web 或 Release 都用 dart-define
       const key = String.fromEnvironment('GOOGLE_API_KEY');
-      if (key.isEmpty) throw Exception('No Web API Key !');
+      if (key.isEmpty) throw Exception("No API key provided via dart-define!");
       return key;
     } else {
-      // 手機: 從 .env 讀
-      final key = dotenv.env['GOOGLE_API_KEY'];
-      if (key == null || key.isEmpty) throw Exception('No .env API Key');
-      return key;
-    }
+      // Debug 模式，優先 .env
+      final keyFromEnv = dotenv.env['GOOGLE_API_KEY'];
+      if (keyFromEnv != null && keyFromEnv.isNotEmpty) return keyFromEnv;
+
+      // 如果 .env 沒讀到，再 fallback dart-define
+      const keyFromDefine = String.fromEnvironment('GOOGLE_API_KEY');
+      if (keyFromDefine.isNotEmpty) return keyFromDefine;
+
+      throw Exception("No API key found! Check .env or dart-define.");
+    }*/
   } // <-- 金鑰
 }
 

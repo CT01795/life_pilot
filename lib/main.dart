@@ -1,5 +1,4 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
 import 'package:life_pilot/config/config_app.dart';
@@ -20,7 +19,6 @@ import 'package:life_pilot/services/service_notification/service_notification_fa
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/export/service_export.dart';
 
 void main() async {
@@ -31,9 +29,7 @@ void main() async {
   // Web: 用 dart-define
   // Mobile: 用 .env
   // ------------------------------
-  if (!kIsWeb) {
-    dotenv.load(fileName: ".env");
-  }
+  await AppConfig.loadEnv();
 
   // ✅ 初始化時區
   CalendarConfig.tzLocation =
