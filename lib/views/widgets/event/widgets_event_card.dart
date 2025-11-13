@@ -4,7 +4,7 @@ import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_sub_card.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_sub_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class WidgetsEventCard extends StatelessWidget {

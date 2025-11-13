@@ -14,8 +14,8 @@ import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_permission.dart';
 import 'package:provider/provider.dart';
 
-import '../../views/widgets/event/ok_widgets_event_list.dart';
-import '../../views/widgets/event/ok_widgets_search_panel.dart';
+import '../../views/widgets/event/widgets_event_list.dart';
+import '../../views/widgets/event/widgets_search_panel.dart';
 
 class PageMemoryTrace extends StatefulWidget {
   const PageMemoryTrace({super.key});

@@ -9,8 +9,8 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_event_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_alarm_settings_dialog.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_confirmation_dialog.dart';
+import 'package:life_pilot/views/widgets/event/widgets_alarm_settings_dialog.dart';
+import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
 
 Widget widgetsEventTrailing({
   required BuildContext context,

@@ -10,7 +10,7 @@ import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 
-import '../../views/widgets/ok_widgets_appbar.dart';
+import '../../views/widgets/widgets_appbar.dart';
 
 typedef EventListBuilder = Widget Function({
   required List<EventItem> filteredEvents,

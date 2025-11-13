@@ -9,12 +9,12 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_event_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_confirmation_dialog.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_trailing.dart';
-import 'package:life_pilot/views/widgets/calendar/ok_widgets_calendar.dart';
+import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_trailing.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_calendar.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/date_time.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_card.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
 
 Future<bool> showCalendarEventsDialog({
   required ControllerAuth auth,
@@ -91,47 +91,48 @@ Future<bool> showCalendarEventsDialog({
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              DateFormat(DateFormats.mmdd).format(date),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.add,
-                                  size: IconTheme.of(context).size!),
-                              tooltip: loc.add,
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => PageEventAdd(
-                                            auth: auth,
-                                            serviceEvent: serviceEvent,
-                                            controllerEvent: controllerCalendar.controllerEvent,
-                                            existingEvent: null,
-                                            tableName:
-                                                controllerCalendar.tableName,
-                                            initialDate: date,
-                                          )),
-                                ).then((value) {
-                                  if (value != null && value is EventItem) {
-                                    controllerCalendar.goToMonth(
-                                      month:
-                                          DateUtils.monthOnly(value.startDate!),
-                                    );
-                                    Navigator.pop(
-                                        context, true); // ✅ 回傳 true 給外層
-                                  }
-                                });
-                              },
-                            ),
-                          ]),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat(DateFormats.mmdd).format(date),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.add,
+                                size: IconTheme.of(context).size!),
+                            tooltip: loc.add,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => PageEventAdd(
+                                          auth: auth,
+                                          serviceEvent: serviceEvent,
+                                          controllerEvent: controllerCalendar.controllerEvent,
+                                          existingEvent: null,
+                                          tableName:
+                                              controllerCalendar.tableName,
+                                          initialDate: date,
+                                        )),
+                              ).then((value) {
+                                if (value != null && value is EventItem) {
+                                  controllerCalendar.goToMonth(
+                                    month:
+                                        DateUtils.monthOnly(value.startDate!),
+                                  );
+                                  Navigator.pop(
+                                      context, true); // ✅ 回傳 true 給外層
+                                }
+                              });
+                            },
+                          ),
+                        ]
+                      ),
                       if (updatedEventsOfDay.isNotEmpty)
                         // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
                         ...updatedEventsOfDay.map((event) {

@@ -7,7 +7,7 @@ import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_event_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/calendar/ok_widgets_calendar.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_calendar.dart';
 import 'package:life_pilot/core/date_time.dart';
 import 'package:provider/provider.dart';
 

@@ -8,8 +8,7 @@ List<EventItem> getTodayEventNotificationsList(
   final nowSub1 = now.subtract(Duration(hours: 1));
   // 過濾出尚未發生的事件
   final todayEvents = events.where((e) {
-    if (e.startDate == null) return false;
-    if (e.id.contains('holiday')) return false;
+    if (e.startDate == null || e.id.contains('holiday')) return false;
     if(DateTimeCompare.isSameDayFutureTime(e.startDate, e.startTime, now)) return true;
     if(DateTimeCompare.isSameDayFutureTime(e.endDate, e.endTime, now)) return true;
     if(e.endDate == null && e.endTime != null && DateTimeCompare.isSameDayFutureTime(e.startDate, e.endTime, now)) return true;

@@ -3,7 +3,7 @@ import 'package:life_pilot/controllers/calendar/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_date_button.dart';
+import 'package:life_pilot/views/widgets/event/widgets_date_button.dart';
 
 Widget widgetsSearchPanel({
   required ModelEventCalendar modelEventCalendar,

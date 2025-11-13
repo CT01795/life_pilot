@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_card.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
 
 class WidgetsEventSubCard extends StatelessWidget {
   final VoidCallback? onTap;

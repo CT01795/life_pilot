@@ -10,7 +10,7 @@ import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_event_fields.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_confirmation_dialog.dart';
+import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class PageEventAdd extends StatefulWidget {

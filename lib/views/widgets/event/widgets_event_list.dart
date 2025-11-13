@@ -8,10 +8,10 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_confirmation_dialog.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_card.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_dialog.dart';
-import 'package:life_pilot/views/widgets/event/ok_widgets_event_trailing.dart';
+import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_dialog.dart';
+import 'package:life_pilot/views/widgets/event/widgets_event_trailing.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsEventList extends StatelessWidget {

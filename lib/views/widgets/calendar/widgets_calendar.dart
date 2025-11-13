@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/calendar/model_event_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/calendar/ok_widgets_calendar_events_dialog.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_calendar_events_dialog.dart';
 import 'package:life_pilot/core/date_time.dart' show DateUtils, DateTimeCompare;
 import 'package:provider/provider.dart';
 
@@ -36,15 +36,17 @@ class CalendarAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final double navIconSize = buttonSize * 1.2;
     AppLocalizations loc = AppLocalizations.of(context)!;
+
+    Widget iconButton(IconData icon, VoidCallback onTap, String tooltip, double size) => IconButton(
+      icon: Icon(icon, size: navIconSize, color: monthColor),
+      tooltip: tooltip,
+      onPressed: onTap,
+    );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          icon: Icon(Icons.arrow_left_rounded,
-              size: navIconSize, color: monthColor),
-          tooltip: loc.previousMonth,
-          onPressed: onPrevious,
-        ),
+        iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth, navIconSize),
         IconButton(
           icon: Icon(Icons.today, size: buttonSize, color: monthColor),
           tooltip: loc.today,
@@ -61,17 +63,8 @@ class CalendarAppBar extends StatelessWidget {
             ),
           ),
         ),
-        IconButton(
-          icon: Icon(Icons.arrow_right_rounded,
-              size: navIconSize, color: monthColor),
-          tooltip: loc.nextMonth,
-          onPressed: onNext,
-        ),
-        IconButton(
-          icon: Icon(Icons.add, size: buttonSize, color: monthColor),
-          tooltip: loc.add,
-          onPressed: onAdd,
-        ),
+        iconButton(Icons.arrow_right_rounded, onNext, loc.nextMonth, navIconSize),
+        iconButton(Icons.add, onAdd, loc.add, buttonSize),
       ],
     );
   }

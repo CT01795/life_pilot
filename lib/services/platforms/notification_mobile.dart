@@ -19,7 +19,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
 
   @override
   FlutterLocalNotificationsPlugin? get plugin => _plugin;
-
+  
   @override
   Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -47,15 +47,18 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
       }
     }
 
-    /*if (Platform.isIOS) {
+    if (Platform.isIOS) {
       // ✅ iOS 通知權限請求
-      final ios = _plugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
+      // 無法使用 _plugin，只能呼叫原生層或透過外部 plugin 處理
+      final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+      final ios = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
       await ios?.requestPermissions(alert: true, badge: true, sound: true);
-    }*/
+    }
   }
 
-  // 根據 event.reminderOptions 安排通知
+  // ------------------ 排程事件提醒 ------------------
   @override
   Future<NotificationResult> scheduleEventReminders(
       {required EventItem event}) async {
@@ -80,25 +83,15 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
             eventId: event.id, reminderOption: option);
         final title =
             '**: ${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime?.formatTimeString()} ${event.name}';
-
-        if (Platform.isAndroid) {
-          final details = AndroidNotificationDetails(
-            'event_channel', 
-            constEmpty,
-            channelDescription: constEmpty,
-            importance: Importance.high,
-            priority: Priority.high,
-            ticker: 'ticker',
-          );
-          await _plugin.zonedSchedule(
-            id,
-            title,
-            constEmpty,
-            tz.TZDateTime.from(reminderTime, tz.local),
-            NotificationDetails(android: details),
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          );
-        }
+        final details = _buildNotificationDetails();
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          constEmpty,
+          tz.TZDateTime.from(reminderTime, tz.local),
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
       }
       return NotificationResult(success: true, message: constEmpty);
     } catch (e) {
@@ -106,6 +99,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
     }
   }
 
+  // ------------------ 即時通知 ------------------
   Future<EventNotification> _showImmediateNotification(
       {required EventItem event,
       required DateTime now}) async {
@@ -120,28 +114,17 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
                   now.formatDateString(passYear: true, formatShow: true) 
                   : '${event.endDate == null ? event.startDate!.formatDateString(passYear: true, formatShow: true) : event.endDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}') 
                 : '${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}'} ${event.name}';
-    // 通知內容
-    final String body = constEmpty;
-
-    final details = AndroidNotificationDetails(
-      'immediate_event_channel',
-      'Event Notifications',
-      channelDescription: 'Upcoming...',
-      importance: Importance.high,
-      priority: Priority.high,
-      ticker: 'ticker',
-    );
 
     return EventNotification(
       id: notificationId,
       title: title,
-      body: body,
-      details: NotificationDetails(android: details),
+      body: constEmpty,
+      details: _buildNotificationDetails(),
       payload: event.id.toString(),
     );
   }
 
-  // 取消與此事件相關的所有提醒通知
+  // ------------------ 取消事件提醒 ------------------
   @override
   Future<NotificationResult> cancelEventReminders(
       {required String eventId, required List<ReminderOption> reminderOptions}) async {
@@ -156,6 +139,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
     }
   }
 
+  // ------------------ 今日事件通知 ------------------
   @override
   Future<List<EventNotification>> getTodayEventNotifications({
     required List<EventItem> events,
@@ -163,12 +147,31 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
   }) async {
     if (events.isEmpty) return [];
 
-    List<EventNotification> returnList = [];
-    final now = DateTime.now().subtract(Duration(hours: 1));
-    for (final event in events) {
-      returnList.add(
-          await _showImmediateNotification(event: event, now: now));
-    }
-    return returnList;
+    final now = DateTime.now().subtract(const Duration(hours: 1));
+
+    //改用 Future.wait() 平行執行多個通知生成。
+    return Future.wait(events.map(
+      (event) => _showImmediateNotification(event: event, now: now),
+    ));
+  }
+
+  // ------------------ 共用通知設定 ------------------
+  NotificationDetails _buildNotificationDetails() {
+    const androidDetails = AndroidNotificationDetails(
+      'event_channel',
+      'Event Notifications',
+      channelDescription: 'Reminders and upcoming events',
+      importance: Importance.high,
+      priority: Priority.high,
+      ticker: 'ticker',
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    return const NotificationDetails(android: androidDetails, iOS: iosDetails);
   }
 }
