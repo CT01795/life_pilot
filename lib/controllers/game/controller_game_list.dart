@@ -1,37 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/services/game/service_game.dart';
 
 class ControllerGameList extends ChangeNotifier {
-  List<GameItem> gameList = [];
-  List<String> gameCategories = [];
-  Map<String, List<GameItem>> gamesByCategory = {};
-  final client = Supabase.instance.client;
+  final ServiceGame serviceGame;
+  final String userName;
+
+  List<GameItem> _games = [];
+  final Map<String, Map<String, List<GameItem>>> _gamesByCategory = {};
+  List<String> _categories = [];
+  final Map<String, List<GameUser>> _userProgressCache = {};
+  
+  bool isLoading = false;
+
+  ControllerGameList({required this.serviceGame, required this.userName});
+
+  List<String> get categories => _categories;
+  Map<String, Map<String, List<GameItem>>> get gamesByCategory => _gamesByCategory;
 
   Future<void> loadGames() async {
-    final data = await client
-        .from('game_list')
-        .select('id, game_type, game_name, level');
-
-    // 轉成 GameItem
-    gameList =
-        (data as List<dynamic>).map((e) {
-      final map = e as Map<String, dynamic>;
-      return GameItem(
-        id: map['id'] as String,
-        gameType: map['game_type'] as String,
-        gameName: '${map['game_name']} ${map['level']}',
-        level: map['level'] as int,
-      );
-    }).toList();
-
-    // 分類
-    gamesByCategory.clear();
-    for (var g in gameList) {
-      gamesByCategory.putIfAbsent(g.gameType, () => []).add(g);
-    }
-    gameCategories = gamesByCategory.keys.toList();
-
+    isLoading = true;
     notifyListeners();
+
+    _games = await serviceGame.fetchGames();
+    _gamesByCategory.clear();
+    for (var g in _games) {
+      _gamesByCategory.putIfAbsent(g.gameType, () => {});
+      final gameMap = _gamesByCategory[g.gameType]!;
+      gameMap.putIfAbsent(g.gameName, () => []).add(g);
+    }
+    _categories = _gamesByCategory.keys.toList();
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  // 查詢目前使用者的分數紀錄
+  Future<List<GameUser>> loadUserProgress(String gameType, String gameName) async {
+    // 組 key
+    final key = '$gameType|$gameName';
+    if (_userProgressCache.containsKey(key)) {
+      return _userProgressCache[key]!;
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    final progress = await serviceGame.fetchUserProgress(userName, gameType, gameName);
+    // 存到快取
+    _userProgressCache[key] = progress;
+
+    isLoading = false;
+    notifyListeners();
+    return progress;
   }
 }

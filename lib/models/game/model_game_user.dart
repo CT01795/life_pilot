@@ -1,17 +1,35 @@
 import 'package:life_pilot/core/const.dart';
 
 class GameUser {
-  String userName;
-  int? score = 0;
-  int? level = 1; // 追蹤使用者闖到哪一關
-  String? gameName = constEmpty;
-  String? gameType = constEmpty;
+  String? id = constEmpty;
+  String? userName;
   String? gameId = constEmpty;
+  double? score = 0;
+  DateTime? createdAt;
+  String? gameType = constEmpty;
+  String? gameName = constEmpty;
+  int? level; // 追蹤使用者闖到哪一關
   GameUser(
-      {required this.userName,
+      {this.id,
+      this.userName,
       this.gameId,
+      this.score,
+      this.createdAt,
       this.gameType,
       this.gameName,
-      this.level,
-      this.score});
+      this.level,});
+
+  factory GameUser.fromMap(Map<String, dynamic> map) {
+    final game = map['game_list'] ?? {};
+    return GameUser(
+      id: map['id'] ?? constEmpty,
+      userName: map['name'] ?? constEmpty,
+      gameId: map['game_id'] ?? constEmpty,
+      score: (map['score'] ?? 0).toDouble(),
+      createdAt: map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
+      gameType: game['game_type'] ?? constEmpty,
+      gameName: game['game_name'] ?? constEmpty,
+      level: game['level']?.toInt() ?? 1,
+    );
+  }
 }

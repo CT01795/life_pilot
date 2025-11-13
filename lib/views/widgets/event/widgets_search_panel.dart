@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/calendar/model_event_calendar.dart';
+import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';

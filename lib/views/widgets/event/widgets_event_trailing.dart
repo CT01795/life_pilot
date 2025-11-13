@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
-import 'package:life_pilot/controllers/calendar/model_event_calendar.dart';
+import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/const.dart';

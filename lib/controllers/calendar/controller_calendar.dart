@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
-import 'package:life_pilot/controllers/calendar/model_event_calendar.dart';
+import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/calendar/utils_calendar.dart';
 import 'package:life_pilot/core/const.dart';

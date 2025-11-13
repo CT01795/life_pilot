@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
-import 'package:life_pilot/controllers/calendar/model_event_calendar.dart';
+import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/services/event/service_event.dart';

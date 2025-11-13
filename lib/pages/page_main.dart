@@ -5,7 +5,7 @@ import 'package:life_pilot/pages/page_calendar.dart';
 import 'package:life_pilot/pages/event/page_memory_trace.dart';
 import 'package:life_pilot/pages/event/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/event/page_recommended_event.dart';
-import 'package:life_pilot/pages/page_game_list.dart';
+import 'package:life_pilot/pages/game/page_game_list.dart';
 import 'package:life_pilot/pages/page_type.dart';
 import 'package:provider/provider.dart';
 
