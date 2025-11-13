@@ -133,7 +133,7 @@ class ModelEventCalendar {
       final serverEvents = await serviceEvent.getEvents(
           tableName: tableName, dateS: start, dateE: end, inputUser: user);
       
-      final holidays = await ServiceCalendar.fetchHolidays(
+      final holidays = await ServiceCalendar.fetchHolidays1(
           start.subtract(Duration(days: 2)),
           end.add(Duration(days: 2)),
           locale, await serviceEvent.getKey(keyName: "GOOGLE_API_KEY"));

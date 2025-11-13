@@ -11,7 +11,7 @@ import '../../core/logger.dart';
 
 class ServiceCalendar {
   
-  static Future<List<EventItem>> fetchHolidays(
+  static Future<List<EventItem>> fetchHolidays1(
       DateTime start, DateTime end, Locale locale, String googleApiKey) async {
     final String calendarId = HolidayUtils.getCalendarIdByLocale(CalendarConfig.tzLocation, locale);
     final url = Uri.parse(

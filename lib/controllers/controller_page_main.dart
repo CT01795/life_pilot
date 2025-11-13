@@ -36,7 +36,7 @@ class ControllerPageMain extends ChangeNotifier {
 
   // ✅ 取得目前登入狀態下可使用的頁面
   List<PageType> get availablePages => _auth.isAnonymous
-      ? const [PageType.recommendedEvent, PageType.recommendedAttractions]
+      ? const [PageType.recommendedEvent, PageType.recommendedAttractions, PageType.game,]
       : PageType.values;
 
   // ✅ 切換頁面（若不同才觸發 notify）
