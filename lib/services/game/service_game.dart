@@ -26,30 +26,14 @@ class ServiceGame {
   // 查詢目前使用者的分數紀錄
   Future<List<GameUser>> fetchUserProgress(
       String userName, String gameType, String gameName) async {
-    var query = client
-        .from('game_user')
-        .select(
-            'id, name, game_id, score, created_at, game_list(game_type, game_name, level)')
-        .eq('name', userName)
-        .eq('game_list.game_type', gameType)
-        .eq('game_list.game_name', gameName); // ✅ 指定要查的遊戲
-    //.order('game_list.level', ascending: false)
-    //.order('created_at', ascending: false)
-    //.limit(5); // 最多 5 筆
+    final response = await client
+        .rpc('fetch_user_progress', params: {
+          'p_name': userName,
+          'p_game_type': gameType,
+          'p_game_name': gameName,
+        });
 
-    final data = await query;
-
-    // 轉成 GameUser
-    List<GameUser> progress =
-        (data as List<dynamic>).map((e) => GameUser.fromMap(e)).toList();
-
-    // 依 level 降序，若 level 相同則依 created_at 降序
-    progress.sort((a, b) {
-      final levelCompare = (b.level ?? 1).compareTo(a.level ?? 1);
-      if (levelCompare != 0) return levelCompare;
-      return (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0));
-    });
-
-    return progress.take(10).toList();
+    final data = response as List<dynamic>;
+    return data.map((e) => GameUser.fromMap(e)).toList();
   }
 }

@@ -20,16 +20,15 @@ class GameUser {
       this.level,});
 
   factory GameUser.fromMap(Map<String, dynamic> map) {
-    final game = map['game_list'] ?? {};
     return GameUser(
       id: map['id'] ?? constEmpty,
       userName: map['name'] ?? constEmpty,
       gameId: map['game_id'] ?? constEmpty,
       score: (map['score'] ?? 0).toDouble(),
       createdAt: map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
-      gameType: game['game_type'] ?? constEmpty,
-      gameName: game['game_name'] ?? constEmpty,
-      level: game['level']?.toInt() ?? 1,
+      gameType: map['game_type'] ?? constEmpty,
+      gameName: map['game_name'] ?? constEmpty,
+      level: map['level']?.toInt() ?? 1,
     );
   }
 }

@@ -1,0 +1,79 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:life_pilot/models/game/model_game_word_match.dart';
+import 'package:life_pilot/services/game/service_game_word_match.dart';
+
+class ControllerGameWordMatch extends ChangeNotifier {
+  final String userName;
+  final ServiceGameWordMatch service;
+  final String gameId; 
+
+  GameWordMatch? currentQuestion;
+  int score = 0; // +1 / -1
+  bool isFinished = false;
+  bool isLoading = false;
+  String? lastAnswer;          // 使用者選的答案
+  bool showCorrectAnswer = false; // 是否要顯示正確答案
+  Timer? _nextQuestionTimer; // Timer 控制自動下一題
+
+  ControllerGameWordMatch({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+  });
+
+  Future<void> loadNextQuestion() async {
+    _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
+    if (score >= 10) {
+      isFinished = true;
+      await _saveScore();
+      notifyListeners();
+      return;
+    }
+
+    isLoading = true;
+    lastAnswer = null;
+    showCorrectAnswer = false;
+    notifyListeners();
+
+    currentQuestion = await service.fetchQuestion(userName);
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  void answer(String answer) {
+    if (currentQuestion == null || lastAnswer != null) return;
+
+    lastAnswer = answer;
+    final isRightAnswer = answer == currentQuestion!.correctAnswer;
+    if (isRightAnswer) {
+      score += 1;
+    } else {
+      score -= 1;
+      showCorrectAnswer = true; // 顯示正確答案
+    }
+    notifyListeners();
+
+    // 用 Timer 2 秒後跳下一題
+    _nextQuestionTimer = Timer(const Duration(seconds: 2), () {
+      loadNextQuestion();
+    });
+
+    service.submitAnswer(
+      userName: userName,
+      questionId: currentQuestion!.questionId,
+      answer: answer,
+      isRightAnswer: isRightAnswer,
+    );
+  }
+
+  Future<void> _saveScore() async {
+    await service.saveUserGameScore(
+      userName: userName,
+      score: score.toDouble(),
+      gameId: gameId, // 使用傳入的 gameId
+    );
+  }
+}

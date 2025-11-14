@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/game/controller_game_list.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
 
@@ -159,12 +160,25 @@ class _PageGameListState extends State<PageGameList> {
             Gaps.h16,
             ElevatedButton(
               onPressed: selectedGameItem != null
-                  ? () {
-                      // 開始遊戲時可使用 selectedGameItem.id 或 gameName
-                      print('Start game: ${selectedGameItem!.gameName}');
+                ? () async {
+                    final game = selectedGameItem!;
+                    if (game.gameName.toLowerCase() == "word matching".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameWordMatch(gameId: game.id),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      }
+                    } else {
+                      // 其他遊戲開啟方式
+                      print("尚未實作此遊戲頁面");
                     }
-                  : null,
-              child: const Text('Start'),
+                  }
+                : null,
+            child: const Text('Start'),
             ),
             const Divider(),
             Expanded(
@@ -175,12 +189,17 @@ class _PageGameListState extends State<PageGameList> {
                       itemBuilder: (context, index) {
                         final item = userProgress[index];
                         final formattedDate = item.createdAt != null
-                            ? DateFormat(item.createdAt?.year == now.year ? 'MM/dd' : 'yyyy/MM/dd')
-                                    .format(item.createdAt!.toLocal())
+                            ? DateFormat(item.createdAt?.year == now.year ? 'MM/dd HH:mm' : 'yyyy/MM/dd HH:mm')
+                                    .format(item.createdAt!)
                             : constEmpty;
+                        // 判斷第一筆，設定文字顏色
+                        final textColor = index == 0 ? Colors.blue.shade700 : Colors.black;
+                        final textBold = index == 0 ? FontWeight.bold : FontWeight.normal;
                         return ListTile(
                           title: Text(
-                              '$formattedDate ${item.gameName} ${item.level} => Score: ${item.score}'),
+                            '$formattedDate Level ${item.level} => Score: ${item.score}',
+                            style: TextStyle(color: textColor, fontWeight: textBold),
+                          ),
                         );
                       },
                     ),
