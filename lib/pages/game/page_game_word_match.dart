@@ -95,16 +95,22 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start, // 讓文字多行時對齊喇叭上方
                   children: [
                     InkWell(
                       onTap: () => speak(q.question),
                       child: Icon(Icons.volume_up, size: size * 1.5),
                     ),
                     Gaps.w8,
-                    Text(
-                      q.question,
-                      style: TextStyle(fontSize: size),
-                      textAlign: TextAlign.center,
+                    // 這裡要用 Flexible 才能換行！！
+                    Flexible(
+                      child: Text(
+                        q.question,
+                        style: TextStyle(fontSize: size),
+                        textAlign: TextAlign.center,
+                        softWrap: true,     // 允許換行
+                        overflow: TextOverflow.visible,
+                      ),
                     ),
                   ],
                 ),
