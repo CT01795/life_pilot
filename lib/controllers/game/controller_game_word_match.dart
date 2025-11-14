@@ -11,6 +11,7 @@ class ControllerGameWordMatch extends ChangeNotifier {
 
   GameWordMatch? currentQuestion;
   int score = 0; // +1 / -1
+  int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
   String? lastAnswer; // 使用者選的答案
@@ -25,7 +26,7 @@ class ControllerGameWordMatch extends ChangeNotifier {
 
   Future<void> loadNextQuestion() async {
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
-    if (score >= 10) {
+    if (score >= 100) {
       isFinished = true;
       await _saveScore();
       notifyListeners();
@@ -50,10 +51,11 @@ class ControllerGameWordMatch extends ChangeNotifier {
     final isRightAnswer = answer == currentQuestion!.correctAnswer;
     int seconds = 1;
     if (isRightAnswer) {
-      score += 1;
+      score += 4;
       seconds = 1;
     } else {
-      score -= 1;
+      score -= 4;
+      scoreMinus -= 4;
       seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
@@ -63,7 +65,6 @@ class ControllerGameWordMatch extends ChangeNotifier {
     _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
       loadNextQuestion();
     });
-
 
     service.submitAnswer(
       userName: userName,
@@ -76,7 +77,7 @@ class ControllerGameWordMatch extends ChangeNotifier {
   Future<void> _saveScore() async {
     await service.saveUserGameScore(
       userName: userName,
-      score: score.toDouble(),
+      score: (score + scoreMinus).toDouble(),
       gameId: gameId, // 使用傳入的 gameId
     );
   }

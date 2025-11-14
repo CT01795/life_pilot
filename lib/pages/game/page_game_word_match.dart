@@ -86,7 +86,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text("Word Matching (${controller.score}/10)"),
+            title: Text("Word Matching (${controller.score}/100)"),
           ),
           body: Center(
             child: Column(
