@@ -18,6 +18,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
   late final ControllerGameWordMatch controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   final FlutterTts flutterTts = FlutterTts(); // TTS 實例
+  double size = 32.0;
 
   @override
   void initState() {
@@ -83,13 +84,13 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.volume_up),
+                      icon: Icon(Icons.volume_up, size: size),
                       onPressed: () => speak(q.question),
                     ),
                     Gaps.w8,
                     Text(
                       q.question,
-                      style: const TextStyle(fontSize: 32),
+                      style: TextStyle(fontSize: size),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -131,14 +132,14 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.volume_up, size: 32),
+                              icon: Icon(Icons.volume_up, size: size),
                               onPressed: () => speak(opt),
                             ),
                             Gaps.w8,
                             Flexible(
                               child: Text(
                                 opt,
-                                style: const TextStyle(fontSize: 32),
+                                style: TextStyle(fontSize: size),
                                 softWrap: true, // 允許自動換行
                                 textAlign: TextAlign.center,
                               ),
@@ -147,7 +148,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                             if (icon.isNotEmpty)
                               Text(
                                 icon,
-                                style: const TextStyle(fontSize: 32),
+                                style: TextStyle(fontSize: size),
                               ),
                           ],
                         ),
