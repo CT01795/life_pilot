@@ -75,7 +75,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                   style: const TextStyle(fontSize: 32),
                   textAlign: TextAlign.center, // 文字水平置中
                 ),
-                Gaps.h4,
+                Gaps.h8,
                 // 三個答案按鈕
                 ...q.options.map((opt) {
                   Color buttonColor = Colors.blue;
@@ -97,25 +97,32 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                   }
 
                   return Padding(
-                    padding: Insets.all2,
+                    padding: Insets.all8,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
-                        minimumSize: const Size(320, 50), // 固定寬度讓按鈕整齊
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12), // 按鈕自適應高度
                       ),
                       onPressed: () => controller.answer(opt),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment:
-                            MainAxisAlignment.center, // 按鈕內文字水平置中
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            opt,
-                            style: const TextStyle(fontSize: 32),
+                          Flexible(
+                            child: Text(
+                              opt,
+                              style: const TextStyle(fontSize: 32),
+                              softWrap: true, // 允許自動換行
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          Gaps.w8,
-                          if (icon.isNotEmpty) Text(icon,
-                            style: const TextStyle(fontSize: 32),),
+                          if (icon.isNotEmpty) ...[
+                            Gaps.w8,
+                            Text(
+                              icon,
+                              style: const TextStyle(fontSize: 32),
+                            ),
+                          ],
                         ],
                       ),
                     ),
