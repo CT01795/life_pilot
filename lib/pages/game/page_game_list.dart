@@ -89,7 +89,7 @@ class _PageGameListState extends State<PageGameList> {
         
     return Scaffold(
       body: Padding(
-        padding: Insets.all2,
+        padding: Insets.all8,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

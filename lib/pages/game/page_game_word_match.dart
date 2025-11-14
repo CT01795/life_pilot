@@ -72,7 +72,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
               children: [
                 Text(
                   q.question,
-                  style: const TextStyle(fontSize: 36),
+                  style: const TextStyle(fontSize: 32),
                   textAlign: TextAlign.center, // 文字水平置中
                 ),
                 Gaps.h4,
@@ -101,7 +101,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
-                        minimumSize: const Size(400, 50), // 固定寬度讓按鈕整齊
+                        minimumSize: const Size(320, 50), // 固定寬度讓按鈕整齊
                       ),
                       onPressed: () => controller.answer(opt),
                       child: Row(
@@ -111,10 +111,11 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                         children: [
                           Text(
                             opt,
-                            style: const TextStyle(fontSize: 36),
+                            style: const TextStyle(fontSize: 32),
                           ),
                           Gaps.w8,
-                          if (icon.isNotEmpty) Text(icon),
+                          if (icon.isNotEmpty) Text(icon,
+                            style: const TextStyle(fontSize: 32),),
                         ],
                       ),
                     ),
