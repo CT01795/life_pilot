@@ -3,6 +3,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_word_match.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/services/game/service_game_word_match.dart';
 import 'package:provider/provider.dart';
 
@@ -31,15 +32,27 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGameWordMatch(),
     );
-
     controller.loadNextQuestion();
   }
 
   Future<void> speak(String text) async {
-    await flutterTts.stop();
+    try {
+      await flutterTts.stop();
+    } catch (e, st) {
+      logger.e(e.toString() + st.toString());
+    }
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    await flutterTts.setLanguage(containsChinese ? "zh-TW" : "en-US");
-    await flutterTts.speak(text);
+    if (containsChinese) {
+      await flutterTts.setLanguage("zh-TW");
+      await flutterTts.setSpeechRate(0.2); // 🟢 中文語速（超重要）
+      await flutterTts.setVolume(1.0); // 中文預設會比較小聲 → 拉滿
+      await flutterTts.speak(text);
+    } else {
+      await flutterTts.setLanguage("en-US");
+      await flutterTts.setSpeechRate(0.6); // 🟢 英文語速
+      await flutterTts.setVolume(1.0);
+      await flutterTts.speak(text);
+    }
   }
 
   @override
@@ -83,9 +96,9 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.volume_up, size: size),
-                      onPressed: () => speak(q.question),
+                    InkWell(
+                      onTap: () => speak(q.question),
+                      child: Icon(Icons.volume_up, size: size * 1.5),
                     ),
                     Gaps.w8,
                     Text(
@@ -131,9 +144,9 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            IconButton(
-                              icon: Icon(Icons.volume_up, size: size),
-                              onPressed: () => speak(opt),
+                            InkWell(
+                              onTap: () => speak(opt),
+                              child: Icon(Icons.volume_up, size: size * 1.5),
                             ),
                             Gaps.w8,
                             Flexible(
