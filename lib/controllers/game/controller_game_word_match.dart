@@ -7,13 +7,13 @@ import 'package:life_pilot/services/game/service_game_word_match.dart';
 class ControllerGameWordMatch extends ChangeNotifier {
   final String userName;
   final ServiceGameWordMatch service;
-  final String gameId; 
+  final String gameId;
 
   GameWordMatch? currentQuestion;
   int score = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
-  String? lastAnswer;          // 使用者選的答案
+  String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
 
@@ -48,18 +48,22 @@ class ControllerGameWordMatch extends ChangeNotifier {
 
     lastAnswer = answer;
     final isRightAnswer = answer == currentQuestion!.correctAnswer;
+    int seconds = 1;
     if (isRightAnswer) {
       score += 1;
+      seconds = 1;
     } else {
       score -= 1;
+      seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
     notifyListeners();
 
     // 用 Timer 2 秒後跳下一題
-    _nextQuestionTimer = Timer(const Duration(seconds: 2), () {
+    _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
       loadNextQuestion();
     });
+
 
     service.submitAnswer(
       userName: userName,
