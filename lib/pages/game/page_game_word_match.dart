@@ -37,21 +37,22 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
 
   Future<void> speak(String text) async {
     try {
-      await flutterTts.stop();
+      // 不 await stop，避免阻塞
+      flutterTts.stop();
     } catch (e, st) {
       logger.e(e.toString() + st.toString());
     }
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (containsChinese) {
       await flutterTts.setLanguage("zh-TW");
-      await flutterTts.setSpeechRate(0.2); // 🟢 中文語速（超重要）
+      await flutterTts.setSpeechRate(0.4); // 🟢 中文語速（超重要）
       await flutterTts.setVolume(1.0); // 中文預設會比較小聲 → 拉滿
-      await flutterTts.speak(text);
+      flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
     } else {
       await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.6); // 🟢 英文語速
+      await flutterTts.setSpeechRate(0.7); // 🟢 英文語速
       await flutterTts.setVolume(1.0);
-      await flutterTts.speak(text);
+      flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
     }
   }
 
@@ -88,95 +89,112 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
           appBar: AppBar(
             title: Text("Word Matching (${controller.score}/100)"),
           ),
-          body: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start, // 讓文字多行時對齊喇叭上方
-                  children: [
-                    InkWell(
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Gaps.h16,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start, // 讓文字多行時對齊喇叭上方
+                children: [
+                  InkWell(
+                    onTap: () => speak(q.question),
+                    child: Icon(Icons.volume_up, size: size * 3),
+                  ),
+                  Gaps.w8,
+                  // 這裡要用 Flexible 才能換行！！
+                  Flexible(
+                    child: InkWell(
                       onTap: () => speak(q.question),
-                      child: Icon(Icons.volume_up, size: size * 1.5),
-                    ),
-                    Gaps.w8,
-                    // 這裡要用 Flexible 才能換行！！
-                    Flexible(
                       child: Text(
                         q.question,
                         style: TextStyle(fontSize: size),
-                        textAlign: TextAlign.center,
-                        softWrap: true,     // 允許換行
+                        textAlign: TextAlign.start,
+                        softWrap: true, // 允許換行
                         overflow: TextOverflow.visible,
                       ),
                     ),
-                  ],
-                ),
-                Gaps.h8,
-                // 三個答案按鈕
-                ...q.options.map((opt) {
-                  Color buttonColor = Colors.blue;
-                  String icon = constEmpty; // 用於顯示勾勾或叉叉
-                  // 如果已選答案
-                  if (controller.lastAnswer != null) {
-                    if (opt == controller.lastAnswer) {
-                      // 使用者選的答案
-                      buttonColor = opt == q.correctAnswer
-                          ? Colors.green
-                          : Colors.redAccent.shade100;
-                      icon = opt == q.correctAnswer ? '✅' : '❌';
-                    } else if (opt == q.correctAnswer &&
-                        controller.showCorrectAnswer) {
-                      // 顯示正確答案
-                      buttonColor = Colors.green;
-                      icon = '✅';
-                    }
+                  ),
+                ],
+              ),
+              Gaps.h8,
+              // 三個答案按鈕
+              ...q.options.map((opt) {
+                Color buttonColor = Colors.blue;
+                String icon = constEmpty; // 用於顯示勾勾或叉叉
+                // 如果已選答案
+                if (controller.lastAnswer != null) {
+                  if (opt == controller.lastAnswer) {
+                    // 使用者選的答案
+                    buttonColor = opt == q.correctAnswer
+                        ? Colors.green
+                        : Colors.redAccent.shade100;
+                    icon = opt == q.correctAnswer ? '✅' : '❌';
+                  } else if (opt == q.correctAnswer &&
+                      controller.showCorrectAnswer) {
+                    // 顯示正確答案
+                    buttonColor = Colors.green;
+                    icon = '✅';
                   }
+                }
 
-                  return Padding(
-                    padding: Insets.all8,
-                    child: SizedBox(
-                      width: double.infinity, // 寬度等於螢幕寬度
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: buttonColor,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 12), // 按鈕自適應高度
-                        ),
-                        onPressed: () => controller.answer(opt),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: () => speak(opt),
-                              child: Icon(Icons.volume_up, size: size * 1.5),
+                return Padding(
+                  padding: Insets.all8,
+                  child: SizedBox(
+                    width: double.infinity, // 寬度等於螢幕寬度
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        padding: EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
+                      ),
+                      onPressed: () => speak(
+                          opt), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Transform.scale(
+                            scale: 3.2, // 放大，可自行調整
+                            alignment: Alignment.centerLeft, // 左對齊
+                            child: Radio<String>(
+                              value: opt, // 這個按鈕的值
+                              // ignore: deprecated_member_use
+                              groupValue: controller.lastAnswer, // 當前選中的值
+                              fillColor: WidgetStateProperty.resolveWith((states) {
+                                return Colors.white; // 選中時白色
+                              }),
+                              // ignore: deprecated_member_use
+                              onChanged: (val) {
+                                if (val != null) {
+                                  controller.answer(val); // 更新答案
+                                  setState(() {}); // 重新刷新 UI
+                                }
+                              },
                             ),
-                            Gaps.w8,
-                            Flexible(
-                              child: Text(
-                                opt,
-                                style: TextStyle(fontSize: size),
-                                softWrap: true, // 允許自動換行
-                                textAlign: TextAlign.center,
-                              ),
+                          ),
+                          Gaps.w60,
+                          Expanded(
+                            child: Text(
+                              opt,
+                              style: TextStyle(fontSize: size),
+                              softWrap: true, // 允許自動換行
+                              textAlign: TextAlign.start,
                             ),
-                            Gaps.w8,
-                            if (icon.isNotEmpty)
-                              Text(
-                                icon,
-                                style: TextStyle(fontSize: size),
-                              ),
-                          ],
-                        ),
+                          ),
+                          Gaps.w8,
+                          if (icon.isNotEmpty)
+                            Text(
+                              icon,
+                              style: TextStyle(fontSize: size),
+                            ),
+                        ],
                       ),
                     ),
-                  );
-                }),
-              ],
-            ),
+                  ),
+                );
+              }),
+            ],
           ),
         );
       },

@@ -70,8 +70,9 @@ mixin EventBaseMixin implements EventBase {
       EventFields.unit: unit,
       EventFields.account: account,
       EventFields.repeatOptions: repeatOptions.key,
-      EventFields.reminderOptions:
-          reminderOptions.map((e) => ReminderMapper.toKey(reminderOption: e)).toList(),
+      EventFields.reminderOptions: reminderOptions
+          .map((e) => ReminderMapper.toKey(reminderOption: e))
+          .toList(),
       EventFields.isHoliday: isHoliday,
       EventFields.isTaiwanHoliday: isTaiwanHoliday,
       EventFields.isApproved: isApproved,
@@ -106,9 +107,9 @@ mixin EventBaseMixin implements EventBase {
     final subEventsJson = json[EventFields.subEvents];
     if (subEventsJson is List && subEventsJson.isNotEmpty) {
       subEvents = subEventsJson
-        .whereType<Map<String, dynamic>>()  // 確保元素是 Map
-        .map((e) => EventItem.fromJson(json: e))
-        .toList();
+          .whereType<Map<String, dynamic>>() // 確保元素是 Map
+          .map((e) => EventItem.fromJson(json: e))
+          .toList();
     } else {
       subEvents = [];
     }
@@ -123,8 +124,11 @@ mixin EventBaseMixin implements EventBase {
     location = parent.location;
   }
 
-  DateTime? fromStringOrNull(String? date) =>
-      date != null && date.isNotEmpty ? DateTime.tryParse(date) : null;
+  DateTime? fromStringOrNull(String? date) {
+    if (date == null || date.isEmpty) return null;
+    final d = DateTime.tryParse(date);
+    return d?.toLocal();
+  }
 
   TimeOfDay? parseTimeOfDay(String? time) => time?.parseToTimeOfDay();
 }

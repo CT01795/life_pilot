@@ -74,7 +74,7 @@ class ControllerCalendar extends ChangeNotifier {
     localeProvider.addListener(() async {
       if (_lastLocale != localeProvider.locale) {
         _lastLocale = localeProvider.locale;
-        modelEventCalendar.clearAll();
+        clearAll();
         unawaited(_reloadEvents(notify: true));
       }
     });
@@ -98,7 +98,7 @@ class ControllerCalendar extends ChangeNotifier {
   // 核心事件載入與刷新
   // ------------------------
   Future<void> _reloadEvents({bool notify = true, DateTime? month}) async {
-    final targetMonth = month ?? DateTime.now();
+    final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now()
     await modelEventCalendar.loadEventsFromService(
       serviceEvent: serviceEvent,
       month: targetMonth,
@@ -197,10 +197,7 @@ class ControllerCalendar extends ChangeNotifier {
 
     await Future.wait(futures);
 
-    // 清除快取（僅影響有修改的月份）
-    for (final key in dirtyMonths) {
-      modelEventCalendar.cachedEvents.remove(key);
-    }
+    clearAll();
     await goToMonth(month: modelEventCalendar.currentMonth, notify: true);
   }
 
@@ -319,7 +316,8 @@ class ControllerCalendar extends ChangeNotifier {
     if (!stayOnCurrentMonth) {
       await goToMonth(month: DateUtils.monthOnly(newEvent.startDate!));
     }
-    await goToMonth(month: DateUtils.monthOnly(modelEventCalendar.currentMonth));
+    await goToMonth(
+        month: DateUtils.monthOnly(modelEventCalendar.currentMonth));
   }
 
   List<EventItem> getEventsOfDay(DateTime date) {

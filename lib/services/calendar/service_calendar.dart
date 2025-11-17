@@ -38,7 +38,7 @@ class ServiceCalendar {
       String currentSummary = constEmpty;
 
       for (final item in items) {
-        final DateTime date = DateTime.parse(item['start']['date']);
+        final DateTime date = DateTime.parse(item['start']['date']).toLocal();
         String summary = item['summary'];
         // 如果是台灣假日，使用你定義的 const summary 名稱
         final mappedSummary = CalendarConfig.taiwanHolidays.firstWhere(

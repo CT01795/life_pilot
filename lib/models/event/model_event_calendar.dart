@@ -90,8 +90,8 @@ class ModelEventCalendar {
   List<List<DateTime>> getWeeks(DateTime month) {
     final key = month.toMonthKey();
     return weeksCache.putIfAbsent(key, () {
-      final first = DateTime(month.year, month.month, 1);
-      final last = DateTime(month.year, month.month + 1, 0);
+      final first = DateTime(month.year, month.month, 1).toLocal();
+      final last = DateTime(month.year, month.month + 1, 0).toLocal();
 
       final start = first.subtract(Duration(days: first.weekday % 7));
       final end = last.add(Duration(days: 6 - (last.weekday % 7)));
@@ -132,12 +132,13 @@ class ModelEventCalendar {
 
       final serverEvents = await serviceEvent.getEvents(
           tableName: tableName, dateS: start, dateE: end, inputUser: user);
-      
+
       final holidays = await ServiceCalendar.fetchHolidays1(
           start.subtract(Duration(days: 2)),
           end.add(Duration(days: 2)),
-          locale, await serviceEvent.getKey(keyName: "GOOGLE_API_KEY"));
-      
+          locale,
+          await serviceEvent.getKey(keyName: "GOOGLE_API_KEY"));
+
       if (isDisposed) return;
 
       events = [...?serverEvents, ...holidays]
@@ -145,7 +146,8 @@ class ModelEventCalendar {
 
       cacheMonthEvents(currentMonth, events);
     } catch (e, st) {
-      if (!isDisposed) logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
+      if (!isDisposed)
+        logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
       rethrow;
     } finally {
       isLoading = false;
@@ -155,7 +157,8 @@ class ModelEventCalendar {
   void cacheMonthEvents(DateTime month, List<EventItem> events) {
     final key = month.toMonthKey();
     final weeks = getWeeks(month);
-    cachedEvents[key] = groupEventsByWeekAndDay(weeks: weeks, events: events);
+    final tmp = groupEventsByWeekAndDay(weeks: weeks, events: events);
+    cachedEvents[key] = tmp;
   }
 
   // 依照週、日將事件分組
@@ -170,8 +173,8 @@ class ModelEventCalendar {
         final day = week[dayIndex];
         result[weekIndex] ??= {};
         result[weekIndex]![dayIndex] = events.where((event) {
-          final start = event.startDate!;
-          final end = event.endDate ?? start;
+          final start = DateUtils.dateOnly(event.startDate!);
+          final end = DateUtils.dateOnly(event.endDate ?? start);
           return !day.isBefore(start) && !day.isAfter(end);
         }).toList();
       }
@@ -203,7 +206,9 @@ class ModelEventCalendar {
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
       for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
         final day = calendarWeeks[weekIndex][dayIndex];
-        if (day.year == date.year && day.month == date.month && day.day == date.day) {
+        if (day.year == date.year &&
+            day.month == date.month &&
+            day.day == date.day) {
           return weeks[weekIndex]?[dayIndex] ?? [];
         }
       }
@@ -225,13 +230,21 @@ class ModelEventCalendar {
     if (startDateS != null) keysToRemove.add(startDateS);
     if (endDateS != null) keysToRemove.add(endDateS);
 
-    if(event.startDate != null){
-      keysToRemove.add(DateTime(event.startDate!.year,event.startDate!.month-1,1).toMonthKey());
-      keysToRemove.add(DateTime(event.startDate!.year,event.startDate!.month+1,1).toMonthKey());
+    if (event.startDate != null) {
+      keysToRemove.add(
+          DateTime(event.startDate!.year, event.startDate!.month - 1, 1)
+              .toMonthKey());
+      keysToRemove.add(
+          DateTime(event.startDate!.year, event.startDate!.month + 1, 1)
+              .toMonthKey());
     }
-    if(event.endDate != null){
-      keysToRemove.add(DateTime(event.endDate!.year,event.endDate!.month-1,1).toMonthKey());
-      keysToRemove.add(DateTime(event.endDate!.year,event.endDate!.month+1,1).toMonthKey());
+    if (event.endDate != null) {
+      keysToRemove.add(
+          DateTime(event.endDate!.year, event.endDate!.month - 1, 1)
+              .toMonthKey());
+      keysToRemove.add(
+          DateTime(event.endDate!.year, event.endDate!.month + 1, 1)
+              .toMonthKey());
     }
 
     for (var key in keysToRemove) {

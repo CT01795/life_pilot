@@ -50,7 +50,12 @@ class ServiceEvent{
 
     final events = (response as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
-        .toList();
+        .toList()
+        .map((e) {
+          e.startDate = e.startDate?.toLocal();
+          e.endDate = e.endDate?.toLocal();
+          return e;
+        }).toList();
     return events;
   }
 
