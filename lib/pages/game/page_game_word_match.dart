@@ -84,7 +84,6 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
         }
 
         final q = controller.currentQuestion!;
-
         return Scaffold(
           appBar: AppBar(
             title: Text("Word Matching (${controller.score}/100)"),
@@ -99,8 +98,9 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                   width: double.infinity, // 寬度等於螢幕寬度
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      padding: EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
+                      backgroundColor: Color(0xFFECEFF1), // blue grey 50
+                      padding:
+                          EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
                     ),
                     onPressed: () => speak(q.question),
                     child: Row(
@@ -112,14 +112,15 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                           alignment: Alignment.centerLeft, // 左對齊
                           child: InkWell(
                             onTap: () => speak(q.question),
-                            child: Icon(Icons.volume_up),
+                            child: Icon(Icons.volume_up, color: Color(0xFF212121)),
                           ),
                         ),
                         Gaps.w60,
                         Expanded(
                           child: Text(
                             q.question,
-                            style: TextStyle(fontSize: size),
+                            style: TextStyle(
+                                fontSize: size, color: Color(0xFF212121)),
                             textAlign: TextAlign.start,
                             softWrap: true, // 允許換行
                             overflow: TextOverflow.visible,
@@ -133,24 +134,30 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
               Gaps.h8,
               // 三個答案按鈕
               ...q.options.map((opt) {
-                Color buttonColor = Colors.blue;
-                String icon = constEmpty; // 用於顯示勾勾或叉叉
-                // 如果已選答案
+                Color buttonColor = Color(0xFFE3F2FD); // 淺藍
+                Color borderColor = Color(0xFF1976D2); // Material Blue 700
+                Icon? statusIcon; // 用於顯示勾勾或叉叉
                 if (controller.lastAnswer != null) {
                   if (opt == controller.lastAnswer) {
-                    // 使用者選的答案
+                    statusIcon = opt == q.correctAnswer
+                        ? Icon(Icons.check_rounded,
+                            color: Color(0xFF2E7D32), size: size * 1.6)
+                        : Icon(Icons.clear_rounded,
+                            color: Color(0xFFD32F2F), size: size * 1.6);
                     buttonColor = opt == q.correctAnswer
-                        ? Colors.green
-                        : Colors.redAccent.shade100;
-                    icon = opt == q.correctAnswer ? '✅' : '❌';
+                        ? Color(0xFFC8E6C9) // 淺綠
+                        : Color(0xFFFFCDD2); // 淺紅
+                    borderColor = opt == q.correctAnswer
+                        ? Color(0xFF388E3C) //Material Green 700
+                        : Color(0xFFD32F2F); //Material Red 700
                   } else if (opt == q.correctAnswer &&
                       controller.showCorrectAnswer) {
-                    // 顯示正確答案
-                    buttonColor = Colors.green;
-                    icon = '✅';
+                    statusIcon = Icon(Icons.check_rounded,
+                        color: Color(0xFF2E7D32), size: size * 1.6);
+                    buttonColor = Color(0xFFC8E6C9); // 淺綠
+                    borderColor = Color(0xFF388E3C); //Material Green 700
                   }
                 }
-
                 return Padding(
                   padding: Insets.all8,
                   child: SizedBox(
@@ -179,14 +186,13 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                                 shape: BoxShape.rectangle,
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: opt == controller.lastAnswer
-                                      ? Colors.blue
-                                      : Colors.grey,
+                                  color: borderColor,
                                 ),
                               ),
                               child: Center(
                                 child: opt == controller.lastAnswer
-                                    ? Icon(Icons.check, color: opt == q.correctAnswer ? Colors.green : Colors.redAccent.shade100, size: 48)
+                                    ? Icon(Icons.check,
+                                        color: borderColor, size: 48)
                                     : SizedBox.shrink(),
                               ),
                             ),
@@ -195,17 +201,15 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                           Expanded(
                             child: Text(
                               opt,
-                              style: TextStyle(fontSize: size),
+                              style: TextStyle(
+                                  fontSize: size, color: Color(0xFF212121)),
                               softWrap: true, // 允許自動換行
                               textAlign: TextAlign.start,
                             ),
                           ),
                           Gaps.w8,
-                          if (icon.isNotEmpty)
-                            Text(
-                              icon,
-                              style: TextStyle(fontSize: size),
-                            ),
+                          // ⭐ 這裡必須安全顯示
+                          statusIcon ?? SizedBox.shrink(),
                         ],
                       ),
                     ),
