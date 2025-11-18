@@ -50,7 +50,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
       flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
     } else {
       await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.7); // 🟢 英文語速
+      await flutterTts.setSpeechRate(0.6); // 🟢 英文語速
       await flutterTts.setVolume(1.0);
       flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
     }
@@ -93,30 +93,42 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Gaps.h16,
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start, // 讓文字多行時對齊喇叭上方
-                children: [
-                  InkWell(
-                    onTap: () => speak(q.question),
-                    child: Icon(Icons.volume_up, size: size * 3),
-                  ),
-                  Gaps.w8,
-                  // 這裡要用 Flexible 才能換行！！
-                  Flexible(
-                    child: InkWell(
-                      onTap: () => speak(q.question),
-                      child: Text(
-                        q.question,
-                        style: TextStyle(fontSize: size),
-                        textAlign: TextAlign.start,
-                        softWrap: true, // 允許換行
-                        overflow: TextOverflow.visible,
-                      ),
+              Padding(
+                padding: Insets.all8,
+                child: SizedBox(
+                  width: double.infinity, // 寬度等於螢幕寬度
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      padding: EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
+                    ),
+                    onPressed: () => speak(q.question),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Transform.scale(
+                          scale: 4, // 放大，可自行調整
+                          alignment: Alignment.centerLeft, // 左對齊
+                          child: InkWell(
+                            onTap: () => speak(q.question),
+                            child: Icon(Icons.volume_up),
+                          ),
+                        ),
+                        Gaps.w60,
+                        Expanded(
+                          child: Text(
+                            q.question,
+                            style: TextStyle(fontSize: size),
+                            textAlign: TextAlign.start,
+                            softWrap: true, // 允許換行
+                            overflow: TextOverflow.visible,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
               Gaps.h8,
               // 三個答案按鈕
@@ -146,7 +158,6 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
-                        padding: EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
                       ),
                       onPressed: () => speak(
                           opt), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
@@ -154,26 +165,33 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                         mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Transform.scale(
-                            scale: 3.2, // 放大，可自行調整
-                            alignment: Alignment.centerLeft, // 左對齊
-                            child: Radio<String>(
-                              value: opt, // 這個按鈕的值
-                              // ignore: deprecated_member_use
-                              groupValue: controller.lastAnswer, // 當前選中的值
-                              fillColor: WidgetStateProperty.resolveWith((states) {
-                                return Colors.white; // 選中時白色
-                              }),
-                              // ignore: deprecated_member_use
-                              onChanged: (val) {
-                                if (val != null) {
-                                  controller.answer(val); // 更新答案
-                                  setState(() {}); // 重新刷新 UI
-                                }
-                              },
+                          // ⭐ 改成自訂 CheckBox 風格的 Radio
+                          GestureDetector(
+                            onTap: () {
+                              controller.answer(opt);
+                              setState(() {});
+                            },
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.rectangle,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: opt == controller.lastAnswer
+                                      ? Colors.blue
+                                      : Colors.grey,
+                                ),
+                              ),
+                              child: Center(
+                                child: opt == controller.lastAnswer
+                                    ? Icon(Icons.check, color: opt == q.correctAnswer ? Colors.green : Colors.redAccent.shade100, size: 48)
+                                    : SizedBox.shrink(),
+                              ),
                             ),
                           ),
-                          Gaps.w60,
+                          Gaps.w36,
                           Expanded(
                             child: Text(
                               opt,

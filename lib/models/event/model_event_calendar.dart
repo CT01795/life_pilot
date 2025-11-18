@@ -146,8 +146,9 @@ class ModelEventCalendar {
 
       cacheMonthEvents(currentMonth, events);
     } catch (e, st) {
-      if (!isDisposed)
+      if (!isDisposed) {
         logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
+      }
       rethrow;
     } finally {
       isLoading = false;
