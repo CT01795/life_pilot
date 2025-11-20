@@ -197,7 +197,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                               ),
                             ),
                           ),
-                          Gaps.w36,
+                          Gaps.w24,
                           Expanded(
                             child: Text(
                               opt,

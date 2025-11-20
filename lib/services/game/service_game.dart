@@ -36,4 +36,19 @@ class ServiceGame {
     final data = response as List<dynamic>;
     return data.map((e) => GameUser.fromMap(e)).toList();
   }
+
+  Future<void> saveUserGameScore({
+    required String userName,
+    required double score,
+    required String? gameId,
+    bool? isPass,
+  }) async {
+    await client.from('game_user').insert({
+      'game_id': gameId,
+      'score': score,
+      'name': userName,
+      'is_pass': isPass,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
 }

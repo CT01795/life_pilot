@@ -55,4 +55,15 @@ class ControllerGameList extends ChangeNotifier {
     notifyListeners();
     return progress;
   }
+
+  // 取得使用者已通關的最高等級
+  int getHighestPassedLevel(List<GameUser> list) {
+    if (list.isEmpty) return 0; // 尚未玩過任何關卡
+
+    // 找到 is_pass = true 的最大 level
+    final passed = list.where((e) => e.isPass ?? false).toList();
+    if (passed.isEmpty) return 0;
+
+    return passed.map((e) => e.level ?? 0).reduce((a, b) => a > b ? a : b);
+  }
 }

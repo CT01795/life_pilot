@@ -63,6 +63,8 @@ dependencies:
   geolocator: ^14.0.2
   flutter_timezone: ^4.1.1
   get_it: ^8.2.0
+  webview_flutter: ^4.13.0
+  xml: ^6.6.1
 
 dev_dependencies:
   flutter_test:
@@ -82,6 +84,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true   # 這裡確定是2個空格縮排
+
+  assets:
+    - assets/blockly/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

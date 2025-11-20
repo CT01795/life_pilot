@@ -5,9 +5,12 @@ import 'package:life_pilot/controllers/game/controller_game_list.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/pages/game/page_game_steam_super_hero.dart';
 import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
+
+import '../../core/logger.dart';
 
 class PageGameList extends StatefulWidget {
   const PageGameList({
@@ -19,6 +22,7 @@ class PageGameList extends StatefulWidget {
 }
 
 class _PageGameListState extends State<PageGameList> {
+  int unlockedMaxLevel = 1;  // 預設第 1 關
   // 範例遊戲類別與遊戲名稱
   late final ControllerGameList controllerGameList;
   String? selectedCategory;
@@ -59,6 +63,9 @@ class _PageGameListState extends State<PageGameList> {
     );
     setState(() {
       userProgress = progress;
+
+      // 取得最高通關 level
+      unlockedMaxLevel = controllerGameList.getHighestPassedLevel(progress) + 1;
     });
   }
 
@@ -144,22 +151,29 @@ class _PageGameListState extends State<PageGameList> {
               isExpanded: true,
               value: selectedLevel,
               onChanged: (value) {
-                if (value != null) {
+                if (value != null && value <= unlockedMaxLevel) {
                   setState(() {
                     selectedLevel = value;
                   });
                 }
               },
-              items: levelList
-                  ?.map((g) => DropdownMenuItem(
-                        value: g.level,
-                        child: Text('Level ${g.level}'),
-                      ))
-                  .toList(),
+              items: levelList?.map((g) {
+                final locked = g.level > unlockedMaxLevel;
+                return DropdownMenuItem<int>(
+                  value: g.level,
+                  enabled: !locked,
+                  child: Text(
+                    'Level ${g.level}${locked ? ' 🔒' : ''}',
+                    style: TextStyle(
+                      color: locked ? Colors.grey : Colors.black,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
             Gaps.h16,
             ElevatedButton(
-              onPressed: selectedGameItem != null
+              onPressed: (selectedGameItem != null && selectedLevel! <= unlockedMaxLevel)
                 ? () async {
                     final game = selectedGameItem!;
                     if (game.gameName.toLowerCase() == "word matching".toLowerCase()) {
@@ -172,9 +186,19 @@ class _PageGameListState extends State<PageGameList> {
                       if (result == true) {
                         await _loadUserProgress();
                       }
+                    } else if (game.gameName.toLowerCase() == "super hero".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameSteamSuperHero(gameId: game.id, gameLevel: game.level),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      }
                     } else {
                       // 其他遊戲開啟方式
-                      print("尚未實作此遊戲頁面");
+                      logger.i("尚未實作此遊戲頁面");
                     }
                   }
                 : null,
