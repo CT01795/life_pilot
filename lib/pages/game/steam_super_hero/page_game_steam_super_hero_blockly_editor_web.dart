@@ -9,7 +9,7 @@ import 'package:js/js_util.dart' as js_util;
 import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
 import 'package:life_pilot/models/game/blockly/blockly_parser.dart';
 
-import '../../core/logger.dart';
+import '../../../core/logger.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
