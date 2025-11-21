@@ -110611,8 +110611,8 @@ ajo(){var s,r,q=this,p=q.f.a
 if(!p.d){s=q.d.d
 s=p.a===s.a&&p.b===s.b}else s=!1
 if(s){s=p.c
-r=q.d.a
-if(s<B.d.e2(r*0.5)){q.r.t(0,new A.lt(B.tc,"Eat at least "+r+" foods !!"))
+r=B.d.e2(q.d.a*0.5)
+if(s<r){q.r.t(0,new A.lt(B.tc,"Eat at least "+r+" foods !!"))
 return!0}p.d=!0
 s+=10
 p.c=s
