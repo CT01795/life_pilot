@@ -13,7 +13,7 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "/": "5fe209ff7a13fb0cffb7cef7a7555930",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/AssetManifest.bin.json": "f351e3de5a5f3e918c1244a072529315",
-"assets/assets/blockly/index.html": "95e2427854acd6f20aae0ef71de5c99f",
+"assets/assets/blockly/index.html": "2e056d1c1be7ba5cc54ddf6b6606cfba",
 "assets/assets/blockly/blockly_compressed.js": "91b86ffca1735da33b289594f0e5d759",
 "assets/assets/blockly/msg/js/zh-hant.js": "33ea34aa45e5a87f01c9bb879452fd80",
 "assets/assets/blockly/javascript_compressed.js": "faff45afbfcf4d8b95a501f81fd9bb4f",
@@ -37,9 +37,9 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "canvaskit/canvaskit.js.symbols": "58832fbed59e00d2190aa295c4d70360",
 "canvaskit/skwasm.js.symbols": "0088242d10d7e7d6d2649d1fe1bda7c1",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
-"flutter_bootstrap.js": "6674fcc2531c29c60cd51b8a79047b95",
+"flutter_bootstrap.js": "2bfec3ff034af440e4f7ff1651a55c02",
 "version.json": "3d24f8e1c43390d4ffe74cc3fce20e2a",
-"main.dart.js": "6277a9597e0f38ba98c0a32a88555d45"};
+"main.dart.js": "9b12c47b11b08ec9078b725600d3c1fc"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
