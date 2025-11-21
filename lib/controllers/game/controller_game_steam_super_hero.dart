@@ -265,7 +265,7 @@ class ControllerGameSteamSuperHero {
         state.y == level.treasure.y) {
       if (state.score < (level.levelNumber * 0.5).toInt()) { //至少要吃一點東西
         _notifyEvent(GameEvent(
-          GameEventType.warning, "Eat at least ${level.levelNumber} foods !!"));
+          GameEventType.warning, "Eat at least ${(level.levelNumber * 0.5).toInt()} foods !!"));
         return true;
       } 
       state.treasureCollected = true;
