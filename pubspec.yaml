@@ -86,7 +86,7 @@ flutter:
   generate: true   # 這裡確定是2個空格縮排
 
   assets:
-    - assets/blockly/
+    - assets/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
