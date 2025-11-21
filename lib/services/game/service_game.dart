@@ -26,28 +26,29 @@ class ServiceGame {
   // 查詢目前使用者的分數紀錄
   Future<List<GameUser>> fetchUserProgress(
       String userName, String gameType, String gameName) async {
-    final response = await client
-        .rpc('fetch_user_progress', params: {
-          'p_name': userName,
-          'p_game_type': gameType,
-          'p_game_name': gameName,
-        });
+    final response = await client.rpc('fetch_user_progress', params: {
+      'p_name': userName,
+      'p_game_type': gameType,
+      'p_game_name': gameName,
+    });
 
     final data = response as List<dynamic>;
     return data.map((e) => GameUser.fromMap(e)).toList();
   }
 
-  Future<void> saveUserGameScore({
-    required String userName,
-    required double score,
-    required String? gameId,
-    bool? isPass,
-  }) async {
+  Future<void> saveUserGameScore(
+      {required String newUserName,
+      required double newScore,
+      required String? newGameId,
+      bool? newIsPass}) async {
+    if (newScore == 0) {
+      return;
+    }
     await client.from('game_user').insert({
-      'game_id': gameId,
-      'score': score,
-      'name': userName,
-      'is_pass': isPass,
+      'game_id': newGameId,
+      'score': newScore,
+      'name': newUserName,
+      'is_pass': newIsPass,
       'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
     });
   }

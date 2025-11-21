@@ -143,6 +143,81 @@
       scrollbars: true,
     });
 
+    // --- 在這裡設定動態最大積木數量 ---
+    window.MAX_BLOCKS = 0; // 預設為 0，Flutter 會傳實際值
+
+    // 非阻塞提示函數
+    function showWarning(msg) {
+      let warningDiv = document.getElementById('warning');
+      if (!warningDiv) {
+        warningDiv = document.createElement('div');
+        warningDiv.id = 'warning';
+        warningDiv.style.position = 'absolute';
+        warningDiv.style.top = '10px';
+        warningDiv.style.right = '10px';
+        warningDiv.style.padding = '8px 12px';
+        warningDiv.style.background = 'orange';
+        warningDiv.style.color = 'white';
+        warningDiv.style.fontWeight = 'bold';
+        warningDiv.style.borderRadius = '4px';
+        warningDiv.style.zIndex = '9999';
+        document.body.appendChild(warningDiv);
+      }
+      warningDiv.innerText = msg;
+      setTimeout(() => {
+        warningDiv.remove();
+      }, 1500);
+    }
+
+    function countExecutableBlocks() {
+      const all = workspace.getAllBlocks(false);
+
+      let count = 0;
+
+      all.forEach(block => {
+        const type = block.type;
+
+        // 只有這些積木應該算 1 個
+        const validTypes = [
+          "forward", "backward", "turn_left", "turn_right",
+          "jump_up", "jump_down",
+          "controls_repeat_ext",
+          "controls_if"
+        ];
+
+        if (validTypes.includes(type)) {
+          count++;
+        }
+      });
+
+      return count;
+    }
+
+    workspace.addChangeListener(function(event) {
+      if (event.type !== Blockly.Events.BLOCK_CREATE) return;
+      const limitCount = countExecutableBlocks(); // 🔥 使用自訂計算
+      if (limitCount > window.MAX_BLOCKS) {
+        const blockId = event.blockId;
+        showWarning(`The number of blocks exceeds the limit ${window.MAX_BLOCKS}！`);
+
+        // 延遲移除積木，避免阻塞 Blockly
+        setTimeout(() => {
+          const block = workspace.getBlockById(blockId);
+          if (block) {
+            block.dispose(false); // 第二個參數 false 表示不觸發事件
+          }
+        }, 0);
+      }
+    });
+
+
+    // 監聽 Flutter 傳來的 maxBlocks
+    window.addEventListener('message', (event) => {
+      if (event.data?.type === 'set_max_blocks') {
+        window.MAX_BLOCKS = event.data.maxBlocks;
+      }
+    });
+
     ////////////////////////////////////////////////////////////
     // 取得 XML
     ////////////////////////////////////////////////////////////

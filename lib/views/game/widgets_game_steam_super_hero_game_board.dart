@@ -25,11 +25,14 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = 40.0;
     // ---- 正確計算場景最大 X, Y ----
     final allPoints = [
-      ...game.level.obstacles.map((o) => Offset(o.x.toDouble(), o.y.toDouble())),
+      ...game.level.obstacles
+          .map((o) => Offset(o.x.toDouble(), o.y.toDouble())),
       ...game.level.fruits.map((f) => Offset(f.x.toDouble(), f.y.toDouble())),
-      Offset(game.level.treasure.x.toDouble(), game.level.treasure.y.toDouble()),
+      Offset(
+          game.level.treasure.x.toDouble(), game.level.treasure.y.toDouble()),
       Offset(game.state.x.toDouble(), game.state.y.toDouble()),
     ];
 
@@ -43,11 +46,11 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
         for (int i = 0; i < maxX; i++)
           for (int j = 0; j < maxY; j++)
             Positioned(
-              left: i * 50.0,
-              bottom: j * 50.0,
+              left: i * size,
+              bottom: j * size,
               child: Container(
-                width: 50,
-                height: 50,
+                width: size,
+                height: size,
                 decoration: BoxDecoration(
                   color: (i + j) % 2 == 0
                       ? Colors.green.shade200
@@ -60,17 +63,19 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
         // 障礙物（深木頭風格）
         // --------------------------
         ...game.level.obstacles.map((o) => Positioned(
-              left: o.x * 50.0,
-              bottom: o.y * 50.0,
+              left: o.x * size,
+              bottom: o.y * size,
               child: Container(
-                width: 50,
-                height: 50,
+                width: size,
+                height: size,
                 decoration: BoxDecoration(
                   color: Colors.brown.shade500,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black26, blurRadius: 3, offset: Offset(2, 2))
+                        color: Colors.black26,
+                        blurRadius: 3,
+                        offset: Offset(2, 2))
                   ],
                 ),
               ),
@@ -80,38 +85,42 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
         // 水果（隨機一次，不會閃動）
         // --------------------------
         ...game.level.fruits.map((f) => Positioned(
-              left: f.x * 50.0,
-              bottom: f.y * 50.0,
+              left: f.x * size,
+              bottom: f.y * size,
               child: Icon(
                 f.collected ? Icons.circle_outlined : f.icon,
                 color: f.collected ? Colors.transparent : Colors.pink.shade400,
-                size: 40,
+                size: size,
               ),
             )),
         // --------------------------
         // 角色（主題色）
         // --------------------------
         Positioned(
-          left: game.state.x * 50.0,
-          bottom: game.state.y * 50.0,
-          child:
-              Icon(Icons.directions_walk_rounded, color: Colors.indigo.shade600, size: 40),
+          left: game.state.x * size,
+          bottom: game.state.y * size,
+          child: Icon(Icons.directions_walk_rounded,
+              color: Colors.indigo.shade600, size: size),
         ),
         // --------------------------
         // 寶藏（金色 + 陰影）
         // --------------------------
         Positioned(
-          left: game.level.treasure.x * 50.0,
-          bottom: game.level.treasure.y * 50.0,
-          child: Icon(Icons.vpn_key_rounded, size: 50, color: Colors.amber.shade700,
-            shadows: [Shadow(blurRadius: 4, color: Colors.black26)],),
+          left: game.level.treasure.x * size,
+          bottom: game.level.treasure.y * size,
+          child: Icon(
+            Icons.vpn_key_rounded,
+            size: size,
+            color: Colors.amber.shade700,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
+          ),
         ),
         // -------------------------- 分數 Overlay --------------------------
         Positioned(
-          top: 16,
-          right: 16,
+          top: 2,
+          left: 16,
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             decoration: BoxDecoration(
               color: Colors.black54,
               borderRadius: BorderRadius.circular(8),

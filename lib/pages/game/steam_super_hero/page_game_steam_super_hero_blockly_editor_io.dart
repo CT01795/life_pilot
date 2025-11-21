@@ -6,8 +6,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
+  final int maxBlocks;
 
-  const PageGameSteamSuperHeroBlocklyEditor({super.key, required this.onCommandsReady});
+  const PageGameSteamSuperHeroBlocklyEditor({super.key, required this.onCommandsReady, required this.maxBlocks});
 
   @override
   State<PageGameSteamSuperHeroBlocklyEditor> createState() => PageGameSteamSuperHeroBlocklyEditorState();
@@ -31,6 +32,10 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
           widget.onCommandsReady(commands);
         },
       );
+    // 傳 maxBlocks 到 WebView
+    controller.runJavaScript(
+      'window.postMessage({type: "set_max_blocks", maxBlocks: $widget.maxBlocks}, "*");'
+    );
   }
 
   // Flutter → Web 要求取出 JSON

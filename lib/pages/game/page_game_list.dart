@@ -66,6 +66,14 @@ class _PageGameListState extends State<PageGameList> {
 
       // 取得最高通關 level
       unlockedMaxLevel = controllerGameList.getHighestPassedLevel(progress) + 1;
+      // 將選單預設值設為最大可進入關卡
+      selectedLevel = unlockedMaxLevel;
+      // 如果 unlockedMaxLevel 超過關卡列表最大值，則選最後一關
+      final levelList = controllerGameList
+          .gamesByCategory[selectedCategory!]![selectedGameName!]!;
+      if (selectedLevel! > levelList.last.level) {
+        selectedLevel = levelList.last.level;
+      }
     });
   }
 

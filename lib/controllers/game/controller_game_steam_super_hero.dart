@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_super_hero_level.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
@@ -45,7 +46,8 @@ class BackwardCommand extends Command {
 class TurnLeftCommand extends Command {
   @override
   Future<bool> execute(ControllerGameSteamSuperHero game) async {
-    game.state.facing = Direction.values[(game.state.facing.index + 3) % 4]; // 左轉 90 度
+    game.state.facing =
+        Direction.values[(game.state.facing.index + 3) % 4]; // 左轉 90 度
     return await game.moveForward();
   }
 }
@@ -53,7 +55,8 @@ class TurnLeftCommand extends Command {
 class TurnRightCommand extends Command {
   @override
   Future<bool> execute(ControllerGameSteamSuperHero game) async {
-    game.state.facing = Direction.values[(game.state.facing.index + 1) % 4]; // 右轉 90 度
+    game.state.facing =
+        Direction.values[(game.state.facing.index + 1) % 4]; // 右轉 90 度
     return await game.moveForward();
   }
 }
@@ -120,15 +123,17 @@ class ControllerGameSteamSuperHero {
   final ServiceGame service;
   final String gameId;
   final GameSteamSuperHeroLevel level;
+  bool _scoreSaved = false;
 
   // 使用 ValueNotifier 提高效能，安全 UI 更新
   final ValueNotifier<GameState> stateNotifier = ValueNotifier(GameState());
   GameState get state => stateNotifier.value;
 
   // 事件 callback
-  final StreamController<GameEvent> _eventController = StreamController.broadcast();
+  final StreamController<GameEvent> _eventController =
+      StreamController.broadcast();
   Stream<GameEvent> get eventStream => _eventController.stream;
-  
+
   ControllerGameSteamSuperHero({
     required this.userName,
     required this.service,
@@ -138,30 +143,49 @@ class ControllerGameSteamSuperHero {
 
   void resetGame() {
     stateNotifier.value = GameState();
+    _scoreSaved = false; // ⭐ 重新遊戲前清空
     for (var fruit in level.fruits) {
       fruit.collected = false;
     }
+    // ⭐ 清空事件 Stream 避免殘留事件再跳 Dialog
+    _eventController.add(GameEvent(GameEventType.none, constEmpty));
   }
 
   void _notifyEvent(GameEvent event) => _eventController.add(event);
-  
+
   // ---------------- Movement ----------------
   Future<bool> moveForward() async {
     switch (state.facing) {
-      case Direction.north: state.y += 1; break;
-      case Direction.east: state.x += 1; break;
-      case Direction.south: state.y -= 1; break;
-      case Direction.west: state.x -= 1; break;
+      case Direction.north:
+        state.y += 1;
+        break;
+      case Direction.east:
+        state.x += 1;
+        break;
+      case Direction.south:
+        state.y -= 1;
+        break;
+      case Direction.west:
+        state.x -= 1;
+        break;
     }
     return _afterMovement();
   }
 
   Future<bool> moveBackward() async {
     switch (state.facing) {
-      case Direction.north: state.y -= 1; break;
-      case Direction.east: state.x -= 1; break;
-      case Direction.south: state.y += 1; break;
-      case Direction.west: state.x += 1; break;
+      case Direction.north:
+        state.y -= 1;
+        break;
+      case Direction.east:
+        state.x -= 1;
+        break;
+      case Direction.south:
+        state.y += 1;
+        break;
+      case Direction.west:
+        state.x += 1;
+        break;
     }
     return _afterMovement();
   }
@@ -177,18 +201,22 @@ class ControllerGameSteamSuperHero {
   }
 
   Future<bool> _afterMovement() async {
-     // 延遲 300ms 再回傳
+    // 延遲 400ms 再回傳
     await Future.delayed(Duration(milliseconds: 400));
 
+    if (_scoreSaved) return false; // 已經過關 → 不要再檢查
+
     // 限制角色不能超出場景
-    final maxX = level.obstacles.map((o) => o.x)
-                    .followedBy(level.fruits.map((f) => f.x))
-                    .followedBy([level.treasure.x])
-                    .reduce(max) + 2;
-    final maxY = level.obstacles.map((o) => o.y)
-                    .followedBy(level.fruits.map((f) => f.y))
-                    .followedBy([level.treasure.y])
-                    .reduce(max) + 2;
+    final maxX = level.obstacles
+            .map((o) => o.x)
+            .followedBy(level.fruits.map((f) => f.x))
+            .followedBy([level.treasure.x]).reduce(max) +
+        2;
+    final maxY = level.obstacles
+            .map((o) => o.y)
+            .followedBy(level.fruits.map((f) => f.y))
+            .followedBy([level.treasure.y]).reduce(max) +
+        2;
 
     // 先更新位置
     state.x = state.x.clamp(-1, maxX);
@@ -203,8 +231,7 @@ class ControllerGameSteamSuperHero {
 
     if (_checkObstacle()) return false;
     _checkFruit();
-    _checkTreasure();
-    return true;
+    return _checkTreasure();
   }
 
   // ---- 檢查障礙 ----
@@ -225,27 +252,37 @@ class ControllerGameSteamSuperHero {
       if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
         fruit.collected = true;
         state.score += fruit.scoreValue;
-        _notifyEvent(GameEvent(GameEventType.fruit, "Eat food！ +${fruit.scoreValue}!"));
+        _notifyEvent(
+            GameEvent(GameEventType.fruit, "Food +${fruit.scoreValue}!"));
       }
     }
   }
 
   // ---- 檢查寶藏 ----
-  void _checkTreasure() {
+  bool _checkTreasure() {
     if (!state.treasureCollected &&
         state.x == level.treasure.x &&
         state.y == level.treasure.y) {
+      if (state.score < level.levelNumber) { //至少要吃一點東西
+        _notifyEvent(GameEvent(
+          GameEventType.warning, "Eat at least ${level.levelNumber} foods !!"));
+        return true;
+      } 
       state.treasureCollected = true;
       state.score += level.treasure.scoreValue;
-      saveScore(true);
-      _notifyEvent(GameEvent(GameEventType.treasure, "Treasure found！Score: ${state.score}"));
-      return;
-    }
-    if (!state.treasureCollected && ((state.x > level.treasure.x && state.y > level.treasure.y) || state.x < 0 || state.y < 0)) {
-      saveScore(false);
+      _notifyEvent(GameEvent(
+          GameEventType.treasure, "Treasure found！Score: ${state.score}"));
+      _saveScore(true);
+      return false;
+      // ❗ 失敗條件：掉出邊界（唯一的失敗條件）
+    } else if (!state.treasureCollected &&
+        ((state.x > level.treasure.x + 1 && state.y > level.treasure.y + 1) ||
+            state.x < 0 ||
+            state.y < 0)) {
       _notifyEvent(GameEvent(GameEventType.obstacle, "Game Over！"));
-      return;
+      return false;
     }
+    return true;
   }
 
   // ---- 執行 commands ----
@@ -256,13 +293,16 @@ class ControllerGameSteamSuperHero {
     }
   }
 
-  Future<void> saveScore(bool isPass) async {
+  Future<void> _saveScore(bool isPass) async {
+    if (_scoreSaved || state.score < level.treasure.scoreValue) return; // ⛔ 已存過就不再存
+    _scoreSaved = true;
     await service.saveUserGameScore(
-      userName: userName,
-      score: state.score.toDouble(),
-      gameId: gameId, // 使用傳入的 gameId
-      isPass: isPass,
+      newUserName: userName,
+      newScore: state.score.toDouble(),
+      newGameId: gameId, // 使用傳入的 gameId
+      newIsPass: isPass,
     );
+    state.score = 0;
   }
 
   void dispose() {

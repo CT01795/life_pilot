@@ -13,9 +13,10 @@ import '../../../core/logger.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
+  final int maxBlocks;
 
   const PageGameSteamSuperHeroBlocklyEditor(
-      {super.key, required this.onCommandsReady});
+      {super.key, required this.onCommandsReady, required this.maxBlocks});
 
   @override
   State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
@@ -39,6 +40,12 @@ class PageGameSteamSuperHeroBlocklyEditorState
           ..width = '100%'
           ..height = '100%';
         iframe = frame; // 儲存 reference
+
+        // 傳 maxBlocks 到 iframe
+        frame.onLoad.listen((_) {
+          iframe?.contentWindow?.postMessage({'type': 'set_max_blocks', 'maxBlocks': widget.maxBlocks}, '*');
+        });
+
         return frame; // ✅ 回傳非 nullable
       });
       _iframeRegistered = true;

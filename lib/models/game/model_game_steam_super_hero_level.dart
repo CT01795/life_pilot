@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_super_hero_game_board.dart';
 
-enum GameEventType { fruit, obstacle, treasure, complete }
+enum GameEventType { none, warning, fruit, obstacle, treasure, complete }
 
 class GameEvent {
   final GameEventType type;

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
@@ -22,6 +24,7 @@ class PageGameSteamSuperHero extends StatefulWidget {
 class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
   late final ControllerGameSteamSuperHero game;
   late List<Command> commands;
+  late final int maxBlocks; // 新增 maxBlocks
 
   // ---- Split Panel 狀態 ----
   double editorWidth = 450; // Editor 初始寬度
@@ -47,6 +50,9 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
         service: ServiceGame(),
         level: level);
 
+    // 計算 maxBlocks
+    maxBlocks = level.treasure.y + level.treasure.x + level.obstacles.length * 2 - level.levelNumber * 2;
+
     // 監聽 game state 更新
     game.stateNotifier.addListener(() {
       if (mounted) setState(() {});
@@ -65,20 +71,23 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
   }
 
   void showGameDialog(GameEvent event) {
+    if (event.type == GameEventType.none) return;
     Color bg = switch (event.type) {
       GameEventType.obstacle => Colors.red.shade600, // 柔和紅
       GameEventType.fruit => Colors.orange.shade400, // 柔和橙
       GameEventType.treasure => Colors.green.shade400, // 柔和綠
       GameEventType.complete => Colors.blue.shade400, // 柔和藍
+      GameEventType.warning => Colors.red.shade600, // 柔和紅
+      GameEventType.none => Colors.white
     };
 
     // 水果 → 自動 300ms 關閉
-    if (event.type == GameEventType.fruit) {
+    if (event.type == GameEventType.fruit || event.type == GameEventType.warning) {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) {
-          Future.delayed(Duration(milliseconds: 300), () {
+          Future.delayed(Duration(milliseconds: event.type == GameEventType.fruit ? 300 : 1500), () {
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
           });
 
@@ -147,6 +156,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                     onPressed: () async {
                       if (!mounted) return;
                       Navigator.of(context).pop(); // 關閉 Dialog
+                      await Future.delayed(Duration(milliseconds: 100)); // 等 dialog 關閉完成
                       game.resetGame(); // 重置遊戲
                     },
                     icon: Icon(Icons.refresh, size: 22),
@@ -165,8 +175,8 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.of(context).pop(); //先關dialog
-                      Navigator.of(context).pop(true); //再回到上一頁
+                      Navigator.of(context).pop(); // 關閉 Dialog
+                      Navigator.of(context, rootNavigator: true).pop(true); // 回上一頁
                     },
                     icon: Icon(Icons.arrow_back, size: 22),
                     label: Text("Back", style: TextStyle(fontSize: 18)),
@@ -189,7 +199,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           if (!mounted) return; // widget 已卸載，直接 return
           if (Navigator.of(context).canPop()) Navigator.of(context).pop();
           // ⭐ 回上一頁（通常是 PageGameList）
-          Navigator.of(context).pop(true); // 帶回 true → 要求上一頁 refresh
+          Navigator.of(context, rootNavigator: true).pop(true); // 帶回 true → 要求上一頁 refresh
         });
 
         return Dialog(
@@ -211,6 +221,19 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
   @override
   Widget build(BuildContext context) {
+    final level = game.level;
+    final tileSize = 50.0;
+
+    // 計算最大 X (地圖寬度)
+    final maxX = [
+      ...level.obstacles.map((o) => o.x),
+      ...level.fruits.map((f) => f.x),
+      level.treasure.x,
+    ].reduce(max);
+
+    // 加上一些 buffer
+    final levelWidth = (maxX + 4) * tileSize;
+    final levelHeight = 8 * tileSize; // 請依你遊戲高度調整
     return Scaffold(
       appBar: AppBar(title: Text('Blockly Platform Game')),
       body: Row(
@@ -281,6 +304,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                         ? SizedBox() // 收合時完全不渲染 blockly iframe
                         : PageGameSteamSuperHeroBlocklyEditor(
                             key: editorKey, // 保證重新建立避免 cache
+                            maxBlocks: maxBlocks, // <-- 傳入 maxBlocks
                             onCommandsReady: (cmds) async {
                               // ✅ 每次開始前重置遊戲
                               game.resetGame();  // 位置、分數、水果全部重置
@@ -325,8 +349,22 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Center(
-                child: WidgetsGameSteamSuperHeroGameBoard(game: game),
+              child: InteractiveViewer(
+                constrained: false,
+                boundaryMargin: const EdgeInsets.all(200),
+                minScale: 0.5,
+                maxScale: 2.5,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: levelWidth,
+                      height: levelHeight,
+                      child: WidgetsGameSteamSuperHeroGameBoard(game: game),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
