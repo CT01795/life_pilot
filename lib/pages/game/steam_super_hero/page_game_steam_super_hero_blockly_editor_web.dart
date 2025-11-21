@@ -14,14 +14,17 @@ import '../../../core/logger.dart';
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
 
-  const PageGameSteamSuperHeroBlocklyEditor({super.key, required this.onCommandsReady});
+  const PageGameSteamSuperHeroBlocklyEditor(
+      {super.key, required this.onCommandsReady});
 
   @override
-  State<PageGameSteamSuperHeroBlocklyEditor> createState() => PageGameSteamSuperHeroBlocklyEditorState();
+  State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
+      PageGameSteamSuperHeroBlocklyEditorState();
 }
 
-class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperHeroBlocklyEditor> {
-  html.IFrameElement? iframe;
+class PageGameSteamSuperHeroBlocklyEditorState
+    extends State<PageGameSteamSuperHeroBlocklyEditor> {
+  static html.IFrameElement? iframe;
   static bool _iframeRegistered = false;
 
   @override
@@ -30,13 +33,13 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
     if (!_iframeRegistered) {
       // ignore: undefined_prefixed_name
       platformViewRegistry.registerViewFactory('blockly-iframe', (int viewId) {
-      final frame = html.IFrameElement()
+        final frame = html.IFrameElement()
           ..src = 'assets/blockly/index.html'
           ..style.border = 'none'
           ..width = '100%'
           ..height = '100%';
-        iframe = frame;       // 儲存 reference
-        return frame;         // ✅ 回傳非 nullable
+        iframe = frame; // 儲存 reference
+        return frame; // ✅ 回傳非 nullable
       });
       _iframeRegistered = true;
     }
@@ -47,6 +50,7 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
     // web_plugins.platformViewRegistry.registerViewFactory(...);
     // 建議這種方式
     html.window.onMessage.listen((event) {
+      if (!mounted) return; // ✅ widget 已卸載就直接 return
       try {
         final dynamic data = event.data;
         Map<String, dynamic> msg;
@@ -64,6 +68,7 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
 
         if (msg['type'] == 'commands_ready') {
           final cmds = parseBlocklyJson(jsonDecode(msg['json'] as String));
+          if (!mounted) return; // 防止 widget 已卸載
           widget.onCommandsReady(cmds);
         }
       } catch (e, st) {
@@ -74,6 +79,10 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
 
   // Flutter → Web 要求取出 JSON
   Future<void> requestBlocklyJson() async {
+    if (iframe == null) {
+      logger.e('iframe == null at requestBlocklyJson');
+      return;
+    }
     iframe?.contentWindow?.postMessage({'type': 'request_commands'}, '*');
   }
 

@@ -1,3 +1,15 @@
+// -------------------- Game Event --------------------
+import 'package:flutter/material.dart';
+import 'package:life_pilot/views/game/widgets_game_steam_super_hero_game_board.dart';
+
+enum GameEventType { fruit, obstacle, treasure, complete }
+
+class GameEvent {
+  final GameEventType type;
+  final String message;
+  GameEvent(this.type, this.message);
+}
+
 // -------------------- Game Level --------------------
 class GameSteamSuperHeroLevel {
   int levelNumber;
@@ -32,5 +44,8 @@ class GameSteamSuperHeroFruit {
   int y;
   int scoreValue;
   bool collected = false;
-  GameSteamSuperHeroFruit({required this.x, required this.y, this.scoreValue = 1});
+  IconData icon;
+  GameSteamSuperHeroFruit({
+    required this.x, required this.y, this.scoreValue = 1, IconData? icon,
+  }) : icon = icon ?? WidgetsGameSteamSuperHeroGameBoard.getRandomFruitIconStatic();
 }

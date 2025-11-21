@@ -18,7 +18,7 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
     Icons.cake_rounded
   ];
 
-  IconData getRandomFruitIcon() {
+  static IconData getRandomFruitIconStatic() {
     final rand = Random();
     return fruitIcons[rand.nextInt(fruitIcons.length)];
   }
@@ -30,7 +30,7 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
       ...game.level.obstacles.map((o) => Offset(o.x.toDouble(), o.y.toDouble())),
       ...game.level.fruits.map((f) => Offset(f.x.toDouble(), f.y.toDouble())),
       Offset(game.level.treasure.x.toDouble(), game.level.treasure.y.toDouble()),
-      Offset(game.x.toDouble(), game.y.toDouble()),
+      Offset(game.state.x.toDouble(), game.state.y.toDouble()),
     ];
 
     final maxX = allPoints.map((e) => e.dx).reduce(max).toInt() + 2;
@@ -83,7 +83,7 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
               left: f.x * 50.0,
               bottom: f.y * 50.0,
               child: Icon(
-                f.collected ? Icons.circle_outlined : getRandomFruitIcon(),
+                f.collected ? Icons.circle_outlined : f.icon,
                 color: f.collected ? Colors.transparent : Colors.pink.shade400,
                 size: 40,
               ),
@@ -92,8 +92,8 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
         // 角色（主題色）
         // --------------------------
         Positioned(
-          left: game.x * 50.0,
-          bottom: game.y * 50.0,
+          left: game.state.x * 50.0,
+          bottom: game.state.y * 50.0,
           child:
               Icon(Icons.directions_walk_rounded, color: Colors.indigo.shade600, size: 40),
         ),
@@ -105,6 +105,31 @@ class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
           bottom: game.level.treasure.y * 50.0,
           child: Icon(Icons.vpn_key_rounded, size: 50, color: Colors.amber.shade700,
             shadows: [Shadow(blurRadius: 4, color: Colors.black26)],),
+        ),
+        // -------------------------- 分數 Overlay --------------------------
+        Positioned(
+          top: 16,
+          right: 16,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ValueListenableBuilder<GameState>(
+              valueListenable: game.stateNotifier,
+              builder: (context, state, _) {
+                return Text(
+                  'Score: ${state.score}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ],
     );

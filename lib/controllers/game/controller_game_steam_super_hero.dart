@@ -1,15 +1,25 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_super_hero_level.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
 enum Direction { north, east, south, west }
 
-// 遊戲事件類型
-enum GameEventType { fruit, obstacle, treasure, complete }
+class GameState {
+  int x = 0;
+  int y = 0;
+  int score = 0;
+  bool treasureCollected = false;
+  Direction facing = Direction.east;
 
-class GameEvent {
-  final GameEventType type;
-  final String message;
-  GameEvent(this.type, this.message);
+  GameState copy() => GameState()
+    ..x = x
+    ..y = y
+    ..score = score
+    ..treasureCollected = treasureCollected
+    ..facing = facing;
 }
 
 // -------------------- Command 定義 --------------------
@@ -35,20 +45,16 @@ class BackwardCommand extends Command {
 class TurnLeftCommand extends Command {
   @override
   Future<bool> execute(ControllerGameSteamSuperHero game) async {
-    game.facing = Direction.values[(game.facing.index + 3) % 4]; // 左轉 90 度
-    game.notifyUpdate();
-    await Future.delayed(Duration(milliseconds: 1000));
-    return true;
+    game.state.facing = Direction.values[(game.state.facing.index + 3) % 4]; // 左轉 90 度
+    return await game.moveForward();
   }
 }
 
 class TurnRightCommand extends Command {
   @override
   Future<bool> execute(ControllerGameSteamSuperHero game) async {
-    game.facing = Direction.values[(game.facing.index + 1) % 4]; // 右轉 90 度
-    game.notifyUpdate();
-    await Future.delayed(Duration(milliseconds: 1000));
-    return true;
+    game.state.facing = Direction.values[(game.state.facing.index + 1) % 4]; // 右轉 90 度
+    return await game.moveForward();
   }
 }
 
@@ -113,7 +119,16 @@ class ControllerGameSteamSuperHero {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final GameSteamSuperHeroLevel level;
 
+  // 使用 ValueNotifier 提高效能，安全 UI 更新
+  final ValueNotifier<GameState> stateNotifier = ValueNotifier(GameState());
+  GameState get state => stateNotifier.value;
+
+  // 事件 callback
+  final StreamController<GameEvent> _eventController = StreamController.broadcast();
+  Stream<GameEvent> get eventStream => _eventController.stream;
+  
   ControllerGameSteamSuperHero({
     required this.userName,
     required this.service,
@@ -121,140 +136,114 @@ class ControllerGameSteamSuperHero {
     required this.level,
   });
 
-  int x = 0;
-  int y = 0;
-  int score = 0;
-  bool treasureCollected = false;
-
-  Direction facing = Direction.east; // 角色朝向東邊
-  final GameSteamSuperHeroLevel level;
-
-  Function? _onUpdate;
-  Function(GameEvent)? _onEvent;
-
-  void setUpdateCallback(Function onUpdate) => _onUpdate = onUpdate;
-
-  void notifyUpdate() {
-    if (_onUpdate != null) _onUpdate!();
-  }
-
-  // 遊戲事件 callback
-  void setEventCallback(Function(GameEvent) callback) {
-    _onEvent = callback;
-  }
-
-  void notifyEvent(GameEvent event) {
-    if (_onEvent != null) _onEvent!(event);
-  }
-
   void resetGame() {
-    x = 0;
-    y = 0;
-    facing = Direction.east;
-    score = 0;
-    treasureCollected = false;
-
+    stateNotifier.value = GameState();
     for (var fruit in level.fruits) {
       fruit.collected = false;
     }
-
-    notifyUpdate();
   }
 
-  // ----------------
-  // 移動邏輯
-  // ----------------
+  void _notifyEvent(GameEvent event) => _eventController.add(event);
+  
+  // ---------------- Movement ----------------
   Future<bool> moveForward() async {
-    switch (facing) {
-      case Direction.north:
-        y += 1;
-        break;
-      case Direction.east:
-        x += 1;
-        break;
-      case Direction.south:
-        y -= 1;
-        break;
-      case Direction.west:
-        x -= 1;
-        break;
+    switch (state.facing) {
+      case Direction.north: state.y += 1; break;
+      case Direction.east: state.x += 1; break;
+      case Direction.south: state.y -= 1; break;
+      case Direction.west: state.x -= 1; break;
     }
     return _afterMovement();
   }
 
   Future<bool> moveBackward() async {
-    switch (facing) {
-      case Direction.north:
-        y -= 1;
-        break;
-      case Direction.east:
-        x -= 1;
-        break;
-      case Direction.south:
-        y += 1;
-        break;
-      case Direction.west:
-        x += 1;
-        break;
+    switch (state.facing) {
+      case Direction.north: state.y -= 1; break;
+      case Direction.east: state.x -= 1; break;
+      case Direction.south: state.y += 1; break;
+      case Direction.west: state.x += 1; break;
     }
     return _afterMovement();
   }
 
   Future<bool> jumpUp() async {
-    y += 1;
+    state.y += 1;
     return _afterMovement();
   }
 
   Future<bool> jumpDown() async {
-    y -= 1;
+    state.y -= 1;
     return _afterMovement();
   }
 
   Future<bool> _afterMovement() async {
-    notifyUpdate();
-    await Future.delayed(Duration(milliseconds: 1000));
+     // 延遲 300ms 再回傳
+    await Future.delayed(Duration(milliseconds: 400));
 
-    if (checkObstacle()) return false;
-    checkFruit();
-    checkTreasure();
+    // 限制角色不能超出場景
+    final maxX = level.obstacles.map((o) => o.x)
+                    .followedBy(level.fruits.map((f) => f.x))
+                    .followedBy([level.treasure.x])
+                    .reduce(max) + 2;
+    final maxY = level.obstacles.map((o) => o.y)
+                    .followedBy(level.fruits.map((f) => f.y))
+                    .followedBy([level.treasure.y])
+                    .reduce(max) + 2;
+
+    // 先更新位置
+    state.x = state.x.clamp(-1, maxX);
+    state.y = state.y.clamp(-1, maxY); // ✅ 防止已卸載 widget 呼叫 setState
+    stateNotifier.value = state.copy();
+
+    // 掉下懸崖檢查
+    if (state.x < 0 || state.x >= maxX || state.y < 0 || state.y >= maxY) {
+      _notifyEvent(GameEvent(GameEventType.obstacle, "Fall off a cliff！"));
+      return false; // 停止遊戲
+    }
+
+    if (_checkObstacle()) return false;
+    _checkFruit();
+    _checkTreasure();
     return true;
   }
 
-  // ---- 檢查水果 ----
-  void checkFruit() {
-    for (var fruit in level.fruits) {
-      if (!fruit.collected && fruit.x == x && fruit.y == y) {
-        fruit.collected = true;
-        score += fruit.scoreValue;
-        notifyEvent(
-            GameEvent(GameEventType.fruit, "Eat food！ +${fruit.scoreValue}!"));
-      }
-    }
-  }
-
   // ---- 檢查障礙 ----
-  bool checkObstacle() {
+  bool _checkObstacle() {
     for (var obs in level.obstacles) {
-      if (obs.x == x && obs.y == y) {
-        notifyEvent(GameEvent(GameEventType.obstacle, "Hit an obstacle！"));
+      if (obs.x == state.x && obs.y == state.y) {
+        state.score += obs.scoreValue;
+        _notifyEvent(GameEvent(GameEventType.obstacle, "Hit an obstacle！"));
         return true;
       }
     }
     return false;
   }
 
+  // ---- 檢查水果 ----
+  void _checkFruit() {
+    for (var fruit in level.fruits) {
+      if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
+        fruit.collected = true;
+        state.score += fruit.scoreValue;
+        _notifyEvent(GameEvent(GameEventType.fruit, "Eat food！ +${fruit.scoreValue}!"));
+      }
+    }
+  }
+
   // ---- 檢查寶藏 ----
-  void checkTreasure() {
-    if (!treasureCollected && x == level.treasure.x && y == level.treasure.y) {
-      treasureCollected = true;
+  void _checkTreasure() {
+    if (!state.treasureCollected &&
+        state.x == level.treasure.x &&
+        state.y == level.treasure.y) {
+      state.treasureCollected = true;
+      state.score += level.treasure.scoreValue;
       saveScore(true);
-      notifyEvent(
-          GameEvent(GameEventType.treasure, "Treasure found！Score: $score"));
+      _notifyEvent(GameEvent(GameEventType.treasure, "Treasure found！Score: ${state.score}"));
       return;
     }
-    if (!treasureCollected && x > level.treasure.x && y > level.treasure.y) {
+    if (!state.treasureCollected && ((state.x > level.treasure.x && state.y > level.treasure.y) || state.x < 0 || state.y < 0)) {
       saveScore(false);
-      notifyEvent(GameEvent(GameEventType.obstacle, "Game Over！"));
+      _notifyEvent(GameEvent(GameEventType.obstacle, "Game Over！"));
       return;
     }
   }
@@ -270,9 +259,13 @@ class ControllerGameSteamSuperHero {
   Future<void> saveScore(bool isPass) async {
     await service.saveUserGameScore(
       userName: userName,
-      score: score.toDouble(),
+      score: state.score.toDouble(),
       gameId: gameId, // 使用傳入的 gameId
       isPass: isPass,
     );
+  }
+
+  void dispose() {
+    _eventController.close();
   }
 }

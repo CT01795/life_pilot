@@ -16,8 +16,8 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
     if (type == 'math_variable') {
       // ignore: deprecated_member_use
       final varName = shadow.getElement('field')?.text;
-      if (varName == 'x') return g.x;
-      if (varName == 'y') return g.y;
+      if (varName == 'x') return g.state.x;
+      if (varName == 'y') return g.state.y;
     } else if (type == 'math_number') {
       // ignore: deprecated_member_use
       return int.tryParse(shadow.getElement('field')?.text ?? '');
