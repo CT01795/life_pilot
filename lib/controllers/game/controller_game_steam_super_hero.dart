@@ -274,14 +274,7 @@ class ControllerGameSteamSuperHero {
           GameEventType.treasure, "Treasure found！Score: ${state.score}"));
       _saveScore(true);
       return false;
-      // ❗ 失敗條件：掉出邊界（唯一的失敗條件）
-    } else if (!state.treasureCollected &&
-        ((state.x > level.treasure.x + 1 && state.y > level.treasure.y + 1) ||
-            state.x < 0 ||
-            state.y < 0)) {
-      _notifyEvent(GameEvent(GameEventType.obstacle, "Game Over！"));
-      return false;
-    }
+    } 
     return true;
   }
 
