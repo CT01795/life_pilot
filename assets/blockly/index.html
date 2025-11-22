@@ -195,19 +195,7 @@
 
     workspace.addChangeListener(function(event) {
       if (event.type !== Blockly.Events.BLOCK_CREATE) return;
-      const limitCount = countExecutableBlocks(); // 🔥 使用自訂計算
-      if (limitCount > window.MAX_BLOCKS) {
-        const blockId = event.blockId;
-        showWarning(`The number of blocks exceeds the limit ${window.MAX_BLOCKS}！`);
-
-        // 延遲移除積木，避免阻塞 Blockly
-        setTimeout(() => {
-          const block = workspace.getBlockById(blockId);
-          if (block) {
-            block.dispose(false); // 第二個參數 false 表示不觸發事件
-          }
-        }, 0);
-      }
+      const limitCount = countExecutableBlocks(); // 🔥 使用自訂計
     });
 
 
