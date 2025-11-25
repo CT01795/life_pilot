@@ -24,10 +24,9 @@ class PageGameSteamSuperHero extends StatefulWidget {
 class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
   late final ControllerGameSteamSuperHero game;
   late List<Command> commands;
-  late final int maxBlocks; // 新增 maxBlocks
 
   // ---- Split Panel 狀態 ----
-  double editorWidth = 450; // Editor 初始寬度
+  double editorWidth = 600; // Editor 初始寬度
   bool editorCollapsed = false; // 是否收合
   final double minEditorWidth = 40;
   final double maxEditorWidth = 600;
@@ -49,9 +48,6 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
         userName: auth.currentAccount ?? AuthConstants.guest,
         service: ServiceGame(),
         level: level);
-
-    // 計算 maxBlocks
-    maxBlocks = level.treasure.y + level.treasure.x + level.obstacles.length * 2 - level.levelNumber * 2;
 
     // 監聽 game state 更新
     game.stateNotifier.addListener(() {
@@ -82,12 +78,16 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
     };
 
     // 水果 → 自動 300ms 關閉
-    if (event.type == GameEventType.fruit || event.type == GameEventType.warning) {
+    if (event.type == GameEventType.fruit ||
+        event.type == GameEventType.warning) {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) {
-          Future.delayed(Duration(milliseconds: event.type == GameEventType.fruit ? 300 : 1500), () {
+          Future.delayed(
+              Duration(
+                  milliseconds: event.type == GameEventType.fruit ? 300 : 1500),
+              () {
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
           });
 
@@ -156,7 +156,8 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                     onPressed: () async {
                       if (!mounted) return;
                       Navigator.of(context).pop(); // 關閉 Dialog
-                      await Future.delayed(Duration(milliseconds: 100)); // 等 dialog 關閉完成
+                      await Future.delayed(
+                          Duration(milliseconds: 100)); // 等 dialog 關閉完成
                       game.resetGame(); // 重置遊戲
                     },
                     icon: Icon(Icons.refresh, size: 22),
@@ -176,7 +177,8 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                     ),
                     onPressed: () {
                       Navigator.of(context).pop(); // 關閉 Dialog
-                      Navigator.of(context, rootNavigator: true).pop(true); // 回上一頁
+                      Navigator.of(context, rootNavigator: true)
+                          .pop(true); // 回上一頁
                     },
                     icon: Icon(Icons.arrow_back, size: 22),
                     label: Text("Back", style: TextStyle(fontSize: 18)),
@@ -199,7 +201,8 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           if (!mounted) return; // widget 已卸載，直接 return
           if (Navigator.of(context).canPop()) Navigator.of(context).pop();
           // ⭐ 回上一頁（通常是 PageGameList）
-          Navigator.of(context, rootNavigator: true).pop(true); // 帶回 true → 要求上一頁 refresh
+          Navigator.of(context, rootNavigator: true)
+              .pop(true); // 帶回 true → 要求上一頁 refresh
         });
 
         return Dialog(
@@ -221,19 +224,16 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
   @override
   Widget build(BuildContext context) {
-    final level = game.level;
-    final tileSize = 50.0;
+    // ---- 1. 計算 maxBlocks ----
+    final maxBlocks = game.level.treasure.y +
+        game.level.treasure.x +
+        game.level.obstacles.length * 2;
 
-    // 計算最大 X (地圖寬度)
-    final maxX = [
-      ...level.obstacles.map((o) => o.x),
-      ...level.fruits.map((f) => f.x),
-      level.treasure.x,
-    ].reduce(max);
+    // ---- 2. 在每次 build 完成後更新到 iframe ----
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      editorKey.currentState?.setMaxBlocks(maxBlocks);
+    });
 
-    // 加上一些 buffer
-    final levelWidth = (maxX + 4) * tileSize;
-    final levelHeight = 8 * tileSize; // 請依你遊戲高度調整
     return Scaffold(
       appBar: AppBar(title: Text('Blockly Platform Game')),
       body: Row(
@@ -304,11 +304,10 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                         ? SizedBox() // 收合時完全不渲染 blockly iframe
                         : PageGameSteamSuperHeroBlocklyEditor(
                             key: editorKey, // 保證重新建立避免 cache
-                            maxBlocks: maxBlocks, // <-- 傳入 maxBlocks
                             onCommandsReady: (cmds) async {
                               // ✅ 每次開始前重置遊戲
-                              game.resetGame();  // 位置、分數、水果全部重置
-                               // 延遲 300ms 再回傳
+                              game.resetGame(); // 位置、分數、水果全部重置
+                              // 延遲 300ms 再回傳
                               await Future.delayed(Duration(milliseconds: 300));
 
                               commands = cmds;
@@ -349,23 +348,67 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           Expanded(
             child: Container(
               color: Colors.black,
-              child: InteractiveViewer(
-                constrained: false,
-                boundaryMargin: const EdgeInsets.all(200),
-                minScale: 0.5,
-                maxScale: 2.5,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: levelWidth,
-                      height: levelHeight,
-                      child: WidgetsGameSteamSuperHeroGameBoard(game: game),
+              child: LayoutBuilder(builder: (context, constraints) {
+                final topOffset = 60.0; // 分數區高度
+                final availableWidth = constraints.maxWidth;
+                final availableHeight = constraints.maxHeight - topOffset - 10;
+
+                // 計算整個地圖最大 x/y
+                final maxX = game.level.treasure.x.toInt();
+                final maxY = game.level.treasure.y.toInt();
+
+                // 每格大小自動計算
+                final tileSize = min(
+                  availableWidth / (maxX + 1),
+                  availableHeight / (maxY + 1),
+                );
+
+                return Stack(
+                  children: [
+                    // 分數區
+                    Positioned(
+                      top: 0,
+                      left: 16,
+                      height: topOffset,
+                      child: ValueListenableBuilder<GameState>(
+                        valueListenable: game.stateNotifier,
+                        builder: (context, state, _) {
+                          return Text(
+                            'Score: ${state.score}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ),
-              ),
+
+                    // 地圖區
+                    Positioned(
+                      top: topOffset,
+                      left: 0,
+                      width: (maxX + 1) * tileSize,
+                      height: (maxY + 1) * tileSize,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: SizedBox(
+                            width: (maxX + 1) * tileSize,
+                            height: (maxY + 1) * tileSize,
+                            child: WidgetsGameSteamSuperHeroGameBoard(
+                              game: game,
+                              tileSize: tileSize, // 傳入自動計算格子大小
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
             ),
           ),
         ],

@@ -6,15 +6,16 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
-  final int maxBlocks;
-
-  const PageGameSteamSuperHeroBlocklyEditor({super.key, required this.onCommandsReady, required this.maxBlocks});
+  const PageGameSteamSuperHeroBlocklyEditor(
+      {super.key, required this.onCommandsReady});
 
   @override
-  State<PageGameSteamSuperHeroBlocklyEditor> createState() => PageGameSteamSuperHeroBlocklyEditorState();
+  State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
+      PageGameSteamSuperHeroBlocklyEditorState();
 }
 
-class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperHeroBlocklyEditor> {
+class PageGameSteamSuperHeroBlocklyEditorState
+    extends State<PageGameSteamSuperHeroBlocklyEditor> {
   late WebViewController controller;
 
   @override
@@ -23,7 +24,6 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
     // Mobile / Desktop 使用 WebView
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadFlutterAsset("assets/blockly/index.html")
       ..addJavaScriptChannel(
         "BlocklyCallback",
         onMessageReceived: (msg) {
@@ -31,10 +31,14 @@ class PageGameSteamSuperHeroBlocklyEditorState extends State<PageGameSteamSuperH
           final commands = parseBlocklyJson(jsonDecode(jsonString));
           widget.onCommandsReady(commands);
         },
-      );
-    // 傳 maxBlocks 到 WebView
+      )
+      ..loadFlutterAsset("assets/blockly/index.html");
+  }
+
+  // ⭐ 父 widget 可以呼叫這個方法來更新 maxBlocks
+  void setMaxBlocks(int value) {
     controller.runJavaScript(
-      'window.postMessage({type: "set_max_blocks", maxBlocks: $widget.maxBlocks}, "*");'
+      "window.postMessage(${{'type': 'set_max_blocks', 'maxBlocks': value}}, '*');"
     );
   }
 

@@ -13,10 +13,9 @@ import '../../../core/logger.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
-  final int maxBlocks;
 
   const PageGameSteamSuperHeroBlocklyEditor(
-      {super.key, required this.onCommandsReady, required this.maxBlocks});
+      {super.key, required this.onCommandsReady});
 
   @override
   State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
@@ -27,6 +26,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
     extends State<PageGameSteamSuperHeroBlocklyEditor> {
   static html.IFrameElement? iframe;
   static bool _iframeRegistered = false;
+  static int? windowMaxBlocksPending;
 
   @override
   void initState() {
@@ -41,9 +41,12 @@ class PageGameSteamSuperHeroBlocklyEditorState
           ..height = '100%';
         iframe = frame; // 儲存 reference
 
-        // 傳 maxBlocks 到 iframe
-        frame.onLoad.listen((_) {
-          iframe?.contentWindow?.postMessage({'type': 'set_max_blocks', 'maxBlocks': widget.maxBlocks}, '*');
+        // ✅ 等 iframe load 完再發送 MAX_BLOCKS
+        iframe?.onLoad.listen((event) {
+          if (windowMaxBlocksPending != null) {
+            sendMaxBlocksToIframe(windowMaxBlocksPending!);
+            windowMaxBlocksPending = null;
+          }
         });
 
         return frame; // ✅ 回傳非 nullable
@@ -82,6 +85,23 @@ class PageGameSteamSuperHeroBlocklyEditorState
         logger.e('Error parsing message from iframe: $e\n$st');
       }
     });
+  }
+
+  // 更新 maxBlocks
+  void setMaxBlocks(int value) {
+    if (iframe?.contentWindow != null) {
+      sendMaxBlocksToIframe(value);
+    } else {
+      // iframe 還沒 ready → 暫存，等 load 後再送
+      windowMaxBlocksPending = value;
+    }
+  }
+
+  void sendMaxBlocksToIframe(int value) {
+    iframe?.contentWindow?.postMessage(
+      {'type': 'set_max_blocks', 'maxBlocks': value},
+      '*',
+    );
   }
 
   // Flutter → Web 要求取出 JSON
