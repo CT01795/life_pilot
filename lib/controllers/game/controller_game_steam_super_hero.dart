@@ -206,25 +206,13 @@ class ControllerGameSteamSuperHero {
 
     if (_scoreSaved) return false; // 已經過關 → 不要再檢查
 
-    // 限制角色不能超出場景
-    final maxX = level.obstacles
-            .map((o) => o.x)
-            .followedBy(level.fruits.map((f) => f.x))
-            .followedBy([level.treasure.x]).reduce(max) +
-        2;
-    final maxY = level.obstacles
-            .map((o) => o.y)
-            .followedBy(level.fruits.map((f) => f.y))
-            .followedBy([level.treasure.y]).reduce(max) +
-        2;
-
     // 先更新位置
-    state.x = state.x.clamp(-1, maxX);
-    state.y = state.y.clamp(-1, maxY); // ✅ 防止已卸載 widget 呼叫 setState
+    state.x = state.x.clamp(-1, level.treasure.x + 1);
+    state.y = state.y.clamp(-1, level.treasure.y + 1); // ✅ 防止已卸載 widget 呼叫 setState
     stateNotifier.value = state.copy();
 
     // 掉下懸崖檢查
-    if (state.x < 0 || state.x >= maxX || state.y < 0 || state.y >= maxY) {
+    if (state.x < 0 || state.x > level.treasure.x || state.y < 0 || state.y > level.treasure.y) {
       _notifyEvent(GameEvent(GameEventType.obstacle, "Fall off a cliff！"));
       return false; // 停止遊戲
     }
@@ -263,18 +251,19 @@ class ControllerGameSteamSuperHero {
     if (!state.treasureCollected &&
         state.x == level.treasure.x &&
         state.y == level.treasure.y) {
-      if (state.score < (level.levelNumber * 0.5).toInt()) { //至少要吃一點東西
-        _notifyEvent(GameEvent(
-          GameEventType.warning, "Eat at least ${(level.levelNumber * 0.5).toInt()} foods !!"));
+      if (state.score < min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
+        //至少要吃一點東西
+        _notifyEvent(GameEvent(GameEventType.warning,
+            "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!"));
         return true;
-      } 
+      }
       state.treasureCollected = true;
       state.score += level.treasure.scoreValue;
       _notifyEvent(GameEvent(
           GameEventType.treasure, "Treasure found！Score: ${state.score}"));
       _saveScore(true);
       return false;
-    } 
+    }
     return true;
   }
 
@@ -287,7 +276,9 @@ class ControllerGameSteamSuperHero {
   }
 
   Future<void> _saveScore(bool isPass) async {
-    if (_scoreSaved || state.score < level.treasure.scoreValue) return; // ⛔ 已存過就不再存
+    if (_scoreSaved || state.score < level.treasure.scoreValue) {
+      return; // ⛔ 已存過就不再存
+    }
     _scoreSaved = true;
     await service.saveUserGameScore(
       newUserName: userName,

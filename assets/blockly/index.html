@@ -24,6 +24,23 @@
       width: 100%;
       overflow: auto; /* 允許滾動 */
     }
+
+    /* 讓 toolbox 往右移動 */
+    .blocklyFlyout {
+      transform: translateX(30px) !important;
+    }
+
+    /* 所有積木文字放大 */
+    .blocklyText {
+      font-size: 20px !important; /* 可調整大小 */
+      font-weight: bold;           /* 可選加粗 */
+    }
+
+    /* 如果要調整下拉選單字體 */
+    .blocklyDropdownText {
+      font-size: 20px !important;
+    }
+
   </style>
 </head>
 
@@ -97,24 +114,24 @@
     var toolbox = `
       <xml>
         <!-- Movement -->
-        <block type="forward" gap="4"></block>
-        <block type="backward" gap="4"></block>
-        <block type="turn_left" gap="4"></block>
-        <block type="turn_right" gap="4"></block>
-        <block type="jump_up" gap="4"></block>
-        <block type="jump_down" gap="4"></block>
+        <block type="forward" gap="14"></block>
+        <block type="backward" gap="14"></block>
+        <block type="turn_left" gap="14"></block>
+        <block type="turn_right" gap="14"></block>
+        <block type="jump_up" gap="14"></block>
+        <block type="jump_down" gap="14"></block>
 
         <!-- Loop -->
-        <block type="controls_repeat_ext" gap="4">
+        <block type="controls_repeat_ext" gap="14">
           <value name="TIMES">
             <shadow type="math_number">
-              <field name="NUM">1</field>
+              <field name="NUM"></field>
             </shadow>
           </value>
         </block>
 
         <!-- If / Else -->
-        <block type="controls_if" gap="4">
+        <block type="controls_if" gap="14">
           <value name="IF0">
             <shadow type="logic_compare">
               <field name="OP">EQ</field>
@@ -125,7 +142,7 @@
               </value>
               <value name="B">
                 <shadow type="math_number">
-                  <field name="NUM">1</field>
+                  <field name="NUM"></field>
                 </shadow>
               </value>
             </shadow>
@@ -194,15 +211,47 @@
     }
 
     workspace.addChangeListener(function(event) {
-      if (event.type !== Blockly.Events.BLOCK_CREATE) return;
-      const limitCount = countExecutableBlocks(); // 🔥 使用自訂計
+      const typesToWatch = [
+        Blockly.Events.BLOCK_CREATE,
+        Blockly.Events.BLOCK_DELETE
+      ];
+
+      if (!typesToWatch.includes(event.type)) {
+        return;
+      }
+      console.log("🔔 Blockly Event: event.type = ", event.type);
+      // 若 MAX_BLOCKS 尚未設置，直接跳過限制
+      if (!window.MAX_BLOCKS || window.MAX_BLOCKS <= 0) {
+        console.log("🔔 Blockly Event: window.MAX_BLOCKS = ", window.MAX_BLOCKS);
+        return;
+      }
+
+      const count = countExecutableBlocks(); // 🔥 使用自訂計
+
+      if (count > window.MAX_BLOCKS) {
+        // 超過限制 → 取得剛建立的積木
+        const block = workspace.getBlockById(event.blockId);
+        if (block) {
+          block.dispose(true); // 刪掉它
+        }
+
+        showWarning(`blocks should <= ${window.MAX_BLOCKS} ！`);
+      }
     });
 
 
     // 監聽 Flutter 傳來的 maxBlocks
     window.addEventListener('message', (event) => {
-      if (event.data?.type === 'set_max_blocks') {
-        window.MAX_BLOCKS = event.data.maxBlocks;
+      console.log("📩 JS 收到 message:", event.data);
+      let msg = event.data;
+      if (msg && msg.type === "set_max_blocks") {
+        window.MAX_BLOCKS = msg.maxBlocks;
+        console.log("MAX_BLOCKS updated =", window.MAX_BLOCKS);
+      }
+      
+      // 監聽 Flutter 的請求 <web版必須加>
+      else if (msg && msg.type === 'request_commands') {
+        sendCommandsToFlutter();
       }
     });
 
@@ -235,13 +284,6 @@
         "*"
       );
     }
-
-    // 監聽 Flutter 的請求 <web版必須加>
-    window.addEventListener('message', (event) => {
-      if (event.data?.type === 'request_commands') {
-        sendCommandsToFlutter();
-      }
-    });
   </script>
 </body>
 </html>
