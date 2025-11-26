@@ -62,19 +62,6 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
   }
 
   @override
-  void didUpdateWidget(covariant PageGameSteamSuperHero oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.gameLevel != oldWidget.gameLevel) {
-      final newMaxBlocks = game.level.treasure.y +
-          game.level.treasure.x +
-          game.level.obstacles.length * 2;
-
-      editorKey.currentState?.setMaxBlocks(newMaxBlocks);
-    }
-  }
-
-  @override
   void dispose() {
     game.dispose();
     super.dispose();

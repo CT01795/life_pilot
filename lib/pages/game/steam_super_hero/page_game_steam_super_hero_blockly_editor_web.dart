@@ -26,7 +26,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
     extends State<PageGameSteamSuperHeroBlocklyEditor> {
   static html.IFrameElement? iframe;
   static bool _iframeRegistered = false;
-  static int? windowMaxBlocksPending;
+  int? windowMaxBlocksPending;
 
   @override
   void initState() {
