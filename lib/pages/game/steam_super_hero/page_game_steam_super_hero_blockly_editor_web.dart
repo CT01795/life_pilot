@@ -26,7 +26,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
     extends State<PageGameSteamSuperHeroBlocklyEditor> {
   static html.IFrameElement? iframe;
   static bool _iframeRegistered = false;
-  int? windowMaxBlocksPending;
+  static int? windowMaxBlocksPending;
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
         // ✅ 等 iframe load 完再發送 MAX_BLOCKS
         iframe?.onLoad.listen((event) {
           if (windowMaxBlocksPending != null) {
-            sendMaxBlocksToIframe(windowMaxBlocksPending!);
+            setMaxBlocks(windowMaxBlocksPending!);
             windowMaxBlocksPending = null;
           }
         });
@@ -97,13 +97,6 @@ class PageGameSteamSuperHeroBlocklyEditorState
     } else {
       // iframe 還沒 ready → 暫存，等 load 後再送
       windowMaxBlocksPending = value;
-      // ✅ 等 iframe load 完再發送 MAX_BLOCKS
-      iframe?.onLoad.listen((event) {
-        if (windowMaxBlocksPending != null) {
-          sendMaxBlocksToIframe(windowMaxBlocksPending!);
-          windowMaxBlocksPending = null;
-        }
-      });
     }
   }
 
