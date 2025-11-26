@@ -44,9 +44,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
 
         // ✅ 等 iframe load 完再發送 MAX_BLOCKS
         iframe?.onLoad.listen((event) {
-          if (windowMaxBlocksPending != null) {
-            setMaxBlocks(windowMaxBlocksPending!);
-          }
+          _sendPendingMaxBlocks();
         });
 
         return frame; // ✅ 回傳非 nullable
@@ -90,21 +88,25 @@ class PageGameSteamSuperHeroBlocklyEditorState
   // 更新 maxBlocks
   void setMaxBlocks(int value) {
     logger.i("🌟 Web setMaxBlocks");
+    windowMaxBlocksPending = value; // 無論 iframe 是否 ready 都存起來
     if (iframe?.contentWindow != null) {
-      logger.i("🌟 Web setMaxBlocks sendMaxBlocksToIframe");
-      sendMaxBlocksToIframe(value);
-      windowMaxBlocksPending = null;
+      _sendPendingMaxBlocks();
     } else {
-      // iframe 還沒 ready → 暫存，等 load 後再送
-      windowMaxBlocksPending = value;
+      // iframe 還沒 ready → 等 onLoad 自動發送
+      iframe?.onLoad.listen((event) {
+        _sendPendingMaxBlocks();
+      });
     }
   }
 
-  void sendMaxBlocksToIframe(int value) {
+  void _sendPendingMaxBlocks() {
+    if (windowMaxBlocksPending == null) return;
+    logger.i("🌟 Web setMaxBlocks sendMaxBlocksToIframe");
     iframe?.contentWindow?.postMessage(
-      {'type': 'set_max_blocks', 'maxBlocks': value},
+      {'type': 'set_max_blocks', 'maxBlocks': windowMaxBlocksPending},
       '*',
     );
+    windowMaxBlocksPending = null;
   }
 
   // Flutter → Web 要求取出 JSON
