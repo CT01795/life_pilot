@@ -223,6 +223,7 @@
         window.speechSynthesis.cancel();
         let msg = new SpeechSynthesisUtterance(text);
         msg.lang = "en-US";
+        msg.rate = 0.7;   // 例如 1.0 = 正常，0.8 = 慢一點，1.2 = 快一點
         window.speechSynthesis.speak(msg);
       } catch(e) {
         console.log("語音失敗:", e);
@@ -230,14 +231,6 @@
     }
 
     workspace.addChangeListener(function(event) {
-      // 🔊 只在開始拖曳積木時念一次
-      const blockSpeak = workspace.getBlockById(event.blockId);
-      if (blockSpeak) {
-        const speakTextValue = blockSpeak.type.replace("controls_","").replace("_"," ");
-        console.log("語音:", blockSpeak.type.replace("controls_","").replace("_"," "));
-        speakText(speakTextValue);
-      }
-
       const typesToWatch = [
         Blockly.Events.BLOCK_CREATE,
         Blockly.Events.BLOCK_DELETE
@@ -246,6 +239,14 @@
       if (!typesToWatch.includes(event.type)) {
         return;
       }
+      
+      // 🔊 只在開始拖曳積木時念一次
+      const blockSpeak = workspace.getBlockById(event.blockId);
+      if (blockSpeak) {
+        const speakTextValue = blockSpeak.type.replace("controls_if","if else").replace("controls_repeat_ext","repeat").replace("_"," ");
+        speakText(speakTextValue);
+      }
+
       console.log("🔔 Blockly Event: event.type = ", event.type);
       // 若 MAX_BLOCKS 尚未設置，直接跳過限制
       if (!window.MAX_BLOCKS || window.MAX_BLOCKS <= 0) {
