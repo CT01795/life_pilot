@@ -13,10 +13,9 @@ import '../../../core/logger.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
-  final int initialMaxBlocks;
 
   const PageGameSteamSuperHeroBlocklyEditor(
-      {super.key, required this.onCommandsReady, required this.initialMaxBlocks,});
+      {super.key, required this.onCommandsReady});
 
   @override
   State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
@@ -87,9 +86,6 @@ class PageGameSteamSuperHeroBlocklyEditorState
         logger.e('Error parsing message from iframe: $e\n$st');
       }
     });
-    if (widget.initialMaxBlocks > 0) {
-      setMaxBlocks(widget.initialMaxBlocks);
-    }
   }
 
   // 更新 maxBlocks
