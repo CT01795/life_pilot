@@ -225,8 +225,6 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
   @override
   Widget build(BuildContext context) {
-    game.resetGame(); // 重置遊戲
-    
     // ---- 1. 計算 maxBlocks ----
     final maxBlocks = game.level.treasure.y +
         game.level.treasure.x +
@@ -302,73 +300,73 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           // -----------------------------------------------------------------
           Expanded(
             child: Container(
-              color: Colors.black,
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 3.0,
-                child: LayoutBuilder(builder: (context, constraints) {
-                  final topOffset = 60.0; // 分數區高度
-                  final availableWidth = constraints.maxWidth;
-                  final availableHeight = constraints.maxHeight - topOffset - 10;
+                color: Colors.black,
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 3.0,
+                  child: LayoutBuilder(builder: (context, constraints) {
+                    final topOffset = 60.0; // 分數區高度
+                    final availableWidth = constraints.maxWidth;
+                    final availableHeight =
+                        constraints.maxHeight - topOffset - 10;
 
-                  // 計算整個地圖最大 x/y
-                  final maxX = game.level.treasure.x.toInt();
-                  final maxY = game.level.treasure.y.toInt();
+                    // 計算整個地圖最大 x/y
+                    final maxX = game.level.treasure.x.toInt();
+                    final maxY = game.level.treasure.y.toInt();
 
-                  // 每格大小自動計算
-                  final tileSize = min(
-                    availableWidth / (maxX + 1),
-                    availableHeight / (maxY + 1),
-                  );
+                    // 每格大小自動計算
+                    final tileSize = min(
+                      availableWidth / (maxX + 1),
+                      availableHeight / (maxY + 1),
+                    );
 
-                  return Stack(
-                    children: [
-                      // 分數區
-                      Positioned(
-                        top: 0,
-                        left: 16,
-                        height: topOffset,
-                        child: ValueListenableBuilder<GameState>(
-                          valueListenable: game.stateNotifier,
-                          builder: (context, state, _) {
-                            return Text(
-                              'Score: ${state.score}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            );
-                          },
+                    return Stack(
+                      children: [
+                        // 分數區
+                        Positioned(
+                          top: 0,
+                          left: 16,
+                          height: topOffset,
+                          child: ValueListenableBuilder<GameState>(
+                            valueListenable: game.stateNotifier,
+                            builder: (context, state, _) {
+                              return Text(
+                                'Score: ${state.score}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
 
-                      // 地圖區
-                      Positioned(
-                        top: topOffset,
-                        left: 0,
-                        width: (maxX + 1) * tileSize,
-                        height: (maxY + 1) * tileSize,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
+                        // 地圖區
+                        Positioned(
+                          top: topOffset,
+                          left: 0,
+                          width: (maxX + 1) * tileSize,
+                          height: (maxY + 1) * tileSize,
                           child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical,
-                            child: SizedBox(
-                              width: (maxX + 1) * tileSize,
-                              height: (maxY + 1) * tileSize,
-                              child: WidgetsGameSteamSuperHeroGameBoard(
-                                game: game,
-                                tileSize: tileSize, // 傳入自動計算格子大小
+                            scrollDirection: Axis.horizontal,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: SizedBox(
+                                width: (maxX + 1) * tileSize,
+                                height: (maxY + 1) * tileSize,
+                                child: WidgetsGameSteamSuperHeroGameBoard(
+                                  game: game,
+                                  tileSize: tileSize, // 傳入自動計算格子大小
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                }),
-              )
-            ),
+                      ],
+                    );
+                  }),
+                )),
           ),
         ],
       ),
