@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/models/game/blockly/blockly_parser.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -21,6 +22,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
   @override
   void initState() {
     super.initState();
+    logger.d("🌟 IO Editor State 建立成功：$this");
     // Mobile / Desktop 使用 WebView
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -38,7 +40,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
   // ⭐ 父 widget 可以呼叫這個方法來更新 maxBlocks
   void setMaxBlocks(int value) {
     controller.runJavaScript(
-      "window.postMessage(${{'type': 'set_max_blocks', 'maxBlocks': value}}, '*');"
+      "window.postMessage({'type': 'set_max_blocks', 'maxBlocks': value}, '*');"
     );
   }
 
