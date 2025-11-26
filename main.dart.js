@@ -112852,7 +112852,7 @@ s=$.awL
 if((s==null?null:A.b0j(s.contentWindow))!=null){r.t9("\ud83c\udf1f Web setMaxBlocks sendMaxBlocksToIframe")
 r=$.awL
 if(r!=null){r=A.b0j(r.contentWindow)
-if(r!=null)J.b2a(r,A.aa(["type","set_max_blocks","maxBlocks",a],t.N,t.K),"*")}}else $.aZX=a},
+if(r!=null)J.b2a(r,A.aa(["type","set_max_blocks","maxBlocks",a],t.N,t.K),"*")}$.aZX=null}else $.aZX=a},
 SX(){var s=0,r=A.t(t.H),q,p,o
 var $async$SX=A.o(function(a,b){if(a===1)return A.p(b,r)
 while(true)switch(s){case 0:o=$.awL
@@ -112876,8 +112876,7 @@ return r},
 $S:694}
 A.awM.prototype={
 $1(a){var s=$.aZX
-if(s!=null){this.a.UA(s)
-$.aZX=null}},
+if(s!=null)this.a.UA(s)},
 $S:131}
 A.awO.prototype={
 $1(a){var s,r,q,p,o,n,m,l,k,j,i,h=this.a
