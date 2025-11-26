@@ -232,7 +232,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
     // ---- 2. 在每次 build 完成後更新到 iframe ----
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      logger.d("📢 editorKey.currentState = ${editorKey.currentState}");
+      logger.i("📢 editorKey.currentState = ${editorKey.currentState}");
       editorKey.currentState?.setMaxBlocks(maxBlocks);
     });
 
