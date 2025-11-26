@@ -46,7 +46,6 @@ class PageGameSteamSuperHeroBlocklyEditorState
         iframe?.onLoad.listen((event) {
           if (windowMaxBlocksPending != null) {
             setMaxBlocks(windowMaxBlocksPending!);
-            windowMaxBlocksPending = null;
           }
         });
 
@@ -94,6 +93,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
     if (iframe?.contentWindow != null) {
       logger.i("🌟 Web setMaxBlocks sendMaxBlocksToIframe");
       sendMaxBlocksToIframe(value);
+      windowMaxBlocksPending = null;
     } else {
       // iframe 還沒 ready → 暫存，等 load 後再送
       windowMaxBlocksPending = value;
