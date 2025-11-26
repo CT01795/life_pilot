@@ -112718,7 +112718,7 @@ o===$&&A.a()
 o=o.d
 s=o.d
 o=o.b.length
-$.af.p3$.push(new A.aPh(q,s.b+s.a+o*2))
+$.af.p3$.push(new A.aPh(q,s.b+s.a+o))
 o=A.R9(p,p,p,p,p,A.aZ("Blockly Platform Game",p,p,p,p,p,p,p,p))
 s=A.bY(0,0,0,180,0,0)
 r=t.p
