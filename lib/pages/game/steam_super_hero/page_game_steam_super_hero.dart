@@ -233,7 +233,14 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
     // ---- 2. 在每次 build 完成後更新到 iframe ----
     WidgetsBinding.instance.addPostFrameCallback((_) {
       logger.i("📢 editorKey.currentState = ${editorKey.currentState}");
-      editorKey.currentState?.setMaxBlocks(maxBlocks);
+      if (editorKey.currentState != null) {
+        editorKey.currentState?.setMaxBlocks(maxBlocks);
+      } else {
+        // 延遲一點再呼叫
+        Future.delayed(Duration(milliseconds: 500), () {
+          editorKey.currentState?.setMaxBlocks(maxBlocks);
+        });
+      }
     });
 
     return Scaffold(
@@ -280,6 +287,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                 Expanded(
                   child: PageGameSteamSuperHeroBlocklyEditor(
                     key: editorKey,
+                    initialMaxBlocks: maxBlocks,
                     onCommandsReady: (cmds) async {
                       // ✅ 每次開始前重置遊戲
                       game.resetGame(); // 位置、分數、水果全部重置
