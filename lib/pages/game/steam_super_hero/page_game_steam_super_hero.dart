@@ -228,7 +228,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
     // ---- 1. 計算 maxBlocks ----
     final maxBlocks = game.level.treasure.y +
         game.level.treasure.x +
-        game.level.obstacles.length * 2;
+        game.level.obstacles.length;
 
     // ---- 2. 在每次 build 完成後更新到 iframe ----
     WidgetsBinding.instance.addPostFrameCallback((_) {
