@@ -31,7 +31,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
   @override
   void initState() {
     super.initState();
-    logger.d("🌟 Web Editor State 建立成功：$this");
+    logger.i("🌟 Web Editor State 建立成功：$this");
     if (!_iframeRegistered) {
       // ignore: undefined_prefixed_name
       platformViewRegistry.registerViewFactory('blockly-iframe', (int viewId) {
@@ -90,7 +90,9 @@ class PageGameSteamSuperHeroBlocklyEditorState
 
   // 更新 maxBlocks
   void setMaxBlocks(int value) {
+    logger.i("🌟 Web setMaxBlocks");
     if (iframe?.contentWindow != null) {
+      logger.i("🌟 Web setMaxBlocks sendMaxBlocksToIframe");
       sendMaxBlocksToIframe(value);
     } else {
       // iframe 還沒 ready → 暫存，等 load 後再送

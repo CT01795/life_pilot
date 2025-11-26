@@ -22,7 +22,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
   @override
   void initState() {
     super.initState();
-    logger.d("🌟 IO Editor State 建立成功：$this");
+    logger.i("🌟 IO Editor State 建立成功：$this");
     // Mobile / Desktop 使用 WebView
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -39,6 +39,7 @@ class PageGameSteamSuperHeroBlocklyEditorState
 
   // ⭐ 父 widget 可以呼叫這個方法來更新 maxBlocks
   void setMaxBlocks(int value) {
+    logger.i("🌟 IO setMaxBlocks");
     controller.runJavaScript(
       "window.postMessage({'type': 'set_max_blocks', 'maxBlocks': value}, '*');"
     );
