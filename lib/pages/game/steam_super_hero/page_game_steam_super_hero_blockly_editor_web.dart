@@ -97,6 +97,13 @@ class PageGameSteamSuperHeroBlocklyEditorState
     } else {
       // iframe 還沒 ready → 暫存，等 load 後再送
       windowMaxBlocksPending = value;
+      // ✅ 等 iframe load 完再發送 MAX_BLOCKS
+      iframe?.onLoad.listen((event) {
+        if (windowMaxBlocksPending != null) {
+          sendMaxBlocksToIframe(windowMaxBlocksPending!);
+          windowMaxBlocksPending = null;
+        }
+      });
     }
   }
 
