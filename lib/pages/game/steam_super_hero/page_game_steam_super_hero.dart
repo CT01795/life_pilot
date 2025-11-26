@@ -62,6 +62,19 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
   }
 
   @override
+  void didUpdateWidget(covariant PageGameSteamSuperHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.gameLevel != oldWidget.gameLevel) {
+      final newMaxBlocks = game.level.treasure.y +
+          game.level.treasure.x +
+          game.level.obstacles.length * 2;
+
+      editorKey.currentState?.setMaxBlocks(newMaxBlocks);
+    }
+  }
+
+  @override
   void dispose() {
     game.dispose();
     super.dispose();
@@ -230,6 +243,12 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
         game.level.treasure.x +
         game.level.obstacles.length * 2;
 
+    // ---- 2. 在每次 build 完成後更新到 iframe ----
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      logger.i("📢 editorKey.currentState = ${editorKey.currentState}");
+      editorKey.currentState?.setMaxBlocks(maxBlocks);
+    });
+
     return Scaffold(
       appBar: AppBar(title: Text('Blockly Platform Game')),
       body: Row(
@@ -274,7 +293,6 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                 Expanded(
                   child: PageGameSteamSuperHeroBlocklyEditor(
                     key: editorKey,
-                    initialMaxBlocks: maxBlocks,
                     onCommandsReady: (cmds) async {
                       // ✅ 每次開始前重置遊戲
                       game.resetGame(); // 位置、分數、水果全部重置

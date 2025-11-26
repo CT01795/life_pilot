@@ -7,10 +7,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
-  final int initialMaxBlocks;
-
   const PageGameSteamSuperHeroBlocklyEditor(
-      {super.key, required this.onCommandsReady, required this.initialMaxBlocks,});
+      {super.key, required this.onCommandsReady});
 
   @override
   State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
@@ -37,9 +35,6 @@ class PageGameSteamSuperHeroBlocklyEditorState
         },
       )
       ..loadFlutterAsset("assets/blockly/index.html");
-    if (widget.initialMaxBlocks > 0) {
-      setMaxBlocks(widget.initialMaxBlocks);
-    }
   }
 
   // ⭐ 父 widget 可以呼叫這個方法來更新 maxBlocks
