@@ -230,19 +230,6 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
         game.level.treasure.x +
         game.level.obstacles.length * 2;
 
-    // ---- 2. 在每次 build 完成後更新到 iframe ----
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      logger.i("📢 editorKey.currentState = ${editorKey.currentState}");
-      if (editorKey.currentState != null) {
-        editorKey.currentState?.setMaxBlocks(maxBlocks);
-      } else {
-        // 延遲一點再呼叫
-        Future.delayed(Duration(milliseconds: 500), () {
-          editorKey.currentState?.setMaxBlocks(maxBlocks);
-        });
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(title: Text('Blockly Platform Game')),
       body: Row(
