@@ -11,6 +11,8 @@ import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_super_hero_game_board.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/logger.dart';
+
 class PageGameSteamSuperHero extends StatefulWidget {
   final String gameId;
   final int gameLevel;
@@ -27,7 +29,6 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
   // ---- Split Panel 狀態 ----
   double editorWidth = 600; // Editor 初始寬度
-  bool editorCollapsed = false; // 是否收合
   final double minEditorWidth = 40;
   final double maxEditorWidth = 600;
 
@@ -231,6 +232,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
     // ---- 2. 在每次 build 完成後更新到 iframe ----
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      logger.d("📢 editorKey.currentState = ${editorKey.currentState}");
       editorKey.currentState?.setMaxBlocks(maxBlocks);
     });
 
@@ -243,7 +245,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           // -----------------------------------------------------------------
           AnimatedContainer(
             duration: Duration(milliseconds: 180),
-            width: editorCollapsed ? minEditorWidth : editorWidth,
+            width: editorWidth,
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(right: BorderSide(color: Colors.grey.shade300)),
@@ -256,89 +258,40 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                   height: 48,
                   child: Row(
                     children: [
-                      // 收合 / 展開按鈕（改成較小寬度避免 overflow）
-                      SizedBox(
-                        width: 30, // 🌟 取代 IconButton，避免最小寬度 48px
-                        child: InkWell(
-                          child: Icon(
-                            editorCollapsed
-                                ? Icons.arrow_right
-                                : Icons.arrow_left,
-                            color: Colors.white,
-                            size: 50,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              editorCollapsed = !editorCollapsed;
-                            });
-                          },
+                      Gaps.w8,
+                      Expanded(
+                        child: Text(
+                          "Blockly Editor",
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-
-                      if (!editorCollapsed) ...[
-                        Gaps.w8,
-                        Expanded(
-                          child: Text(
-                            "Blockly Editor",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            if (editorCollapsed) return; // 或先展開
-                            await editorKey.currentState?.requestBlocklyJson();
-                          },
-                          child: Text("Start",
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
+                      TextButton(
+                        onPressed: () async {
+                          await editorKey.currentState?.requestBlocklyJson();
+                        },
+                        child: Text("Start",
+                            style: TextStyle(color: Colors.white)),
+                      ),
                     ],
                   ),
                 ),
 
                 // ---------- Editor main ----------
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: Duration(milliseconds: 150),
-                    child: editorCollapsed
-                        ? SizedBox() // 收合時完全不渲染 blockly iframe
-                        : PageGameSteamSuperHeroBlocklyEditor(
-                            key: editorKey, // 保證重新建立避免 cache
-                            onCommandsReady: (cmds) async {
-                              // ✅ 每次開始前重置遊戲
-                              game.resetGame(); // 位置、分數、水果全部重置
-                              // 延遲 300ms 再回傳
-                              await Future.delayed(Duration(milliseconds: 300));
+                  child: PageGameSteamSuperHeroBlocklyEditor(
+                    key: editorKey,
+                    onCommandsReady: (cmds) async {
+                      // ✅ 每次開始前重置遊戲
+                      game.resetGame(); // 位置、分數、水果全部重置
+                      // 延遲 300ms 再回傳
+                      await Future.delayed(Duration(milliseconds: 300));
 
-                              commands = cmds;
-                              await game.executeCommands(commands);
-                            },
-                          ),
+                      commands = cmds;
+                      await game.executeCommands(commands);
+                    },
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // -----------------------------------------------------------------
-          // SplitBar：拖曳中間的 Bar 調整 Editor 寬度
-          // -----------------------------------------------------------------
-          MouseRegion(
-            cursor: SystemMouseCursors.resizeLeftRight,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onPanUpdate: (details) {
-                if (editorCollapsed) return; // 收合時不能拉
-                setState(() {
-                  editorWidth += details.delta.dx;
-                  editorWidth =
-                      editorWidth.clamp(minEditorWidth, maxEditorWidth);
-                });
-              },
-              child: Container(
-                width: 6,
-                color: Colors.grey.shade300,
-              ),
             ),
           ),
 
@@ -348,67 +301,71 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
           Expanded(
             child: Container(
               color: Colors.black,
-              child: LayoutBuilder(builder: (context, constraints) {
-                final topOffset = 60.0; // 分數區高度
-                final availableWidth = constraints.maxWidth;
-                final availableHeight = constraints.maxHeight - topOffset - 10;
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 3.0,
+                child: LayoutBuilder(builder: (context, constraints) {
+                  final topOffset = 60.0; // 分數區高度
+                  final availableWidth = constraints.maxWidth;
+                  final availableHeight = constraints.maxHeight - topOffset - 10;
 
-                // 計算整個地圖最大 x/y
-                final maxX = game.level.treasure.x.toInt();
-                final maxY = game.level.treasure.y.toInt();
+                  // 計算整個地圖最大 x/y
+                  final maxX = game.level.treasure.x.toInt();
+                  final maxY = game.level.treasure.y.toInt();
 
-                // 每格大小自動計算
-                final tileSize = min(
-                  availableWidth / (maxX + 1),
-                  availableHeight / (maxY + 1),
-                );
+                  // 每格大小自動計算
+                  final tileSize = min(
+                    availableWidth / (maxX + 1),
+                    availableHeight / (maxY + 1),
+                  );
 
-                return Stack(
-                  children: [
-                    // 分數區
-                    Positioned(
-                      top: 0,
-                      left: 16,
-                      height: topOffset,
-                      child: ValueListenableBuilder<GameState>(
-                        valueListenable: game.stateNotifier,
-                        builder: (context, state, _) {
-                          return Text(
-                            'Score: ${state.score}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        },
+                  return Stack(
+                    children: [
+                      // 分數區
+                      Positioned(
+                        top: 0,
+                        left: 16,
+                        height: topOffset,
+                        child: ValueListenableBuilder<GameState>(
+                          valueListenable: game.stateNotifier,
+                          builder: (context, state, _) {
+                            return Text(
+                              'Score: ${state.score}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
 
-                    // 地圖區
-                    Positioned(
-                      top: topOffset,
-                      left: 0,
-                      width: (maxX + 1) * tileSize,
-                      height: (maxY + 1) * tileSize,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
+                      // 地圖區
+                      Positioned(
+                        top: topOffset,
+                        left: 0,
+                        width: (maxX + 1) * tileSize,
+                        height: (maxY + 1) * tileSize,
                         child: SingleChildScrollView(
-                          scrollDirection: Axis.vertical,
-                          child: SizedBox(
-                            width: (maxX + 1) * tileSize,
-                            height: (maxY + 1) * tileSize,
-                            child: WidgetsGameSteamSuperHeroGameBoard(
-                              game: game,
-                              tileSize: tileSize, // 傳入自動計算格子大小
+                          scrollDirection: Axis.horizontal,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.vertical,
+                            child: SizedBox(
+                              width: (maxX + 1) * tileSize,
+                              height: (maxY + 1) * tileSize,
+                              child: WidgetsGameSteamSuperHeroGameBoard(
+                                game: game,
+                                tileSize: tileSize, // 傳入自動計算格子大小
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              }),
+                    ],
+                  );
+                }),
+              )
             ),
           ),
         ],
