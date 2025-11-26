@@ -225,6 +225,8 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
   @override
   Widget build(BuildContext context) {
+    game.resetGame(); // 重置遊戲
+    
     // ---- 1. 計算 maxBlocks ----
     final maxBlocks = game.level.treasure.y +
         game.level.treasure.x +
