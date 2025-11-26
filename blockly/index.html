@@ -70,7 +70,7 @@
         }
       };
 
-      Blockly.JavaScript[name] = function(block) {
+      Blockly.JavaScript[block.name] = function(block) {
         return `sendActionToFlutter("${block.name}");\n`;
       };
     });
@@ -216,7 +216,28 @@
       return count;
     }
 
+    let lastSpokenBlockId = null;
+
+    function speakText(text) {
+      try {
+        window.speechSynthesis.cancel();
+        let msg = new SpeechSynthesisUtterance(text);
+        msg.lang = "en-US";
+        window.speechSynthesis.speak(msg);
+      } catch(e) {
+        console.log("語音失敗:", e);
+      }
+    }
+
     workspace.addChangeListener(function(event) {
+      // 🔊 只在開始拖曳積木時念一次
+      const blockSpeak = workspace.getBlockById(event.blockId);
+      if (blockSpeak) {
+        const speakTextValue = blockSpeak.type.replace("controls_","").replace("_"," ");
+        console.log("語音:", blockSpeak.type.replace("controls_","").replace("_"," "));
+        speakText(speakTextValue);
+      }
+
       const typesToWatch = [
         Blockly.Events.BLOCK_CREATE,
         Blockly.Events.BLOCK_DELETE
@@ -236,9 +257,9 @@
 
       if (count > window.MAX_BLOCKS) {
         // 超過限制 → 取得剛建立的積木
-        const block = workspace.getBlockById(event.blockId);
-        if (block) {
-          block.dispose(true); // 刪掉它
+        // const block = workspace.getBlockById(event.blockId);
+        if (blockSpeak) {
+          blockSpeak.dispose(true); // 刪掉它
         }
 
         showWarning(`blocks should <= ${window.MAX_BLOCKS} ！`);
