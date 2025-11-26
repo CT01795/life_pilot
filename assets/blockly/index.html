@@ -51,13 +51,19 @@
     ////////////////////////////////////////////////////////////
     // 1️⃣ 定義自訂動作 blocks
     ////////////////////////////////////////////////////////////
-    const actionBlocks = ['forward','backward','turn_left','turn_right','jump_up','jump_down'];
+    const actionBlocks = [{name: 'forward', label: 'forward 🡺'},
+                          {name: 'backward', label: 'backward 🡸'},
+                          {name: 'turn_left', label: 'turn left 🡼'},
+                          {name: 'turn_right', label: 'turn right 🡽'},
+                          {name: 'jump_up', label: 'jump up 🡹'},
+                          {name: 'jump_down', label: 'jump down 🡻'}
+                        ];
 
-    actionBlocks.forEach(name => {
-      Blockly.Blocks[name] = {
+    actionBlocks.forEach(block => {
+      Blockly.Blocks[block.name] = {
         init: function() {
           this.appendDummyInput()
-              .appendField(name.replace('_',' '));
+              .appendField(block.label);
           this.setPreviousStatement(true);
           this.setNextStatement(true);
           this.setColour(160);
@@ -65,7 +71,7 @@
       };
 
       Blockly.JavaScript[name] = function(block) {
-        return `sendActionToFlutter("${name}");\n`;
+        return `sendActionToFlutter("${block.name}");\n`;
       };
     });
 
@@ -89,7 +95,7 @@
     Blockly.Blocks['math_variable'] = {
       init: function() {
         this.appendDummyInput()
-            .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"]]), "VAR");
+            .appendField(new Blockly.FieldDropdown([["🡺","x"], ["🡹","y"]]), "VAR");
         this.setOutput(true, "Number");
         this.setColour(230);
       }
@@ -131,13 +137,13 @@
         </block>
 
         <!-- If / Else -->
-        <!-- <block type="controls_if" gap="14">
+        <block type="controls_if" gap="14">
           <value name="IF0">
             <shadow type="logic_compare">
               <field name="OP">EQ</field>
               <value name="A">
                 <shadow type="math_variable">
-                  <field name="VAR">x</field>
+                  <field name="VAR">🡺</field>
                 </shadow>
               </value>
               <value name="B">
@@ -148,7 +154,7 @@
             </shadow>
           </value>
           <mutation else="1"></mutation>
-        </block>-->
+        </block>
       </xml>
     `;
 
