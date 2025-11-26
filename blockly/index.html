@@ -284,6 +284,11 @@
         "*"
       );
     }
+
+    window.setMaxBlocksFromFlutter = function(max) {
+      window.MAX_BLOCKS = max;
+      console.log("(IO) MAX_BLOCKS updated =", window.MAX_BLOCKS);
+    }
   </script>
 </body>
 </html>

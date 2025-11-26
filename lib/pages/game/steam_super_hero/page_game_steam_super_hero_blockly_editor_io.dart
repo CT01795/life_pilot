@@ -18,6 +18,7 @@ class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
 class PageGameSteamSuperHeroBlocklyEditorState
     extends State<PageGameSteamSuperHeroBlocklyEditor> {
   late WebViewController controller;
+  static int? windowMaxBlocksPending;
 
   @override
   void initState() {
@@ -34,15 +35,29 @@ class PageGameSteamSuperHeroBlocklyEditorState
           widget.onCommandsReady(commands);
         },
       )
-      ..loadFlutterAsset("assets/blockly/index.html");
+      ..loadFlutterAsset("assets/blockly/index.html")
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (url) {
+            logger.i("🌟 HTML 已載入完成");
+            // 確保 JS 函式存在再呼叫
+            setMaxBlocks(windowMaxBlocksPending!); // 或你要的數值
+          },
+        ),
+      );
   }
 
   // ⭐ 父 widget 可以呼叫這個方法來更新 maxBlocks
-  void setMaxBlocks(int value) {
+  Future<void> setMaxBlocks(int value) async {
     logger.i("🌟 IO setMaxBlocks");
-    controller.runJavaScript(
-      "window.postMessage({'type': 'set_max_blocks', 'maxBlocks': value}, '*');"
-    );
+    windowMaxBlocksPending = value; // 無論 if
+    try {
+      if (windowMaxBlocksPending != null) {
+        await controller.runJavaScript("setMaxBlocksFromFlutter($windowMaxBlocksPending)");
+      }
+    } catch (ex) {
+      logger.e(ex.toString());
+    }
   }
 
   // Flutter → Web 要求取出 JSON
