@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/game/controller_game_list.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
 import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero.dart';
 import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
@@ -199,6 +200,16 @@ class _PageGameListState extends State<PageGameList> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PageGameSteamSuperHero(gameId: game.id, gameLevel: game.level),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      }
+                    } else if (game.gameName.toLowerCase() == "kumon".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameSteamKumon(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {
