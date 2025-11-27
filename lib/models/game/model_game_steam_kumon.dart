@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:math';
 
 enum TileDirection { up, down, left, right, empty }
@@ -19,6 +18,7 @@ class Tile {
 }
 
 class Level {
+  late Map<Point<int>, Point<int>?> parent;
   final int rows;
   final int cols;
   late List<List<Tile>> board;
@@ -36,7 +36,8 @@ class Level {
     board = List.generate(rows, (_) => List.generate(cols, (_) => Tile()));
     start = Point(0, 0);
     goal = Point(rows - 1, cols - 1);
-
+    parent = {};
+    parent[start] = null;
     // 初始化全部障礙
     for (var row in board) {
       for (var tile in row) {
@@ -62,7 +63,6 @@ class Level {
     List<Point<int>> stack = [start];
     Set<Point<int>> visited = {start};
     Point<int>? lastDelta;
-    int straightCount = 0;
 
     while (stack.isNotEmpty) {
       Point<int> current = stack.last;
@@ -84,30 +84,30 @@ class Level {
       if (neighbors.isEmpty) {
         stack.removeLast();
         lastDelta = null;
-        straightCount = 0;
       } else {
-        // 過濾長直線
-        List<int> filteredIndices = [];
+        // ❤️ 增加迷宮彎道：高機率選擇轉彎方向
+        List<int> turnChoices = [];
+        List<int> straightChoices = [];
+
         for (int i = 0; i < neighborDeltas.length; i++) {
-          if (lastDelta == null ||
-              neighborDeltas[i] != lastDelta ||
-              straightCount < 2) {
-            filteredIndices.add(i);
+          if (lastDelta == null || neighborDeltas[i] != lastDelta) {
+            turnChoices.add(i);          // 轉彎方向
+          } else {
+            straightChoices.add(i);      // 直走方向
           }
         }
 
-        int idx = filteredIndices.isNotEmpty
-            ? filteredIndices[rnd.nextInt(filteredIndices.length)]
-            : rnd.nextInt(neighbors.length);
-        Point<int> next = neighbors[idx];
-
-        if (lastDelta != null && neighborDeltas[idx] == lastDelta) {
-          straightCount++;
+        int idx;
+        if (turnChoices.isNotEmpty && Random().nextDouble() < 0.75) {
+          idx = turnChoices[Random().nextInt(turnChoices.length)];
         } else {
-          straightCount = 1;
+          idx = (turnChoices + straightChoices)[Random().nextInt(turnChoices.length + straightChoices.length)];
         }
 
-        lastDelta = neighborDeltas[idx];
+        Point<int> next = neighbors[idx];
+
+        parent[next] = current;   // ⭐ 記錄路徑
+
         visited.add(next);
         board[next.x][next.y].fixed = false;
         stack.add(next);
@@ -115,7 +115,7 @@ class Level {
     }
 
     // --- 計算最短路徑 ---
-    solutionPath = _findShortestPath(start, goal);
+    solutionPath = _buildPathFromParent(goal);
 
     // --- 放置固定箭頭 ---
     int arrowCount = max(solutionPath.length ~/ 12, 1);
@@ -142,6 +142,7 @@ class Level {
       if (tile1.fixed || tile1.isFixedArrow) continue;
 
       TileDirection dir = _getDirection(p1, p2);
+      // 1. 加入真正需要的方向
       tilesToPlace.add(dir);
       Tile tile2 = board[p2.x][p2.y];
       if (!tile2.isFixedArrow && !tile2.fixed)
@@ -169,55 +170,15 @@ class Level {
     return TileDirection.left;
   }
 
-  // BFS 或 DFS 找最短路徑
-  List<Point<int>> _findShortestPath(Point<int> start, Point<int> goal) {
-    Queue<List<Map<String, dynamic>>> queue = Queue();
-    Set<String> visited = {};
+  List<Point<int>> _buildPathFromParent(Point<int> goal) {
+    List<Point<int>> path = [];
+    Point<int>? current = goal;
 
-    // 每個節點記錄: {'pos': Point<int>, 'lastDir': TileDirection?}
-    queue.add([
-      {'pos': start, 'lastDir': null}
-    ]);
-
-    while (queue.isNotEmpty) {
-      List<Map<String, dynamic>> path = queue.removeFirst();
-      Point<int> current = path.last['pos'];
-      TileDirection? lastDir = path.last['lastDir'];
-      String key = "${current.x},${current.y},${lastDir ?? 'null'}";
-      if (visited.contains(key)) continue;
-      visited.add(key);
-
-      if (current == goal) {
-        return path.map((e) => e['pos'] as Point<int>).toList();
-      }
-
-      List<Map<String, dynamic>> neighbors = [
-        {'delta': Point(0, 1), 'dir': TileDirection.right},
-        {'delta': Point(0, -1), 'dir': TileDirection.left},
-        {'delta': Point(1, 0), 'dir': TileDirection.down},
-        {'delta': Point(-1, 0), 'dir': TileDirection.up},
-      ];
-
-      for (var n in neighbors) {
-        Point<int> delta = n['delta'];
-        TileDirection dir = n['dir'];
-        Point<int> next = Point(current.x + delta.x, current.y + delta.y);
-
-        if (next.x < 0 || next.x >= rows || next.y < 0 || next.y >= cols)
-          continue;
-        if (board[next.x][next.y].fixed) continue;
-
-        // 禁止連續兩步方向相同
-        if (lastDir != null && lastDir == dir) continue;
-
-        queue.add([
-          ...path,
-          {'pos': next, 'lastDir': dir}
-        ]);
-      }
+    while (current != null) {
+      path.add(current);
+      current = parent[current];
     }
-
-    return [start, goal];
+    return path.reversed.toList();
   }
 
   bool checkPath() {
@@ -237,7 +198,7 @@ class Level {
       Tile tile = board[r][c];
 
       // 檢查是否是固定箭頭
-      if (tile.fixed && tile.direction != TileDirection.empty) {
+      if (tile.isFixedArrow) {
         passedFixedArrow = true;
       }
 

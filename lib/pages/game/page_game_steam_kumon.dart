@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_steam_kumon.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_kumon.dart';
 import 'package:provider/provider.dart';
@@ -127,12 +128,13 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
               },
             ),
           ),
+          Gaps.h8,
+          // 本關給的積木（正確 + 假箭頭混合）
           Wrap(
             children: controller.remainingTiles
                 .map((dir) => DraggableTile(direction: dir))
                 .toList(),
           ),
-          Gaps.h8,
         ],
       ),
     );
