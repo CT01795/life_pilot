@@ -51,12 +51,12 @@
     ////////////////////////////////////////////////////////////
     // 1️⃣ 定義自訂動作 blocks
     ////////////////////////////////////////////////////////////
-    const actionBlocks = [{name: 'forward', label: 'forward 🡺'},
-                          {name: 'backward', label: 'backward 🡸'},
-                          {name: 'turn_left', label: 'turn left 🡼'},
-                          {name: 'turn_right', label: 'turn right 🡽'},
-                          {name: 'jump_up', label: 'jump up 🡹'},
-                          {name: 'jump_down', label: 'jump down 🡻'}
+    const actionBlocks = [{name: 'forward', label: 'forward →'},
+                          {name: 'backward', label: 'backward ←'},
+                          {name: 'turn_left', label: 'turn left \u{1F83C}'},
+                          {name: 'turn_right', label: 'turn right \u{1F83D}'},
+                          {name: 'jump_up', label: 'jump up ↑'},
+                          {name: 'jump_down', label: 'jump down ↓'}
                         ];
 
     actionBlocks.forEach(block => {
@@ -95,7 +95,7 @@
     Blockly.Blocks['math_variable'] = {
       init: function() {
         this.appendDummyInput()
-            .appendField(new Blockly.FieldDropdown([["🡺","x"], ["🡹","y"]]), "VAR");
+            .appendField(new Blockly.FieldDropdown([["→","x"], ["↑","y"]]), "VAR");
         this.setOutput(true, "Number");
         this.setColour(230);
       }
@@ -143,7 +143,7 @@
               <field name="OP">EQ</field>
               <value name="A">
                 <shadow type="math_variable">
-                  <field name="VAR">🡺</field>
+                  <field name="VAR">→</field>
                 </shadow>
               </value>
               <value name="B">
