@@ -68,6 +68,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
       ),
       body: Column(
         children: [
+          Gaps.h8,
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -88,64 +89,10 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
               ),
             ],
           ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                double maxW = constraints.maxWidth;
-                double maxH = constraints.maxHeight;
-
-                int rows = controller.level.rows;
-                int cols = controller.level.cols;
-
-                // 格子大小
-                double tileSize = min(maxW / cols, maxH / rows);
-
-                // 整個棋盤尺寸
-                double gridW = tileSize * cols;
-                double gridH = tileSize * rows;
-
-                return Expanded(
-                  child: InteractiveViewer(
-                    panEnabled: true, // 可以拖動
-                    scaleEnabled: true, // 可以縮放
-                    minScale: 0.5, // 最小縮放
-                    maxScale: 3.0, // 最大縮放
-                    child: Center(
-                      child: SizedBox(
-                        width: gridW,
-                        height: gridH,
-                        child: GridView.builder(
-                          physics: NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: cols,
-                            childAspectRatio: 1,
-                          ),
-                          itemCount: rows * cols,
-                          itemBuilder: (context, index) {
-                            int r = index ~/ cols;
-                            int c = index % cols;
-                            return TileWidget(
-                              tile: controller.level.board[r][c],
-                              row: r,
-                              col: c,
-                              onDropped: (dir) =>
-                                  controller.placeTile(r, c, dir),
-                              size: tileSize,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Gaps.h8,
+          Gaps.h16,
           // 本關給的積木
           SizedBox(
-            height: 60,
+            height: 50,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: controller.getRemainingCount().entries.map((e) {
@@ -184,7 +131,66 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                 );
               }).toList(),
             ),
-          )
+          ),
+          Gaps.h8,
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                double maxW = constraints.maxWidth - 32;
+                double maxH = constraints.maxHeight - 32;
+
+                int rows = controller.level.rows;
+                int cols = controller.level.cols;
+
+                // 格子大小
+                double tileSize = min(maxW / cols, maxH / rows);
+
+                // 整個棋盤尺寸
+                double gridW = tileSize * cols;
+                double gridH = tileSize * rows;
+
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), // 左16、上0、右16、下16
+                  child: Align(
+                    alignment: Alignment.topLeft, // 畫布靠上靠左
+                    child: InteractiveViewer(
+                      panEnabled: true, // 可以拖動
+                      scaleEnabled: true, // 可以縮放
+                      minScale: 0.5, // 最小縮放
+                      maxScale: 3.0, // 最大縮放
+                      child: Center(
+                        child: SizedBox(
+                          width: gridW,
+                          height: gridH,
+                          child: GridView.builder(
+                            physics: NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: cols,
+                              childAspectRatio: 1,
+                            ),
+                            itemCount: rows * cols,
+                            itemBuilder: (context, index) {
+                              int r = index ~/ cols;
+                              int c = index % cols;
+                              return TileWidget(
+                                tile: controller.level.board[r][c],
+                                row: r,
+                                col: c,
+                                onDropped: (dir) =>
+                                    controller.placeTile(r, c, dir),
+                                size: tileSize,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
