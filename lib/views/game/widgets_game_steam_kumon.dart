@@ -7,7 +7,8 @@ class TileWidget extends StatelessWidget {
   final int row;
   final int col;
   final double size;
-  final Function(TileDirection?) onDropped; // 可以放空值
+
+  final Function(int row, int col, int? fromRow, int? fromCol, TileDirection? newDir) onDropped;
 
   const TileWidget({
     super.key,
@@ -38,13 +39,20 @@ class TileWidget extends StatelessWidget {
     return AnimatedBuilder(
       animation: tile,
       builder: (context, _) {
-        return DragTarget<TileDirection>(
+        return DragTarget<Map<String, dynamic>>(
           onWillAcceptWithDetails: (details) {
             // 例如不接受障礙、終點、固定箭頭格子
             return !tile.isObstacle && !tile.isGoalP && !tile.isFixedArrow;
           },
           onAcceptWithDetails: (details) {
-            onDropped(details.data); // 由 Controller 更新狀態
+            final fromRow = details.data['fromRow'] as int?;
+            final fromCol = details.data['fromCol'] as int?;
+            final direction = details.data['direction'] as TileDirection?;
+            
+            // 如果來源格子是自己格子，直接 return
+            if (fromRow == row && fromCol == col) return;
+
+            onDropped(row, col, fromRow, fromCol, direction);
           },
           builder: (context, candidateData, rejectedData) {
             // 分層 Stack
@@ -76,8 +84,12 @@ class TileWidget extends StatelessWidget {
             // 上層：箭頭（可拖動）
             if (tile.direction != TileDirection.empty && !tile.isFixedArrow && !tile.isObstacle) {
               stackChildren.add(
-                Draggable<TileDirection>(
-                  data: tile.direction,
+                Draggable<Map<String, dynamic>>(
+                  data: {
+                    'fromRow': row,
+                    'fromCol': col,
+                    'direction': tile.direction,
+                  },
                   feedback: Material(
                     child: Icon(
                       _directionToIcon(tile.direction),
@@ -86,7 +98,10 @@ class TileWidget extends StatelessWidget {
                     ),
                   ),
                   childWhenDragging: Container(),
-                  onDragCompleted: () => onDropped(null),
+                  onDragCompleted: () {
+                    // 通知 Controller 從格子搬箭頭
+                    onDropped(row, col, row, col, null); 
+                  },
                   child: Icon(
                     _directionToIcon(tile.direction),
                     color: Colors.blue[900],

@@ -49,21 +49,28 @@ class ControllerGameSteamKumon extends ChangeNotifier {
     notifyListeners();
   }
 
-  void placeTile(int row, int col, TileDirection? dir) {
-    Tile tile = level.board[row][col];
-    if (!tile.isObstacle && !tile.isFixedArrow) {
-      // 如果原本有方向，回到 remainingTiles
-      if (tile.direction != TileDirection.empty) {
-        remainingTiles.add(tile.direction);
-      }
-      // 設新方向
-      tile.direction = dir ?? TileDirection.empty;
+  void placeTile(
+      int row, int col, int? fromRow, int? fromCol, TileDirection? to) {
+    if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
 
-      // 移除新的方向
-      if (dir != null) remainingTiles.remove(dir);
-      usedSteps++;
-      notifyListeners();
+    Tile tileTarget = level.board[row][col];
+    Tile? tileFrom = fromRow != null && fromCol != null
+        ? level.board[fromRow][fromCol]
+        : null;
+
+    if (tileTarget.isObstacle || tileTarget.isFixedArrow) return;
+
+    if (tileTarget.direction != TileDirection.empty) {
+      remainingTiles.add(tileTarget.direction);
     }
+    tileTarget.direction = tileFrom == null ? to! : tileFrom.direction;
+    if(tileFrom == null) {
+      remainingTiles.remove(to!);
+    }else{
+      tileFrom.direction = TileDirection.empty;
+    }
+    usedSteps++;
+    notifyListeners();
   }
 
   Future<bool> checkPath() async {
