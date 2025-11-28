@@ -21,20 +21,22 @@ class PageGameSteamKumon extends StatefulWidget {
 
 class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
   late ControllerGameSteamKumon controller;
-  int usedSteps = 0; // 新增計數器
 
   @override
   void initState() {
     super.initState();
     final auth = context.read<ControllerAuth>();
-    controller = ControllerGameSteamKumon(userName: auth.currentAccount ?? AuthConstants.guest, service: ServiceGame(), gameId: widget.gameId, gameLevel: widget.gameLevel);
+    controller = ControllerGameSteamKumon(
+        userName: auth.currentAccount ?? AuthConstants.guest,
+        service: ServiceGame(),
+        gameId: widget.gameId,
+        gameLevel: widget.gameLevel);
   }
 
   void _checkPath() async {
-    bool ok = await controller.checkPath(usedSteps);
+    bool ok = await controller.checkPath();
     setState(() {}); // 更新分數
-    if(ok) usedSteps = 0; // 過關後重置
-    
+
     // 顯示結果
     showDialog(
       context: context,
@@ -44,14 +46,12 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // 過關 -> 寫入資料庫
-              if (!ok) {
-                controller.resetLevel();
-              }
-              else{
+              if (ok) {
                 Navigator.pop(context, true); // 過關 -> 返回上一頁
+              } else {
+                //controller.resetLevel();
+                //setState(() {});
               }
-              setState(() {});
             },
             child: Text("OK"),
           )
@@ -71,14 +71,22 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Score: ${controller.score}", style: TextStyle(fontSize: 20)),
-              Gaps.w8,
               ElevatedButton(
                 onPressed: _checkPath,
                 child: Text("Check the path"),
               ),
+              Gaps.w8,
+              ElevatedButton(
+                onPressed: () async {
+                  controller.showHint();
+                  setState(() {});
+                  await Future.delayed(Duration(seconds: 2));
+                  controller.clearHint();
+                  setState(() {});
+                },
+                child: Text("Hint 💡"),
+              ),
             ],
-          
           ),
           Expanded(
             child: LayoutBuilder(
@@ -96,32 +104,38 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                 double gridW = tileSize * cols;
                 double gridH = tileSize * rows;
 
-                return Center(
-                  child: SizedBox(
-                    width: gridW,
-                    height: gridH,
-                    child: GridView.builder(
-                      physics: NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: cols,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: rows * cols,
-                      itemBuilder: (context, index) {
-                        int r = index ~/ cols;
-                        int c = index % cols;
-
-                        return TileWidget(
-                          tile: controller.level.board[r][c],
-                          onDropped: (dir) {
-                            setState(() {
-                              controller.placeTile(r, c, dir);
-                              usedSteps++;
-                            });
+                return Expanded(
+                  child: InteractiveViewer(
+                    panEnabled: true, // 可以拖動
+                    scaleEnabled: true, // 可以縮放
+                    minScale: 0.5, // 最小縮放
+                    maxScale: 3.0, // 最大縮放
+                    child: Center(
+                      child: SizedBox(
+                        width: gridW,
+                        height: gridH,
+                        child: GridView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: cols,
+                            childAspectRatio: 1,
+                          ),
+                          itemCount: rows * cols,
+                          itemBuilder: (context, index) {
+                            int r = index ~/ cols;
+                            int c = index % cols;
+                            return TileWidget(
+                              tile: controller.level.board[r][c],
+                              row: r,
+                              col: c,
+                              onDropped: (dir) =>
+                                  controller.placeTile(r, c, dir),
+                              size: tileSize,
+                            );
                           },
-                          size: tileSize,
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ),
                 );
@@ -129,12 +143,48 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
             ),
           ),
           Gaps.h8,
-          // 本關給的積木（正確 + 假箭頭混合）
-          Wrap(
-            children: controller.remainingTiles
-                .map((dir) => DraggableTile(direction: dir))
-                .toList(),
-          ),
+          // 本關給的積木
+          SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: controller.getRemainingCount().entries.map((e) {
+                TileDirection dir = e.key;
+                int count = e.value;
+
+                String arrow = {
+                  TileDirection.up: "↑",
+                  TileDirection.down: "↓",
+                  TileDirection.left: "←",
+                  TileDirection.right: "→",
+                  TileDirection.empty: "○"
+                }[dir]!;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Draggable<TileDirection>(
+                    data: dir,
+                    feedback: Material(
+                      child: Chip(
+                        label: Text(arrow, style: TextStyle(fontSize: 20)),
+                        backgroundColor: Colors.orange[300],
+                      ),
+                    ),
+                    childWhenDragging: Chip(
+                      label: Text("$arrow ${count - 1}",
+                          style: TextStyle(fontSize: 16)),
+                      backgroundColor: Colors.grey[300],
+                    ),
+                    child: Chip(
+                      label:
+                          Text("$arrow $count", style: TextStyle(fontSize: 16)),
+                      backgroundColor: Colors.blue[200],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          )
         ],
       ),
     );

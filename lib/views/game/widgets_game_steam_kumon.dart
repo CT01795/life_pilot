@@ -4,22 +4,19 @@ import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
 
 class TileWidget extends StatelessWidget {
   final Tile tile;
-  final Function(TileDirection?) onDropped; // 可以放空值
+  final int row;
+  final int col;
   final double size;
+  final Function(TileDirection?) onDropped; // 可以放空值
 
   const TileWidget({
     super.key,
     required this.tile,
+    required this.row,
+    required this.col,
     required this.onDropped,
     required this.size,
   });
-
-  Color _getTileColor() {
-    if (tile.isHighlighted) return Colors.yellowAccent;
-    if (tile.isStart || tile.isGoal) return Colors.green;
-    if (tile.fixed) return Colors.black87; // 障礙
-    return Colors.blue[100]!;
-  }
 
   IconData _directionToIcon(TileDirection dir) {
     switch (dir) {
@@ -36,103 +33,95 @@ class TileWidget extends StatelessWidget {
     }
   }
 
-  Widget? _getIcon() {
-    List<Widget> icons = [];
-
-    if (tile.isFixedArrow) {
-      icons.add(Icon(_directionToIcon(tile.direction),
-          color: Colors.redAccent, size: size * 0.7));
-      return Stack(alignment: Alignment.center, children: icons);
-    }
-
-    if (tile.isStart) {
-      icons.add(Icon(Icons.directions_walk_rounded,
-          color: Colors.white, size: size * 0.8));
-    }
-    if (tile.isGoal) {
-      icons.add(
-          Icon(Icons.vpn_key_rounded, color: Colors.white, size: size * 0.8));
-      return Stack(alignment: Alignment.center, children: icons);
-    }
-    if (tile.fixed) {
-      icons.add(Icon(Icons.block, color: Colors.white, size: size * 0.7));
-    }
-    if (tile.direction != TileDirection.empty) {
-      icons.add(Icon(_directionToIcon(tile.direction),
-          size: size * 0.6, color: Colors.black));
-    }
-
-    return Stack(alignment: Alignment.center, children: icons);
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (tile.fixed) {
-      // 固定格子不能拖
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: _getTileColor(),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.black26),
-        ),
-        child: Center(child: _getIcon()),
-      );
-    }
+    return AnimatedBuilder(
+      animation: tile,
+      builder: (context, _) {
+        return DragTarget<TileDirection>(
+          onWillAcceptWithDetails: (details) {
+            // 例如不接受障礙、終點、固定箭頭格子
+            return !tile.isObstacle && !tile.isGoalP && !tile.isFixedArrow;
+          },
+          onAcceptWithDetails: (details) {
+            onDropped(details.data); // 由 Controller 更新狀態
+          },
+          builder: (context, candidateData, rejectedData) {
+            // 分層 Stack
+            List<Widget> stackChildren = [];
 
-    return DragTarget<TileDirection>(
-      onAcceptWithDetails: (details) {
-        tile.direction = details.data; // 玩家放箭頭
-        onDropped(details.data);
-      },
-      builder: (context, candidateData, rejectedData) {
-        Widget content = Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: _getTileColor(),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.black26),
-          ),
-          child: Center(child: _getIcon()),
-        );
+            // 中層：固定圖示（起點、終點、障礙）
+            if (tile.isStartP) {
+              stackChildren.add(
+                Icon(Icons.directions_walk_rounded,
+                    color: Colors.green, size: size * 0.7),
+              );
+            } else if (tile.isGoalP) {
+              stackChildren.add(
+                Icon(Icons.vpn_key_rounded,
+                    color: Colors.green, size: size * 0.7),
+              );
+            } else if (tile.isObstacle) {
+              stackChildren.add(
+                Icon(Icons.block, color: Colors.black87, size: size * 0.7),
+              );
+            } else if (tile.isFixedArrow) {
+              stackChildren.add(
+                Icon(_directionToIcon(tile.direction),
+                    color: Colors.redAccent, size: size * 0.7),
+              );
 
-        // 如果有箭頭，就可以拖動
-        if (tile.direction != TileDirection.empty) {
-          return Draggable<TileDirection>(
-            data: tile.direction,
-            feedback: Material(
-              child: Container(
-                width: size,
-                height: size,
-                color: Colors.orange.withValues(alpha: (0.8 * 255.0)),
-                child: Center(child: _getIcon()),
-              ),
-            ),
-            childWhenDragging: Container(
+            }
+
+            // 上層：箭頭（可拖動）
+            if (tile.direction != TileDirection.empty && !tile.isFixedArrow && !tile.isObstacle) {
+              stackChildren.add(
+                Draggable<TileDirection>(
+                  data: tile.direction,
+                  feedback: Material(
+                    child: Icon(
+                      _directionToIcon(tile.direction),
+                      color: Colors.blue[900],
+                      size: size * 0.7,
+                    ),
+                  ),
+                  childWhenDragging: Container(),
+                  onDragCompleted: () => onDropped(null),
+                  child: Icon(
+                    _directionToIcon(tile.direction),
+                    color: Colors.blue[900],
+                    size: size * 0.7,
+                  ),
+                ),
+              );
+            }
+
+            return Container(
               width: size,
               height: size,
-              color: Colors.blue[100],
-            ),
-            onDraggableCanceled: (_, __) {
-              onDropped(null);
-            },
-            onDragCompleted: () {
-              // 放回其他格子時，清空自己
-              onDropped(null);
-            },
-            child: content,
-          );
-        } else {
-          return content;
-        }
+              decoration: BoxDecoration(
+                color: tile.isHighlighted
+                    ? Colors.yellowAccent
+                    : (tile.isFixedArrow || tile.isStartP || tile.isGoalP)
+                        ? Colors.green[300]
+                        : tile.isObstacle
+                            ? Colors.black87
+                            : Colors.blue[100],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.black26),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: stackChildren,
+              ),
+            );
+          },
+        );
       },
     );
   }
 }
 
-// draggable_tile.dart
 class DraggableTile extends StatelessWidget {
   final TileDirection direction;
 
