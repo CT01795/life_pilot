@@ -114531,7 +114531,7 @@ return A.r(null,r)}})
 return A.t($async$Dd,r)},
 J(a){var s=this,r=null,q=A.DG(r,r,r,r,r,A.aN("KUMON",r,r,r,r,r,r,r,r)),p=t.p,o=A.b([A.um(!1,A.aN("Check the path",r,r,r,r,r,r,r,r),r,r,r,r,r,r,s.gajR(),r,r),B.iq],p),n=s.d
 n===$&&A.a()
-if(n.w>10)o.push(A.um(!1,A.aN("Hint \ud83d\udca1",r,r,r,r,r,r,r,r),r,r,r,r,r,r,new A.aQx(s),r,r))
+if(n.w>20)o.push(A.um(!1,A.aN("Hint \ud83d\udca1",r,r,r,r,r,r,r,r),r,r,r,r,r,r,new A.aQx(s),r,r))
 return A.rj(q,A.cO(A.b([B.ir,new A.bg(B.rU,A.cu(o,B.z,r,B.q,B.C,0,r),r),B.bV,new A.bg(B.rU,A.cR(A.iQ(s.d,new A.aQy(s),r),50,r),r),B.ir,A.cm(A.zo(new A.aQz(s)),1)],p),B.z,B.q,B.C,0,B.O))}}
 A.aQq.prototype={
 $0(){},
