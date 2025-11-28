@@ -69,75 +69,78 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
       body: Column(
         children: [
           Gaps.h8,
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton(
-                onPressed: _checkPath,
-                child: Text("Check the path"),
-              ),
-              Gaps.w8,
-              ElevatedButton(
-                onPressed: () async {
-                  controller.showHint();
-                  setState(() {});
-                  await Future.delayed(Duration(seconds: 2));
-                  controller.clearHint();
-                  setState(() {});
-                },
-                child: Text("Hint 💡"),
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _checkPath,
+                  child: Text("Check the path"),
+                ),
+                Gaps.w8,
+                ElevatedButton(
+                  onPressed: () async {
+                    controller.showHint();
+                    setState(() {});
+                    await Future.delayed(Duration(seconds: 2));
+                    controller.clearHint();
+                    setState(() {});
+                  },
+                  child: Text("Hint 💡"),
+                ),
+              ],
+            ),
           ),
           Gaps.h16,
           // 本關給的積木
-          SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: controller.getRemainingCount().entries.map((e) {
-                TileDirection dir = e.key;
-                int count = e.value;
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: SizedBox(
+              height: 50,
+              child: Row(
+                children: controller.getRemainingCount().entries.map((e) {
+                  TileDirection dir = e.key;
+                  int count = e.value;
+                  String arrow = {
+                    TileDirection.up: "↑",
+                    TileDirection.down: "↓",
+                    TileDirection.left: "←",
+                    TileDirection.right: "→",
+                    TileDirection.empty: "○"
+                  }[dir]!;
 
-                String arrow = {
-                  TileDirection.up: "↑",
-                  TileDirection.down: "↓",
-                  TileDirection.left: "←",
-                  TileDirection.right: "→",
-                  TileDirection.empty: "○"
-                }[dir]!;
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Draggable<TileDirection>(
-                    data: dir,
-                    feedback: Material(
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: Draggable<TileDirection>(
+                      data: dir,
+                      feedback: Material(
+                        child: Chip(
+                          label: Text(arrow, style: TextStyle(fontSize: 20)),
+                          backgroundColor: Colors.orange[300],
+                        ),
+                      ),
+                      childWhenDragging: Chip(
+                        label: Text("$arrow ${count - 1}",
+                            style: TextStyle(fontSize: 16)),
+                        backgroundColor: Colors.grey[300],
+                      ),
                       child: Chip(
-                        label: Text(arrow, style: TextStyle(fontSize: 20)),
-                        backgroundColor: Colors.orange[300],
+                        label:
+                            Text("$arrow $count", style: TextStyle(fontSize: 16)),
+                        backgroundColor: Colors.blue[200],
                       ),
                     ),
-                    childWhenDragging: Chip(
-                      label: Text("$arrow ${count - 1}",
-                          style: TextStyle(fontSize: 16)),
-                      backgroundColor: Colors.grey[300],
-                    ),
-                    child: Chip(
-                      label:
-                          Text("$arrow $count", style: TextStyle(fontSize: 16)),
-                      backgroundColor: Colors.blue[200],
-                    ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ),
           Gaps.h8,
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                double maxW = constraints.maxWidth - 32;
-                double maxH = constraints.maxHeight - 32;
+                double maxW = constraints.maxWidth - 40;
+                double maxH = constraints.maxHeight - 40;
 
                 int rows = controller.level.rows;
                 int cols = controller.level.cols;
@@ -150,7 +153,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                 double gridH = tileSize * rows;
 
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), // 左16、上0、右16、下16
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20), // 左16、上0、右16、下16
                   child: Align(
                     alignment: Alignment.topLeft, // 畫布靠上靠左
                     child: InteractiveViewer(
@@ -158,31 +161,29 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                       scaleEnabled: true, // 可以縮放
                       minScale: 0.5, // 最小縮放
                       maxScale: 3.0, // 最大縮放
-                      child: Center(
-                        child: SizedBox(
-                          width: gridW,
-                          height: gridH,
-                          child: GridView.builder(
-                            physics: NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: cols,
-                              childAspectRatio: 1,
-                            ),
-                            itemCount: rows * cols,
-                            itemBuilder: (context, index) {
-                              int r = index ~/ cols;
-                              int c = index % cols;
-                              return TileWidget(
-                                tile: controller.level.board[r][c],
-                                row: r,
-                                col: c,
-                                onDropped: (dir) =>
-                                    controller.placeTile(r, c, dir),
-                                size: tileSize,
-                              );
-                            },
+                      child: SizedBox(
+                        width: gridW,
+                        height: gridH,
+                        child: GridView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: cols,
+                            childAspectRatio: 1,
                           ),
+                          itemCount: rows * cols,
+                          itemBuilder: (context, index) {
+                            int r = index ~/ cols;
+                            int c = index % cols;
+                            return TileWidget(
+                              tile: controller.level.board[r][c],
+                              row: r,
+                              col: c,
+                              onDropped: (dir) =>
+                                  controller.placeTile(r, c, dir),
+                              size: tileSize,
+                            );
+                          },
                         ),
                       ),
                     ),
