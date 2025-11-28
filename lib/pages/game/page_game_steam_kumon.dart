@@ -86,7 +86,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                   child: Text("Check the path"),
                 ),
                 Gaps.w16,
-                if(controller.usedSteps > 10)
+                if(controller.usedSteps > 20)
                   ElevatedButton(
                     onPressed: () async {
                       
