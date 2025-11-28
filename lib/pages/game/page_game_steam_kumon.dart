@@ -105,53 +105,71 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
             padding: const EdgeInsets.only(left: 20),
             child: SizedBox(
               height: 50,
-              child: Row(
-                children: controller.getRemainingCount().entries.map((e) {
-                  TileDirection dir = e.key;
-                  int count = e.value;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                    child: Draggable<TileDirection>(
-                      data: dir,
-                      feedback: Material(
-                        child: Chip(
-                          padding: EdgeInsets.all(2),
-                          label: Icon(arrowIcons[dir], size: 26),
-                          backgroundColor: Colors.orange[300],
-                        ),
-                      ),
-                      childWhenDragging: Chip(
-                        padding: EdgeInsets.all(2),
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(arrowIcons[dir], size: 18),
-                            Gaps.w8,
-                            Text("${count - 1}", style: TextStyle(fontSize: 16)),
-                          ],
-                        ),
-                        backgroundColor: Colors.grey[300],
-                      ),
-                      child: SizedBox(
-                        width: 85, // ← 固定 Chip 寬度，避免被切掉
-                        child: Chip(
-                          padding: EdgeInsets.all(2),
-                          labelPadding: EdgeInsets.zero,
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(arrowIcons[dir], size: 22),
-                              SizedBox(width: 4),
-                              Text("$count", style: TextStyle(fontSize: 18)),
-                            ],
+              child: AnimatedBuilder(
+                animation: controller, // ← 監聽 Controller
+                builder: (context, _) {
+                  final counts = controller.getRemainingCount();
+                  return Row(
+                    children: counts.entries.map((e) {
+                      TileDirection dir = e.key;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Draggable<Map<String, dynamic>>(
+                          data: {
+                            'fromRow': null,
+                            'fromCol': null,
+                            'direction': dir,
+                          },
+                          feedback: Material(
+                            child: Chip(
+                              padding: EdgeInsets.zero,
+                              label: Icon(arrowIcons[dir], size: 16),
+                              backgroundColor: Colors.orange[300],
+                            ),
                           ),
-                          backgroundColor: Colors.blue[200],
+                          childWhenDragging: SizedBox(
+                            width: 85,
+                            child: Chip(
+                              padding: EdgeInsets.all(2),
+                              labelPadding: EdgeInsets.zero,
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(arrowIcons[dir], size: 18),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "${counts[dir] ?? 0}",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: Colors.grey[300],
+                            ),
+                          ),
+                          child: SizedBox(
+                            width: 85,
+                            child: Chip(
+                              padding: EdgeInsets.all(2),
+                              labelPadding: EdgeInsets.zero,
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(arrowIcons[dir], size: 22),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "${counts[dir] ?? 0}",
+                                    style: TextStyle(fontSize: 18),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: Colors.blue[200],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
             ),
           ),
@@ -200,8 +218,11 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                                 tile: controller.level.board[r][c],
                                 row: r,
                                 col: c,
-                                onDropped: (dir) =>
-                                    controller.placeTile(r, c, dir),
+                                onDropped:
+                                    (row, col, fromRow, fromCol, newDir) {
+                                  controller.placeTile(
+                                      row, col, fromRow, fromCol, newDir);
+                                },
                                 size: tileSize,
                               );
                             },
