@@ -85,17 +85,19 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                   onPressed: _checkPath,
                   child: Text("Check the path"),
                 ),
-                Gaps.w8,
-                ElevatedButton(
-                  onPressed: () async {
-                    controller.showHint();
-                    setState(() {});
-                    await Future.delayed(Duration(seconds: 2));
-                    controller.clearHint();
-                    setState(() {});
-                  },
-                  child: Text("Hint 💡"),
-                ),
+                Gaps.w16,
+                if(controller.usedSteps > 10)
+                  ElevatedButton(
+                    onPressed: () async {
+                      
+                      controller.showHint();
+                      setState(() {});
+                      await Future.delayed(Duration(seconds: 2));
+                      controller.clearHint();
+                      setState(() {});
+                    },
+                    child: Text("Hint 💡"),
+                  ),
               ],
             ),
           ),
