@@ -60,6 +60,14 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
     );
   }
 
+  final Map<TileDirection, IconData> arrowIcons = {
+    TileDirection.up: Icons.arrow_upward,
+    TileDirection.down: Icons.arrow_downward,
+    TileDirection.left: Icons.arrow_back,
+    TileDirection.right: Icons.arrow_forward,
+    TileDirection.empty: Icons.circle_outlined,
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,13 +109,6 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                 children: controller.getRemainingCount().entries.map((e) {
                   TileDirection dir = e.key;
                   int count = e.value;
-                  String arrow = {
-                    TileDirection.up: "🡱",
-                    TileDirection.down: "🡳",
-                    TileDirection.left: "🡸",
-                    TileDirection.right: "🡺",
-                    TileDirection.empty: ""
-                  }[dir]!;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 6.0),
@@ -115,25 +116,35 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                       data: dir,
                       feedback: Material(
                         child: Chip(
-                          padding: EdgeInsets.zero,
-                          label: Text(arrow, style: TextStyle(fontSize: 20)),
+                          padding: EdgeInsets.all(2),
+                          label: Icon(arrowIcons[dir], size: 26),
                           backgroundColor: Colors.orange[300],
                         ),
                       ),
                       childWhenDragging: Chip(
-                        padding: EdgeInsets.zero,
-                        label: Text("$arrow ${count - 1}",
-                            style: TextStyle(fontSize: 16)),
+                        padding: EdgeInsets.all(2),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(arrowIcons[dir], size: 18),
+                            Gaps.w8,
+                            Text("${count - 1}", style: TextStyle(fontSize: 16)),
+                          ],
+                        ),
                         backgroundColor: Colors.grey[300],
                       ),
                       child: SizedBox(
                         width: 85, // ← 固定 Chip 寬度，避免被切掉
                         child: Chip(
-                          padding: EdgeInsets.all(1),
+                          padding: EdgeInsets.all(2),
                           labelPadding: EdgeInsets.zero,
-                          label: Center(
-                            child: Text("$arrow $count",
-                                style: TextStyle(fontSize: 18)),
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(arrowIcons[dir], size: 22),
+                              SizedBox(width: 4),
+                              Text("$count", style: TextStyle(fontSize: 18)),
+                            ],
                           ),
                           backgroundColor: Colors.blue[200],
                         ),
