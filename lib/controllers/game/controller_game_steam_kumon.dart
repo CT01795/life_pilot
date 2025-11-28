@@ -89,7 +89,7 @@ class ControllerGameSteamKumon extends ChangeNotifier {
 
   void _calculateScore() {
     int correctTiles = level.tilesToPlace.length - remainingTiles.length;
-    score += (correctTiles * 10 - usedSteps).clamp(0, 9999);
+    score += (correctTiles * 10 - usedSteps * 5).clamp(0, 9999);
   }
 
   void showHint() {
