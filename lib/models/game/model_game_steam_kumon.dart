@@ -3,12 +3,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-enum TileDirection { up, down, left, right, empty }
+enum KumonTileDirection { up, down, left, right, empty }
 
-class Tile extends ChangeNotifier {
-  TileDirection _direction = TileDirection.empty;
-  TileDirection get direction => _direction;
-  set direction(TileDirection dir) {
+class KumonTile extends ChangeNotifier {
+  KumonTileDirection _direction = KumonTileDirection.empty;
+  KumonTileDirection get direction => _direction;
+  set direction(KumonTileDirection dir) {
     _direction = dir;
     notifyListeners();
   }
@@ -19,8 +19,8 @@ class Tile extends ChangeNotifier {
   bool isHighlighted = false;
   bool isFixedArrow = false;
 
-  Tile({
-    TileDirection direction = TileDirection.empty,
+  KumonTile({
+    KumonTileDirection direction = KumonTileDirection.empty,
     this.isObstacle = false,
     this.isStartP = false,
     this.isGoalP = false,
@@ -35,20 +35,20 @@ class _BFSNode {
   _BFSNode(this.point, this.lastDelta, this.straightCount);
 }
 
-class Level {
+class KumonLevel {
   late Map<Point<int>, Point<int>?> parent;
   final int levelNumber;
   final int rows;
   final int cols;
-  late List<List<Tile>> board;
-  late List<TileDirection> tilesToPlace;
+  late List<List<KumonTile>> board;
+  late List<KumonTileDirection> tilesToPlace;
   late Point<int> start;
   late Point<int> goal;
   late List<Point<int>> remainingFixed;
   List<Point<int>> solutionPath = [];
   Set<Point<int>> highlighted = {};
 
-  Level({required this.levelNumber, required this.rows, required this.cols}) {
+  KumonLevel({required this.levelNumber, required this.rows, required this.cols}) {
     remainingFixed = [];
     _generateLevel();
   }
@@ -56,7 +56,7 @@ class Level {
   List<Point<int>> getSolutionPath() => solutionPath;
 
   void _generateLevel() {
-    board = List.generate(rows, (_) => List.generate(cols, (_) => Tile()));
+    board = List.generate(rows, (_) => List.generate(cols, (_) => KumonTile()));
     start = Point(0, 0);
     goal = Point(rows - 1, cols - 1);
     parent = {};
@@ -170,7 +170,7 @@ class Level {
       if (board[p1.x][p1.y].isStartP) {
         continue;
       } else if (rnd.nextDouble() < revealRate && showCnt < maxNumber) {
-        Tile tile1 = board[p1.x][p1.y];
+        KumonTile tile1 = board[p1.x][p1.y];
         tile1.isFixedArrow = true;
         remainingFixed.add(Point(p1.x, p1.y));
         i = i + 4;
@@ -189,12 +189,12 @@ class Level {
       Point<int> p1 = solutionPath[i];
       Point<int> p2 = solutionPath[i + 1];
 
-      Tile tile1 = board[p1.x][p1.y];
-      TileDirection dir = _getDirection(p1, p2);
+      KumonTile tile1 = board[p1.x][p1.y];
+      KumonTileDirection dir = _getDirection(p1, p2);
       if (!tile1.isFixedArrow) {
         // 1. 加入真正需要的方向
         tilesToPlace.add(dir);
-        tile1.direction = TileDirection.empty; // 玩家放置
+        tile1.direction = KumonTileDirection.empty; // 玩家放置
       } else {
         tile1.direction = dir;
       }
@@ -212,7 +212,7 @@ class Level {
       int r = rnd.nextInt(rows);
       int c = rnd.nextInt(cols);
 
-      Tile tile = board[r][c];
+      KumonTile tile = board[r][c];
       Point<int> p = Point(r, c);
       if (!tile.isFixedArrow &&
           !tile.isStartP &&
@@ -225,11 +225,11 @@ class Level {
     }
   }
 
-  TileDirection _getDirection(Point<int> from, Point<int> to) {
-    if (to.x > from.x) return TileDirection.down;
-    if (to.x < from.x) return TileDirection.up;
-    if (to.y > from.y) return TileDirection.right;
-    return TileDirection.left;
+  KumonTileDirection _getDirection(Point<int> from, Point<int> to) {
+    if (to.x > from.x) return KumonTileDirection.down;
+    if (to.x < from.x) return KumonTileDirection.up;
+    if (to.y > from.y) return KumonTileDirection.right;
+    return KumonTileDirection.left;
   }
 
   List<Point<int>> _buildPathFromParent(Point<int> goal) {
@@ -340,7 +340,7 @@ class Level {
       if (visited.contains(key)) return false; // 迴圈
       visited.add(key);
 
-      Tile tile = board[r][c];
+      KumonTile tile = board[r][c];
 
       // 如果是固定箭頭，從集合移除
       if (tile.isFixedArrow) {
@@ -349,19 +349,19 @@ class Level {
 
       // 根據方向移動
       switch (tile.direction) {
-        case TileDirection.up:
+        case KumonTileDirection.up:
           r--;
           break;
-        case TileDirection.down:
+        case KumonTileDirection.down:
           r++;
           break;
-        case TileDirection.left:
+        case KumonTileDirection.left:
           c--;
           break;
-        case TileDirection.right:
+        case KumonTileDirection.right:
           c++;
           break;
-        case TileDirection.empty:
+        case KumonTileDirection.empty:
           return false; // 無箭頭就斷路
       }
 
@@ -374,7 +374,7 @@ class Level {
     for (var row in board) {
       for (var tile in row) {
         if (!tile.isObstacle && !tile.isFixedArrow) {
-          tile.direction = TileDirection.empty;
+          tile.direction = KumonTileDirection.empty;
         }
       }
     }

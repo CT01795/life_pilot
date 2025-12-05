@@ -11,10 +11,10 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   final int gameLevel;
   late List<Point<int>> remainingFixed;
 
-  late Level level;
+  late KumonLevel level;
   int score = 0;
   int usedSteps = 0;
-  List<TileDirection> remainingTiles = [];
+  List<KumonTileDirection> remainingTiles = [];
 
   ControllerGameSteamKumon(
       {required this.userName,
@@ -33,12 +33,12 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   }
 
   // 根據 gameLevel 生成不同大小/難度的 Level
-  Level _generateLevel(int levelNumber) {
+  KumonLevel _generateLevel(int levelNumber) {
     // 簡單規則：等級越高，行列數增加，積木數增加
     int baseSize = 6; // 最低關卡 4x4
     int size =
         baseSize + (levelNumber - 1); // e.g. level 1 -> 4x4, level 2 -> 5x5
-    return Level(levelNumber: levelNumber, rows: size, cols: size);
+    return KumonLevel(levelNumber: levelNumber, rows: size, cols: size);
   }
 
   void resetLevel() {
@@ -50,24 +50,24 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   }
 
   void placeTile(
-      int row, int col, int? fromRow, int? fromCol, TileDirection? to) {
+      int row, int col, int? fromRow, int? fromCol, KumonTileDirection? to) {
     if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
 
-    Tile tileTarget = level.board[row][col];
-    Tile? tileFrom = fromRow != null && fromCol != null
+    KumonTile tileTarget = level.board[row][col];
+    KumonTile? tileFrom = fromRow != null && fromCol != null
         ? level.board[fromRow][fromCol]
         : null;
 
     if (tileTarget.isObstacle || tileTarget.isFixedArrow) return;
 
-    if (tileTarget.direction != TileDirection.empty) {
+    if (tileTarget.direction != KumonTileDirection.empty) {
       remainingTiles.add(tileTarget.direction);
     }
     tileTarget.direction = tileFrom == null ? to! : tileFrom.direction;
     if(tileFrom == null) {
       remainingTiles.remove(to!);
     }else{
-      tileFrom.direction = TileDirection.empty;
+      tileFrom.direction = KumonTileDirection.empty;
     }
     usedSteps++;
     notifyListeners();
@@ -102,8 +102,8 @@ class ControllerGameSteamKumon extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<TileDirection, int> getRemainingCount() {
-    Map<TileDirection, int> counts = {};
+  Map<KumonTileDirection, int> getRemainingCount() {
+    Map<KumonTileDirection, int> counts = {};
     for (var dir in remainingTiles) {
       counts[dir] = (counts[dir] ?? 0) + 1;
     }
