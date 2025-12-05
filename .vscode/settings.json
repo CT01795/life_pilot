@@ -15,6 +15,7 @@
         "callbackkey",
         "callnoreturn",
         "callreturn",
+        "cand",
         "CHANGECASE",
         "COLCOUNT",
         "Colour",
@@ -79,6 +80,7 @@
         "parsererror",
         "peaceiris",
         "PKCE",
+        "polyomino",
         "posinset",
         "positionable",
         "Repositionable",
@@ -110,6 +112,7 @@
         "XLINK",
         "XVCJ",
         "zelos",
+        "Zoomable",
         "Zoomin",
         "Zoomout",
         "Zoomreset"

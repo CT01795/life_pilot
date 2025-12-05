@@ -6,6 +6,7 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
 import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
+import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
 import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero.dart';
 import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
@@ -214,7 +215,17 @@ class _PageGameListState extends State<PageGameList> {
                       );
                       if (result == true) {
                         await _loadUserProgress();
-                      }
+                      } 
+                    } else if (game.gameName.toLowerCase() == "polyomino".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => GamePage(gameId: game.id, gameLevel: game.level),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      } //Polyomino
                     } else {
                       // 其他遊戲開啟方式
                       logger.i("尚未實作此遊戲頁面");
