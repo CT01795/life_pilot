@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
-import 'package:life_pilot/pages/page_a.dart';
+import 'package:life_pilot/pages/page_ai.dart';
+import 'package:life_pilot/pages/page_account_records.dart';
 import 'package:life_pilot/pages/page_calendar.dart';
 import 'package:life_pilot/pages/event/page_memory_trace.dart';
 import 'package:life_pilot/pages/event/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/event/page_recommended_event.dart';
 import 'package:life_pilot/pages/game/page_game_list.dart';
+import 'package:life_pilot/pages/page_points_record.dart';
+import 'package:life_pilot/pages/page_settings.dart';
 import 'package:life_pilot/pages/page_type.dart';
 import 'package:provider/provider.dart';
 
@@ -32,7 +35,7 @@ class _PageMainState extends State<PageMain> {
       case PageType.personalEvent:
         return const PageCalendar();
       case PageType.settings:
-        return const PageA();
+        return const PageSettings();
       case PageType.recommendedEvent:
         return const PageRecommendedEvent();
       case PageType.recommendedAttractions:
@@ -40,13 +43,13 @@ class _PageMainState extends State<PageMain> {
       case PageType.memoryTrace:
         return const PageMemoryTrace();
       case PageType.accountRecords:
-        return const PageA();
+        return const PageAccountRecords();
       case PageType.pointsRecord:
-        return const PageA();
+        return const PagePointsRecord();
       case PageType.game:
         return const PageGameList();
       case PageType.ai:
-        return const PageA();
+        return const PageAI();
     }
   }
 

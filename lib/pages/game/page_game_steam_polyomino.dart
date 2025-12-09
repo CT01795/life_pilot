@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_steam_polyomino.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
+import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_polyomino_block.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_polyomino_tile.dart';
@@ -33,11 +34,11 @@ class _GamePageState extends State<GamePage> {
     final levelData = PolyominoLevelFactory.generateLevel(widget.gameLevel);
     final auth = context.read<ControllerAuth>();
     ctrl = ControllerGameSteamPolyomino(
-      userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGame(),
-      gameId: widget.gameId,
-      gameLevel: widget.gameLevel, 
-      level: levelData);
+        userName: auth.currentAccount ?? AuthConstants.guest,
+        service: ServiceGame(),
+        gameId: widget.gameId,
+        gameLevel: widget.gameLevel,
+        level: levelData);
     waiting = levelData.availableBlocks.map((b) => b.clone()).toList();
     // 初始化時每個水管旋轉一次，強制 build
     for (var b in waiting) {
@@ -93,15 +94,29 @@ class _GamePageState extends State<GamePage> {
         onPressed: () async {
           final ok = await ctrl.isLevelComplete();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(ok ? "🎉 Completed!" : "❌ Not Completed"),
-            duration: const Duration(seconds: 1)),
+            SnackBar(
+                content: Text(ok ? "🎉 Completed!" : "❌ Not Completed"),
+                duration: const Duration(seconds: 1)),
           );
+
           if (ok) {
-            // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
-            Future.delayed(const Duration(seconds: 1), () {
-              if (!mounted) return;
-              Navigator.pop(context, true); // 過關 -> 返回上一頁
-            });
+            // 強制跳轉到 WordMatch 遊戲頁（不能跳過）
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameWordMatch(
+                  gameId: widget.gameId,
+                  gameLevel: widget.gameLevel,
+                ),
+              ),
+            );
+            if (result == true) {
+              // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
+              Future.delayed(const Duration(seconds: 1), () {
+                if (!mounted) return;
+                Navigator.pop(context, true); // 過關 -> 返回上一頁
+              });
+            }
           }
         },
       ),
@@ -116,7 +131,8 @@ class _GamePageState extends State<GamePage> {
     if (!waitingUnitCalculated && waiting.isNotEmpty) {
       // 計算統一縮放比例，只做一次
       const baseUnit = 42.0;
-      final maxBlockWH = max(waiting.map((b) => b.width).fold(0, max), waiting.map((b) => b.height).fold(0, max));
+      final maxBlockWH = max(waiting.map((b) => b.width).fold(0, max),
+          waiting.map((b) => b.height).fold(0, max));
 
       final estCols = (maxBlockWH > 0)
           ? (totalW / (maxBlockWH * baseUnit)).floor().clamp(1, waiting.length)
@@ -130,7 +146,7 @@ class _GamePageState extends State<GamePage> {
         return min(slotW / (b.width * baseUnit), slotH / (b.height * baseUnit));
       }).toList();
 
-      waitingUnit = min(baseUnit * scales.reduce(min),80);
+      waitingUnit = min(baseUnit * scales.reduce(min), 80);
       waitingUnitCalculated = true; // 記錄已經計算
     }
 
@@ -156,7 +172,8 @@ class _GamePageState extends State<GamePage> {
         children: waiting.map((b) {
           return Draggable<PolyominoDragBlockData>(
             dragAnchorStrategy: childDragAnchorStrategy,
-            data: PolyominoDragBlockData(block: b, source: PolyominoDragSource.waiting),
+            data: PolyominoDragBlockData(
+                block: b, source: PolyominoDragSource.waiting),
             feedback: PolyominoBlockWidget(
               block: b,
               unitSize: waitingUnit,
@@ -216,11 +233,14 @@ class _GamePageState extends State<GamePage> {
                   onAcceptWithDetails: (details) {
                     setState(() {
                       if (!ctrl.placeBlock(details.data.block, c, r)) {
-                        if (!waiting.any((w) => w.id == details.data.block.id)) {
+                        if (!waiting
+                            .any((w) => w.id == details.data.block.id)) {
                           waiting.add(details.data.block);
                         }
-                      } else if (details.data.source == PolyominoDragSource.waiting) {
-                        waiting.removeWhere((w) => w.id == details.data.block.id);
+                      } else if (details.data.source ==
+                          PolyominoDragSource.waiting) {
+                        waiting
+                            .removeWhere((w) => w.id == details.data.block.id);
                       }
                     });
                   },
@@ -236,7 +256,8 @@ class _GamePageState extends State<GamePage> {
                           grid: ctrl.grid,
                           showPipe: true,
                         ),
-                        childWhenDragging: PolyominoTileWidget(tile: tile, size: cell),
+                        childWhenDragging:
+                            PolyominoTileWidget(tile: tile, size: cell),
                         onDragStarted: () =>
                             setState(() => ctrl.removeBlock(block)),
                         onDraggableCanceled: (_, __) {
