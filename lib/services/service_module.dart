@@ -1,36 +1,22 @@
-import 'package:life_pilot/pages/page_type.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceModule {
-  static final ServiceModule _instance = ServiceModule._internal();
-  factory ServiceModule() => _instance;
-  ServiceModule._internal();
-
-  final Map<PageType, bool> _moduleStatus = {};
+  final client = Supabase.instance.client;
+  ServiceModule();
 
   // ✅ 載入模組啟用狀態（實作可替換為從 Firebase/Supabase 拉）
-  Future<void> loadModulesFromServer(String userId) async {
-    // ⚠️ TODO: 改為實際從資料庫取得使用者模組啟用資訊
-    _moduleStatus.clear();
-    _moduleStatus[PageType.personalEvent] = true;
-    _moduleStatus[PageType.ai] = false;
-  }
+  Future<List<String>> loadModulesFromServer(String account) async {
+    final response = await client
+      .from('user_module')
+      .select('module_key')
+      .eq('account', account)
+      .or('stop_at.is.null,stop_at.gt.${DateTime.now().toIso8601String()}'); // ✅ 新版 SDK 必須 execute()
 
-  // ✅ 查詢某個模組是否啟用
-  bool isModuleEnabled(PageType module) {
-    return _moduleStatus[module] ?? false;
-  }
+      // data 可能為 null
+      final data = response as List<dynamic>?;
+      if (data == null) return [];
 
-  // ✅ 取得所有已啟用模組
-  List<PageType> get enabledModules =>
-      _moduleStatus.entries.where((e) => e.value).map((e) => e.key).toList();
-
-  // ✅ 更新某個模組狀態（例如 admin 或 debug 用）
-  void setModuleStatus(PageType module, bool isEnabled) {
-    _moduleStatus[module] = isEnabled;
-  }
-
-  // ✅ 清除所有模組狀態（可用於登出或重設）
-  void reset() {
-    _moduleStatus.clear();
+      // 轉成 List<String>
+      return data.map((e) => e['module_key'] as String).toList();
   }
 }

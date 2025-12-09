@@ -5,12 +5,13 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/page_type.dart';
+import 'package:life_pilot/services/service_module.dart';
 
 class ControllerPageMain extends ChangeNotifier {
   ControllerAuth _auth;
   AppLocalizations _loc;
   Locale _locale;
-
+  late List<String> dbPages = [];
   PageType _selectedPage;
 
   Timer? _debounce;
@@ -28,6 +29,15 @@ class ControllerPageMain extends ChangeNotifier {
     _validateSelectedPage(); // ✅ 放到 constructor body 裡
   }
 
+  /// async 初始化
+  Future<void> init() async {
+    if (!_auth.isAnonymous && _auth.currentAccount != null) {
+      dbPages =
+          await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
+      notifyListeners();
+    }
+  }
+
   // 📘 Getter 區
   ControllerAuth get auth => _auth;
   AppLocalizations get loc => _loc;
@@ -35,9 +45,42 @@ class ControllerPageMain extends ChangeNotifier {
   PageType get selectedPage => _selectedPage;
 
   // ✅ 取得目前登入狀態下可使用的頁面
-  List<PageType> get availablePages => _auth.isAnonymous
-      ? const [PageType.recommendedEvent, PageType.recommendedAttractions, PageType.game,]
-      : PageType.values;
+  List<PageType> get availablePages {
+    if (_auth.isAnonymous) {
+      return const [
+        PageType.recommendedEvent,
+        PageType.recommendedAttractions,
+        PageType.game,
+      ];
+    }
+
+    // ⭐ 已登入 → 基本 4 頁
+    List<PageType> pages = [
+      PageType.personalEvent,
+      PageType.recommendedEvent,
+      PageType.recommendedAttractions,
+      PageType.game,
+    ];
+
+    // ⭐ optional 功能（依 DB 開放）
+    const optionalMap = {
+      "memoryTrace": PageType.memoryTrace,
+      "accountRecords": PageType.accountRecords,
+      "pointsRecord": PageType.pointsRecord,
+      "ai": PageType.ai,
+    };
+
+    for (final key in dbPages) {
+      if (optionalMap.containsKey(key)) {
+        pages.add(optionalMap[key]!);
+      }
+    }
+    pages.remove(PageType.game);
+    // 最後加遊戲頁
+    pages.add(PageType.game);
+
+    return pages;
+  }
 
   // ✅ 切換頁面（若不同才觸發 notify）
   void changePage(PageType newPage) {
@@ -71,10 +114,12 @@ class ControllerPageMain extends ChangeNotifier {
   }
 
   // ✅ 確保 selectedPage 在合法頁面範圍內
-  void _validateSelectedPage() {
+  Future<void> _validateSelectedPage() async {
+    dbPages =
+        await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
+    _notifyDebounced();
     if (!availablePages.contains(_selectedPage)) {
-      logger.i(
-          '🔄 Page $_selectedPage 無效，重設為 ${availablePages.first}（登入狀態改變）');
+      logger.i('🔄 Page $_selectedPage 無效，重設為 ${availablePages.first}（登入狀態改變）');
       _selectedPage = availablePages.first;
     }
   }
