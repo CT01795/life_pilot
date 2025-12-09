@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_steam_kumon.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
+import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_kumon.dart';
 import 'package:provider/provider.dart';
@@ -47,10 +48,23 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
             onPressed: () async {
               Navigator.pop(context);
               if (ok) {
-                Navigator.pop(context, true); // 過關 -> 返回上一頁
-              } else {
-                //controller.resetLevel();
-                //setState(() {});
+                // 強制跳轉到 WordMatch 遊戲頁（不能跳過）
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PageGameWordMatch(
+                      gameId: widget.gameId,
+                      gameLevel: widget.gameLevel,
+                    ),
+                  ),
+                );
+                if (result == true) {
+                  // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (!mounted) return;
+                    Navigator.pop(context, true); // 過關 -> 返回上一頁
+                  });
+                }
               }
             },
             child: Text("OK"),

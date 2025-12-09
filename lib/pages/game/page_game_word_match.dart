@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
@@ -7,9 +9,11 @@ import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/services/game/service_game_word_match.dart';
 import 'package:provider/provider.dart';
 
+// ignore: must_be_immutable
 class PageGameWordMatch extends StatefulWidget {
   final String gameId;
-  const PageGameWordMatch({super.key, required this.gameId});
+  int? gameLevel;
+  PageGameWordMatch({super.key, required this.gameId, this.gameLevel});
 
   @override
   State<PageGameWordMatch> createState() => _PageGameWordMatchState();
@@ -20,19 +24,37 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
   bool _hasPopped = false; // 旗標，避免重複 pop
   final FlutterTts flutterTts = FlutterTts(); // TTS 實例
   double size = 32.0;
+  int answeredCount = 0; // 紀錄答了幾題
+  late int maxQ;
 
   @override
   void initState() {
     super.initState();
 
     final auth = context.read<ControllerAuth>();
-
+    maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
     controller = ControllerGameWordMatch(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGameWordMatch(),
     );
     controller.loadNextQuestion();
+  }
+
+  // 呼叫這個方法答題並判斷是否完成題數
+  void onAnswer(String option) {
+    controller.answer(option);
+    answeredCount++;
+
+    if (widget.gameLevel != null &&
+        answeredCount >= maxQ &&
+        !_hasPopped) {
+      _hasPopped = true;
+      // 延遲一下讓 UI 更新後再跳回
+      Future.microtask(() => Navigator.pop(context, true));
+    } else {
+      setState(() {}); // 更新 UI
+    }
   }
 
   Future<void> speak(String text) async {
@@ -112,7 +134,8 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                           alignment: Alignment.centerLeft, // 左對齊
                           child: InkWell(
                             onTap: () => speak(q.question),
-                            child: Icon(Icons.volume_up, color: Color(0xFF212121)),
+                            child:
+                                Icon(Icons.volume_up, color: Color(0xFF212121)),
                           ),
                         ),
                         Gaps.w60,
@@ -174,10 +197,11 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
                         children: [
                           // ⭐ 改成自訂 CheckBox 風格的 Radio
                           GestureDetector(
-                            onTap: () {
+                            onTap: () => onAnswer(opt),
+                            /*() {
                               controller.answer(opt);
                               setState(() {});
-                            },
+                            },*/
                             child: Container(
                               width: 60,
                               height: 60,
