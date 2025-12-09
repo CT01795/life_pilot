@@ -26,16 +26,8 @@ class ControllerPageMain extends ChangeNotifier {
         _selectedPage = auth.isAnonymous
             ? PageType.recommendedEvent
             : PageType.personalEvent {
+    loadModulesFromServer();
     _validateSelectedPage(); // ✅ 放到 constructor body 裡
-  }
-
-  /// async 初始化
-  Future<void> init() async {
-    if (!_auth.isAnonymous && _auth.currentAccount != null) {
-      dbPages =
-          await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
-      notifyListeners();
-    }
   }
 
   // 📘 Getter 區
@@ -108,16 +100,21 @@ class ControllerPageMain extends ChangeNotifier {
       changed = true;
     }
     if (changed) {
+      loadModulesFromServer();
       _validateSelectedPage();
       _notifyDebounced();
     }
   }
 
   // ✅ 確保 selectedPage 在合法頁面範圍內
-  Future<void> _validateSelectedPage() async {
+  Future<void> loadModulesFromServer() async {
     dbPages =
         await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
-    _notifyDebounced();
+    notifyListeners();
+  }
+
+  // ✅ 確保 selectedPage 在合法頁面範圍內
+  void _validateSelectedPage() {
     if (!availablePages.contains(_selectedPage)) {
       logger.i('🔄 Page $_selectedPage 無效，重設為 ${availablePages.first}（登入狀態改變）');
       _selectedPage = availablePages.first;
