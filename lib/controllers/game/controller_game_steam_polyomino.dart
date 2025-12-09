@@ -1,14 +1,25 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
+import 'package:life_pilot/services/game/service_game.dart';
 
-class GameController {
-  late LevelData levelData;
-  late List<List<Tile>> grid;
-  final List<PipeBlock> placedBlocks = [];
+class ControllerGameSteamPolyomino extends ChangeNotifier {
+  final String userName;
+  final ServiceGame service;
+  final String gameId;
+  final int gameLevel;
+  late PolyominoLevelData levelData;
+  late List<List<PolyominoTile>> grid;
+  final List<PolyominoPipeBlock> placedBlocks = [];
 
-  GameController({required LevelData level}) {
+  ControllerGameSteamPolyomino({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel, 
+    required PolyominoLevelData level}) {
     levelData = level;
     _initGrid();
     _markStartGoal();
@@ -17,7 +28,7 @@ class GameController {
   void _initGrid() {
     grid = List.generate(
       levelData.rows,
-      (_) => List.generate(levelData.cols, (_) => Tile()),
+      (_) => List.generate(levelData.cols, (_) => PolyominoTile()),
     );
   }
 
@@ -25,8 +36,8 @@ class GameController {
     // 設定 start/goal 類型
     final start = levelData.start;
     final goal = levelData.goal;
-    grid[levelData.start.y][levelData.start.x].type = TileType.start;
-    grid[levelData.goal.y][levelData.goal.x].type = TileType.goal;
+    grid[levelData.start.y][levelData.start.x].type = PolyominoTileType.start;
+    grid[levelData.goal.y][levelData.goal.x].type = PolyominoTileType.goal;
 
     final path = levelData.path;
     final next = path[1];
@@ -36,7 +47,7 @@ class GameController {
     _setDir(grid[goal.y][goal.x], goal, prev);
   }
 
-  void _setDir(Tile tile, Point<int> cur, Point<int> target) {
+  void _setDir(PolyominoTile tile, Point<int> cur, Point<int> target) {
     // 計算 start tile 的方向（只看下一格）
     tile.up = target.x == cur.x && target.y == cur.y - 1;
     tile.right = target.x == cur.x + 1 && target.y == cur.y;
@@ -47,7 +58,7 @@ class GameController {
   bool _inBounds(int x, int y) =>
       x >= 0 && x < levelData.cols && y >= 0 && y < levelData.rows;
 
-  bool canPlaceBlock(PipeBlock block, int gx, int gy) {
+  bool canPlaceBlock(PolyominoPipeBlock block, int gx, int gy) {
     if (gx < 0 ||
         gy < 0 ||
         gx + block.width > levelData.cols ||
@@ -58,12 +69,22 @@ class GameController {
       int nx = gx + c.x;
       int ny = gy + c.y;
       if (!_inBounds(nx, ny)) return false;
-      if (grid[ny][nx].type != TileType.empty) return false;
+      
+      final tile = grid[ny][nx];
+
+      // ★ 修正 1：禁止覆蓋 start / goal
+      if (tile.type == PolyominoTileType.start ||
+          tile.type == PolyominoTileType.goal) {
+        return false;
+      }
+
+      // 不能覆蓋其他方塊
+      if (tile.type != PolyominoTileType.empty) return false;
     }
     return true;
   }
 
-  bool placeBlock(PipeBlock block, int gx, int gy) {
+  bool placeBlock(PolyominoPipeBlock block, int gx, int gy) {
     if (!canPlaceBlock(block, gx, gy)) return false;
 
     block.originX = gx;
@@ -75,9 +96,13 @@ class GameController {
       final ny = gy + c.y;
 
       final tile = grid[ny][nx];
-      tile.type = TileType.pipe;
+      tile.type = PolyominoTileType.pipe;
       tile.blockId = block.id;
 
+      // ★ 修正 2：先清方向，避免殘留
+      tile.up = tile.right = tile.down = tile.left = false;
+
+      // 套入新方向
       tile.up = block.connections[i][0];
       tile.right = block.connections[i][1];
       tile.down = block.connections[i][2];
@@ -88,14 +113,25 @@ class GameController {
     return true;
   }
 
-  void removeBlock(PipeBlock block) {
+  void removeBlock(PolyominoPipeBlock block) {
     for (var c in block.cells) {
-      grid[block.originY + c.y][block.originX + c.x].reset();
+      final x = block.originX + c.x;
+      final y = block.originY + c.y;
+      final tile = grid[y][x];
+
+      // ★ 修正 3：不能清除 start / goal
+      if (tile.type == PolyominoTileType.start ||
+          tile.type == PolyominoTileType.goal) {
+        tile.blockId = null; // 移除 blockId 但保留方向
+        continue;
+      }
+
+      tile.reset();
     }
     placedBlocks.remove(block);
   }
 
-  bool isLevelComplete() {
+  Future<bool> isLevelComplete() async {
     final visited = List.generate(
         levelData.rows, (_) => List.filled(levelData.cols, false));
 
@@ -138,13 +174,17 @@ class GameController {
       return false; // 無法到達終點
     }
 
-    // 2️⃣ 待用水管都要用完
-    for (final block in levelData.availableBlocks) {
-      if (block.originX == -1 || block.originY == -1) {
-        return false; // 還有水管沒放
-      }
+    // 2️⃣ 所有水管都要放完（不能留在 waiting）
+    if (placedBlocks.length != levelData.availableBlocks.length) {
+      return false;
     }
 
+    await service.saveUserGameScore(
+      newUserName: userName,
+      newScore: levelData.availableBlocks.length * 10,
+      newGameId: gameId, // 使用傳入的 gameId
+      newIsPass: true,
+    );
     return true; // 到達終點且待用水管全部放完
   }
 
