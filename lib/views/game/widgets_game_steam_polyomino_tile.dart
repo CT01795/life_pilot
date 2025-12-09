@@ -11,17 +11,17 @@ class PolyominoTileWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg = _tileColor();
     // ⭐ 如果是 Hint 且有方向 → 顯示 Hint block 的管線
-    if (tile.highlight && tile.hintDirs != null) {
+    if ((tile.highlight && tile.hintDirs != null) || tile.type == PolyominoTileType.start) {
       return Container(
         width: size,
         height: size,
         color: Colors.orange.withValues(alpha: 0.3), // Hint 底色
         child: CustomPaint(
           painter: PolyominoPipePainter(
-            tile.hintDirs![0],
-            tile.hintDirs![1],
-            tile.hintDirs![2],
-            tile.hintDirs![3],
+            tile.hintDirs?[0] ?? tile.up,
+            tile.hintDirs?[1] ?? tile.right,
+            tile.hintDirs?[2] ?? tile.down,
+            tile.hintDirs?[3] ?? tile.left,
             color:const Color(0xFF2D6EDB),
             thickness: 6,
           ),
