@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_polyomino_tile.dart';
 
-class BlockWidget extends StatelessWidget {
-  final PipeBlock block;
+class PolyominoBlockWidget extends StatelessWidget {
+  final PolyominoPipeBlock block;
   final double unitSize;
-  final List<List<Tile>> grid; // 用來查 tile 的方向
+  final List<List<PolyominoTile>> grid; // 用來查 tile 的方向
   final bool showPipe; // 是否顯示水管（待用區=false，格子上=true）
 
-  const BlockWidget({
+  const PolyominoBlockWidget({
     super.key,
     required this.block,
     required this.unitSize,
@@ -31,15 +31,12 @@ class BlockWidget extends StatelessWidget {
               width: unitSize,
               height: unitSize,
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                border: Border.all(
-                  color: Colors.black38, // cell 格線顏色
-                  width: 1.0,            // 格線粗細
-                ),
+                color: const Color(0xFFE3E7EF),
+                border: Border.all(color: const Color(0xFFCCCCCC)),
               ),
               child: showPipe
                   ? CustomPaint(
-                      painter: PipePainter(
+                      painter: PolyominoPipePainter(
                         block.connections[i][0],
                         block.connections[i][1],
                         block.connections[i][2],

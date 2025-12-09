@@ -1,11 +1,10 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 
-enum TileType { empty, pipe, start, goal }
+enum PolyominoTileType { empty, pipe, start, goal }
 
-class Tile extends ChangeNotifier {
-  TileType type;
+class PolyominoTile extends ChangeNotifier {
+  PolyominoTileType type;
   bool up = false;
   bool right = false;
   bool down = false;
@@ -15,7 +14,7 @@ class Tile extends ChangeNotifier {
   // ⭐ 用於 Hint：該格方向（完整 block 的方向）
   List<bool>? hintDirs;
 
-  Tile({this.type = TileType.empty});
+  PolyominoTile({this.type = PolyominoTileType.empty});
 
   void clearHint() {
     highlight = false;
@@ -23,7 +22,7 @@ class Tile extends ChangeNotifier {
   }
 
   void reset() {
-    type = TileType.empty;
+    type = PolyominoTileType.empty;
     up = right = down = left = false;
     blockId = null;
     clearHint();
@@ -31,8 +30,8 @@ class Tile extends ChangeNotifier {
   }
 }
 
-/// PipeBlock：每格有自己的方向（up,right,down,left）
-class PipeBlock extends ChangeNotifier {
+// PipeBlock：每格有自己的方向（up,right,down,left）
+class PolyominoPipeBlock extends ChangeNotifier {
   final int id;
   List<Point<int>> cells; // (0,0) 起始
   List<List<bool>> connections; // 每個 cell 的 [up,right,down,left]
@@ -40,7 +39,7 @@ class PipeBlock extends ChangeNotifier {
   int originX = -1; // 放在 grid 的座標
   int originY = -1;
 
-  PipeBlock({
+  PolyominoPipeBlock({
     required this.id,
     required this.cells,
     required this.connections,
@@ -57,7 +56,7 @@ class PipeBlock extends ChangeNotifier {
           cells.map((c) => c.y).reduce(min) +
           1;
 
-  /// 右旋 90°，任意形狀 block 皆適用
+  // 右旋 90°，任意形狀 block 皆適用
   void rotateRight() {
     final h = height;
 
@@ -78,8 +77,8 @@ class PipeBlock extends ChangeNotifier {
     notifyListeners();
   }
 
-  PipeBlock clone() {
-    return PipeBlock(
+  PolyominoPipeBlock clone() {
+    return PolyominoPipeBlock(
       id: id,
       cells: List.from(cells),
       connections: connections.map((c) => List<bool>.from(c)).toList(),
@@ -89,15 +88,15 @@ class PipeBlock extends ChangeNotifier {
   }
 }
 
-class LevelData {
+class PolyominoLevelData {
   final int rows;
   final int cols;
   final Point<int> start;
   final Point<int> goal;
-  final List<PipeBlock> availableBlocks;
+  final List<PolyominoPipeBlock> availableBlocks;
   final List<Point<int>> path;
 
-  LevelData(
+  PolyominoLevelData(
       {required this.rows,
       required this.cols,
       required this.start,
@@ -106,16 +105,16 @@ class LevelData {
       required this.path});
 }
 
-class LevelFactory {
-  static LevelData generateLevel(int level) {
-    int rows = 3 + level;
-    int cols = 3 + level;
+class PolyominoLevelFactory {
+  static PolyominoLevelData generateLevel(int level) {
+    int rows = 3 + (level / 3).ceil();
+    int cols = rows;
 
     final start = const Point(0, 0);
     final goal = Point(cols - 1, rows - 1);
 
     while (true) {
-      final path = _generatePath(start, goal, rows * cols);
+      final path = _generatePath(start, goal, rows, level);
 
       // 計算 start/goal 的方向
       Map<Point<int>, List<bool>> tileDirections = {};
@@ -155,7 +154,7 @@ class LevelFactory {
       // ⭐ 檢查 cells 總數是否超過 path 長度
       int totalCells = blocks.fold(0, (sum, b) => sum + b.cells.length);
       if (totalCells <= path.length) {
-        return LevelData(
+        return PolyominoLevelData(
           rows: rows,
           cols: cols,
           start: start,
@@ -168,10 +167,11 @@ class LevelFactory {
   }
 
   static List<Point<int>> _generatePath(
-      Point<int> start, Point<int> goal, int cellCount) {
+      Point<int> start, Point<int> goal, int rows, int level) {
     final rnd = Random();
     List<Point<int>> path;
-    
+    double rate = 20;
+    int cellCount = rows * rows;
     // 重試直到成功生成一條從 start 到 goal 的路徑
     while (true) {
       path = [start];
@@ -216,8 +216,8 @@ class LevelFactory {
 
         // 控制蜿蜒程度
         Point<int> chosenDir;
-        if (rnd.nextInt(100) < 20 && candidates.contains(lastDir)) {
-          // 20% 保持原方向
+        if (rnd.nextInt(100) < rate && candidates.contains(lastDir)) {
+          // rate% 保持原方向
           chosenDir = lastDir;
         } else {
           chosenDir = candidates[rnd.nextInt(candidates.length)];
@@ -257,9 +257,9 @@ class LevelFactory {
     return 1; // 預設 fallback
   }
 
-  static List<PipeBlock> pathToPipeBlocks(
+  static List<PolyominoPipeBlock> pathToPipeBlocks(
       List<Point<int>> path, Point<int> start, Point<int> goal, int level) {
-    List<PipeBlock> blocks = [];
+    List<PolyominoPipeBlock> blocks = [];
     int id = 1;
     int i = 0;
     final rnd = Random();
@@ -319,7 +319,7 @@ class LevelFactory {
         connections.add([up, right, down, left]);
       }
 
-      blocks.add(PipeBlock(
+      blocks.add(PolyominoPipeBlock(
         id: id++,
         cells: cells,
         connections: connections,
@@ -333,10 +333,10 @@ class LevelFactory {
   }
 }
 
-enum DragSource { waiting, grid }
+enum PolyominoDragSource { waiting, grid }
 
-class DragBlockData {
-  final PipeBlock block;
-  final DragSource source;
-  DragBlockData({required this.block, required this.source});
+class PolyominoDragBlockData {
+  final PolyominoPipeBlock block;
+  final PolyominoDragSource source;
+  PolyominoDragBlockData({required this.block, required this.source});
 }

@@ -2,13 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
 
-class TileWidget extends StatelessWidget {
-  final Tile tile;
+class PolyominoTileWidget extends StatelessWidget {
+  final PolyominoTile tile;
   final double size;
-  const TileWidget({super.key, required this.tile, required this.size});
+  const PolyominoTileWidget({super.key, required this.tile, required this.size});
 
   @override
   Widget build(BuildContext context) {
+    Color bg = _tileColor();
     // ⭐ 如果是 Hint 且有方向 → 顯示 Hint block 的管線
     if (tile.highlight && tile.hintDirs != null) {
       return Container(
@@ -16,12 +17,12 @@ class TileWidget extends StatelessWidget {
         height: size,
         color: Colors.orange.withValues(alpha: 0.3), // Hint 底色
         child: CustomPaint(
-          painter: PipePainter(
+          painter: PolyominoPipePainter(
             tile.hintDirs![0],
             tile.hintDirs![1],
             tile.hintDirs![2],
             tile.hintDirs![3],
-            color: Colors.orange,
+            color:const Color(0xFF2D6EDB),
             thickness: 6,
           ),
         ),
@@ -33,16 +34,20 @@ class TileWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: _tileColor(),
-        border: Border.all(color: Colors.black12),
+        color: tile.highlight
+            ? const Color(0xFFCCE2FF) // 淡藍提示背景
+            : bg,
+        border: Border.all(color: const Color(0xFFCCCCCC)),
       ),
-      child: (tile.type == TileType.pipe)
+      child: (tile.type == PolyominoTileType.pipe)
           ? CustomPaint(
-              painter: PipePainter(
+              painter: PolyominoPipePainter(
                 tile.up,
                 tile.right,
                 tile.down,
                 tile.left,
+                color: const Color(0xFF4A90E2),
+                thickness:6,
               ),
             )
           : const SizedBox.shrink(),
@@ -51,21 +56,23 @@ class TileWidget extends StatelessWidget {
 
   Color _tileColor() {
     switch (tile.type) {
-      case TileType.start:
-        return Colors.green;
-      case TileType.goal:
-        return Colors.red;
+      case PolyominoTileType.start:
+        return const Color(0xFF6FCF97); // 綠
+      case PolyominoTileType.goal:
+        return const Color(0xFFEB5757); // 紅
+      case PolyominoTileType.pipe:
+        return const Color(0xFFE3E7EF); // 藍灰管道底色
       default:
-        return Colors.grey.shade200;
+        return const Color(0xFFF4F4F7); // 空格
     }
   }
 }
 
-class PipePainter extends CustomPainter {
+class PolyominoPipePainter extends CustomPainter {
   final bool up, right, down, left;
   final Color color;
   final double thickness;
-  PipePainter(this.up, this.right, this.down, this.left, {
+  PolyominoPipePainter(this.up, this.right, this.down, this.left, {
     this.color = Colors.orange,
     this.thickness = 6,
   });
