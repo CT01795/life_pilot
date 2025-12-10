@@ -14,12 +14,12 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
   late List<List<PolyominoTile>> grid;
   final List<PolyominoPipeBlock> placedBlocks = [];
 
-  ControllerGameSteamPolyomino({
-    required this.userName,
-    required this.service,
-    required this.gameId, // 初始化
-    required this.gameLevel, 
-    required PolyominoLevelData level}) {
+  ControllerGameSteamPolyomino(
+      {required this.userName,
+      required this.service,
+      required this.gameId, // 初始化
+      required this.gameLevel,
+      required PolyominoLevelData level}) {
     levelData = level;
     _initGrid();
     _markStartGoal();
@@ -69,7 +69,7 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
       int nx = gx + c.x;
       int ny = gy + c.y;
       if (!_inBounds(nx, ny)) return false;
-      
+
       final tile = grid[ny][nx];
 
       // ★ 修正 1：禁止覆蓋 start / goal
@@ -85,7 +85,42 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
   }
 
   bool placeBlock(PolyominoPipeBlock block, int gx, int gy) {
-    if (!canPlaceBlock(block, gx, gy)) return false;
+    bool isFind = false;
+    // 曼哈頓距離優先搜尋
+    // 原點可放 → 直接回
+    if (canPlaceBlock(block, gx, gy)) {
+      isFind = true;
+    } else {
+      for (int d = 1; d <= 3; d++) {
+        List<Point<int>> candidates = [
+          Point(gx, gy - d), // 上 d
+          Point(gx - d, gy), // 左 d
+          Point(gx - d, gy - d), // 左上
+          Point(gx - d, gy - d - 1), // 上 d
+          Point(gx - d - 1, gy - 1), // 左 d
+        ];
+
+        for (final p in candidates) {
+          final tx = p.x;
+          final ty = p.y;
+
+          if (tx < 0 || ty < 0) {
+            continue;
+          }
+
+          if (canPlaceBlock(block, tx, ty)) {
+            gx = tx;
+            gy = ty;
+            isFind = true;
+            break;
+          }
+        }
+        if (isFind) {
+          break;
+        }
+      }
+    }
+    if (!isFind) return false;
 
     block.originX = gx;
     block.originY = gy;

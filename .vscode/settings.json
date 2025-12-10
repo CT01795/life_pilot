@@ -53,6 +53,7 @@
         "inputdates",
         "inputid",
         "inputuser",
+        "isfind",
         "isodatee",
         "isodates",
         "jscomp",
