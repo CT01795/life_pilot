@@ -34,16 +34,24 @@ class TileWidget extends StatelessWidget {
     }
   }
 
+  Offset centerDragAnchorStrategy(
+    Draggable<Object> draggable, BuildContext context, Offset position) {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    // Offset 從 pointer 轉為 feedback 中心
+    return size.center(Offset.zero);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: tile,
       builder: (context, _) {
         return DragTarget<Map<String, dynamic>>(
-          onWillAcceptWithDetails: (details) {
+          onWillAcceptWithDetails: (_) => true, /*(details) {
             // 例如不接受障礙、終點、固定箭頭格子
             return !tile.isObstacle && !tile.isGoalP && !tile.isFixedArrow;
-          },
+          },*/
           onAcceptWithDetails: (details) {
             final fromRow = details.data['fromRow'] as int?;
             final fromCol = details.data['fromCol'] as int?;
@@ -91,21 +99,31 @@ class TileWidget extends StatelessWidget {
                     'direction': tile.direction,
                   },
                   feedback: Material(
-                    child: Icon(
-                      _directionToIcon(tile.direction),
-                      color: Colors.blue[900],
-                      size: size * 0.7,
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: size,
+                      height: size,
+                      child: Icon(
+                        _directionToIcon(tile.direction),
+                        color: Colors.blue[900],
+                        size: size * 0.7,
+                      ),
                     ),
                   ),
+                  dragAnchorStrategy: centerDragAnchorStrategy,
                   childWhenDragging: Container(),
                   onDragCompleted: () {
                     // 通知 Controller 從格子搬箭頭
                     onDropped(row, col, row, col, null); 
                   },
-                  child: Icon(
-                    _directionToIcon(tile.direction),
-                    color: Colors.blue[900],
-                    size: size * 0.7,
+                  child: SizedBox(
+                    width: size,
+                    height: size,
+                    child: Icon(
+                      _directionToIcon(tile.direction),
+                      color: Colors.blue[900],
+                      size: size * 0.7,
+                    ),
                   ),
                 ),
               );
@@ -127,6 +145,7 @@ class TileWidget extends StatelessWidget {
               ),
               child: Stack(
                 alignment: Alignment.center,
+                fit: StackFit.expand, 
                 children: stackChildren,
               ),
             );

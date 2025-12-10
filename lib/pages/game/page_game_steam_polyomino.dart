@@ -227,9 +227,9 @@ class _GamePageState extends State<GamePage> {
                     : ctrl.placedBlocks.firstWhere((b) => b.id == tile.blockId);
 
                 return DragTarget<PolyominoDragBlockData>(
-                  onWillAcceptWithDetails: (details) {
+                  onWillAcceptWithDetails: (_) => true, /*(details) {
                     return ctrl.canPlaceBlock(details.data.block, c, r);
-                  },
+                  },*/
                   onAcceptWithDetails: (details) {
                     setState(() {
                       if (!ctrl.placeBlock(details.data.block, c, r)) {

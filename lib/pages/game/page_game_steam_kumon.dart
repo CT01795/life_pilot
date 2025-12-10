@@ -82,6 +82,14 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
     KumonTileDirection.empty: Icons.circle_outlined,
   };
 
+  Offset centerDragAnchorStrategy(
+      Draggable<Object> draggable, BuildContext context, Offset position) {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    // Offset 從 pointer 轉為 feedback 中心
+    return size.center(Offset.zero);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,12 +144,18 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                             'direction': dir,
                           },
                           feedback: Material(
-                            child: Chip(
-                              padding: EdgeInsets.zero,
-                              label: Icon(arrowIcons[dir], size: 16),
-                              backgroundColor: Colors.orange[300],
+                            color: Colors.transparent,
+                            child: SizedBox(
+                              width: 85,
+                              height: 36,
+                              child: Chip(
+                                padding: EdgeInsets.zero,
+                                label: Icon(arrowIcons[dir], size: 16),
+                                backgroundColor: Colors.orange[300],
+                              ),
                             ),
                           ),
+                          dragAnchorStrategy: centerDragAnchorStrategy,
                           childWhenDragging: SizedBox(
                             width: 85,
                             child: Chip(
