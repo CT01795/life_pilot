@@ -10,16 +10,16 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
-  late PolyominoLevelData levelData;
-  late List<List<PolyominoTile>> grid;
-  final List<PolyominoPipeBlock> placedBlocks = [];
+  late ModelGamePolyominoLevelData levelData;
+  late List<List<ModelGamePolyominoTile>> grid;
+  final List<ModelGamePolyominoPipeBlock> placedBlocks = [];
 
   ControllerGameSteamPolyomino(
       {required this.userName,
       required this.service,
       required this.gameId, // 初始化
       required this.gameLevel,
-      required PolyominoLevelData level}) {
+      required ModelGamePolyominoLevelData level}) {
     levelData = level;
     _initGrid();
     _markStartGoal();
@@ -28,7 +28,7 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
   void _initGrid() {
     grid = List.generate(
       levelData.rows,
-      (_) => List.generate(levelData.cols, (_) => PolyominoTile()),
+      (_) => List.generate(levelData.cols, (_) => ModelGamePolyominoTile()),
     );
   }
 
@@ -36,8 +36,8 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
     // 設定 start/goal 類型
     final start = levelData.start;
     final goal = levelData.goal;
-    grid[levelData.start.y][levelData.start.x].type = PolyominoTileType.start;
-    grid[levelData.goal.y][levelData.goal.x].type = PolyominoTileType.goal;
+    grid[levelData.start.y][levelData.start.x].type = EnumPolyominoTileType.start;
+    grid[levelData.goal.y][levelData.goal.x].type = EnumPolyominoTileType.goal;
 
     final path = levelData.path;
     final next = path[1];
@@ -47,7 +47,7 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
     _setDir(grid[goal.y][goal.x], goal, prev);
   }
 
-  void _setDir(PolyominoTile tile, Point<int> cur, Point<int> target) {
+  void _setDir(ModelGamePolyominoTile tile, Point<int> cur, Point<int> target) {
     // 計算 start tile 的方向（只看下一格）
     tile.up = target.x == cur.x && target.y == cur.y - 1;
     tile.right = target.x == cur.x + 1 && target.y == cur.y;
@@ -58,7 +58,7 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
   bool _inBounds(int x, int y) =>
       x >= 0 && x < levelData.cols && y >= 0 && y < levelData.rows;
 
-  bool canPlaceBlock(PolyominoPipeBlock block, int gx, int gy) {
+  bool canPlaceBlock(ModelGamePolyominoPipeBlock block, int gx, int gy) {
     if (gx < 0 ||
         gy < 0 ||
         gx + block.width > levelData.cols ||
@@ -73,18 +73,18 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
       final tile = grid[ny][nx];
 
       // ★ 修正 1：禁止覆蓋 start / goal
-      if (tile.type == PolyominoTileType.start ||
-          tile.type == PolyominoTileType.goal) {
+      if (tile.type == EnumPolyominoTileType.start ||
+          tile.type == EnumPolyominoTileType.goal) {
         return false;
       }
 
       // 不能覆蓋其他方塊
-      if (tile.type != PolyominoTileType.empty) return false;
+      if (tile.type != EnumPolyominoTileType.empty) return false;
     }
     return true;
   }
 
-  bool placeBlock(PolyominoPipeBlock block, int gx, int gy) {
+  bool placeBlock(ModelGamePolyominoPipeBlock block, int gx, int gy) {
     bool isFind = false;
     // 曼哈頓距離優先搜尋
     // 原點可放 → 直接回
@@ -131,7 +131,7 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
       final ny = gy + c.y;
 
       final tile = grid[ny][nx];
-      tile.type = PolyominoTileType.pipe;
+      tile.type = EnumPolyominoTileType.pipe;
       tile.blockId = block.id;
 
       // ★ 修正 2：先清方向，避免殘留
@@ -148,15 +148,15 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
     return true;
   }
 
-  void removeBlock(PolyominoPipeBlock block) {
+  void removeBlock(ModelGamePolyominoPipeBlock block) {
     for (var c in block.cells) {
       final x = block.originX + c.x;
       final y = block.originY + c.y;
       final tile = grid[y][x];
 
       // ★ 修正 3：不能清除 start / goal
-      if (tile.type == PolyominoTileType.start ||
-          tile.type == PolyominoTileType.goal) {
+      if (tile.type == EnumPolyominoTileType.start ||
+          tile.type == EnumPolyominoTileType.goal) {
         tile.blockId = null; // 移除 blockId 但保留方向
         continue;
       }

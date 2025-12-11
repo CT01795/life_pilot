@@ -6,8 +6,8 @@ import 'dart:ui_web';
 import 'package:flutter/material.dart';
 // ignore: deprecated_member_use
 import 'package:js/js_util.dart' as js_util;
-import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
-import 'package:life_pilot/models/game/blockly/blockly_parser.dart';
+import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/models/game/steam_supper_hero/blockly_parser.dart';
 
 import '../../../core/logger.dart';
 

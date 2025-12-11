@@ -1,16 +1,16 @@
 import 'dart:math';
 
-import 'package:life_pilot/models/game/model_game_steam_super_hero_level.dart';
+import 'package:life_pilot/models/game/steam_supper_hero/model_game_steam_super_hero_level.dart';
 
 class GameSteamSuperHeroLevelGenerator {
-  GameSteamSuperHeroLevel generateLevel(int levelNumber) {
+  ModelGameSteamSuperHeroLevel generateLevel(int levelNumber) {
     final rand = Random();
     final width = (levelNumber * 1.1).toInt() + 2;
     final height = width;
 
     final occupied = <String>{}; // 記錄已占位置
-    final obstacles = <GameSteamSuperHeroObstacle>[];
-    final fruits = <GameSteamSuperHeroFruit>[];
+    final obstacles = <ModelGameSteamSuperHeroObstacle>[];
+    final fruits = <ModelGameSteamSuperHeroFruit>[];
 
     int numObstacles = (levelNumber * 1.4).toInt();
     int numFruits = numObstacles;
@@ -27,7 +27,7 @@ class GameSteamSuperHeroLevelGenerator {
     final treasureY = height - 1;
 
     occupied.add('${treasureX}_$treasureY');
-    final treasure = GameSteamSuperHeroTreasure(x: treasureX, y: treasureY);
+    final treasure = ModelGameSteamSuperHeroTreasure(x: treasureX, y: treasureY);
 
     // -------------------------------
     // 2️⃣ 生成水果
@@ -40,7 +40,7 @@ class GameSteamSuperHeroLevelGenerator {
 
       if (!occupied.contains(posKey)) {
         occupied.add(posKey);
-        fruits.add(GameSteamSuperHeroFruit(x: x, y: y));
+        fruits.add(ModelGameSteamSuperHeroFruit(x: x, y: y));
       }
       attempts++;
     }
@@ -81,11 +81,11 @@ class GameSteamSuperHeroLevelGenerator {
       }
 
       occupied.add(posKey);
-      obstacles.add(GameSteamSuperHeroObstacle(x: x, y: y));
+      obstacles.add(ModelGameSteamSuperHeroObstacle(x: x, y: y));
       attempts++;
     }
 
-    return GameSteamSuperHeroLevel(
+    return ModelGameSteamSuperHeroLevel(
       levelNumber: levelNumber,
       obstacles: obstacles,
       fruits: fruits,

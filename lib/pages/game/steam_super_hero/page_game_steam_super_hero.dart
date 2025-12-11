@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
-import 'package:life_pilot/controllers/game/controller_game_steam_super_hero_level_generator.dart';
+import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero_level_generator.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/game/model_game_steam_super_hero_level.dart';
+import 'package:life_pilot/models/game/steam_supper_hero/model_game_steam_super_hero_level.dart';
 import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero_blockly_editor.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_super_hero_game_board.dart';
@@ -67,27 +67,27 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
     super.dispose();
   }
 
-  void showGameDialog(GameEvent event) {
-    if (event.type == GameEventType.none) return;
+  void showGameDialog(ModelGameEvent event) {
+    if (event.type == EnumGameEventType.none) return;
     Color bg = switch (event.type) {
-      GameEventType.obstacle => Colors.red.shade600, // 柔和紅
-      GameEventType.fruit => Colors.orange.shade400, // 柔和橙
-      GameEventType.treasure => Colors.green.shade400, // 柔和綠
-      GameEventType.complete => Colors.blue.shade400, // 柔和藍
-      GameEventType.warning => Colors.red.shade600, // 柔和紅
-      GameEventType.none => Colors.white
+      EnumGameEventType.obstacle => Colors.red.shade600, // 柔和紅
+      EnumGameEventType.fruit => Colors.orange.shade400, // 柔和橙
+      EnumGameEventType.treasure => Colors.green.shade400, // 柔和綠
+      EnumGameEventType.complete => Colors.blue.shade400, // 柔和藍
+      EnumGameEventType.warning => Colors.red.shade600, // 柔和紅
+      EnumGameEventType.none => Colors.white
     };
 
     // 水果 → 自動 300ms 關閉
-    if (event.type == GameEventType.fruit ||
-        event.type == GameEventType.warning) {
+    if (event.type == EnumGameEventType.fruit ||
+        event.type == EnumGameEventType.warning) {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) {
           Future.delayed(
               Duration(
-                  milliseconds: event.type == GameEventType.fruit ? 300 : 1500),
+                  milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500),
               () {
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
           });
@@ -121,7 +121,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
     }
 
     // ----❗失敗（障礙）→ 顯示重新開始按鈕------
-    if (event.type == GameEventType.obstacle) {
+    if (event.type == EnumGameEventType.obstacle) {
       showDialog(
         context: context,
         barrierDismissible: false,

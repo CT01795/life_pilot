@@ -118,5 +118,6 @@
         "Zoomout",
         "Zoomreset"
     ],
-    "commentTranslate.hover.enabled": false
+    "commentTranslate.hover.enabled": false,
+    "cmake.sourceDirectory": "C:/Users/shinhui.shih/life_pilot/windows"
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
-import 'package:life_pilot/views/game/widgets_game_steam_polyomino_tile.dart';
+import 'package:life_pilot/views/game/steam_polyomino/widgets_game_steam_polyomino_tile.dart';
 
 class PolyominoBlockWidget extends StatelessWidget {
-  final PolyominoPipeBlock block;
+  final ModelGamePolyominoPipeBlock block;
   final double unitSize;
-  final List<List<PolyominoTile>> grid; // 用來查 tile 的方向
+  final List<List<ModelGamePolyominoTile>> grid; // 用來查 tile 的方向
   final bool showPipe; // 是否顯示水管（待用區=false，格子上=true）
 
   const PolyominoBlockWidget({

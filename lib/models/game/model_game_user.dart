@@ -1,6 +1,6 @@
 import 'package:life_pilot/core/const.dart';
 
-class GameUser {
+class ModelGameUser {
   String? id = constEmpty;
   String? userName;
   String? gameId = constEmpty;
@@ -10,7 +10,7 @@ class GameUser {
   String? gameName = constEmpty;
   int? level; // 追蹤使用者闖到哪一關
   bool? isPass;
-  GameUser({
+  ModelGameUser({
     this.id,
     this.userName,
     this.gameId,
@@ -22,8 +22,8 @@ class GameUser {
     this.isPass
   });
 
-  factory GameUser.fromMap(Map<String, dynamic> map) {
-    return GameUser(
+  factory ModelGameUser.fromMap(Map<String, dynamic> map) {
+    return ModelGameUser(
       id: map['id'] ?? constEmpty,
       userName: map['name'] ?? constEmpty,
       gameId: map['game_id'] ?? constEmpty,

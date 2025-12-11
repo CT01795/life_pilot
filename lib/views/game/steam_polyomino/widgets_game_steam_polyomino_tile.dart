@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
 
 class PolyominoTileWidget extends StatelessWidget {
-  final PolyominoTile tile;
+  final ModelGamePolyominoTile tile;
   final double size;
   const PolyominoTileWidget({super.key, required this.tile, required this.size});
 
@@ -11,7 +11,7 @@ class PolyominoTileWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg = _tileColor();
     // ⭐ 如果是 Hint 且有方向 → 顯示 Hint block 的管線
-    if ((tile.highlight && tile.hintDirs != null) || tile.type == PolyominoTileType.start || tile.type == PolyominoTileType.goal) {
+    if ((tile.highlight && tile.hintDirs != null) || tile.type == EnumPolyominoTileType.start || tile.type == EnumPolyominoTileType.goal) {
       return Container(
         width: size,
         height: size,
@@ -39,7 +39,7 @@ class PolyominoTileWidget extends StatelessWidget {
             : bg,
         border: Border.all(color: const Color(0xFFCCCCCC)),
       ),
-      child: (tile.type == PolyominoTileType.pipe)
+      child: (tile.type == EnumPolyominoTileType.pipe)
           ? CustomPaint(
               painter: PolyominoPipePainter(
                 tile.up,
@@ -56,11 +56,11 @@ class PolyominoTileWidget extends StatelessWidget {
 
   Color _tileColor() {
     switch (tile.type) {
-      case PolyominoTileType.start:
+      case EnumPolyominoTileType.start:
         return const Color(0xFF6FCF97); // 綠
-      case PolyominoTileType.goal:
+      case EnumPolyominoTileType.goal:
         return const Color(0xFFEB5757); // 紅
-      case PolyominoTileType.pipe:
+      case EnumPolyominoTileType.pipe:
         return const Color(0xFFE3E7EF); // 藍灰管道底色
       default:
         return const Color(0xFFF4F4F7); // 空格

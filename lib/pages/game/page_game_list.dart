@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/game/controller_game_list.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
 import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
 import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero.dart';
@@ -30,7 +31,7 @@ class _PageGameListState extends State<PageGameList> {
   String? selectedCategory;
   String? selectedGameName;
   int? selectedLevel;
-  List<GameUser> userProgress = [];
+  List<ModelGameUser> userProgress = [];
 
   @override
   void initState() {
@@ -79,7 +80,7 @@ class _PageGameListState extends State<PageGameList> {
     });
   }
 
-  GameItem? get selectedGameItem {
+  ModelGameItem? get selectedGameItem {
     if (selectedCategory == null || selectedGameName == null || selectedLevel == null) return null;
     final gameMap = controllerGameList.gamesByCategory[selectedCategory!];
     if (gameMap == null) return null;
@@ -220,7 +221,17 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => GamePage(gameId: game.id, gameLevel: game.level),
+                          builder: (_) => PageGameSteamPolyomino(gameId: game.id, gameLevel: game.level),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      } //Polyomino
+                    } else if (game.gameName.toLowerCase() == "word and sentence builder".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameSentence(gameId: game.id),
                         ),
                       );
                       if (result == true) {

@@ -7,22 +7,22 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
 import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
-import 'package:life_pilot/views/game/widgets_game_steam_polyomino_block.dart';
-import 'package:life_pilot/views/game/widgets_game_steam_polyomino_tile.dart';
+import 'package:life_pilot/views/game/steam_polyomino/widgets_game_steam_polyomino_block.dart';
+import 'package:life_pilot/views/game/steam_polyomino/widgets_game_steam_polyomino_tile.dart';
 import 'package:provider/provider.dart';
 
-class GamePage extends StatefulWidget {
+class PageGameSteamPolyomino extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const GamePage({super.key, required this.gameId, required this.gameLevel});
+  const PageGameSteamPolyomino({super.key, required this.gameId, required this.gameLevel});
 
   @override
-  State<GamePage> createState() => _GamePageState();
+  State<PageGameSteamPolyomino> createState() => _PageGameSteamPolyominoState();
 }
 
-class _GamePageState extends State<GamePage> {
+class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
   late ControllerGameSteamPolyomino ctrl;
-  late List<PolyominoPipeBlock> waiting;
+  late List<ModelGamePolyominoPipeBlock> waiting;
 
   // --- 統一縮放比例 ---
   double waitingUnit = 42.0; // 初始化
@@ -31,7 +31,7 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
-    final levelData = PolyominoLevelFactory.generateLevel(widget.gameLevel);
+    final levelData = ModelGamePolyominoLevelFactory.generateLevel(widget.gameLevel);
     final auth = context.read<ControllerAuth>();
     ctrl = ControllerGameSteamPolyomino(
         userName: auth.currentAccount ?? AuthConstants.guest,
@@ -170,10 +170,10 @@ class _GamePageState extends State<GamePage> {
         runSpacing: padding,
         alignment: WrapAlignment.center,
         children: waiting.map((b) {
-          return Draggable<PolyominoDragBlockData>(
+          return Draggable<ModelGamePolyominoDragBlockData>(
             dragAnchorStrategy: childDragAnchorStrategy,
-            data: PolyominoDragBlockData(
-                block: b, source: PolyominoDragSource.waiting),
+            data: ModelGamePolyominoDragBlockData(
+                block: b, source: EnumPolyominoDragSource.waiting),
             feedback: PolyominoBlockWidget(
               block: b,
               unitSize: waitingUnit,
@@ -226,7 +226,7 @@ class _GamePageState extends State<GamePage> {
                     ? null
                     : ctrl.placedBlocks.firstWhere((b) => b.id == tile.blockId);
 
-                return DragTarget<PolyominoDragBlockData>(
+                return DragTarget<ModelGamePolyominoDragBlockData>(
                   onWillAcceptWithDetails: (_) => true, /*(details) {
                     return ctrl.canPlaceBlock(details.data.block, c, r);
                   },*/
@@ -238,7 +238,7 @@ class _GamePageState extends State<GamePage> {
                           waiting.add(details.data.block);
                         }
                       } else if (details.data.source ==
-                          PolyominoDragSource.waiting) {
+                          EnumPolyominoDragSource.waiting) {
                         waiting
                             .removeWhere((w) => w.id == details.data.block.id);
                       }
@@ -246,10 +246,10 @@ class _GamePageState extends State<GamePage> {
                   },
                   builder: (_, __, ___) {
                     if (block != null) {
-                      return Draggable<PolyominoDragBlockData>(
+                      return Draggable<ModelGamePolyominoDragBlockData>(
                         dragAnchorStrategy: childDragAnchorStrategy,
-                        data: PolyominoDragBlockData(
-                            block: block, source: PolyominoDragSource.grid),
+                        data: ModelGamePolyominoDragBlockData(
+                            block: block, source: EnumPolyominoDragSource.grid),
                         feedback: PolyominoBlockWidget(
                           block: block,
                           unitSize: cell,

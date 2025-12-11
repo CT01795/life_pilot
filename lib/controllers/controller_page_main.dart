@@ -100,8 +100,10 @@ class ControllerPageMain extends ChangeNotifier {
       changed = true;
     }
     if (changed) {
-      loadModulesFromServer();
-      _validateSelectedPage();
+      if(_auth.isLoggedIn){
+        loadModulesFromServer();
+        _validateSelectedPage();
+      }
       _notifyDebounced();
     }
   }
