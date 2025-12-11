@@ -143,6 +143,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
       final maxBlockWH = max(waiting.map((b) => b.width).fold(0, max),
           waiting.map((b) => b.height).fold(0, max));
 
+      // 用寬度計算
       final estCols = (maxBlockWH > 0)
           ? (totalW / (maxBlockWH * baseUnit)).floor().clamp(1, waiting.length)
           : 1;
@@ -154,8 +155,10 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
       final scales = waiting.map((b) {
         return min(slotW / (b.width * baseUnit), slotH / (b.height * baseUnit));
       }).toList();
-
-      waitingUnit = min(baseUnit * scales.reduce(min), 80);
+      
+      waitingUnit = baseUnit * scales.reduce(min);
+      // 加上最小限制
+      waitingUnit = waitingUnit.clamp(28, 80);
       waitingUnitCalculated = true; // 記錄已經計算
     }
 
@@ -174,37 +177,46 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
 
     return Padding(
       padding: const EdgeInsets.all(padding),
-      child: Wrap(
-        spacing: padding,
-        runSpacing: padding,
-        alignment: WrapAlignment.center,
-        children: waiting.map((b) {
-          return Draggable<ModelGamePolyominoDragBlockData>(
-            dragAnchorStrategy: childDragAnchorStrategy,
-            data: ModelGamePolyominoDragBlockData(
-                block: b, source: EnumPolyominoDragSource.waiting),
-            feedback: PolyominoBlockWidget(
-              block: b,
-              unitSize: waitingUnit,
-              grid: ctrl.grid,
-              showPipe: true,
-            ),
-            childWhenDragging: const SizedBox.shrink(),
-            child: GestureDetector(
-              onTap: () {
-                setState(() => b.rotateRight());
-                // 旋轉時不再重新計算 unitSize
-              },
-              child: PolyominoBlockWidget(
-                block: b,
-                unitSize: waitingUnit,
-                grid: ctrl.grid,
-                showPipe: true,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+      child: InteractiveViewer(
+        minScale: 0.2,
+        maxScale: 3.0,
+        boundaryMargin: const EdgeInsets.all(200),
+        constrained: false, // ⭐ 讓內容可超出邊界
+        child: SizedBox(
+          width: totalW, // ⭐ 限制 Wrap 的寬度
+          child: Wrap(
+            spacing: padding,
+            runSpacing: padding,
+            alignment: WrapAlignment.center,
+            children: waiting.map((b) {
+              return Draggable<ModelGamePolyominoDragBlockData>(
+                dragAnchorStrategy: childDragAnchorStrategy,
+                data: ModelGamePolyominoDragBlockData(
+                    block: b, source: EnumPolyominoDragSource.waiting),
+                feedback: PolyominoBlockWidget(
+                  block: b,
+                  unitSize: waitingUnit,
+                  grid: ctrl.grid,
+                  showPipe: true,
+                ),
+                childWhenDragging: const SizedBox.shrink(),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => b.rotateRight());
+                    // 旋轉時不再重新計算 unitSize
+                  },
+                  child: PolyominoBlockWidget(
+                    block: b,
+                    unitSize: waitingUnit,
+                    grid: ctrl.grid,
+                    showPipe: true,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      )
     );
   }
 
