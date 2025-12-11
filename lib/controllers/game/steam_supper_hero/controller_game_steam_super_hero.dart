@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/game/model_game_steam_super_hero_level.dart';
+import 'package:life_pilot/models/game/steam_supper_hero/model_game_steam_super_hero_level.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
 enum Direction { north, east, south, west }
@@ -122,7 +122,7 @@ class ControllerGameSteamSuperHero {
   final String userName;
   final ServiceGame service;
   final String gameId;
-  final GameSteamSuperHeroLevel level;
+  final ModelGameSteamSuperHeroLevel level;
   bool _scoreSaved = false;
 
   // 使用 ValueNotifier 提高效能，安全 UI 更新
@@ -130,9 +130,9 @@ class ControllerGameSteamSuperHero {
   GameState get state => stateNotifier.value;
 
   // 事件 callback
-  final StreamController<GameEvent> _eventController =
+  final StreamController<ModelGameEvent> _eventController =
       StreamController.broadcast();
-  Stream<GameEvent> get eventStream => _eventController.stream;
+  Stream<ModelGameEvent> get eventStream => _eventController.stream;
 
   ControllerGameSteamSuperHero({
     required this.userName,
@@ -148,10 +148,10 @@ class ControllerGameSteamSuperHero {
       fruit.collected = false;
     }
     // ⭐ 清空事件 Stream 避免殘留事件再跳 Dialog
-    _eventController.add(GameEvent(GameEventType.none, constEmpty));
+    _eventController.add(ModelGameEvent(EnumGameEventType.none, constEmpty));
   }
 
-  void _notifyEvent(GameEvent event) => _eventController.add(event);
+  void _notifyEvent(ModelGameEvent event) => _eventController.add(event);
 
   // ---------------- Movement ----------------
   Future<bool> moveForward() async {
@@ -213,7 +213,7 @@ class ControllerGameSteamSuperHero {
 
     // 掉下懸崖檢查
     if (state.x < 0 || state.x > level.treasure.x || state.y < 0 || state.y > level.treasure.y) {
-      _notifyEvent(GameEvent(GameEventType.obstacle, "Fall off a cliff！"));
+      _notifyEvent(ModelGameEvent(EnumGameEventType.obstacle, "Fall off a cliff！"));
       return false; // 停止遊戲
     }
 
@@ -227,7 +227,7 @@ class ControllerGameSteamSuperHero {
     for (var obs in level.obstacles) {
       if (obs.x == state.x && obs.y == state.y) {
         state.score += obs.scoreValue;
-        _notifyEvent(GameEvent(GameEventType.obstacle, "Hit an obstacle！"));
+        _notifyEvent(ModelGameEvent(EnumGameEventType.obstacle, "Hit an obstacle！"));
         return true;
       }
     }
@@ -241,7 +241,7 @@ class ControllerGameSteamSuperHero {
         fruit.collected = true;
         state.score += fruit.scoreValue;
         _notifyEvent(
-            GameEvent(GameEventType.fruit, "Food +${fruit.scoreValue}!"));
+            ModelGameEvent(EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
       }
     }
   }
@@ -253,14 +253,14 @@ class ControllerGameSteamSuperHero {
         state.y == level.treasure.y) {
       if (state.score < min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
         //至少要吃一點東西
-        _notifyEvent(GameEvent(GameEventType.warning,
+        _notifyEvent(ModelGameEvent(EnumGameEventType.warning,
             "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!"));
         return true;
       }
       state.treasureCollected = true;
       state.score += level.treasure.scoreValue;
-      _notifyEvent(GameEvent(
-          GameEventType.treasure, "Treasure found！Score: ${state.score}"));
+      _notifyEvent(ModelGameEvent(
+          EnumGameEventType.treasure, "Treasure found！Score: ${state.score}"));
       _saveScore(true);
       return false;
     }

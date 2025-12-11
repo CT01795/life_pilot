@@ -7,17 +7,17 @@ class ControllerGameList extends ChangeNotifier {
   final ServiceGame serviceGame;
   final String userName;
 
-  List<GameItem> _games = [];
-  final Map<String, Map<String, List<GameItem>>> _gamesByCategory = {};
+  List<ModelGameItem> _games = [];
+  final Map<String, Map<String, List<ModelGameItem>>> _gamesByCategory = {};
   List<String> _categories = [];
-  final Map<String, List<GameUser>> _userProgressCache = {};
+  final Map<String, List<ModelGameUser>> _userProgressCache = {};
   
   bool isLoading = false;
 
   ControllerGameList({required this.serviceGame, required this.userName});
 
   List<String> get categories => _categories;
-  Map<String, Map<String, List<GameItem>>> get gamesByCategory => _gamesByCategory;
+  Map<String, Map<String, List<ModelGameItem>>> get gamesByCategory => _gamesByCategory;
 
   Future<void> loadGames() async {
     isLoading = true;
@@ -37,7 +37,7 @@ class ControllerGameList extends ChangeNotifier {
   }
 
   // 查詢目前使用者的分數紀錄
-  Future<List<GameUser>> loadUserProgress(String gameType, String gameName) async {
+  Future<List<ModelGameUser>> loadUserProgress(String gameType, String gameName) async {
     // 組 key
     final key = '$gameType|$gameName';
     /*if (_userProgressCache.containsKey(key)) {
@@ -57,7 +57,7 @@ class ControllerGameList extends ChangeNotifier {
   }
 
   // 取得使用者已通關的最高等級
-  int getHighestPassedLevel(List<GameUser> list) {
+  int getHighestPassedLevel(List<ModelGameUser> list) {
     if (list.isEmpty) return 0; // 尚未玩過任何關卡
 
     // 找到 is_pass = true 的最大 level

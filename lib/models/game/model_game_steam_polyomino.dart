@@ -1,10 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-enum PolyominoTileType { empty, pipe, start, goal }
+enum EnumPolyominoTileType { empty, pipe, start, goal }
 
-class PolyominoTile extends ChangeNotifier {
-  PolyominoTileType type;
+class ModelGamePolyominoTile extends ChangeNotifier {
+  EnumPolyominoTileType type;
   bool up = false;
   bool right = false;
   bool down = false;
@@ -14,7 +14,7 @@ class PolyominoTile extends ChangeNotifier {
   // ⭐ 用於 Hint：該格方向（完整 block 的方向）
   List<bool>? hintDirs;
 
-  PolyominoTile({this.type = PolyominoTileType.empty});
+  ModelGamePolyominoTile({this.type = EnumPolyominoTileType.empty});
 
   void clearHint() {
     highlight = false;
@@ -22,7 +22,7 @@ class PolyominoTile extends ChangeNotifier {
   }
 
   void reset() {
-    type = PolyominoTileType.empty;
+    type = EnumPolyominoTileType.empty;
     up = right = down = left = false;
     blockId = null;
     clearHint();
@@ -31,7 +31,7 @@ class PolyominoTile extends ChangeNotifier {
 }
 
 // PipeBlock：每格有自己的方向（up,right,down,left）
-class PolyominoPipeBlock extends ChangeNotifier {
+class ModelGamePolyominoPipeBlock extends ChangeNotifier {
   final int id;
   List<Point<int>> cells; // (0,0) 起始
   List<List<bool>> connections; // 每個 cell 的 [up,right,down,left]
@@ -39,7 +39,7 @@ class PolyominoPipeBlock extends ChangeNotifier {
   int originX = -1; // 放在 grid 的座標
   int originY = -1;
 
-  PolyominoPipeBlock({
+  ModelGamePolyominoPipeBlock({
     required this.id,
     required this.cells,
     required this.connections,
@@ -77,8 +77,8 @@ class PolyominoPipeBlock extends ChangeNotifier {
     notifyListeners();
   }
 
-  PolyominoPipeBlock clone() {
-    return PolyominoPipeBlock(
+  ModelGamePolyominoPipeBlock clone() {
+    return ModelGamePolyominoPipeBlock(
       id: id,
       cells: List.from(cells),
       connections: connections.map((c) => List<bool>.from(c)).toList(),
@@ -88,15 +88,15 @@ class PolyominoPipeBlock extends ChangeNotifier {
   }
 }
 
-class PolyominoLevelData {
+class ModelGamePolyominoLevelData {
   final int rows;
   final int cols;
   final Point<int> start;
   final Point<int> goal;
-  final List<PolyominoPipeBlock> availableBlocks;
+  final List<ModelGamePolyominoPipeBlock> availableBlocks;
   final List<Point<int>> path;
 
-  PolyominoLevelData(
+  ModelGamePolyominoLevelData(
       {required this.rows,
       required this.cols,
       required this.start,
@@ -105,8 +105,8 @@ class PolyominoLevelData {
       required this.path});
 }
 
-class PolyominoLevelFactory {
-  static PolyominoLevelData generateLevel(int level) {
+class ModelGamePolyominoLevelFactory {
+  static ModelGamePolyominoLevelData generateLevel(int level) {
     int rows = 3 + (level / 3).ceil();
     int cols = rows;
 
@@ -154,7 +154,7 @@ class PolyominoLevelFactory {
       // ⭐ 檢查 cells 總數是否超過 path 長度
       int totalCells = blocks.fold(0, (sum, b) => sum + b.cells.length);
       if (totalCells <= path.length) {
-        return PolyominoLevelData(
+        return ModelGamePolyominoLevelData(
           rows: rows,
           cols: cols,
           start: start,
@@ -257,9 +257,9 @@ class PolyominoLevelFactory {
     return 1; // 預設 fallback
   }
 
-  static List<PolyominoPipeBlock> pathToPipeBlocks(
+  static List<ModelGamePolyominoPipeBlock> pathToPipeBlocks(
       List<Point<int>> path, Point<int> start, Point<int> goal, int level) {
-    List<PolyominoPipeBlock> blocks = [];
+    List<ModelGamePolyominoPipeBlock> blocks = [];
     int id = 1;
     int i = 0;
     final rnd = Random();
@@ -319,7 +319,7 @@ class PolyominoLevelFactory {
         connections.add([up, right, down, left]);
       }
 
-      blocks.add(PolyominoPipeBlock(
+      blocks.add(ModelGamePolyominoPipeBlock(
         id: id++,
         cells: cells,
         connections: connections,
@@ -333,10 +333,10 @@ class PolyominoLevelFactory {
   }
 }
 
-enum PolyominoDragSource { waiting, grid }
+enum EnumPolyominoDragSource { waiting, grid }
 
-class PolyominoDragBlockData {
-  final PolyominoPipeBlock block;
-  final PolyominoDragSource source;
-  PolyominoDragBlockData({required this.block, required this.source});
+class ModelGamePolyominoDragBlockData {
+  final ModelGamePolyominoPipeBlock block;
+  final EnumPolyominoDragSource source;
+  ModelGamePolyominoDragBlockData({required this.block, required this.source});
 }

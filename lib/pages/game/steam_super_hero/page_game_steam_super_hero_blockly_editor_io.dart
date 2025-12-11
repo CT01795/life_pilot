@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/models/game/blockly/blockly_parser.dart';
+import 'package:life_pilot/models/game/steam_supper_hero/blockly_parser.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {

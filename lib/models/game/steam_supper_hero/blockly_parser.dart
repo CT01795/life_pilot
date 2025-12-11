@@ -1,4 +1,4 @@
-import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
 import 'package:xml/xml.dart';
 
 List<Command> parseBlocklyJson(Map<String, dynamic> data) {

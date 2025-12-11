@@ -74,12 +74,12 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
     );
   }
 
-  final Map<KumonTileDirection, IconData> arrowIcons = {
-    KumonTileDirection.up: Icons.arrow_upward,
-    KumonTileDirection.down: Icons.arrow_downward,
-    KumonTileDirection.left: Icons.arrow_back,
-    KumonTileDirection.right: Icons.arrow_forward,
-    KumonTileDirection.empty: Icons.circle_outlined,
+  final Map<EnumKumonTileDirection, IconData> arrowIcons = {
+    EnumKumonTileDirection.up: Icons.arrow_upward,
+    EnumKumonTileDirection.down: Icons.arrow_downward,
+    EnumKumonTileDirection.left: Icons.arrow_back,
+    EnumKumonTileDirection.right: Icons.arrow_forward,
+    EnumKumonTileDirection.empty: Icons.circle_outlined,
   };
 
   Offset centerDragAnchorStrategy(
@@ -134,7 +134,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                   final counts = controller.getRemainingCount();
                   return Row(
                     children: counts.entries.map((e) {
-                      KumonTileDirection dir = e.key;
+                      EnumKumonTileDirection dir = e.key;
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6.0),
                         child: Draggable<Map<String, dynamic>>(

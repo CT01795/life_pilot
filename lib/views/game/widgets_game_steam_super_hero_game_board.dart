@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/game/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
 
 class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
   final ControllerGameSteamSuperHero game;

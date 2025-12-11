@@ -11,10 +11,10 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   final int gameLevel;
   late List<Point<int>> remainingFixed;
 
-  late KumonLevel level;
+  late ModelGameKumonLevel level;
   int score = 0;
   int usedSteps = 0;
-  List<KumonTileDirection> remainingTiles = [];
+  List<EnumKumonTileDirection> remainingTiles = [];
 
   ControllerGameSteamKumon(
       {required this.userName,
@@ -33,12 +33,12 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   }
 
   // 根據 gameLevel 生成不同大小/難度的 Level
-  KumonLevel _generateLevel(int levelNumber) {
+  ModelGameKumonLevel _generateLevel(int levelNumber) {
     // 簡單規則：等級越高，行列數增加，積木數增加
     int baseSize = 6; // 最低關卡 4x4
     int size =
         baseSize + (levelNumber - 1); // e.g. level 1 -> 4x4, level 2 -> 5x5
-    return KumonLevel(levelNumber: levelNumber, rows: size, cols: size);
+    return ModelGameKumonLevel(levelNumber: levelNumber, rows: size, cols: size);
   }
 
   void resetLevel() {
@@ -50,24 +50,24 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   }
 
   void placeTile(
-      int row, int col, int? fromRow, int? fromCol, KumonTileDirection? to) {
+      int row, int col, int? fromRow, int? fromCol, EnumKumonTileDirection? to) {
     if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
 
-    KumonTile tileTarget = level.board[row][col];
-    KumonTile? tileFrom = fromRow != null && fromCol != null
+    ModelGameKumonTile tileTarget = level.board[row][col];
+    ModelGameKumonTile? tileFrom = fromRow != null && fromCol != null
         ? level.board[fromRow][fromCol]
         : null;
 
     if (tileTarget.isObstacle || tileTarget.isFixedArrow) return;
 
-    if (tileTarget.direction != KumonTileDirection.empty) {
+    if (tileTarget.direction != EnumKumonTileDirection.empty) {
       remainingTiles.add(tileTarget.direction);
     }
     tileTarget.direction = tileFrom == null ? to! : tileFrom.direction;
     if(tileFrom == null) {
       remainingTiles.remove(to!);
     }else{
-      tileFrom.direction = KumonTileDirection.empty;
+      tileFrom.direction = EnumKumonTileDirection.empty;
     }
     usedSteps++;
     notifyListeners();
@@ -102,8 +102,8 @@ class ControllerGameSteamKumon extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<KumonTileDirection, int> getRemainingCount() {
-    Map<KumonTileDirection, int> counts = {};
+  Map<EnumKumonTileDirection, int> getRemainingCount() {
+    Map<EnumKumonTileDirection, int> counts = {};
     for (var dir in remainingTiles) {
       counts[dir] = (counts[dir] ?? 0) + 1;
     }

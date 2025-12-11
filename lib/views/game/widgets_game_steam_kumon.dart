@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
 
 class TileWidget extends StatelessWidget {
-  final KumonTile tile;
+  final ModelGameKumonTile tile;
   final int row;
   final int col;
   final double size;
 
-  final Function(int row, int col, int? fromRow, int? fromCol, KumonTileDirection? newDir) onDropped;
+  final Function(int row, int col, int? fromRow, int? fromCol, EnumKumonTileDirection? newDir) onDropped;
 
   const TileWidget({
     super.key,
@@ -19,15 +19,15 @@ class TileWidget extends StatelessWidget {
     required this.size,
   });
 
-  IconData _directionToIcon(KumonTileDirection dir) {
+  IconData _directionToIcon(EnumKumonTileDirection dir) {
     switch (dir) {
-      case KumonTileDirection.up:
+      case EnumKumonTileDirection.up:
         return Icons.arrow_upward;
-      case KumonTileDirection.down:
+      case EnumKumonTileDirection.down:
         return Icons.arrow_downward;
-      case KumonTileDirection.left:
+      case EnumKumonTileDirection.left:
         return Icons.arrow_back;
-      case KumonTileDirection.right:
+      case EnumKumonTileDirection.right:
         return Icons.arrow_forward;
       default:
         return Icons.circle_outlined;
@@ -55,7 +55,7 @@ class TileWidget extends StatelessWidget {
           onAcceptWithDetails: (details) {
             final fromRow = details.data['fromRow'] as int?;
             final fromCol = details.data['fromCol'] as int?;
-            final direction = details.data['direction'] as KumonTileDirection?;
+            final direction = details.data['direction'] as EnumKumonTileDirection?;
             
             // 如果來源格子是自己格子，直接 return
             if (fromRow == row && fromCol == col) return;
@@ -90,7 +90,7 @@ class TileWidget extends StatelessWidget {
             }
 
             // 上層：箭頭（可拖動）
-            if (tile.direction != KumonTileDirection.empty && !tile.isFixedArrow && !tile.isObstacle) {
+            if (tile.direction != EnumKumonTileDirection.empty && !tile.isFixedArrow && !tile.isObstacle) {
               stackChildren.add(
                 Draggable<Map<String, dynamic>>(
                   data: {

@@ -6,7 +6,7 @@ class ServiceGame {
   final client = Supabase.instance.client;
   ServiceGame();
 
-  Future<List<GameItem>> fetchGames() async {
+  Future<List<ModelGameItem>> fetchGames() async {
     final data = await client
         .from('game_list')
         .select('id, game_type, game_name, level');
@@ -14,17 +14,17 @@ class ServiceGame {
     // 轉成 GameItem
     return (data as List<dynamic>).map((e) {
       final map = e as Map<String, dynamic>;
-      return GameItem(
+      return ModelGameItem(
         id: map['id'] as String,
         gameType: map['game_type'] as String,
         gameName: map['game_name'] as String,
-        level: map['level'] as int,
+        level: int.tryParse(map['level']?.toString() ?? '') ?? 1,
       );
     }).toList();
   }
 
   // 查詢目前使用者的分數紀錄
-  Future<List<GameUser>> fetchUserProgress(
+  Future<List<ModelGameUser>> fetchUserProgress(
       String userName, String gameType, String gameName) async {
     final response = await client.rpc('fetch_user_progress', params: {
       'p_name': userName,
@@ -33,7 +33,7 @@ class ServiceGame {
     });
 
     final data = response as List<dynamic>;
-    return data.map((e) => GameUser.fromMap(e)).toList();
+    return data.map((e) => ModelGameUser.fromMap(e)).toList();
   }
 
   Future<void> saveUserGameScore(
