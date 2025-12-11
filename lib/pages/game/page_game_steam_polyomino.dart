@@ -134,7 +134,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
 
   Widget _buildWaitingArea(BoxConstraints cons) {
     const padding = 16.0;
-    final totalW = cons.maxWidth * 0.4 - padding * 2;
+    final totalW = cons.maxWidth * 0.4 - padding * 3;
     final totalH = cons.maxHeight - padding * 2;
 
     if (!waitingUnitCalculated && waiting.isNotEmpty) {
