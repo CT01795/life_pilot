@@ -32,7 +32,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
     super.initState();
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
+    maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 10;
     controller = ControllerGameWordMatch(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,

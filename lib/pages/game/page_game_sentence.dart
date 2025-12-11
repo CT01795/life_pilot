@@ -37,7 +37,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     super.initState();
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
+    maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 10;
     controller = ControllerGameSentence(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
