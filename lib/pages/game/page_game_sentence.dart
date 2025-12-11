@@ -126,7 +126,9 @@ class _PageGameSentenceState extends State<PageGameSentence> {
         }
 
         return Scaffold(
+          backgroundColor: Color(0xFFF5F7FA),
           appBar: AppBar(
+            backgroundColor: Color(0xFF4DB6AC),
             title: Text("Word Builder (${controller.score}/100)"),
           ),
           body: Column(
@@ -138,14 +140,19 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.volume_up, size: 60, color: Colors.blue),
+                      icon: Icon(Icons.volume_up, size: 60, color: Color(0xFF26A69A)),
                       onPressed: () =>
                           speak(controller.currentQuestion!.correctAnswer),
                     ),
                     Gaps.w36,
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF00897B),
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                       onPressed: onAnswer,
-                      child: Text("Check", style: TextStyle(fontSize: 24)),
+                      child: Text("Check", style: TextStyle(fontSize: 24, color: Colors.white)),
                     ),
                   ],
                 ),
@@ -153,25 +160,32 @@ class _PageGameSentenceState extends State<PageGameSentence> {
               if (isRightAnswer != null)
                 Container(
                   padding: EdgeInsets.all(8),
+                  width: double.infinity,                      // 允許換行最重要
                   decoration: BoxDecoration(
-                    color: isRightAnswer == true ? Colors.green : Colors.red,
+                    color: isRightAnswer == true ? Color(0xFF81C784) : Color(0xFFE57373),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,       // ⬅ 水平置中
+                    crossAxisAlignment: CrossAxisAlignment.center,     // ⬅ 垂直置中
                     children: [
-                      if (isRightAnswer == true)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Icon(Icons.check, color: Colors.white, size: 36),
-                        ),
-                      Text(
-                        controller.currentQuestion!.correctAnswer,
-                        style: TextStyle(
-                          fontSize: 24,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      Icon(
+                        isRightAnswer == true ? Icons.check_circle : Icons.close,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                      Gaps.w8,
+                      /// 不用 Expanded → 用 Flexible 才不會把 icon 推開
+                      Flexible(
+                        child: Text(
+                          controller.currentQuestion!.correctAnswer,
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,  // 文字置中
+                          softWrap: true,
                         ),
                       ),
                     ],
@@ -185,7 +199,10 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                   final minHeight = 80.0;
                   return Container(
                     padding: EdgeInsets.symmetric(vertical: 3, horizontal: 6),
-                    color: Colors.grey[100], // 淡淡背景
+                    decoration: BoxDecoration(
+                      color: Color(0xFFE0F2F1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Wrap(
                       spacing: 4, // 水平間距
                       runSpacing: 4, // 垂直間距
@@ -230,7 +247,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                               decoration: BoxDecoration(
                                 color: word == null
                                     ? Colors.grey[300]
-                                    : Colors.blue[100],
+                                    : Color(0xFFB2DFDB),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: word == null
@@ -241,7 +258,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
                                               vertical: 3, horizontal: 6),
-                                          color: Colors.blue[200],
+                                          color: Color(0xFFB2DFDB),
                                           child: Text(word.text,
                                               style: TextStyle(
                                                   fontSize: fontSize)),
@@ -250,7 +267,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                       childWhenDragging: Container(
                                         width: width,
                                         height: minHeight,
-                                        color: Colors.grey[300],
+                                        color: Color(0xFF80CBC4),
                                       ),
                                       child: Text(
                                         word.text,
@@ -287,52 +304,59 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                     return Container(
                       width: double.infinity,
                       padding: EdgeInsets.symmetric(vertical: 3, horizontal: 6),
-                      color: Colors.grey[200], // 淡背景
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
                       child: Column(
                         crossAxisAlignment:
                             CrossAxisAlignment.center, // Row 水平置中
                         mainAxisAlignment: MainAxisAlignment.start, // 垂直靠上
                         children: [
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Wrap(
-                              spacing: 8, // 水平間距
-                              runSpacing: 8, // 垂直間距
-                              alignment: WrapAlignment.center,
-                              children: options.map((word) {
-                                return Draggable<WordItem>(
-                                  data: word,
-                                  feedback: Material(
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 3, horizontal: 6),
-                                      color: Colors.blue[200],
-                                      child: Text(word.text,
-                                          style: TextStyle(fontSize: 24)),
-                                    ),
-                                  ),
-                                  childWhenDragging: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 3, horizontal: 6),
-                                    margin: EdgeInsets.symmetric(horizontal: 4),
-                                    color: Colors.grey[400],
-                                    child: Text(word.text,
-                                        style: TextStyle(fontSize: 24)),
-                                  ),
+                          Wrap(
+                            spacing: 8, // 水平間距
+                            runSpacing: 8, // 垂直間距
+                            alignment: WrapAlignment.center,
+                            children: options.map((word) {
+                              return Draggable<WordItem>(
+                                data: word,
+                                feedback: Material(
                                   child: Container(
                                     padding: EdgeInsets.symmetric(
                                         vertical: 3, horizontal: 6),
-                                    margin: EdgeInsets.symmetric(horizontal: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue[100],
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                                    color: Color(0xFFB2DFDB),
                                     child: Text(word.text,
                                         style: TextStyle(fontSize: 24)),
                                   ),
-                                );
-                              }).toList(),
-                            ),
+                                ),
+                                childWhenDragging: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 3, horizontal: 6),
+                                  margin: EdgeInsets.symmetric(horizontal: 4),
+                                  color: Color(0xFF80CBC4),
+                                  child: Text(word.text,
+                                      style: TextStyle(fontSize: 24)),
+                                ),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 3, horizontal: 6),
+                                  margin: EdgeInsets.symmetric(horizontal: 4),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFB2DFDB),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(word.text,
+                                      style: TextStyle(fontSize: 24)),
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ],
                       ),
