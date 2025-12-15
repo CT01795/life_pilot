@@ -183,6 +183,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             itemBuilder: (_) => [
               const PopupMenuItem(
                   value: "assets/maps/taiwan.png", child: Text("Taiwan")),
+              const PopupMenuItem(
+                  value: "assets/maps/japan.png", child: Text("Japan")),   
+              const PopupMenuItem(
+                  value: "assets/maps/korea.png", child: Text("Korea")),   
             ],
             icon: const Icon(Icons.public),
           ),
@@ -207,7 +211,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           );
 
           if (maxWidth > maxHeight) {
-            mainSize = min(maxWidth - maxHeight, maxHeight);
+            mainSize = min(maxWidth - maxHeight, maxHeight) * 0.7;
             mainImage = SizedBox(
               width: mainSize,
               height: mainSize,
@@ -227,7 +231,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               ),
             );
           } else {
-            mainSize = min(maxHeight - maxWidth, maxWidth);
+            mainSize = min(maxHeight - maxWidth, maxWidth) * 0.7;
             mainImage = SizedBox(
               width: mainSize,
               height: mainSize,
@@ -238,8 +242,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             );
             return Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start, // 改成靠上
+                crossAxisAlignment: CrossAxisAlignment.center, // 水平置中
                 children: [
+                  Gaps.h16,
                   mainImage,
                   Gaps.h16,
                   puzzleArea,
