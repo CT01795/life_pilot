@@ -197,7 +197,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                 child: Text("${i + 4}x${i + 4}"),
               ),
             ),
-            icon: const Icon(Icons.grid_on),
+            icon: const Icon(Icons.grid_on, color: Colors.white,),
           ),
           PopupMenuButton<String>(
             onSelected: (path) async {
@@ -216,10 +216,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               const PopupMenuItem(
                   value: "assets/maps/korea.png", child: Text("Korea")),   
             ],
-            icon: const Icon(Icons.public),
+            icon: const Icon(Icons.public, color: Colors.white,),
           ),
           IconButton(
             icon: const Icon(Icons.check),
+            color: Colors.white,
             onPressed: _check,
           ),
         ],
