@@ -93,52 +93,80 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   }
 
   void _moveGroup(List<ModelGamePuzzlePiece> group, Offset totalOffset) {
+    if (group.isEmpty) return;
+
     final tileSize = puzzleAreaSize / gridSize;
 
-    // 計算群組拼圖的新位置
-    Map<ModelGamePuzzlePiece, int> newIndices = {};
+    final newIndices = <ModelGamePuzzlePiece, int>{};
+
     for (var p in group) {
       final col = p.currentIndex % gridSize;
       final row = p.currentIndex ~/ gridSize;
 
       final newCol =
-          ((col * tileSize + totalOffset.dx) / tileSize).round().clamp(0, gridSize - 1);
+          ((col * tileSize + totalOffset.dx) / tileSize)
+              .round()
+              .clamp(0, gridSize - 1);
       final newRow =
-          ((row * tileSize + totalOffset.dy) / tileSize).round().clamp(0, gridSize - 1);
-      final newIndex = newRow * gridSize + newCol;
-      newIndices[p] = newIndex;
+          ((row * tileSize + totalOffset.dy) / tileSize)
+              .round()
+              .clamp(0, gridSize - 1);
+
+      newIndices[p] = newRow * gridSize + newCol;
     }
 
-    // 建立 index -> 拼圖映射
-    Map<int, ModelGamePuzzlePiece?> positionMap = {};
-    for (var p in controller!.pieces) {
-      positionMap[p.currentIndex] = p;
+    // 群組內 newIndex 不可重複
+    final indexSet = <int>{};
+    for (final index in newIndices.values) {
+      if (!indexSet.add(index)) {
+        _resetDragOffsets(group);
+        return;
+      }
     }
 
-    // 處理互換：先把 target 拼圖的 currentIndex 存起來，最後再統一更新
-    Map<ModelGamePuzzlePiece, int> finalIndices = {};
+    final positionMap = {
+      for (var p in controller!.pieces) p.currentIndex: p
+    };
+
+    // 撞到正確拼圖 → 整組取消
+    for (var entry in newIndices.entries) {
+      final target = positionMap[entry.value];
+      if (target != null &&
+          !group.contains(target) &&
+          target.currentIndex == target.correctIndex) {
+        _resetDragOffsets(group);
+        return;
+      }
+    }
+
+    final finalIndices = <ModelGamePuzzlePiece, int>{};
 
     for (var entry in newIndices.entries) {
       final p = entry.key;
       final newIndex = entry.value;
-
       final target = positionMap[newIndex];
 
-      if (target != null && !group.contains(target) && target.currentIndex != target.correctIndex) {
-        // 互換位置
-        finalIndices[target] = p.currentIndex; // 先存 target 的新位置
+      if (target != null && !group.contains(target)) {
+        finalIndices[target] = p.currentIndex;
       }
 
-      finalIndices[p] = newIndex; // 存群組拼圖的新位置
+      finalIndices[p] = newIndex;
     }
 
-    // 統一更新所有拼圖
     finalIndices.forEach((piece, index) {
       piece.currentIndex = index;
       dragOffsets[index] = Offset.zero;
     });
 
     setState(() {});
+  }
+
+  void _resetDragOffsets(List<ModelGamePuzzlePiece> group) {
+    setState(() {
+      for (var p in group) {
+        dragOffsets[p.currentIndex] = Offset.zero;
+      }
+    });
   }
 
   @override
