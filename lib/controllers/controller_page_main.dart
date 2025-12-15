@@ -26,8 +26,10 @@ class ControllerPageMain extends ChangeNotifier {
         _selectedPage = auth.isAnonymous
             ? PageType.recommendedEvent
             : PageType.personalEvent {
-    loadModulesFromServer();
-    _validateSelectedPage(); // ✅ 放到 constructor body 裡
+    if(_auth.isLoggedIn){
+      loadModulesFromServer();
+      _validateSelectedPage(); // ✅ 放到 constructor body 裡
+    }
   }
 
   // 📘 Getter 區

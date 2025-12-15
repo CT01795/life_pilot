@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/game/controller_game_list.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/pages/game/page_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
 import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
@@ -236,8 +237,18 @@ class _PageGameListState extends State<PageGameList> {
                       );
                       if (result == true) {
                         await _loadUserProgress();
-                      } //Polyomino
-                    } else {
+                      } 
+                    } else if (game.gameName.toLowerCase() == "puzzle map".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGamePuzzleMap(gameId: game.id),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      } 
+                    }  else { 
                       // 其他遊戲開啟方式
                       logger.i("尚未實作此遊戲頁面");
                     }
