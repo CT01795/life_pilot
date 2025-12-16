@@ -23,6 +23,7 @@ class PageGamePuzzleMap extends StatefulWidget {
 }
 
 class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
+  bool showHint = false;
   late ModelGamePuzzleMap map;
   late int gameSize;
   late Map<String, int> rowsCols;
@@ -43,15 +44,15 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       gameLevel: widget.gameLevel,
     );
     final maps = [
-      "assets/maps/world.png",
-      "assets/maps/asia.png",
       "assets/maps/taiwan.png",
       "assets/maps/taiwan_outlying_islands.png",
       "assets/maps/penghu.png",
       "assets/maps/kinmen.png",
       "assets/maps/korea.png",
       "assets/maps/japan.png",
-      "assets/maps/singapore.png"
+      "assets/maps/singapore.png",
+      "assets/maps/asia.png",
+      "assets/maps/world.png"
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
@@ -166,6 +167,15 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       appBar: AppBar(
         title: const Text("Puzzle map"),
         actions: [
+          IconButton(
+            icon: Icon(Icons.lightbulb_outline, color: Colors.white,),
+            tooltip: "Hint",
+            onPressed: () {
+              setState(() {
+                showHint = !showHint;
+              });
+            },
+          ),
           PopupMenuButton<int>(
             onSelected: (size) {
               setState(() {
@@ -210,7 +220,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
             return Center(
               child: Row(
-                mainAxisSize: MainAxisSize.max,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Gaps.w24,
                   SizedBox(
@@ -220,16 +230,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
                   ),
                   Gaps.w16,
-                  Expanded(
-                    child: InteractiveViewer(
-                      minScale: 0.2,
-                      maxScale: 5.0,
-                      boundaryMargin: const EdgeInsets.all(20),
-                      child: Center(
-                        child: RawImage(image: puzzleImage),
+                  if (showHint)
+                    Expanded(
+                      child: InteractiveViewer(
+                        minScale: 0.2,
+                        maxScale: 5.0,
+                        boundaryMargin: const EdgeInsets.all(20),
+                        child: Center(
+                          child: RawImage(image: puzzleImage),
+                        ),
                       ),
                     ),
-                  ),
                   Gaps.w16,
                 ],
               ),
@@ -242,7 +253,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
             return Center(
               child: Column(
-                mainAxisSize: MainAxisSize.max,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Gaps.h16,
                   SizedBox(
@@ -252,16 +263,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
                   ),
                   Gaps.h16,
-                  Expanded(
-                    child: InteractiveViewer(
-                      minScale: 0.2,
-                      maxScale: 5.0,
-                      boundaryMargin: const EdgeInsets.all(20),
-                      child: Center(
-                        child: RawImage(image: puzzleImage),
+                  if (showHint)
+                    Expanded(
+                      child: InteractiveViewer(
+                        minScale: 0.2,
+                        maxScale: 5.0,
+                        boundaryMargin: const EdgeInsets.all(20),
+                        child: Center(
+                          child: RawImage(image: puzzleImage),
+                        ),
                       ),
                     ),
-                  ),
                   Gaps.h16,
                 ],
               ),
