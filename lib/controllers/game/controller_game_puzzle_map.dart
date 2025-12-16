@@ -17,18 +17,24 @@ class ControllerGamePuzzleMap {
       required this.gameId, // 初始化
       required this.gameLevel});
 
-  Map<String, int> setGridSize(int imgWidth, int imgHeight, int shortSideCount) {
+  Map<String, int> setGridSize(
+      int imgWidth, int imgHeight, int shortSideCount) {
     double tileSize;
     if (imgWidth > imgHeight) {
       // 高是短邊
       tileSize = imgHeight / shortSideCount;
-      rows = shortSideCount;                 // 垂直
-      cols = (imgWidth / tileSize).round();  // 水平
+      rows = shortSideCount; // 垂直
+      cols = (imgWidth / tileSize).round(); // 水平
     } else {
       // 寬是短邊
       tileSize = imgWidth / shortSideCount;
-      cols = shortSideCount;                 // 水平
+      cols = shortSideCount; // 水平
       rows = (imgHeight / tileSize).round(); // 垂直
+    }
+
+    if (rows * cols < 10) {
+      cols = cols + 1;
+      rows = rows + 1;
     }
 
     pieces = List.generate(
