@@ -117911,7 +117911,7 @@ r=$.fO().b
 r===$&&A.a()
 q=p.a
 p.x=new A.amg(s,new A.wW(r),q.c)
-q=["assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/singapore.png","assets/maps/asia.png","assets/maps/world.png"][q.d-1]
+q=["assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/singapore.png","assets/maps/malaysia.png","assets/maps/asia.png","assets/maps/world.png"][q.d-1]
 p.e=new A.ayo(q)
 p.v8(q).cw(new A.aTi(p),t.P)},
 v8(a){return this.auA(a)},
