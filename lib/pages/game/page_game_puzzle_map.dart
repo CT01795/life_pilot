@@ -53,8 +53,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     if (piece.currentIndex == piece.correctIndex) return [];
 
     final row = piece.currentIndex ~/ gridSize;
-    List<ModelGamePuzzlePiece> rowPieces =
-        controller!.pieces.where((p) => p.currentIndex ~/ gridSize == row).toList();
+    List<ModelGamePuzzlePiece> rowPieces = controller!.pieces
+        .where((p) => p.currentIndex ~/ gridSize == row)
+        .toList();
 
     List<ModelGamePuzzlePiece> group = [piece];
 
@@ -65,7 +66,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     for (int i = left - 1; i >= 0; i--) {
       try {
         final p = rowPieces.firstWhere((rp) => rp.currentIndex % gridSize == i);
-        if (p.currentIndex != p.correctIndex && p.correctIndex == group.first.correctIndex - 1) {
+        if (p.currentIndex != p.correctIndex &&
+            p.correctIndex == group.first.correctIndex - 1) {
           group.insert(0, p);
         } else {
           break;
@@ -79,7 +81,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     for (int i = right + 1; i < gridSize; i++) {
       try {
         final p = rowPieces.firstWhere((rp) => rp.currentIndex % gridSize == i);
-        if (p.currentIndex != p.correctIndex && p.correctIndex == group.last.correctIndex + 1) {
+        if (p.currentIndex != p.correctIndex &&
+            p.correctIndex == group.last.correctIndex + 1) {
           group.add(p);
         } else {
           break;
@@ -103,14 +106,12 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       final col = p.currentIndex % gridSize;
       final row = p.currentIndex ~/ gridSize;
 
-      final newCol =
-          ((col * tileSize + totalOffset.dx) / tileSize)
-              .round()
-              .clamp(0, gridSize - 1);
-      final newRow =
-          ((row * tileSize + totalOffset.dy) / tileSize)
-              .round()
-              .clamp(0, gridSize - 1);
+      final newCol = ((col * tileSize + totalOffset.dx) / tileSize)
+          .round()
+          .clamp(0, gridSize - 1);
+      final newRow = ((row * tileSize + totalOffset.dy) / tileSize)
+          .round()
+          .clamp(0, gridSize - 1);
 
       newIndices[p] = newRow * gridSize + newCol;
     }
@@ -124,9 +125,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       }
     }
 
-    final positionMap = {
-      for (var p in controller!.pieces) p.currentIndex: p
-    };
+    final positionMap = {for (var p in controller!.pieces) p.currentIndex: p};
 
     // 撞到正確拼圖 → 整組取消
     for (var entry in newIndices.entries) {
@@ -197,7 +196,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                 child: Text("${i + 4}x${i + 4}"),
               ),
             ),
-            icon: const Icon(Icons.grid_on, color: Colors.white,),
+            icon: const Icon(
+              Icons.grid_on,
+              color: Colors.white,
+            ),
           ),
           PopupMenuButton<String>(
             onSelected: (path) async {
@@ -212,11 +214,14 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               const PopupMenuItem(
                   value: "assets/maps/taiwan.png", child: Text("Taiwan")),
               const PopupMenuItem(
-                  value: "assets/maps/japan.png", child: Text("Japan")),   
+                  value: "assets/maps/japan.png", child: Text("Japan")),
               const PopupMenuItem(
-                  value: "assets/maps/korea.png", child: Text("Korea")),   
+                  value: "assets/maps/korea.png", child: Text("Korea")),
             ],
-            icon: const Icon(Icons.public, color: Colors.white,),
+            icon: const Icon(
+              Icons.public,
+              color: Colors.white,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.check),
@@ -230,54 +235,92 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           final maxWidth = constraints.maxWidth - 16;
           final maxHeight = constraints.maxHeight - 16;
 
-          final puzzleSize = min(maxWidth, maxHeight);
-          double mainSize;
-          Widget mainImage;
-          Widget puzzleArea = SizedBox(
-            width: puzzleSize,
-            height: puzzleSize,
-            child: _buildPuzzleArea(ctrl, puzzleSize),
-          );
+          final imageRatio = puzzleImage.width / puzzleImage.height;
+
+          late double puzzleWidth;
+          late double puzzleHeight;
 
           if (maxWidth > maxHeight) {
-            mainSize = min(maxWidth - maxHeight, maxHeight) * 0.7;
-            mainImage = SizedBox(
-              width: mainSize,
-              height: mainSize,
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: RawImage(image: puzzleImage),
-              ),
-            );
+            puzzleHeight = maxHeight;
+            puzzleWidth = puzzleHeight * imageRatio;
+            if (puzzleWidth > maxWidth * 0.75) {
+              puzzleWidth = maxWidth * 0.75;
+              puzzleHeight = puzzleWidth / imageRatio;
+            }
+
+            // 剩餘給左邊
+            double remainHeight = maxHeight;
+            double remainWidth = remainHeight * imageRatio;
+            if (remainWidth > maxWidth - puzzleWidth) {
+              remainWidth = maxWidth - puzzleWidth;
+              remainHeight = remainWidth / imageRatio;
+            }
+
             return Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  mainImage,
+                  SizedBox(
+                    width: remainWidth,
+                    height: remainHeight,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: RawImage(image: puzzleImage),
+                    ),
+                  ),
                   Gaps.w16,
-                  puzzleArea,
+                  SizedBox(
+                    width: puzzleWidth,
+                    height: puzzleHeight,
+                    child: _buildPuzzleArea(
+                      ctrl,
+                      puzzleWidth,
+                      puzzleHeight,
+                    ),
+                  ),
                 ],
               ),
             );
           } else {
-            mainSize = min(maxHeight - maxWidth, maxWidth) * 0.7;
-            mainImage = SizedBox(
-              width: mainSize,
-              height: mainSize,
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: RawImage(image: puzzleImage),
-              ),
-            );
+            puzzleWidth = maxWidth;
+            puzzleHeight = puzzleWidth / imageRatio;
+            if (puzzleHeight > maxHeight * 0.75) {
+              puzzleHeight = maxHeight * 0.75;
+              puzzleWidth = puzzleHeight * imageRatio;
+            }
+
+            // 剩餘給左邊
+            double remainWidth = maxWidth;
+            double remainHeight = remainWidth / imageRatio;
+            if (remainHeight > maxHeight - puzzleHeight) {
+              remainHeight = maxHeight - puzzleHeight;
+              remainWidth = remainHeight * imageRatio;
+            }
+
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start, // 改成靠上
                 crossAxisAlignment: CrossAxisAlignment.center, // 水平置中
                 children: [
                   Gaps.h16,
-                  mainImage,
+                  SizedBox(
+                    width: remainWidth,
+                    height: remainHeight,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: RawImage(image: puzzleImage),
+                    ),
+                  ),
                   Gaps.h16,
-                  puzzleArea,
+                  SizedBox(
+                    width: puzzleWidth,
+                    height: puzzleHeight,
+                    child: _buildPuzzleArea(
+                      ctrl,
+                      puzzleWidth,
+                      puzzleHeight,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -287,8 +330,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     );
   }
 
-  Widget _buildPuzzleArea(ControllerGamePuzzleMap ctrl, double puzzleAreaSize) {
-    final tileSize = puzzleAreaSize / gridSize;
+  Widget _buildPuzzleArea(
+      ControllerGamePuzzleMap ctrl, double puzzleWidth, double puzzleHeight) {
+    final tileRowSize = puzzleWidth / gridSize;
+    final tileColumnSize = puzzleHeight / gridSize;
 
     return Stack(
       children: ctrl.pieces.map((piece) {
@@ -297,29 +342,31 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
         Offset offset = dragOffsets[piece.currentIndex] ?? Offset.zero;
 
         return Positioned(
-          left: col * tileSize + offset.dx,
-          top: row * tileSize + offset.dy,
-          width: tileSize,
-          height: tileSize,
+          left: col * tileRowSize + offset.dx,
+          top: row * tileColumnSize + offset.dy,
+          width: tileRowSize,
+          height: tileColumnSize,
           child: GestureDetector(
             onPanUpdate: (details) {
               final group = _getGroup(piece);
-               if (group.isEmpty) return; // 正確位置的拼圖不處理
+              if (group.isEmpty) return; // 正確位置的拼圖不處理
               setState(() {
                 for (var p in group) {
                   dragOffsets[p.currentIndex] =
-                      (dragOffsets[p.currentIndex] ?? Offset.zero) + details.delta;
+                      (dragOffsets[p.currentIndex] ?? Offset.zero) +
+                          details.delta;
                 }
               });
             },
             onPanEnd: (details) {
               final group = _getGroup(piece);
-              final totalOffset = dragOffsets[piece.currentIndex] ?? Offset.zero;
+              final totalOffset =
+                  dragOffsets[piece.currentIndex] ?? Offset.zero;
               _moveGroup(group, totalOffset);
             },
             child: Stack(
               children: [
-                _buildPuzzleImage(piece, tileSize),
+                _buildPuzzleImage(piece, tileRowSize, tileColumnSize),
                 if (piece.correctIndex != piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -347,15 +394,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     );
   }
 
-  Widget _buildPuzzleImage(ModelGamePuzzlePiece piece, double tileSize) {
+  Widget _buildPuzzleImage(
+      ModelGamePuzzlePiece piece, double tileRowSize, double tileColumnSize) {
     final row = piece.correctIndex ~/ gridSize;
     final col = piece.correctIndex % gridSize;
 
     return CustomPaint(
-      size: Size(tileSize, tileSize),
+      size: Size(tileRowSize, tileColumnSize),
       painter: _PuzzleTilePainter(
         uiImage: puzzleImage,
-        sourceRect: Rect.fromLTWH(col * tileSize, row * tileSize, tileSize, tileSize),
+        sourceRect: Rect.fromLTWH(col * tileRowSize, row * tileColumnSize,
+            tileRowSize, tileColumnSize),
       ),
     );
   }
@@ -370,7 +419,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             ? "Puzzle completed successfully!"
             : "Some pieces are still in the wrong position."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
@@ -385,7 +435,8 @@ class _PuzzleTilePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawImageRect(uiImage, sourceRect, Rect.fromLTWH(0, 0, size.width, size.height), Paint());
+    canvas.drawImageRect(uiImage, sourceRect,
+        Rect.fromLTWH(0, 0, size.width, size.height), Paint());
   }
 
   @override
@@ -411,7 +462,8 @@ class _GroupBorderPainter extends CustomPainter {
       // 畫虛線矩形
       const dashWidth = 5.0;
       const dashSpace = 3.0;
-      final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+      final path = Path()
+        ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
       double distance = 0.0;
       for (final metric in path.computeMetrics()) {
         while (distance < metric.length) {
