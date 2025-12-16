@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:life_pilot/controllers/game/controller_game_puzzle_map.dart';
@@ -22,7 +23,6 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   late ui.Image puzzleImage;
   ControllerGamePuzzleMap? controller;
 
-  final double puzzleAreaSize = 512;
   Map<int, Offset> dragOffsets = {}; // 用 piece.currentIndex 當 key
 
   @override
@@ -50,7 +50,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
   List<ModelGamePuzzlePiece> _getGroup(ModelGamePuzzlePiece piece) {
     // 如果已經在正確位置，不能拖
-    if (piece.currentIndex == piece.correctIndex) return [];
+    //if (piece.currentIndex == piece.correctIndex) return [];
 
     final row = piece.currentIndex ~/ gridSize;
     List<ModelGamePuzzlePiece> rowPieces = controller!.pieces
@@ -95,10 +95,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     return group;
   }
 
-  void _moveGroup(List<ModelGamePuzzlePiece> group, Offset totalOffset) {
+  void _moveGroup(List<ModelGamePuzzlePiece> group, Offset totalOffset,
+      double tileRowSize, double tileColumnSize) {
     if (group.isEmpty) return;
-
-    final tileSize = puzzleAreaSize / gridSize;
 
     final newIndices = <ModelGamePuzzlePiece, int>{};
 
@@ -106,11 +105,13 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       final col = p.currentIndex % gridSize;
       final row = p.currentIndex ~/ gridSize;
 
-      final newCol = ((col * tileSize + totalOffset.dx) / tileSize)
-          .round()
-          .clamp(0, gridSize - 1);
-      final newRow = ((row * tileSize + totalOffset.dy) / tileSize)
-          .round()
+      final newCol =
+          ((col * tileRowSize + totalOffset.dx + tileRowSize * 0.15) /
+                  tileRowSize) //給手指 15% 的安全邊距
+              .floor()
+              .clamp(0, gridSize - 1);
+      final newRow = ((row * tileColumnSize + totalOffset.dy) / tileColumnSize)
+          .floor()
           .clamp(0, gridSize - 1);
 
       newIndices[p] = newRow * gridSize + newCol;
@@ -132,7 +133,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       final target = positionMap[entry.value];
       if (target != null &&
           !group.contains(target) &&
-          target.currentIndex == target.correctIndex) {
+          target.currentIndex == target.correctIndex &&
+          entry.value != entry.key.currentIndex) {
+        //✔ 真的要移到別人的格子 → 擋 ✔ 只是貼邊、沒換 index → 放行
         _resetDragOffsets(group);
         return;
       }
@@ -232,30 +235,31 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth - 16;
-          final maxHeight = constraints.maxHeight - 16;
-
-          final imageRatio = puzzleImage.width / puzzleImage.height;
+          final maxWidth = constraints.maxWidth - 32;
+          final maxHeight = constraints.maxHeight - 32;
 
           late double puzzleWidth;
           late double puzzleHeight;
 
+          double imageRatio = puzzleImage.width / puzzleImage.height;
+
           if (maxWidth > maxHeight) {
             puzzleHeight = maxHeight;
-            puzzleWidth = puzzleHeight * imageRatio;
-            if (puzzleWidth > maxWidth * 0.75) {
-              puzzleWidth = maxWidth * 0.75;
+            puzzleWidth = maxWidth * 0.75;
+            if (imageRatio > puzzleWidth / puzzleHeight) {
               puzzleHeight = puzzleWidth / imageRatio;
+            } else {
+              puzzleWidth = puzzleHeight * imageRatio;
             }
 
             // 剩餘給左邊
             double remainHeight = maxHeight;
-            double remainWidth = remainHeight * imageRatio;
-            if (remainWidth > maxWidth - puzzleWidth) {
-              remainWidth = maxWidth - puzzleWidth;
+            double remainWidth = maxWidth - puzzleWidth;
+            if (imageRatio > remainWidth / remainHeight) {
               remainHeight = remainWidth / imageRatio;
+            } else {
+              remainWidth = remainHeight * imageRatio;
             }
-
             return Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -283,20 +287,22 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             );
           } else {
             puzzleWidth = maxWidth;
-            puzzleHeight = puzzleWidth / imageRatio;
-            if (puzzleHeight > maxHeight * 0.75) {
-              puzzleHeight = maxHeight * 0.75;
+            puzzleHeight = maxHeight * 0.75;
+            if (imageRatio > puzzleWidth / puzzleHeight) {
+              puzzleHeight = puzzleWidth / imageRatio;
+            } else {
               puzzleWidth = puzzleHeight * imageRatio;
             }
 
             // 剩餘給左邊
             double remainWidth = maxWidth;
-            double remainHeight = remainWidth / imageRatio;
-            if (remainHeight > maxHeight - puzzleHeight) {
-              remainHeight = maxHeight - puzzleHeight;
+            double remainHeight = maxHeight - puzzleHeight;
+            if (imageRatio > remainWidth / remainHeight) {
+              remainHeight = remainWidth / imageRatio;
+            } else {
               remainWidth = remainHeight * imageRatio;
             }
-
+            
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start, // 改成靠上
@@ -362,7 +368,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               final group = _getGroup(piece);
               final totalOffset =
                   dragOffsets[piece.currentIndex] ?? Offset.zero;
-              _moveGroup(group, totalOffset);
+              _moveGroup(group, totalOffset, tileRowSize, tileColumnSize);
             },
             child: Stack(
               children: [
@@ -381,8 +387,29 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                 if (piece.correctIndex == piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: Container(
-                        color: Colors.green.withValues(alpha: 0.2),
+                      child: Stack(
+                        children: [
+                          // 半透明底 + 黃框
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              border: Border.all(
+                                color: Colors.yellow,
+                              ),
+                            ),
+                          ),
+
+                          // ✔ 打勾
+                          const Positioned(
+                            right: 6,
+                            bottom: 6,
+                            child: Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
