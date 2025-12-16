@@ -117974,7 +117974,7 @@ r===$&&A.a()
 r=new A.amg(s,new A.wX(r),q.a.c)
 q.r=r
 r.VW(q.e)
-r=["assets/maps/world.png","assets/maps/asia.png","assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/singapore.png"][q.a.d-1]
+r=["assets/maps/world.png","assets/maps/asia.png","assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/singapore.png"][q.a.d-1]
 q.d=new A.ayo(r)
 q.v8(r).cz(new A.aTg(q),t.P)},
 v8(a){return this.auA(a)},
