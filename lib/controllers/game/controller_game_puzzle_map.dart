@@ -6,7 +6,8 @@ class ControllerGamePuzzleMap {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
-  late int gridSize;
+  late int rows;
+  late int cols;
   int score = 0;
   late List<ModelGamePuzzlePiece> pieces;
 
@@ -16,10 +17,22 @@ class ControllerGamePuzzleMap {
       required this.gameId, // 初始化
       required this.gameLevel});
 
-  void setGridSize(int inputSize) {
-    gridSize = inputSize;
+  Map<String, int> setGridSize(int imgWidth, int imgHeight, int shortSideCount) {
+    double tileSize;
+    if (imgWidth > imgHeight) {
+      // 高是短邊
+      tileSize = imgHeight / shortSideCount;
+      rows = shortSideCount;                 // 垂直
+      cols = (imgWidth / tileSize).round();  // 水平
+    } else {
+      // 寬是短邊
+      tileSize = imgWidth / shortSideCount;
+      cols = shortSideCount;                 // 水平
+      rows = (imgHeight / tileSize).round(); // 垂直
+    }
+
     pieces = List.generate(
-      gridSize * gridSize,
+      rows * cols,
       (i) => ModelGamePuzzlePiece(correctIndex: i, currentIndex: i),
     );
 
@@ -27,6 +40,10 @@ class ControllerGamePuzzleMap {
     for (int i = 0; i < pieces.length; i++) {
       pieces[i].currentIndex = i;
     }
+    return {
+      "rows": rows,
+      "cols": cols,
+    };
   }
 
   Future<bool> checkResult() async {
@@ -44,6 +61,6 @@ class ControllerGamePuzzleMap {
   }
 
   void _calculateScore() {
-    score = gridSize * 10;
+    score = rows * cols * 10;
   }
 }
