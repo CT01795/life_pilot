@@ -47,6 +47,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/asia.png",
       "assets/maps/taiwan.png",
       "assets/maps/taiwan_outlying_islands.png",
+      "assets/maps/penghu.png",
+      "assets/maps/kinmen.png",
       "assets/maps/korea.png",
       "assets/maps/japan.png",
       "assets/maps/singapore.png"
