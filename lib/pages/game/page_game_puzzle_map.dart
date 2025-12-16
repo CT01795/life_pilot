@@ -3,15 +3,20 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_puzzle_map.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_puzzle_map.dart';
+import 'package:life_pilot/pages/game/page_game_sentence.dart';
+import 'package:life_pilot/pages/game/page_game_word_match.dart';
+import 'package:life_pilot/services/game/service_game.dart';
+import 'package:provider/provider.dart';
 
-// ignore: must_be_immutable
 class PageGamePuzzleMap extends StatefulWidget {
   final String gameId;
-  int? gameLevel;
-  PageGamePuzzleMap({super.key, required this.gameId, this.gameLevel});
+  final int gameLevel;
+  const PageGamePuzzleMap(
+      {super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGamePuzzleMap> createState() => _PageGamePuzzleMapState();
@@ -20,7 +25,7 @@ class PageGamePuzzleMap extends StatefulWidget {
 class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   late ModelGamePuzzleMap map;
   late int gridSize;
-  late ui.Image puzzleImage;
+  ui.Image? puzzleImage;
   ControllerGamePuzzleMap? controller;
 
   Map<int, Offset> dragOffsets = {}; // 用 piece.currentIndex 當 key
@@ -28,14 +33,28 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   @override
   void initState() {
     super.initState();
-    map = ModelGamePuzzleMap(assetPath: "assets/maps/taiwan.png");
-
-    gridSize = min((widget.gameLevel ?? 1) + 3, 10);
-
+    gridSize = min(widget.gameLevel + 3, 10);
+    final auth = context.read<ControllerAuth>();
+    controller = ControllerGamePuzzleMap(
+      userName: auth.currentAccount ?? AuthConstants.guest,
+      service: ServiceGame(),
+      gameId: widget.gameId,
+      gameLevel: widget.gameLevel,
+    );
+    controller!.setGridSize(gridSize);
+    final maps = [
+      "assets/maps/world.png",
+      "assets/maps/asia.png",
+      "assets/maps/taiwan.png",
+      "assets/maps/taiwan_outlying_islands.png",
+      "assets/maps/korea.png",
+      "assets/maps/japan.png",
+      "assets/maps/singapore.png"
+    ];
+    map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
       setState(() {
         puzzleImage = img;
-        controller = ControllerGamePuzzleMap(gridSize: gridSize);
       });
     });
   }
@@ -50,16 +69,16 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
   List<ModelGamePuzzlePiece> _getGroup(ModelGamePuzzlePiece piece) {
     // 如果已經在正確位置，不能拖
-    //if (piece.currentIndex == piece.correctIndex) return [];
+    if (piece.currentIndex == piece.correctIndex) return [];
 
-    final row = piece.currentIndex ~/ gridSize;
+    /*final row = piece.currentIndex ~/ gridSize;
     List<ModelGamePuzzlePiece> rowPieces = controller!.pieces
         .where((p) => p.currentIndex ~/ gridSize == row)
-        .toList();
+        .toList();*/
 
     List<ModelGamePuzzlePiece> group = [piece];
 
-    int left = piece.currentIndex % gridSize;
+    /*int left = piece.currentIndex % gridSize;
     int right = left;
 
     // 向左找未在正確位置但正確相鄰的拼圖
@@ -90,7 +109,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       } catch (e) {
         break;
       }
-    }
+    }*/
 
     return group;
   }
@@ -173,7 +192,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
   @override
   Widget build(BuildContext context) {
-    if (controller == null) {
+    if (controller == null || puzzleImage == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -188,8 +207,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           PopupMenuButton<int>(
             onSelected: (size) {
               setState(() {
-                gridSize = size;
-                controller = ControllerGamePuzzleMap(gridSize: gridSize);
+                gridSize = size;               // 更新 state 中的 gridSize
+                controller!.setGridSize(size); // 重新生成 pieces
+                dragOffsets.clear();           // 清掉舊的拖動偏移
               });
             },
             itemBuilder: (_) => List.generate(
@@ -204,28 +224,6 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               color: Colors.white,
             ),
           ),
-          PopupMenuButton<String>(
-            onSelected: (path) async {
-              final img = await _loadImage(path);
-              setState(() {
-                map = ModelGamePuzzleMap(assetPath: path);
-                puzzleImage = img;
-                controller = ControllerGamePuzzleMap(gridSize: gridSize);
-              });
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                  value: "assets/maps/taiwan.png", child: Text("Taiwan")),
-              const PopupMenuItem(
-                  value: "assets/maps/japan.png", child: Text("Japan")),
-              const PopupMenuItem(
-                  value: "assets/maps/korea.png", child: Text("Korea")),
-            ],
-            icon: const Icon(
-              Icons.public,
-              color: Colors.white,
-            ),
-          ),
           IconButton(
             icon: const Icon(Icons.check),
             color: Colors.white,
@@ -235,43 +233,20 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth - 32;
-          final maxHeight = constraints.maxHeight - 32;
+          double maxWidth = constraints.maxWidth - 48;
+          double maxHeight = constraints.maxHeight - 48;
 
           late double puzzleWidth;
           late double puzzleHeight;
 
-          double imageRatio = puzzleImage.width / puzzleImage.height;
-
           if (maxWidth > maxHeight) {
             puzzleHeight = maxHeight;
             puzzleWidth = maxWidth * 0.75;
-            if (imageRatio > puzzleWidth / puzzleHeight) {
-              puzzleHeight = puzzleWidth / imageRatio;
-            } else {
-              puzzleWidth = puzzleHeight * imageRatio;
-            }
 
-            // 剩餘給左邊
-            double remainHeight = maxHeight;
-            double remainWidth = maxWidth - puzzleWidth;
-            if (imageRatio > remainWidth / remainHeight) {
-              remainHeight = remainWidth / imageRatio;
-            } else {
-              remainWidth = remainHeight * imageRatio;
-            }
             return Center(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: remainWidth,
-                    height: remainHeight,
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: RawImage(image: puzzleImage),
-                    ),
-                  ),
                   Gaps.w16,
                   SizedBox(
                     width: puzzleWidth,
@@ -280,43 +255,28 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                       ctrl,
                       puzzleWidth,
                       puzzleHeight,
+                      puzzleImage!
                     ),
                   ),
+                  Gaps.w16,
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: RawImage(image: puzzleImage),
+                    ),
+                  ),
+                  Gaps.w16,
                 ],
               ),
             );
           } else {
             puzzleWidth = maxWidth;
             puzzleHeight = maxHeight * 0.75;
-            if (imageRatio > puzzleWidth / puzzleHeight) {
-              puzzleHeight = puzzleWidth / imageRatio;
-            } else {
-              puzzleWidth = puzzleHeight * imageRatio;
-            }
 
-            // 剩餘給左邊
-            double remainWidth = maxWidth;
-            double remainHeight = maxHeight - puzzleHeight;
-            if (imageRatio > remainWidth / remainHeight) {
-              remainHeight = remainWidth / imageRatio;
-            } else {
-              remainWidth = remainHeight * imageRatio;
-            }
-            
             return Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.start, // 改成靠上
-                crossAxisAlignment: CrossAxisAlignment.center, // 水平置中
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Gaps.h16,
-                  SizedBox(
-                    width: remainWidth,
-                    height: remainHeight,
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: RawImage(image: puzzleImage),
-                    ),
-                  ),
                   Gaps.h16,
                   SizedBox(
                     width: puzzleWidth,
@@ -325,8 +285,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                       ctrl,
                       puzzleWidth,
                       puzzleHeight,
+                      puzzleImage!
                     ),
                   ),
+                  Gaps.h16,
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: RawImage(image: puzzleImage),
+                    ),
+                  ),
+                  Gaps.h16,
                 ],
               ),
             );
@@ -337,9 +306,14 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   }
 
   Widget _buildPuzzleArea(
-      ControllerGamePuzzleMap ctrl, double puzzleWidth, double puzzleHeight) {
-    final tileRowSize = puzzleWidth / gridSize;
-    final tileColumnSize = puzzleHeight / gridSize;
+      ControllerGamePuzzleMap ctrl, double puzzleWidth, double puzzleHeight, ui.Image inputImage) {
+    // 計算圖片在容器中的實際顯示區域
+    final imageRect =
+        _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
+
+    // 只使用圖片區域切格子
+    final tileRowSize = imageRect.width / gridSize;
+    final tileColumnSize = imageRect.height / gridSize;
 
     return Stack(
       children: ctrl.pieces.map((piece) {
@@ -348,14 +322,14 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
         Offset offset = dragOffsets[piece.currentIndex] ?? Offset.zero;
 
         return Positioned(
-          left: col * tileRowSize + offset.dx,
-          top: row * tileColumnSize + offset.dy,
+          left: imageRect.left + col * tileRowSize + offset.dx,
+          top: imageRect.top + row * tileColumnSize + offset.dy,
           width: tileRowSize,
           height: tileColumnSize,
           child: GestureDetector(
             onPanUpdate: (details) {
               final group = _getGroup(piece);
-              if (group.isEmpty) return; // 正確位置的拼圖不處理
+              if (group.isEmpty) return;
               setState(() {
                 for (var p in group) {
                   dragOffsets[p.currentIndex] =
@@ -372,7 +346,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             },
             child: Stack(
               children: [
-                _buildPuzzleImage(piece, tileRowSize, tileColumnSize),
+                _buildPuzzleImage(piece, tileRowSize, tileColumnSize, puzzleImage!),
                 if (piece.correctIndex != piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -389,23 +363,20 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     child: IgnorePointer(
                       child: Stack(
                         children: [
-                          // 半透明底 + 黃框
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.3),
+                              color: Colors.white.withValues(alpha: 0.4),
                               border: Border.all(
                                 color: Colors.yellow,
                               ),
                             ),
                           ),
-
-                          // ✔ 打勾
-                          const Positioned(
+                          Positioned(
                             right: 6,
                             bottom: 6,
                             child: Icon(
                               Icons.check_circle,
-                              color: Colors.green,
+                              color: Colors.green.shade800,
                               size: 20,
                             ),
                           ),
@@ -422,32 +393,90 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   }
 
   Widget _buildPuzzleImage(
-      ModelGamePuzzlePiece piece, double tileRowSize, double tileColumnSize) {
+      ModelGamePuzzlePiece piece, double tileRowSize, double tileColumnSize, ui.Image inputImage) {
     final row = piece.correctIndex ~/ gridSize;
     final col = piece.correctIndex % gridSize;
+
+    final srcTileW = inputImage.width / gridSize;
+    final srcTileH = inputImage.height / gridSize;
 
     return CustomPaint(
       size: Size(tileRowSize, tileColumnSize),
       painter: _PuzzleTilePainter(
-        uiImage: puzzleImage,
-        sourceRect: Rect.fromLTWH(col * tileRowSize, row * tileColumnSize,
-            tileRowSize, tileColumnSize),
+        uiImage: inputImage,
+        sourceRect: Rect.fromLTWH(
+          col * srcTileW,
+          row * srcTileH,
+          srcTileW,
+          srcTileH,
+        ),
       ),
     );
   }
 
-  void _check() {
-    final ok = controller!.checkResult();
+  Rect _calcImageRectInBox(double boxWidth, double boxHeight, ui.Image image) {
+    final imageRatio = image.width / image.height;
+    final boxRatio = boxWidth / boxHeight;
+
+    double drawWidth, drawHeight;
+
+    if (imageRatio > boxRatio) {
+      drawWidth = boxWidth;
+      drawHeight = boxWidth / imageRatio;
+    } else {
+      drawHeight = boxHeight;
+      drawWidth = boxHeight * imageRatio;
+    }
+
+    final dx = (boxWidth - drawWidth) / 2;
+    final dy = (boxHeight - drawHeight) / 2;
+
+    return Rect.fromLTWH(dx, dy, drawWidth, drawHeight);
+  }
+
+  void _check() async {
+    final ok = await controller!.checkResult();
+    // 顯示結果
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(ok ? "🎉 Correct!" : "❌ Not yet"),
-        content: Text(ok
-            ? "Puzzle completed successfully!"
-            : "Some pieces are still in the wrong position."),
+        title: Text(ok ? "Pass！🎉" : "Fail 😢"),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text("OK")),
+            onPressed: () async {
+              Navigator.pop(context);
+              if (ok) {
+                // 強制跳轉到 WordMatch 或 sentence 遊戲頁（不能跳過）
+                final result = widget.gameLevel % 2 == 0
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameWordMatch(
+                            gameId: widget.gameId,
+                            gameLevel: widget.gameLevel,
+                          ),
+                        ),
+                      )
+                    : await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameSentence(
+                            gameId: widget.gameId,
+                            gameLevel: widget.gameLevel,
+                          ),
+                        ),
+                      );
+                if (result == true) {
+                  // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (!mounted) return;
+                    Navigator.pop(context, true); // 過關 -> 返回上一頁
+                  });
+                }
+              }
+            },
+            child: Text("OK"),
+          )
         ],
       ),
     );
