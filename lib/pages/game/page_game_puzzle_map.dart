@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -24,7 +23,8 @@ class PageGamePuzzleMap extends StatefulWidget {
 
 class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   late ModelGamePuzzleMap map;
-  late int gridSize;
+  late int gameSize;
+  late Map<String, int> rowsCols;
   ui.Image? puzzleImage;
   ControllerGamePuzzleMap? controller;
 
@@ -33,7 +33,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   @override
   void initState() {
     super.initState();
-    gridSize = min(widget.gameLevel + 3, 10);
+    gameSize = widget.gameLevel + 3;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGamePuzzleMap(
       userName: auth.currentAccount ?? AuthConstants.guest,
@@ -41,7 +41,6 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       gameId: widget.gameId,
       gameLevel: widget.gameLevel,
     );
-    controller!.setGridSize(gridSize);
     final maps = [
       "assets/maps/world.png",
       "assets/maps/asia.png",
@@ -55,6 +54,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
+      rowsCols = controller!.setGridSize(img.width, img.height, gameSize);
       setState(() {
         puzzleImage = img;
       });
@@ -72,70 +72,30 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   List<ModelGamePuzzlePiece> _getGroup(ModelGamePuzzlePiece piece) {
     // 如果已經在正確位置，不能拖
     if (piece.currentIndex == piece.correctIndex) return [];
-
-    /*final row = piece.currentIndex ~/ gridSize;
-    List<ModelGamePuzzlePiece> rowPieces = controller!.pieces
-        .where((p) => p.currentIndex ~/ gridSize == row)
-        .toList();*/
-
     List<ModelGamePuzzlePiece> group = [piece];
-
-    /*int left = piece.currentIndex % gridSize;
-    int right = left;
-
-    // 向左找未在正確位置但正確相鄰的拼圖
-    for (int i = left - 1; i >= 0; i--) {
-      try {
-        final p = rowPieces.firstWhere((rp) => rp.currentIndex % gridSize == i);
-        if (p.currentIndex != p.correctIndex &&
-            p.correctIndex == group.first.correctIndex - 1) {
-          group.insert(0, p);
-        } else {
-          break;
-        }
-      } catch (e) {
-        break;
-      }
-    }
-
-    // 向右找未在正確位置但正確相鄰的拼圖
-    for (int i = right + 1; i < gridSize; i++) {
-      try {
-        final p = rowPieces.firstWhere((rp) => rp.currentIndex % gridSize == i);
-        if (p.currentIndex != p.correctIndex &&
-            p.correctIndex == group.last.correctIndex + 1) {
-          group.add(p);
-        } else {
-          break;
-        }
-      } catch (e) {
-        break;
-      }
-    }*/
-
     return group;
   }
 
   void _moveGroup(List<ModelGamePuzzlePiece> group, Offset totalOffset,
-      double tileRowSize, double tileColumnSize) {
+      double tileWidth, double tileHeight) {
     if (group.isEmpty) return;
 
     final newIndices = <ModelGamePuzzlePiece, int>{};
 
     for (var p in group) {
-      final col = p.currentIndex % gridSize;
-      final row = p.currentIndex ~/ gridSize;
+      final col = p.currentIndex % rowsCols["cols"]!;
+      final row = p.currentIndex ~/ rowsCols["cols"]!;
 
       final newCol =
-          ((col * tileRowSize + totalOffset.dx + tileRowSize * 0.15) /
-                  tileRowSize) //給手指 15% 的安全邊距
+          ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
+                  tileWidth) //給手指 15% 的安全邊距
               .floor()
-              .clamp(0, gridSize - 1);
-      final newRow = ((row * tileColumnSize + totalOffset.dy) / tileColumnSize)
+              .clamp(0, rowsCols["cols"]! - 1);
+      final newRow = ((row * tileHeight + totalOffset.dy) / tileHeight)
           .floor()
-          .clamp(0, gridSize - 1);
+          .clamp(0, rowsCols["rows"]! - 1);
 
-      newIndices[p] = newRow * gridSize + newCol;
+      newIndices[p] = newRow * rowsCols["cols"]! + newCol;
     }
 
     // 群組內 newIndex 不可重複
@@ -209,16 +169,16 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           PopupMenuButton<int>(
             onSelected: (size) {
               setState(() {
-                gridSize = size;               // 更新 state 中的 gridSize
-                controller!.setGridSize(size); // 重新生成 pieces
-                dragOffsets.clear();           // 清掉舊的拖動偏移
+                gameSize = size; // 更新 state 中的 gridSize
+                rowsCols = controller!.setGridSize(puzzleImage!.width, puzzleImage!.height, gameSize); // 重新生成 pieces
+                dragOffsets.clear(); // 清掉舊的拖動偏移
               });
             },
             itemBuilder: (_) => List.generate(
               7,
               (i) => PopupMenuItem(
                 value: i + 4,
-                child: Text("${i + 4}x${i + 4}"),
+                child: Text("${i + 4}"),
               ),
             ),
             icon: const Icon(
@@ -254,11 +214,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     width: puzzleWidth,
                     height: puzzleHeight,
                     child: _buildPuzzleArea(
-                      ctrl,
-                      puzzleWidth,
-                      puzzleHeight,
-                      puzzleImage!
-                    ),
+                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
                   ),
                   Gaps.w16,
                   Expanded(
@@ -284,11 +240,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     width: puzzleWidth,
                     height: puzzleHeight,
                     child: _buildPuzzleArea(
-                      ctrl,
-                      puzzleWidth,
-                      puzzleHeight,
-                      puzzleImage!
-                    ),
+                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
                   ),
                   Gaps.h16,
                   Expanded(
@@ -307,27 +259,27 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     );
   }
 
-  Widget _buildPuzzleArea(
-      ControllerGamePuzzleMap ctrl, double puzzleWidth, double puzzleHeight, ui.Image inputImage) {
+  Widget _buildPuzzleArea(ControllerGamePuzzleMap ctrl, double puzzleWidth,
+      double puzzleHeight, ui.Image inputImage) {
     // 計算圖片在容器中的實際顯示區域
     final imageRect =
         _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
 
     // 只使用圖片區域切格子
-    final tileRowSize = imageRect.width / gridSize;
-    final tileColumnSize = imageRect.height / gridSize;
+    final tileWidth = imageRect.width / rowsCols["cols"]!;
+    final tileHeight = imageRect.height / rowsCols["rows"]!;
 
     return Stack(
       children: ctrl.pieces.map((piece) {
-        final row = piece.currentIndex ~/ gridSize;
-        final col = piece.currentIndex % gridSize;
+        final row = piece.currentIndex ~/ rowsCols["cols"]!;
+        final col = piece.currentIndex % rowsCols["cols"]!;
         Offset offset = dragOffsets[piece.currentIndex] ?? Offset.zero;
 
         return Positioned(
-          left: imageRect.left + col * tileRowSize + offset.dx,
-          top: imageRect.top + row * tileColumnSize + offset.dy,
-          width: tileRowSize,
-          height: tileColumnSize,
+          left: imageRect.left + col * tileWidth + offset.dx,
+          top: imageRect.top + row * tileHeight + offset.dy,
+          width: tileWidth,
+          height: tileHeight,
           child: GestureDetector(
             onPanUpdate: (details) {
               final group = _getGroup(piece);
@@ -344,11 +296,12 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               final group = _getGroup(piece);
               final totalOffset =
                   dragOffsets[piece.currentIndex] ?? Offset.zero;
-              _moveGroup(group, totalOffset, tileRowSize, tileColumnSize);
+              _moveGroup(group, totalOffset, tileWidth, tileHeight);
             },
             child: Stack(
               children: [
-                _buildPuzzleImage(piece, tileRowSize, tileColumnSize, puzzleImage!),
+                _buildPuzzleImage(
+                    piece, tileWidth, tileHeight, puzzleImage!),
                 if (piece.correctIndex != piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -394,16 +347,16 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     );
   }
 
-  Widget _buildPuzzleImage(
-      ModelGamePuzzlePiece piece, double tileRowSize, double tileColumnSize, ui.Image inputImage) {
-    final row = piece.correctIndex ~/ gridSize;
-    final col = piece.correctIndex % gridSize;
+  Widget _buildPuzzleImage(ModelGamePuzzlePiece piece, double tileWidth,
+      double tileHeight, ui.Image inputImage) {
+    final row = piece.correctIndex ~/ rowsCols["cols"]!;
+    final col = piece.correctIndex % rowsCols["cols"]!;
 
-    final srcTileW = inputImage.width / gridSize;
-    final srcTileH = inputImage.height / gridSize;
+    final srcTileW = inputImage.width / rowsCols["cols"]!;
+    final srcTileH = inputImage.height / rowsCols["rows"]!;
 
     return CustomPaint(
-      size: Size(tileRowSize, tileColumnSize),
+      size: Size(tileWidth, tileHeight),
       painter: _PuzzleTilePainter(
         uiImage: inputImage,
         sourceRect: Rect.fromLTWH(
