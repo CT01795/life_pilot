@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   @override
   void initState() {
     super.initState();
-    gameSize = widget.gameLevel + 3;
+    gameSize = 3;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGamePuzzleMap(
       userName: auth.currentAccount ?? AuthConstants.guest,
@@ -86,11 +87,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       final col = p.currentIndex % rowsCols["cols"]!;
       final row = p.currentIndex ~/ rowsCols["cols"]!;
 
-      final newCol =
-          ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
-                  tileWidth) //給手指 15% 的安全邊距
-              .floor()
-              .clamp(0, rowsCols["cols"]! - 1);
+      final newCol = ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
+              tileWidth) //給手指 15% 的安全邊距
+          .floor()
+          .clamp(0, rowsCols["cols"]! - 1);
       final newRow = ((row * tileHeight + totalOffset.dy) / tileHeight)
           .floor()
           .clamp(0, rowsCols["rows"]! - 1);
@@ -170,7 +170,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             onSelected: (size) {
               setState(() {
                 gameSize = size; // 更新 state 中的 gridSize
-                rowsCols = controller!.setGridSize(puzzleImage!.width, puzzleImage!.height, gameSize); // 重新生成 pieces
+                rowsCols = controller!.setGridSize(puzzleImage!.width,
+                    puzzleImage!.height, gameSize); // 重新生成 pieces
                 dragOffsets.clear(); // 清掉舊的拖動偏移
               });
             },
@@ -195,21 +196,23 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          double maxWidth = constraints.maxWidth - 48;
-          double maxHeight = constraints.maxHeight - 48;
+          double maxWidth = constraints.maxWidth;
+          double maxHeight = constraints.maxHeight;
 
           late double puzzleWidth;
           late double puzzleHeight;
 
           if (maxWidth > maxHeight) {
+            maxHeight = constraints.maxHeight - 16;
             puzzleHeight = maxHeight;
-            puzzleWidth = maxWidth * 0.75;
+            puzzleWidth = min(maxWidth * 0.75,
+                maxHeight * puzzleImage!.width / puzzleImage!.height);
 
             return Center(
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 children: [
-                  Gaps.w16,
+                  Gaps.w24,
                   SizedBox(
                     width: puzzleWidth,
                     height: puzzleHeight,
@@ -218,9 +221,13 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                   ),
                   Gaps.w16,
                   Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: RawImage(image: puzzleImage),
+                    child: InteractiveViewer(
+                      minScale: 0.2,
+                      maxScale: 5.0,
+                      boundaryMargin: const EdgeInsets.all(20),
+                      child: Center(
+                        child: RawImage(image: puzzleImage),
+                      ),
                     ),
                   ),
                   Gaps.w16,
@@ -228,12 +235,14 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               ),
             );
           } else {
+            maxWidth = constraints.maxWidth - 16;
             puzzleWidth = maxWidth;
-            puzzleHeight = maxHeight * 0.75;
+            puzzleHeight = min(maxHeight * 0.75,
+                maxWidth / puzzleImage!.width * puzzleImage!.height);
 
             return Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   Gaps.h16,
                   SizedBox(
@@ -244,9 +253,13 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                   ),
                   Gaps.h16,
                   Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: RawImage(image: puzzleImage),
+                    child: InteractiveViewer(
+                      minScale: 0.2,
+                      maxScale: 5.0,
+                      boundaryMargin: const EdgeInsets.all(20),
+                      child: Center(
+                        child: RawImage(image: puzzleImage),
+                      ),
                     ),
                   ),
                   Gaps.h16,
@@ -300,15 +313,14 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             },
             child: Stack(
               children: [
-                _buildPuzzleImage(
-                    piece, tileWidth, tileHeight, puzzleImage!),
+                _buildPuzzleImage(piece, tileWidth, tileHeight, puzzleImage!),
                 if (piece.correctIndex != piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
                       child: CustomPaint(
                         painter: _GroupBorderPainter(
-                          color: Colors.redAccent,
-                          isDashed: true,
+                          color: Colors.black87,
+                          isDashed: false,
                         ),
                       ),
                     ),
@@ -320,10 +332,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              border: Border.all(
-                                color: Colors.yellow,
-                              ),
+                              color: Colors.white.withValues(alpha: 0.3),
+                              border:
+                                  Border.all(color: Colors.yellow, width: 3),
                             ),
                           ),
                           Positioned(
