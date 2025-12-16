@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_sentence_say.dart';
 import 'package:life_pilot/services/game/service_game_sentence_say.dart';
 
@@ -42,7 +43,9 @@ class ControllerGameSentenceSay extends ChangeNotifier {
 
   int answer(String answer, int counts) {
     if (currentQuestion == null) return 0;
-    final isRightAnswer = answer == currentQuestion!.correctAnswer;
+    String right = currentQuestion!.correctAnswer.toLowerCase();
+    String my = answer.toLowerCase();
+    final isRightAnswer = right == my || right.replaceAll(" ", constEmpty).replaceAll(".", constEmpty) == my.replaceAll(" ", constEmpty).replaceAll(".", constEmpty);
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;
