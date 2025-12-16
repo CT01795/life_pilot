@@ -52,6 +52,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/japan.png",
       "assets/maps/singapore.png",
       "assets/maps/malaysia.png",
+      "assets/maps/china.png",
       "assets/maps/asia.png",
       "assets/maps/world.png"
     ];
