@@ -35,7 +35,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   @override
   void initState() {
     super.initState();
-    gameSize = 3;
+    gameSize = 4;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGamePuzzleMap(
       userName: auth.currentAccount ?? AuthConstants.guest,
