@@ -7,6 +7,7 @@ import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
 import 'package:life_pilot/pages/game/page_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
+import 'package:life_pilot/pages/game/page_game_sentence_say.dart';
 import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
 import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
 import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero.dart';
@@ -233,6 +234,16 @@ class _PageGameListState extends State<PageGameList> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PageGameSentence(gameId: game.id),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      } 
+                    } else if (game.gameName.toLowerCase() == "say word and sentence".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameSentenceSay(gameId: game.id),
                         ),
                       );
                       if (result == true) {
