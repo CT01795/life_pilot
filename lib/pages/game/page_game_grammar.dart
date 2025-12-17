@@ -201,7 +201,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                             color: Color(0xFF26A69A),
                           ),
                           onPressed: () =>
-                              speak(controller.currentQuestion!.question),
+                              speak(controller.currentQuestion!.question.replaceAll("______", controller.currentQuestion!.correctAnswer).replaceAll("<-->", ",")),
                         ),
                         Gaps.w8, // 🔥 小間距就好
                         Flexible(
