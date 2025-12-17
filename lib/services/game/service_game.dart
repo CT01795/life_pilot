@@ -9,7 +9,10 @@ class ServiceGame {
   Future<List<ModelGameItem>> fetchGames() async {
     final data = await client
         .from('game_list')
-        .select('id, game_type, game_name, level').order('level', ascending: true); // 升序
+        .select('id, game_type, game_name, level')
+        .order('game_type', ascending: true)
+        .order('game_name', ascending: true)
+        .order('level', ascending: true);
 
     // 轉成 GameItem
     return (data as List<dynamic>).map((e) {

@@ -11,18 +11,18 @@ import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 // ignore: must_be_immutable
-class PageGameSentenceSay extends StatefulWidget {
+class PageGameSaySentence extends StatefulWidget {
   final String gameId;
   int? gameLevel;
-  PageGameSentenceSay({super.key, required this.gameId, this.gameLevel});
+  PageGameSaySentence({super.key, required this.gameId, this.gameLevel});
 
   @override
-  State<PageGameSentenceSay> createState() => _PageGameSentenceSayState();
+  State<PageGameSaySentence> createState() => _PageGameSaySentenceState();
 }
 
-class _PageGameSentenceSayState extends State<PageGameSentenceSay> {
+class _PageGameSaySentenceState extends State<PageGameSaySentence> {
   late TextEditingController textController;
-  late final ControllerGameSentenceSay controller;
+  late final ControllerGameSaySentence controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   final FlutterTts flutterTts = FlutterTts(); // TTS 實例
   double size = 32.0;
@@ -39,10 +39,10 @@ class _PageGameSentenceSayState extends State<PageGameSentenceSay> {
 
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
-    controller = ControllerGameSentenceSay(
+    controller = ControllerGameSaySentence(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGameSentenceSay(),
+      service: ServiceGameSaySentence(),
     );
 
     controller.loadNextQuestion();

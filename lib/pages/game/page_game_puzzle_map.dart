@@ -462,7 +462,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                   ) : await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PageGameSentenceSay(
+                      builder: (context) => PageGameSaySentence(
                         gameId: widget.gameId,
                         gameLevel: widget.gameLevel,
                       ),

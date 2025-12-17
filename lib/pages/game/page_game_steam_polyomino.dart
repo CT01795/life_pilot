@@ -122,7 +122,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                   ) : await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PageGameSentenceSay(
+                      builder: (context) => PageGameSaySentence(
                         gameId: widget.gameId,
                         gameLevel: widget.gameLevel,
                       ),
