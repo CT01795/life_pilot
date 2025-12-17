@@ -117913,7 +117913,7 @@ A.Ox.prototype={
 gaLk(a){var s=this.e
 s===$&&A.a()
 return s},
-aw(){var s,r,q,p=this
+aw(){var s,r,q,p=this,o="assets/maps/taiwan_outlying_islands.png",n="assets/maps/east_asia.png",m="assets/maps/southeast_asia.png",l="assets/maps/oceania.png",k="assets/maps/north_america.png"
 p.b1()
 p.f=4
 s=p.c
@@ -117924,7 +117924,7 @@ r=$.fO().b
 r===$&&A.a()
 q=p.a
 p.x=new A.amg(s,new A.wY(r),q.c)
-q=["assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/kansai.png","assets/maps/okinawa.png","assets/maps/china.png","assets/maps/east_asia.png","assets/maps/singapore.png","assets/maps/malaysia.png","assets/maps/philippines.png","assets/maps/southeast_asia.png","assets/maps/asia.png","assets/maps/australia.png","assets/maps/oceania.png","assets/maps/jianada.png","assets/maps/north_america.png","assets/maps/world.png"][q.d-1]
+q=["assets/maps/taiwan.png",o,"assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/lienchiang.png","assets/maps/greenland.png","assets/maps/little_ryukyu.png","assets/maps/lanyu.png",o,n,"assets/maps/korea.png","assets/maps/japan.png","assets/maps/kansai.png","assets/maps/okinawa.png","assets/maps/china.png",n,m,"assets/maps/vietnam.png","assets/maps/thailand.png","assets/maps/malaysia.png","assets/maps/singapore.png","assets/maps/philippines.png",m,"assets/maps/asia.png",l,"assets/maps/australia.png",l,k,"assets/maps/jianada.png",k,"assets/maps/world.png"][q.d-1]
 p.e=new A.ayo(q)
 p.v8(q).cw(new A.aTi(p),t.P)},
 v8(a){return this.auB(a)},
