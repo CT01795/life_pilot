@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/game/controller_game_sentence_say.dart';
+import 'package:life_pilot/controllers/game/controller_game_say_sentence.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/services/game/service_game_sentence_say.dart';
+import 'package:life_pilot/services/game/service_game_say_sentence.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
@@ -127,50 +127,81 @@ class _PageGameSaySentenceState extends State<PageGameSaySentence> {
           ),
           body: Column(
             children: [
-              // 第一列：喇叭按鈕
+              // 第一列：喇叭按鈕 + 題目
               Padding(
-                padding: const EdgeInsets.all(6.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
                       icon: Icon(Icons.volume_up,
-                          size: 60, color: Color(0xFF26A69A)),
+                          size: 50, color: Color(0xFF26A69A)),
                       onPressed: () =>
                           speak(controller.currentQuestion!.correctAnswer),
                     ),
-                    Gaps.w36,
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF00897B),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                    Gaps.w8,
+                    Flexible(
+                      child: Text(
+                        controller.currentQuestion!.question,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      onPressed: onAnswer,
-                      child: Text("Check",
-                          style: TextStyle(fontSize: 24, color: Colors.white)),
                     ),
                   ],
                 ),
               ),
-              Flexible(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+
+              Gaps.h16,
+
+              // 第二列：麥克風 + TextField
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
                   children: [
-                    Text(
-                      controller.currentQuestion!.question,
-                      style: TextStyle(
-                        fontSize: 28,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.bold,
+                    IconButton(
+                      icon: Icon(
+                        isRecording ? Icons.mic : Icons.mic_none,
+                        size: 50,
+                        color: isRecording ? Colors.red : Color(0xFF26A69A),
                       ),
-                      textAlign: TextAlign.center,
+                      onPressed: () async {
+                        try {
+                          if (!isRecording) {
+                            if (speechToText.isListening) {
+                              await speechToText.stop();
+                            }
+                            bool available = await speechToText.initialize();
+                            if (available) {
+                              setState(() => isRecording = true);
+                              speechToText.listen(
+                                onResult: (result) {
+                                  setState(() {
+                                    textController.text = result.recognizedWords;
+                                    textController.selection =
+                                        TextSelection.fromPosition(
+                                      TextPosition(
+                                          offset: textController.text.length),
+                                    );
+                                  });
+                                },
+                                localeId: 'en_US',
+                              );
+                            }
+                          } else {
+                            speechToText.stop();
+                            setState(() => isRecording = false);
+                          }
+                        } catch (e) {
+                          logger.e("Speech recognition error: $e");
+                        }
+                      },
                     ),
-                    Gaps.h16,
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    Gaps.w8,
+                    Expanded(
                       child: TextField(
                         controller: textController,
                         maxLines: null,
@@ -187,43 +218,24 @@ class _PageGameSaySentenceState extends State<PageGameSaySentence> {
                 ),
               ),
               Gaps.h16,
-              IconButton(
-                icon: Icon(
-                  isRecording ? Icons.mic : Icons.mic_none,
-                  size: 60,
-                  color: isRecording ? Colors.red : Color(0xFF26A69A),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF00897B),
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: onAnswer,
+                      child: Text("Check",
+                          style: TextStyle(fontSize: 24, color: Colors.white)),
+                    ),
+                  ],
                 ),
-                onPressed: () async {
-                  try {
-                    if (!isRecording) {
-                      if (speechToText.isListening) {
-                        await speechToText.stop();
-                      }
-                      bool available = await speechToText.initialize();
-                      if (available) {
-                        setState(() => isRecording = true);
-                        speechToText.listen(
-                          onResult: (result) {
-                            setState(() {
-                              textController.text = result.recognizedWords;
-                              textController.selection =
-                                  TextSelection.fromPosition(
-                                TextPosition(
-                                    offset: textController.text.length),
-                              );
-                            });
-                          },
-                          localeId: 'en_US', // 英文
-                        );
-                      }
-                    } else {
-                      speechToText.stop();
-                      setState(() => isRecording = false);
-                    }
-                  } catch (e) {
-                    logger.e("Speech recognition error: $e");
-                  }
-                },
               ),
               Gaps.h16,
             ],

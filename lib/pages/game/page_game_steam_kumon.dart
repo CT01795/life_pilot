@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/game/controller_game_steam_kumon.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_sentence_say.dart';
+import 'package:life_pilot/pages/game/page_game_say_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_word_match.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_kumon.dart';
