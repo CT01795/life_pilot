@@ -51,7 +51,6 @@ class _PageGameSentenceSayState extends State<PageGameSentenceSay> {
 
   // 呼叫這個方法答題並判斷是否完成題數
   void onAnswer() {
-    if (textController.text.isEmpty) return;
     final userAnswer = textController.text;
     counts = controller.answer(userAnswer, counts);
 
@@ -180,7 +179,7 @@ class _PageGameSentenceSayState extends State<PageGameSentenceSay> {
                             TextStyle(fontSize: 24, color: Colors.blueAccent),
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
-                          hintText: "Press the microphone to speak",
+                          hintText: "Please speak",
                         ),
                       ),
                     ),
@@ -206,7 +205,7 @@ class _PageGameSentenceSayState extends State<PageGameSentenceSay> {
                         speechToText.listen(
                           onResult: (result) {
                             setState(() {
-                              textController.text += result.recognizedWords;
+                              textController.text = result.recognizedWords;
                               textController.selection =
                                   TextSelection.fromPosition(
                                 TextPosition(

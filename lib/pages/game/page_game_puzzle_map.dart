@@ -52,10 +52,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/japan.png",
       "assets/maps/kansai.png",
       "assets/maps/okinawa.png",
+      "assets/maps/china.png",
+      "assets/maps/east_asia.png",
       "assets/maps/singapore.png",
       "assets/maps/malaysia.png",
-      "assets/maps/china.png",
+      "assets/maps/philippines.png",
+      "assets/maps/southeast_asia.png",
       "assets/maps/asia.png",
+      "assets/maps/australia.png",
+      "assets/maps/oceania.png",
+      "assets/maps/jianada.png",
+      "assets/maps/north_america.png",
       "assets/maps/world.png"
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
