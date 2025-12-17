@@ -117911,7 +117911,7 @@ r=$.fO().b
 r===$&&A.a()
 q=p.a
 p.x=new A.amg(s,new A.wW(r),q.c)
-q=["assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/kansai.png","assets/maps/okinawa.png","assets/maps/singapore.png","assets/maps/malaysia.png","assets/maps/china.png","assets/maps/asia.png","assets/maps/world.png"][q.d-1]
+q=["assets/maps/taiwan.png","assets/maps/taiwan_outlying_islands.png","assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/korea.png","assets/maps/japan.png","assets/maps/kansai.png","assets/maps/okinawa.png","assets/maps/china.png","assets/maps/east_asia.png","assets/maps/singapore.png","assets/maps/malaysia.png","assets/maps/philippines.png","assets/maps/southeast_asia.png","assets/maps/asia.png","assets/maps/australia.png","assets/maps/oceania.png","assets/maps/jianada.png","assets/maps/north_america.png","assets/maps/world.png"][q.d-1]
 p.e=new A.ayo(q)
 p.v8(q).cw(new A.aTi(p),t.P)},
 v8(a){return this.auA(a)},
@@ -118485,22 +118485,21 @@ n.e!==$&&A.aU()
 n.e=s
 s.hH()
 n.d=new A.hZ(B.iz,o)},
-TA(){var s,r=this,q=r.d
-q===$&&A.a()
-q=q.a.a
-if(q.length===0)return
-s=r.e
-s===$&&A.a()
-q=s.aCZ(q,r.at)
-r.at=q
-if(q===0)r.a6(new A.aTr(r))
-else r.a6(new A.aTs(r))
-if(r.a.d!=null){q=r.x
-s=r.y
-s===$&&A.a()
-q=q>=s&&!r.f}else q=!1
-if(q){r.f=!0
-A.zz(new A.aTt(r),t.H)}},
+TA(){var s,r,q=this,p=q.d
+p===$&&A.a()
+s=p.a.a
+p=q.e
+p===$&&A.a()
+p=p.aCZ(s,q.at)
+q.at=p
+if(p===0)q.a6(new A.aTr(q))
+else q.a6(new A.aTs(q))
+if(q.a.d!=null){p=q.x
+r=q.y
+r===$&&A.a()
+p=p>=r&&!q.f}else p=!1
+if(p){q.f=!0
+A.zz(new A.aTt(q),t.H)}},
 d8(a,b){return this.adX(0,b)},
 adX(a,b){var s=0,r=A.t(t.H),q=this,p,o,n,m,l
 var $async$d8=A.o(function(c,d){if(c===1)return A.p(d,r)
@@ -118565,7 +118564,7 @@ j=A.ay(j.d.b,m,m,m,m,A.ct(m,m,B.a6,m,m,m,m,m,m,m,m,28,m,m,B.bh,m,m,!0,m,m,m,m,m,
 q=k.d
 q===$&&A.a()
 n=A.ct(m,m,B.fA,m,m,m,m,m,m,m,m,24,m,m,m,m,m,!0,m,m,m,m,m,m,m,m)
-n=A.cw(A.b([j,B.aY,new A.b9(B.el,A.BC(m,B.cD,!1,m,!0,B.N,m,A.RP(),q,m,m,m,m,m,2,A.oU(m,new A.h1(4,B.e8,B.iU),m,m,m,m,m,m,!0,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,"Press the microphone to speak",m,m,m,m,m,m,m,m,m,!0,!0,m,m,m,m,m,m,m,m,m,m,m,m,m,m),B.a4,!0,m,!0,m,!1,m,B.cL,m,m,m,m,m,m,m,m,m,m,m,!1,"\u2022",m,m,m,m,m,!1,m,m,!1,m,!0,m,B.cU,m,m,m,m,m,m,m,m,m,m,m,n,!0,B.cb,m,B.eL,m,m,m,m),m)],o),B.v,B.d0,B.y,0,B.M)
+n=A.cw(A.b([j,B.aY,new A.b9(B.el,A.BC(m,B.cD,!1,m,!0,B.N,m,A.RP(),q,m,m,m,m,m,2,A.oU(m,new A.h1(4,B.e8,B.iU),m,m,m,m,m,m,!0,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,m,"Please speak",m,m,m,m,m,m,m,m,m,!0,!0,m,m,m,m,m,m,m,m,m,m,m,m,m,m),B.a4,!0,m,!0,m,!1,m,B.cL,m,m,m,m,m,m,m,m,m,m,m,!1,"\u2022",m,m,m,m,m,!1,m,m,!1,m,!0,m,B.cU,m,m,m,m,m,m,m,m,m,m,m,n,!0,B.cb,m,B.eL,m,m,m,m),m)],o),B.v,B.d0,B.y,0,B.M)
 j=k.as
 q=j?B.ua:B.Yp
 return A.ju(r,s,A.cw(A.b([new A.b9(B.nj,p,m),new A.iE(1,B.cy,n,m),B.aY,A.dD(m,m,m,A.d2(q,j?B.kU:A.b4(l),m,m,60),m,m,new A.aTp(k),m,m,m,m),B.aY],o),B.v,B.p,B.y,0,B.M),m)},
@@ -118622,13 +118621,12 @@ $1(a){var s=this.a
 s.a6(new A.aTj(s,a))},
 $S:258}
 A.aTj.prototype={
-$0(){var s,r,q=this.a,p=q.d
-p===$&&A.a()
-s=p.a.a
-r=this.b.a
-p.se9(0,s+(r.length!==0?B.b.gO(r).a:""))
-q=q.d
-q.sut(A.pH(new A.aT(q.a.a.length,B.m)))},
+$0(){var s,r=this.a,q=r.d
+q===$&&A.a()
+s=this.b.a
+q.se9(0,s.length!==0?B.b.gO(s).a:"")
+r=r.d
+r.sut(A.pH(new A.aT(r.a.a.length,B.m)))},
 $S:0}
 A.aTm.prototype={
 $0(){return this.a.as=!1},
