@@ -53,28 +53,32 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/little_ryukyu.png",
       "assets/maps/lanyu.png",
       "assets/maps/taiwan_outlying_islands.png",
-      "assets/maps/east_asia.png", //10
+      "assets/maps/world.png", //10
+      "assets/maps/east_asia.png",
       "assets/maps/korea.png",
       "assets/maps/japan.png",
       "assets/maps/kansai.png",
-      "assets/maps/okinawa.png",
-      "assets/maps/china.png", //15
+      "assets/maps/okinawa.png", //15
+      "assets/maps/china.png",
       "assets/maps/east_asia.png",
+      "assets/maps/world.png",
       "assets/maps/southeast_asia.png",
-      "assets/maps/vietnam.png",
+      "assets/maps/vietnam.png", //20
       "assets/maps/thailand.png",
-      "assets/maps/malaysia.png", //20
+      "assets/maps/malaysia.png",
       "assets/maps/singapore.png",
       "assets/maps/philippines.png",
-      "assets/maps/southeast_asia.png",
+      "assets/maps/southeast_asia.png", //25
+      "assets/maps/world.png",
       "assets/maps/asia.png",
-      "assets/maps/oceania.png", //25
-      "assets/maps/australia.png",
       "assets/maps/oceania.png",
+      "assets/maps/australia.png",
+      "assets/maps/oceania.png", //30
+      "assets/maps/world.png",
       "assets/maps/north_america.png",
       "assets/maps/jianada.png",
-      "assets/maps/north_america.png", //30
-      "assets/maps/world.png"
+      "assets/maps/north_america.png",
+      "assets/maps/world.png" //35
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
