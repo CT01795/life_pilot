@@ -7,7 +7,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_puzzle_map.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_puzzle_map.dart';
-import 'package:life_pilot/pages/game/page_game_sentence.dart';
+import 'package:life_pilot/pages/game/page_game_grammar.dart';
 import 'package:life_pilot/pages/game/page_game_sentence_say.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
@@ -450,11 +450,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             onPressed: () async {
               Navigator.pop(context);
               if (ok) {
-                // 強制跳轉到 WordMatch 或 sentence 遊戲頁（不能跳過）
-                final result = widget.gameLevel % 4 == 0 ? await Navigator.push<bool>(
+                // 強制跳轉到遊戲頁（不能跳過）
+                final result = widget.gameLevel % 3 == 0 ? await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PageGameSentence(
+                      builder: (context) => PageGameGrammar(
                         gameId: widget.gameId,
                         gameLevel: widget.gameLevel,
                       ),

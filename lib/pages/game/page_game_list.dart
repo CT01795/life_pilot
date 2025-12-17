@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/game/controller_game_list.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/pages/game/page_game_grammar.dart';
 import 'package:life_pilot/pages/game/page_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_sentence_say.dart';
@@ -254,6 +255,16 @@ class _PageGameListState extends State<PageGameList> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PageGamePuzzleMap(gameId: game.id, gameLevel: game.level,),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      } 
+                    } else if (game.gameName.toLowerCase() == "english rpg adventure".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameGrammar(gameId: game.id),
                         ),
                       );
                       if (result == true) {
