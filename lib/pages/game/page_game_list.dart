@@ -8,7 +8,7 @@ import 'package:life_pilot/models/game/model_game_user.dart';
 import 'package:life_pilot/pages/game/page_game_grammar.dart';
 import 'package:life_pilot/pages/game/page_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_sentence_say.dart';
+import 'package:life_pilot/pages/game/page_game_say_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
 import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
 import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero.dart';

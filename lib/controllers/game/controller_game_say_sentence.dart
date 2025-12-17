@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_say_sentence.dart';
-import 'package:life_pilot/services/game/service_game_sentence_say.dart';
+import 'package:life_pilot/services/game/service_game_say_sentence.dart';
 
 class ControllerGameSaySentence extends ChangeNotifier {
   final String userName;
