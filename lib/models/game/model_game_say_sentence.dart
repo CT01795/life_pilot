@@ -1,11 +1,11 @@
-class ModelGameSentenceSay {
+class ModelGameSaySentence {
   final String questionId;
   final String question;
   final String correctAnswer;
   final String type;
   bool? isRight;
 
-  ModelGameSentenceSay({
+  ModelGameSaySentence({
     required this.questionId,
     required this.question,
     required this.correctAnswer,

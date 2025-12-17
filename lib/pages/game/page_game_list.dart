@@ -243,7 +243,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameSentenceSay(gameId: game.id),
+                          builder: (_) => PageGameSaySentence(gameId: game.id),
                         ),
                       );
                       if (result == true) {

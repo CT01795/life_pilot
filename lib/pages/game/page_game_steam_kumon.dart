@@ -70,7 +70,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                       ) : await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PageGameSentenceSay(
+                          builder: (context) => PageGameSaySentence(
                             gameId: widget.gameId,
                             gameLevel: widget.gameLevel,
                           ),
