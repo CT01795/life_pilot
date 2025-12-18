@@ -30,6 +30,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   int repeatCounts = 0;
   TextEditingController answerController =
       TextEditingController(); // 顯示答案的 TextField
+  bool _isBusy = false;
 
   @override
   void initState() {
@@ -55,6 +56,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
   // 呼叫這個方法答題並判斷是否完成題數
   Future<void> onAnswer() async {
+    if (_isBusy) return;
+
+    setState(() {
+      _isBusy = true; // 🔒 鎖畫面
+    });
+
     final userAnswer = answerController.text;
     repeatCounts = repeatCounts + 1;
     repeatCounts = controller.answer(userAnswer, repeatCounts);
@@ -62,8 +69,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     if (repeatCounts < 3 && repeatCounts > 0) {
       showCorrectAnswer(controller.currentQuestion!.correctAnswer);
     }
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await Future.delayed(const Duration(milliseconds: 1500));
     answerController.clear();
+
+    setState(() {
+      _isBusy = false; // 🔓 解鎖
+    });
 
     if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
@@ -132,91 +143,107 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
           );
         }
 
-        return Scaffold(
-          backgroundColor: Color(0xFFF5F7FA),
-          appBar: AppBar(
-            backgroundColor: Color(0xFF4DB6AC),
-            title: Text("Speaking (${controller.score}/100)"),
-          ),
-          body: Column(
+        return AbsorbPointer(
+          absorbing: _isBusy, // true = 全部不能點
+          child: Stack(
             children: [
-              // 第一列：喇叭按鈕 + 題目
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              Scaffold(
+                backgroundColor: Color(0xFFF5F7FA),
+                appBar: AppBar(
+                  backgroundColor: Color(0xFF4DB6AC),
+                  title: Text("Speaking (${controller.score}/100)"),
+                ),
+                body: Column(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.volume_up,
-                          size: 50, color: Color(0xFF26A69A)),
-                      onPressed: () =>
-                          speak(controller.currentQuestion!.correctAnswer),
+                    // 第一列：喇叭按鈕 + 題目
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.volume_up,
+                                size: 50, color: Color(0xFF26A69A)),
+                            onPressed: () =>
+                                speak(controller.currentQuestion!.correctAnswer),
+                          ),
+                          Gaps.w8,
+                          Flexible(
+                            child: Text(
+                              controller.currentQuestion!.question,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Gaps.w8,
-                    Flexible(
-                      child: Text(
-                        controller.currentQuestion!.question,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                    Gaps.h16,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              !isRecording ? Icons.mic_none : Icons.stop, // 錄音時顯示停止
+                              size: 50,
+                              color: !isRecording ? Color(0xFF26A69A) : Colors.red,
+                            ),
+                            onPressed: () async {
+                              if (!isRecording) {
+                                // 開始錄音
+                                setState(() {
+                                  isRecording = true;
+                                });
+                              } else {
+                                onAnswer(); // 停止後立即提交答案
+                                setState(() {
+                                  isRecording = false;
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Gaps.h16,
+                    // 逐字顯示答案的 TextField
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: TextField(
+                          controller: answerController,
+                          maxLines: null,
+                          readOnly: false,
+                          keyboardType: TextInputType.multiline,
+                          textAlign: TextAlign.left,
+                          textAlignVertical: TextAlignVertical.top,
+                          style: TextStyle(fontSize: 20, color: Colors.blueAccent),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: "Answer here",
+                          ),
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),
-              Gaps.h16,
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        !isRecording ? Icons.mic_none : Icons.stop, // 錄音時顯示停止
-                        size: 50,
-                        color: !isRecording ? Color(0xFF26A69A) : Colors.red,
-                      ),
-                      onPressed: () async {
-                        if (!isRecording) {
-                          // 開始錄音
-                          setState(() {
-                            isRecording = true;
-                          });
-                        } else {
-                          onAnswer(); // 停止後立即提交答案
-                          setState(() {
-                            isRecording = false;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Gaps.h16,
-              // 逐字顯示答案的 TextField
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: TextField(
-                    controller: answerController,
-                    maxLines: null,
-                    readOnly: false,
-                    keyboardType: TextInputType.multiline,
-                    textAlign: TextAlign.left,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: TextStyle(fontSize: 20, color: Colors.blueAccent),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: "Answer here",
-                    ),
+
+              // 🔹 等待遮罩（可選但很推薦）
+              if (_isBusy)
+                Container(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  child: const Center(
+                    child: CircularProgressIndicator(),
                   ),
                 ),
-              )
             ],
           ),
         );
