@@ -66,10 +66,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     repeatCounts = repeatCounts + 1;
     repeatCounts = controller.answer(userAnswer, repeatCounts);
     // 逐字顯示正確答案
-    if (repeatCounts < 3 && repeatCounts > 0) {
-      showCorrectAnswer(controller.currentQuestion!.correctAnswer);
-    }
-    await Future.delayed(const Duration(milliseconds: 1500));
+    showCorrectAnswer(controller.currentQuestion!.correctAnswer);
+    await Future.delayed(Duration(milliseconds: min(repeatCounts * 1000 + 1000, 1500)));
     answerController.clear();
 
     setState(() {
@@ -90,7 +88,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     }
     List<String> tmp = text.split(" ");
     for (int i = 0; i < tmp.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       final newValue = TextEditingValue(
         text: "${answerController.text}${tmp[i]} ",
@@ -240,9 +238,6 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
               if (_isBusy)
                 Container(
                   color: Colors.black.withValues(alpha: 0.2),
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
                 ),
             ],
           ),
