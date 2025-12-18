@@ -129,7 +129,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
           backgroundColor: Color(0xFFF5F7FA),
           appBar: AppBar(
             backgroundColor: Color(0xFF4DB6AC),
-            title: Text("Word Builder (${controller.score}/100)"),
+            title: Text("Word and sentence builder (${controller.score}/100)"),
           ),
           body: Column(
             children: [

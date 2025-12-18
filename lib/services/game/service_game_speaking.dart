@@ -1,11 +1,11 @@
-import 'package:life_pilot/models/game/model_game_say_sentence.dart';
+import 'package:life_pilot/models/game/model_game_speaking.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ServiceGameSaySentence {
+class ServiceGameSpeaking {
   final client = Supabase.instance.client;
 
-  Future<ModelGameSaySentence> fetchQuestion(String userName) async {
-    final result = await client.rpc("get_sentence_say_question", params: {
+  Future<ModelGameSpeaking> fetchQuestion(String userName) async {
+    final result = await client.rpc("get_speaking_question", params: {
       'user_name': userName,
     });
 
@@ -14,7 +14,7 @@ class ServiceGameSaySentence {
     }
 
     final data = result[0];
-    return ModelGameSaySentence(
+    return ModelGameSpeaking(
       questionId: data['id'],
       question: data['question'],
       correctAnswer: data['correct_answer'],
@@ -29,7 +29,7 @@ class ServiceGameSaySentence {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await client.from('game_sentence_say_user').insert({
+    await client.from('game_speaking_user').insert({
       'user': userName,
       'question_id': questionId,
       'answer': answer,

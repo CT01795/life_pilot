@@ -1,4 +1,4 @@
-import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/controllers/game/steam_scratch/controller_game_steam_scratch.dart';
 import 'package:xml/xml.dart';
 
 List<Command> parseBlocklyJson(Map<String, dynamic> data) {
@@ -6,7 +6,7 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
   final xmlDoc = XmlDocument.parse(xmlStr);
   final rootElement = xmlDoc.rootElement;
 
-  int? getValue(XmlElement? valueElement, ControllerGameSteamSuperHero g) {
+  int? getValue(XmlElement? valueElement, ControllerGameSteamScratch g) {
     if (valueElement == null) return null;
 
     final shadow = valueElement.getElement('shadow');

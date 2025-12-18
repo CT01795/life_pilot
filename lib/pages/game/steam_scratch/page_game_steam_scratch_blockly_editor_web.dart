@@ -6,24 +6,24 @@ import 'dart:ui_web';
 import 'package:flutter/material.dart';
 // ignore: deprecated_member_use
 import 'package:js/js_util.dart' as js_util;
-import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
-import 'package:life_pilot/models/game/steam_supper_hero/blockly_parser.dart';
+import 'package:life_pilot/controllers/game/steam_scratch/controller_game_steam_scratch.dart';
+import 'package:life_pilot/models/game/steam_scratch/blockly_parser.dart';
 
 import '../../../core/logger.dart';
 
-class PageGameSteamSuperHeroBlocklyEditor extends StatefulWidget {
+class PageGameSteamScratchBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
 
-  const PageGameSteamSuperHeroBlocklyEditor(
+  const PageGameSteamScratchBlocklyEditor(
       {super.key, required this.onCommandsReady});
 
   @override
-  State<PageGameSteamSuperHeroBlocklyEditor> createState() =>
-      PageGameSteamSuperHeroBlocklyEditorState();
+  State<PageGameSteamScratchBlocklyEditor> createState() =>
+      PageGameSteamScratchBlocklyEditorState();
 }
 
-class PageGameSteamSuperHeroBlocklyEditorState
-    extends State<PageGameSteamSuperHeroBlocklyEditor> {
+class PageGameSteamScratchBlocklyEditorState
+    extends State<PageGameSteamScratchBlocklyEditor> {
   static html.IFrameElement? iframe;
   static bool _iframeRegistered = false;
   static int? windowMaxBlocksPending;

@@ -1,6 +1,6 @@
 // -------------------- Game Event --------------------
 import 'package:flutter/material.dart';
-import 'package:life_pilot/views/game/widgets_game_steam_super_hero_game_board.dart';
+import 'package:life_pilot/views/game/widgets_game_steam_scratch_game_board.dart';
 
 enum EnumGameEventType { none, warning, fruit, obstacle, treasure, complete }
 
@@ -11,13 +11,13 @@ class ModelGameEvent {
 }
 
 // -------------------- Game Level --------------------
-class ModelGameSteamSuperHeroLevel {
+class ModelGameSteamScratchLevel {
   int levelNumber;
-  List<ModelGameSteamSuperHeroObstacle> obstacles;
-  List<ModelGameSteamSuperHeroFruit> fruits;
-  ModelGameSteamSuperHeroTreasure treasure;
+  List<ModelGameSteamScratchObstacle> obstacles;
+  List<ModelGameSteamScratchFruit> fruits;
+  ModelGameSteamScratchTreasure treasure;
 
-  ModelGameSteamSuperHeroLevel({
+  ModelGameSteamScratchLevel({
     required this.levelNumber,
     required this.obstacles,
     required this.fruits,
@@ -25,27 +25,27 @@ class ModelGameSteamSuperHeroLevel {
   });
 }
 
-class ModelGameSteamSuperHeroTreasure {
+class ModelGameSteamScratchTreasure {
   int x;
   int y;
   int scoreValue;
-  ModelGameSteamSuperHeroTreasure({required this.x, required this.y, this.scoreValue = 10});
+  ModelGameSteamScratchTreasure({required this.x, required this.y, this.scoreValue = 10});
 }
 
-class ModelGameSteamSuperHeroObstacle {
+class ModelGameSteamScratchObstacle {
   int x;
   int y;
   int scoreValue;
-  ModelGameSteamSuperHeroObstacle({required this.x, required this.y, this.scoreValue = -1});
+  ModelGameSteamScratchObstacle({required this.x, required this.y, this.scoreValue = -1});
 }
 
-class ModelGameSteamSuperHeroFruit {
+class ModelGameSteamScratchFruit {
   int x;
   int y;
   int scoreValue;
   bool collected = false;
   IconData icon;
-  ModelGameSteamSuperHeroFruit({
+  ModelGameSteamScratchFruit({
     required this.x, required this.y, this.scoreValue = 1, IconData? icon,
-  }) : icon = icon ?? WidgetsGameSteamSuperHeroGameBoard.getRandomFruitIconStatic();
+  }) : icon = icon ?? WidgetsGameSteamScratchGameBoard.getRandomFruitIconStatic();
 }

@@ -8,11 +8,11 @@ import 'package:life_pilot/models/game/model_game_user.dart';
 import 'package:life_pilot/pages/game/page_game_grammar.dart';
 import 'package:life_pilot/pages/game/page_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_say_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_steam_kumon.dart';
+import 'package:life_pilot/pages/game/page_game_speaking.dart';
+import 'package:life_pilot/pages/game/page_game_steam_monomino.dart';
 import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
-import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero.dart';
-import 'package:life_pilot/pages/game/page_game_word_match.dart';
+import 'package:life_pilot/pages/game/steam_scratch/page_game_steam_scratch.dart';
+import 'package:life_pilot/pages/game/page_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
 
@@ -194,7 +194,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameWordMatch(gameId: game.id),
+                          builder: (_) => PageGameTranslation(gameId: game.id),
                         ),
                       );
                       if (result == true) {
@@ -204,7 +204,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameSteamSuperHero(gameId: game.id, gameLevel: game.level),
+                          builder: (_) => PageGameSteamScratch(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {
@@ -214,7 +214,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameSteamKumon(gameId: game.id, gameLevel: game.level),
+                          builder: (_) => PageGameSteamMonomino(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {
@@ -244,7 +244,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameSaySentence(gameId: game.id),
+                          builder: (_) => PageGameSpeaking(gameId: game.id),
                         ),
                       );
                       if (result == true) {

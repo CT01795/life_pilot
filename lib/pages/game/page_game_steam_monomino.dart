@@ -2,34 +2,34 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/game/controller_game_steam_kumon.dart';
+import 'package:life_pilot/controllers/game/controller_game_steam_monomino.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
+import 'package:life_pilot/models/game/model_game_steam_monomino.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_say_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_word_match.dart';
+import 'package:life_pilot/pages/game/page_game_speaking.dart';
+import 'package:life_pilot/pages/game/page_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
-import 'package:life_pilot/views/game/widgets_game_steam_kumon.dart';
+import 'package:life_pilot/views/game/widgets_game_steam_monomino.dart';
 import 'package:provider/provider.dart';
 
-class PageGameSteamKumon extends StatefulWidget {
+class PageGameSteamMonomino extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const PageGameSteamKumon(
+  const PageGameSteamMonomino(
       {super.key, required this.gameId, required this.gameLevel});
 
   @override
-  State<PageGameSteamKumon> createState() => _PageGameSteamKumonState();
+  State<PageGameSteamMonomino> createState() => _PageGameSteamMonominoState();
 }
 
-class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
-  late ControllerGameSteamKumon controller;
+class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
+  late ControllerGameSteamMonomino controller;
 
   @override
   void initState() {
     super.initState();
     final auth = context.read<ControllerAuth>();
-    controller = ControllerGameSteamKumon(
+    controller = ControllerGameSteamMonomino(
         userName: auth.currentAccount ?? AuthConstants.guest,
         service: ServiceGame(),
         gameId: widget.gameId,
@@ -54,7 +54,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                 final result = widget.gameLevel % 3 == 0 ? await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PageGameWordMatch(
+                      builder: (context) => PageGameTranslation(
                         gameId: widget.gameId,
                         gameLevel: widget.gameLevel,
                       ),
@@ -70,7 +70,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                       ) : await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PageGameSaySentence(
+                          builder: (context) => PageGameSpeaking(
                             gameId: widget.gameId,
                             gameLevel: widget.gameLevel,
                           ),
@@ -92,12 +92,12 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
     );
   }
 
-  final Map<EnumKumonTileDirection, IconData> arrowIcons = {
-    EnumKumonTileDirection.up: Icons.arrow_upward,
-    EnumKumonTileDirection.down: Icons.arrow_downward,
-    EnumKumonTileDirection.left: Icons.arrow_back,
-    EnumKumonTileDirection.right: Icons.arrow_forward,
-    EnumKumonTileDirection.empty: Icons.circle_outlined,
+  final Map<EnumMonominoTileDirection, IconData> arrowIcons = {
+    EnumMonominoTileDirection.up: Icons.arrow_upward,
+    EnumMonominoTileDirection.down: Icons.arrow_downward,
+    EnumMonominoTileDirection.left: Icons.arrow_back,
+    EnumMonominoTileDirection.right: Icons.arrow_forward,
+    EnumMonominoTileDirection.empty: Icons.circle_outlined,
   };
 
   Offset centerDragAnchorStrategy(
@@ -112,7 +112,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("KUMON"),
+        title: Text("Monomino Game"),
       ),
       body: Column(
         children: [
@@ -152,7 +152,7 @@ class _PageGameSteamKumonState extends State<PageGameSteamKumon> {
                   final counts = controller.getRemainingCount();
                   return Row(
                     children: counts.entries.map((e) {
-                      EnumKumonTileDirection dir = e.key;
+                      EnumMonominoTileDirection dir = e.key;
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6.0),
                         child: Draggable<Map<String, dynamic>>(

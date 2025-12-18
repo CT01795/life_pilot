@@ -1,15 +1,15 @@
-class ModelGameSaySentence {
+class ModelGameTranslation {
   final String questionId;
   final String question;
+  final List<String> options; // 3 個答案
   final String correctAnswer;
-  final String type;
   bool? isRight;
 
-  ModelGameSaySentence({
+  ModelGameTranslation({
     required this.questionId,
     required this.question,
+    required this.options,
     required this.correctAnswer,
-    required this.type,
     this.isRight,
   });
 }
