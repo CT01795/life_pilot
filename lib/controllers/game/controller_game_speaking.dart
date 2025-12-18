@@ -52,7 +52,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
       seconds = 1;
     }
     notifyListeners();
-    if (!isRightAnswer && counts <= 3) {
+    if (!isRightAnswer && counts < 3) {
       return counts;
     }
 
