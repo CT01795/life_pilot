@@ -50,11 +50,9 @@ class ControllerGameSpeaking extends ChangeNotifier {
     if (isRightAnswer) {
       score += 4;
       seconds = 1;
-    } else {
-      counts++;
     }
     notifyListeners();
-    if (!isRightAnswer && counts < 3) {
+    if (!isRightAnswer && counts <= 3) {
       return counts;
     }
 

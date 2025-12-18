@@ -8,7 +8,6 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/services/game/service_game_speaking.dart';
 import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 // ignore: must_be_immutable
 class PageGameSpeaking extends StatefulWidget {
@@ -21,17 +20,14 @@ class PageGameSpeaking extends StatefulWidget {
 }
 
 class _PageGameSpeakingState extends State<PageGameSpeaking> {
-  late TextEditingController textController;
   late final ControllerGameSpeaking controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   final FlutterTts flutterTts = FlutterTts(); // TTS 實例
   double size = 32.0;
   int answeredCount = 0; // 紀錄答了幾題
   late int maxQ;
-  final SpeechToText speechToText = SpeechToText();
-  String? userSpokenText;
   bool isRecording = false;
-  int counts = 0;
+  int repeatCounts = 0;
 
   @override
   void initState() {
@@ -46,28 +42,19 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     );
 
     controller.loadNextQuestion();
-    textController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    flutterTts.stop();
+    super.dispose();
   }
 
   // 呼叫這個方法答題並判斷是否完成題數
   void onAnswer() {
-    final userAnswer = textController.text;
-    counts = controller.answer(userAnswer, counts);
-
-    if (counts == 0) {
-      // 清空 spoken text
-      setState(() {
-        textController.clear();
-        isRecording = false;
-        answeredCount++;
-      });
-    } else {
-      // 清空 spoken text
-      setState(() {
-        textController.clear();
-        isRecording = false;
-      });
-    }
+    final userAnswer = constEmpty;
+    repeatCounts++;
+    repeatCounts = controller.answer(userAnswer, repeatCounts);
 
     if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
@@ -162,65 +149,23 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                   children: [
                     IconButton(
                       icon: Icon(
-                        isRecording ? Icons.mic : Icons.mic_none,
+                        !isRecording ? Icons.mic_none : Icons.stop, // 錄音時顯示停止
                         size: 50,
-                        color: isRecording ? Colors.red : Color(0xFF26A69A),
+                        color: !isRecording ? Color(0xFF26A69A) : Colors.red,
                       ),
                       onPressed: () async {
-                        try {
-                          if (!isRecording) {
-                            if (speechToText.isListening) {
-                              await speechToText.stop();
-                            }
-                            bool available = await speechToText.initialize();
-                            if (available) {
-                              setState(() => isRecording = true);
-                              speechToText.listen(
-                                onResult: (result) {
-                                  setState(() {
-                                    textController.text =
-                                        result.recognizedWords;
-                                    textController.selection =
-                                        TextSelection.fromPosition(
-                                      TextPosition(
-                                          offset: textController.text.length),
-                                    );
-                                    onAnswer();
-                                  });
-                                },
-                                localeId: 'en_US',
-                              );
-                            }
-                          } else {
-                            speechToText.stop();
-                            setState(() => isRecording = false);
-                          }
-                        } catch (e) {
-                          logger.e("Speech recognition error: $e");
+                        if (!isRecording) {
+                          // 開始錄音
+                          setState(() {
+                            isRecording = true;
+                          });
+                        } else {
+                          onAnswer(); // 停止後立即提交答案
+                          setState(() {
+                            isRecording = false;
+                          });
                         }
                       },
-                    ),
-                  ],
-                ),
-              ),
-              Gaps.h16,
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    
-                    Expanded(
-                      child: TextField(
-                        controller: textController,
-                        maxLines: null,
-                        textAlign: TextAlign.center,
-                        style:
-                            TextStyle(fontSize: 24, color: Colors.blueAccent),
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: "Please speak",
-                        ),
-                      ),
                     ),
                   ],
                 ),
