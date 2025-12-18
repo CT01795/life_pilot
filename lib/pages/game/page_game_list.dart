@@ -190,7 +190,7 @@ class _PageGameListState extends State<PageGameList> {
               onPressed: (selectedGameItem != null && selectedLevel! <= unlockedMaxLevel)
                 ? () async {
                     final game = selectedGameItem!;
-                    if (game.gameName.toLowerCase() == "word matching".toLowerCase()) {
+                    if (game.gameName.toLowerCase() == "translation".toLowerCase()) {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -200,7 +200,7 @@ class _PageGameListState extends State<PageGameList> {
                       if (result == true) {
                         await _loadUserProgress();
                       }
-                    } else if (game.gameName.toLowerCase() == "super hero".toLowerCase()) {
+                    } else if (game.gameName.toLowerCase() == "scratch".toLowerCase()) {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -210,7 +210,7 @@ class _PageGameListState extends State<PageGameList> {
                       if (result == true) {
                         await _loadUserProgress();
                       }
-                    } else if (game.gameName.toLowerCase() == "kumon".toLowerCase()) {
+                    } else if (game.gameName.toLowerCase() == "monomino".toLowerCase()) {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -240,7 +240,7 @@ class _PageGameListState extends State<PageGameList> {
                       if (result == true) {
                         await _loadUserProgress();
                       } 
-                    } else if (game.gameName.toLowerCase() == "say word and sentence".toLowerCase()) {
+                    } else if (game.gameName.toLowerCase() == "speaking".toLowerCase()) {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
