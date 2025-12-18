@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:life_pilot/models/game/model_game_word_match.dart';
-import 'package:life_pilot/services/game/service_game_word_match.dart';
+import 'package:life_pilot/models/game/model_game_translation.dart';
+import 'package:life_pilot/services/game/service_game_translation.dart';
 
-class ControllerGameWordMatch extends ChangeNotifier {
+class ControllerGameTranslation extends ChangeNotifier {
   final String userName;
-  final ServiceGameWordMatch service;
+  final ServiceGameTranslation service;
   final String gameId;
 
-  ModelGameWordMatch? currentQuestion;
+  ModelGameTranslation? currentQuestion;
   int score = 0; // +1 / -1
   int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
@@ -18,7 +18,7 @@ class ControllerGameWordMatch extends ChangeNotifier {
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
 
-  ControllerGameWordMatch({
+  ControllerGameTranslation({
     required this.userName,
     required this.service,
     required this.gameId, // 初始化

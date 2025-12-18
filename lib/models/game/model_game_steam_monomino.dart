@@ -3,12 +3,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-enum EnumKumonTileDirection { up, down, left, right, empty }
+enum EnumMonominoTileDirection { up, down, left, right, empty }
 
-class ModelGameKumonTile extends ChangeNotifier {
-  EnumKumonTileDirection _direction = EnumKumonTileDirection.empty;
-  EnumKumonTileDirection get direction => _direction;
-  set direction(EnumKumonTileDirection dir) {
+class ModelGameMonominoTile extends ChangeNotifier {
+  EnumMonominoTileDirection _direction = EnumMonominoTileDirection.empty;
+  EnumMonominoTileDirection get direction => _direction;
+  set direction(EnumMonominoTileDirection dir) {
     _direction = dir;
     notifyListeners();
   }
@@ -19,8 +19,8 @@ class ModelGameKumonTile extends ChangeNotifier {
   bool isHighlighted = false;
   bool isFixedArrow = false;
 
-  ModelGameKumonTile({
-    EnumKumonTileDirection direction = EnumKumonTileDirection.empty,
+  ModelGameMonominoTile({
+    EnumMonominoTileDirection direction = EnumMonominoTileDirection.empty,
     this.isObstacle = false,
     this.isStartP = false,
     this.isGoalP = false,
@@ -35,20 +35,20 @@ class _BFSNode {
   _BFSNode(this.point, this.lastDelta, this.straightCount);
 }
 
-class ModelGameKumonLevel {
+class ModelGameMonominoLevel {
   late Map<Point<int>, Point<int>?> parent;
   final int levelNumber;
   final int rows;
   final int cols;
-  late List<List<ModelGameKumonTile>> board;
-  late List<EnumKumonTileDirection> tilesToPlace;
+  late List<List<ModelGameMonominoTile>> board;
+  late List<EnumMonominoTileDirection> tilesToPlace;
   late Point<int> start;
   late Point<int> goal;
   late List<Point<int>> remainingFixed;
   List<Point<int>> solutionPath = [];
   Set<Point<int>> highlighted = {};
 
-  ModelGameKumonLevel({required this.levelNumber, required this.rows, required this.cols}) {
+  ModelGameMonominoLevel({required this.levelNumber, required this.rows, required this.cols}) {
     remainingFixed = [];
     _generateLevel();
   }
@@ -56,7 +56,7 @@ class ModelGameKumonLevel {
   List<Point<int>> getSolutionPath() => solutionPath;
 
   void _generateLevel() {
-    board = List.generate(rows, (_) => List.generate(cols, (_) => ModelGameKumonTile()));
+    board = List.generate(rows, (_) => List.generate(cols, (_) => ModelGameMonominoTile()));
     start = Point(0, 0);
     goal = Point(rows - 1, cols - 1);
     parent = {};
@@ -170,7 +170,7 @@ class ModelGameKumonLevel {
       if (board[p1.x][p1.y].isStartP) {
         continue;
       } else if (rnd.nextDouble() < revealRate && showCnt < maxNumber) {
-        ModelGameKumonTile tile1 = board[p1.x][p1.y];
+        ModelGameMonominoTile tile1 = board[p1.x][p1.y];
         tile1.isFixedArrow = true;
         remainingFixed.add(Point(p1.x, p1.y));
         i = i + 4;
@@ -189,12 +189,12 @@ class ModelGameKumonLevel {
       Point<int> p1 = solutionPath[i];
       Point<int> p2 = solutionPath[i + 1];
 
-      ModelGameKumonTile tile1 = board[p1.x][p1.y];
-      EnumKumonTileDirection dir = _getDirection(p1, p2);
+      ModelGameMonominoTile tile1 = board[p1.x][p1.y];
+      EnumMonominoTileDirection dir = _getDirection(p1, p2);
       if (!tile1.isFixedArrow) {
         // 1. 加入真正需要的方向
         tilesToPlace.add(dir);
-        tile1.direction = EnumKumonTileDirection.empty; // 玩家放置
+        tile1.direction = EnumMonominoTileDirection.empty; // 玩家放置
       } else {
         tile1.direction = dir;
       }
@@ -212,7 +212,7 @@ class ModelGameKumonLevel {
       int r = rnd.nextInt(rows);
       int c = rnd.nextInt(cols);
 
-      ModelGameKumonTile tile = board[r][c];
+      ModelGameMonominoTile tile = board[r][c];
       Point<int> p = Point(r, c);
       if (!tile.isFixedArrow &&
           !tile.isStartP &&
@@ -225,11 +225,11 @@ class ModelGameKumonLevel {
     }
   }
 
-  EnumKumonTileDirection _getDirection(Point<int> from, Point<int> to) {
-    if (to.x > from.x) return EnumKumonTileDirection.down;
-    if (to.x < from.x) return EnumKumonTileDirection.up;
-    if (to.y > from.y) return EnumKumonTileDirection.right;
-    return EnumKumonTileDirection.left;
+  EnumMonominoTileDirection _getDirection(Point<int> from, Point<int> to) {
+    if (to.x > from.x) return EnumMonominoTileDirection.down;
+    if (to.x < from.x) return EnumMonominoTileDirection.up;
+    if (to.y > from.y) return EnumMonominoTileDirection.right;
+    return EnumMonominoTileDirection.left;
   }
 
   List<Point<int>> _buildPathFromParent(Point<int> goal) {
@@ -340,7 +340,7 @@ class ModelGameKumonLevel {
       if (visited.contains(key)) return false; // 迴圈
       visited.add(key);
 
-      ModelGameKumonTile tile = board[r][c];
+      ModelGameMonominoTile tile = board[r][c];
 
       // 如果是固定箭頭，從集合移除
       if (tile.isFixedArrow) {
@@ -349,19 +349,19 @@ class ModelGameKumonLevel {
 
       // 根據方向移動
       switch (tile.direction) {
-        case EnumKumonTileDirection.up:
+        case EnumMonominoTileDirection.up:
           r--;
           break;
-        case EnumKumonTileDirection.down:
+        case EnumMonominoTileDirection.down:
           r++;
           break;
-        case EnumKumonTileDirection.left:
+        case EnumMonominoTileDirection.left:
           c--;
           break;
-        case EnumKumonTileDirection.right:
+        case EnumMonominoTileDirection.right:
           c++;
           break;
-        case EnumKumonTileDirection.empty:
+        case EnumMonominoTileDirection.empty:
           return false; // 無箭頭就斷路
       }
 
@@ -374,7 +374,7 @@ class ModelGameKumonLevel {
     for (var row in board) {
       for (var tile in row) {
         if (!tile.isObstacle && !tile.isFixedArrow) {
-          tile.direction = EnumKumonTileDirection.empty;
+          tile.direction = EnumMonominoTileDirection.empty;
         }
       }
     }

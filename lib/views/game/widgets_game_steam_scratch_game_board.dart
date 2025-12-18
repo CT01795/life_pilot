@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
+import 'package:life_pilot/controllers/game/steam_scratch/controller_game_steam_scratch.dart';
 
-class WidgetsGameSteamSuperHeroGameBoard extends StatelessWidget {
-  final ControllerGameSteamSuperHero game;
+class WidgetsGameSteamScratchGameBoard extends StatelessWidget {
+  final ControllerGameSteamScratch game;
   final double tileSize;
 
-  const WidgetsGameSteamSuperHeroGameBoard({super.key, required this.game, required this.tileSize,});
+  const WidgetsGameSteamScratchGameBoard({super.key, required this.game, required this.tileSize,});
 
   // 隨機水果 icon
   static final List<IconData> fruitIcons = [

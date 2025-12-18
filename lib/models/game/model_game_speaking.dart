@@ -1,15 +1,15 @@
-class ModelGameWordMatch {
+class ModelGameSpeaking {
   final String questionId;
   final String question;
-  final List<String> options; // 3 個答案
   final String correctAnswer;
+  final String type;
   bool? isRight;
 
-  ModelGameWordMatch({
+  ModelGameSpeaking({
     required this.questionId,
     required this.question,
-    required this.options,
     required this.correctAnswer,
+    required this.type,
     this.isRight,
   });
 }

@@ -3,26 +3,26 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/game/controller_game_say_sentence.dart';
+import 'package:life_pilot/controllers/game/controller_game_speaking.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/services/game/service_game_say_sentence.dart';
+import 'package:life_pilot/services/game/service_game_speaking.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 // ignore: must_be_immutable
-class PageGameSaySentence extends StatefulWidget {
+class PageGameSpeaking extends StatefulWidget {
   final String gameId;
   int? gameLevel;
-  PageGameSaySentence({super.key, required this.gameId, this.gameLevel});
+  PageGameSpeaking({super.key, required this.gameId, this.gameLevel});
 
   @override
-  State<PageGameSaySentence> createState() => _PageGameSaySentenceState();
+  State<PageGameSpeaking> createState() => _PageGameSpeakingState();
 }
 
-class _PageGameSaySentenceState extends State<PageGameSaySentence> {
+class _PageGameSpeakingState extends State<PageGameSpeaking> {
   late TextEditingController textController;
-  late final ControllerGameSaySentence controller;
+  late final ControllerGameSpeaking controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   final FlutterTts flutterTts = FlutterTts(); // TTS 實例
   double size = 32.0;
@@ -39,10 +39,10 @@ class _PageGameSaySentenceState extends State<PageGameSaySentence> {
 
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
-    controller = ControllerGameSaySentence(
+    controller = ControllerGameSpeaking(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGameSaySentence(),
+      service: ServiceGameSpeaking(),
     );
 
     controller.loadNextQuestion();
@@ -122,7 +122,7 @@ class _PageGameSaySentenceState extends State<PageGameSaySentence> {
           backgroundColor: Color(0xFFF5F7FA),
           appBar: AppBar(
             backgroundColor: Color(0xFF4DB6AC),
-            title: Text("Say something (${controller.score}/100)"),
+            title: Text("Speaking (${controller.score}/100)"),
           ),
           body: Column(
             children: [

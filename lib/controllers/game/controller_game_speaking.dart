@@ -2,22 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/game/model_game_say_sentence.dart';
-import 'package:life_pilot/services/game/service_game_say_sentence.dart';
+import 'package:life_pilot/models/game/model_game_speaking.dart';
+import 'package:life_pilot/services/game/service_game_speaking.dart';
 
-class ControllerGameSaySentence extends ChangeNotifier {
+class ControllerGameSpeaking extends ChangeNotifier {
   final String userName;
-  final ServiceGameSaySentence service;
+  final ServiceGameSpeaking service;
   final String gameId;
 
-  ModelGameSaySentence? currentQuestion;
+  ModelGameSpeaking? currentQuestion;
   int score = 0; // +1 / -1
   int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
 
-  ControllerGameSaySentence({
+  ControllerGameSpeaking({
     required this.userName,
     required this.service,
     required this.gameId, // 初始化

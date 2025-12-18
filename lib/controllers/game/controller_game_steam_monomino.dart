@@ -1,22 +1,22 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:life_pilot/models/game/model_game_steam_kumon.dart';
+import 'package:life_pilot/models/game/model_game_steam_monomino.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
-class ControllerGameSteamKumon extends ChangeNotifier {
+class ControllerGameSteamMonomino extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
   late List<Point<int>> remainingFixed;
 
-  late ModelGameKumonLevel level;
+  late ModelGameMonominoLevel level;
   int score = 0;
   int usedSteps = 0;
-  List<EnumKumonTileDirection> remainingTiles = [];
+  List<EnumMonominoTileDirection> remainingTiles = [];
 
-  ControllerGameSteamKumon(
+  ControllerGameSteamMonomino(
       {required this.userName,
       required this.service,
       required this.gameId, // 初始化
@@ -33,12 +33,12 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   }
 
   // 根據 gameLevel 生成不同大小/難度的 Level
-  ModelGameKumonLevel _generateLevel(int levelNumber) {
+  ModelGameMonominoLevel _generateLevel(int levelNumber) {
     // 簡單規則：等級越高，行列數增加，積木數增加
     int baseSize = 6; // 最低關卡 4x4
     int size =
         baseSize + (levelNumber - 1); // e.g. level 1 -> 4x4, level 2 -> 5x5
-    return ModelGameKumonLevel(levelNumber: levelNumber, rows: size, cols: size);
+    return ModelGameMonominoLevel(levelNumber: levelNumber, rows: size, cols: size);
   }
 
   void resetLevel() {
@@ -50,24 +50,24 @@ class ControllerGameSteamKumon extends ChangeNotifier {
   }
 
   void placeTile(
-      int row, int col, int? fromRow, int? fromCol, EnumKumonTileDirection? to) {
+      int row, int col, int? fromRow, int? fromCol, EnumMonominoTileDirection? to) {
     if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
 
-    ModelGameKumonTile tileTarget = level.board[row][col];
-    ModelGameKumonTile? tileFrom = fromRow != null && fromCol != null
+    ModelGameMonominoTile tileTarget = level.board[row][col];
+    ModelGameMonominoTile? tileFrom = fromRow != null && fromCol != null
         ? level.board[fromRow][fromCol]
         : null;
 
     if (tileTarget.isObstacle || tileTarget.isFixedArrow) return;
 
-    if (tileTarget.direction != EnumKumonTileDirection.empty) {
+    if (tileTarget.direction != EnumMonominoTileDirection.empty) {
       remainingTiles.add(tileTarget.direction);
     }
     tileTarget.direction = tileFrom == null ? to! : tileFrom.direction;
     if(tileFrom == null) {
       remainingTiles.remove(to!);
     }else{
-      tileFrom.direction = EnumKumonTileDirection.empty;
+      tileFrom.direction = EnumMonominoTileDirection.empty;
     }
     usedSteps++;
     notifyListeners();
@@ -102,8 +102,8 @@ class ControllerGameSteamKumon extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<EnumKumonTileDirection, int> getRemainingCount() {
-    Map<EnumKumonTileDirection, int> counts = {};
+  Map<EnumMonominoTileDirection, int> getRemainingCount() {
+    Map<EnumMonominoTileDirection, int> counts = {};
     for (var dir in remainingTiles) {
       counts[dir] = (counts[dir] ?? 0) + 1;
     }

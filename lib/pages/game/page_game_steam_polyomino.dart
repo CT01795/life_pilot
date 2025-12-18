@@ -6,8 +6,8 @@ import 'package:life_pilot/controllers/game/controller_game_steam_polyomino.dart
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_say_sentence.dart';
-import 'package:life_pilot/pages/game/page_game_word_match.dart';
+import 'package:life_pilot/pages/game/page_game_speaking.dart';
+import 'package:life_pilot/pages/game/page_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/steam_polyomino/widgets_game_steam_polyomino_block.dart';
 import 'package:life_pilot/views/game/steam_polyomino/widgets_game_steam_polyomino_tile.dart';
@@ -53,7 +53,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Pipe Path Game"),
+        title: const Text("Polyomino Game"),
         actions: [
           IconButton(
             icon: Icon(Icons.lightbulb_outline),
@@ -106,7 +106,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
             final result = widget.gameLevel % 3 == 0 ? await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PageGameWordMatch(
+                  builder: (context) => PageGameTranslation(
                     gameId: widget.gameId,
                     gameLevel: widget.gameLevel,
                   ),
@@ -122,7 +122,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                   ) : await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PageGameSaySentence(
+                      builder: (context) => PageGameSpeaking(
                         gameId: widget.gameId,
                         gameLevel: widget.gameLevel,
                       ),

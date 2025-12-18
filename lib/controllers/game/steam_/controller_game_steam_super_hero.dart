@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/game/steam_supper_hero/model_game_steam_super_hero_level.dart';
+import 'package:life_pilot/models/game/steam_scratch/model_game_steam_scratch_level.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
 enum Direction { north, east, south, west }
@@ -25,27 +25,27 @@ class GameState {
 
 // -------------------- Command 定義 --------------------
 abstract class Command {
-  Future<bool> execute(ControllerGameSteamSuperHero game);
+  Future<bool> execute(ControllerGameSteamScratch game);
 }
 
 // 基本動作
 class ForwardCommand extends Command {
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     return await game.moveForward();
   }
 }
 
 class BackwardCommand extends Command {
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     return await game.moveBackward();
   }
 }
 
 class TurnLeftCommand extends Command {
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     game.state.facing =
         Direction.values[(game.state.facing.index + 3) % 4]; // 左轉 90 度
     return await game.moveForward();
@@ -54,7 +54,7 @@ class TurnLeftCommand extends Command {
 
 class TurnRightCommand extends Command {
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     game.state.facing =
         Direction.values[(game.state.facing.index + 1) % 4]; // 右轉 90 度
     return await game.moveForward();
@@ -64,14 +64,14 @@ class TurnRightCommand extends Command {
 // 跳躍動畫
 class JumpUpCommand extends Command {
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     return await game.jumpUp();
   }
 }
 
 class JumpDownCommand extends Command {
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     return await game.jumpDown();
   }
 }
@@ -83,7 +83,7 @@ class LoopCommand extends Command {
   LoopCommand({required this.count, required this.commands});
 
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     for (int i = 0; i < count; i++) {
       for (var cmd in commands) {
         bool cont = await cmd.execute(game);
@@ -96,7 +96,7 @@ class LoopCommand extends Command {
 
 // if/else
 class IfElseCommand extends Command {
-  bool Function(ControllerGameSteamSuperHero) condition;
+  bool Function(ControllerGameSteamScratch) condition;
   List<Command> thenCommands;
   List<Command> elseCommands;
 
@@ -107,7 +107,7 @@ class IfElseCommand extends Command {
   });
 
   @override
-  Future<bool> execute(ControllerGameSteamSuperHero game) async {
+  Future<bool> execute(ControllerGameSteamScratch game) async {
     var list = condition(game) ? thenCommands : elseCommands;
     for (var cmd in list) {
       bool cont = await cmd.execute(game);
@@ -118,11 +118,11 @@ class IfElseCommand extends Command {
 }
 
 // -------------------- Game Controller --------------------
-class ControllerGameSteamSuperHero {
+class ControllerGameSteamScratch {
   final String userName;
   final ServiceGame service;
   final String gameId;
-  final ModelGameSteamSuperHeroLevel level;
+  final ModelGameSteamScratchLevel level;
   bool _scoreSaved = false;
 
   // 使用 ValueNotifier 提高效能，安全 UI 更新
@@ -134,7 +134,7 @@ class ControllerGameSteamSuperHero {
       StreamController.broadcast();
   Stream<ModelGameEvent> get eventStream => _eventController.stream;
 
-  ControllerGameSteamSuperHero({
+  ControllerGameSteamScratch({
     required this.userName,
     required this.service,
     required this.gameId, // 初始化

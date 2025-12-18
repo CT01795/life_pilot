@@ -1,11 +1,11 @@
-import 'package:life_pilot/models/game/model_game_word_match.dart';
+import 'package:life_pilot/models/game/model_game_translation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ServiceGameWordMatch {
+class ServiceGameTranslation {
   final client = Supabase.instance.client;
 
-  Future<ModelGameWordMatch> fetchQuestion(String userName) async {
-    final result = await client.rpc("get_word_match_with_options", params: {
+  Future<ModelGameTranslation> fetchQuestion(String userName) async {
+    final result = await client.rpc("get_translation_with_options", params: {
       'user_name': userName,
     });
 
@@ -15,7 +15,7 @@ class ServiceGameWordMatch {
 
     final data = result[0];
 
-    return ModelGameWordMatch(
+    return ModelGameTranslation(
       questionId: data['id'],
       question: data['question'],
       correctAnswer: data['correct_answer'],
@@ -34,7 +34,7 @@ class ServiceGameWordMatch {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await client.from('game_word_match_user').insert({
+    await client.from('game_translation_user').insert({
       'user': userName,
       'question_id': questionId,
       'answer': answer,

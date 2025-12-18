@@ -8,7 +8,7 @@ import 'package:life_pilot/controllers/game/controller_game_puzzle_map.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_grammar.dart';
-import 'package:life_pilot/pages/game/page_game_say_sentence.dart';
+import 'package:life_pilot/pages/game/page_game_speaking.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
 
@@ -462,7 +462,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                   ) : await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PageGameSaySentence(
+                      builder: (context) => PageGameSpeaking(
                         gameId: widget.gameId,
                         gameLevel: widget.gameLevel,
                       ),

@@ -2,29 +2,29 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero.dart';
-import 'package:life_pilot/controllers/game/steam_supper_hero/controller_game_steam_super_hero_level_generator.dart';
+import 'package:life_pilot/controllers/game/steam_scratch/controller_game_steam_scratch.dart';
+import 'package:life_pilot/controllers/game/steam_scratch/controller_game_steam_scratch_level_generator.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/game/steam_supper_hero/model_game_steam_super_hero_level.dart';
-import 'package:life_pilot/pages/game/steam_super_hero/page_game_steam_super_hero_blockly_editor.dart';
+import 'package:life_pilot/models/game/steam_scratch/model_game_steam_scratch_level.dart';
+import 'package:life_pilot/pages/game/steam_scratch/page_game_steam_scratch_blockly_editor.dart';
 import 'package:life_pilot/services/game/service_game.dart';
-import 'package:life_pilot/views/game/widgets_game_steam_super_hero_game_board.dart';
+import 'package:life_pilot/views/game/widgets_game_steam_scratch_game_board.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/logger.dart';
 
-class PageGameSteamSuperHero extends StatefulWidget {
+class PageGameSteamScratch extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const PageGameSteamSuperHero(
+  const PageGameSteamScratch(
       {super.key, required this.gameId, required this.gameLevel});
 
   @override
-  State<PageGameSteamSuperHero> createState() => _PageGameSteamSuperHeroState();
+  State<PageGameSteamScratch> createState() => _PageGameSteamScratchState();
 }
 
-class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
-  late final ControllerGameSteamSuperHero game;
+class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
+  late final ControllerGameSteamScratch game;
   late List<Command> commands;
 
   // ---- Split Panel 狀態 ----
@@ -33,18 +33,18 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
   final double maxEditorWidth = 600;
 
   // Editor 的 Key
-  final GlobalKey<PageGameSteamSuperHeroBlocklyEditorState> editorKey =
-      GlobalKey<PageGameSteamSuperHeroBlocklyEditorState>();
+  final GlobalKey<PageGameSteamScratchBlocklyEditorState> editorKey =
+      GlobalKey<PageGameSteamScratchBlocklyEditorState>();
 
   @override
   void initState() {
     super.initState();
 
     final level =
-        GameSteamSuperHeroLevelGenerator().generateLevel(widget.gameLevel);
+        GameSteamScratchLevelGenerator().generateLevel(widget.gameLevel);
     final auth = context.read<ControllerAuth>();
 
-    game = ControllerGameSteamSuperHero(
+    game = ControllerGameSteamScratch(
         gameId: widget.gameId,
         userName: auth.currentAccount ?? AuthConstants.guest,
         service: ServiceGame(),
@@ -237,7 +237,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text('Blockly Platform Game')),
+      appBar: AppBar(title: Text('Scratch Game')),
       body: Row(
         children: [
           // -----------------------------------------------------------------
@@ -278,7 +278,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
 
                 // ---------- Editor main ----------
                 Expanded(
-                  child: PageGameSteamSuperHeroBlocklyEditor(
+                  child: PageGameSteamScratchBlocklyEditor(
                     key: editorKey,
                     onCommandsReady: (cmds) async {
                       // ✅ 每次開始前重置遊戲
@@ -355,7 +355,7 @@ class _PageGameSteamSuperHeroState extends State<PageGameSteamSuperHero> {
                               child: SizedBox(
                                 width: (maxX + 1) * tileSize,
                                 height: (maxY + 1) * tileSize,
-                                child: WidgetsGameSteamSuperHeroGameBoard(
+                                child: WidgetsGameSteamScratchGameBoard(
                                   game: game,
                                   tileSize: tileSize, // 傳入自動計算格子大小
                                 ),

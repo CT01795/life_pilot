@@ -3,24 +3,24 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/game/controller_game_word_match.dart';
+import 'package:life_pilot/controllers/game/controller_game_translation.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/services/game/service_game_word_match.dart';
+import 'package:life_pilot/services/game/service_game_translation.dart';
 import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
-class PageGameWordMatch extends StatefulWidget {
+class PageGameTranslation extends StatefulWidget {
   final String gameId;
   int? gameLevel;
-  PageGameWordMatch({super.key, required this.gameId, this.gameLevel});
+  PageGameTranslation({super.key, required this.gameId, this.gameLevel});
 
   @override
-  State<PageGameWordMatch> createState() => _PageGameWordMatchState();
+  State<PageGameTranslation> createState() => _PageGameTranslationState();
 }
 
-class _PageGameWordMatchState extends State<PageGameWordMatch> {
-  late final ControllerGameWordMatch controller;
+class _PageGameTranslationState extends State<PageGameTranslation> {
+  late final ControllerGameTranslation controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   final FlutterTts flutterTts = FlutterTts(); // TTS 實例
   double size = 32.0;
@@ -33,10 +33,10 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
 
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 10;
-    controller = ControllerGameWordMatch(
+    controller = ControllerGameTranslation(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGameWordMatch(),
+      service: ServiceGameTranslation(),
     );
     controller.loadNextQuestion();
   }
@@ -108,7 +108,7 @@ class _PageGameWordMatchState extends State<PageGameWordMatch> {
         final q = controller.currentQuestion!;
         return Scaffold(
           appBar: AppBar(
-            title: Text("Word Matching (${controller.score}/100)"),
+            title: Text("Translation (${controller.score}/100)"),
           ),
           body: Column(
             mainAxisSize: MainAxisSize.min,
