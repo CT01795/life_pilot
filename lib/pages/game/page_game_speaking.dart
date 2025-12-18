@@ -28,6 +28,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   late int maxQ;
   bool isRecording = false;
   int repeatCounts = 0;
+  TextEditingController answerController =
+      TextEditingController(); // 顯示答案的 TextField
 
   @override
   void initState() {
@@ -47,19 +49,44 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   @override
   void dispose() {
     flutterTts.stop();
+    answerController.dispose();
     super.dispose();
   }
 
   // 呼叫這個方法答題並判斷是否完成題數
-  void onAnswer() {
-    final userAnswer = constEmpty;
-    repeatCounts++;
+  Future<void> onAnswer() async {
+    final userAnswer = answerController.text;
+    repeatCounts = repeatCounts + 1;
     repeatCounts = controller.answer(userAnswer, repeatCounts);
+    // 逐字顯示正確答案
+    if (repeatCounts < 3 && repeatCounts > 0) {
+      showCorrectAnswer(controller.currentQuestion!.correctAnswer);
+    }
+    await Future.delayed(const Duration(milliseconds: 2000));
+    answerController.clear();
 
     if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));
+    }
+  }
+
+  // 逐字顯示文字
+  void showCorrectAnswer(String text) async {
+    if (answerController.text.isNotEmpty) {
+      return;
+    }
+    List<String> tmp = text.split(" ");
+    for (int i = 0; i < tmp.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      final newValue = TextEditingValue(
+        text: "${answerController.text}${tmp[i]} ",
+        selection:
+            TextSelection.collapsed(offset: answerController.text.length + 1),
+      );
+      answerController.value = newValue;
     }
   }
 
@@ -171,6 +198,25 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                 ),
               ),
               Gaps.h16,
+              // 逐字顯示答案的 TextField
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TextField(
+                    controller: answerController,
+                    maxLines: null,
+                    readOnly: false,
+                    keyboardType: TextInputType.multiline,
+                    textAlign: TextAlign.left,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: TextStyle(fontSize: 20, color: Colors.blueAccent),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: "Answer here",
+                    ),
+                  ),
+                ),
+              )
             ],
           ),
         );
