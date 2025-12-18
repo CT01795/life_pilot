@@ -155,29 +155,6 @@ class _PageGameSaySentenceState extends State<PageGameSaySentence> {
                 ),
               ),
               Gaps.h16,
-              // 第二列：麥克風 + TextField
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    
-                    Expanded(
-                      child: TextField(
-                        controller: textController,
-                        maxLines: null,
-                        textAlign: TextAlign.center,
-                        style:
-                            TextStyle(fontSize: 24, color: Colors.blueAccent),
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: "Please speak",
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Gaps.h16,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -222,6 +199,28 @@ class _PageGameSaySentenceState extends State<PageGameSaySentence> {
                           logger.e("Speech recognition error: $e");
                         }
                       },
+                    ),
+                  ],
+                ),
+              ),
+              Gaps.h16,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    
+                    Expanded(
+                      child: TextField(
+                        controller: textController,
+                        maxLines: null,
+                        textAlign: TextAlign.center,
+                        style:
+                            TextStyle(fontSize: 24, color: Colors.blueAccent),
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "Please speak",
+                        ),
+                      ),
                     ),
                   ],
                 ),
