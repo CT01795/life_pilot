@@ -118340,7 +118340,7 @@ var $async$$0=A.o(function(a,b){if(a===1)return A.p(b,r)
 while(true)switch(s){case 0:p=q.a
 o=p.gVX()
 n=o.c
-s=n.toLowerCase()==="word matching".toLowerCase()?2:4
+s=n.toLowerCase()==="translation".toLowerCase()?2:4
 break
 case 2:n=A.fo(new A.aT7(o),null,t.z)
 m=J
@@ -118352,7 +118352,7 @@ case 5:s=8
 return A.i(p.k7(),$async$$0)
 case 8:case 6:s=3
 break
-case 4:s=n.toLowerCase()==="super hero".toLowerCase()?9:11
+case 4:s=n.toLowerCase()==="scratch".toLowerCase()?9:11
 break
 case 9:n=A.fo(new A.aT8(o),null,t.z)
 m=J
@@ -118364,7 +118364,7 @@ case 12:s=15
 return A.i(p.k7(),$async$$0)
 case 15:case 13:s=10
 break
-case 11:s=n.toLowerCase()==="kumon".toLowerCase()?16:18
+case 11:s=n.toLowerCase()==="monomino".toLowerCase()?16:18
 break
 case 16:n=A.fo(new A.aT9(o),null,t.z)
 m=J
@@ -118400,7 +118400,7 @@ case 33:s=36
 return A.i(p.k7(),$async$$0)
 case 36:case 34:s=31
 break
-case 32:s=n.toLowerCase()==="say word and sentence".toLowerCase()?37:39
+case 32:s=n.toLowerCase()==="speaking".toLowerCase()?37:39
 break
 case 37:n=A.fo(new A.aTc(o),null,t.z)
 m=J
