@@ -1,42 +1,66 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/models/point_record/model_point_record.dart';
 import 'package:life_pilot/models/point_record/model_point_record_account.dart';
 import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide MultipartFile;
+import 'package:dio/dio.dart';
 
 class ServicePointRecord {
+  final Dio dio;
+
+  ServicePointRecord(this.dio);
+
   final supabase = Supabase.instance.client;
 
   // ===== 帳戶 =====
+  Uint8List? parseMasterGraph(dynamic data) {
+    if (data == null) return null;
+
+    if (data is String) {
+      try {
+        return base64Decode(data);
+      } catch (e) {
+        logger.e(e);
+        return null;
+      }
+    }
+    return null;
+  }
+
   Future<List<ModelPointRecordAccount>> fetchAccounts({
-    required String userId,
+    required String user,
   }) async {
     final res = await supabase
         .from('point_record_account')
         .select()
-        .eq('created_by', userId)
+        .eq('created_by', user)
         .eq('is_valid', true)
         .order('account', ascending: true);
 
-    return (res as List)
-        .map((e) => ModelPointRecordAccount(
-              id: e['id'],
-              accountName: e['account'],
-              masterGraphUrl: e['master_graph_url'],
-              points: (e['points'] ?? 0).toInt(),
-              balance: (e['balance'] ?? 0).toInt(),
-            ))
-        .toList();
+    return (res as List).map((e) {
+      final bytes = parseMasterGraph(e['master_graph_url']);
+      return ModelPointRecordAccount(
+        id: e['id'],
+        accountName: e['account'],
+        masterGraphUrl: bytes,
+        points: (e['points'] ?? 0).toInt(),
+        balance: (e['balance'] ?? 0).toInt(),
+      );
+    }).toList();
   }
 
   Future<void> createAccount({
     required String name,
-    required String userId,
+    required String user,
   }) async {
     // 先檢查是否有重複帳戶
     final res = await supabase
         .from('point_record_account')
         .select('id, is_valid')
-        .eq('created_by', userId)
+        .eq('created_by', user)
         .eq('account', name)
         .maybeSingle();
 
@@ -45,8 +69,7 @@ class ServicePointRecord {
         // 帳戶存在但被刪除 → 直接改成 true
         await supabase
             .from('point_record_account')
-            .update({'is_valid': true})
-            .eq('id', res['id']);
+            .update({'is_valid': true}).eq('id', res['id']);
         return;
       } else {
         throw Exception('Account already exists'); // 已存在有效帳戶
@@ -55,7 +78,7 @@ class ServicePointRecord {
 
     await supabase.from('point_record_account').insert({
       'account': name,
-      'created_by': userId,
+      'created_by': user,
       'points': 0,
       'balance': 0,
     });
@@ -66,10 +89,24 @@ class ServicePointRecord {
   }) async {
     await supabase
         .from('point_record_account')
-        .update({'is_valid': false})
-        .eq('id', accountId);
+        .update({'is_valid': false}).eq('id', accountId);
   }
-  
+
+  Future<void> uploadAccountImageBytesDirect(
+      String accountId, Uint8List imageBytes) async {
+    try {
+      // 不管 Web / Mobile 都轉 base64
+      final base64Str = base64Encode(imageBytes);
+      // Mobile / Web 統一存 bytea (Uint8List)
+      await supabase
+          .from('point_record_account')
+          .update({'master_graph_url': base64Str}).eq('id', accountId);
+    } catch (e, st) {
+      logger.e('uploadAccountImageBytesDirect failed $e,$st');
+      rethrow;
+    }
+  }
+
   // ===== 明細 =====
   Future<List<ModelPointRecord>> fetchTodayRecords({
     required String accountId,

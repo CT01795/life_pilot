@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
@@ -72,7 +73,7 @@ void main() async {
           create: (_) => ControllerAuth(),
         ),
         Provider<ServicePointRecord>(
-          create: (_) => ServicePointRecord(),
+          create: (_) => ServicePointRecord(Dio()),
         ),
         Provider<ControllerPointRecordSpeech>(
           create: (_) => ControllerPointRecordSpeech(),

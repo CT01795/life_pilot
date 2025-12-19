@@ -12,6 +12,7 @@
         "Blockly",
         "blockxml",
         "buildscript",
+        "bytea",
         "callbackkey",
         "callnoreturn",
         "callreturn",
