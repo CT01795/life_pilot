@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/point_record/model_point_record.dart';
 import 'package:life_pilot/models/point_record/model_point_record_account.dart';
 import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
@@ -60,19 +61,20 @@ class ControllerPointRecord extends ChangeNotifier {
   }
 }
 
-class NLPService {
+class NLPService { //TODO
   static List<PointRecordParsedResult> parseMulti(String text) {
     final results = <PointRecordParsedResult>[];
 
     // ① 加 / 扣 + 數字（阿拉伯 or 中文）
     final regex = RegExp(
-      r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十]+)\s*(分|點)?',
+      r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十]+)\s*(分|點|元)?',
     );
 
     for (final m in regex.allMatches(text)) {
-      final action = m.group(1)?.trim().isNotEmpty == true
-        ? m.group(1)!.trim()
-        : 'Accounting';
+      /*final action =
+          m.group(4)?.trim() == '元' ? 'Accounting' : m.group(1)?.trim() ?? constEmpty;*/
+      final action = m.group(1)?.trim() ?? constEmpty;
+      if (action.isEmpty) continue;
 
       final op = m.group(2)!;
       final rawNumber = m.group(3)!;

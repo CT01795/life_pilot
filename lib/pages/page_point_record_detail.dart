@@ -9,13 +9,36 @@ import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/services/service_point_record.dart';
 import 'package:provider/provider.dart';
 
-class PagePointRecordDetail extends StatelessWidget {
+class PagePointRecordDetail extends StatefulWidget {
   final String accountId;
   final String accountName;
   final ServicePointRecord service;
 
-  const PagePointRecordDetail(
-      {super.key, required this.service, required this.accountId, required this.accountName});
+  const PagePointRecordDetail({
+    super.key,
+    required this.service,
+    required this.accountId,
+    required this.accountName,
+  });
+
+  @override
+  State<PagePointRecordDetail> createState() => _PagePointRecordDetailState();
+}
+
+class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
+  late final TextEditingController _speechTextController;
+
+  @override
+  void initState() {
+    super.initState();
+    _speechTextController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _speechTextController.dispose();
+    super.dispose();
+  }
 
   Future<bool?> showVoiceConfirmDialog(
     BuildContext context,
@@ -106,8 +129,8 @@ class PagePointRecordDetail extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) {
         final c = ControllerPointRecord(
-          service,
-          accountId,
+          widget.service,
+          widget.accountId,
           context.read<ControllerPointRecordAccount>(),
         );
         c.loadToday();
@@ -115,13 +138,13 @@ class PagePointRecordDetail extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(accountName),
+          title: Text(widget.accountName),
           backgroundColor: Colors.blueAccent, // 可自定義顏色
           elevation: 2,
         ),
         body: Consumer2<ControllerPointRecord, ControllerPointRecordAccount>(
           builder: (context, pointsController, accountController, _) {
-            final account = accountController.getAccountById(accountId);
+            final account = accountController.getAccountById(widget.accountId);
             return Column(
               children: [
                 Gaps.h8,
@@ -143,11 +166,10 @@ class PagePointRecordDetail extends StatelessWidget {
                         await pointsController.switchType('balance');
                       },
                     ),
-                    Gaps.w16,
-                    _buildMicButton(context, pointsController),
                   ],
                 ),
                 _buildSummary(account, pointsController),
+                _buildMicButton(context, pointsController),
                 const Divider(),
                 _buildTodayList(pointsController),
               ],
@@ -195,42 +217,65 @@ class PagePointRecordDetail extends StatelessWidget {
 
   Widget _buildMicButton(
       BuildContext context, ControllerPointRecord controller) {
-    final speechController = context.read<ControllerPointRecordSpeech>();
-
     return Padding(
-      padding: EdgeInsets.zero,
-      child: FloatingActionButton(
-        child: const Icon(Icons.mic),
-        onPressed: () async {
-          final text = await speechController.recordAndTranscribe();
-          if (text.isEmpty) {
-            return;
-          }
-          // ① 解析成 preview
-          final previews = await controller.parseFromSpeech(text);
-          if (previews.isEmpty) return;
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          // 麥克風按鈕
+          FloatingActionButton(
+            child: const Icon(Icons.mic, size: 50),
+            onPressed: () async {
+              final speechController =
+                  context.read<ControllerPointRecordSpeech>();
+              final text = await speechController.recordAndTranscribe();
+              if (text.isNotEmpty) {
+                setState(() {
+                  _speechTextController.text = text;
+                });
+              }
+            },
+          ),
+          Gaps.w8,
+          // 可編輯文字欄位
+          Expanded(
+            child: TextField(
+              controller: _speechTextController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Input',
+              ),
+              maxLines: 1,
+            ),
+          ),
+          Gaps.w8,
+          ElevatedButton(
+            onPressed: () async {
+              if (_speechTextController.text.isEmpty) return;
+              final previews = await controller
+                  .parseFromSpeech(_speechTextController.text);
+              if (previews.isEmpty) return;
+              final confirmed = await showVoiceConfirmDialog(context, previews);
+              if (confirmed != true) return;
 
-          // ② 顯示確認 UI
-          final confirmed = await showVoiceConfirmDialog(context, previews);
+              final tts = context.read<TtsService>();
+              await controller.commitRecords(previews);
+              await context.read<ControllerPointRecordAccount>().loadAccounts();
 
-          if (confirmed != true) return;
+              final summary = previews.map((p) {
+                final v = p.value;
+                return '${p.description}${v > 0 ? '加$v' : '扣${v.abs()}'}';
+              }).join('，');
 
-          final tts = context.read<TtsService>();
+              await tts.speak('${previews.length} records created, $summary');
 
-          // ③ 寫入 DB
-          await controller.commitRecords(previews);
-
-          // ④ 同步帳戶 totals
-          await context.read<ControllerPointRecordAccount>().loadAccounts();
-
-          // ⑤ 語音回饋
-          final summary = previews.map((p) {
-            final v = p.value;
-            return '${p.description}${v > 0 ? '加$v' : '扣${v.abs()}'}';
-          }).join('，');
-
-          await tts.speak('${previews.length} records created, $summary');
-        },
+              // 清空輸入框
+              setState(() {
+                _speechTextController.clear();
+              });
+            },
+            child: const Text('Submit'),
+          ),
+        ],
       ),
     );
   }
