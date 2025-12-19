@@ -49,16 +49,20 @@ class _PagePointRecordState extends State<PagePointRecord> {
                 ),
                 elevation: 2,
                 child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PagePointRecordDetail(
-                          service: context.read<ServicePointRecord>(),
-                          accountId: account.id,
+                  onTap: () async {
+                    final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PagePointRecordDetail(
+                            service: context.read<ServicePointRecord>(),
+                            accountId: account.id,
+                            accountName: account.accountName,
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                      if (result == true) {
+                        await controller.loadAccounts();
+                      }
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),

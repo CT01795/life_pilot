@@ -11,10 +11,11 @@ import 'package:provider/provider.dart';
 
 class PagePointRecordDetail extends StatelessWidget {
   final String accountId;
+  final String accountName;
   final ServicePointRecord service;
 
   const PagePointRecordDetail(
-      {super.key, required this.service, required this.accountId});
+      {super.key, required this.service, required this.accountId, required this.accountName});
 
   Future<bool?> showVoiceConfirmDialog(
     BuildContext context,
@@ -49,13 +50,12 @@ class PagePointRecordDetail extends StatelessWidget {
                             content: TextField(controller: controller),
                             actions: [
                               TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, null),
+                                onPressed: () => Navigator.pop(context, null),
                                 child: const Text('Cancel'),
                               ),
                               ElevatedButton(
-                                onPressed: () => Navigator.pop(
-                                    context, controller.text),
+                                onPressed: () =>
+                                    Navigator.pop(context, controller.text),
                                 child: const Text('OK'),
                               ),
                             ],
@@ -76,8 +76,7 @@ class PagePointRecordDetail extends StatelessWidget {
                       value: p.value,
                       onChanged: (newValue) {
                         setState(() {
-                          previews[index] =
-                              p.copyWith(value: newValue);
+                          previews[index] = p.copyWith(value: newValue);
                         });
                       },
                     ),
@@ -90,9 +89,8 @@ class PagePointRecordDetail extends StatelessWidget {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: isValid
-                    ? () => Navigator.pop(context, true)
-                    : null,
+                  onPressed:
+                      isValid ? () => Navigator.pop(context, true) : null,
                   child: const Text('Confirm'),
                 ),
               ],
@@ -116,13 +114,17 @@ class PagePointRecordDetail extends StatelessWidget {
         return c;
       },
       child: Scaffold(
+        appBar: AppBar(
+          title: Text(accountName),
+          backgroundColor: Colors.blueAccent, // 可自定義顏色
+          elevation: 2,
+        ),
         body: Consumer2<ControllerPointRecord, ControllerPointRecordAccount>(
           builder: (context, pointsController, accountController, _) {
             final account = accountController.getAccountById(accountId);
             return Column(
               children: [
-                Text(account.accountName),
-                _buildSummary(account, pointsController),
+                Gaps.h8,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -133,7 +135,7 @@ class PagePointRecordDetail extends StatelessWidget {
                         await pointsController.switchType('points');
                       },
                     ),
-                    Gaps.w8,
+                    Gaps.w16,
                     ChoiceChip(
                       label: const Text('Balance'),
                       selected: pointsController.currentType == 'balance',
@@ -141,12 +143,13 @@ class PagePointRecordDetail extends StatelessWidget {
                         await pointsController.switchType('balance');
                       },
                     ),
+                    Gaps.w16,
+                    _buildMicButton(context, pointsController),
                   ],
                 ),
+                _buildSummary(account, pointsController),
                 const Divider(),
                 _buildTodayList(pointsController),
-                const Spacer(),
-                _buildMicButton(context, pointsController),
               ],
             );
           },
@@ -160,7 +163,7 @@ class PagePointRecordDetail extends StatelessWidget {
     final todayTotal =
         controller.todayRecords.fold(0, (sum, r) => sum + r.value);
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           Text('Today ${controller.currentType}：$todayTotal',
@@ -195,7 +198,7 @@ class PagePointRecordDetail extends StatelessWidget {
     final speechController = context.read<ControllerPointRecordSpeech>();
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.zero,
       child: FloatingActionButton(
         child: const Icon(Icons.mic),
         onPressed: () async {
@@ -208,20 +211,17 @@ class PagePointRecordDetail extends StatelessWidget {
           if (previews.isEmpty) return;
 
           // ② 顯示確認 UI
-          final confirmed =
-              await showVoiceConfirmDialog(context, previews);
+          final confirmed = await showVoiceConfirmDialog(context, previews);
 
           if (confirmed != true) return;
-          
+
           final tts = context.read<TtsService>();
 
           // ③ 寫入 DB
           await controller.commitRecords(previews);
 
           // ④ 同步帳戶 totals
-          await context
-            .read<ControllerPointRecordAccount>()
-            .loadAccounts();
+          await context.read<ControllerPointRecordAccount>().loadAccounts();
 
           // ⑤ 語音回饋
           final summary = previews.map((p) {
@@ -249,8 +249,7 @@ class _EditableValue extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        final controller =
-            TextEditingController(text: value.abs().toString());
+        final controller = TextEditingController(text: value.abs().toString());
 
         final result = await showDialog<int>(
           context: context,
@@ -269,8 +268,7 @@ class _EditableValue extends StatelessWidget {
                 onPressed: () {
                   final v = int.tryParse(controller.text);
                   if (v != null) {
-                    Navigator.pop(
-                        context, value >= 0 ? v : -v);
+                    Navigator.pop(context, value >= 0 ? v : -v);
                   }
                 },
                 child: const Text('OK'),
