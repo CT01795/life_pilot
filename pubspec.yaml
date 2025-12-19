@@ -65,6 +65,8 @@ dependencies:
   get_it: ^8.2.0
   webview_flutter: ^4.13.0
   xml: ^6.6.1
+  image_picker: ^1.2.1
+  dio: ^5.9.0
 
 dev_dependencies:
   flutter_test:
