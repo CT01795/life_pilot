@@ -7,7 +7,7 @@ import 'package:life_pilot/pages/event/page_memory_trace.dart';
 import 'package:life_pilot/pages/event/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/event/page_recommended_event.dart';
 import 'package:life_pilot/pages/game/page_game_list.dart';
-import 'package:life_pilot/pages/page_points_record.dart';
+import 'package:life_pilot/pages/page_point_record.dart';
 import 'package:life_pilot/pages/page_settings.dart';
 import 'package:life_pilot/pages/page_type.dart';
 import 'package:provider/provider.dart';
@@ -45,7 +45,7 @@ class _PageMainState extends State<PageMain> {
       case PageType.accountRecords:
         return const PageAccountRecords();
       case PageType.pointsRecord:
-        return const PagePointsRecord();
+        return const PagePointRecord();
       case PageType.game:
         return const PageGameList();
       case PageType.ai:

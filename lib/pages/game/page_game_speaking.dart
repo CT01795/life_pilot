@@ -67,13 +67,16 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     repeatCounts = controller.answer(userAnswer, repeatCounts);
     // 逐字顯示正確答案
     showCorrectAnswer(controller.currentQuestion!.correctAnswer);
-    await Future.delayed(Duration(milliseconds: min(repeatCounts * 1000 + 1000, 1500)));
+    await Future.delayed(
+        Duration(milliseconds: min(repeatCounts * 1000 + 1000, 1500)));
     answerController.clear();
 
     setState(() {
       _isBusy = false; // 🔓 解鎖
     });
-
+    if (repeatCounts == 0) {
+      answeredCount++;
+    }
     if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
@@ -155,16 +158,16 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                   children: [
                     // 第一列：喇叭按鈕 + 題目
                     Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
                             icon: Icon(Icons.volume_up,
                                 size: 50, color: Color(0xFF26A69A)),
-                            onPressed: () =>
-                                speak(controller.currentQuestion!.correctAnswer),
+                            onPressed: () => speak(
+                                controller.currentQuestion!.correctAnswer),
                           ),
                           Gaps.w8,
                           Flexible(
@@ -189,9 +192,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                         children: [
                           IconButton(
                             icon: Icon(
-                              !isRecording ? Icons.mic_none : Icons.stop, // 錄音時顯示停止
+                              !isRecording
+                                  ? Icons.mic_none
+                                  : Icons.stop, // 錄音時顯示停止
                               size: 50,
-                              color: !isRecording ? Color(0xFF26A69A) : Colors.red,
+                              color:
+                                  !isRecording ? Color(0xFF26A69A) : Colors.red,
                             ),
                             onPressed: () async {
                               if (!isRecording) {
@@ -222,7 +228,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                           keyboardType: TextInputType.multiline,
                           textAlign: TextAlign.left,
                           textAlignVertical: TextAlignVertical.top,
-                          style: TextStyle(fontSize: 20, color: Colors.blueAccent),
+                          style:
+                              TextStyle(fontSize: 20, color: Colors.blueAccent),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(),
                             hintText: "Answer here",
