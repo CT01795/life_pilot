@@ -77,14 +77,14 @@ class _PagePointRecordState extends State<PagePointRecord> {
                             }
                           },
                           child: CircleAvatar(
-                            radius: 36,
+                            radius: 60,
                             backgroundColor: Colors.grey[200],
                             child: account.masterGraphUrl != null
                                 ? ClipOval(
                                     child: Image.memory(
                                       account.masterGraphUrl!,
-                                      width: 72,
-                                      height: 72,
+                                      width: 120,
+                                      height: 120,
                                       fit: BoxFit.cover,
                                     ),
                                   )
@@ -158,13 +158,34 @@ class _PagePointRecordState extends State<PagePointRecord> {
                           icon: const Icon(Icons.delete),
                           color: Colors.redAccent,
                           onPressed: () async {
-                            await controller.deleteAccount(account.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content:
-                                    Text('${account.accountName} deleted'),
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                content: Text('Delete ${account.accountName}?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false), // 不刪除
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                    onPressed: () => Navigator.pop(context, true), // 確認刪除
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
                               ),
                             );
+
+                            if (confirm == true) {
+                              await controller.deleteAccount(account.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${account.accountName} deleted'),
+                                ),
+                              );
+                            }
                           },
                         ),
                       ],
@@ -177,7 +198,7 @@ class _PagePointRecordState extends State<PagePointRecord> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 50),
         onPressed: () {
           _showAddDialog(context);
         },
@@ -192,7 +213,6 @@ class _PagePointRecordState extends State<PagePointRecord> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('New'),
         content: TextField(
           controller: textController,
           decoration: const InputDecoration(hintText: 'Account'),
