@@ -212,7 +212,20 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
           final record = controller.todayRecords[index];
           return ListTile(
             key: ValueKey(record.id),
-            title: Text("${record.displayTime}  ${record.description}",),
+            title: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: "${record.displayTime}  ",
+                    style: TextStyle(fontSize: 12, color: Colors.grey), // 時間小一點
+                  ),
+                  TextSpan(
+                    text: record.description,
+                    style: TextStyle(color: Colors.black), // 描述正常大小
+                  ),
+                ],
+              ),
+            ),
             trailing: Text(
               record.value > 0 ? '+${numberFormatter.format(record.value)}' : numberFormatter.format(record.value),
               style: TextStyle(

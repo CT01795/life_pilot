@@ -18,7 +18,7 @@ class ModelPointRecord {
     required this.description,
     required this.type,
     required this.value,
-  }){
+  }) {
     localTime = createdAt.toLocal();
     displayTime = _formatTime(localTime);
   }
@@ -26,7 +26,9 @@ class ModelPointRecord {
   static String _formatTime(DateTime time) {
     final now = DateTime.now();
     return time.year == now.year
-        ? DateFormat('M/d HH:mm').format(time)
+        ? time.month == now.month && time.day == now.day
+            ? DateFormat('HH:mm').format(time)
+            : DateFormat('M/d HH:mm').format(time)
         : DateFormat('yyyy/M/d HH:mm').format(time);
   }
 }
