@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record_speech.dart';
@@ -27,11 +28,20 @@ class PagePointRecordDetail extends StatefulWidget {
 
 class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
   late final TextEditingController _speechTextController;
+  late ControllerPointRecord _controller;
+  final numberFormatter = NumberFormat('#,###');
 
   @override
   void initState() {
     super.initState();
     _speechTextController = TextEditingController();
+    _controller = ControllerPointRecord(
+      widget.service,
+      widget.accountId,
+      context.read<ControllerPointRecordAccount>(),
+    );
+
+  _controller.loadToday(); // ✅ 只載一次
   }
 
   @override
@@ -124,18 +134,19 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
     );
   }
 
+  String formatRecordTime(DateTime time) {
+    final now = DateTime.now();
+
+    if (time.year == now.year) {
+      return DateFormat('M/d HH:mm').format(time);
+    } else {
+      return DateFormat('yyyy/M/d HH:mm').format(time);
+    }
+  }
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) {
-        final c = ControllerPointRecord(
-          widget.service,
-          widget.accountId,
-          context.read<ControllerPointRecordAccount>(),
-        );
-        c.loadToday();
-        return c;
-      },
+    return ChangeNotifierProvider.value(
+      value: _controller,
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.accountName),
@@ -182,13 +193,11 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
 
   Widget _buildSummary(
       ModelPointRecordAccount account, ControllerPointRecord controller) {
-    final todayTotal =
-        controller.todayRecords.fold(0, (sum, r) => sum + r.value);
     return Padding(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          Text('Today ${controller.currentType}：$todayTotal',
+          Text('Today ${controller.currentType}：${numberFormatter.format(controller.todayTotal)}',
               style: const TextStyle(fontSize: 20)),
         ],
       ),
@@ -202,11 +211,13 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
         itemBuilder: (context, index) {
           final record = controller.todayRecords[index];
           return ListTile(
-            title: Text(record.description),
+            key: ValueKey(record.id),
+            title: Text("${record.displayTime}  ${record.description}",),
             trailing: Text(
-              record.value > 0 ? '+${record.value}' : record.value.toString(),
+              record.value > 0 ? '+${numberFormatter.format(record.value)}' : numberFormatter.format(record.value),
               style: TextStyle(
                 color: record.value >= 0 ? Colors.green : Colors.red,
+                fontSize: 18
               ),
             ),
           );
@@ -259,7 +270,23 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
 
               final tts = context.read<TtsService>();
               await controller.commitRecords(previews);
-              await context.read<ControllerPointRecordAccount>().loadAccounts();
+              // ❶ 取這次變動的總值
+              final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
+              // ❷ 更新主頁帳戶
+              final accountController = context.read<ControllerPointRecordAccount>();
+              if (controller.currentType == 'points') {
+                accountController.updateAccountTotals(
+                  accountId: controller.account.id,
+                  deltaPoints: delta,
+                  deltaBalance: 0,
+                );
+              } else {
+                accountController.updateAccountTotals(
+                  accountId: controller.account.id,
+                  deltaPoints: 0,
+                  deltaBalance: delta,
+                );
+              }
 
               final summary = previews.map((p) {
                 final v = p.value;

@@ -15,12 +15,15 @@ class ControllerPointRecordAccount extends ChangeNotifier {
   });
 
   List<ModelPointRecordAccount> accounts = [];
+  bool isLoaded = false;
 
-  Future<void> loadAccounts() async {
-    accounts = await service.fetchAccounts(
+  Future<void> loadAccounts({bool silent = false}) async {
+    final res = await service.fetchAccounts(
       user: auth?.currentAccount?? constEmpty,
     );
-    notifyListeners();
+    accounts = res;
+    isLoaded = true;
+    if (!silent) notifyListeners();
   }
 
   Future<void> createAccount(String name) async {
@@ -48,4 +51,21 @@ class ControllerPointRecordAccount extends ChangeNotifier {
 
   ModelPointRecordAccount getAccountById(String id) =>
       accounts.firstWhere((a) => a.id == id);
+
+  void updateAccountTotals({
+    required String accountId,
+    required int deltaPoints,
+    required int deltaBalance,
+  }) {
+    final index = accounts.indexWhere((a) => a.id == accountId);
+    if (index == -1) return;
+
+    final old = accounts[index];
+    accounts[index] = old.copyWith(
+      points: old.points + deltaPoints,
+      balance: old.balance + deltaBalance,
+    );
+
+    notifyListeners();
+  }
 }

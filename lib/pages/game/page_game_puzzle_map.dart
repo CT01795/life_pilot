@@ -313,8 +313,13 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   Widget _buildPuzzleArea(ControllerGamePuzzleMap ctrl, double puzzleWidth,
       double puzzleHeight, ui.Image inputImage) {
     // 計算圖片在容器中的實際顯示區域
-    final imageRect =
-        _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
+    final imageRect0 =
+    _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
+
+    // 想離邊界多遠（像素）
+    const double padding = 24;
+
+    final imageRect = imageRect0.deflate(padding);
 
     // 只使用圖片區域切格子
     final tileWidth = imageRect.width / rowsCols["cols"]!;

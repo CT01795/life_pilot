@@ -1,11 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/pages/page_point_record_detail.dart';
 import 'package:life_pilot/services/service_point_record.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 
 class PagePointRecord extends StatefulWidget {
   const PagePointRecord({super.key});
@@ -23,8 +25,12 @@ class _PagePointRecordState extends State<PagePointRecord> {
     super.didChangeDependencies();
     if (_isInitialized) return; // 避免重複初始化
     controller = context.read<ControllerPointRecordAccount>();
-    controller.loadAccounts();
+    _loadAccountsAsync();
     _isInitialized = true;
+  }
+
+  Future<void> _loadAccountsAsync() async {
+    await controller.loadAccounts();
   }
 
   @override
@@ -37,12 +43,17 @@ class _PagePointRecordState extends State<PagePointRecord> {
     final formatter = NumberFormat('#,###');
     return Scaffold(
       body: Consumer<ControllerPointRecordAccount>(
-          builder: (context, controller, _) {
-        return ListView.builder(
-          itemCount: controller.accounts.length,
-          itemBuilder: (context, index) {
-            final account = controller.accounts[index];
-            return Card(
+        builder: (context, controller, _) {
+          final accounts = controller.accounts; // 先取目前資料
+          if (accounts.isEmpty) {
+            // 資料還沒載入，先顯示 loading
+            return const Center(child: CircularProgressIndicator());
+          }
+          return ListView.builder(
+            itemCount: accounts.length,
+            itemBuilder: (context, index) {
+              final account = accounts[index];
+              return Card(
                 color: Colors.grey[50], // 卡片背景淺灰
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -51,18 +62,18 @@ class _PagePointRecordState extends State<PagePointRecord> {
                 child: InkWell(
                   onTap: () async {
                     final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PagePointRecordDetail(
-                            service: context.read<ServicePointRecord>(),
-                            accountId: account.id,
-                            accountName: account.accountName,
-                          ),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PagePointRecordDetail(
+                          service: context.read<ServicePointRecord>(),
+                          accountId: account.id,
+                          accountName: account.accountName,
                         ),
-                      );
-                      if (result == true) {
-                        await controller.loadAccounts();
-                      }
+                      ),
+                    );
+                    if (result == true) {
+                      await controller.loadAccounts();
+                    }
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -80,22 +91,48 @@ class _PagePointRecordState extends State<PagePointRecord> {
                                   account.id, pickedFile);
                             }
                           },
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundColor: Colors.grey[200],
-                            child: account.masterGraphUrl != null
-                                ? ClipOval(
-                                    child: Image.memory(
-                                      account.masterGraphUrl!,
-                                      width: 120,
-                                      height: 120,
-                                      fit: BoxFit.cover,
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(16), // 圓角大小
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                children: [
+                                  // 先顯示文字或占位背景
+                                  Container(
+                                    color: Colors.grey[200],
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      account.accountName[0],
+                                      style: const TextStyle(fontSize: 32),
                                     ),
-                                  )
-                                : Text(
-                                    account.accountName[0],
-                                    style: const TextStyle(fontSize: 24),
                                   ),
+                                  // 如果有圖片，慢慢載入
+                                  if (account.masterGraphUrl != null)
+                                    FutureBuilder<Uint8List>(
+                                      future: Future.value(account.masterGraphUrl), // 假裝延遲
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState == ConnectionState.done &&
+                                            snapshot.hasData) {
+                                          return Image.memory(
+                                            snapshot.data!,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                            gaplessPlayback: true,
+                                          );
+                                        } else {
+                                          return const SizedBox.shrink(); // 等圖片到，不會遮住文字
+                                        }
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                         Gaps.w16,
@@ -108,7 +145,7 @@ class _PagePointRecordState extends State<PagePointRecord> {
                               Text(
                                 account.accountName,
                                 style: const TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF212121), // 深灰
                                 ),
@@ -120,16 +157,20 @@ class _PagePointRecordState extends State<PagePointRecord> {
                                   children: [
                                     const TextSpan(
                                       text: 'Points ',
-                                      style: TextStyle(color: Color(0xFF757575)), // 中灰
+                                      style: TextStyle(
+                                          color: Color(0xFF757575),
+                                          fontSize: 20), // 中灰
                                     ),
                                     TextSpan(
-                                      text: formatter.format(account.points),
+                                      text: controller.isLoaded
+                                        ? formatter.format(account.points)
+                                        : '-', // 資料還沒來先顯示 '-'
                                       style: TextStyle(
-                                        color: account.points >= 0
-                                            ? Color(0xFF388E3C) // 綠色
-                                            : Color(0xFFD32F2F), // 紅色
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                          color: account.points >= 0
+                                              ? Color(0xFF388E3C) // 綠色
+                                              : Color(0xFFD32F2F), // 紅色
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20),
                                     ),
                                   ],
                                 ),
@@ -140,16 +181,20 @@ class _PagePointRecordState extends State<PagePointRecord> {
                                   children: [
                                     const TextSpan(
                                       text: 'Balance ',
-                                      style: TextStyle(color: Color(0xFF757575)), // 中灰
+                                      style: TextStyle(
+                                          color: Color(0xFF757575),
+                                          fontSize: 20), // 中灰
                                     ),
                                     TextSpan(
-                                      text: formatter.format(account.balance),
+                                      text: controller.isLoaded
+                                        ? formatter.format(account.balance)
+                                        : '-', // 資料還沒來先顯示 '-'
                                       style: TextStyle(
-                                        color: account.balance >= 0
-                                            ? Color(0xFF388E3C) // 綠色
-                                            : Color(0xFFD32F2F), // 紅色
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                          color: account.balance >= 0
+                                              ? Color(0xFF388E3C) // 綠色
+                                              : Color(0xFFD32F2F), // 紅色
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20),
                                     ),
                                   ],
                                 ),
@@ -168,14 +213,16 @@ class _PagePointRecordState extends State<PagePointRecord> {
                                 content: Text('Delete ${account.accountName}?'),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, false), // 不刪除
+                                    onPressed: () =>
+                                        Navigator.pop(context, false), // 不刪除
                                     child: const Text('Cancel'),
                                   ),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.redAccent,
                                     ),
-                                    onPressed: () => Navigator.pop(context, true), // 確認刪除
+                                    onPressed: () =>
+                                        Navigator.pop(context, true), // 確認刪除
                                     child: const Text('Delete'),
                                   ),
                                 ],
@@ -186,7 +233,8 @@ class _PagePointRecordState extends State<PagePointRecord> {
                               await controller.deleteAccount(account.id);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('${account.accountName} deleted'),
+                                  content:
+                                      Text('${account.accountName} deleted'),
                                 ),
                               );
                             }
