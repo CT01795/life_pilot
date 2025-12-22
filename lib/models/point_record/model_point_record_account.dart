@@ -3,9 +3,9 @@ import 'dart:typed_data';
 class ModelPointRecordAccount {
   final String id;
   final String accountName;
-  Uint8List? masterGraphUrl;
-  int points;
-  int balance;
+  final Uint8List? masterGraphUrl;
+  final int points;
+  final int balance;
 
   ModelPointRecordAccount({
     required this.id,
