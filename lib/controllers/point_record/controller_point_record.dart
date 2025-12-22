@@ -17,6 +17,17 @@ class ControllerPointRecord extends ChangeNotifier {
     this.accountController,
   );
 
+  int todayTotal = 0;
+
+  void _recalculateTodayTotal() {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+
+    todayTotal = todayRecords
+        .where((r) => r.localTime.isAfter(todayStart))
+        .fold(0, (sum, r) => sum + r.value);
+  }
+
   ModelPointRecordAccount get account =>
       accountController.getAccountById(accountId);
 
@@ -29,6 +40,7 @@ class ControllerPointRecord extends ChangeNotifier {
       accountId: account.id,
       type: currentType,
     );
+    _recalculateTodayTotal();
     notifyListeners();
   }
 
@@ -61,18 +73,16 @@ class ControllerPointRecord extends ChangeNotifier {
   }
 }
 
-class NLPService { //TODO
+class NLPService {
   static List<PointRecordParsedResult> parseMulti(String text) {
     final results = <PointRecordParsedResult>[];
 
     // ① 加 / 扣 + 數字（阿拉伯 or 中文）
     final regex = RegExp(
-      r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十]+)\s*(分|點|元)?',
+      r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十兩]+)\s*(分|點|元)?',
     );
 
     for (final m in regex.allMatches(text)) {
-      /*final action =
-          m.group(4)?.trim() == '元' ? 'Accounting' : m.group(1)?.trim() ?? constEmpty;*/
       final action = m.group(1)?.trim() ?? constEmpty;
       if (action.isEmpty) continue;
 
