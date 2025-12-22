@@ -68,6 +68,7 @@ class ControllerPointRecord extends ChangeNotifier {
   }
 
   Future<void> switchType(String type) async {
+    if (currentType == type) return; 
     currentType = type;
     await loadToday();
   }

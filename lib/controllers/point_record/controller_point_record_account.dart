@@ -15,42 +15,56 @@ class ControllerPointRecordAccount extends ChangeNotifier {
   });
 
   List<ModelPointRecordAccount> accounts = [];
+  bool isLoading = false;
   bool isLoaded = false;
 
-  Future<void> loadAccounts({bool silent = false}) async {
-    final res = await service.fetchAccounts(
+  Future<void> loadAccounts() async {
+    isLoading = true;
+    notifyListeners();
+    accounts = await service.fetchAccounts(
       user: auth?.currentAccount?? constEmpty,
     );
-    accounts = res;
+    isLoading = false;
     isLoaded = true;
-    if (!silent) notifyListeners();
+    notifyListeners();
   }
 
   Future<void> createAccount(String name) async {
-    await service.createAccount(
+    final newAccount = await service.createAccount(
       name: name,
       user: auth?.currentAccount?? constEmpty,
     );
-    await loadAccounts();
+    accounts.add(newAccount);
+    notifyListeners();
   }
 
   Future<void> deleteAccount(String accountId) async {
     await service.deleteAccount(accountId: accountId);
-    await loadAccounts();
+    accounts.removeWhere((a) => a.id == accountId);
+    notifyListeners();
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
 
     // 上傳圖片給後端，後端返回可訪問 URL
-    await service.uploadAccountImageBytesDirect(accountId, bytes);
+    final newImage = await service.uploadAccountImageBytesDirect(accountId, bytes);
 
-    // 重新抓最新帳號資料
-    await loadAccounts(); // 這會刷新 accounts list 並通知 UI
+    final index = accounts.indexWhere((a) => a.id == accountId);
+    if (index == -1) return;
+
+    accounts[index] = accounts[index].copyWith(
+      masterGraphUrl: newImage,
+    );
+
+    notifyListeners();
   }
 
   ModelPointRecordAccount getAccountById(String id) =>
-      accounts.firstWhere((a) => a.id == id);
+      accounts.firstWhere(
+        (a) => a.id == id,
+        orElse: () => dummyAccount,
+      );
 
   void updateAccountTotals({
     required String accountId,
@@ -68,4 +82,12 @@ class ControllerPointRecordAccount extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  static final ModelPointRecordAccount dummyAccount =
+      ModelPointRecordAccount(
+    id: '__dummy__',
+    accountName: '',
+    points: 0,
+    balance: 0,
+  );
 }
