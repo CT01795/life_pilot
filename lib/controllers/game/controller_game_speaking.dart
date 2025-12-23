@@ -43,16 +43,25 @@ class ControllerGameSpeaking extends ChangeNotifier {
 
   int answer(String answer, int counts) {
     if (currentQuestion == null) return 0;
+    if (answer.isEmpty) {
+      return counts;
+    } else {
+      counts = counts + 1;
+    }
     String right = currentQuestion!.correctAnswer.toLowerCase();
     String my = answer.toLowerCase();
-    final isRightAnswer = right == my || right.replaceAll(" ", constEmpty).replaceAll(".", constEmpty) == my.replaceAll(" ", constEmpty).replaceAll(".", constEmpty);
+    final isRightAnswer = right == my ||
+        right.replaceAll(" ", constEmpty).replaceAll(".", constEmpty) ==
+            my.replaceAll(" ", constEmpty).replaceAll(".", constEmpty);
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;
       seconds = 1;
+    } else {
+      seconds = 2;
     }
     notifyListeners();
-    if (!isRightAnswer && counts < 3) {
+    if (!isRightAnswer && counts < 2) {
       return counts;
     }
 

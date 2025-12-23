@@ -15,6 +15,7 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
   int score = 0;
   int usedSteps = 0;
   List<EnumMonominoTileDirection> remainingTiles = [];
+  bool _scoreSaved = false;
 
   ControllerGameSteamMonomino(
       {required this.userName,
@@ -38,7 +39,8 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
     int baseSize = 6; // 最低關卡 4x4
     int size =
         baseSize + (levelNumber - 1); // e.g. level 1 -> 4x4, level 2 -> 5x5
-    return ModelGameMonominoLevel(levelNumber: levelNumber, rows: size, cols: size);
+    return ModelGameMonominoLevel(
+        levelNumber: levelNumber, rows: size, cols: size);
   }
 
   void resetLevel() {
@@ -46,11 +48,12 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
     remainingFixed = List.from(level.remainingFixed);
     remainingTiles = List.from(level.tilesToPlace);
     usedSteps = 0;
+    _scoreSaved = false;
     notifyListeners();
   }
 
-  void placeTile(
-      int row, int col, int? fromRow, int? fromCol, EnumMonominoTileDirection? to) {
+  void placeTile(int row, int col, int? fromRow, int? fromCol,
+      EnumMonominoTileDirection? to) {
     if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
 
     ModelGameMonominoTile tileTarget = level.board[row][col];
@@ -64,9 +67,9 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
       remainingTiles.add(tileTarget.direction);
     }
     tileTarget.direction = tileFrom == null ? to! : tileFrom.direction;
-    if(tileFrom == null) {
+    if (tileFrom == null) {
       remainingTiles.remove(to!);
-    }else{
+    } else {
       tileFrom.direction = EnumMonominoTileDirection.empty;
     }
     usedSteps++;
@@ -75,7 +78,7 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
 
   Future<bool> checkPath() async {
     bool ok = level.checkPath(remainingFixed);
-    if (ok) {
+    if (ok && !_scoreSaved) {
       _calculateScore();
       await service.saveUserGameScore(
         newUserName: userName,
@@ -83,6 +86,7 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
         newGameId: gameId, // 使用傳入的 gameId
         newIsPass: true,
       );
+      _scoreSaved = true;
     }
     return ok;
   }

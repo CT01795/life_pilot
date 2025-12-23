@@ -13,6 +13,7 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
   late ModelGamePolyominoLevelData levelData;
   late List<List<ModelGamePolyominoTile>> grid;
   final List<ModelGamePolyominoPipeBlock> placedBlocks = [];
+  bool _scoreSaved = false;
 
   ControllerGameSteamPolyomino(
       {required this.userName,
@@ -36,7 +37,8 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
     // 設定 start/goal 類型
     final start = levelData.start;
     final goal = levelData.goal;
-    grid[levelData.start.y][levelData.start.x].type = EnumPolyominoTileType.start;
+    grid[levelData.start.y][levelData.start.x].type =
+        EnumPolyominoTileType.start;
     grid[levelData.goal.y][levelData.goal.x].type = EnumPolyominoTileType.goal;
 
     final path = levelData.path;
@@ -213,13 +215,15 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
     if (placedBlocks.length != levelData.availableBlocks.length) {
       return false;
     }
-
-    await service.saveUserGameScore(
-      newUserName: userName,
-      newScore: levelData.availableBlocks.length * 10,
-      newGameId: gameId, // 使用傳入的 gameId
-      newIsPass: true,
-    );
+    if(!_scoreSaved){
+      await service.saveUserGameScore(
+        newUserName: userName,
+        newScore: levelData.availableBlocks.length * 10,
+        newGameId: gameId, // 使用傳入的 gameId
+        newIsPass: true,
+      );
+      _scoreSaved = true;
+    }
     return true; // 到達終點且待用水管全部放完
   }
 
