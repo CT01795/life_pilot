@@ -26,11 +26,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   bool showHint = false;
   late ModelGamePuzzleMap map;
   late int gameSize;
-  late Map<String, int> rowsCols;
   ui.Image? puzzleImage;
   ControllerGamePuzzleMap? controller;
-
-  Map<int, Offset> dragOffsets = {}; // 用 piece.currentIndex 當 key
 
   @override
   void initState() {
@@ -82,11 +79,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
-      rowsCols = controller!.setGridSize(img.width, img.height, gameSize);
+      controller!.setGridSize(img.width, img.height, gameSize);
       setState(() {
         puzzleImage = img;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
   }
 
   Future<ui.Image> _loadImage(String path) async {
@@ -95,88 +98,6 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     final codec = await ui.instantiateImageCodec(list);
     final frame = await codec.getNextFrame();
     return frame.image;
-  }
-
-  List<ModelGamePuzzlePiece> _getGroup(ModelGamePuzzlePiece piece) {
-    // 如果已經在正確位置，不能拖
-    if (piece.currentIndex == piece.correctIndex) return [];
-    List<ModelGamePuzzlePiece> group = [piece];
-    return group;
-  }
-
-  void _moveGroup(List<ModelGamePuzzlePiece> group, Offset totalOffset,
-      double tileWidth, double tileHeight) {
-    if (group.isEmpty) return;
-
-    final newIndices = <ModelGamePuzzlePiece, int>{};
-
-    for (var p in group) {
-      final col = p.currentIndex % rowsCols["cols"]!;
-      final row = p.currentIndex ~/ rowsCols["cols"]!;
-
-      final newCol = ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
-              tileWidth) //給手指 15% 的安全邊距
-          .floor()
-          .clamp(0, rowsCols["cols"]! - 1);
-      final newRow = ((row * tileHeight + totalOffset.dy) / tileHeight)
-          .floor()
-          .clamp(0, rowsCols["rows"]! - 1);
-
-      newIndices[p] = newRow * rowsCols["cols"]! + newCol;
-    }
-
-    // 群組內 newIndex 不可重複
-    final indexSet = <int>{};
-    for (final index in newIndices.values) {
-      if (!indexSet.add(index)) {
-        _resetDragOffsets(group);
-        return;
-      }
-    }
-
-    final positionMap = {for (var p in controller!.pieces) p.currentIndex: p};
-
-    // 撞到正確拼圖 → 整組取消
-    for (var entry in newIndices.entries) {
-      final target = positionMap[entry.value];
-      if (target != null &&
-          !group.contains(target) &&
-          target.currentIndex == target.correctIndex &&
-          entry.value != entry.key.currentIndex) {
-        //✔ 真的要移到別人的格子 → 擋 ✔ 只是貼邊、沒換 index → 放行
-        _resetDragOffsets(group);
-        return;
-      }
-    }
-
-    final finalIndices = <ModelGamePuzzlePiece, int>{};
-
-    for (var entry in newIndices.entries) {
-      final p = entry.key;
-      final newIndex = entry.value;
-      final target = positionMap[newIndex];
-
-      if (target != null && !group.contains(target)) {
-        finalIndices[target] = p.currentIndex;
-      }
-
-      finalIndices[p] = newIndex;
-    }
-
-    finalIndices.forEach((piece, index) {
-      piece.currentIndex = index;
-      dragOffsets[index] = Offset.zero;
-    });
-
-    setState(() {});
-  }
-
-  void _resetDragOffsets(List<ModelGamePuzzlePiece> group) {
-    setState(() {
-      for (var p in group) {
-        dragOffsets[p.currentIndex] = Offset.zero;
-      }
-    });
   }
 
   @override
@@ -191,10 +112,19 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+          },
+        ),
         title: const Text("Puzzle map"),
         actions: [
           IconButton(
-            icon: Icon(Icons.lightbulb_outline, color: Colors.white,),
+            icon: Icon(
+              Icons.lightbulb_outline,
+              color: Colors.white,
+            ),
             tooltip: "Hint",
             onPressed: () {
               setState(() {
@@ -206,9 +136,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             onSelected: (size) {
               setState(() {
                 gameSize = size; // 更新 state 中的 gridSize
-                rowsCols = controller!.setGridSize(puzzleImage!.width,
-                    puzzleImage!.height, gameSize); // 重新生成 pieces
-                dragOffsets.clear(); // 清掉舊的拖動偏移
+                controller!.setGridSize(puzzleImage!.width, puzzleImage!.height,
+                    gameSize); // 重新生成 pieces
               });
             },
             itemBuilder: (_) => List.generate(
@@ -252,9 +181,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                   SizedBox(
                     width: puzzleWidth,
                     height: puzzleHeight,
-                    child: _buildPuzzleArea(
-                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
-                  ),
+                    child:  _buildPuzzleArea(
+                      ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
+                    ),
                   Gaps.w16,
                   if (showHint)
                     Expanded(
@@ -286,7 +215,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     width: puzzleWidth,
                     height: puzzleHeight,
                     child: _buildPuzzleArea(
-                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
+                      ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
                   ),
                   Gaps.h16,
                   if (showHint)
@@ -314,7 +243,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       double puzzleHeight, ui.Image inputImage) {
     // 計算圖片在容器中的實際顯示區域
     final imageRect0 =
-    _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
+        _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
 
     // 想離邊界多遠（像素）
     const double padding = 24;
@@ -322,41 +251,36 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     final imageRect = imageRect0.deflate(padding);
 
     // 只使用圖片區域切格子
-    final tileWidth = imageRect.width / rowsCols["cols"]!;
-    final tileHeight = imageRect.height / rowsCols["rows"]!;
+    final tileWidth = imageRect.width / ctrl.colsCount;
+    final tileHeight = imageRect.height / ctrl.rowsCount;
 
     return Stack(
       children: ctrl.pieces.map((piece) {
-        final row = piece.currentIndex ~/ rowsCols["cols"]!;
-        final col = piece.currentIndex % rowsCols["cols"]!;
-        Offset offset = dragOffsets[piece.currentIndex] ?? Offset.zero;
+        return AnimatedBuilder(
+          animation: ctrl,
+          builder: (_, __) {
+            final row = piece.currentIndex ~/ ctrl.colsCount;
+            final col = piece.currentIndex % ctrl.colsCount;
+            Offset offset = ctrl.dragOffsets[piece.currentIndex] ?? Offset.zero;
+        
+            Widget tileChild = _buildPuzzleImage(piece, tileWidth, tileHeight, puzzleImage!, ctrl);
 
-        return Positioned(
-          left: imageRect.left + col * tileWidth + offset.dx,
-          top: imageRect.top + row * tileHeight + offset.dy,
-          width: tileWidth,
-          height: tileHeight,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              final group = _getGroup(piece);
-              if (group.isEmpty) return;
-              setState(() {
-                for (var p in group) {
-                  dragOffsets[p.currentIndex] =
-                      (dragOffsets[p.currentIndex] ?? Offset.zero) +
-                          details.delta;
-                }
-              });
-            },
-            onPanEnd: (details) {
-              final group = _getGroup(piece);
-              final totalOffset =
-                  dragOffsets[piece.currentIndex] ?? Offset.zero;
-              _moveGroup(group, totalOffset, tileWidth, tileHeight);
-            },
-            child: Stack(
+            if (piece.currentIndex != piece.correctIndex) {
+              // 只有沒完成的拼圖才可拖動
+              tileChild = GestureDetector(
+                onPanUpdate: (details) {
+                  ctrl.updateDrag(piece, details.delta);
+                },
+                onPanEnd: (details) {
+                  ctrl.endDrag(piece, tileWidth, tileHeight);
+                },
+                child: tileChild,
+              );
+            }
+
+            tileChild = Stack(
               children: [
-                _buildPuzzleImage(piece, tileWidth, tileHeight, puzzleImage!),
+                tileChild,
                 if (piece.correctIndex != piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -371,43 +295,45 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                 if (piece.correctIndex == piece.currentIndex)
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              border:
-                                  Border.all(color: Colors.yellow, width: 3),
-                            ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          border: Border.all(color: Colors.yellow, width: 3),
+                        ),
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: Icon(
+                            Icons.check_circle,
+                            color: Colors.green.shade800,
+                            size: 20,
                           ),
-                          Positioned(
-                            right: 6,
-                            bottom: 6,
-                            child: Icon(
-                              Icons.check_circle,
-                              color: Colors.green.shade800,
-                              size: 20,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
+              ]
+            );
+
+            return Positioned(
+              left: imageRect.left + col * tileWidth + offset.dx,
+              top: imageRect.top + row * tileHeight + offset.dy,
+              width: tileWidth,
+              height: tileHeight,
+              child: tileChild,
+            );
+          },
         );
       }).toList(),
     );
   }
 
   Widget _buildPuzzleImage(ModelGamePuzzlePiece piece, double tileWidth,
-      double tileHeight, ui.Image inputImage) {
-    final row = piece.correctIndex ~/ rowsCols["cols"]!;
-    final col = piece.correctIndex % rowsCols["cols"]!;
+      double tileHeight, ui.Image inputImage, ControllerGamePuzzleMap ctrl) {
+    final row = piece.correctIndex ~/ ctrl.colsCount;
+    final col = piece.correctIndex % ctrl.colsCount;
 
-    final srcTileW = inputImage.width / rowsCols["cols"]!;
-    final srcTileH = inputImage.height / rowsCols["rows"]!;
+    final srcTileW = inputImage.width / ctrl.colsCount;
+    final srcTileH = inputImage.height / ctrl.rowsCount;
 
     return CustomPaint(
       size: Size(tileWidth, tileHeight),
@@ -456,23 +382,25 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               Navigator.pop(context);
               if (ok) {
                 // 強制跳轉到遊戲頁（不能跳過）
-                final result = widget.gameLevel % 3 == 0 ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameGrammar(
-                        gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
-                      ),
-                    ),
-                  ) : await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameSpeaking(
-                        gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
-                      ),
-                    ),
-                  );
+                final result = widget.gameLevel % 3 == 0
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameGrammar(
+                            gameId: widget.gameId,
+                            gameLevel: widget.gameLevel,
+                          ),
+                        ),
+                      )
+                    : await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameSpeaking(
+                            gameId: widget.gameId,
+                            gameLevel: widget.gameLevel,
+                          ),
+                        ),
+                      );
                 if (result == true) {
                   // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
                   Future.delayed(const Duration(seconds: 1), () {

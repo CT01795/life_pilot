@@ -1,10 +1,31 @@
+import 'package:life_pilot/models/game/model_game_grammar.dart';
 import 'package:life_pilot/models/game/model_game_item.dart';
+import 'package:life_pilot/models/game/model_game_sentence.dart';
+import 'package:life_pilot/models/game/model_game_speaking.dart';
+import 'package:life_pilot/models/game/model_game_translation.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceGame {
   final client = Supabase.instance.client;
-  ServiceGame();
+  
+  //------------------------- 共用 -------------------------
+  Future<void> saveUserGameScore(
+      {required String newUserName,
+      required double newScore,
+      required String? newGameId,
+      bool? newIsPass}) async {
+    if (newScore == 0 || newIsPass == null || newIsPass == false) {
+      return;
+    }
+    await client.from('game_user').insert({
+      'game_id': newGameId,
+      'score': newScore,
+      'name': newUserName,
+      'is_pass': newIsPass,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
 
   Future<List<ModelGameItem>> fetchGames() async {
     final data = await client
@@ -39,19 +60,149 @@ class ServiceGame {
     return data.map((e) => ModelGameUser.fromMap(e)).toList();
   }
 
-  Future<void> saveUserGameScore(
-      {required String newUserName,
-      required double newScore,
-      required String? newGameId,
-      bool? newIsPass}) async {
-    if (newScore == 0 || newIsPass == null || newIsPass == false) {
-      return;
+  //------------------------- Grammar -------------------------
+  Future<ModelGameGrammarQuestion> fetchGrammarQuestion(String userName) async {
+    final result = await client.rpc("get_grammar_question", params: {
+      'user_name': userName,
+    });
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
     }
-    await client.from('game_user').insert({
-      'game_id': newGameId,
-      'score': newScore,
-      'name': newUserName,
-      'is_pass': newIsPass,
+
+    final data = result[0];
+    return ModelGameGrammarQuestion(
+      questionId: data['id'],
+      question: data['question'],
+      correctAnswer: data['correct_answer'],
+      type: data['type'],
+      options: (data['options'] ?? '').split('_')
+    );
+  }
+
+  // 寫入使用者答題紀錄
+  Future<void> submitGrammarAnswer({
+    required String userName,
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    await client.from('game_grammar_user').insert({
+      'user': userName,
+      'question_id': questionId,
+      'answer': answer,
+      'is_right': isRightAnswer,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
+
+  //------------------------- Sentence -------------------------
+  Future<ModelGameSentence> fetchSentenceQuestion(String userName) async {
+    final result = await client.rpc("get_sentence_question", params: {
+      'user_name': userName,
+    });
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+    return ModelGameSentence(
+      questionId: data['id'],
+      question: data['question'],
+      correctAnswer: data['correct_answer'],
+      type: data['type'],
+      options: (data['question'] ?? '').split('_')
+    );
+  }
+
+  // 寫入使用者答題紀錄
+  Future<void> submitSentenceAnswer({
+    required String userName,
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    await client.from('game_sentence_user').insert({
+      'user': userName,
+      'question_id': questionId,
+      'answer': answer,
+      'is_right': isRightAnswer,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
+
+  //------------------------- Speaking -------------------------
+  Future<ModelGameSpeaking> fetchSpeakingQuestion(String userName) async {
+    final result = await client.rpc("get_speaking_question", params: {
+      'user_name': userName,
+    });
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+    return ModelGameSpeaking(
+      questionId: data['id'],
+      question: data['question'],
+      correctAnswer: data['correct_answer'],
+      type: data['type'],
+    );
+  }
+
+  // 寫入使用者答題紀錄
+  Future<void> submitSpeakingAnswer({
+    required String userName,
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    await client.from('game_speaking_user').insert({
+      'user': userName,
+      'question_id': questionId,
+      'answer': answer,
+      'is_right': isRightAnswer,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
+  
+  //------------------------- Translation -------------------------
+  Future<ModelGameTranslation> fetchTranslationQuestion(String userName) async {
+    final result = await client.rpc("get_translation_with_options", params: {
+      'user_name': userName,
+    });
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+
+    return ModelGameTranslation(
+      questionId: data['id'],
+      question: data['question'],
+      correctAnswer: data['correct_answer'],
+      options: [
+        data['correct_answer'],
+        data['wrong1'],
+        data['wrong2'],
+      ]..shuffle()
+    );
+  }
+
+  // 寫入使用者答題紀錄
+  Future<void> submitTranslationAnswer({
+    required String userName,
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    await client.from('game_translation_user').insert({
+      'user': userName,
+      'question_id': questionId,
+      'answer': answer,
+      'is_right': isRightAnswer,
       'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
     });
   }

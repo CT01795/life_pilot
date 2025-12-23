@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_translation.dart';
-import 'package:life_pilot/services/game/service_game_translation.dart';
+import 'package:life_pilot/services/game/service_game.dart';
 
 class ControllerGameTranslation extends ChangeNotifier {
   final String userName;
-  final ServiceGameTranslation service;
+  final ServiceGame service;
   final String gameId;
 
   ModelGameTranslation? currentQuestion;
@@ -38,7 +38,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchQuestion(userName);
+    currentQuestion = await service.fetchTranslationQuestion(userName);
 
     isLoading = false;
     notifyListeners();
@@ -66,7 +66,7 @@ class ControllerGameTranslation extends ChangeNotifier {
       loadNextQuestion();
     });
 
-    service.submitAnswer(
+    service.submitTranslationAnswer(
       userName: userName,
       questionId: currentQuestion!.questionId,
       answer: answer,
@@ -76,9 +76,9 @@ class ControllerGameTranslation extends ChangeNotifier {
 
   Future<void> _saveScore() async {
     await service.saveUserGameScore(
-      userName: userName,
-      score: (score + scoreMinus).toDouble(),
-      gameId: gameId, // 使用傳入的 gameId
+      newUserName: userName,
+      newScore: (score + scoreMinus).toDouble(),
+      newGameId: gameId, // 使用傳入的 gameId
     );
   }
 }

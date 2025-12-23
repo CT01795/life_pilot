@@ -149,6 +149,12 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
       value: _controller,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+            },
+          ),
           title: Text(widget.accountName),
           backgroundColor: Colors.blueAccent, // 可自定義顏色
           elevation: 2,

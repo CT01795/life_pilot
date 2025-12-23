@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/models/game/model_game_grammar.dart';
-import 'package:life_pilot/services/game/service_game_grammar.dart';
+import 'package:life_pilot/services/game/service_game.dart';
 
 class ControllerGameGrammar extends ChangeNotifier {
   final String userName;
-  final ServiceGameGrammar service;
+  final ServiceGame service;
   final String gameId;
   final ModelGameGrammar model;
   bool? isRightAnswer;
@@ -46,7 +46,7 @@ class ControllerGameGrammar extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchQuestion(userName);
+    currentQuestion = await service.fetchGrammarQuestion(userName);
     currentQuestion?.options.shuffle();
     model.currentQuestion = currentQuestion;
 
@@ -67,7 +67,7 @@ class ControllerGameGrammar extends ChangeNotifier {
     notifyListeners();
 
     // async submitAnswer 不阻塞 UI
-    unawaited(service.submitAnswer(
+    unawaited(service.submitGrammarAnswer(
       userName: userName,
       questionId: currentQuestion!.questionId,
       answer: answer,
@@ -82,9 +82,9 @@ class ControllerGameGrammar extends ChangeNotifier {
 
   Future<void> _saveScore() async {
     await service.saveUserGameScore(
-      userName: userName,
-      score: model.player.hp.toDouble(),
-      gameId: gameId, // 使用傳入的 gameId
+      newUserName: userName,
+      newScore: model.player.hp.toDouble(),
+      newGameId: gameId, // 使用傳入的 gameId
     );
   }
 

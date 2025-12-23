@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_grammar.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_grammar.dart';
-import 'package:life_pilot/services/game/service_game_grammar.dart';
+import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
@@ -40,7 +40,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     controller = ControllerGameGrammar(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGameGrammar(),
+      service: ServiceGame(),
       model: ModelGameGrammar()
     );
     
@@ -90,6 +90,12 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
           backgroundColor: Color(0xFFF5F7FA),
           appBar: AppBar(
             backgroundColor: Color(0xFF4DB6AC),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+              },
+            ),
             title: Text("English RPG Adventure (${controller.model.player.hp})"),
           ),
           body: Column(
