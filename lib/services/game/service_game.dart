@@ -8,14 +8,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceGame {
   final client = Supabase.instance.client;
-  
+
   //------------------------- 共用 -------------------------
   Future<void> saveUserGameScore(
       {required String newUserName,
       required double newScore,
       required String? newGameId,
       bool? newIsPass}) async {
-    if (newScore == 0 || newIsPass == null || newIsPass == false) {
+    if (newScore == 0) { //不紀錄0分
       return;
     }
     await client.from('game_user').insert({
@@ -72,12 +72,11 @@ class ServiceGame {
 
     final data = result[0];
     return ModelGameGrammarQuestion(
-      questionId: data['id'],
-      question: data['question'],
-      correctAnswer: data['correct_answer'],
-      type: data['type'],
-      options: (data['options'] ?? '').split('_')
-    );
+        questionId: data['id'],
+        question: data['question'],
+        correctAnswer: data['correct_answer'],
+        type: data['type'],
+        options: (data['options'] ?? '').split('_'));
   }
 
   // 寫入使用者答題紀錄
@@ -108,12 +107,11 @@ class ServiceGame {
 
     final data = result[0];
     return ModelGameSentence(
-      questionId: data['id'],
-      question: data['question'],
-      correctAnswer: data['correct_answer'],
-      type: data['type'],
-      options: (data['question'] ?? '').split('_')
-    );
+        questionId: data['id'],
+        question: data['question'],
+        correctAnswer: data['correct_answer'],
+        type: data['type'],
+        options: (data['question'] ?? '').split('_'));
   }
 
   // 寫入使用者答題紀錄
@@ -166,7 +164,7 @@ class ServiceGame {
       'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
     });
   }
-  
+
   //------------------------- Translation -------------------------
   Future<ModelGameTranslation> fetchTranslationQuestion(String userName) async {
     final result = await client.rpc("get_translation_with_options", params: {
@@ -180,15 +178,14 @@ class ServiceGame {
     final data = result[0];
 
     return ModelGameTranslation(
-      questionId: data['id'],
-      question: data['question'],
-      correctAnswer: data['correct_answer'],
-      options: [
-        data['correct_answer'],
-        data['wrong1'],
-        data['wrong2'],
-      ]..shuffle()
-    );
+        questionId: data['id'],
+        question: data['question'],
+        correctAnswer: data['correct_answer'],
+        options: [
+          data['correct_answer'],
+          data['wrong1'],
+          data['wrong2'],
+        ]..shuffle());
   }
 
   // 寫入使用者答題紀錄

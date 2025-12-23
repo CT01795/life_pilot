@@ -28,10 +28,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   int answeredCount = 0; // 紀錄答了幾題
   late int maxQ;
   bool isRecording = false;
-  int repeatCounts = 0;
   TextEditingController answerController =
       TextEditingController(); // 顯示答案的 TextField
-  bool _isBusy = false;
   late stt.SpeechToText _speech;
 
   @override
@@ -72,24 +70,15 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
   // 呼叫這個方法答題並判斷是否完成題數
   Future<void> onAnswer() async {
-    if (_isBusy) return;
-
-    setState(() {
-      _isBusy = true; // 🔒 鎖畫面
-    });
-
     final userAnswer = answerController.text;
-    repeatCounts = controller.answer(userAnswer, repeatCounts);
+    controller.answer(userAnswer);
     // 逐字顯示正確答案
     showCorrectAnswer(controller.currentQuestion!.correctAnswer);
     await Future.delayed(
-        Duration(milliseconds: min(repeatCounts * 1000 + 1000, 1500)));
+        Duration(milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)));
     answerController.clear();
 
-    setState(() {
-      _isBusy = false; // 🔓 解鎖
-    });
-    if (repeatCounts == 0) {
+    if (controller.isRightAnswer == true || controller.repeatCounts == 2) {
       answeredCount++;
     }
     if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
@@ -216,7 +205,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
         }
 
         return AbsorbPointer(
-          absorbing: _isBusy, // true = 全部不能點
+          absorbing: controller.isBusy, // true = 全部不能點
           child: Stack(
             children: [
               Scaffold(
@@ -329,7 +318,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
               ),
 
               // 🔹 等待遮罩（可選但很推薦）
-              if (_isBusy)
+              if (controller.isBusy)
                 Container(
                   color: Colors.black.withValues(alpha: 0.2),
                 ),
