@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/models/game/model_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
@@ -17,12 +18,34 @@ class ControllerGameTranslation extends ChangeNotifier {
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
+  int answeredCount = 0;
+  int maxQuestions = 10;
+  final FlutterTts flutterTts = FlutterTts();
 
   ControllerGameTranslation({
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.maxQuestions
   });
+
+  Future<void> speak(String text) async {
+    try {
+      flutterTts.stop();
+    } catch (_) {}
+    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    if (containsChinese) {
+      await flutterTts.setLanguage("zh-TW");
+      await flutterTts.setSpeechRate(0.4);
+      await flutterTts.setVolume(1.0);
+    } else {
+      await flutterTts.setLanguage("en-US");
+      await flutterTts.setSpeechRate(0.6);
+      await flutterTts.setVolume(1.0);
+    }
+    flutterTts.speak(text.split('/')[0]);
+  }
+
 
   Future<void> loadNextQuestion() async {
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
@@ -48,6 +71,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     if (currentQuestion == null || lastAnswer != null) return;
 
     lastAnswer = answer;
+    answeredCount++;
     final isRightAnswer = answer == currentQuestion!.correctAnswer;
     int seconds = 1;
     if (isRightAnswer) {
@@ -66,6 +90,9 @@ class ControllerGameTranslation extends ChangeNotifier {
       loadNextQuestion();
     });
 
+    if (answeredCount >= maxQuestions) {
+      isFinished = true;
+    }
     service.submitTranslationAnswer(
       userName: userName,
       questionId: currentQuestion!.questionId,
@@ -80,5 +107,44 @@ class ControllerGameTranslation extends ChangeNotifier {
       newScore: (score + scoreMinus).toDouble(),
       newGameId: gameId, // 使用傳入的 gameId
     );
+  }
+
+  Color getButtonColor(String option) {
+    if (lastAnswer == null) return Color(0xFFE3F2FD);
+    if (option == lastAnswer) {
+      return option == currentQuestion!.correctAnswer ? Color(0xFFC8E6C9) : Color(0xFFFFCDD2);
+    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
+      return Color(0xFFC8E6C9);
+    }
+    return Color(0xFFE3F2FD);
+  }
+
+  Color getBorderColor(String option) {
+    if (lastAnswer == null) return Color(0xFF1976D2);
+    if (option == lastAnswer) {
+      return option == currentQuestion!.correctAnswer ? Color(0xFF388E3C) : Color(0xFFD32F2F);
+    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
+      return Color(0xFF388E3C);
+    }
+    return Color(0xFF1976D2);
+  }
+
+  Icon? getStatusIcon(String option) {
+    if (lastAnswer == null) return null;
+    if (option == lastAnswer) {
+      return option == currentQuestion!.correctAnswer
+          ? Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32)
+          : Icon(Icons.clear_rounded, color: Color(0xFFD32F2F), size: 32);
+    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
+      return Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32);
+    }
+    return null;
+  }
+
+  @override
+  void dispose() {
+    _nextQuestionTimer?.cancel();
+    flutterTts.stop();
+    super.dispose();
   }
 }

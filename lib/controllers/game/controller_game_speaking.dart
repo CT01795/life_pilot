@@ -17,6 +17,10 @@ class ControllerGameSpeaking extends ChangeNotifier {
   bool isLoading = false;
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
 
+  int repeatCounts = 0;
+  bool? isRightAnswer;
+  bool isBusy = false;
+
   ControllerGameSpeaking({
     required this.userName,
     required this.service,
@@ -41,32 +45,41 @@ class ControllerGameSpeaking extends ChangeNotifier {
     notifyListeners();
   }
 
-  int answer(String answer, int counts) {
-    if (currentQuestion == null) return 0;
+  void answer(String answer) {
+    if (currentQuestion == null) return;
     if (answer.isEmpty) {
-      return counts;
-    } else {
-      counts = counts + 1;
+      return;
     }
+    repeatCounts++;
+
     String right = currentQuestion!.correctAnswer.toLowerCase();
     String my = answer.toLowerCase();
-    final isRightAnswer = right == my ||
+    isRightAnswer = right == my ||
         right.replaceAll(" ", constEmpty).replaceAll(".", constEmpty) ==
             my.replaceAll(" ", constEmpty).replaceAll(".", constEmpty);
     int seconds = 1;
-    if (isRightAnswer) {
+    if (isRightAnswer == true) {
       score += 4;
       seconds = 1;
     } else {
       seconds = 2;
     }
-    notifyListeners();
-    if (!isRightAnswer && counts < 2) {
-      return counts;
+
+    if (isRightAnswer != true && repeatCounts < 2) {
+      notifyListeners();
+      return;
     }
+    else if (isRightAnswer != true && repeatCounts == 2) {
+      score += 4;
+    }
+
+    isBusy = true;
+    notifyListeners();
 
     // 用 Timer 2 秒後跳下一題
     _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
+      repeatCounts = 0;
+      isBusy = false;
       loadNextQuestion();
     });
 
@@ -76,7 +89,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
       answer: currentQuestion!.correctAnswer,
       isRightAnswer: true,
     );
-    return 0;
+    notifyListeners();
   }
 
   Future<void> _saveScore() async {

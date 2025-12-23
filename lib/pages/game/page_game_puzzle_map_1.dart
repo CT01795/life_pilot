@@ -394,7 +394,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               Navigator.pop(context);
               if (ok) {
                 // 強制跳轉到遊戲頁（不能跳過）
-                final result = widget.gameLevel % 3 == 0
+                widget.gameLevel % 3 == 0
                     ? await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
@@ -413,13 +413,14 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                           ),
                         ),
                       );
-                if (result == true) {
+                /*if (result == true) {
                   // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
                   Future.delayed(const Duration(seconds: 1), () {
                     if (!mounted) return;
                     Navigator.pop(context, true); // 過關 -> 返回上一頁
                   });
-                }
+                }*/
+                Navigator.pop(context, true); // 過關 -> 返回上一頁
               }
             },
             child: Text("OK"),

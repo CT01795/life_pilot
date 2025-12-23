@@ -25,7 +25,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   late int maxQ;
   late int playerMaxHp;
   late int monsterMaxHp;
-  bool _popped = false;
+  bool _hasPopped = false; // 旗標，避免重複 pop
 
   @override
   void initState() {
@@ -38,13 +38,12 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 1000;
     controller = ControllerGameGrammar(
-      gameId: widget.gameId,
-      userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGame(),
-      model: ModelGameGrammar()
-    );
-    
-    controller.startBattle(widget.gameLevel?? 1);
+        gameId: widget.gameId,
+        userName: auth.currentAccount ?? AuthConstants.guest,
+        service: ServiceGame(),
+        model: ModelGameGrammar());
+
+    controller.startBattle(widget.gameLevel ?? 1);
     playerMaxHp = controller.model.player.hp;
     monsterMaxHp = controller.model.monster!.hp;
   }
@@ -53,7 +52,10 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   void onAnswer(String userAnswer) {
     controller.answer(userAnswer);
 
-    if (widget.gameLevel != null && controller.answeredCount >= maxQ) {
+    if (widget.gameLevel != null &&
+        controller.answeredCount >= maxQ &&
+        !_hasPopped) {
+      _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));
     }
@@ -72,11 +74,12 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        if (controller.isFinished && !_popped) {
-          _popped = true;
+        if (controller.isFinished && !_hasPopped) {
+          _hasPopped = true;
           Future.microtask(() => Navigator.pop(context, true));
           return Center(
-            child: Text("Congratulations! Score: ${controller.model.player.hp}"),
+            child:
+                Text("Congratulations! Score: ${controller.model.player.hp}"),
           );
         }
 
@@ -96,12 +99,14 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                 Navigator.pop(context, true); // 返回上一頁並通知需要刷新
               },
             ),
-            title: Text("English RPG Adventure (${controller.model.player.hp})"),
+            title:
+                Text("English RPG Adventure (${controller.model.player.hp})"),
           ),
           body: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     // 🧑 玩家血條（左側）
@@ -167,7 +172,8 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center, // 🔥 整組置中
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -178,8 +184,11 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                             size: 44,
                             color: Color(0xFF26A69A),
                           ),
-                          onPressed: () =>
-                              speak(controller.currentQuestion!.question.replaceAll("______", controller.currentQuestion!.correctAnswer).replaceAll("<-->", ",")),
+                          onPressed: () => speak(controller
+                              .currentQuestion!.question
+                              .replaceAll("______",
+                                  controller.currentQuestion!.correctAnswer)
+                              .replaceAll("<-->", ",")),
                         ),
                         Gaps.w8, // 🔥 小間距就好
                         Flexible(
@@ -240,7 +249,8 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
               // 第二列：答案填答區
               ...controller.model.currentQuestion!.options.map(
                 (opt) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
