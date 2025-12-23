@@ -7,7 +7,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_puzzle_map.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_puzzle_map.dart';
-import 'package:life_pilot/pages/game/page_game_grammar.dart';
+import 'package:life_pilot/pages/game/page_game_grammar_1.dart';
 import 'package:life_pilot/pages/game/page_game_speaking.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
@@ -41,41 +41,51 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       gameLevel: widget.gameLevel,
     );
     final maps = [
-      "assets/maps/taiwan.png",
-      "assets/maps/taiwan_outlying_islands.png",
-      "assets/maps/penghu.png",
-      "assets/maps/kinmen.png",
-      "assets/maps/lienchiang.png", //5
-      "assets/maps/greenland.png",
-      "assets/maps/little_ryukyu.png",
-      "assets/maps/lanyu.png",
-      "assets/maps/taiwan_outlying_islands.png",
+      "assets/maps/taiwan.png", //台灣
+      "assets/maps/taiwan_outlying_islands.png", //台灣與離島
+      "assets/maps/penghu.png", //澎湖
+      "assets/maps/kinmen.png", //金門
+      "assets/maps/lienchiang.png", //5 馬祖
+      "assets/maps/greenland.png", //綠島
+      "assets/maps/little_ryukyu.png", //小琉球
+      "assets/maps/lanyu.png", //蘭嶼
+      "assets/maps/taiwan_outlying_islands.png", //台灣與離島
       "assets/maps/world.png", //10
-      "assets/maps/east_asia.png",
-      "assets/maps/korea.png",
-      "assets/maps/japan.png",
-      "assets/maps/kansai.png",
-      "assets/maps/okinawa.png", //15
-      "assets/maps/china.png",
-      "assets/maps/east_asia.png",
-      "assets/maps/world.png",
-      "assets/maps/southeast_asia.png",
-      "assets/maps/vietnam.png", //20
-      "assets/maps/thailand.png",
-      "assets/maps/malaysia.png",
-      "assets/maps/singapore.png",
-      "assets/maps/philippines.png",
-      "assets/maps/southeast_asia.png", //25
-      "assets/maps/world.png",
-      "assets/maps/asia.png",
-      "assets/maps/oceania.png",
-      "assets/maps/australia.png",
-      "assets/maps/oceania.png", //30
-      "assets/maps/world.png",
-      "assets/maps/north_america.png",
-      "assets/maps/jianada.png",
-      "assets/maps/north_america.png",
-      "assets/maps/world.png" //35
+      "assets/maps/east_asia.png", //東亞
+      "assets/maps/korea.png", //韓國
+      "assets/maps/japan.png", //日本
+      "assets/maps/kansai.png", //關西
+      "assets/maps/okinawa.png", //15 沖繩
+      "assets/maps/china.png", //中國大陸
+      "assets/maps/east_asia.png", //東亞
+      "assets/maps/world.png", //世界地圖
+      "assets/maps/southeast_asia.png", //東南亞
+      "assets/maps/vietnam.png", //20 越南
+      "assets/maps/thailand.png", //泰國
+      "assets/maps/malaysia.png", //馬來西亞
+      "assets/maps/singapore.png", //新加坡
+      "assets/maps/philippines.png", //菲律賓
+      "assets/maps/southeast_asia.png", //25 東南亞
+      "assets/maps/south_asia.png", //南亞
+      "assets/mapscenter_asia.png", //中亞
+      "assets/maps/world.png", //世界地圖
+      "assets/maps/asia.png", //亞洲
+      "assets/maps/oceania.png", //30 大洋洲
+      "assets/maps/australia.png", //澳大利亞
+      "assets/maps/new_zealand.png", //紐西蘭
+      "assets/maps/oceania.png", //大洋洲
+      "assets/maps/world.png", //世界地圖
+      "assets/maps/north_america.png", //35 北美洲
+      "assets/maps/jianada.png", //加拿大
+      "assets/maps/america.png", //美國
+      "assets/maps/north_america.png", //北美洲
+      "assets/maps/arctic.png", //北極
+      "assets/maps/antarctica.png", //40 南極
+      "assets/maps/central_america.png", //中美洲
+      "assets/maps/south_america.png", //南美洲
+      "assets/maps/europe.png", //歐洲
+      "assets/maps/africa.png", //非洲
+      "assets/maps/world.png" //45
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
