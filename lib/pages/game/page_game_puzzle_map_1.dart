@@ -84,8 +84,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/central_america.png", //中美洲
       "assets/maps/south_america.png", //南美洲
       "assets/maps/europe.png", //歐洲
+      "assets/maps/france.png", //法國
+      "assets/maps/europe.png", //45 歐洲
       "assets/maps/africa.png", //非洲
-      "assets/maps/world.png" //45
+      "assets/maps/world.png" //47
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
