@@ -44,7 +44,7 @@ class ServiceGame {
       required double newScore,
       required String? newGameId,
       bool? newIsPass}) async {
-    if (newScore == 0) {
+    if (newScore == 0 || newIsPass == null || newIsPass == false) {
       return;
     }
     await client.from('game_user').insert({

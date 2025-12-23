@@ -10,6 +10,7 @@ class ControllerGamePuzzleMap {
   late int cols;
   int score = 0;
   late List<ModelGamePuzzlePiece> pieces;
+  bool _scoreSaved = false;
 
   ControllerGamePuzzleMap(
       {required this.userName,
@@ -54,7 +55,7 @@ class ControllerGamePuzzleMap {
 
   Future<bool> checkResult() async {
     bool ok = pieces.every((p) => p.correctIndex == p.currentIndex);
-    if (ok) {
+    if (ok && !_scoreSaved) {
       _calculateScore();
       await service.saveUserGameScore(
         newUserName: userName,
@@ -62,6 +63,7 @@ class ControllerGamePuzzleMap {
         newGameId: gameId, // 使用傳入的 gameId
         newIsPass: true,
       );
+      _scoreSaved = true;
     }
     return ok;
   }

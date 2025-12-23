@@ -8,6 +8,7 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/services/game/service_game_speaking.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // ignore: must_be_immutable
 class PageGameSpeaking extends StatefulWidget {
@@ -31,10 +32,25 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   TextEditingController answerController =
       TextEditingController(); // 顯示答案的 TextField
   bool _isBusy = false;
+  late stt.SpeechToText _speech;
 
   @override
   void initState() {
     super.initState();
+    _speech = stt.SpeechToText();
+
+    _speech.initialize(
+      onStatus: (status) {
+        // debug 用
+        logger.d('Speech status: $status');
+      },
+      onError: (error) {
+        logger.e('Speech error: $error');
+        setState(() {
+          isRecording = false;
+        });
+      },
+    );
 
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
@@ -63,7 +79,6 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     });
 
     final userAnswer = answerController.text;
-    repeatCounts = repeatCounts + 1;
     repeatCounts = controller.answer(userAnswer, repeatCounts);
     // 逐字顯示正確答案
     showCorrectAnswer(controller.currentQuestion!.correctAnswer);
@@ -86,9 +101,10 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
   // 逐字顯示文字
   void showCorrectAnswer(String text) async {
-    if (answerController.text.isNotEmpty) {
-      return;
-    }
+    //if (answerController.text.isNotEmpty) {
+    //  return;
+    //}
+    answerController.clear();
     List<String> tmp = text.split(" ");
     for (int i = 0; i < tmp.length; i++) {
       await Future.delayed(const Duration(milliseconds: 100));
@@ -99,6 +115,61 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
             TextSelection.collapsed(offset: answerController.text.length + 1),
       );
       answerController.value = newValue;
+    }
+  }
+
+  void onSpeechResult(String recognizedText) {
+    if (!isRecording) return;
+
+    answerController.value = TextEditingValue(
+      text: recognizedText,
+      selection: TextSelection.collapsed(offset: recognizedText.length),
+    );
+  }
+
+  Future<void> startSpeechRecognition({
+    required void Function(String text) onResult,
+  }) async {
+    if (_speech.isListening) {
+      await _speech.stop();
+    }
+    final available = await _speech.initialize(
+      onError: (error) {
+        logger.e('Speech error: $error');
+
+        // ⛔ timeout 不當作失敗
+        if (error.errorMsg == 'error_speech_timeout') {
+          return;
+        }
+
+        setState(() {
+          isRecording = false;
+        });
+      },
+    );
+
+    if (!available) return;
+
+    answerController.clear();
+
+    await _speech.listen(
+      localeId: 'en_US',
+      onResult: (result) {
+        if (!isRecording) return;
+        onResult(result.recognizedWords);
+      },
+      listenOptions: stt.SpeechListenOptions(
+        listenMode: stt.ListenMode.confirmation,
+        partialResults: true,
+      ),
+      listenFor: const Duration(seconds: 10), // 🔥 最重要
+      pauseFor: const Duration(seconds: 3), // 🔥 停頓多久才結束
+    );
+  }
+
+  Future<void> stopSpeechRecognition() async {
+    if (_speech.isListening) {
+      await _speech.stop();
     }
   }
 
@@ -165,9 +236,14 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                         children: [
                           IconButton(
                             icon: Icon(Icons.volume_up,
-                                size: 50, color: Color(0xFF26A69A)),
-                            onPressed: () => speak(
-                                controller.currentQuestion!.correctAnswer),
+                                size: 50,
+                                color: isRecording
+                                    ? Colors.grey
+                                    : Color(0xFF26A69A)),
+                            onPressed: isRecording
+                                ? null // 🔒 錄音中不能按
+                                : () => speak(
+                                    controller.currentQuestion!.correctAnswer),
                           ),
                           Gaps.w8,
                           Flexible(
@@ -205,11 +281,16 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                                 setState(() {
                                   isRecording = true;
                                 });
+                                // 🚀 開始語音辨識
+                                startSpeechRecognition(
+                                    onResult: onSpeechResult);
                               } else {
-                                onAnswer(); // 停止後立即提交答案
+                                // ⏹ 停止錄音
+                                stopSpeechRecognition();
                                 setState(() {
                                   isRecording = false;
                                 });
+                                onAnswer(); // 停止後立即提交答案
                               }
                             },
                           ),

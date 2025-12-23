@@ -5,7 +5,6 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_grammar.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/models/game/model_game_grammar.dart';
 import 'package:life_pilot/services/game/service_game_grammar.dart';
 import 'package:provider/provider.dart';
@@ -22,17 +21,19 @@ class PageGameGrammar extends StatefulWidget {
 
 class _PageGameGrammarState extends State<PageGameGrammar> {
   late final ControllerGameGrammar controller;
-  bool _hasPopped = false; // 旗標，避免重複 pop
-  final FlutterTts flutterTts = FlutterTts(); // TTS 實例
-  int answeredCount = 0; // 紀錄答了幾題
+  late final FlutterTts flutterTts; // TTS 實例
   late int maxQ;
-  bool? isRightAnswer; // 答案對錯
   late int playerMaxHp;
   late int monsterMaxHp;
+  bool _popped = false;
 
   @override
   void initState() {
     super.initState();
+    flutterTts = FlutterTts();
+    flutterTts.setVolume(1.0);
+    flutterTts.setSpeechRate(0.6); // 預設語速
+    flutterTts.setLanguage("en-US");
 
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 1000;
@@ -43,16 +44,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
       model: ModelGameGrammar()
     );
     
-    // 🔥 當題目載入時，更新 currentOrder 並打亂
-    controller.addListener(() {
-      if (controller.currentQuestion != null) {
-        setState(() {
-          controller.currentQuestion!.options.shuffle();
-          isRightAnswer = null;
-        });
-      }
-    });
-    controller.startBattle();
+    controller.startBattle(widget.gameLevel?? 1);
     playerMaxHp = controller.model.player.hp;
     monsterMaxHp = controller.model.monster!.hp;
   }
@@ -60,37 +52,19 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   // 呼叫這個方法答題並判斷是否完成題數
   void onAnswer(String userAnswer) {
     controller.answer(userAnswer);
-    answeredCount++;
-    isRightAnswer = userAnswer == controller.currentQuestion!.correctAnswer;
 
-    if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
-      _hasPopped = true;
+    if (widget.gameLevel != null && controller.answeredCount >= maxQ) {
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));
-    } else {
-      setState(() {}); // 更新 UI
     }
   }
 
   Future<void> speak(String text) async {
-    try {
-      // 不 await stop，避免阻塞
-      flutterTts.stop();
-    } catch (e, st) {
-      logger.e(e.toString() + st.toString());
-    }
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    if (containsChinese) {
-      await flutterTts.setLanguage("zh-TW");
-      await flutterTts.setSpeechRate(0.4); // 🟢 中文語速（超重要）
-      await flutterTts.setVolume(1.0); // 中文預設會比較小聲 → 拉滿
-      flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
-    } else {
-      await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.6); // 🟢 英文語速
-      await flutterTts.setVolume(1.0);
-      flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
-    }
+    if (text.isEmpty) return;
+    //final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    //await flutterTts.setLanguage(containsChinese ? "zh-TW" : "en-US");
+    //await flutterTts.setSpeechRate(containsChinese ? 0.4 : 0.6); // 🟢 語速
+    await flutterTts.speak(text.split('/')[0]);
   }
 
   @override
@@ -98,13 +72,11 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        if (controller.isFinished && !_hasPopped) {
-          _hasPopped = true;
+        if (controller.isFinished && !_popped) {
+          _popped = true;
           Future.microtask(() => Navigator.pop(context, true));
-          return Scaffold(
-            body: Center(
-              child: Text("Congratulations! Score: ${controller.model.player.hp}"),
-            ),
+          return Center(
+            child: Text("Congratulations! Score: ${controller.model.player.hp}"),
           );
         }
 
@@ -221,13 +193,13 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                   ),
                 ),
               ),
-              if (isRightAnswer != null)
+              if (controller.isRightAnswer != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Container(
                     padding: EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: isRightAnswer == true
+                      color: controller.isRightAnswer == true
                           ? Color(0xFF81C784)
                           : Color(0xFFE57373),
                       borderRadius: BorderRadius.circular(12),
@@ -236,7 +208,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          isRightAnswer == true
+                          controller.isRightAnswer == true
                               ? Icons.check_circle
                               : Icons.cancel,
                           color: Colors.white,
