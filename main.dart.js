@@ -120391,7 +120391,7 @@ A.Pd.prototype={
 gaNN(a){var s=this.e
 s===$&&A.a()
 return s},
-au(){var s,r,q=this,p="assets/maps/taiwan_outlying_islands.png",o="assets/maps/world.png",n="assets/maps/east_asia.png",m="assets/maps/southeast_asia.png",l="assets/maps/oceania.png",k="assets/maps/north_america.png",j="assets/maps/europe.png"
+au(){var s,r,q=this,p="assets/maps/taiwan_outlying_islands.png",o="assets/maps/world.png",n="assets/maps/east_asia.png",m="assets/maps/southeast_asia.png",l="assets/maps/oceania.png",k="assets/maps/north_america.png"
 q.b0()
 q.f=4
 s=q.c
@@ -120401,7 +120401,7 @@ if(s==null)s="Guest"
 r=$.fq().b
 r===$&&A.a()
 q.w=new A.UR(s,new A.mA(r),q.a.c,A.w(t.S,t.A),new A.aR(Date.now(),0,!1),$.aa())
-r=["assets/maps/taiwan.png",p,"assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/lienchiang.png","assets/maps/greenland.png","assets/maps/little_ryukyu.png","assets/maps/lanyu.png",p,o,n,"assets/maps/korea.png","assets/maps/japan.png","assets/maps/kansai.png","assets/maps/okinawa.png","assets/maps/china.png",n,o,m,"assets/maps/vietnam.png","assets/maps/thailand.png","assets/maps/malaysia.png","assets/maps/singapore.png","assets/maps/philippines.png",m,"assets/maps/south_asia.png","assets/mapscenter_asia.png",o,"assets/maps/asia.png",l,"assets/maps/australia.png","assets/maps/new_zealand.png",l,o,k,"assets/maps/jianada.png","assets/maps/america.png",k,"assets/maps/arctic.png","assets/maps/antarctica.png","assets/maps/central_america.png","assets/maps/south_america.png",j,"assets/maps/france.png",j,"assets/maps/africa.png",o][q.a.d-1]
+r=["assets/maps/taiwan.png",p,"assets/maps/penghu.png","assets/maps/kinmen.png","assets/maps/lienchiang.png","assets/maps/greenland.png","assets/maps/little_ryukyu.png","assets/maps/lanyu.png",p,o,n,"assets/maps/korea.png","assets/maps/japan.png","assets/maps/kansai.png","assets/maps/okinawa.png","assets/maps/china.png",n,o,m,"assets/maps/vietnam.png","assets/maps/thailand.png","assets/maps/malaysia.png","assets/maps/singapore.png","assets/maps/philippines.png",m,"assets/maps/south_asia.png","assets/mapscenter_asia.png","assets/maps/asia.png",o,l,"assets/maps/australia.png","assets/maps/new_zealand.png",l,o,k,"assets/maps/jianada.png","assets/maps/america.png",k,"assets/maps/arctic.png","assets/maps/antarctica.png","assets/maps/world.pngassets/maps/central_america.png","assets/maps/south_america.png","assets/maps/europe.png","assets/maps/france.png","assets/maps/africa.png",o][q.a.d-1]
 q.e=new A.aAa(r)
 q.vm(r).cr(new A.aVR(q),t.P)},
 l(){var s=this.w
