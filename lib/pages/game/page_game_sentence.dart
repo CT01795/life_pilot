@@ -7,7 +7,7 @@ import 'package:life_pilot/controllers/game/controller_game_sentence.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/models/game/model_game_sentence.dart';
-import 'package:life_pilot/services/game/service_game_sentence.dart';
+import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -41,7 +41,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     controller = ControllerGameSentence(
       gameId: widget.gameId,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGameSentence(),
+      service: ServiceGame(),
     );
 
     // 🔥 當題目載入時，更新 currentOrder 並打亂
@@ -129,6 +129,12 @@ class _PageGameSentenceState extends State<PageGameSentence> {
           backgroundColor: Color(0xFFF5F7FA),
           appBar: AppBar(
             backgroundColor: Color(0xFF4DB6AC),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+              },
+            ),
             title: Text("Word and sentence builder (${controller.score}/100)"),
           ),
           body: Column(

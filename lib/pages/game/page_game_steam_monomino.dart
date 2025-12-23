@@ -112,6 +112,12 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+          },
+        ),
         title: Text("Monomino Game"),
       ),
       body: Column(

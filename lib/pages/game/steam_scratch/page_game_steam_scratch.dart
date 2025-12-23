@@ -237,7 +237,14 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text('Scratch Game')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+          },
+        ),
+        title: Text('Scratch Game')),
       body: Row(
         children: [
           // -----------------------------------------------------------------
