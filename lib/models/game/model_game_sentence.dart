@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 class ModelGameSentence {
   final String questionId;
   final String question;
@@ -14,6 +15,12 @@ class ModelGameSentence {
     required this.type,
     this.isRight,
   });
+
+  String buildUserAnswer(List<WordItem?> slots) {
+  return slots
+    .map((e) => e?.text ?? '')
+    .join(type == 'word' ? '' : ' ');
+}
 }
 
 class WordItem {
@@ -21,4 +28,18 @@ class WordItem {
   final String text;
 
   WordItem({required this.id, required this.text});
+}
+
+class GameState {
+  List<WordItem> options;
+  List<WordItem?> answerSlots;
+  bool? isRightAnswer;
+  int answeredCount;
+
+  GameState({
+    required this.options,
+    required this.answerSlots,
+    required this.isRightAnswer,
+    required this.answeredCount,
+  });
 }
