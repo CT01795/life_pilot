@@ -68,8 +68,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/southeast_asia.png", //25 東南亞
       "assets/maps/south_asia.png", //南亞
       "assets/mapscenter_asia.png", //中亞
-      "assets/maps/world.png", //世界地圖
       "assets/maps/asia.png", //亞洲
+      "assets/maps/world.png", //世界地圖
       "assets/maps/oceania.png", //30 大洋洲
       "assets/maps/australia.png", //澳大利亞
       "assets/maps/new_zealand.png", //紐西蘭
@@ -81,13 +81,13 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/north_america.png", //北美洲
       "assets/maps/arctic.png", //北極
       "assets/maps/antarctica.png", //40 南極
+      "assets/maps/world.png" //世界地圖
       "assets/maps/central_america.png", //中美洲
       "assets/maps/south_america.png", //南美洲
       "assets/maps/europe.png", //歐洲
-      "assets/maps/france.png", //法國
-      "assets/maps/europe.png", //45 歐洲
+      "assets/maps/france.png", //45 法國
       "assets/maps/africa.png", //非洲
-      "assets/maps/world.png" //47
+      "assets/maps/world.png" //47 世界地圖
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
