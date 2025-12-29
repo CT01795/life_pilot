@@ -28,7 +28,6 @@ class ControllerPageMain extends ChangeNotifier {
             : PageType.personalEvent {
     if(_auth.isLoggedIn){
       loadModulesFromServer();
-      _validateSelectedPage(); // ✅ 放到 constructor body 裡
     }
   }
 
@@ -104,7 +103,6 @@ class ControllerPageMain extends ChangeNotifier {
     if (changed) {
       if(_auth.isLoggedIn){
         loadModulesFromServer();
-        _validateSelectedPage();
       }
       _notifyDebounced();
     }
@@ -114,6 +112,7 @@ class ControllerPageMain extends ChangeNotifier {
   Future<void> loadModulesFromServer() async {
     dbPages =
         await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
+    _validateSelectedPage(); 
     notifyListeners();
   }
 
