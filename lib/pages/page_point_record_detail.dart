@@ -272,7 +272,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
               controller: _speechTextController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'Input',
+                hintText: '...加/扣...分/元',
               ),
               maxLines: 1,
             ),
