@@ -155,6 +155,9 @@ class _AccountCard extends StatelessWidget {
                       final picker = ImagePicker();
                       final pickedFile = await picker.pickImage(
                         source: ImageSource.gallery,
+                        maxWidth: 512,
+                        maxHeight: 512,
+                        imageQuality: 75,
                       );
                       if (pickedFile != null) {
                         await context
