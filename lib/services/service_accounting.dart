@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/models/point_record/model_point_record.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/models/accounting/model_accounting.dart';
+import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide MultipartFile;
 import 'package:dio/dio.dart';
 
-class ServicePointRecord {
+class ServiceAccounting {
   final Dio dio;
 
-  ServicePointRecord(this.dio);
+  ServiceAccounting(this.dio);
 
   final supabase = Supabase.instance.client;
 
@@ -29,11 +29,11 @@ class ServicePointRecord {
     return null;
   }
 
-  Future<List<ModelPointRecordAccount>> fetchAccounts({
+  Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
   }) async {
     final res = await supabase
-        .from('point_record_account')
+        .from('accounting_account')
         .select()
         .eq('created_by', user)
         .eq('is_valid', true)
@@ -44,7 +44,7 @@ class ServicePointRecord {
         decodeBase64InIsolate,
         e['master_graph_url'],
       );
-      return ModelPointRecordAccount(
+      return ModelAccountingAccount(
         id: e['id'],
         accountName: e['account'],
         masterGraphUrl: bytes,
@@ -54,13 +54,13 @@ class ServicePointRecord {
     }));
   }
 
-  Future<ModelPointRecordAccount> createAccount({
+  Future<ModelAccountingAccount> createAccount({
     required String name,
     required String user,
   }) async {
     // 先檢查是否有重複帳戶
     final res = await supabase
-        .from('point_record_account')
+        .from('accounting_account')
         .select('id, is_valid')
         .eq('created_by', user)
         .eq('account', name)
@@ -71,14 +71,14 @@ class ServicePointRecord {
       if (res['is_valid'] == false) {
         // 帳戶存在但被刪除 → 直接改成 true
         result = await supabase
-            .from('point_record_account')
+            .from('accounting_account')
             .update({'is_valid': true}).eq('id', res['id'])
             .select().single();
       } else {
         throw Exception('Account already exists'); // 已存在有效帳戶
       }
     } else {
-      result = await supabase.from('point_record_account').insert({
+      result = await supabase.from('accounting_account').insert({
         'account': name,
         'created_by': user,
         'points': 0,
@@ -86,9 +86,9 @@ class ServicePointRecord {
       })
       .select().single();
     }
-    
+
     final bytes = parseMasterGraph(result['master_graph_url']);
-    return ModelPointRecordAccount(
+    return ModelAccountingAccount(
       id: result['id'],
       accountName: result['account'],
       masterGraphUrl: bytes,
@@ -101,7 +101,7 @@ class ServicePointRecord {
     required String accountId,
   }) async {
     await supabase
-        .from('point_record_account')
+        .from('accounting_account')
         .update({'is_valid': false}).eq('id', accountId);
   }
 
@@ -112,7 +112,7 @@ class ServicePointRecord {
       final base64Str = base64Encode(imageBytes);
       // Mobile / Web 統一存 bytea (Uint8List)
       await supabase
-          .from('point_record_account')
+          .from('accounting_account')
           .update({'master_graph_url': base64Str}).eq('id', accountId);
       return imageBytes;
     } catch (e, st) {
@@ -122,12 +122,12 @@ class ServicePointRecord {
   }
 
   // ===== 明細 =====
-  Future<List<ModelPointRecord>> fetchTodayRecords({
+  Future<List<ModelAccounting>> fetchTodayRecords({
     required String accountId,
     required String type,
   }) async {
     final res = await supabase.rpc(
-      'fetch_today_point_records',
+      'fetch_today_accountings',
       params: {
         'p_account_id': accountId,
         'p_type': type,
@@ -138,7 +138,7 @@ class ServicePointRecord {
     final end = start.add(const Duration(days: 1));
 
     final res = await supabase
-        .from('point_record_detail')
+        .from('accounting_detail')
         .select()
         .eq('account_id', accountId)
         .eq('type', type)
@@ -147,7 +147,7 @@ class ServicePointRecord {
         .order('created_at', ascending: false);
     */
     return (res as List)
-        .map((e) => ModelPointRecord(
+        .map((e) => ModelAccounting(
               id: e['id'],
               accountId: e['account_id'],
               createdAt: DateTime.parse(e['created_at']),
@@ -161,10 +161,10 @@ class ServicePointRecord {
   Future<void> insertRecordsBatch({
     required String accountId,
     required String type,
-    required List<PointRecordPreview> records,
+    required List<AccountingPreview> records,
   }) async {
     await supabase.rpc(
-      'add_point_records_batch',
+      'add_accountings_batch',
       params: {
         'p_account_id': accountId,
         'p_type': type,

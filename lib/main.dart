@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
 import 'package:life_pilot/config/config_app.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
@@ -19,6 +21,7 @@ import 'package:life_pilot/pages/page_point_record_detail.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
+import 'package:life_pilot/services/service_accounting.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
 import 'package:life_pilot/services/service_point_record.dart';
 import 'package:life_pilot/services/service_timezone.dart';
@@ -75,8 +78,14 @@ void main() async {
         Provider<ServicePointRecord>(
           create: (_) => ServicePointRecord(Dio()),
         ),
+        Provider<ServiceAccounting>(
+          create: (_) => ServiceAccounting(Dio()),
+        ),
         Provider<ControllerPointRecordSpeech>(
           create: (_) => ControllerPointRecordSpeech(),
+        ),
+        Provider<ControllerAccountingSpeech>(
+          create: (_) => ControllerAccountingSpeech(),
         ),
         Provider<TtsService>(
           create: (_) => TtsService(),
@@ -92,6 +101,24 @@ void main() async {
           ),
           update: (_, service, auth, controller) {
             controller ??= ControllerPointRecordAccount(
+              service: service,
+              auth: auth,
+            );
+            controller.auth = auth;
+            return controller;
+          },
+        ),
+        ChangeNotifierProxyProvider2<
+          ServiceAccounting,
+          ControllerAuth,
+          ControllerAccountingAccount
+        >(
+          create: (context) => ControllerAccountingAccount(
+            service: context.read<ServiceAccounting>(),
+            auth: context.read<ControllerAuth>(),
+          ),
+          update: (_, service, auth, controller) {
+            controller ??= ControllerAccountingAccount(
               service: service,
               auth: auth,
             );

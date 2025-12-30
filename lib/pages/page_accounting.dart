@@ -3,29 +3,29 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/pages/page_point_record_detail.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/pages/page_accounting_detail.dart';
+import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
-class PagePointRecord extends StatefulWidget {
-  const PagePointRecord({super.key});
+class PageAccounting extends StatefulWidget {
+  const PageAccounting({super.key});
 
   @override
-  State<PagePointRecord> createState() => _PagePointRecordState();
+  State<PageAccounting> createState() => _PageAccountingState();
 }
 
-class _PagePointRecordState extends State<PagePointRecord> {
-  late final ControllerPointRecordAccount controller;
+class _PageAccountingState extends State<PageAccounting> {
+  late final ControllerAccountingAccount controller;
   bool _isInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_isInitialized) return; // 避免重複初始化
-    controller = context.read<ControllerPointRecordAccount>();
+    controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadAccounts();
@@ -41,14 +41,14 @@ class _PagePointRecordState extends State<PagePointRecord> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Selector<ControllerPointRecordAccount, bool>(
+      body: Selector<ControllerAccountingAccount, bool>(
         selector: (_, c) => c.isLoading,
         builder: (context, isLoading, _) {
           if (isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return Selector<ControllerPointRecordAccount, List<ModelPointRecordAccount>>(
+          return Selector<ControllerAccountingAccount, List<ModelAccountingAccount>>(
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
               if (accounts.isEmpty) {
@@ -80,7 +80,7 @@ class _PagePointRecordState extends State<PagePointRecord> {
   }
 
   void _showAddDialog(BuildContext context) {
-    final controller = context.read<ControllerPointRecordAccount>();
+    final controller = context.read<ControllerAccountingAccount>();
     final textController = TextEditingController();
 
     showDialog(
@@ -124,7 +124,7 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ControllerPointRecordAccount, ModelPointRecordAccount>(
+    return Selector<ControllerAccountingAccount, ModelAccountingAccount>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) =>
           prev.points != next.points ||
@@ -147,8 +147,8 @@ class _AccountCard extends StatelessWidget {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => PagePointRecordDetail(
-                    service: context.read<ServicePointRecord>(),
+                  builder: (_) => PageAccountingDetail(
+                    service: context.read<ServiceAccounting>(),
                     accountId: account.id,
                     accountName: account.accountName,
                   ),
@@ -172,7 +172,7 @@ class _AccountCard extends StatelessWidget {
                       );
                       if (pickedFile != null) {
                         await context
-                            .read<ControllerPointRecordAccount>()
+                            .read<ControllerAccountingAccount>()
                             .updateAccountImage(account.id, pickedFile);
                       }
                     },
@@ -222,20 +222,21 @@ class _AccountCard extends StatelessWidget {
                           ),
                         ),
                         Gaps.h4,
-                        // Points
+                        // Balance
                         Text.rich(
                           TextSpan(
                             children: [
                               const TextSpan(
-                                text: 'Points ',
+                                text: 'Balance ',
                                 style: TextStyle(
                                     color: Color(0xFF757575),
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: formatter.format(account.points),
+                                text: formatter
+                                    .format(account.balance), // 資料還沒來先顯示 '-'
                                 style: TextStyle(
-                                    color: account.points >= 0
+                                    color: account.balance >= 0
                                         ? Color(0xFF388E3C) // 綠色
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
@@ -272,7 +273,7 @@ class _AccountCard extends StatelessWidget {
 
                       if (confirm == true) {
                         await context
-                            .read<ControllerPointRecordAccount>()
+                            .read<ControllerAccountingAccount>()
                             .deleteAccount(account.id);
                       }
                     },

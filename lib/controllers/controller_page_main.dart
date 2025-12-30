@@ -6,6 +6,7 @@ import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/page_type.dart';
 import 'package:life_pilot/services/service_module.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ControllerPageMain extends ChangeNotifier {
   ControllerAuth _auth;
@@ -44,6 +45,7 @@ class ControllerPageMain extends ChangeNotifier {
         PageType.recommendedEvent,
         PageType.recommendedAttractions,
         PageType.game,
+        PageType.ai,
       ];
     }
 
@@ -53,6 +55,7 @@ class ControllerPageMain extends ChangeNotifier {
       PageType.recommendedEvent,
       PageType.recommendedAttractions,
       PageType.game,
+      PageType.ai,
     ];
 
     // ⭐ optional 功能（依 DB 開放）
@@ -60,7 +63,6 @@ class ControllerPageMain extends ChangeNotifier {
       "memoryTrace": PageType.memoryTrace,
       "accountRecords": PageType.accountRecords,
       "pointsRecord": PageType.pointsRecord,
-      "ai": PageType.ai,
     };
 
     for (final key in dbPages) {
@@ -69,18 +71,36 @@ class ControllerPageMain extends ChangeNotifier {
       }
     }
     pages.remove(PageType.game);
+    pages.remove(PageType.ai);
     // 最後加遊戲頁
     pages.add(PageType.game);
+    pages.add(PageType.ai);
 
     return pages;
   }
 
   // ✅ 切換頁面（若不同才觸發 notify）
   void changePage(PageType newPage) {
+    // ⭐ AI → 直接開外部瀏覽器，不切頁
+    if (newPage == PageType.ai) {
+      _openAI();
+      return;
+    }
     if (newPage == _selectedPage) return;
     _selectedPage = newPage;
     _validateSelectedPage();
     _notifyDebounced();
+  }
+
+  Future<void> _openAI() async {
+    final uri = Uri.parse('https://chatgpt.com/zh-TW');
+
+    if (!await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    )) {
+      logger.e('❌ 無法開啟 ChatGPT');
+    }
   }
 
   // ✅ 更新語系與登入資訊

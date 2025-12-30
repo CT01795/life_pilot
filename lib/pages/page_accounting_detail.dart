@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_speech.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
-class PagePointRecordDetail extends StatefulWidget {
+class PageAccountingDetail extends StatefulWidget {
   final String accountId;
   final String accountName;
-  final ServicePointRecord service;
+  final ServiceAccounting service;
 
-  const PagePointRecordDetail({
+  const PageAccountingDetail({
     super.key,
     required this.service,
     required this.accountId,
@@ -23,22 +23,22 @@ class PagePointRecordDetail extends StatefulWidget {
   });
 
   @override
-  State<PagePointRecordDetail> createState() => _PagePointRecordDetailState();
+  State<PageAccountingDetail> createState() => _PageAccountingDetailState();
 }
 
-class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
+class _PageAccountingDetailState extends State<PageAccountingDetail> {
   late final TextEditingController _speechTextController;
-  late ControllerPointRecord _controller;
+  late ControllerAccounting _controller;
   final numberFormatter = NumberFormat('#,###');
 
   @override
   void initState() {
     super.initState();
     _speechTextController = TextEditingController();
-    _controller = ControllerPointRecord(
+    _controller = ControllerAccounting(
       widget.service,
       widget.accountId,
-      context.read<ControllerPointRecordAccount>(),
+      context.read<ControllerAccountingAccount>(),
     );
 
   _controller.loadToday(); // ✅ 只載一次
@@ -52,7 +52,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
 
   Future<bool?> showVoiceConfirmDialog(
     BuildContext context,
-    List<PointRecordPreview> previews,
+    List<AccountingPreview> previews,
   ) {
     return showDialog<bool>(
       context: context,
@@ -159,7 +159,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
           backgroundColor: Colors.blueAccent, // 可自定義顏色
           elevation: 2,
         ),
-        body: Consumer2<ControllerPointRecord, ControllerPointRecordAccount>(
+        body: Consumer2<ControllerAccounting, ControllerAccountingAccount>(
           builder: (context, pointsController, accountController, _) {
             final account = accountController.getAccountById(widget.accountId);
             return Column(
@@ -198,7 +198,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
   }
 
   Widget _buildSummary(
-      ModelPointRecordAccount account, ControllerPointRecord controller) {
+      ModelAccountingAccount account, ControllerAccounting controller) {
     return Padding(
       padding: EdgeInsets.zero,
       child: Column(
@@ -210,7 +210,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
     );
   }
 
-  Widget _buildTodayList(ControllerPointRecord controller) {
+  Widget _buildTodayList(ControllerAccounting controller) {
     return Expanded(
       child: ListView.builder(
         itemCount: controller.todayRecords.length,
@@ -246,7 +246,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerPointRecord controller) {
+      BuildContext context, ControllerAccounting controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -256,7 +256,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
               final speechController =
-                  context.read<ControllerPointRecordSpeech>();
+                  context.read<ControllerAccountingSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {
@@ -272,7 +272,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
               controller: _speechTextController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: '...加/扣...分',
+                hintText: '...加/扣...元',
               ),
               maxLines: 1,
             ),
@@ -292,7 +292,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
               // ❶ 取這次變動的總值
               final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
               // ❷ 更新主頁帳戶
-              final accountController = context.read<ControllerPointRecordAccount>();
+              final accountController = context.read<ControllerAccountingAccount>();
               if (controller.currentType == 'points') {
                 accountController.updateAccountTotals(
                   accountId: controller.account.id,
