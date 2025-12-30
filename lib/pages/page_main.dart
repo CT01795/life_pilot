@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
+import 'package:life_pilot/pages/page_accounting.dart';
 import 'package:life_pilot/pages/page_ai.dart';
-import 'package:life_pilot/pages/page_account_records.dart';
 import 'package:life_pilot/pages/page_calendar.dart';
 import 'package:life_pilot/pages/event/page_memory_trace.dart';
 import 'package:life_pilot/pages/event/page_recommended_attractions.dart';
@@ -43,7 +43,7 @@ class _PageMainState extends State<PageMain> {
       case PageType.memoryTrace:
         return const PageMemoryTrace();
       case PageType.accountRecords:
-        return const PageAccountRecords();
+        return const PageAccounting();
       case PageType.pointsRecord:
         return const PagePointRecord();
       case PageType.game:

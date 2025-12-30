@@ -2,19 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/services/service_accounting.dart';
 
-class ControllerPointRecordAccount extends ChangeNotifier {
-  final ServicePointRecord service;
+class ControllerAccountingAccount extends ChangeNotifier {
+  final ServiceAccounting service;
   ControllerAuth? auth;
 
-  ControllerPointRecordAccount({
+  ControllerAccountingAccount({
     required this.service,
     required this.auth,
   });
 
-  List<ModelPointRecordAccount> accounts = [];
+  List<ModelAccountingAccount> accounts = [];
   bool isLoading = false;
   bool isLoaded = false;
 
@@ -60,7 +60,7 @@ class ControllerPointRecordAccount extends ChangeNotifier {
     notifyListeners();
   }
 
-  ModelPointRecordAccount getAccountById(String id) =>
+  ModelAccountingAccount getAccountById(String id) =>
       accounts.firstWhere(
         (a) => a.id == id,
         orElse: () => dummyAccount,
@@ -83,8 +83,8 @@ class ControllerPointRecordAccount extends ChangeNotifier {
     notifyListeners();
   }
 
-  static final ModelPointRecordAccount dummyAccount =
-      ModelPointRecordAccount(
+  static final ModelAccountingAccount dummyAccount =
+      ModelAccountingAccount(
     id: '__dummy__',
     accountName: '',
     points: 0,
