@@ -50,13 +50,30 @@ class ServiceAccounting {
         masterGraphUrl: bytes,
         points: (e['points'] ?? 0).toInt(),
         balance: (e['balance'] ?? 0).toInt(),
+        currency: e['main_currency'],
+        exchangeRate: e['exchange_rate'],
       );
     }));
+  }
+
+  Future<String> fetchLatestAccount({
+    required String user,
+  }) async {
+    final res = await supabase
+        .from('accounting_account')
+        .select()
+        .eq('created_by', user)
+        .eq('is_valid', true)
+        .order('created_at', ascending: false).limit(1)
+        .maybeSingle();
+
+    return res?['main_currency'];
   }
 
   Future<ModelAccountingAccount> createAccount({
     required String name,
     required String user,
+    required String? currency,
   }) async {
     // 先檢查是否有重複帳戶
     final res = await supabase
@@ -83,6 +100,8 @@ class ServiceAccounting {
         'created_by': user,
         'points': 0,
         'balance': 0,
+        'main_currency': currency,   // 或 mainCurrency
+        'exchange_rate': null,
       })
       .select().single();
     }
@@ -94,6 +113,8 @@ class ServiceAccounting {
       masterGraphUrl: bytes,
       points: (result['points'] ?? 0).toInt(),
       balance: (result['balance'] ?? 0).toInt(),
+      currency: result['main_currency'],
+      exchangeRate: result['exchange_rate']
     );
   }
 
@@ -154,6 +175,8 @@ class ServiceAccounting {
               description: e['description'],
               type: e['type'],
               value: (e['value'] ?? 0).toInt(),
+              currency: e['currency'],
+              exchangeRate: e['exchange_rate'],
             ))
         .toList();
   }
@@ -162,6 +185,7 @@ class ServiceAccounting {
     required String accountId,
     required String type,
     required List<AccountingPreview> records,
+    required String? currency,
   }) async {
     await supabase.rpc(
       'add_accountings_batch',
@@ -172,6 +196,7 @@ class ServiceAccounting {
             .map((r) => {
                   'description': r.description,
                   'value': r.value,
+                  'currency': currency,
                 })
             .toList(),
       },

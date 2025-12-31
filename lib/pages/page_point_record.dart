@@ -131,9 +131,6 @@ class _AccountCard extends StatelessWidget {
           prev.balance != next.balance ||
           prev.masterGraphUrl != next.masterGraphUrl,
       builder: (context, account, _) {
-        if (account.id == '__dummy__') {
-          return const SizedBox.shrink();
-        }
         final formatter = NumberFormat('#,###');
 
         return Card(

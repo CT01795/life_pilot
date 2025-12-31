@@ -6,6 +6,8 @@ class ModelAccountingAccount {
   final Uint8List? masterGraphUrl;
   final int points;
   final int balance;
+  String? currency; 
+  double? exchangeRate; // 與主要幣別轉換用
 
   ModelAccountingAccount({
     required this.id,
@@ -13,6 +15,8 @@ class ModelAccountingAccount {
     this.masterGraphUrl,
     this.points = 0,
     this.balance = 0,
+    this.currency,
+    this.exchangeRate,
   });
 
   ModelAccountingAccount copyWith({
@@ -21,6 +25,8 @@ class ModelAccountingAccount {
     Uint8List? masterGraphUrl,
     int? points,
     int? balance,
+    String? currency,
+    double? exchangeRate
   }) {
     return ModelAccountingAccount(
       id: id ?? this.id,
@@ -28,6 +34,8 @@ class ModelAccountingAccount {
       masterGraphUrl: masterGraphUrl ?? this.masterGraphUrl,
       points: points ?? this.points,
       balance: balance ?? this.balance,
+      currency: currency ?? this.currency,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
     );
   }
 }

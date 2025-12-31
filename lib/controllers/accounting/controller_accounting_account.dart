@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
@@ -8,11 +9,48 @@ import 'package:life_pilot/services/service_accounting.dart';
 class ControllerAccountingAccount extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
+  String? mainCurrency;
 
   ControllerAccountingAccount({
     required this.service,
     required this.auth,
   });
+
+  Future<void> askMainCurrency(BuildContext context) async {
+    if (accounts.isNotEmpty) {
+      mainCurrency = await service.fetchLatestAccount(
+        user: auth?.currentAccount ?? constEmpty,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final textController = TextEditingController(text: mainCurrency);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Set main currency'),
+        content: TextField(controller: textController),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context, textController.text),
+              child: Text('OK')),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      mainCurrency = result.toUpperCase();
+      notifyListeners();
+    } else {
+      mainCurrency ??= 'TWD'; // ✅ 如果使用者沒輸入，給預設
+      notifyListeners();
+    }
+  }
 
   List<ModelAccountingAccount> accounts = [];
   bool isLoading = false;
@@ -22,7 +60,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     accounts = await service.fetchAccounts(
-      user: auth?.currentAccount?? constEmpty,
+      user: auth?.currentAccount ?? constEmpty,
     );
     isLoading = false;
     isLoaded = true;
@@ -32,7 +70,8 @@ class ControllerAccountingAccount extends ChangeNotifier {
   Future<void> createAccount(String name) async {
     await service.createAccount(
       name: name,
-      user: auth?.currentAccount?? constEmpty,
+      user: auth?.currentAccount ?? constEmpty,
+      currency: mainCurrency,
     );
     // ⭐ 統一來源：重新拉一次
     await loadAccounts();
@@ -48,20 +87,21 @@ class ControllerAccountingAccount extends ChangeNotifier {
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
 
     // 上傳圖片給後端，後端返回可訪問 URL
-    final newImage = await service.uploadAccountImageBytesDirect(accountId, bytes);
+    final newImage =
+        await service.uploadAccountImageBytesDirect(accountId, bytes);
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
 
     accounts[index] = accounts[index].copyWith(
       masterGraphUrl: newImage,
+      currency: mainCurrency,
     );
 
     notifyListeners();
   }
 
-  ModelAccountingAccount getAccountById(String id) =>
-      accounts.firstWhere(
+  ModelAccountingAccount getAccountById(String id) => accounts.firstWhere(
         (a) => a.id == id,
         orElse: () => dummyAccount,
       );
@@ -78,16 +118,13 @@ class ControllerAccountingAccount extends ChangeNotifier {
     accounts[index] = old.copyWith(
       points: old.points + deltaPoints,
       balance: old.balance + deltaBalance,
+      currency: old.currency,
+      exchangeRate: old.exchangeRate,
     );
 
     notifyListeners();
   }
 
-  static final ModelAccountingAccount dummyAccount =
-      ModelAccountingAccount(
-    id: '__dummy__',
-    accountName: '',
-    points: 0,
-    balance: 0,
-  );
+  static final ModelAccountingAccount dummyAccount = ModelAccountingAccount(
+      id: '__dummy__', accountName: '', points: 0, balance: 0, currency: null);
 }

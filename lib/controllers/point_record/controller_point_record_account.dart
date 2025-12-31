@@ -62,8 +62,7 @@ class ControllerPointRecordAccount extends ChangeNotifier {
 
   ModelPointRecordAccount getAccountById(String id) =>
       accounts.firstWhere(
-        (a) => a.id == id,
-        orElse: () => dummyAccount,
+        (a) => a.id == id
       );
 
   void updateAccountTotals({
@@ -82,12 +81,4 @@ class ControllerPointRecordAccount extends ChangeNotifier {
 
     notifyListeners();
   }
-
-  static final ModelPointRecordAccount dummyAccount =
-      ModelPointRecordAccount(
-    id: '__dummy__',
-    accountName: '',
-    points: 0,
-    balance: 0,
-  );
 }
