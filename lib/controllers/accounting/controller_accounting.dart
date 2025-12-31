@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
@@ -8,14 +9,26 @@ import 'package:life_pilot/services/service_accounting.dart';
 
 class ControllerAccounting extends ChangeNotifier {
   final ServiceAccounting service;
+  ControllerAuth? auth;
   final String accountId;
   final ControllerAccountingAccount accountController;
+  double? currentExchangeRate;
+  String? _currentCurrency;
+
+  String? get currentCurrency =>
+      _currentCurrency ?? accountController.mainCurrency;
+
+  set currentCurrency(String? value) {
+    _currentCurrency = value;
+    notifyListeners();
+  }
 
   ControllerAccounting(
-    this.service,
-    this.accountId,
-    this.accountController,
-  );
+      {required this.service,
+      required this.auth,
+      required this.accountId,
+      required this.accountController,
+      this.currentExchangeRate});
 
   int todayTotal = 0;
 
@@ -40,35 +53,48 @@ class ControllerAccounting extends ChangeNotifier {
       accountId: account.id,
       type: currentType,
     );
+
+    if (todayRecords.isNotEmpty) {
+      currentCurrency = todayRecords.last.currency;
+      currentExchangeRate = todayRecords.last.exchangeRate;
+    } else {
+      currentCurrency = accountController.mainCurrency;
+    }
+
     _recalculateTodayTotal();
     notifyListeners();
   }
 
-  Future<List<AccountingPreview>> parseFromSpeech(String text) async {
+  Future<List<AccountingPreview>> parseFromSpeech(
+      String text, String? currency, double? exchangeRate) async {
     final results = NLPService.parseMulti(text);
 
     return results
         .map(
           (r) => AccountingPreview(
-            description: r.description,
-            value: r.points,
-          ),
+              description: r.description,
+              value: r.points,
+              currency: currency,
+              exchangeRate: exchangeRate),
         )
         .toList();
   }
 
-  Future<void> commitRecords(List<AccountingPreview> previews) async {
+  Future<void> commitRecords(
+      List<AccountingPreview> previews, String? currency) async {
+
     await service.insertRecordsBatch(
       accountId: account.id,
       type: currentType,
       records: previews,
+      currency: currency,
     );
 
     await loadToday();
   }
 
   Future<void> switchType(String type) async {
-    if (currentType == type) return; 
+    if (currentType == type) return;
     currentType = type;
     await loadToday();
   }
@@ -84,10 +110,12 @@ class NLPService {
     );
 
     for (final m in regex.allMatches(text)) {
-      final action = m.group(1)?.trim() ?? constEmpty;
-      if (action.isEmpty) continue;
-
+      String action = m.group(1)?.trim() ?? constEmpty;
       final op = m.group(2)!;
+      if (action.isEmpty) {
+        action = op == "加" || op == "+" ? "Save" : "Spend";
+      }
+
       final rawNumber = m.group(3)!;
 
       int? value = int.tryParse(rawNumber) ?? ChineseNumber.parse(rawNumber);

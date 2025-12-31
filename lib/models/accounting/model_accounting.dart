@@ -7,6 +7,8 @@ class ModelAccounting {
   final String description;
   final String type;
   final int value;
+  final String currency; 
+  double? exchangeRate; 
 
   late final DateTime localTime;
   late final String displayTime;
@@ -18,6 +20,8 @@ class ModelAccounting {
     required this.description,
     required this.type,
     required this.value,
+    required this.currency,
+    this.exchangeRate
   }) {
     localTime = createdAt.toLocal();
     displayTime = _formatTime(localTime);

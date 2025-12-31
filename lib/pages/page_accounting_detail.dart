@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
+import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
@@ -36,12 +37,15 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
     super.initState();
     _speechTextController = TextEditingController();
     _controller = ControllerAccounting(
-      widget.service,
-      widget.accountId,
-      context.read<ControllerAccountingAccount>(),
+      service:widget.service,
+      auth: context.read<ControllerAuth>(),
+      accountId: widget.accountId,
+      accountController: context.read<ControllerAccountingAccount>()
     );
 
-  _controller.loadToday(); // ✅ 只載一次
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.loadToday(); 
+    });
   }
 
   @override
@@ -282,13 +286,12 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
               final previews = await controller
-                  .parseFromSpeech(_speechTextController.text);
+                  .parseFromSpeech(_speechTextController.text, controller.currentCurrency, controller.currentExchangeRate);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
 
-              final tts = context.read<TtsService>();
-              await controller.commitRecords(previews);
+              await controller.commitRecords(previews, controller.currentCurrency);
               // ❶ 取這次變動的總值
               final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
               // ❷ 更新主頁帳戶
@@ -311,7 +314,7 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
                 final v = p.value;
                 return '${p.description}${v > 0 ? '加$v' : '扣${v.abs()}'}';
               }).join('，');
-
+              final tts = context.read<TtsService>();
               await tts.speak('${previews.length} records created, $summary');
 
               // 清空輸入框

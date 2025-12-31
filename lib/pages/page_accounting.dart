@@ -27,9 +27,11 @@ class _PageAccountingState extends State<PageAccounting> {
     if (_isInitialized) return; // 避免重複初始化
     controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.loadAccounts();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.loadAccounts();
+      await controller.askMainCurrency(context);
     });
+
     _isInitialized = true;
   }
 
@@ -144,7 +146,7 @@ class _AccountCard extends StatelessWidget {
           elevation: 2,
           child: InkWell(
             onTap: () async {
-              await Navigator.push(
+              final needReload = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => PageAccountingDetail(
@@ -154,6 +156,9 @@ class _AccountCard extends StatelessWidget {
                   ),
                 ),
               );
+              if (needReload == true) {
+                await context.read<ControllerAccountingAccount>().loadAccounts();
+              }
             },
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -227,14 +232,13 @@ class _AccountCard extends StatelessWidget {
                           TextSpan(
                             children: [
                               const TextSpan(
-                                text: 'Balance ',
+                                text: 'Balance\n',
                                 style: TextStyle(
                                     color: Color(0xFF757575),
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: formatter
-                                    .format(account.balance), // 資料還沒來先顯示 '-'
+                                text: '${account.currency} ${formatter.format(account.balance)}', // 資料還沒來先顯示 '-'
                                 style: TextStyle(
                                     color: account.balance >= 0
                                         ? Color(0xFF388E3C) // 綠色

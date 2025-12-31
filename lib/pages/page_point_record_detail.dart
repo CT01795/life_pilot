@@ -41,7 +41,9 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
       context.read<ControllerPointRecordAccount>(),
     );
 
-  _controller.loadToday(); // ✅ 只載一次
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.loadToday(); 
+    });
   }
 
   @override

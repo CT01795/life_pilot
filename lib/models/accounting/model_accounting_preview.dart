@@ -1,19 +1,27 @@
 class AccountingPreview {
   String description;
   int value;
+  String? currency;
+  double? exchangeRate;
 
   AccountingPreview({
     required this.description,
     required this.value,
+    required this.currency,
+    required this.exchangeRate,
   });
 
   AccountingPreview copyWith({
     String? description,
     int? value,
+    String? currency,
+    double? exchangeRate,
   }) {
     return AccountingPreview(
       description: description ?? this.description,
       value: value ?? this.value,
+      currency: currency ?? this.currency,
+      exchangeRate: exchangeRate ?? this.exchangeRate
     );
   }
 }
