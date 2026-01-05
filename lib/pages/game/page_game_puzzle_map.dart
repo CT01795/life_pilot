@@ -8,7 +8,9 @@ import 'package:life_pilot/controllers/game/controller_game_puzzle_map.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_puzzle_map.dart';
 import 'package:life_pilot/pages/game/page_game_grammar.dart';
+import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_speaking.dart';
+import 'package:life_pilot/pages/game/page_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:provider/provider.dart';
 
@@ -82,7 +84,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/arctic.png", //北極
       "assets/maps/antarctica.png", //40 南極
       "assets/maps/world.png" //世界地圖
-      "assets/maps/central_america.png", //中美洲
+          "assets/maps/central_america.png", //中美洲
       "assets/maps/south_america.png", //南美洲
       "assets/maps/europe.png", //歐洲
       "assets/maps/france.png", //45 法國
@@ -193,9 +195,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                   SizedBox(
                     width: puzzleWidth,
                     height: puzzleHeight,
-                    child:  _buildPuzzleArea(
-                      ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
-                    ),
+                    child: _buildPuzzleArea(
+                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
+                  ),
                   Gaps.w16,
                   if (showHint)
                     Expanded(
@@ -227,7 +229,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     width: puzzleWidth,
                     height: puzzleHeight,
                     child: _buildPuzzleArea(
-                      ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
+                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
                   ),
                   Gaps.h16,
                   if (showHint)
@@ -274,8 +276,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             final row = piece.currentIndex ~/ ctrl.colsCount;
             final col = piece.currentIndex % ctrl.colsCount;
             Offset offset = ctrl.dragOffsets[piece.currentIndex] ?? Offset.zero;
-        
-            Widget tileChild = _buildPuzzleImage(piece, tileWidth, tileHeight, puzzleImage!, ctrl);
+
+            Widget tileChild = _buildPuzzleImage(
+                piece, tileWidth, tileHeight, puzzleImage!, ctrl);
 
             if (piece.currentIndex != piece.correctIndex) {
               // 只有沒完成的拼圖才可拖動
@@ -290,41 +293,39 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               );
             }
 
-            tileChild = Stack(
-              children: [
-                tileChild,
-                if (piece.correctIndex != piece.currentIndex)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _GroupBorderPainter(
-                          color: Colors.black87,
-                          isDashed: false,
+            tileChild = Stack(children: [
+              tileChild,
+              if (piece.correctIndex != piece.currentIndex)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _GroupBorderPainter(
+                        color: Colors.black87,
+                        isDashed: false,
+                      ),
+                    ),
+                  ),
+                ),
+              if (piece.correctIndex == piece.currentIndex)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        border: Border.all(color: Colors.yellow, width: 3),
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.green.shade800,
+                          size: 20,
                         ),
                       ),
                     ),
                   ),
-                if (piece.correctIndex == piece.currentIndex)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          border: Border.all(color: Colors.yellow, width: 3),
-                        ),
-                        child: Align(
-                          alignment: Alignment.bottomRight,
-                          child: Icon(
-                            Icons.check_circle,
-                            color: Colors.green.shade800,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ]
-            );
+                ),
+            ]);
 
             return Positioned(
               left: imageRect.left + col * tileWidth + offset.dx,
@@ -394,32 +395,45 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               Navigator.pop(context);
               if (ok) {
                 // 強制跳轉到遊戲頁（不能跳過）
-                widget.gameLevel % 3 == 0
-                    ? await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameGrammar(
-                            gameId: widget.gameId,
-                            gameLevel: widget.gameLevel,
-                          ),
+                int value = widget.gameLevel % 4;
+                value == 0
+                  ? await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PageGameGrammar(
+                          gameId: widget.gameId,
+                          gameLevel: widget.gameLevel,
                         ),
-                      )
-                    : await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameSpeaking(
-                            gameId: widget.gameId,
-                            gameLevel: widget.gameLevel,
-                          ),
+                      ),
+                    )
+                  : value == 1
+                  ? await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PageGameSpeaking(
+                          gameId: widget.gameId,
+                          gameLevel: widget.gameLevel,
                         ),
-                      );
-                /*if (result == true) {
-                  // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
-                  Future.delayed(const Duration(seconds: 1), () {
-                    if (!mounted) return;
-                    Navigator.pop(context, true); // 過關 -> 返回上一頁
-                  });
-                }*/
+                      ),
+                    ) 
+                  : value == 2 ? await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PageGameTranslation(
+                        gameId: widget.gameId,
+                        gameLevel: widget.gameLevel,
+                      ),
+                    ),
+                  )
+                  : await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PageGameSentence(
+                        gameId: widget.gameId,
+                        gameLevel: widget.gameLevel,
+                      ),
+                    ),
+                  );
                 Navigator.pop(context, true); // 過關 -> 返回上一頁
               }
             },
