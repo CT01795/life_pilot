@@ -5,6 +5,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/game/controller_game_steam_polyomino.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_steam_polyomino.dart';
+import 'package:life_pilot/pages/game/page_game_grammar.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_speaking.dart';
 import 'package:life_pilot/pages/game/page_game_translation.dart';
@@ -108,8 +109,29 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
           );
 
           if (ok) {
-            // 強制跳轉到 WordMatch 或 sentence 遊戲頁（不能跳過）
-            widget.gameLevel % 3 == 0 ? await Navigator.push<bool>(
+            // 強制跳轉到遊戲頁（不能跳過）
+            int value = widget.gameLevel % 4;
+            value == 0
+              ? await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PageGameGrammar(
+                      gameId: widget.gameId,
+                      gameLevel: widget.gameLevel,
+                    ),
+                  ),
+                )
+              : value == 1
+              ? await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PageGameSpeaking(
+                      gameId: widget.gameId,
+                      gameLevel: widget.gameLevel,
+                    ),
+                  ),
+                ) 
+              : value == 2 ? await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PageGameTranslation(
@@ -117,30 +139,16 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                     gameLevel: widget.gameLevel,
                   ),
                 ),
-              ) : (widget.gameLevel % 3 == 1 ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameSentence(
-                        gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
-                      ),
-                    ),
-                  ) : await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameSpeaking(
-                        gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
-                      ),
-                    ),
-                  ));
-            /*if (result == true) {
-              // 延遲 1 秒再回上一頁，讓玩家看到 SnackBar
-              Future.delayed(const Duration(seconds: 1), () {
-                if (!mounted) return;
-                Navigator.pop(context, true); // 過關 -> 返回上一頁
-              });
-            }*/
+              )
+              : await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PageGameSentence(
+                    gameId: widget.gameId,
+                    gameLevel: widget.gameLevel,
+                  ),
+                ),
+              );
             Navigator.pop(context, true); // 過關 -> 返回上一頁
           }
         },
