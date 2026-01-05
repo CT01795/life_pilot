@@ -9,6 +9,7 @@ import 'package:life_pilot/pages/game/page_game_grammar.dart';
 import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_speaking.dart';
 import 'package:life_pilot/pages/game/page_game_translation.dart';
+import 'package:life_pilot/pages/game/page_game_word_search.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_monomino.dart';
 import 'package:provider/provider.dart';
@@ -52,45 +53,56 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
               Navigator.pop(context);
               if (ok) {
                 // 強制跳轉到遊戲頁（不能跳過）
-                int value = widget.gameLevel % 4;
+                int value = widget.gameLevel % 5;
                 value == 0
-                  ? await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PageGameGrammar(
-                          gameId: widget.gameId,
-                          gameLevel: widget.gameLevel,
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameGrammar(
+                            gameId: widget.gameId,
+                            gameLevel: widget.gameLevel,
+                          ),
                         ),
-                      ),
-                    )
-                  : value == 1
-                  ? await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PageGameSpeaking(
-                          gameId: widget.gameId,
-                          gameLevel: widget.gameLevel,
-                        ),
-                      ),
-                    ) 
-                  : value == 2 ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameTranslation(
-                        gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
-                      ),
-                    ),
-                  )
-                  : await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameSentence(
-                        gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
-                      ),
-                    ),
-                  );
+                      )
+                    : value == 4
+                        ? await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PageGameSpeaking(
+                                gameId: widget.gameId,
+                                gameLevel: widget.gameLevel,
+                              ),
+                            ),
+                          )
+                        : value == 3
+                            ? await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PageGameTranslation(
+                                    gameId: widget.gameId,
+                                    gameLevel: widget.gameLevel,
+                                  ),
+                                ),
+                              )
+                            : value == 2
+                                ? await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PageGameSentence(
+                                        gameId: widget.gameId,
+                                        gameLevel: widget.gameLevel,
+                                      ),
+                                    ),
+                                  )
+                                : await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PageGameWordSearch(
+                                        gameId: widget.gameId,
+                                        gameLevel: widget.gameLevel,
+                                      ),
+                                    ),
+                                  );
                 Navigator.pop(context, true); // 過關 -> 返回上一頁
               }
             },
