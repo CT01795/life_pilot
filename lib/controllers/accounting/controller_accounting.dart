@@ -15,6 +15,8 @@ class ControllerAccounting extends ChangeNotifier {
   double? currentExchangeRate;
   String? _currentCurrency;
 
+  String get currentType => accountController.currentType;
+
   String? get currentCurrency =>
       _currentCurrency ?? accountController.mainCurrency;
 
@@ -43,8 +45,6 @@ class ControllerAccounting extends ChangeNotifier {
 
   ModelAccountingAccount get account =>
       accountController.getAccountById(accountId);
-
-  String currentType = 'balance'; // points | balance
 
   List<ModelAccounting> todayRecords = [];
 
@@ -82,20 +82,14 @@ class ControllerAccounting extends ChangeNotifier {
 
   Future<void> commitRecords(
       List<AccountingPreview> previews, String? currency) async {
-
     await service.insertRecordsBatch(
       accountId: account.id,
       type: currentType,
       records: previews,
       currency: currency,
+      currentType: currentType
     );
 
-    await loadToday();
-  }
-
-  Future<void> switchType(String type) async {
-    if (currentType == type) return;
-    currentType = type;
     await loadToday();
   }
 }

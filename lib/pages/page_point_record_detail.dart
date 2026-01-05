@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_speech.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
+import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecordDetail extends StatefulWidget {
   final String accountId;
   final String accountName;
-  final ServicePointRecord service;
+  final ServiceAccounting service;
 
   const PagePointRecordDetail({
     super.key,
@@ -28,21 +29,23 @@ class PagePointRecordDetail extends StatefulWidget {
 
 class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
   late final TextEditingController _speechTextController;
-  late ControllerPointRecord _controller;
+  late ControllerAccounting _controller;
   final numberFormatter = NumberFormat('#,###');
 
   @override
   void initState() {
     super.initState();
     _speechTextController = TextEditingController();
-    _controller = ControllerPointRecord(
-      widget.service,
-      widget.accountId,
-      context.read<ControllerPointRecordAccount>(),
+
+    _controller = ControllerAccounting(
+      service: widget.service,
+      auth: context.read<ControllerAuth>(),
+      accountId: widget.accountId,
+      accountController: context.read<ControllerAccountingAccount>(),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadToday(); 
+      _controller.loadToday();
     });
   }
 
@@ -54,7 +57,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
 
   Future<bool?> showVoiceConfirmDialog(
     BuildContext context,
-    List<PointRecordPreview> previews,
+    List<AccountingPreview> previews,
   ) {
     return showDialog<bool>(
       context: context,
@@ -145,6 +148,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
       return DateFormat('yyyy/M/d HH:mm').format(time);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -161,32 +165,12 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
           backgroundColor: Colors.blueAccent, // 可自定義顏色
           elevation: 2,
         ),
-        body: Consumer2<ControllerPointRecord, ControllerPointRecordAccount>(
+        body: Consumer2<ControllerAccounting, ControllerAccountingAccount>(
           builder: (context, pointsController, accountController, _) {
             final account = accountController.getAccountById(widget.accountId);
             return Column(
               children: [
                 Gaps.h8,
-                /*Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Points'),
-                      selected: pointsController.currentType == 'points',
-                      onSelected: (_) async {
-                        await pointsController.switchType('points');
-                      },
-                    ),
-                    Gaps.w16,
-                    ChoiceChip(
-                      label: const Text('Balance'),
-                      selected: pointsController.currentType == 'balance',
-                      onSelected: (_) async {
-                        await pointsController.switchType('balance');
-                      },
-                    ),
-                  ],
-                ),*/
                 _buildSummary(account, pointsController),
                 _buildMicButton(context, pointsController),
                 const Divider(),
@@ -199,20 +183,67 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
     );
   }
 
-  Widget _buildSummary(
-      ModelPointRecordAccount account, ControllerPointRecord controller) {
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Text('Today ${controller.currentType}：${numberFormatter.format(controller.todayTotal)}',
-              style: const TextStyle(fontSize: 20)),
-        ],
-      ),
+    Widget _buildSummary(
+      ModelAccountingAccount account, ControllerAccounting controller) {
+    String currency = account.currency ?? '';
+    int totalValue =
+        controller.currentType == 'balance' ? account.balance : account.points;
+
+    return Table(
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      columnWidths: const {
+        0: IntrinsicColumnWidth(), // 左文字自動寬度
+        1: IntrinsicColumnWidth(), // 幣別自動寬度
+        2: IntrinsicColumnWidth(), // 數值自動寬度
+      },
+      children: [
+        TableRow(
+          children: [
+            Text(' Total ', style: const TextStyle(fontSize: 20)),
+            controller.currentType == 'balance' && account.currency != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child:
+                        Text(currency, style: const TextStyle(fontSize: 20)),
+                  )
+                : const SizedBox(),
+            Text(
+              '${NumberFormat('#,###').format(totalValue)} ${controller.currentType == 'balance' ? '元':'分'}',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: controller.todayTotal >= 0 ? Colors.black : Colors.red,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
+        TableRow(
+          children: [
+            Text(' Today ', style: const TextStyle(fontSize: 20)),
+            controller.currentType == 'balance' && account.currency != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child:
+                        Text(currency, style: const TextStyle(fontSize: 20)),
+                  )
+                : const SizedBox(),
+            Text(
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${controller.currentType == 'balance' ? '元':'分'}',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: totalValue >= 0 ? Colors.green : Colors.red,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildTodayList(ControllerPointRecord controller) {
+  Widget _buildTodayList(ControllerAccounting controller) {
     return Expanded(
       child: ListView.builder(
         itemCount: controller.todayRecords.length,
@@ -235,11 +266,12 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
               ),
             ),
             trailing: Text(
-              record.value > 0 ? '+${numberFormatter.format(record.value)}' : numberFormatter.format(record.value),
+              record.value > 0
+                  ? '+${numberFormatter.format(record.value)}'
+                  : numberFormatter.format(record.value),
               style: TextStyle(
-                color: record.value >= 0 ? Colors.green : Colors.red,
-                fontSize: 18
-              ),
+                  color: record.value >= 0 ? Colors.green : Colors.red,
+                  fontSize: 18),
             ),
           );
         },
@@ -248,7 +280,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerPointRecord controller) {
+      BuildContext context, ControllerAccounting controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -258,7 +290,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
               final speechController =
-                  context.read<ControllerPointRecordSpeech>();
+                  context.read<ControllerAccountingSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {
@@ -283,31 +315,24 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
           ElevatedButton(
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
-              final previews = await controller
-                  .parseFromSpeech(_speechTextController.text);
+              final previews = await controller.parseFromSpeech(
+                  _speechTextController.text, null, null);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
 
               final tts = context.read<TtsService>();
-              await controller.commitRecords(previews);
+              await controller.commitRecords(previews, null);
               // ❶ 取這次變動的總值
               final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
               // ❷ 更新主頁帳戶
-              final accountController = context.read<ControllerPointRecordAccount>();
-              if (controller.currentType == 'points') {
-                accountController.updateAccountTotals(
-                  accountId: controller.account.id,
-                  deltaPoints: delta,
-                  deltaBalance: 0,
-                );
-              } else {
-                accountController.updateAccountTotals(
-                  accountId: controller.account.id,
-                  deltaPoints: 0,
-                  deltaBalance: delta,
-                );
-              }
+              final accountController =
+                  context.read<ControllerAccountingAccount>();
+              accountController.updateAccountTotals(
+                accountId: controller.account.id,
+                deltaPoints: delta,
+                deltaBalance: 0,
+              );
 
               final summary = previews.map((p) {
                 final v = p.value;

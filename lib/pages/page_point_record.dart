@@ -3,11 +3,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
+import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/pages/page_point_record_detail.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecord extends StatefulWidget {
@@ -18,17 +18,17 @@ class PagePointRecord extends StatefulWidget {
 }
 
 class _PagePointRecordState extends State<PagePointRecord> {
-  late final ControllerPointRecordAccount controller;
+  late final ControllerAccountingAccount controller;
   bool _isInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_isInitialized) return; // 避免重複初始化
-    controller = context.read<ControllerPointRecordAccount>();
+    controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.loadAccounts();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.setCurrentType('points');
     });
     _isInitialized = true;
   }
@@ -41,33 +41,33 @@ class _PagePointRecordState extends State<PagePointRecord> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Selector<ControllerPointRecordAccount, bool>(
+      body: Selector<ControllerAccountingAccount, bool>(
         selector: (_, c) => c.isLoading,
         builder: (context, isLoading, _) {
           if (isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return Selector<ControllerPointRecordAccount, List<ModelPointRecordAccount>>(
-            selector: (_, c) => c.accounts,
-            builder: (context, accounts, _) {
-              if (accounts.isEmpty) {
-                return const Center(
-                  child: Text('No accounts yet'),
-                );
-              }
-
-              return ListView.builder(
-                itemCount: accounts.length,
-                itemBuilder: (context, index) {
-                  return _AccountCard(
-                    key: ValueKey(accounts[index].id),
-                    accountId: accounts[index].id, // ✅ 只傳 id
+          return Selector<ControllerAccountingAccount,
+                  List<ModelAccountingAccount>>(
+              selector: (_, c) => c.accounts,
+              builder: (context, accounts, _) {
+                if (accounts.isEmpty) {
+                  return const Center(
+                    child: Text('No accounts yet'),
                   );
-                },
-              );
-            }
-          );
+                }
+
+                return ListView.builder(
+                  itemCount: accounts.length,
+                  itemBuilder: (context, index) {
+                    return _AccountCard(
+                      key: ValueKey(accounts[index].id),
+                      accountId: accounts[index].id, // ✅ 只傳 id
+                    );
+                  },
+                );
+              });
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -80,7 +80,7 @@ class _PagePointRecordState extends State<PagePointRecord> {
   }
 
   void _showAddDialog(BuildContext context) {
-    final controller = context.read<ControllerPointRecordAccount>();
+    final controller = context.read<ControllerAccountingAccount>();
     final textController = TextEditingController();
 
     showDialog(
@@ -124,7 +124,7 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ControllerPointRecordAccount, ModelPointRecordAccount>(
+    return Selector<ControllerAccountingAccount, ModelAccountingAccount>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) =>
           prev.points != next.points ||
@@ -145,7 +145,7 @@ class _AccountCard extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => PagePointRecordDetail(
-                    service: context.read<ServicePointRecord>(),
+                    service: context.read<ServiceAccounting>(),
                     accountId: account.id,
                     accountName: account.accountName,
                   ),
@@ -169,7 +169,7 @@ class _AccountCard extends StatelessWidget {
                       );
                       if (pickedFile != null) {
                         await context
-                            .read<ControllerPointRecordAccount>()
+                            .read<ControllerAccountingAccount>()
                             .updateAccountImage(account.id, pickedFile);
                       }
                     },
@@ -230,10 +230,34 @@ class _AccountCard extends StatelessWidget {
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: formatter.format(account.points),
+                                text: '${formatter.format(account.points)} 分',
                                 style: TextStyle(
                                     color: account.points >= 0
                                         ? Color(0xFF388E3C) // 綠色
+                                        : Color(0xFFD32F2F), // 紅色
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Gaps.h4,
+                        // Balance
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${account.currency} ',
+                                style: TextStyle(
+                                    color: Color(0xFF757575),
+                                    fontSize: 20), // 中灰
+                              ),
+                              TextSpan(
+                                text:
+                                    '${formatter.format(account.balance)} 元', // 資料還沒來先顯示 '-'
+                                style: TextStyle(
+                                    color: account.balance >= 0
+                                        ? Color(0xFF757575) // 綠色
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20),
@@ -269,7 +293,7 @@ class _AccountCard extends StatelessWidget {
 
                       if (confirm == true) {
                         await context
-                            .read<ControllerPointRecordAccount>()
+                            .read<ControllerAccountingAccount>()
                             .deleteAccount(account.id);
                       }
                     },
