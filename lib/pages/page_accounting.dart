@@ -28,7 +28,7 @@ class _PageAccountingState extends State<PageAccounting> {
     controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await controller.loadAccounts();
+      await controller.setCurrentType('balance');
       await controller.askMainCurrency(context);
     });
 
@@ -231,17 +231,40 @@ class _AccountCard extends StatelessWidget {
                         Text.rich(
                           TextSpan(
                             children: [
-                              const TextSpan(
-                                text: 'Balance\n',
+                              TextSpan(
+                                text: '${account.currency} ',
                                 style: TextStyle(
                                     color: Color(0xFF757575),
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: '${account.currency} ${formatter.format(account.balance)}', // 資料還沒來先顯示 '-'
+                                text: '${formatter.format(account.balance)} 元', // 資料還沒來先顯示 '-'
                                 style: TextStyle(
                                     color: account.balance >= 0
                                         ? Color(0xFF388E3C) // 綠色
+                                        : Color(0xFFD32F2F), // 紅色
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Gaps.h4,
+                        // Balance
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Points ',
+                                style: TextStyle(
+                                    color: Color(0xFF757575),
+                                    fontSize: 20), // 中灰
+                              ),
+                              TextSpan(
+                                text: '${formatter.format(account.points)} 分', // 資料還沒來先顯示 '-'
+                                style: TextStyle(
+                                    color: account.points >= 0
+                                        ? Color(0xFF757575)
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20),

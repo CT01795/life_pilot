@@ -8,8 +8,6 @@ import 'package:life_pilot/controllers/accounting/controller_accounting_speech.d
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_speech.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
 import 'package:life_pilot/core/const.dart';
@@ -23,7 +21,6 @@ import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
-import 'package:life_pilot/services/service_point_record.dart';
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -75,38 +72,14 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => ControllerAuth(),
         ),
-        Provider<ServicePointRecord>(
-          create: (_) => ServicePointRecord(Dio()),
-        ),
         Provider<ServiceAccounting>(
           create: (_) => ServiceAccounting(Dio()),
-        ),
-        Provider<ControllerPointRecordSpeech>(
-          create: (_) => ControllerPointRecordSpeech(),
         ),
         Provider<ControllerAccountingSpeech>(
           create: (_) => ControllerAccountingSpeech(),
         ),
         Provider<TtsService>(
           create: (_) => TtsService(),
-        ),
-        ChangeNotifierProxyProvider2<
-          ServicePointRecord,
-          ControllerAuth,
-          ControllerPointRecordAccount
-        >(
-          create: (context) => ControllerPointRecordAccount(
-            service: context.read<ServicePointRecord>(),
-            auth: context.read<ControllerAuth>(),
-          ),
-          update: (_, service, auth, controller) {
-            controller ??= ControllerPointRecordAccount(
-              service: service,
-              auth: auth,
-            );
-            controller.auth = auth;
-            return controller;
-          },
         ),
         ChangeNotifierProxyProvider2<
           ServiceAccounting,

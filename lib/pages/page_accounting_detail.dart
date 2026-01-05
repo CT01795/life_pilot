@@ -40,7 +40,7 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
       service:widget.service,
       auth: context.read<ControllerAuth>(),
       accountId: widget.accountId,
-      accountController: context.read<ControllerAccountingAccount>()
+      accountController: context.read<ControllerAccountingAccount>(),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -169,26 +169,6 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
             return Column(
               children: [
                 Gaps.h8,
-                /*Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Points'),
-                      selected: pointsController.currentType == 'points',
-                      onSelected: (_) async {
-                        await pointsController.switchType('points');
-                      },
-                    ),
-                    Gaps.w16,
-                    ChoiceChip(
-                      label: const Text('Balance'),
-                      selected: pointsController.currentType == 'balance',
-                      onSelected: (_) async {
-                        await pointsController.switchType('balance');
-                      },
-                    ),
-                  ],
-                ),*/
                 _buildSummary(account, pointsController),
                 _buildMicButton(context, pointsController),
                 const Divider(),
@@ -203,14 +183,61 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
 
   Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Text('Today ${controller.currentType}：${numberFormatter.format(controller.todayTotal)}',
-              style: const TextStyle(fontSize: 20)),
-        ],
-      ),
+    String currency = account.currency ?? '';
+    int totalValue =
+        controller.currentType == 'balance' ? account.balance : account.points;
+
+    return Table(
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      columnWidths: const {
+        0: IntrinsicColumnWidth(), // 左文字自動寬度
+        1: IntrinsicColumnWidth(), // 幣別自動寬度
+        2: IntrinsicColumnWidth(), // 數值自動寬度
+      },
+      children: [
+        TableRow(
+          children: [
+            Text(' Total ', style: const TextStyle(fontSize: 20)),
+            controller.currentType == 'balance' && account.currency != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child:
+                        Text(currency, style: const TextStyle(fontSize: 20)),
+                  )
+                : const SizedBox(),
+            Text(
+              '${NumberFormat('#,###').format(totalValue)} ${controller.currentType == 'balance' ? '元':'分'}',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: controller.todayTotal >= 0 ? Colors.black : Colors.red,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
+        TableRow(
+          children: [
+            Text(' Today ', style: const TextStyle(fontSize: 20)),
+            controller.currentType == 'balance' && account.currency != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child:
+                        Text(currency, style: const TextStyle(fontSize: 20)),
+                  )
+                : const SizedBox(),
+            Text(
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${controller.currentType == 'balance' ? '元':'分'}',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: totalValue >= 0 ? Colors.green : Colors.red,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -296,19 +323,11 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
               final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
               // ❷ 更新主頁帳戶
               final accountController = context.read<ControllerAccountingAccount>();
-              if (controller.currentType == 'points') {
-                accountController.updateAccountTotals(
-                  accountId: controller.account.id,
-                  deltaPoints: delta,
-                  deltaBalance: 0,
-                );
-              } else {
-                accountController.updateAccountTotals(
-                  accountId: controller.account.id,
-                  deltaPoints: 0,
-                  deltaBalance: delta,
-                );
-              }
+              accountController.updateAccountTotals(
+                accountId: controller.account.id,
+                deltaPoints: 0,
+                deltaBalance: delta,
+              );
 
               final summary = previews.map((p) {
                 final v = p.value;

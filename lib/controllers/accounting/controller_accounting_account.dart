@@ -10,6 +10,18 @@ class ControllerAccountingAccount extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
   String? mainCurrency;
+  String _currentType = 'points'; // 預設值（不重要）
+
+  String get currentType => _currentType;
+
+  // ⭐ 關鍵：由頁面來決定
+  Future<void> setCurrentType(String type) async {
+    if (_currentType == type && isLoaded) return;
+
+    _currentType = type;
+    isLoaded = false;
+    await loadAccounts();
+  }
 
   ControllerAccountingAccount({
     required this.service,
@@ -19,8 +31,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
   Future<void> askMainCurrency(BuildContext context) async {
     if (accounts.isNotEmpty) {
       mainCurrency = await service.fetchLatestAccount(
-        user: auth?.currentAccount ?? constEmpty,
-      );
+          user: auth?.currentAccount ?? constEmpty, currentType: currentType);
       notifyListeners();
       return;
     }
@@ -61,6 +72,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
     notifyListeners();
     accounts = await service.fetchAccounts(
       user: auth?.currentAccount ?? constEmpty,
+      currentType: currentType
     );
     isLoading = false;
     isLoaded = true;
@@ -68,19 +80,22 @@ class ControllerAccountingAccount extends ChangeNotifier {
   }
 
   Future<void> createAccount(String name) async {
+    mainCurrency = await service.fetchLatestAccount(
+          user: auth?.currentAccount ?? constEmpty, currentType: currentType);
     await service.createAccount(
       name: name,
       user: auth?.currentAccount ?? constEmpty,
       currency: mainCurrency,
+      currentType: currentType,
     );
     // ⭐ 統一來源：重新拉一次
     await loadAccounts();
   }
 
   Future<void> deleteAccount(String accountId) async {
-    await service.deleteAccount(accountId: accountId);
-    accounts.removeWhere((a) => a.id == accountId);
-    notifyListeners();
+    await service.deleteAccount(accountId: accountId, currentType: currentType);
+    //accounts.removeWhere((a) => a.id == accountId);
+    await loadAccounts();
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {
@@ -88,7 +103,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
 
     // 上傳圖片給後端，後端返回可訪問 URL
     final newImage =
-        await service.uploadAccountImageBytesDirect(accountId, bytes);
+        await service.uploadAccountImageBytesDirect(accountId, bytes, currentType);
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
