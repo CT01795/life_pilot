@@ -4,6 +4,7 @@ import 'package:life_pilot/models/game/model_game_sentence.dart';
 import 'package:life_pilot/models/game/model_game_speaking.dart';
 import 'package:life_pilot/models/game/model_game_translation.dart';
 import 'package:life_pilot/models/game/model_game_user.dart';
+import 'package:life_pilot/models/game/model_game_word_search.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceGame {
@@ -15,7 +16,8 @@ class ServiceGame {
       required double newScore,
       required String? newGameId,
       bool? newIsPass}) async {
-    if (newScore == 0) { //不紀錄0分
+    if (newScore == 0) {
+      //不紀錄0分
       return;
     }
     await client.from('game_user').insert({
@@ -196,6 +198,38 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await client.from('game_translation_user').insert({
+      'user': userName,
+      'question_id': questionId,
+      'answer': answer,
+      'is_right': isRightAnswer,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
+
+  //------------------------- Word Search -------------------------
+  Future<ModelGameWordSearch> fetchWordSearchQuestion(String userName) async {
+    final result = await client.rpc("get_next_word_question", params: {
+      'user_name': userName,
+    });
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+
+    return ModelGameWordSearch(
+        questionId: data['id'], question: data['question'], found: false);
+  }
+
+  // 寫入使用者答題紀錄
+  Future<void> submitWordSearchAnswer({
+    required String userName,
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    await client.from('game_word_search_user').insert({
       'user': userName,
       'question_id': questionId,
       'answer': answer,

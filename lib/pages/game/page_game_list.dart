@@ -11,6 +11,7 @@ import 'package:life_pilot/pages/game/page_game_sentence.dart';
 import 'package:life_pilot/pages/game/page_game_speaking.dart';
 import 'package:life_pilot/pages/game/page_game_steam_monomino.dart';
 import 'package:life_pilot/pages/game/page_game_steam_polyomino.dart';
+import 'package:life_pilot/pages/game/page_game_word_search.dart';
 import 'package:life_pilot/pages/game/steam_scratch/page_game_steam_scratch.dart';
 import 'package:life_pilot/pages/game/page_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
@@ -265,6 +266,16 @@ class _PageGameListState extends State<PageGameList> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PageGameGrammar(gameId: game.id),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      } 
+                    } else if (game.gameName.toLowerCase() == "word searching".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageGameWordSearch(gameId: game.id),
                         ),
                       );
                       if (result == true) {
