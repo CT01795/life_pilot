@@ -163,169 +163,170 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
             LanguageToggleDropdown(
               currentLocale: currentLocale,
             ),
-            IconButton(
-              icon: const Icon(Icons.feedback, color: Colors.white),
-              tooltip: 'Feedback',
-              onPressed: () {
-                final screenSize = MediaQuery.of(context).size;
-                double width = screenSize.width *2 / 3;
-                double height = screenSize.height * 0.8;
-                double top = 50;
-                double left = screenSize.width / 3 - 20;
+            if ((account != null && account!.isNotEmpty))
+              IconButton(
+                icon: const Icon(Icons.feedback, color: Colors.white),
+                tooltip: 'Feedback',
+                onPressed: () {
+                  final screenSize = MediaQuery.of(context).size;
+                  double width = screenSize.width *2 / 3;
+                  double height = screenSize.height * 0.8;
+                  double top = 50;
+                  double left = screenSize.width / 3 - 20;
 
-                showDialog(
-                  context: context,
-                  barrierDismissible: true,
-                  builder: (context) {
-                    return StatefulBuilder(builder: (context, setState) {
-                      return Stack(
-                        children: [
-                          // 背景半透明，點擊可以關閉
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: Container(
-                              color: Colors.black.withValues(alpha:0.02),
-                            ),
-                          ),
-
-                          // 可拖動視窗
-                          Positioned(
-                            top: top,
-                            left: left,
-                            child: GestureDetector(
-                              onPanUpdate: (details) {
-                                setState(() {
-                                  top += details.delta.dy;
-                                  left += details.delta.dx;
-
-                                  // 邊界限制
-                                  if (top < 0) top = 0;
-                                  if (left < 0) left = 0;
-                                  if (top + height > screenSize.height) {
-                                    top = screenSize.height - height;
-                                  }
-                                  if (left + width > screenSize.width) {
-                                    left = screenSize.width - width;
-                                  }
-                                });
-                              },
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (context) {
+                      return StatefulBuilder(builder: (context, setState) {
+                        return Stack(
+                          children: [
+                            // 背景半透明，點擊可以關閉
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
                               child: Container(
-                                width: width,
-                                height: height,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 10,
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    // 標題列
-                                    Container(
-                                      height: 40,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                                top: Radius.circular(12)),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text(
-                                            'Feedback',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.close,
-                                                color: Colors.white),
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(),
-                                          )
-                                        ],
-                                      ),
-                                    ),
+                                color: Colors.black.withValues(alpha:0.02),
+                              ),
+                            ),
 
-                                    // 內容區 + 右下角縮放手把
-                                    Expanded(
-                                      child: Stack(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: ChangeNotifierProvider(
-                                              create: (_) => ControllerFeedback(
-                                                ServiceFeedback(),
-                                                context.read<ControllerAuth>(),
-                                              ),
-                                              child: const PageFeedbackBody(),
+                            // 可拖動視窗
+                            Positioned(
+                              top: top,
+                              left: left,
+                              child: GestureDetector(
+                                onPanUpdate: (details) {
+                                  setState(() {
+                                    top += details.delta.dy;
+                                    left += details.delta.dx;
+
+                                    // 邊界限制
+                                    if (top < 0) top = 0;
+                                    if (left < 0) left = 0;
+                                    if (top + height > screenSize.height) {
+                                      top = screenSize.height - height;
+                                    }
+                                    if (left + width > screenSize.width) {
+                                      left = screenSize.width - width;
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  width: width,
+                                  height: height,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      // 標題列
+                                      Container(
+                                        height: 40,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius:
+                                              const BorderRadius.vertical(
+                                                  top: Radius.circular(12)),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Feedback',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
                                             ),
-                                          ),
+                                            IconButton(
+                                              icon: const Icon(Icons.close,
+                                                  color: Colors.white),
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(),
+                                            )
+                                          ],
+                                        ),
+                                      ),
 
-                                          // 右下角縮放手把
-                                          Positioned(
-                                            right: 0,
-                                            bottom: 0,
-                                            child: GestureDetector(
-                                              onPanUpdate: (details) {
-                                                setState(() {
-                                                  width += details.delta.dx;
-                                                  height += details.delta.dy;
-
-                                                  // 最小限制
-                                                  if (width < 300) width = 300;
-                                                  if (height < 400) {
-                                                    height = 400;
-                                                  }
-
-                                                  // 最大限制
-                                                  if (width > screenSize.width) {
-                                                    width = screenSize.width;
-                                                  }
-                                                  if (height >
-                                                      screenSize.height) {
-                                                    height = screenSize.height;
-                                                  }
-                                                });
-                                              },
-                                              child: Container(
-                                                width: 20,
-                                                height: 20,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.blue,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
+                                      // 內容區 + 右下角縮放手把
+                                      Expanded(
+                                        child: Stack(
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: ChangeNotifierProvider(
+                                                create: (_) => ControllerFeedback(
+                                                  ServiceFeedback(),
+                                                  context.read<ControllerAuth>(),
                                                 ),
-                                                child: const Icon(
-                                                    Icons.drag_handle,
-                                                    size: 16,
-                                                    color: Colors.white),
+                                                child: const PageFeedbackBody(),
                                               ),
                                             ),
-                                          )
-                                        ],
+
+                                            // 右下角縮放手把
+                                            Positioned(
+                                              right: 0,
+                                              bottom: 0,
+                                              child: GestureDetector(
+                                                onPanUpdate: (details) {
+                                                  setState(() {
+                                                    width += details.delta.dx;
+                                                    height += details.delta.dy;
+
+                                                    // 最小限制
+                                                    if (width < 300) width = 300;
+                                                    if (height < 400) {
+                                                      height = 400;
+                                                    }
+
+                                                    // 最大限制
+                                                    if (width > screenSize.width) {
+                                                      width = screenSize.width;
+                                                    }
+                                                    if (height >
+                                                        screenSize.height) {
+                                                      height = screenSize.height;
+                                                    }
+                                                  });
+                                                },
+                                                child: Container(
+                                                  width: 20,
+                                                  height: 20,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue,
+                                                    borderRadius:
+                                                        BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Icon(
+                                                      Icons.drag_handle,
+                                                      size: 16,
+                                                      color: Colors.white),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    });
-                  },
-                );
-              },
-            ),
+                          ],
+                        );
+                      });
+                    },
+                  );
+                },
+              ),
             if ((account != null && account!.isNotEmpty))
               IconButton(
                 icon: const Icon(Icons.exit_to_app),
