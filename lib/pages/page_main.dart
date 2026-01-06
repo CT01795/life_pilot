@@ -7,6 +7,7 @@ import 'package:life_pilot/pages/event/page_memory_trace.dart';
 import 'package:life_pilot/pages/event/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/event/page_recommended_event.dart';
 import 'package:life_pilot/pages/game/page_game_list.dart';
+import 'package:life_pilot/pages/page_feedback_admin.dart';
 import 'package:life_pilot/pages/page_point_record.dart';
 import 'package:life_pilot/pages/page_settings.dart';
 import 'package:life_pilot/pages/page_type.dart';
@@ -50,6 +51,8 @@ class _PageMainState extends State<PageMain> {
         return const PageGameList();
       case PageType.ai:
         return const PageAI();
+      case PageType.feedbackAdmin:
+        return const PageFeedbackAdmin();
     }
   }
 

@@ -123,6 +123,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ai => 'AIアシスタント';
 
   @override
+  String get feedback => 'Feedback';
+
+  @override
   String get pageRecommendedEvent => 'pageRecommendedEvent';
 
   @override

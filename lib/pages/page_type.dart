@@ -10,6 +10,7 @@ enum PageType {
   pointsRecord,
   game,
   ai,
+  feedbackAdmin,
 }
 
 extension PageTypeExtension on PageType {
@@ -40,5 +41,6 @@ extension PageTypeExtension on PageType {
     PageType.pointsRecord: loc.pointsRecord,
     PageType.game: loc.game,
     PageType.ai: loc.ai,
+    PageType.feedbackAdmin: loc.feedback,
   };
 }

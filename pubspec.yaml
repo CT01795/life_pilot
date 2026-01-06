@@ -67,6 +67,8 @@ dependencies:
   xml: ^6.6.1
   image_picker: ^1.2.1
   dio: ^5.9.0
+  screenshot: ^3.0.0
+  resizable_dialog: ^0.0.4
 
 dev_dependencies:
   flutter_test:
