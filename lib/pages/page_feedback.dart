@@ -35,11 +35,6 @@ class PageFeedbackBody extends StatelessWidget {
               onChanged: (v) => controller.subject = v,
             ),
             TextField(
-              decoration:
-                  const InputDecoration(labelText: 'Copy (comma separated)'),
-              onChanged: (v) => controller.ccRaw = v,
-            ),
-            TextField(
               decoration: const InputDecoration(labelText: 'Content'),
               maxLines: 4,
               onChanged: (v) => controller.content = v,
