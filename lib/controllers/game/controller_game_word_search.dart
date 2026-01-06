@@ -71,7 +71,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
     final wordLength = word.length;
 
     // ⭐ 動態計算格子大小
-    final newSize = max(wordLength + 4, 12);
+    final newSize = max(wordLength + 4, 10);
     if (board.size != newSize) {
       board.size = newSize;
       // 重新生成 grid

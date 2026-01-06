@@ -123,6 +123,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ai => 'AI 도우미';
 
   @override
+  String get feedback => 'Feedback';
+
+  @override
   String get pageRecommendedEvent => 'pageRecommendedEvent';
 
   @override

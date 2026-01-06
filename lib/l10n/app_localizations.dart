@@ -327,6 +327,12 @@ abstract class AppLocalizations {
   /// **'AI'**
   String get ai;
 
+  /// Label for Feedback
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get feedback;
+
   /// ==========================================================================
   ///
   /// In en, this message translates to:

@@ -123,6 +123,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ai => 'AI';
 
   @override
+  String get feedback => 'Feedback';
+
+  @override
   String get pageRecommendedEvent => 'pageRecommendedEvent';
 
   @override

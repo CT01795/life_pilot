@@ -13,7 +13,7 @@ class AppView extends StatefulWidget {
   State<AppView> createState() => _AppViewState();
 }
 
-class _AppViewState extends State<AppView> {
+class _AppViewState extends State<AppView> {  
   @override
   void initState() {
     super.initState();
@@ -25,30 +25,33 @@ class _AppViewState extends State<AppView> {
   Widget build(BuildContext context) {
     //final localeProvider = context.watch<ProviderLocale>();
     // ✅ 只監聽 locale，不重建整個 MaterialApp
-    return Selector<ProviderLocale, Locale>(
-      selector: (_, provider) => provider.locale,
-      builder: (_, locale, __) {
-        return MaterialApp(
-          navigatorKey: app_navigator.navigatorKey,
-          scaffoldMessengerKey: app_navigator.scaffoldMessengerKey,
-          locale: locale,
-          supportedLocales: AppConfig.supportedLocales,
-          localizationsDelegates: AppConfig.localizationDelegates,
-          theme: AppTheme.lightTheme,
-          title: AppConfig.appTitle,
-          builder: (context, child) {
-            // ⚙️ 允許自動調整但限制最大字體放大倍率
-            final mediaQuery = MediaQuery.of(context);
+    return RepaintBoundary(
+      key: app_navigator.rootRepaintBoundaryKey, // 🌟 全局 RepaintBoundary
+      child: Selector<ProviderLocale, Locale>(
+        selector: (_, provider) => provider.locale,
+        builder: (_, locale, __) {
+          return MaterialApp(
+            navigatorKey: app_navigator.navigatorKey,
+            scaffoldMessengerKey: app_navigator.scaffoldMessengerKey,
+            locale: locale,
+            supportedLocales: AppConfig.supportedLocales,
+            localizationsDelegates: AppConfig.localizationDelegates,
+            theme: AppTheme.lightTheme,
+            title: AppConfig.appTitle,
+            builder: (context, child) {
+              // ⚙️ 允許自動調整但限制最大字體放大倍率
+              final mediaQuery = MediaQuery.of(context);
 
-            return MediaQuery(
-              data: mediaQuery.copyWith(textScaler: TextScaler.linear(1.5)),
-              child: child ?? const SizedBox.shrink(), //避免 child 為 null 時 crash，防禦性寫法。
-            );
-          },
-          debugShowCheckedModeBanner: false,
-          home: const _AppHome(),
-        );
-      },
+              return MediaQuery(
+                data: mediaQuery.copyWith(textScaler: TextScaler.linear(1.5)),
+                child: child ?? const SizedBox.shrink(), //避免 child 為 null 時 crash，防禦性寫法。
+              );
+            },
+            debugShowCheckedModeBanner: false,
+            home: const _AppHome(),
+          );
+        },
+      ),
     );
   }
 }

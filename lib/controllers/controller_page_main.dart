@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/page_type.dart';
@@ -75,6 +76,9 @@ class ControllerPageMain extends ChangeNotifier {
     // 最後加遊戲頁
     pages.add(PageType.game);
     pages.add(PageType.ai);
+    if(auth.currentAccount == AuthConstants.sysAdminEmail){
+      pages.add(PageType.feedbackAdmin);
+    }
 
     return pages;
   }

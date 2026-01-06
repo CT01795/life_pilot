@@ -123,6 +123,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ai => 'AI助理';
 
   @override
+  String get feedback => 'Feedback';
+
+  @override
   String get pageRecommendedEvent => 'pageRecommendedEvent';
 
   @override

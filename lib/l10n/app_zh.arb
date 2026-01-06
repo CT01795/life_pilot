@@ -79,6 +79,8 @@
   "@game": {"description": "Label for Game"},
   "ai": "AI助理",
   "@ai": {"description": "Label for AI"},
+  "feedback": "Feedback",
+  "@feedback": {"description": "Label for Feedback"},
 
   "pageRecommendedEvent": "pageRecommendedEvent",
   "@pageRecommendedEvent": {"description": "=========================================================================="},
