@@ -184,7 +184,7 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
                           GestureDetector(
                             onTap: () => Navigator.of(context).pop(),
                             child: Container(
-                              color: Colors.black54,
+                              color: Colors.black.withValues(alpha:0.02),
                             ),
                           ),
 
