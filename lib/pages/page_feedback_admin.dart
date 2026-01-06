@@ -39,7 +39,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                     showDialog(
                       context: context,
                       builder: (_) => AlertDialog(
-                        title: Text(feedback.subject),
+                        title: Text(feedback.subject, style: const TextStyle(fontSize: 20)),
                         content: SingleChildScrollView(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,

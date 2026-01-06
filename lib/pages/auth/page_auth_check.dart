@@ -168,10 +168,10 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
               tooltip: 'Feedback',
               onPressed: () {
                 final screenSize = MediaQuery.of(context).size;
-                double width = screenSize.width / 2;
+                double width = screenSize.width *2 / 3;
                 double height = screenSize.height * 0.8;
                 double top = 50;
-                double left = screenSize.width / 2 - 20;
+                double left = screenSize.width / 3 - 20;
 
                 showDialog(
                   context: context,
