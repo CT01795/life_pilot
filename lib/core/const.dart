@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+String? weatherApiKey;
+
 final List<String> currencyList = [
   'TWD',
   'USD',
