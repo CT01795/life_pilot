@@ -8,6 +8,7 @@ import 'package:life_pilot/controllers/accounting/controller_accounting_speech.d
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
+import 'package:life_pilot/core/const.dart' as globals;
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
 import 'package:life_pilot/core/const.dart';
@@ -43,6 +44,14 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
     debug: true, // 可選，用於除錯
   );
+
+  final supabase = Supabase.instance.client;
+  // ✅ 自動匿名登入，如果沒有 session 就登入
+  if (supabase.auth.currentSession == null) {
+    await supabase.auth.signInAnonymously();
+  }
+
+  globals.weatherApiKey = await ServiceEvent().getKey(keyName: "OPEN_WEATHER_API_KEY");
 
   // 只呼叫一次 NotificationService 的初始化
   final notificationService = getNotificationService();
@@ -81,11 +90,8 @@ void main() async {
         Provider<TtsService>(
           create: (_) => TtsService(),
         ),
-        ChangeNotifierProxyProvider2<
-          ServiceAccounting,
-          ControllerAuth,
-          ControllerAccountingAccount
-        >(
+        ChangeNotifierProxyProvider2<ServiceAccounting, ControllerAuth,
+            ControllerAccountingAccount>(
           create: (context) => ControllerAccountingAccount(
             service: context.read<ServiceAccounting>(),
             auth: context.read<ControllerAuth>(),

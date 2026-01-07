@@ -103,7 +103,7 @@ class ControllerPageMain extends ChangeNotifier {
       uri,
       mode: LaunchMode.externalApplication,
     )) {
-      logger.e('❌ 無法開啟 ChatGPT');
+      logger.e('❌ Can\'t open ChatGPT');
     }
   }
 
