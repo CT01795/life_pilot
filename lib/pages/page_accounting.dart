@@ -275,7 +275,30 @@ class _AccountCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  //幣別切換按鈕
+                  IconButton(
+                    icon: const Icon(Icons.currency_exchange),
+                    onPressed: () async {
+                      final selected = await showDialog<String>(
+                        context: context,
+                        builder: (_) => SimpleDialog(
+                          title: const Text('Switching Currency'),
+                          children: currencyList.map((c) {
+                            return SimpleDialogOption(
+                              child: Text(c),
+                              onPressed: () => Navigator.pop(context, c),
+                            );
+                          }).toList(),
+                        ),
+                      );
 
+                      if (selected != null) {
+                        await context
+                            .read<ControllerAccountingAccount>()
+                            .changeMainCurrency(account.id, selected);
+                      }
+                    },
+                  ),
                   // ===== 刪除 =====
                   IconButton(
                     icon: const Icon(Icons.delete),

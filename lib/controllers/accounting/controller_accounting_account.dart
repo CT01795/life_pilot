@@ -125,8 +125,9 @@ class ControllerAccountingAccount extends ChangeNotifier {
     required String accountId,
     required int deltaPoints,
     required int deltaBalance,
+    required String? currency,
   }) {
-    final index = accounts.indexWhere((a) => a.id == accountId);
+    final index = accounts.indexWhere((a) => a.id == accountId && (currency == null || a.currency == currency));
     if (index == -1) return;
 
     final old = accounts[index];
@@ -138,6 +139,17 @@ class ControllerAccountingAccount extends ChangeNotifier {
     );
 
     notifyListeners();
+  }
+
+  Future<void> changeMainCurrency(
+    String accountId,
+    String currency,
+  ) async {
+    await service.switchMainCurrency(
+      accountId: accountId,
+      currency: currency,
+    );
+    await loadAccounts();
   }
 
   static final ModelAccountingAccount dummyAccount = ModelAccountingAccount(

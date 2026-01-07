@@ -27,6 +27,24 @@ class ModelAccounting {
     displayTime = _formatTime(localTime);
   }
 
+  ModelAccounting copyWith({
+    String? description,
+    int? value,
+    String? currency,
+    double? exchangeRate,
+  }) {
+    return ModelAccounting(
+      id: id,
+      accountId: accountId,
+      createdAt: createdAt,
+      description: description ?? this.description,
+      type: type,
+      value: value ?? this.value,
+      currency: currency ?? this.currency,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
+    );
+  }
+
   static String _formatTime(DateTime time) {
     final now = DateTime.now();
     return time.year == now.year

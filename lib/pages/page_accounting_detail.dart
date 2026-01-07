@@ -31,20 +31,23 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
   late final TextEditingController _speechTextController;
   late ControllerAccounting _controller;
   final numberFormatter = NumberFormat('#,###');
+  late ModelAccountingAccount account;
 
   @override
   void initState() {
     super.initState();
+    final accountController = context.read<ControllerAccountingAccount>();
     _speechTextController = TextEditingController();
     _controller = ControllerAccounting(
-      service:widget.service,
+      service: widget.service,
       auth: context.read<ControllerAuth>(),
       accountId: widget.accountId,
-      accountController: context.read<ControllerAccountingAccount>(),
+      accountController: accountController,
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadToday(); 
+      _controller.loadToday();
+      account = accountController.getAccountById(widget.accountId);
     });
   }
 
@@ -75,47 +78,22 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
                   final p = previews[index];
                   return ListTile(
                     dense: true,
-                    title: InkWell(
-                      onTap: () async {
-                        final controller =
-                            TextEditingController(text: p.description);
-
-                        final result = await showDialog<String>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('Edit description'),
-                            content: TextField(controller: controller),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, null),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, controller.text),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (result != null && result.trim().isNotEmpty) {
-                          setState(() {
-                            previews[index] = p.copyWith(
-                              description: result.trim(),
-                            );
-                          });
-                        }
-                      },
-                      child: Text(p.description),
-                    ),
-                    trailing: _EditableValue(
-                      value: p.value,
-                      onChanged: (newValue) {
+                    onTap: () async {
+                      // 點整個 ListTile 都能編輯
+                      final updated = await _showEditDetailDialog(context, p);
+                      if (updated != null) {
                         setState(() {
-                          previews[index] = p.copyWith(value: newValue);
+                          previews[index] = updated;
                         });
-                      },
+                      }
+                    },
+                    title: Text(p.description),
+                    trailing: Text(
+                      '${p.value >= 0 ? '+' : ''}${p.value} ${p.currency}',
+                      style: TextStyle(
+                        color: p.value >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   );
                 }),
@@ -147,6 +125,7 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
       return DateFormat('yyyy/M/d HH:mm').format(time);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -165,7 +144,7 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
         ),
         body: Consumer2<ControllerAccounting, ControllerAccountingAccount>(
           builder: (context, pointsController, accountController, _) {
-            final account = accountController.getAccountById(widget.accountId);
+            account = accountController.getAccountById(widget.accountId);
             return Column(
               children: [
                 Gaps.h8,
@@ -201,12 +180,11 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
             controller.currentType == 'balance' && account.currency != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child:
-                        Text(currency, style: const TextStyle(fontSize: 20)),
+                    child: Text(currency, style: const TextStyle(fontSize: 20)),
                   )
                 : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(totalValue)} ${controller.currentType == 'balance' ? '元':'分'}',
+              '${NumberFormat('#,###').format(totalValue)} ${controller.currentType == 'balance' ? '元' : '分'}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -222,12 +200,11 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
             controller.currentType == 'balance' && account.currency != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child:
-                        Text(currency, style: const TextStyle(fontSize: 20)),
+                    child: Text(currency, style: const TextStyle(fontSize: 20)),
                   )
                 : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(controller.todayTotal)} ${controller.currentType == 'balance' ? '元':'分'}',
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${controller.currentType == 'balance' ? '元' : '分'}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -264,12 +241,36 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
               ),
             ),
             trailing: Text(
-              record.value > 0 ? '+${numberFormatter.format(record.value)}' : numberFormatter.format(record.value),
+              record.value > 0
+                  ? '+${numberFormatter.format(record.value)} ${record.currency}'
+                  : '${numberFormatter.format(record.value)} ${record.currency}',
               style: TextStyle(
-                color: record.value >= 0 ? Colors.green : Colors.red,
-                fontSize: 18
-              ),
+                  color: record.value >= 0 ? Colors.green : Colors.red,
+                  fontSize: 18),
             ),
+            onTap: () async {
+              final updated = await _showEditDetailDialog(
+                context,
+                AccountingPreview(
+                  id: record.id,
+                  description: record.description,
+                  value: record.value,
+                  currency: record.currency,
+                  exchangeRate: null,
+                ),
+              );
+              if (updated != null) {
+                await _controller.updateAccountingDetail(
+                  recordId: updated.id,
+                  newValue: updated.value,
+                  newCurrency: updated.currency,
+                  newDescription: updated.description,
+                );
+                await _controller.loadToday();
+                await context.read<ControllerAccountingAccount>().loadAccounts();
+                setState(() {});
+              }
+            },
           );
         },
       ),
@@ -312,22 +313,17 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
           ElevatedButton(
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
-              final previews = await controller
-                  .parseFromSpeech(_speechTextController.text, controller.currentCurrency, controller.currentExchangeRate);
+              final previews = await controller.parseFromSpeech(
+                  _speechTextController.text,
+                  controller.account.currency,
+                  controller.currentExchangeRate);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
 
-              await controller.commitRecords(previews, controller.currentCurrency);
-              // ❶ 取這次變動的總值
-              final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
-              // ❷ 更新主頁帳戶
-              final accountController = context.read<ControllerAccountingAccount>();
-              accountController.updateAccountTotals(
-                accountId: controller.account.id,
-                deltaPoints: 0,
-                deltaBalance: delta,
-              );
+              await controller.commitRecords(
+                  previews, controller.account.currency);
+              await context.read<ControllerAccountingAccount>().loadAccounts();
 
               final summary = previews.map((p) {
                 final v = p.value;
@@ -347,61 +343,78 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
       ),
     );
   }
-}
 
-class _EditableValue extends StatelessWidget {
-  final int value;
-  final ValueChanged<int> onChanged;
+  // 回傳修改後的 AccountingPreview，取消則回傳 null
+  Future<AccountingPreview?> _showEditDetailDialog(
+      BuildContext context, AccountingPreview record) async {
+    final valueController = TextEditingController(text: record.value.toString());
+    final descController = TextEditingController(text: record.description);
+    String currency = record.currency ?? '';
 
-  const _EditableValue({
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () async {
-        final controller = TextEditingController(text: value.abs().toString());
-
-        final result = await showDialog<int>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Edit value'),
-            content: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, null),
-                child: const Text('Cancel'),
+    final result = await showDialog<AccountingPreview>(
+      context: context,
+      builder: (context) {
+        // ✅ 使用 StatefulBuilder 來控制 dialog 內的狀態
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Record'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: descController,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                  ),
+                  TextField(
+                    controller: valueController,
+                    decoration: const InputDecoration(labelText: 'Value'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  DropdownButton<String>(
+                    value: currency,
+                    isExpanded: true,
+                    items: currencyList
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          currency = val; // ✅ 正確更新幣別
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () {
-                  final v = int.tryParse(controller.text);
-                  if (v != null) {
-                    Navigator.pop(context, value >= 0 ? v : -v);
-                  }
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final v = int.tryParse(valueController.text);
+                    if (v == null || descController.text.trim().isEmpty) return;
+                    Navigator.pop(
+                      context,
+                      record.copyWith(
+                        value: v,
+                        description: descController.text.trim(),
+                        currency: currency,
+                      ),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
-
-        if (result != null) {
-          onChanged(result);
-        }
       },
-      child: Text(
-        value > 0 ? '+$value' : value.toString(),
-        style: TextStyle(
-          color: value >= 0 ? Colors.green : Colors.red,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
     );
+
+    return result;
   }
 }
 
