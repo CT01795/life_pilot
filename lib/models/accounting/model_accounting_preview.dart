@@ -1,10 +1,12 @@
 class AccountingPreview {
+  String? id;
   String description;
   int value;
   String? currency;
   double? exchangeRate;
 
   AccountingPreview({
+    this.id,
     required this.description,
     required this.value,
     required this.currency,
@@ -12,16 +14,18 @@ class AccountingPreview {
   });
 
   AccountingPreview copyWith({
+    String? id,
     String? description,
     int? value,
     String? currency,
     double? exchangeRate,
   }) {
     return AccountingPreview(
+      id: id ?? this.id,
       description: description ?? this.description,
       value: value ?? this.value,
       currency: currency ?? this.currency,
-      exchangeRate: exchangeRate ?? this.exchangeRate
+      exchangeRate: exchangeRate ?? this.exchangeRate,
     );
   }
 }

@@ -1,5 +1,24 @@
 import 'package:flutter/widgets.dart';
 
+final List<String> currencyList = [
+  'TWD',
+  'USD',
+  'JPY',
+  'KRW',
+  'SGD',
+  'MYR',
+  'CNY',
+  'HKD',
+  'GBP',
+  'AUD',
+  'CAD',
+  'CHF',
+  'NZD',
+  'THB',
+  'EUR',
+  'VND'
+];
+
 // -------------------- Auth --------------------
 class AuthConstants {
   static const guest = 'Guest';
@@ -68,10 +87,10 @@ class Insets {
   static const h12v8 = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
 
   static const directionalL20T6 = EdgeInsetsDirectional.only(start: 20, top: 6);
-  static const directionalL4R4T4B8 = EdgeInsetsDirectional.only(
-      start: 4, end: 4, top: 4, bottom: 8);
-  static const directionalL1R1B1 = EdgeInsetsDirectional.only(
-      start: 1, end: 1, top: 0, bottom: 1);
+  static const directionalL4R4T4B8 =
+      EdgeInsetsDirectional.only(start: 4, end: 4, top: 4, bottom: 8);
+  static const directionalL1R1B1 =
+      EdgeInsetsDirectional.only(start: 1, end: 1, top: 0, bottom: 1);
   static const directionalR3 = EdgeInsetsDirectional.only(end: 3);
 }
 
@@ -102,5 +121,6 @@ class ErrorFields {
   static const String invalidEmailError = 'invalid-email';
   static const String emailAlreadyInUseError = 'email-already-in-use';
   static const String weakPasswordError = 'weak-password';
-  static const String resetPasswordEmailNotFoundError = 'resetPasswordEmailNotFound';
+  static const String resetPasswordEmailNotFoundError =
+      'resetPasswordEmailNotFound';
 }

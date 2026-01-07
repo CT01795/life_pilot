@@ -206,9 +206,39 @@ class ServiceAccounting {
             .map((r) => {
                   'description': r.description,
                   'value': r.value,
-                  'currency': currency,
+                  'currency': r.currency ?? currency,
                 })
             .toList(),
+      },
+    );
+  }
+
+  Future<void> switchMainCurrency({
+    required String accountId,
+    required String currency,
+  }) async {
+    await supabase.rpc(
+      'switch_main_currency',
+      params: {
+        'p_account_id': accountId,
+        'p_currency': currency,
+      },
+    );
+  }
+
+  Future<void> updateAccountingDetail({
+    required String detailId,
+    required int newValue,
+    required String newCurrency,
+    required String newDescription,
+  }) async {
+    await supabase.rpc(
+      'update_accounting_detail',
+      params: {
+        'p_detail_id': detailId,
+        'p_new_value': newValue,
+        'p_new_currency': newCurrency,
+        'p_new_description': newDescription,
       },
     );
   }

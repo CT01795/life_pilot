@@ -332,6 +332,7 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
                 accountId: controller.account.id,
                 deltaPoints: delta,
                 deltaBalance: 0,
+                currency: null,
               );
 
               final summary = previews.map((p) {

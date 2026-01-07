@@ -34,12 +34,12 @@ class ControllerAccounting extends ChangeNotifier {
 
   int todayTotal = 0;
 
-  void _recalculateTodayTotal() {
+  void _recalculateTodayTotal(String? currency) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
     todayTotal = todayRecords
-        .where((r) => r.localTime.isAfter(todayStart))
+        .where((r) => r.localTime.isAfter(todayStart) && r.currency == currency)
         .fold(0, (sum, r) => sum + r.value);
   }
 
@@ -61,7 +61,7 @@ class ControllerAccounting extends ChangeNotifier {
       currentCurrency = accountController.mainCurrency;
     }
 
-    _recalculateTodayTotal();
+    _recalculateTodayTotal(account.currency);
     notifyListeners();
   }
 
@@ -83,14 +83,43 @@ class ControllerAccounting extends ChangeNotifier {
   Future<void> commitRecords(
       List<AccountingPreview> previews, String? currency) async {
     await service.insertRecordsBatch(
-      accountId: account.id,
-      type: currentType,
-      records: previews,
-      currency: currency,
-      currentType: currentType
-    );
+        accountId: account.id,
+        type: currentType,
+        records: previews,
+        currency: currency,
+        currentType: currentType);
 
     await loadToday();
+  }
+
+  // 更新單筆 accounting_detail
+  Future<void> updateAccountingDetail({
+    required String? recordId,
+    required int newValue,
+    required String? newCurrency,
+    required String newDescription,
+  }) async {
+    if (recordId == null || newCurrency == null) {
+      return;
+    }
+    // 呼叫後端 RPC
+    await service.updateAccountingDetail(
+      detailId: recordId,
+      newValue: newValue,
+      newCurrency: newCurrency,
+      newDescription: newDescription,
+    );
+
+    // 更新本地 todayRecords
+    /*final index = todayRecords.indexWhere((r) => r.id == recordId);
+    if (index != -1) {
+      todayRecords[index] = todayRecords[index].copyWith(
+        value: newValue,
+        currency: newCurrency,
+        description: newDescription,
+      );
+      notifyListeners();
+    }*/
   }
 }
 
