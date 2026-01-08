@@ -233,7 +233,7 @@ class _AccountCard extends StatelessWidget {
                                 text: '${formatter.format(account.points)} 分',
                                 style: TextStyle(
                                     color: account.points >= 0
-                                        ? Color(0xFF388E3C) // 綠色
+                                        ? Color(0xFF388E3C) 
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20),
@@ -269,35 +269,41 @@ class _AccountCard extends StatelessWidget {
                     ),
                   ),
 
-                  // ===== 刪除 =====
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    color: Colors.redAccent,
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          content: Text('Delete ${account.accountName}?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                  Column(
+                    mainAxisSize: MainAxisSize.min, // 依內容大小自適應
+                    children: [
+                      Gaps.h80,
+                      // ===== 刪除 =====
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        color: Colors.redAccent,
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              content: Text('Delete ${account.accountName}?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
                             ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      );
+                          );
 
-                      if (confirm == true) {
-                        await context
-                            .read<ControllerAccountingAccount>()
-                            .deleteAccount(account.id);
-                      }
-                    },
-                  ),
+                          if (confirm == true) {
+                            await context
+                                .read<ControllerAccountingAccount>()
+                                .deleteAccount(account.id);
+                          }
+                        },
+                      ),
+                    ]
+                  )
                 ],
               ),
             ),

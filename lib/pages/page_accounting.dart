@@ -254,14 +254,15 @@ class _AccountCard extends StatelessWidget {
                         Text.rich(
                           TextSpan(
                             children: [
-                              const TextSpan(
+                              TextSpan(
                                 text: 'Points ',
                                 style: TextStyle(
                                     color: Color(0xFF757575),
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: '${formatter.format(account.points)} 分', // 資料還沒來先顯示 '-'
+                                text: 
+                                  '${formatter.format(account.points)} 分', // 資料還沒來先顯示 '-'
                                 style: TextStyle(
                                     color: account.points >= 0
                                         ? Color(0xFF757575)
@@ -275,59 +276,65 @@ class _AccountCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  //幣別切換按鈕
-                  IconButton(
-                    icon: const Icon(Icons.currency_exchange),
-                    onPressed: () async {
-                      final selected = await showDialog<String>(
-                        context: context,
-                        builder: (_) => SimpleDialog(
-                          title: const Text('Switching Currency'),
-                          children: currencyList.map((c) {
-                            return SimpleDialogOption(
-                              child: Text(c),
-                              onPressed: () => Navigator.pop(context, c),
-                            );
-                          }).toList(),
-                        ),
-                      );
-
-                      if (selected != null) {
-                        await context
-                            .read<ControllerAccountingAccount>()
-                            .changeMainCurrency(account.id, selected);
-                      }
-                    },
-                  ),
-                  // ===== 刪除 =====
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    color: Colors.redAccent,
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          content: Text('Delete ${account.accountName}?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
+                  Column(
+                    mainAxisSize: MainAxisSize.min, // 依內容大小自適應
+                    children: [
+                      //幣別切換按鈕
+                      IconButton(
+                        icon: const Icon(Icons.currency_exchange),
+                        onPressed: () async {
+                          final selected = await showDialog<String>(
+                            context: context,
+                            builder: (_) => SimpleDialog(
+                              title: const Text('Switching Currency'),
+                              children: currencyList.map((c) {
+                                return SimpleDialogOption(
+                                  child: Text(c),
+                                  onPressed: () => Navigator.pop(context, c),
+                                );
+                              }).toList(),
                             ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      );
+                          );
 
-                      if (confirm == true) {
-                        await context
-                            .read<ControllerAccountingAccount>()
-                            .deleteAccount(account.id);
-                      }
-                    },
-                  ),
+                          if (selected != null) {
+                            await context
+                                .read<ControllerAccountingAccount>()
+                                .changeMainCurrency(account.id, selected);
+                          }
+                        },
+                      ),
+                      Gaps.h32,
+                      // ===== 刪除 =====
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        color: Colors.redAccent,
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              content: Text('Delete ${account.accountName}?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            await context
+                                .read<ControllerAccountingAccount>()
+                                .deleteAccount(account.id);
+                          }
+                        },
+                      ),
+                    ]
+                  )
                 ],
               ),
             ),
