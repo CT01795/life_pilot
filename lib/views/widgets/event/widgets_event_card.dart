@@ -233,7 +233,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
                                 ),
                               ),
                               title: Text(
-                                  '${DateFormat('M/d H點').format(w.date)} ${w.main}'),
+                                  '${DateFormat('M/d H:mm').format(w.date)} ${w.main}'),
                               subtitle: Text(tmp),
                             );
                           }).toList(),
