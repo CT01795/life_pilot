@@ -8,6 +8,7 @@ import 'package:life_pilot/controllers/accounting/controller_accounting_speech.d
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
+import 'package:life_pilot/controllers/event/controller_page_event_weather.dart';
 import 'package:life_pilot/core/const.dart' as globals;
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
@@ -23,6 +24,7 @@ import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
 import 'package:life_pilot/services/service_timezone.dart';
+import 'package:life_pilot/services/service_weather.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/export/service_export.dart';
@@ -104,6 +106,15 @@ void main() async {
             controller.auth = auth;
             return controller;
           },
+        ),
+        //-------------- Weather --------------
+        Provider<ServiceWeather>(
+          create: (_) => ServiceWeather(apiKey: globals.weatherApiKey),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ControllerPageEventWeather(
+            context.read<ServiceWeather>(),
+          ),
         ),
         //-------------- ModelAuthView (ControllerAuth)--------------
         ChangeNotifierProxyProvider<ControllerAuth, ModelAuthView>(

@@ -1,20 +1,16 @@
 // lib/views/widgets/event/event_card_widgets.dart
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
+import 'package:life_pilot/controllers/event/controller_page_event_weather.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/const.dart' as globals;
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/event/model_event_weather.dart';
-import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/event/widgets_event_sub_card.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../../core/logger.dart';
 
 class WidgetsEventCard extends StatefulWidget {
   final EventViewModel eventViewModel;
@@ -84,119 +80,105 @@ class WidgetsEventCard extends StatefulWidget {
 }
 
 class _WidgetsEventCardState extends State<WidgetsEventCard> {
-  EventWeather? currentWeather;
   String? weatherApiKey;
-  ServiceEvent? serviceEvent;
 
   @override
   void initState() {
     super.initState();
     weatherApiKey = globals.weatherApiKey;
-    serviceEvent = context.read<ServiceEvent>();
-    fetchWeather();
-  }
-
-  Future<void> fetchWeather() async {
-    if (widget.eventViewModel.hasLocation && weatherApiKey != null) {
-      try {
-        // 1️⃣ 用 OpenWeather Geocoding API 取得經緯度
-        final address = Uri.encodeComponent(
-            widget.eventViewModel.locationDisplay.split("．")[0]);
-        final geoUrl = Uri.parse(
-          'https://api.openweathermap.org/geo/1.0/direct?q=$address&limit=1&appid=$weatherApiKey',
+    context.read<ControllerPageEventWeather>().load(
+          locationDisplay: widget.eventViewModel.locationDisplay,
         );
-
-        final geoRes = await http.get(geoUrl);
-        if (geoRes.statusCode == 200) {
-          final geoData = json.decode(geoRes.body);
-          if (geoData is List && geoData.isNotEmpty) {
-            final loc = geoData[0];
-            final lat = loc['lat'];
-            final lon = loc['lon'];
-
-            // 2️⃣ 再呼叫 OpenWeather Weather API
-            final weatherUrl = Uri.parse(
-              'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$weatherApiKey&units=metric',
-            );
-
-            final weatherRes = await http.get(weatherUrl);
-            if (weatherRes.statusCode == 200) {
-              final data = json.decode(weatherRes.body);
-              setState(() {
-                currentWeather = EventWeather.fromJson(data);
-              });
-            } else {
-              logger.e('❌ Weather API Error: ${weatherRes.statusCode}');
-            }
-          } else {
-            logger.w(
-                '⚠️ No geocoding result for: ${widget.eventViewModel.locationDisplay}');
-          }
-        } else {
-          logger.e('❌ Geocoding API Error: ${geoRes.statusCode}');
-        }
-      } catch (e, st) {
-        logger.e('❌ fetchWeather Error: $e', stackTrace: st);
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final weatherCtrl = context.watch<ControllerPageEventWeather>();
+    final now = DateTime.now();
+    final tmpDate = formatDateRange(now, widget.eventViewModel.dateRange);
+    final eventDate =
+        DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
+
+    final showWeatherIcon =
+        weatherCtrl.forecast.isNotEmpty && eventDate.isAfter(now);
+
+    final todayWeather =
+        weatherCtrl.forecast.isNotEmpty ? weatherCtrl.forecast.first : null;
+
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
-      final now = DateTime.now();
-      final tmpDate = formatDateRange(now, widget.eventViewModel.dateRange);
-      final eventDate = DateTime.tryParse(tmpDate ?? '') ?? now.add(Duration(days: 1));
-      final showWeatherIcon = currentWeather != null && eventDate.isAfter(now);
       return Row(
         children: [
           // 天氣 Icon
-          if (showWeatherIcon)
+          if (showWeatherIcon && todayWeather != null)
             IconButton(
-              icon: currentWeather != null
-                  ? Container(
-                      width: 40, // 可調整大小
-                      height: 40,
-                      decoration: currentWeather?.main == 'Clouds'
-                          ? BoxDecoration(
-                              color: Colors.grey.shade400, // 舒服的淺灰色背景
-                              shape: BoxShape.circle,
-                            )
-                          : null, // 其他天氣不加背景
-                      padding: const EdgeInsets.all(1), // 內邊距
-                      child: Image.network(
-                        'https://openweathermap.org/img/wn/${currentWeather!.icon}@2x.png',
-                        width: 32,
-                        height: 32,
-                      ),
-                    )
-                  : Container(
-                      width: 40,
-                      height: 40,
-                      padding: const EdgeInsets.all(1),
-                      child: Icon(Icons.wb_sunny, color: Colors.orange),
-                    ),
-              tooltip: currentWeather != null
-                  ? '${currentWeather!.main} ${currentWeather!.temp.toStringAsFixed(1)}°C'
-                  : 'Weather',
+              icon: Container(
+                width: 42, // 可調整大小
+                height: 42,
+                decoration:
+                    todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
+                        ? BoxDecoration(
+                            color: Colors.grey.shade300, // 舒服的淺灰色背景
+                            shape: BoxShape.circle,
+                          )
+                        : null, // 其他天氣不加背景
+                padding: const EdgeInsets.all(1), // 內邊距
+                child: Image.network(
+                  'https://openweathermap.org/img/wn/${todayWeather.icon}@2x.png',
+                  width: 40,
+                  height: 40,
+                ),
+              ),
+              tooltip:
+                  '${todayWeather..main} ${todayWeather..temp.toStringAsFixed(1)}°C',
               onPressed: () async {
-                if (currentWeather != null) {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('Weather Forecast'),
-                      content: Text(
-                          '${currentWeather!.main} (${currentWeather!.description})\nTemperature: ${currentWeather!.temp}°C\n'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Close'),
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text('Weather Forecast'),
+                    content: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.6,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: weatherCtrl.forecast.map((w) {
+                            return ListTile(
+                              leading: Container(
+                                width: 42, // 可調整大小
+                                height: 42,
+                                decoration: w.main == 'Clouds' ||
+                                        w.main == 'Rain'
+                                    ? BoxDecoration(
+                                        color: Colors.grey.shade300, // 舒服的淺灰色背景
+                                        shape: BoxShape.circle,
+                                      )
+                                    : null, // 其他天氣不加背景
+                                padding: const EdgeInsets.all(1), // 內邊距
+                                child: Image.network(
+                                  'https://openweathermap.org/img/wn/${w.icon}.png',
+                                  width: 40,
+                                  height: 40,
+                                ),
+                              ),
+                              title: Text(
+                                  '${DateFormat('M/d H點').format(w.date)} ${w.main}'),
+                              subtitle: Text(
+                                  '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C\nMin:${w.tempMin.toStringAsFixed(1)}°C~Max:${w.tempMax.toStringAsFixed(1)}°C\n'),
+                            );
+                          }).toList(),
                         ),
-                      ],
+                      ),
                     ),
-                  );
-                }
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
 
