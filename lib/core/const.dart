@@ -70,6 +70,8 @@ class Gaps {
   static const h4 = SizedBox(height: 4);
   static const h8 = SizedBox(height: 8);
   static const h16 = SizedBox(height: 16);
+  static const h32 = SizedBox(height: 32);
+  static const h80 = SizedBox(height: 80);
 }
 
 // -------------------- Padding / EdgeInsets --------------------
