@@ -1,6 +1,7 @@
 // lib/views/widgets/event/event_card_widgets.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/controllers/event/controller_page_event_weather.dart';
@@ -142,20 +143,34 @@ class _WidgetsEventCardBody extends StatelessWidget {
           if (showWeatherIcon && todayWeather != null && context.mounted)
             IconButton(
               icon: Container(
-                width: 42, // 可調整大小
+                width: 42,
                 height: 42,
-                decoration:
-                    todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
-                        ? BoxDecoration(
-                            color: Colors.grey.shade300, // 舒服的淺灰色背景
-                            shape: BoxShape.circle,
+                decoration: todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
+                    ? BoxDecoration(
+                        color: Colors.grey.shade300,
+                        shape: BoxShape.circle,
+                      )
+                    : null,
+                padding: const EdgeInsets.all(1),
+                child: FutureBuilder<bool>(
+                  future: assetExists('assets/weather_icons/${todayWeather.icon}.png'),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const SizedBox(width: 40, height: 40);
+                    }
+                    final exists = snapshot.data ?? false;
+                    return exists
+                        ? Image.asset(
+                            'assets/weather_icons/${todayWeather.icon}.png',
+                            width: 40,
+                            height: 40,
                           )
-                        : null, // 其他天氣不加背景
-                padding: const EdgeInsets.all(1), // 內邊距
-                child: Image.network(
-                  'https://openweathermap.org/img/wn/${todayWeather.icon}@2x.png',
-                  width: 40,
-                  height: 40,
+                        : Image.network(
+                            'https://openweathermap.org/img/wn/${todayWeather.icon}.png',
+                            width: 40,
+                            height: 40,
+                          );
+                  },
                 ),
               ),
               tooltip:
@@ -187,20 +202,34 @@ class _WidgetsEventCardBody extends StatelessWidget {
                             tmp = '$tmp\n';
                             return ListTile(
                               leading: Container(
-                                width: 42, // 可調整大小
+                                width: 42,
                                 height: 42,
-                                decoration: w.main == 'Clouds' ||
-                                        w.main == 'Rain'
+                                decoration: w.main == 'Clouds' || w.main == 'Rain'
                                     ? BoxDecoration(
-                                        color: Colors.grey.shade300, // 舒服的淺灰色背景
+                                        color: Colors.grey.shade300,
                                         shape: BoxShape.circle,
                                       )
-                                    : null, // 其他天氣不加背景
-                                padding: const EdgeInsets.all(1), // 內邊距
-                                child: Image.network(
-                                  'https://openweathermap.org/img/wn/${w.icon}.png',
-                                  width: 40,
-                                  height: 40,
+                                    : null,
+                                padding: const EdgeInsets.all(1),
+                                child: FutureBuilder<bool>(
+                                  future: assetExists('assets/weather_icons/${w.icon}.png'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState != ConnectionState.done) {
+                                      return const SizedBox(width: 40, height: 40);
+                                    }
+                                    final exists = snapshot.data ?? false;
+                                    return exists
+                                        ? Image.asset(
+                                            'assets/weather_icons/${w.icon}.png',
+                                            width: 40,
+                                            height: 40,
+                                          )
+                                        : Image.network(
+                                            'https://openweathermap.org/img/wn/${w.icon}.png',
+                                            width: 40,
+                                            height: 40,
+                                          );
+                                  },
                                 ),
                               ),
                               title: Text(
@@ -338,6 +367,15 @@ class _WidgetsEventCardBody extends StatelessWidget {
       return null;
     } else {
       return '${tmpDateElement[0]}-${tmpDateElement[1].padLeft(2, '0')}-${tmpDateElement[2].padLeft(2, '0')}';
+    }
+  }
+
+  Future<bool> assetExists(String assetPath) async {
+    try {
+      await rootBundle.load(assetPath);
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 }

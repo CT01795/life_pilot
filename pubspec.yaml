@@ -95,6 +95,8 @@ flutter:
     - blockly/
     - blockly/msg/js/
     - assets/maps/
+    - assets/weather_icons/
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
