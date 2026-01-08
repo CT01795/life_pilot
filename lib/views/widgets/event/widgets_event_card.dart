@@ -5,14 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/controllers/event/controller_page_event_weather.dart';
 import 'package:life_pilot/core/app_navigator.dart';
-import 'package:life_pilot/core/const.dart' as globals;
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/services/service_weather.dart';
 import 'package:life_pilot/views/widgets/event/widgets_event_sub_card.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class WidgetsEventCard extends StatefulWidget {
+class WidgetsEventCard extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -29,6 +29,33 @@ class WidgetsEventCard extends StatefulWidget {
     this.trailing,
     this.showSubEvents = true,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    final serviceWeather = context.read<ServiceWeather>();
+    return ChangeNotifierProvider(
+      create: (_) {
+        final ctrl = ControllerPageEventWeather(serviceWeather);
+
+        // ✅ 延遲呼叫，避免在 build 階段或 widget 被移除時觸發
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!ctrl.disposed) {
+            ctrl.load(locationDisplay: eventViewModel.locationDisplay);
+          }
+        });
+
+        return ctrl;
+      },
+      child: _WidgetsEventCardBody(
+        eventViewModel: eventViewModel,
+        tableName: tableName,
+        onTap: onTap,
+        onDelete: onDelete,
+        trailing: trailing,
+        showSubEvents: showSubEvents,
+      ),
+    );
+  }
 
   static Widget link({
     required AppLocalizations loc,
@@ -74,28 +101,30 @@ class WidgetsEventCard extends StatefulWidget {
       }).toList(),
     );
   }
-
-  @override
-  State<WidgetsEventCard> createState() => _WidgetsEventCardState();
 }
 
-class _WidgetsEventCardState extends State<WidgetsEventCard> {
-  String? weatherApiKey;
+class _WidgetsEventCardBody extends StatelessWidget {
+  final EventViewModel eventViewModel;
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
+  final Widget? trailing;
+  final String tableName;
+  final bool showSubEvents;
 
-  @override
-  void initState() {
-    super.initState();
-    weatherApiKey = globals.weatherApiKey;
-    context.read<ControllerPageEventWeather>().load(
-          locationDisplay: widget.eventViewModel.locationDisplay,
-        );
-  }
+  const _WidgetsEventCardBody({
+    required this.eventViewModel,
+    required this.tableName,
+    this.onTap,
+    this.onDelete,
+    this.trailing,
+    this.showSubEvents = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     final weatherCtrl = context.watch<ControllerPageEventWeather>();
     final now = DateTime.now();
-    final tmpDate = formatDateRange(now, widget.eventViewModel.dateRange);
+    final tmpDate = formatDateRange(now, eventViewModel.dateRange);
     final eventDate =
         DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
 
@@ -110,7 +139,7 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
       return Row(
         children: [
           // 天氣 Icon
-          if (showWeatherIcon && todayWeather != null)
+          if (showWeatherIcon && todayWeather != null && context.mounted)
             IconButton(
               icon: Container(
                 width: 42, // 可調整大小
@@ -130,8 +159,9 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
                 ),
               ),
               tooltip:
-                  '${todayWeather..main} ${todayWeather..temp.toStringAsFixed(1)}°C',
+                  '${todayWeather.main} ${todayWeather.temp.toStringAsFixed(1)}°C',
               onPressed: () async {
+                if (!context.mounted) return;
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
@@ -194,17 +224,16 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
 
           Gaps.w8,
           Expanded(
-              child: Text(
-            widget.eventViewModel.name,
+              child: Text(eventViewModel.name,
             style: const TextStyle(fontWeight: FontWeight.bold),
             overflow: TextOverflow.ellipsis, // 防止文字過長
             softWrap: true,
           )),
-          if (widget.trailing != null)
+          if (trailing != null)
             Builder(
               builder: (context) {
                 // 這裡的 context 已經在 widget 樹內，可以安全使用 Provider
-                return widget.trailing!;
+                return trailing!;
               },
             ),
         ],
@@ -217,15 +246,16 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          if (widget.eventViewModel.dateRange.isNotEmpty)
-            Text(widget.eventViewModel.dateRange),
-          if (widget.eventViewModel.tags.isNotEmpty)
-            WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
-          if (widget.eventViewModel.hasLocation)
+          if (eventViewModel.dateRange.isNotEmpty)
+            Text(eventViewModel.dateRange),
+          if (eventViewModel.tags.isNotEmpty)
+            WidgetsEventCard.tags(typeList: eventViewModel.tags),
+          if (eventViewModel.hasLocation)
             InkWell(
               onTap: () async {
+                if (!context.mounted) return;
                 final query =
-                    Uri.encodeComponent(widget.eventViewModel.locationDisplay);
+                    Uri.encodeComponent(eventViewModel.locationDisplay);
 
                 // Google Maps 網頁導航 URL
                 final googleMapsUrl = Uri.parse(
@@ -244,27 +274,26 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
                   );
                 }
               },
-              child: Text(
-                widget.eventViewModel.locationDisplay,
+              child: Text(eventViewModel.locationDisplay,
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
-          if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
+          if (eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsEventCard.link(
-                loc: loc, url: widget.eventViewModel.masterUrl!),
-          if (widget.eventViewModel.description.isNotEmpty)
-            Text(widget.eventViewModel.description),
-          if (widget.showSubEvents)
-            ...widget.eventViewModel.subEvents
+                loc: loc, url: eventViewModel.masterUrl!),
+          if (eventViewModel.description.isNotEmpty)
+            Text(eventViewModel.description),
+          if (showSubEvents)
+            ...eventViewModel.subEvents
                 .map((sub) => WidgetsEventSubCard(event: sub)),
         ],
       ),
     );
 
-    final container = widget.tableName != TableNames.calendarEvents
+    final container = tableName != TableNames.calendarEvents
         ? Card(
             margin: Insets.h8v16,
             shape: RoundedRectangleBorder(
@@ -280,18 +309,18 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
           );
 
     return GestureDetector(
-      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
+      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
       child: Stack(
         children: [
           container,
-          if (widget.eventViewModel.canDelete && widget.onDelete != null)
+          if (eventViewModel.canDelete && onDelete != null)
             PositionedDirectional(
               end: Gaps.w24.width,
               bottom: Gaps.h8.height,
               child: IconButton(
                 icon: const Icon(Icons.delete, color: Colors.redAccent),
                 tooltip: loc.delete,
-                onPressed: widget.onDelete,
+                onPressed: onDelete,
               ),
             ),
         ],

@@ -9,20 +9,29 @@ class ControllerPageEventWeather extends ChangeNotifier {
 
   List<EventWeather> forecast = [];
   bool loading = false;
+  bool disposed = false;
 
   ControllerPageEventWeather(this.serviceWeather);
   
   Future<void> load({
     required String locationDisplay,
   }) async {
+    if (loading || locationDisplay.isEmpty) return;
+
     loading = true;
-    notifyListeners();
+    if (!disposed) notifyListeners();
 
     forecast = await serviceWeather.get3DayWeather(
       locationDisplay: locationDisplay,
     );
 
     loading = false;
-    notifyListeners();
+    if (!disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    disposed = true;
+    super.dispose();
   }
 }
