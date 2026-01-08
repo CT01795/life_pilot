@@ -144,6 +144,17 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: weatherCtrl.forecast.map((w) {
+                            String tmp =
+                                '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
+                            if (w.temp.toStringAsFixed(1) !=
+                                w.tempMin.toStringAsFixed(1)) {
+                              tmp = '$tmp\nMin:${w.tempMin.toStringAsFixed(1)}°C';
+                            }
+                            if (w.temp.toStringAsFixed(1) !=
+                                w.tempMax.toStringAsFixed(1)) {
+                              tmp = '$tmp~Max:${w.tempMax.toStringAsFixed(1)}°C';
+                            }
+                            tmp = '$tmp\n';
                             return ListTile(
                               leading: Container(
                                 width: 42, // 可調整大小
@@ -164,8 +175,7 @@ class _WidgetsEventCardState extends State<WidgetsEventCard> {
                               ),
                               title: Text(
                                   '${DateFormat('M/d H點').format(w.date)} ${w.main}'),
-                              subtitle: Text(
-                                  '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C\nMin:${w.tempMin.toStringAsFixed(1)}°C~Max:${w.tempMax.toStringAsFixed(1)}°C\n'),
+                              subtitle: Text(tmp),
                             );
                           }).toList(),
                         ),
