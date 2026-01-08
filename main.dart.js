@@ -127417,7 +127417,7 @@ if(B.d.aq(r,1)!==B.d.aq(p,1))q=q+"~Max:"+B.d.aq(p,1)+"\xb0C"
 r=a.b
 p=r==="Clouds"||r==="Rain"?new A.ck(B.dq,s,s,s,s,s,B.dj):s
 p=A.c4(s,A.bhi(new A.b52(a),this.a.AD("assets/weather_icons/"+a.z+".png"),t.y),B.o,s,s,p,s,42,s,B.tU,s,s,42)
-r=A.a5(A.mj("M/d H\u9ede",s).dC(a.a)+" "+r,s,s,s,s,s,s,s,s)
+r=A.a5(A.mj("M/d H:mm",s).dC(a.a)+" "+r,s,s,s,s,s,s,s,s)
 return A.t9(s,s,s,p,s,A.a5(q+"\n",s,s,s,s,s,s,s,s),r,s,s)},
 $S:886}
 A.b52.prototype={
