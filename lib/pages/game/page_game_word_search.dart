@@ -88,7 +88,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                       ),
                       TextSpan(
                         text: controller.currentQuestion.question,
-                        style: const TextStyle(color: Colors.blue), // 藍色
+                        style: const TextStyle(color: Colors.blue,fontsize:40), // 藍色
                       ),
                     ],
                   ),
