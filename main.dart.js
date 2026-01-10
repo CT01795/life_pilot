@@ -119962,7 +119962,7 @@ c.y=c.ay=null
 s=c.e
 r=A.du(s.b," ","")
 q=r.length
-p=Math.max(q+4,10)
+p=Math.max(q+3,10)
 s=b.a
 if(s!==p){b.a=p
 o=J.hM(p,t.Cq)
