@@ -83,12 +83,12 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                     ),
                     children: [
                       TextSpan(
-                        text: 'Find this word: ',
+                        text: 'Find  ',
                         style: const TextStyle(color: Colors.black), // 黑色
                       ),
                       TextSpan(
                         text: controller.currentQuestion.question,
-                        style: const TextStyle(color: Colors.blue), // 藍色
+                        style: const TextStyle(color: Colors.blue,fontSize:50), // 藍色
                       ),
                     ],
                   ),
