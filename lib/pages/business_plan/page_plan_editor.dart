@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/business_plan/model_plan_question.dart';
+import 'package:life_pilot/pages/business_plan/page_plan_preview.dart';
 import 'package:provider/provider.dart';
 
 class PagePlanEditor extends StatefulWidget {
@@ -27,7 +28,21 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Business Plan Editor'),
+      appBar: AppBar(
+        title: const Text('Business Plan Editor'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.visibility),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PagePlanPreview(),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(16), // 增加高度，變胖
           child: Selector<ControllerBusinessPlan, double>(
@@ -81,9 +96,22 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                     controller: _textController,
                     maxLines: null,
                     expands: true,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: '請輸入你的回答…',
+                    textAlignVertical: TextAlignVertical.top,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.6, // ⭐ 行距
+                    ),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.all(16), // ⭐ 內距
+                      hintText:
+                          '建議用條列方式撰寫，例如：\n'
+                          '• 背景說明：\n'
+                          '• 解決的問題：\n'
+                          '• 商業模式：',
+                      hintStyle: const TextStyle(height: 1.6),
                     ),
                   ),
                 ),
