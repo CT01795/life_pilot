@@ -75,7 +75,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     );
 
     // 🔥 真正補上的地方
-    service.upsertAnswer(
+    await service.upsertAnswer(
       planId: currentPlan!.id,
       sectionOrder: sectionIndex,
       questionOrder: questionIndex,
