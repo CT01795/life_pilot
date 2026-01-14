@@ -90,7 +90,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                 Gaps.h16,
                 // Navigation
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
                       onPressed: () async {

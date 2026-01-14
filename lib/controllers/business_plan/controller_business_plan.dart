@@ -37,21 +37,19 @@ class ControllerBusinessPlan extends ChangeNotifier {
     required String templateId,
   }) async {
     final planId = const Uuid().v4();
-
-  // 1️⃣ 先在 DB 建立 Plan
-    await service.insertBusinessPlan(
+    // 1️⃣ 先建立 plan + section + question
+    await service.createPlanFromTemplate(
+      user: auth?.currentAccount ?? AuthConstants.guest,
       planId: planId,
       title: title,
       templateId: templateId,
-      user: auth?.currentAccount ?? AuthConstants.guest
     );
 
-    // 2️⃣ 再用 template 生成 sections
-    final sections =
-        await service.buildSectionsFromTemplate(templateId);
+    // 2️⃣ 拉剛建立的 sections（帶題目）
+    final sections = await service.fetchSectionsWithQuestions(planId);
 
     currentPlan = ModelBusinessPlan(
-      id: const Uuid().v4(),
+      id: planId, // 使用剛建立的 planId
       title: title,
       createdAt: DateTime.now(),
       sections: sections,
@@ -74,13 +72,13 @@ class ControllerBusinessPlan extends ChangeNotifier {
         ..[sectionIndex] = section.copyWith(questions: questions),
     );
 
+    final question = questions[questionIndex];
+
     // 🔥 真正補上的地方
     await service.upsertAnswer(
       planId: currentPlan!.id,
-      sectionOrder: sectionIndex,
-      questionOrder: questionIndex,
-      sectionTitle: section.title,
-      prompt: questions[questionIndex].prompt,
+      sectionId: section.id,
+      questionId: question.id,
       answer: answer,
     );
 
