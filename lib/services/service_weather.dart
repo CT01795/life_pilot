@@ -12,9 +12,11 @@ class ServiceWeather {
   Future<List<EventWeather>> get3DayWeather(
       {required String locationDisplay, required DateTime? startDate}) async {
     String tmpLocation = locationDisplay.split("．")[0];
-    final today = startDate == null || startDate.isBefore(DateTime.now())
-        ? DateTime.now()
-        : startDate;
+    final today = DateTime.now();
+    final resultStartDate =
+        startDate == null || startDate.isBefore(today)
+            ? today
+            : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
 
     /// 1️⃣ 查 DB
@@ -22,7 +24,7 @@ class ServiceWeather {
         .from('weather_forecast')
         .select()
         .eq('location', tmpLocation)
-        .gte('date', today.add(Duration(hours: -3)).toIso8601String())
+        .gte('date', resultStartDate.add(Duration(hours: -3)).toIso8601String())
         .gte('created_at', todayDate.toIso8601String())
         .order('date', ascending: true);
 
