@@ -11,6 +11,7 @@ enum PageType {
   game,
   ai,
   feedbackAdmin,
+  startupBusinessPlan,
 }
 
 extension PageTypeExtension on PageType {
@@ -42,5 +43,6 @@ extension PageTypeExtension on PageType {
     PageType.game: loc.game,
     PageType.ai: loc.ai,
     PageType.feedbackAdmin: loc.feedback,
+    PageType.startupBusinessPlan: loc.startupBusinessPlan,
   };
 }
