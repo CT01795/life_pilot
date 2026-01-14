@@ -333,11 +333,11 @@ abstract class AppLocalizations {
   /// **'Feedback'**
   String get feedback;
 
-  /// Label for startupBusinessPlan
+  /// Label for BusinessPlan
   ///
   /// In en, this message translates to:
-  /// **'Startup Business Plan'**
-  String get startupBusinessPlan;
+  /// **'Business Plan'**
+  String get businessPlan;
 
   /// ==========================================================================
   ///

@@ -62,7 +62,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     notifyListeners();
   }
 
-  void saveAnswer(String answer) {
+  Future<void> commitCurrentAnswer(String answer) async {
     final section = currentPlan!.sections[sectionIndex];
     final questions = [...section.questions];
 
@@ -114,5 +114,70 @@ class ControllerBusinessPlan extends ChangeNotifier {
     }
 
     return false;
+  }
+
+  bool previous() {
+    if (questionIndex > 0) {
+      questionIndex--;
+      notifyListeners();
+      return true;
+    }
+
+    if (sectionIndex > 0) {
+      sectionIndex--;
+      questionIndex =
+          currentPlan!.sections[sectionIndex].questions.length - 1;
+      notifyListeners();
+      return true;
+    }
+
+    return false;
+  }
+
+  int get totalQuestions =>
+    currentPlan!.sections.fold(
+      0,
+      (sum, s) => sum + s.questions.length,
+    );
+
+  int get currentQuestionNumber {
+    int count = 0;
+    for (int s = 0; s < sectionIndex; s++) {
+      count += currentPlan!.sections[s].questions.length;
+    }
+    return count + questionIndex + 1;
+  }
+
+  double get progress =>
+    currentQuestionNumber / totalQuestions;
+
+  Future<void> resumePlan(String planId) async {
+    isLoading = true;
+    notifyListeners();
+
+    currentPlan =
+        await service.fetchPlanDetail(planId: planId);
+
+    for (int s = 0; s < currentPlan!.sections.length; s++) {
+      for (int q = 0;
+          q < currentPlan!.sections[s].questions.length;
+          q++) {
+        if (currentPlan!.sections[s].questions[q].answer.isEmpty) {
+          sectionIndex = s;
+          questionIndex = q;
+          isLoading = false;
+          notifyListeners();
+          return;
+        }
+      }
+    }
+
+    // 全部填完 → 停在最後
+    sectionIndex = currentPlan!.sections.length - 1;
+    questionIndex =
+        currentPlan!.sections.last.questions.length - 1;
+
+    isLoading = false;
+    notifyListeners();
   }
 }

@@ -54,7 +54,7 @@ class _PageMainState extends State<PageMain> {
         return const PageAI();
       case PageType.feedbackAdmin:
         return const PageFeedbackAdmin();
-      case PageType.startupBusinessPlan:
+      case PageType.businessPlan:
         return const PageBusinessPlan();
     }
   }
