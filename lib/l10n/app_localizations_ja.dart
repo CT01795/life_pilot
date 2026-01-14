@@ -126,6 +126,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feedback => 'Feedback';
 
   @override
+  String get startupBusinessPlan => 'Startup Business Plan';
+
+  @override
   String get pageRecommendedEvent => 'pageRecommendedEvent';
 
   @override

@@ -6,6 +6,7 @@ import 'package:life_pilot/config/config_app.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
+import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
 import 'package:life_pilot/core/const.dart' as globals;
@@ -21,6 +22,7 @@ import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_accounting.dart';
+import 'package:life_pilot/services/service_business_plan.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:life_pilot/services/service_weather.dart';
@@ -90,6 +92,13 @@ void main() async {
         ),
         Provider<TtsService>(
           create: (_) => TtsService(),
+        ),
+        Provider(create: (_) => ServiceBusinessPlan()),
+        ChangeNotifierProvider(
+          create: (context) => ControllerBusinessPlan(
+            service: context.read<ServiceBusinessPlan>(),
+            auth: context.read<ControllerAuth>(),
+          ),
         ),
         ChangeNotifierProxyProvider2<ServiceAccounting, ControllerAuth,
             ControllerAccountingAccount>(

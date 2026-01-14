@@ -13,16 +13,17 @@ class ControllerPageEventWeather extends ChangeNotifier {
 
   ControllerPageEventWeather(this.serviceWeather);
   
-  Future<void> load({
-    required String locationDisplay,
+  Future<void> load1({
+    required String locationDisplay, required DateTime? startDate
   }) async {
-    if (loading || locationDisplay.isEmpty) return;
+    if (loading || locationDisplay.isEmpty || (startDate != null && (DateTime.now().add(Duration(days: 7))).isBefore(startDate))) return;
 
     loading = true;
     if (!disposed) notifyListeners();
 
     forecast = await serviceWeather.get3DayWeather(
       locationDisplay: locationDisplay,
+      startDate: startDate
     );
 
     loading = false;

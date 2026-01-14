@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/models/event/model_event_weather.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,11 +9,12 @@ class ServiceWeather {
   final String? apiKey;
   ServiceWeather({required this.apiKey});
 
-  Future<List<EventWeather>> get3DayWeather({
-    required String locationDisplay,
-  }) async {
+  Future<List<EventWeather>> get3DayWeather(
+      {required String locationDisplay, required DateTime? startDate}) async {
     String tmpLocation = locationDisplay.split("．")[0];
-    final today = DateTime.now();
+    final today = startDate == null || startDate.isBefore(DateTime.now())
+        ? DateTime.now()
+        : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
 
     /// 1️⃣ 查 DB
@@ -122,7 +124,7 @@ String detectCountryHint(String location) {
           r'宜蘭|Yilan|花蓮|Hualien|台東|臺東|Taitung|'
           r'澎湖|Penghu|金門|Kinmen|連江|Lienchiang|馬祖|Matsu)')
       .hasMatch(l)) {
-    return ',TW';  //',Taiwan';
+    return ',TW'; //',Taiwan';
   }
 
   /// ======================
@@ -145,7 +147,7 @@ String detectCountryHint(String location) {
           r'熊本|阿蘇|鹿児島|指宿|'
           r'宮崎)')
       .hasMatch(l)) {
-    return ',JP';  //',Japan';
+    return ',JP'; //',Japan';
   }
 
   /// ======================
@@ -157,7 +159,7 @@ String detectCountryHint(String location) {
           r'天津|青岛|厦门|福州|'
           r'长沙|郑州|合肥|南昌)')
       .hasMatch(l)) {
-    return ',CN';  //',China';
+    return ',CN'; //',China';
   }
 
   /// ======================
@@ -168,28 +170,28 @@ String detectCountryHint(String location) {
               r'수원|성남|용인|'
               r'제주|서귀포)')
           .hasMatch(l)) {
-    return ',KR';  //',South Korea';
+    return ',KR'; //',South Korea';
   }
 
   /// ======================
   /// 🇭🇰 HONG KONG
   /// ======================
   if (RegExp(r'(Hong Kong|香港)').hasMatch(l)) {
-    return ',HK';  //',Hong Kong';
+    return ',HK'; //',Hong Kong';
   }
 
   /// ======================
   /// 🇸🇬 SINGAPORE
   /// ======================
   if (RegExp(r'(新加坡|Singapore)').hasMatch(l)) {
-    return ',SG';  //',Singapore';
+    return ',SG'; //',Singapore';
   }
 
   /// ======================
   /// 🇹🇭 THAILAND
   /// ======================
   if (RegExp(r'(曼谷|清迈|普吉|芭提雅|Bangkok|Chiang\s?Mai|Phuket)').hasMatch(l)) {
-    return ',TH';  //',Thailand';
+    return ',TH'; //',Thailand';
   }
 
   /// ======================
@@ -199,42 +201,42 @@ String detectCountryHint(String location) {
           r'Seattle|Chicago|Boston|'
           r'CA|NY|TX|WA|IL)')
       .hasMatch(l)) {
-    return ',US';  //',USA';
+    return ',US'; //',USA';
   }
 
   /// 🇬🇧 UK
   if (RegExp(r'(London|Manchester|Birmingham|Liverpool|Leeds)').hasMatch(l)) {
-    return ',GB';  //',UK';
+    return ',GB'; //',UK';
   }
 
   /// 🇫🇷 France
   if (RegExp(r'(Paris|Lyon|Marseille|Nice)').hasMatch(l)) {
-    return ',FR';  //',France';
+    return ',FR'; //',France';
   }
 
   /// 🇩🇪 Germany
   if (RegExp(r'(Berlin|Munich|München|Frankfurt|Hamburg)').hasMatch(l)) {
-    return ',DE';  //',Germany';
+    return ',DE'; //',Germany';
   }
 
   /// 🇮🇹 Italy
   if (RegExp(r'(Rome|Roma|Milan|Milano|Venice|Venezia|Florence)').hasMatch(l)) {
-    return ',IT';  //',Italy';
+    return ',IT'; //',Italy';
   }
 
   /// 🇪🇸 Spain
   if (RegExp(r'(Madrid|Barcelona|Valencia|Seville)').hasMatch(l)) {
-    return ',ES';  //',Spain';
+    return ',ES'; //',Spain';
   }
 
   /// 🇦🇺 Australia
   if (RegExp(r'(Sydney|Melbourne|Brisbane|Perth)').hasMatch(l)) {
-    return ',AU';  //',Australia';
+    return ',AU'; //',Australia';
   }
 
   /// 🇨🇦 Canada
   if (RegExp(r'(Toronto|Vancouver|Montreal|Calgary)').hasMatch(l)) {
-    return ',CA';  //',Canada';
+    return ',CA'; //',Canada';
   }
 
   return l; // ❗ 無法判斷 → 不加國家

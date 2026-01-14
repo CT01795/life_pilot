@@ -28,7 +28,7 @@ class ControllerPageMain extends ChangeNotifier {
         _selectedPage = auth.isAnonymous
             ? PageType.recommendedEvent
             : PageType.personalEvent {
-    if(_auth.isLoggedIn){
+    if (_auth.isLoggedIn) {
       loadModulesFromServer();
     }
   }
@@ -76,8 +76,9 @@ class ControllerPageMain extends ChangeNotifier {
     // 最後加遊戲頁
     pages.add(PageType.game);
     pages.add(PageType.ai);
-    if(auth.currentAccount == AuthConstants.sysAdminEmail){
+    if (auth.currentAccount == AuthConstants.sysAdminEmail) {
       pages.add(PageType.feedbackAdmin);
+      pages.add(PageType.startupBusinessPlan);
     }
 
     return pages;
@@ -125,7 +126,7 @@ class ControllerPageMain extends ChangeNotifier {
       changed = true;
     }
     if (changed) {
-      if(_auth.isLoggedIn){
+      if (_auth.isLoggedIn) {
         loadModulesFromServer();
       }
       _notifyDebounced();
@@ -136,7 +137,7 @@ class ControllerPageMain extends ChangeNotifier {
   Future<void> loadModulesFromServer() async {
     dbPages =
         await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
-    _validateSelectedPage(); 
+    _validateSelectedPage();
     notifyListeners();
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
+import 'package:life_pilot/pages/business_plan/page_business_plan.dart';
 import 'package:life_pilot/pages/page_accounting.dart';
 import 'package:life_pilot/pages/page_ai.dart';
 import 'package:life_pilot/pages/page_calendar.dart';
@@ -53,6 +54,8 @@ class _PageMainState extends State<PageMain> {
         return const PageAI();
       case PageType.feedbackAdmin:
         return const PageFeedbackAdmin();
+      case PageType.startupBusinessPlan:
+        return const PageBusinessPlan();
     }
   }
 

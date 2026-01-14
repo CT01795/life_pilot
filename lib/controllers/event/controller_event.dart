@@ -154,8 +154,7 @@ class ControllerEvent extends ChangeNotifier {
       }
       await controllerCalendar?.loadCalendarEvents(
           month: event.startDate!, notify: true);
-    }
-    else{
+    } else {
       await loadEvents(); // 自動刷新列表
     }
   }
@@ -197,7 +196,8 @@ class ControllerEvent extends ChangeNotifier {
       modelEventCalendar.toggleEventSelection(event.id, true);
 
       if (toTableName == TableNames.calendarEvents) {
-        await controllerCalendar.loadCalendarEvents(month: event.startDate!, notify: false);
+        await controllerCalendar.loadCalendarEvents(
+            month: event.startDate!, notify: false);
         controllerCalendar.goToMonth(month: DateTime.now(), notify: false);
       }
     } else {
@@ -264,9 +264,8 @@ class ControllerEvent extends ChangeNotifier {
         : constEmpty;
 
     // 處理 tags
-    final tagsRawData = <String>[event.fee, event.type]
-        .where((t) => t.isNotEmpty)
-        .toList();
+    final tagsRawData =
+        <String>[event.fee, event.type].where((t) => t.isNotEmpty).toList();
 
     final tags = tagsRawData
         .expand((t) => t.split(RegExp(r'[\s,，]')))
@@ -278,6 +277,7 @@ class ControllerEvent extends ChangeNotifier {
     return EventViewModel(
       name: event.name,
       showDate: tableName != TableNames.recommendedAttractions,
+      startDate: event.startDate,
       dateRange: tableName != TableNames.recommendedAttractions
           ? '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.startToS)}'
               '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.endToE)}'
@@ -290,13 +290,14 @@ class ControllerEvent extends ChangeNotifier {
       description: event.description,
       subEvents: showSubEvents
           ? event.subEvents
-          .map((sub) => buildEventViewModel(
-                event: sub,
-                parentLocation: locationDisplay,
-                canDelete: canDelete,
-                showSubEvents: showSubEvents,
-              ))
-          .toList() : const [],
+              .map((sub) => buildEventViewModel(
+                    event: sub,
+                    parentLocation: locationDisplay,
+                    canDelete: canDelete,
+                    showSubEvents: showSubEvents,
+                  ))
+              .toList()
+          : const [],
       canDelete: canDelete,
       showSubEvents: showSubEvents,
     );
@@ -321,10 +322,12 @@ class EventViewModel {
   final List<EventViewModel> subEvents;
   final bool canDelete;
   final bool showSubEvents;
+  final DateTime? startDate;
 
   EventViewModel({
     required this.name,
     required this.showDate,
+    required this.startDate,
     required this.dateRange,
     required this.tags,
     required this.hasLocation,

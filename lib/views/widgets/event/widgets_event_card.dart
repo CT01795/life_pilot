@@ -41,7 +41,7 @@ class WidgetsEventCard extends StatelessWidget {
         // ✅ 延遲呼叫，避免在 build 階段或 widget 被移除時觸發
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!ctrl.disposed) {
-            ctrl.load(locationDisplay: eventViewModel.locationDisplay);
+            ctrl.load1(locationDisplay: eventViewModel.locationDisplay, startDate: eventViewModel.startDate);
           }
         });
 
