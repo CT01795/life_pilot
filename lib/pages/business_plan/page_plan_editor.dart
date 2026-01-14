@@ -94,12 +94,24 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                   children: [
                     ElevatedButton(
                       onPressed: () async {
+                        await c.commitCurrentAnswer(_textController.text);
+                        final hasPrev = c.previous();
+                        if (hasPrev) {
+                          _textController.text = c.currentQuestion.answer;
+                        }
+                      },
+                      child: const Text('Previous'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
                         // 1️⃣ 先存答案
                         await c.commitCurrentAnswer(_textController.text);
                         // 2️⃣ 再切題
                         final hasNext = c.next();
                         if (!hasNext) {
                           Navigator.pop(context); // 暫時完成
+                        } else {
+                          _textController.text = c.currentQuestion.answer;
                         }
                       },
                       child: const Text('Next'),

@@ -9,7 +9,7 @@ class ServiceWeather {
   final String? apiKey;
   ServiceWeather({required this.apiKey});
 
-  Future<List<EventWeather>> get3DayWeather(
+  Future<List<EventWeather>> getWeather(
       {required String locationDisplay, required DateTime? startDate}) async {
     String tmpLocation = locationDisplay.split("．")[0];
     final today = DateTime.now();
