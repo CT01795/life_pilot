@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/models/business_plan/model_business_plan.dart';
+import 'package:life_pilot/pages/business_plan/page_plan_editor.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_select_template.dart';
 import 'package:provider/provider.dart';
 
@@ -25,7 +26,6 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Business Plans')),
       body: Selector<ControllerBusinessPlan, bool>(
         selector: (_, c) => c.isLoading,
         builder: (_, isLoading, __) {
@@ -43,7 +43,19 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
               return ListView.builder(
                 itemCount: plans.length,
                 itemBuilder: (_, i) => ListTile(
-                  title: Text(plans[i].title),
+                  title: Text('Plan ${i+1}: ${plans[i].title}'),
+                  onTap: () async {
+                    await context
+                        .read<ControllerBusinessPlan>()
+                        .resumePlan(plans[i].id);
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PagePlanEditor(),
+                      ),
+                    );
+                  },
                 ),
               );
             },
@@ -59,7 +71,7 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 50),
       ),
     );
   }

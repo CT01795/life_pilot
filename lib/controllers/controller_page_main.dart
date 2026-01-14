@@ -78,7 +78,7 @@ class ControllerPageMain extends ChangeNotifier {
     pages.add(PageType.ai);
     if (auth.currentAccount == AuthConstants.sysAdminEmail) {
       pages.add(PageType.feedbackAdmin);
-      pages.add(PageType.startupBusinessPlan);
+      pages.add(PageType.businessPlan);
     }
 
     return pages;

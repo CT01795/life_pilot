@@ -81,8 +81,8 @@
   "@ai": {"description": "Label for AI"},
   "feedback": "Feedback",
   "@feedback": {"description": "Label for Feedback"},
-  "startupBusinessPlan": "Startup Business Plan",
-  "@startupBusinessPlan": {"description": "Label for startupBusinessPlan"},
+  "businessPlan": "Business Plan",
+  "@businessPlan": {"description": "Label for BusinessPlan"},
 
   "pageRecommendedEvent": "pageRecommendedEvent",
   "@pageRecommendedEvent": {"description": "=========================================================================="},

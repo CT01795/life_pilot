@@ -126,7 +126,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedback => 'Feedback';
 
   @override
-  String get startupBusinessPlan => 'Startup Business Plan';
+  String get businessPlan => 'Business Plan';
 
   @override
   String get pageRecommendedEvent => 'pageRecommendedEvent';
