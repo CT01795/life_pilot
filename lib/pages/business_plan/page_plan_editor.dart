@@ -4,6 +4,7 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/business_plan/model_plan_question.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_preview.dart';
 import 'package:provider/provider.dart';
+import 'package:html_editor_enhanced/html_editor.dart';
 
 class PagePlanEditor extends StatefulWidget {
   const PagePlanEditor({super.key});
@@ -13,16 +14,23 @@ class PagePlanEditor extends StatefulWidget {
 }
 
 class _PagePlanEditorState extends State<PagePlanEditor> {
-  late final TextEditingController _textController;
-  ModelPlanQuestion? _lastQuestion;
+  late HtmlEditorController _htmlController;
 
   @override
   void initState() {
     super.initState();
+    _htmlController = HtmlEditorController();
+    _loadCurrentAnswer();
+  }
+
+  // 載入當前題目答案到 HtmlEditor
+  void _loadCurrentAnswer() {
     final c = context.read<ControllerBusinessPlan>();
-    _textController =
-        TextEditingController(text: c.currentQuestion.answer);
-    _lastQuestion = c.currentQuestion;
+    final answer = c.currentQuestion.answer;
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      _htmlController.clear(); // 先清空
+      _htmlController.setText(answer);
+    });
   }
 
   @override
@@ -65,12 +73,6 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
       body: Selector<ControllerBusinessPlan, ModelPlanQuestion>(
         selector: (_, c) => c.currentQuestion,
         builder: (_, question, __) {
-          // 🔒 只有在「題目真的變了」才同步文字
-          if (_lastQuestion?.id != question.id) {
-            _textController.text = question.answer;
-            _lastQuestion = question;
-          }
-
           final c = context.read<ControllerBusinessPlan>();
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -92,26 +94,21 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                 Gaps.h16,
                 // Answer
                 Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.6, // ⭐ 行距
+                  child: HtmlEditor(
+                    controller: _htmlController,
+                    htmlEditorOptions: HtmlEditorOptions(
+                      initialText: question.answer.isEmpty ? "" : question.answer,
+                      hint: "請輸入答案",
                     ),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      contentPadding: const EdgeInsets.all(16), // ⭐ 內距
-                      hintText:
-                          '建議用條列方式撰寫，例如：\n'
-                          '• 背景說明：\n'
-                          '• 解決的問題：\n'
-                          '• 商業模式：',
-                      hintStyle: const TextStyle(height: 1.6),
+                    htmlToolbarOptions: const HtmlToolbarOptions(
+                      defaultToolbarButtons: [
+                        StyleButtons(),
+                        FontSettingButtons(),
+                        ColorButtons(),
+                        ListButtons(),
+                        ParagraphButtons(),
+                        InsertButtons(),
+                      ],
                     ),
                   ),
                 ),
@@ -122,24 +119,26 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                   children: [
                     ElevatedButton(
                       onPressed: () async {
-                        await c.commitCurrentAnswer(_textController.text);
+                        final html = await _htmlController.getText();
+                        await c.commitCurrentAnswer(html);
                         final hasPrev = c.previous();
                         if (hasPrev) {
-                          _textController.text = c.currentQuestion.answer;
+                          _loadCurrentAnswer();
+                          setState(() {});
                         }
                       },
                       child: const Text('Previous'),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        // 1️⃣ 先存答案
-                        await c.commitCurrentAnswer(_textController.text);
-                        // 2️⃣ 再切題
+                        final html = await _htmlController.getText();
+                        await c.commitCurrentAnswer(html);
                         final hasNext = c.next();
                         if (!hasNext) {
-                          Navigator.pop(context); // 暫時完成
+                          Navigator.pop(context);
                         } else {
-                          _textController.text = c.currentQuestion.answer;
+                          _loadCurrentAnswer();
+                          setState(() {});
                         }
                       },
                       child: const Text('Next'),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:provider/provider.dart';
 
 class PagePlanPreview extends StatelessWidget {
@@ -22,7 +24,7 @@ class PagePlanPreview extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            Gaps.h8,
             for (final q in section.questions) ...[
               Text(
                 q.prompt,
@@ -30,7 +32,7 @@ class PagePlanPreview extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 6),
+              Gaps.h8,
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -38,12 +40,13 @@ class PagePlanPreview extends StatelessWidget {
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: SelectableText(
-                  q.answer.isEmpty ? '（尚未填寫）' : q.answer,
-                  style: const TextStyle(height: 1.6),
-                ),
+                child: q.answer.isEmpty
+                    ? const Text('（尚未填寫）')
+                    : Html(
+                        data: q.answer, // 直接渲染 HTML
+                      ),
               ),
-              const SizedBox(height: 16),
+              Gaps.h16,
             ],
           ]
         ],
