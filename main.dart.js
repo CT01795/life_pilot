@@ -127566,7 +127566,7 @@ case 13:case 11:b.length===b0||(0,A.M)(b),++a3
 s=10
 break
 case 12:a9=a9.du("weather_forecast").nt(0).dX("location",a5)
-a9=A.lH(a9.qc(a9.oQ("date","gte."+a6.fn(A.bJ(0,-3,0,0,0,0).a).f7())),a9.$ti.c)
+a9=A.lH(a9.qc(a9.oQ("date","gte."+a7.fn(A.bJ(0,-3,0,0,0,0).a).f7())),a9.$ti.c)
 s=14
 return A.i(A.lH(a9.qc(a9.oQ("created_at","gte."+a8.f7())),a9.$ti.c).iY(0,"date",!0),$async$pR)
 case 14:o=b4
