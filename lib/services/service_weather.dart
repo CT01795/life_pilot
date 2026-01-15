@@ -96,10 +96,10 @@ class ServiceWeather {
             .from('weather_forecast')
             .select()
             .eq('location', tmpLocation)
-            .gte('date', today.add(Duration(hours: -3)).toIso8601String())
+            .gte('date', resultStartDate.add(Duration(hours: -3)).toIso8601String())
             .gte('created_at', todayDate.toIso8601String())
             .order('date', ascending: true);
-
+        
         if (dbRes.isNotEmpty) {
           return dbRes
               .map<EventWeather>((e) => EventWeather.fromJson(e['weather']))
