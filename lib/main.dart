@@ -100,10 +100,10 @@ void main() async {
             auth: context.read<ControllerAuth>(),
           ),
           update: (_, auth, controller) {
-            final prevAccount = controller!.auth?.currentAccount;
-            controller.auth = auth;
+            controller!.auth = auth;
 
-            if (prevAccount != auth.currentAccount) {
+            if (!controller.hasLoadedOnce) {
+              controller.hasLoadedOnce = true;
               Future.microtask(() {
                 controller.loadPlans();
               });
