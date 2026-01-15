@@ -94,11 +94,23 @@ void main() async {
           create: (_) => TtsService(),
         ),
         Provider(create: (_) => ServiceBusinessPlan()),
-        ChangeNotifierProvider(
+        ChangeNotifierProxyProvider<ControllerAuth, ControllerBusinessPlan>(
           create: (context) => ControllerBusinessPlan(
             service: context.read<ServiceBusinessPlan>(),
             auth: context.read<ControllerAuth>(),
           ),
+          update: (_, auth, controller) {
+            final prevAccount = controller!.auth?.currentAccount;
+            controller.auth = auth;
+
+            if (prevAccount != auth.currentAccount) {
+              Future.microtask(() {
+                controller.loadPlans();
+              });
+            }
+
+            return controller;
+          },
         ),
         ChangeNotifierProxyProvider2<ServiceAccounting, ControllerAuth,
             ControllerAccountingAccount>(

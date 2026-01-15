@@ -13,15 +13,6 @@ class PageBusinessPlan extends StatefulWidget {
 }
 
 class _PageBusinessPlanState extends State<PageBusinessPlan> {
-  bool _inited = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_inited) return;
-    context.read<ControllerBusinessPlan>().loadPlans();
-    _inited = true;
-  }
 
   @override
   Widget build(BuildContext context) {
