@@ -88,9 +88,15 @@ class ControllerBusinessPlan extends ChangeNotifier {
   Future<void> loadPlans() async {
     isLoading = true;
     notifyListeners();
-    plans = await service.fetchPlans(user: auth?.currentAccount ?? AuthConstants.guest);
-    isLoading = false;
-    notifyListeners();
+    try {
+      plans = await service.fetchPlans(user: auth?.currentAccount ?? AuthConstants.guest);
+    } catch (e, stack) {
+      debugPrint('loadPlans error: $e');
+      debugPrintStack(stackTrace: stack);
+    } finally {
+      isLoading = false; // 🔥 關鍵
+      notifyListeners(); // 🔥 關鍵
+    }
   }
 
   ModelPlanQuestion get currentQuestion =>
@@ -152,30 +158,35 @@ class ControllerBusinessPlan extends ChangeNotifier {
   Future<void> resumePlan(String planId) async {
     isLoading = true;
     notifyListeners();
+    try {
+      currentPlan =
+          await service.fetchPlanDetail(planId: planId);
 
-    currentPlan =
-        await service.fetchPlanDetail(planId: planId);
-
-    for (int s = 0; s < currentPlan!.sections.length; s++) {
-      for (int q = 0;
-          q < currentPlan!.sections[s].questions.length;
-          q++) {
-        if (currentPlan!.sections[s].questions[q].answer.isEmpty) {
-          sectionIndex = s;
-          questionIndex = q;
-          isLoading = false;
-          notifyListeners();
-          return;
+      for (int s = 0; s < currentPlan!.sections.length; s++) {
+        for (int q = 0;
+            q < currentPlan!.sections[s].questions.length;
+            q++) {
+          if (currentPlan!.sections[s].questions[q].answer.isEmpty) {
+            sectionIndex = s;
+            questionIndex = q;
+            isLoading = false;
+            notifyListeners();
+            return;
+          }
         }
       }
+
+      // 全部填完 → 停在最後
+      sectionIndex = currentPlan!.sections.length - 1;
+      questionIndex =
+          currentPlan!.sections.last.questions.length - 1;
+
+    } catch (e, stack) {
+      debugPrint('resumePlan error: $e');
+      debugPrintStack(stackTrace: stack);
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-
-    // 全部填完 → 停在最後
-    sectionIndex = currentPlan!.sections.length - 1;
-    questionIndex =
-        currentPlan!.sections.last.questions.length - 1;
-
-    isLoading = false;
-    notifyListeners();
   }
 }
