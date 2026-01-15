@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 class ControllerBusinessPlan extends ChangeNotifier {
   final ServiceBusinessPlan service;
   ControllerAuth? auth;
+  bool hasLoadedOnce = false;
 
   ControllerBusinessPlan({required this.service, required this.auth,});
 
