@@ -44,7 +44,7 @@ void main() async {
 
   await Supabase.initialize(
     url: SupabaseConfig.url,
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNja3RkcHljbmZlcmJyanJkdGtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNTU0NTIsImV4cCI6MjA2ODgzMTQ1Mn0.jsuY3AvuhRlCwuGKmcq_hyj1ViLRX18kmQs5YYnFwR4',//SupabaseConfig.anonKey,
+    anonKey: SupabaseConfig.anonKey,
     debug: true, // 可選，用於除錯
   );
 
