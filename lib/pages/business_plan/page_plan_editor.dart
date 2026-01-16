@@ -29,10 +29,8 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
   void _loadCurrentAnswer() {
     final c = context.read<ControllerBusinessPlan>();
     final answer = c.currentQuestion.answer;
-    WidgetsBinding.instance.addPostFrameCallback((_){
-      _htmlController.clear(); // 先清空
-      _htmlController.setText(answer);
-    });
+    _htmlController.clear(); // 先清空
+    _htmlController.setText(answer);
   }
 
   @override
@@ -40,19 +38,6 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Business Plan Editor'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.visibility),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PagePlanPreview(),
-                ),
-              );
-            },
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(16), // 增加高度，變胖
           child: Selector<ControllerBusinessPlan, double>(
