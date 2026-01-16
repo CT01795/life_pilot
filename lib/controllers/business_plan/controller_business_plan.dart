@@ -168,7 +168,35 @@ class ControllerBusinessPlan extends ChangeNotifier {
   double get progress =>
     currentQuestionNumber / totalQuestions;
 
-  Future<void> resumePlan(String planId) async {
+  void selectPlan(ModelBusinessPlan plan) {
+    currentPlan = plan;
+    sectionIndex = 0;
+    questionIndex = 0;
+    notifyListeners();
+  }
+
+  Future<void> loadPlanDetailIfNeeded(String planId) async {
+    if (currentPlan?.id == planId) return;
+
+    isLoading = true;
+    notifyListeners();
+    try {
+      currentPlan =
+          await service.fetchPlanDetail(planId: planId);
+
+      sectionIndex = 0;
+      questionIndex = 0;
+
+    } catch (e, stack) {
+      debugPrint('resumePlan error: $e');
+      debugPrintStack(stackTrace: stack);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resumePlanBackup(String planId) async {
     isLoading = true;
     notifyListeners();
     try {
