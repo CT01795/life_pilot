@@ -139,6 +139,15 @@ class ControllerBusinessPlan extends ChangeNotifier {
     return false;
   }
 
+  void jumpToQuestion({
+    required int sectionIndex,
+    required int questionIndex,
+  }) {
+    this.sectionIndex = sectionIndex;
+    this.questionIndex = questionIndex;
+    notifyListeners();
+  }
+
   int get totalQuestions =>
     currentPlan!.sections.fold(
       0,

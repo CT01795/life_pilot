@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/models/business_plan/model_business_plan.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_editor.dart';
+import 'package:life_pilot/pages/business_plan/page_plan_preview.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_select_template.dart';
 import 'package:provider/provider.dart';
 
@@ -43,7 +44,7 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PagePlanEditor(),
+                        builder: (_) => const PagePlanPreview(),
                       ),
                     );
                   },

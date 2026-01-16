@@ -20,7 +20,9 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
   void initState() {
     super.initState();
     _htmlController = HtmlEditorController();
-    _loadCurrentAnswer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCurrentAnswer();
+    });
   }
 
   // 載入當前題目答案到 HtmlEditor
