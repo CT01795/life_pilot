@@ -68,9 +68,12 @@ class ControllerBusinessPlan extends ChangeNotifier {
     questions[questionIndex] =
         questions[questionIndex].copyWith(answer: answer);
 
+    final newSections = [...currentPlan!.sections];
+    newSections[sectionIndex] =
+        section.copyWith(questions: questions);
+
     currentPlan = currentPlan!.copyWith(
-      sections: currentPlan!.sections
-        ..[sectionIndex] = section.copyWith(questions: questions),
+      sections: newSections,
     );
 
     final question = questions[questionIndex];

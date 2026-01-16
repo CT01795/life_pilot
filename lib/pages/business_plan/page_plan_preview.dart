@@ -10,59 +10,57 @@ class PagePlanPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.read<ControllerBusinessPlan>();
-    final plan = c.currentPlan!;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(plan.title)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          for (int s = 0; s < plan.sections.length; s++) ...[
-            Text(
-              plan.sections[s].title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Gaps.h8,
-            for (int q = 0;
-                q < plan.sections[s].questions.length;
-                q++) ...[
-              InkWell(
-                onTap: () {
-                  c.jumpToQuestion(
-                    sectionIndex: s,
-                    questionIndex: q,
-                  );
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PagePlanEditor(),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: plan.sections[s].questions[q].answer.isEmpty
-                      ? const Text('（尚未填寫）')
-                      : Html(
-                          data: plan.sections[s].questions[q].answer,
-                        ),
+    return Consumer<ControllerBusinessPlan>(builder: (_, c, __) {
+      final plan = c.currentPlan!;
+      return Scaffold(
+        appBar: AppBar(title: Text(plan.title)),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            for (int s = 0; s < plan.sections.length; s++) ...[
+              Text(
+                plan.sections[s].title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Gaps.h16,
+              Gaps.h8,
+              for (int q = 0; q < plan.sections[s].questions.length; q++) ...[
+                InkWell(
+                  onTap: () {
+                    c.jumpToQuestion(
+                      sectionIndex: s,
+                      questionIndex: q,
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PagePlanEditor(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: plan.sections[s].questions[q].answer.isEmpty
+                        ? const Text('（尚未填寫）')
+                        : Html(
+                            data: plan.sections[s].questions[q].answer,
+                          ),
+                  ),
+                ),
+                Gaps.h16,
+              ],
             ],
           ],
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 }
