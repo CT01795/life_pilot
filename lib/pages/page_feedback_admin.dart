@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_feedback_admin.dart';
 import 'package:life_pilot/core/const.dart';
@@ -35,7 +37,8 @@ class PageFeedbackAdmin extends StatelessWidget {
                                           AuthConstants.sysAdminEmail),
                                       child: const Text('Mark Done'),
                                     ),
-                              onTap: () {
+                              onTap: () async {
+                                await controller.loadFeedbackScreenshots(feedback);
                                 showDialog(
                                   context: context,
                                   builder: (_) => AlertDialog(
@@ -48,31 +51,41 @@ class PageFeedbackAdmin extends StatelessWidget {
                                           Text(feedback.content),
                                           Gaps.h8,
                                           // ✅ 多張截圖縮圖化顯示
-                                          if (feedback.screenshot != null &&
-                                              feedback.screenshot!.isNotEmpty)
-                                            Wrap(
-                                              spacing: 8,
-                                              runSpacing: 8,
-                                              children: feedback.screenshotDecodeData!
-                                                  .map((bytes) {
-                                                return GestureDetector(
-                                                  onTap: () => showDialog(
-                                                    context: context,
-                                                    builder: (_) => Dialog(
-                                                      child: InteractiveViewer(
-                                                        child:
-                                                            Image.memory(bytes),
+                                          if (feedback.screenshot != null && feedback.screenshot!.isNotEmpty)
+                                            FutureBuilder<List<Uint8List>>(
+                                              future: feedback.decodeScreenshotsAsync(),
+                                              builder: (context, snapshot) {
+                                                if (!snapshot.hasData) {
+                                                  return const Padding(
+                                                    padding: EdgeInsets.all(8),
+                                                    child: CircularProgressIndicator(),
+                                                  );
+                                                }
+
+                                                final images = snapshot.data!;
+                                                return Wrap(
+                                                  spacing: 8,
+                                                  runSpacing: 8,
+                                                  children: images.map((bytes) {
+                                                    return GestureDetector(
+                                                      onTap: () => showDialog(
+                                                        context: context,
+                                                        builder: (_) => Dialog(
+                                                          child: InteractiveViewer(
+                                                            child: Image.memory(bytes),
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                  child: Image.memory(
-                                                    bytes, // ✅ 用 decode 過的資料
-                                                    width: 120,
-                                                    height: 120,
-                                                    fit: BoxFit.cover,
-                                                  ),
+                                                      child: Image.memory(
+                                                        bytes,
+                                                        width: 120,
+                                                        height: 120,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    );
+                                                  }).toList(),
                                                 );
-                                              }).toList(),
+                                              },
                                             ),
                                           Gaps.h8,
                                           if (feedback.isOk == true)
