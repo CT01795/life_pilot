@@ -11,6 +11,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
   final ServiceBusinessPlan service;
   ControllerAuth? auth;
   bool hasLoadedOnce = false;
+  final Map<String, ModelBusinessPlan> _planCache = {};
 
   ControllerBusinessPlan({required this.service, required this.auth,});
 
@@ -74,6 +75,9 @@ class ControllerBusinessPlan extends ChangeNotifier {
     final section = currentPlan!.sections[sectionIndex];
     final questions = [...section.questions];
 
+    // 保存舊資料，用於回滾
+    final oldAnswer = questions[questionIndex].answer;
+
     questions[questionIndex] =
         questions[questionIndex].copyWith(answer: answer);
 
@@ -88,14 +92,26 @@ class ControllerBusinessPlan extends ChangeNotifier {
     notifyListeners(); // UI 立即更新
 
     final question = questions[questionIndex];
+    try {
+      await service.upsertAnswer(
+        planId: currentPlan!.id,
+        sectionId: section.id,
+        questionId: question.id,
+        answer: answer,
+      );
 
-    // 🔥 真正補上的地方
-    await service.upsertAnswer(
-      planId: currentPlan!.id,
-      sectionId: section.id,
-      questionId: question.id,
-      answer: answer,
-    );
+      // 同步 cache
+      _planCache[currentPlan!.id] = currentPlan!;
+    } catch (e, stack) {
+      debugPrint('commitCurrentAnswer error: $e');
+      debugPrintStack(stackTrace: stack);
+
+      // 回滾到舊資料
+      questions[questionIndex] = questions[questionIndex].copyWith(answer: oldAnswer);
+      newSections[sectionIndex] = section.copyWith(questions: questions);
+      currentPlan = currentPlan!.copyWith(sections: newSections);
+      notifyListeners();
+    }
   }
 
   Future<void> loadPlans() async {
@@ -177,15 +193,24 @@ class ControllerBusinessPlan extends ChangeNotifier {
     currentQuestionNumber / totalQuestions;
 
   Future<void> loadPlanDetailIfNeeded(String planId) async {
-    if (currentPlan?.id == planId &&
-        currentPlan!.sections.isNotEmpty) {
-      return;
+    // 先從 cache 讀
+    if (_planCache.containsKey(planId)) {
+      // 如果 currentPlan 不是同一個 plan 或 sections 是空的，才 assign
+      if (currentPlan?.id != planId || currentPlan!.sections.isEmpty) {
+        currentPlan = _planCache[planId];
+        sectionIndex = 0;
+        questionIndex = 0;
+        notifyListeners();
+      }
+      return; // 不再抓 API
     }
-
+    
     isCurrentPlanLoading = true;
     try {
       currentPlan =
           await service.fetchPlanDetail(planId: planId);
+      // 抓到就存 cache
+      _planCache[planId] = currentPlan!;
 
       sectionIndex = 0;
       questionIndex = 0;
