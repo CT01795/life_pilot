@@ -139,10 +139,10 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
   Widget build(BuildContext context) {
     final c = context.read<ControllerBusinessPlan>();
 
-    // 預覽文字（前 100 字）
+    // 預覽文字（前 50 字）
     String previewText = widget.question.answer.isEmpty
         ? '（尚未填寫）'
-        : _shortenHtml(widget.question.answer, 100);
+        : _shortenHtml(widget.question.answer, 50);
 
     return Card(
       elevation: 2,
