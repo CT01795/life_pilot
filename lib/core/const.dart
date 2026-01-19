@@ -96,6 +96,9 @@ class Insets {
   static const directionalL1R1B1 =
       EdgeInsetsDirectional.only(start: 1, end: 1, top: 0, bottom: 1);
   static const directionalR3 = EdgeInsetsDirectional.only(end: 3);
+  static const directionalT6 = EdgeInsets.only(top: 6);
+  static const directionalB12 = EdgeInsets.only(bottom: 12);
+  static const directionalT24B12 = EdgeInsets.only(bottom: 12, top: 24);
 }
 
 // -------------------- Message Enum --------------------

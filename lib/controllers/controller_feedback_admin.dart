@@ -18,8 +18,7 @@ class ControllerFeedbackAdmin extends ChangeNotifier {
         .from('feedback')
         .select()
         //.eq('is_ok', false)
-        .order('is_ok', ascending: true)
-        .order('created_at', ascending: true);
+        .order('is_ok,created_at', ascending: true);
 
     feedbackList = (res as List<dynamic>?)
             ?.map((e) => ModelFeedback.fromMap(e as Map<String, dynamic>))
