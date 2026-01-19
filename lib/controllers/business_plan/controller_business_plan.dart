@@ -14,13 +14,22 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
   ControllerBusinessPlan({required this.service, required this.auth,});
 
+  String? currentPlanId;
+
+  void setCurrentPlanSummary(ModelBusinessPlan plan) {
+    currentPlan = plan; // 只有 id / title
+    currentPlanId = plan.id;
+    // ❌ 不 notify（避免 preview 先 rebuild）
+  }
+
   List<ModelBusinessPlan> plans = [];
   ModelBusinessPlan? currentPlan;
 
   int sectionIndex = 0;
   int questionIndex = 0;
 
-  bool isLoading = false;
+  bool isPlansLoading = false;          // 列表用
+  bool isCurrentPlanLoading = false;    // Preview / Editor 用
 
   List<ModelPlanTemplate> templates = [];
   bool isTemplateLoading = false;
@@ -76,6 +85,8 @@ class ControllerBusinessPlan extends ChangeNotifier {
       sections: newSections,
     );
 
+    notifyListeners(); // UI 立即更新
+
     final question = questions[questionIndex];
 
     // 🔥 真正補上的地方
@@ -85,12 +96,10 @@ class ControllerBusinessPlan extends ChangeNotifier {
       questionId: question.id,
       answer: answer,
     );
-
-    notifyListeners();
   }
 
   Future<void> loadPlans() async {
-    isLoading = true;
+    isPlansLoading = true;
     notifyListeners();
     try {
       plans = await service.fetchPlans(user: auth?.currentAccount ?? AuthConstants.guest);
@@ -98,7 +107,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
       debugPrint('loadPlans error: $e');
       debugPrintStack(stackTrace: stack);
     } finally {
-      isLoading = false; // 🔥 關鍵
+      isPlansLoading = false;
       notifyListeners(); // 🔥 關鍵
     }
   }
@@ -148,7 +157,6 @@ class ControllerBusinessPlan extends ChangeNotifier {
   }) {
     this.sectionIndex = sectionIndex;
     this.questionIndex = questionIndex;
-    notifyListeners();
   }
 
   int get totalQuestions =>
@@ -168,18 +176,13 @@ class ControllerBusinessPlan extends ChangeNotifier {
   double get progress =>
     currentQuestionNumber / totalQuestions;
 
-  void selectPlan(ModelBusinessPlan plan) {
-    currentPlan = plan;
-    sectionIndex = 0;
-    questionIndex = 0;
-    notifyListeners();
-  }
-
   Future<void> loadPlanDetailIfNeeded(String planId) async {
-    if (currentPlan?.id == planId) return;
+    if (currentPlan?.id == planId &&
+        currentPlan!.sections.isNotEmpty) {
+      return;
+    }
 
-    isLoading = true;
-    notifyListeners();
+    isCurrentPlanLoading = true;
     try {
       currentPlan =
           await service.fetchPlanDetail(planId: planId);
@@ -191,42 +194,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
       debugPrint('resumePlan error: $e');
       debugPrintStack(stackTrace: stack);
     } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> resumePlanBackup(String planId) async {
-    isLoading = true;
-    notifyListeners();
-    try {
-      currentPlan =
-          await service.fetchPlanDetail(planId: planId);
-
-      for (int s = 0; s < currentPlan!.sections.length; s++) {
-        for (int q = 0;
-            q < currentPlan!.sections[s].questions.length;
-            q++) {
-          if (currentPlan!.sections[s].questions[q].answer.isEmpty) {
-            sectionIndex = s;
-            questionIndex = q;
-            isLoading = false;
-            notifyListeners();
-            return;
-          }
-        }
-      }
-
-      // 全部填完 → 停在最後
-      sectionIndex = currentPlan!.sections.length - 1;
-      questionIndex =
-          currentPlan!.sections.last.questions.length - 1;
-
-    } catch (e, stack) {
-      debugPrint('resumePlan error: $e');
-      debugPrintStack(stackTrace: stack);
-    } finally {
-      isLoading = false;
+      isCurrentPlanLoading = false;
       notifyListeners();
     }
   }

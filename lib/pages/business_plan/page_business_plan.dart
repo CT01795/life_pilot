@@ -13,12 +13,11 @@ class PageBusinessPlan extends StatefulWidget {
 }
 
 class _PageBusinessPlanState extends State<PageBusinessPlan> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Selector<ControllerBusinessPlan, bool>(
-        selector: (_, c) => c.isLoading,
+        selector: (_, c) => c.isPlansLoading,
         builder: (_, isLoading, __) {
           if (isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -34,15 +33,18 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
               return ListView.builder(
                 itemCount: plans.length,
                 itemBuilder: (_, i) => ListTile(
-                  title: Text('Plan ${i+1}: ${plans[i].title}'),
-                  onTap: () async {
-                    // 如果 plans 裡只有 summary，就 load 一次
-                    await context.read<ControllerBusinessPlan>().loadPlanDetailIfNeeded(plans[i].id);
-
+                  title: Text('Plan ${i + 1}: ${plans[i].title}'),
+                  onTap: () {
+                    final c = context.read<ControllerBusinessPlan>();
+                    c.setCurrentPlanSummary(plans[i]);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const PagePlanPreview()),
+                      MaterialPageRoute(
+                          builder: (_) => const PagePlanPreview()),
                     );
+                    // 如果 plans 裡只有 summary，就 load 一次
+                    c.loadPlanDetailIfNeeded(plans[i].id);
+
                   },
                 ),
               );
