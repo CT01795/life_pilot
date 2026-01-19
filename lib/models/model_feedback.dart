@@ -1,12 +1,13 @@
 import 'dart:convert';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 class ModelFeedback {
   final int id;
   final String subject;
   final String content;
   final List<String>? cc;
-  final List<String>? screenshot; // base64
+  List<String>? screenshot; // base64
   final String? createdBy;
   final DateTime createdAt;
   List<Uint8List>? screenshotDecodeRawData; // decode cache
@@ -55,4 +56,17 @@ class ModelFeedback {
     screenshotDecodeRawData = screenshot?.map(base64Decode).toList();
     return screenshotDecodeRawData;
   }
+
+  Future<List<Uint8List>> decodeScreenshotsAsync() async {
+    if (screenshotDecodeRawData != null) return screenshotDecodeRawData!;
+    if (screenshot == null) return [];
+
+    // async decode
+    final decoded = await Future.wait(screenshot!.map((s) => compute(decodeBase64, s)));
+    screenshotDecodeRawData = decoded;
+    return decoded;
+  }
+
+  // helper for isolate
+  static Uint8List decodeBase64(String s) => base64Decode(s);
 }
