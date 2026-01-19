@@ -9,13 +9,10 @@ class ModelFeedback {
   final List<String>? screenshot; // base64
   final String? createdBy;
   final DateTime createdAt;
+  List<Uint8List>? screenshotDecodeRawData; // decode cache
   bool? isOk;
   String? dealBy;
   DateTime? dealAt;
-
-  // 新增一個 getter
-  List<Uint8List>? get screenshotBytes => 
-      screenshot?.map((e) => base64Decode(e)).toList();
       
   ModelFeedback({
     required this.id,
@@ -50,4 +47,12 @@ class ModelFeedback {
         'deal_by': dealBy,
         'deal_at': dealAt?.toIso8601String(),
       };
+
+  // 💡 懶加載 decode，第一次用時才 decode，之後 cache
+  List<Uint8List>? get screenshotDecodeData {
+    if (screenshotDecodeRawData != null) return screenshotDecodeRawData;
+    if (screenshot == null) return null;
+    screenshotDecodeRawData = screenshot?.map(base64Decode).toList();
+    return screenshotDecodeRawData;
+  }
 }

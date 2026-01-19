@@ -21,9 +21,9 @@ class ControllerFeedbackAdmin extends ChangeNotifier {
         .order('is_ok,created_at', ascending: true);
 
     feedbackList = (res as List<dynamic>?)
-            ?.map((e) => ModelFeedback.fromMap(e as Map<String, dynamic>))
-            .toList() ??
-        [];
+            ?.map((e) {
+              return ModelFeedback.fromMap(e as Map<String, dynamic>);
+            }).toList() ?? [];
 
     isLoading = false;
     notifyListeners();

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_feedback_admin.dart';
 import 'package:life_pilot/core/const.dart';
@@ -16,74 +14,86 @@ class PageFeedbackAdmin extends StatelessWidget {
         builder: (context, controller, _) {
           return Scaffold(
             body: controller.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.separated(
-                itemCount: controller.feedbackList.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, index) {
-                  final feedback = controller.feedbackList[index];
-                  return ListTile(
-                    title: Text(feedback.subject),
-                    subtitle: Text(feedback.content),
-                    trailing: feedback.isOk == true
-                        ? const Icon(Icons.check, color: Colors.green)
-                        : ElevatedButton(
-                            onPressed: () => controller.markAsDone(feedback, AuthConstants.sysAdminEmail),
-                            child: const Text('Mark Done'),
-                          ),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: Text(feedback.subject, style: const TextStyle(fontSize: 20)),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(feedback.content),
-                                Gaps.h8,
-                                // ✅ 多張截圖縮圖化顯示
-                                if (feedback.screenshot != null && feedback.screenshot!.isNotEmpty)
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: feedback.screenshot!.map((b64) {
-                                      final bytes = base64Decode(b64);
-                                      return GestureDetector(
-                                        onTap: () => showDialog(
-                                          context: context,
-                                          builder: (_) => Dialog(
-                                            child: InteractiveViewer(
-                                              child: Image.memory(bytes),
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.separated(
+                    itemCount: controller.feedbackList.length,
+                    separatorBuilder: (_, __) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final feedback = controller.feedbackList[index];
+                      return Selector<ControllerFeedbackAdmin, bool>(
+                          selector: (_, c) =>
+                              c.feedbackList[index].isOk ?? false,
+                          builder: (_, isOk, __) {
+                            return ListTile(
+                              title: Text(feedback.subject),
+                              subtitle: Text(feedback.content),
+                              trailing: isOk == true
+                                  ? const Icon(Icons.check, color: Colors.green)
+                                  : ElevatedButton(
+                                      onPressed: () => controller.markAsDone(
+                                          feedback,
+                                          AuthConstants.sysAdminEmail),
+                                      child: const Text('Mark Done'),
+                                    ),
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: Text(feedback.subject,
+                                        style: const TextStyle(fontSize: 20)),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(feedback.content),
+                                          Gaps.h8,
+                                          // ✅ 多張截圖縮圖化顯示
+                                          if (feedback.screenshot != null &&
+                                              feedback.screenshot!.isNotEmpty)
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 8,
+                                              children: feedback.screenshotDecodeData!
+                                                  .map((bytes) {
+                                                return GestureDetector(
+                                                  onTap: () => showDialog(
+                                                    context: context,
+                                                    builder: (_) => Dialog(
+                                                      child: InteractiveViewer(
+                                                        child:
+                                                            Image.memory(bytes),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: Image.memory(
+                                                    bytes, // ✅ 用 decode 過的資料
+                                                    width: 120,
+                                                    height: 120,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                );
+                                              }).toList(),
                                             ),
-                                          ),
-                                        ),
-                                        child: Image.memory(
-                                          bytes,
-                                          width: 120,
-                                          height: 120,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      );
-                                    }).toList(),
+                                          Gaps.h8,
+                                          if (feedback.isOk == true)
+                                            Text(
+                                                'Processed by: ${feedback.dealBy} at ${feedback.dealAt}'),
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('Close')),
+                                    ],
                                   ),
-                                Gaps.h8,
-                                if (feedback.isOk == true)
-                                  Text('Processed by: ${feedback.dealBy} at ${feedback.dealAt}'),
-                              ],
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Close')),
-                          ],
-                        ),
-                      );
+                                );
+                              },
+                            );
+                          });
                     },
-                  );
-                },
-              ),
+                  ),
           );
         },
       ),
