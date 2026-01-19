@@ -76,6 +76,72 @@ class ControllerBusinessPlan extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updatePlanTitleByIndex(int index, String newTitle) {
+    if (index < 0 || index >= plans.length) return;
+    final oldPlan = plans[index];
+    final updatedPlan = oldPlan.copyWith(title: newTitle);
+    plans[index] = updatedPlan;
+
+    // 如果正在編輯的 currentPlan 是同一個，順便更新
+    if (currentPlan?.id == oldPlan.id) {
+      currentPlan = currentPlan!.copyWith(
+        title: newTitle,
+        sections: currentPlan!.sections.isNotEmpty
+            ? currentPlan!.sections
+            : _planCache[oldPlan.id]?.sections ?? [], // 保留已經 load 的 sections
+      );
+      _planCache[oldPlan.id] = currentPlan!;
+    }
+
+    notifyListeners();
+
+    // 存到 DB
+    service.updatePlanTitle(planId: oldPlan.id, title: newTitle).catchError((_) {
+      // 回滾
+      plans[index] = oldPlan;
+      if (currentPlan?.id == oldPlan.id) currentPlan = oldPlan;
+      _planCache[oldPlan.id] = oldPlan;
+      notifyListeners();
+    });
+  }
+
+  Future<void> updateCurrentPlanTitle(String newTitle) async {
+    if (currentPlan == null) return;
+
+    final oldPlan = currentPlan!;
+    currentPlan = oldPlan.copyWith(
+      title: newTitle,
+      sections: currentPlan?.sections.isNotEmpty == true
+          ? currentPlan!.sections
+          : _planCache[oldPlan.id]?.sections ?? [],
+    );
+
+    final index = plans.indexWhere((p) => p.id == oldPlan.id);
+    if (index != -1) {
+      plans[index] = plans[index].copyWith(title: newTitle);
+    }
+
+    notifyListeners();
+
+    // ✅ 更新 cache
+    _planCache[oldPlan.id] = currentPlan!;
+
+    // 2️⃣ 再存 DB
+    try {
+      await service.updatePlanTitle(
+        planId: oldPlan.id,
+        title: newTitle,
+      );
+    } catch (e) {
+      // ❌ 失敗就回滾
+      currentPlan = currentPlan!.copyWith(title: oldPlan.title);
+      if (index != -1) {
+        plans[index] = plans[index].copyWith(title: oldPlan.title);
+      }
+      notifyListeners();
+    }
+  }
+
   Future<void> commitCurrentAnswer(String answer) async {
     final section = currentPlan!.sections[sectionIndex];
     final questions = [...section.questions];

@@ -16,6 +16,9 @@ class PagePlanPreview extends StatefulWidget {
 }
 
 class _PagePlanPreviewState extends State<PagePlanPreview> {
+  bool editingTitle = false;
+  final _titleKey = GlobalKey<_EditablePlanTitleState>();
+
   @override
   void initState() {
     super.initState();
@@ -64,7 +67,31 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
       builder: (_, plan, __) {
         if (plan == null) return const CircularProgressIndicator();
         return Scaffold(
-          appBar: AppBar(title: Text(plan.title)),
+          appBar: AppBar(
+            title: EditablePlanTitle(
+              key: _titleKey,
+              editing: editingTitle,
+              onSave: (value) {
+                context.read<ControllerBusinessPlan>()
+                    .updateCurrentPlanTitle(value);
+              },
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(editingTitle ? Icons.check : Icons.edit, color: Colors.white,),
+                onPressed: () {
+                  if (editingTitle) {
+                    final text = _titleKey.currentState?.currentText ?? '';
+                    if (text.trim().isNotEmpty) {
+                      context.read<ControllerBusinessPlan>()
+                          .updateCurrentPlanTitle(text);
+                    }
+                  }
+                  setState(() => editingTitle = !editingTitle);
+                },
+              ),
+            ],
+          ),
           body: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: _totalItemCount(plan),
@@ -227,5 +254,41 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
     final text = html.replaceAll(RegExp(r'<[^>]*>', multiLine: true), '');
     if (text.length <= maxLength) return text;
     return '${text.substring(0, maxLength)}...';
+  }
+}
+
+class EditablePlanTitle extends StatefulWidget {
+  final bool editing;
+  final void Function(String value) onSave;
+  const EditablePlanTitle({
+    super.key,
+    required this.editing,
+    required this.onSave,
+  });
+
+  @override
+  State<EditablePlanTitle> createState() => _EditablePlanTitleState();
+}
+
+class _EditablePlanTitleState extends State<EditablePlanTitle> {
+  late TextEditingController controller;
+  String get currentText => controller.text;
+
+  @override
+  void initState() {
+    super.initState();
+    final title = context.read<ControllerBusinessPlan>().currentPlan?.title ?? '';
+    controller = TextEditingController(text: title);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<ControllerBusinessPlan, ModelBusinessPlan?>(
+      selector: (_, c) => c.currentPlan,
+      builder: (_, plan, __) {
+        if (plan == null) return const SizedBox();
+        return Text(plan.title);
+      },
+    );
   }
 }
