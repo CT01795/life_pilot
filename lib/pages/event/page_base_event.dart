@@ -65,9 +65,21 @@ class _GenericEventPageState extends State<GenericEventPage> {
   ControllerEvent get _controller => widget.controllerEvent;
   ModelEventCalendar get _model => widget.modelEventCalendar;
 
+  late final ControllerAppBarActions _appBarHandler;
+
   @override
   void initState() {
     super.initState();
+    _appBarHandler = ControllerAppBarActions(
+      auth: widget.auth,
+      modelEventCalendar: widget.modelEventCalendar, // 使用頁面同一個 model
+      serviceEvent: widget.serviceEvent,
+      controllerEvent: widget.controllerEvent,       // 使用頁面同一個 controller
+      exportService: widget.exportService,
+      excelService: widget.excelService,
+      tableName: widget.tableName,
+    );
+
     // ✅ 只在第一次建立時執行
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _safeLoadEvents();
@@ -143,20 +155,12 @@ class _GenericEventPageState extends State<GenericEventPage> {
       appBar: widgetsWhiteAppBar(
           title: widget.title,
           enableSearchAndExport: true,
-          handler: ControllerAppBarActions(
-            auth: widget.auth,
-            modelEventCalendar: _model,
-            serviceEvent: widget.serviceEvent,
-            controllerEvent: _controller,
-            exportService: widget.exportService, // ✅ 新增
-            excelService: widget.excelService, // ✅ 新增
-            tableName: widget.tableName,
-          ),
+          handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
           tableName: widget.tableName,
           loc: loc),
       body: AnimatedBuilder(
-        animation: _controller,
+        animation: Listenable.merge([_controller, _appBarHandler]),
         builder: (context, _) => Column(
           children: [
             _buildSearchPanel(loc, context),
