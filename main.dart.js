@@ -142154,7 +142154,7 @@ $S:120}
 A.Ui.prototype={
 ab(){return new A.aj0()}}
 A.aj0.prototype={
-H(a){var s,r,q=this,p=null,o=A.b3(a,!1,t.in),n=q.a.e.c,m=n.length===0?"\uff08\u5c1a\u672a\u586b\u5beb\uff09":q.aND(n,100)
+H(a){var s,r,q=this,p=null,o=A.b3(a,!1,t.in),n=q.a.e.c,m=n.length===0?"\uff08\u5c1a\u672a\u586b\u5beb\uff09":q.aND(n,50)
 n=A.cz(12)
 s=A.cz(12)
 if(q.d){r=q.a.e
