@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/business_plan/model_business_plan.dart';
 import 'package:life_pilot/models/business_plan/model_plan_preview.dart';
 import 'package:life_pilot/models/business_plan/model_plan_question.dart';
@@ -27,53 +28,54 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
     }
   }
 
+  // 1️⃣ 計算總 item 數量
+  int _totalItemCount(ModelBusinessPlan plan) {
+    if (plan.sections.isEmpty) return 1; // skeleton
+    int count = 0;
+    for (var s in plan.sections) {
+      count += 1; // section title
+      count += s.questions.length; // questions
+    }
+    return count;
+  }
+
+  // 2️⃣ 依 index 取得 item
+  PlanPreviewItem _itemAtIndex(ModelBusinessPlan plan, int index) {
+    if (plan.sections.isEmpty) return PlanSectionItem('Loading sections...');
+
+    int counter = 0;
+    for (int s = 0; s < plan.sections.length; s++) {
+      if (counter == index) return PlanSectionItem(plan.sections[s].title);
+      counter++;
+      for (int q = 0; q < plan.sections[s].questions.length; q++) {
+        if (counter == index) {
+          return PlanQuestionItem(s, q, plan.sections[s].questions[q]);
+        }
+        counter++;
+      }
+    }
+    throw Exception('Index out of range');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Selector<ControllerBusinessPlan, _PreviewState>(
-      selector: (_, c) => _PreviewState(
-        plan: c.currentPlan,
-        isLoading: c.isCurrentPlanLoading,
-      ),
-      builder: (_, state, __) {
-        final plan = state.plan;
-
-        // 還沒 summary
-        if (plan == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
-        final items = <PlanPreviewItem>[];
-
-        if (plan.sections.isEmpty) {
-          // 尚未抓到詳細資料 → 顯示 skeleton
-          items.add(PlanSectionItem('Loading sections...'));
-        } else {
-          for (int s = 0; s < plan.sections.length; s++) {
-            items.add(PlanSectionItem(plan.sections[s].title));
-            for (int q = 0; q < plan.sections[s].questions.length; q++) {
-              items.add(
-                PlanQuestionItem(s, q, plan.sections[s].questions[q]),
-              );
-            }
-          }
-        }
-
+    return Selector<ControllerBusinessPlan, ModelBusinessPlan?>(
+      selector: (_, c) => c.currentPlan,
+      builder: (_, plan, __) {
+        if (plan == null) return const CircularProgressIndicator();
         return Scaffold(
           appBar: AppBar(title: Text(plan.title)),
           body: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: items.length,
+            itemCount: _totalItemCount(plan),
             itemBuilder: (_, i) {
-              final item = items[i];
-
+              final item = _itemAtIndex(plan, i);
               if (item is PlanSectionItem) {
                 return Container(
                   width: double.infinity,
                   padding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  margin: const EdgeInsets.only(bottom: 12, top: 24),
+                  margin: Insets.directionalT24B12,
                   decoration: BoxDecoration(
                     color: Colors.blueGrey.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -93,7 +95,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
               // 如果 sections 尚未 load → skeleton tile
               if (plan.sections.isEmpty) {
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
+                  margin: Insets.directionalB12,
                   height: 60,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
@@ -134,26 +136,28 @@ class _ExpandableQuestionTile extends StatefulWidget {
 
 class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
   bool _expanded = false;
+  String? _previewTextCache;
+
+  String get previewText {
+    if (_previewTextCache != null) return _previewTextCache!;
+    if (widget.question.answer.isEmpty) return '（尚未填寫）';
+    _previewTextCache = _shortenHtml(widget.question.answer, 50);
+    return _previewTextCache!;
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.read<ControllerBusinessPlan>();
-
-    // 預覽文字（前 50 字）
-    String previewText = widget.question.answer.isEmpty
-        ? '（尚未填寫）'
-        : _shortenHtml(widget.question.answer, 50);
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: Insets.directionalB12,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          if (widget.question.answer.isEmpty) {
+          if (c.planAnswerAt(widget.sectionIndex, widget.questionIndex).isEmpty) {
             // 空答案就直接進編輯頁
             c.jumpToQuestion(
               sectionIndex: widget.sectionIndex,
@@ -183,27 +187,36 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _expanded
-                  ? Html(data: widget.question.answer)
-                  : Text(
-                      previewText,
-                      style: widget.question.answer.isEmpty
-                          ? TextStyle(color: Colors.grey.shade600)
-                          : null,
+          child: Selector<ControllerBusinessPlan, String>(
+            selector: (_, c) =>
+                c.planAnswerAt(widget.sectionIndex, widget.questionIndex),
+            builder: (_, answer, __) {
+              final previewText = answer.isEmpty
+                  ? '（尚未填寫）'
+                  : _shortenHtml(answer, 50);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _expanded
+                      ? Html(data: answer)
+                      : Text(
+                          previewText,
+                          style: answer.isEmpty
+                              ? TextStyle(color: Colors.grey.shade600)
+                              : null,
+                        ),
+                  if (!_expanded && answer.isNotEmpty)
+                    Padding(
+                      padding: Insets.directionalT6,
+                      child: Text(
+                        '點擊展開全文或長按編輯',
+                        style:
+                            TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      ),
                     ),
-              if (!_expanded && widget.question.answer.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    '點擊展開全文或長按編輯',
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey.shade500),
-                  ),
-                ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -215,25 +228,4 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
     if (text.length <= maxLength) return text;
     return '${text.substring(0, maxLength)}...';
   }
-}
-
-// ===== Selector 用的小型 state =====
-class _PreviewState {
-  final ModelBusinessPlan? plan;
-  final bool isLoading;
-
-  const _PreviewState({
-    required this.plan,
-    required this.isLoading,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _PreviewState &&
-          other.plan == plan &&
-          other.isLoading == isLoading;
-
-  @override
-  int get hashCode => Object.hash(plan, isLoading);
 }

@@ -23,6 +23,11 @@ class ControllerBusinessPlan extends ChangeNotifier {
     // ❌ 不 notify（避免 preview 先 rebuild）
   }
 
+  // 取得指定 question 的 answer
+  String planAnswerAt(int sectionIndex, int questionIndex) {
+    return currentPlan?.sections[sectionIndex].questions[questionIndex].answer ?? '';
+  }
+
   List<ModelBusinessPlan> plans = [];
   ModelBusinessPlan? currentPlan;
 
@@ -204,7 +209,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
       }
       return; // 不再抓 API
     }
-    
+
     isCurrentPlanLoading = true;
     try {
       currentPlan =
