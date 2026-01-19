@@ -124,6 +124,16 @@ class ServiceBusinessPlan {
     return sections;
   }
   
+  Future<void> updatePlanTitle({
+    required String planId,
+    required String title,
+  }) async {
+    await supabase
+        .from('business_plan')
+        .update({'title': title})
+        .eq('id', planId);
+  }
+
   Future<void> upsertAnswer({
     required String planId,
     required String sectionId,
