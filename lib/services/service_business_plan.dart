@@ -78,6 +78,47 @@ class ServiceBusinessPlan {
     }
   }
 
+  Stream<ModelPlanSection> streamSectionsWithQuestions(String planId) async* {
+    final sectionsRes = await supabase
+        .from('business_plan_section')
+        .select('*')
+        .eq('plan_id', planId)
+        .order('sort_order', ascending: true);
+
+    for (final s in sectionsRes) {
+      final questionsRes = await supabase
+          .from('business_plan_question')
+          .select('*')
+          .eq('section_id', s['id'])
+          .order('sort_order', ascending: true);
+
+      List<ModelPlanQuestion> questions = [];
+
+      for (final q in questionsRes) {
+        final answerRes = await supabase
+            .from('business_plan_answer')
+            .select('answer')
+            .eq('plan_id', planId)
+            .eq('question_id', q['id'])
+            .maybeSingle();
+
+        questions.add(ModelPlanQuestion(
+          id: q['id'],
+          prompt: q['prompt'],
+          answer: answerRes?['answer'] ?? '',
+          sortOrder: q['sort_order'],
+        ));
+      }
+
+      yield ModelPlanSection(
+        id: s['id'],
+        title: s['title'],
+        sortOrder: s['sort_order'],
+        questions: questions,
+      );
+    }
+  }
+
   // 取得 Plan + Section + Question（帶答案）
   Future<List<ModelPlanSection>> fetchSectionsWithQuestions(String planId) async {
     final sectionsRes = await supabase

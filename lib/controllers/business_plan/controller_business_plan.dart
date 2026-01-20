@@ -13,7 +13,10 @@ class ControllerBusinessPlan extends ChangeNotifier {
   bool hasLoadedOnce = false;
   final Map<String, ModelBusinessPlan> _planCache = {};
 
-  ControllerBusinessPlan({required this.service, required this.auth,});
+  ControllerBusinessPlan({
+    required this.service,
+    required this.auth,
+  });
 
   String? currentPlanId;
 
@@ -25,7 +28,9 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
   // 取得指定 question 的 answer
   String planAnswerAt(int sectionIndex, int questionIndex) {
-    return currentPlan?.sections[sectionIndex].questions[questionIndex].answer ?? '';
+    return currentPlan
+            ?.sections[sectionIndex].questions[questionIndex].answer ??
+        '';
   }
 
   List<ModelBusinessPlan> plans = [];
@@ -34,8 +39,8 @@ class ControllerBusinessPlan extends ChangeNotifier {
   int sectionIndex = 0;
   int questionIndex = 0;
 
-  bool isPlansLoading = false;          // 列表用
-  bool isCurrentPlanLoading = false;    // Preview / Editor 用
+  bool isPlansLoading = false; // 列表用
+  bool isCurrentPlanLoading = false; // Preview / Editor 用
 
   List<ModelPlanTemplate> templates = [];
   bool isTemplateLoading = false;
@@ -96,7 +101,9 @@ class ControllerBusinessPlan extends ChangeNotifier {
     notifyListeners();
 
     // 存到 DB
-    service.updatePlanTitle(planId: oldPlan.id, title: newTitle).catchError((_) {
+    service
+        .updatePlanTitle(planId: oldPlan.id, title: newTitle)
+        .catchError((_) {
       // 回滾
       plans[index] = oldPlan;
       if (currentPlan?.id == oldPlan.id) currentPlan = oldPlan;
@@ -153,8 +160,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
         questions[questionIndex].copyWith(answer: answer);
 
     final newSections = [...currentPlan!.sections];
-    newSections[sectionIndex] =
-        section.copyWith(questions: questions);
+    newSections[sectionIndex] = section.copyWith(questions: questions);
 
     currentPlan = currentPlan!.copyWith(
       sections: newSections,
@@ -178,7 +184,8 @@ class ControllerBusinessPlan extends ChangeNotifier {
       debugPrintStack(stackTrace: stack);
 
       // 回滾到舊資料
-      questions[questionIndex] = questions[questionIndex].copyWith(answer: oldAnswer);
+      questions[questionIndex] =
+          questions[questionIndex].copyWith(answer: oldAnswer);
       newSections[sectionIndex] = section.copyWith(questions: questions);
       currentPlan = currentPlan!.copyWith(sections: newSections);
       notifyListeners();
@@ -189,7 +196,8 @@ class ControllerBusinessPlan extends ChangeNotifier {
     isPlansLoading = true;
     notifyListeners();
     try {
-      plans = await service.fetchPlans(user: auth?.currentAccount ?? AuthConstants.guest);
+      plans = await service.fetchPlans(
+          user: auth?.currentAccount ?? AuthConstants.guest);
     } catch (e, stack) {
       debugPrint('loadPlans error: $e');
       debugPrintStack(stackTrace: stack);
@@ -229,8 +237,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
     if (sectionIndex > 0) {
       sectionIndex--;
-      questionIndex =
-          currentPlan!.sections[sectionIndex].questions.length - 1;
+      questionIndex = currentPlan!.sections[sectionIndex].questions.length - 1;
       notifyListeners();
       return true;
     }
@@ -246,11 +253,10 @@ class ControllerBusinessPlan extends ChangeNotifier {
     this.questionIndex = questionIndex;
   }
 
-  int get totalQuestions =>
-    currentPlan!.sections.fold(
-      0,
-      (sum, s) => sum + s.questions.length,
-    );
+  int get totalQuestions => currentPlan!.sections.fold(
+        0,
+        (sum, s) => sum + s.questions.length,
+      );
 
   int get currentQuestionNumber {
     int count = 0;
@@ -260,8 +266,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     return count + questionIndex + 1;
   }
 
-  double get progress =>
-    currentQuestionNumber / totalQuestions;
+  double get progress => currentQuestionNumber / totalQuestions;
 
   Future<void> loadPlanDetailIfNeeded(String planId) async {
     // 先從 cache 讀
@@ -278,16 +283,26 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
     isCurrentPlanLoading = true;
     try {
-      currentPlan =
-          await service.fetchPlanDetail(planId: planId);
-      // 抓到就存 cache
-      _planCache[planId] = currentPlan!;
+      // 2️⃣ 先建立「只有 id / title，sections 空」
+      final summary = currentPlan;
+      if (summary == null) return;
 
+      currentPlan = summary.copyWith(sections: []);
+      notifyListeners(); // 👉 UI 立刻顯示 Loading sections...
+
+      await for (final section
+        in service.streamSectionsWithQuestions(planId)) {
+        currentPlan = currentPlan!.copyWith(
+          sections: [...currentPlan!.sections, section],
+        );
+      }
+
+      // 5️⃣ 全部完成後存 cache
+      _planCache[planId] = currentPlan!;
       sectionIndex = 0;
       questionIndex = 0;
-
     } catch (e, stack) {
-      debugPrint('resumePlan error: $e');
+      debugPrint('loadPlanDetailIfNeeded error: $e');
       debugPrintStack(stackTrace: stack);
     } finally {
       isCurrentPlanLoading = false;
