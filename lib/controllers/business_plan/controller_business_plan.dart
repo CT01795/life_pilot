@@ -267,8 +267,9 @@ class ControllerBusinessPlan extends ChangeNotifier {
   }
 
   double get progress => currentQuestionNumber / totalQuestions;
-
+  String? _loadingPlanId;
   Future<void> loadPlanDetailIfNeeded(String planId) async {
+    if (isCurrentPlanLoading && _loadingPlanId == planId) return; // 🔒 關鍵
     // 先從 cache 讀
     if (_planCache.containsKey(planId)) {
       // 如果 currentPlan 不是同一個 plan 或 sections 是空的，才 assign
@@ -281,6 +282,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
       return; // 不再抓 API
     }
 
+    _loadingPlanId = planId;
     isCurrentPlanLoading = true;
     try {
       // 2️⃣ 先建立「只有 id / title，sections 空」
@@ -295,6 +297,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
         currentPlan = currentPlan!.copyWith(
           sections: [...currentPlan!.sections, section],
         );
+        notifyListeners(); // 👈 每個 section 都刷新
       }
 
       // 5️⃣ 全部完成後存 cache
@@ -305,6 +308,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
       debugPrint('loadPlanDetailIfNeeded error: $e');
       debugPrintStack(stackTrace: stack);
     } finally {
+      _loadingPlanId = null;
       isCurrentPlanLoading = false;
       notifyListeners();
     }
