@@ -49,10 +49,20 @@ class ModelEventCalendar {
   }
 
   void updateStartDate(DateTime? date) {
+    if (searchFilter.endDate != null &&
+        date != null &&
+        date.isAfter(searchFilter.endDate!)) {
+      searchFilter.endDate = date;
+    }
     searchFilter.startDate = date;
   }
 
   void updateEndDate(DateTime? date) {
+    if (searchFilter.startDate != null &&
+        date != null &&
+        searchFilter.startDate!.isAfter(date)) {
+      searchFilter.startDate = date;
+    }
     searchFilter.endDate = date;
   }
 

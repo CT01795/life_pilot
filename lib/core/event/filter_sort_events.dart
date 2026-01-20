@@ -42,14 +42,23 @@ List<EventItem> utilsFilterEvents({
 
     final endDate = e.endDate ?? e.startDate;
     bool matchesDate = true;
+    filter.startDate = filter.startDate?.add(Duration(seconds: -1)).day ==
+            filter.startDate?.day
+        ? filter.startDate
+        : filter.startDate?.add(Duration(days: 1)).add(Duration(seconds: -1));
     if (filter.startDate != null &&
         endDate != null &&
-        endDate.isBefore(filter.startDate!)) {
+        !endDate.isAfter(filter.startDate!)) {
       matchesDate = false;
     }
-    if (filter.startDate != null &&
-        e.startDate != null &&
-        e.startDate!.isAfter(filter.startDate!)) {
+    filter.endDate =
+        filter.endDate?.add(Duration(seconds: -1)).day == filter.endDate?.day
+            ? filter.endDate
+            : filter.endDate?.add(Duration(days: 1)).add(Duration(seconds: -1));
+    final startDate = e.startDate;
+    if (filter.endDate != null &&
+        startDate != null &&
+        !startDate.isBefore(filter.endDate!)) {
       matchesDate = false;
     }
 
