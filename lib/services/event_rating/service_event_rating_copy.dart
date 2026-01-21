@@ -8,12 +8,12 @@ import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ServiceEventRating{
+class ServiceEventRatingCopy{
   final client = Supabase.instance.client;
-  ServiceEventRating();
+  ServiceEventRatingCopy();
 
   // 📌 取得推薦事件 (由 Supabase 的 RPC 呼叫)
-  Future<List<EventItem>?> getEvents({ //TODO
+  Future<List<EventItem>?> getEvents({
     required String tableName,
     DateTime? dateS,
     DateTime? dateE,

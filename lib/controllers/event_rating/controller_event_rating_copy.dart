@@ -2,7 +2,7 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event_rating/model_event_rating.dart';
 
-class ControllerEventRating extends ChangeNotifier {
+class ControllerEventRatingCopy extends ChangeNotifier {
   final List<EventItem> _events = [];
   final Map<String, EventRating> _ratings = {};
 
