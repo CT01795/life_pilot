@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/event_rating/controller_event_rating.dart';
+import 'package:life_pilot/controllers/event_rating/controller_event_rating_copy.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/views/widgets/event_rating/widgets_event_rating_emoji.dart';
 
-class EventCardRating extends StatefulWidget {
+class EventCardRatingCopy extends StatefulWidget {
   final EventItem event;
-  final ControllerEventRating controller;
+  final ControllerEventRatingCopy controller;
 
-  const EventCardRating({super.key, required this.event, required this.controller});
+  const EventCardRatingCopy({super.key, required this.event, required this.controller});
 
   @override
-  State<EventCardRating> createState() => _EventCardRatingState();
+  State<EventCardRatingCopy> createState() => _EventCardRatingCopyState();
 }
 
-class _EventCardRatingState extends State<EventCardRating> {
+class _EventCardRatingCopyState extends State<EventCardRatingCopy> {
   int rating = 0;
   TextEditingController commentController = TextEditingController();
 

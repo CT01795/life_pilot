@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/event_rating/controller_event_rating.dart';
-import 'package:life_pilot/views/widgets/event_rating/widgets_event_card_rating.dart';
+import 'package:life_pilot/controllers/event_rating/controller_event_rating_copy.dart';
+import 'package:life_pilot/views/widgets/event_rating/widgets_event_card_rating_copy.dart';
 import 'package:provider/provider.dart';
 
 class PageEventRating extends StatefulWidget {
@@ -16,7 +16,7 @@ class _PageEventRatingState extends State<PageEventRating> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<ControllerEventRating>();
+    final controller = context.read<ControllerEventRatingCopy>();
     final filtered = controller.searchEvents(keyword);
 
     return Scaffold(
@@ -53,7 +53,7 @@ class _PageEventRatingState extends State<PageEventRating> {
             Expanded(
               child: ListView.builder(
                 itemCount: filtered.length,
-                itemBuilder: (_, i) => EventCardRating(
+                itemBuilder: (_, i) => EventCardRatingCopy(
                   event: filtered[i],
                   controller: controller,
                 ),

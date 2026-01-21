@@ -162,7 +162,7 @@
     "Zoomreset"
   ],
   "cmake.sourceDirectory": "C:/Users/shinhui.shih/life_pilot/windows",
-  "commentTranslate.hover.enabled": false,
+  "commentTranslate.hover.enabled": true,
   "deno.enablePaths": [
     "supabase/functions"
   ],
