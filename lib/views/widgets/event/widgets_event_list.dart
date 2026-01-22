@@ -55,7 +55,9 @@ class WidgetsEventList extends StatelessWidget {
                 parentLocation: constEmpty,
                 canDelete: controllerEvent.canDelete(
                     account: event.account ?? constEmpty),
-                showSubEvents: true);
+                showSubEvents: true,
+                loc: loc
+                );
 
             return WidgetsEventCard(
               eventViewModel: eventViewModel,

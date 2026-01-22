@@ -1,3 +1,5 @@
+import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_search_filter.dart';
 
@@ -5,6 +7,7 @@ List<EventItem> utilsFilterEvents({
   required List<EventItem> events,
   required SearchFilter filter,
   required Set<String> removedEventIds,
+  required AppLocalizations loc,
 }) {
   // 🧠 預先處理關鍵字（全部轉小寫）
   final List<String> keywords = filter.keywords
@@ -17,27 +20,84 @@ List<EventItem> utilsFilterEvents({
     // ✅ 若沒有過濾條件，直接回傳原列表（避免無謂運算）
     return List<EventItem>.from(events);
   }
-
+  RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
+  RegExp ageRange = RegExp(r'^(\d+)y~(\d+)y$'); // 例如 "18y~25y"
   return events.where((e) {
     if (removedEventIds.contains(e.id)) return false;
+    String isFree =
+        e.isFree == null ? constEmpty : (e.isFree! ? loc.free : loc.pay);
+    String isOutdoor = e.isOutdoor == null
+        ? constEmpty
+        : (e.isOutdoor! ? loc.outdoor : loc.indoor);
     bool matchesKeywords = keywords.every((word) {
-      return e.city.toLowerCase().contains(word) ||
+      bool matchedText = e.city.toLowerCase().contains(word) ||
           e.location.toLowerCase().contains(word) ||
           e.name.toLowerCase().contains(word) ||
           e.type.toLowerCase().contains(word) ||
           e.description.toLowerCase().contains(word) ||
-          e.fee.toLowerCase().contains(word) ||
+          //e.fee.toLowerCase().contains(word) ||
           e.unit.toLowerCase().contains(word) ||
-          e.subEvents.any(
-            (se) =>
-                se.city.toLowerCase().contains(word) ||
-                se.location.toLowerCase().contains(word) ||
-                se.name.toLowerCase().contains(word) ||
-                se.type.toLowerCase().contains(word) ||
-                se.description.toLowerCase().contains(word) ||
-                se.fee.toLowerCase().contains(word) ||
-                se.unit.toLowerCase().contains(word),
-          );
+          isFree.toLowerCase().contains(word) ||
+          isOutdoor.toLowerCase().contains(word);
+      if (matchedText) {
+        return matchedText;
+      }
+      // 🔹 年齡判斷
+      final ageSingleMatch = ageSingle.firstMatch(word);
+      final ageRangeMatch = ageRange.firstMatch(word);
+
+      if (ageRangeMatch != null) {
+        final int kwStart = int.parse(ageRangeMatch.group(1)!);
+        final int kwEnd = int.parse(ageRangeMatch.group(2)!);
+        final int eStart = e.ageMin ?? 0;
+        final int eEnd = e.ageMax ?? 999;
+        // 🔹 區間有交集即可
+        if (!(kwEnd < eStart || kwStart > eEnd)) {
+          return true;
+        }
+      } else if (ageSingleMatch != null) {
+        final int kwAge = int.parse(ageSingleMatch.group(1)!);
+        if ((e.ageMin ?? 0) <= kwAge && (e.ageMax ?? 999) >= kwAge) {
+          return true;
+        }
+      }
+
+      bool matchedSubEvents = e.subEvents.any((se) {
+        String sIsFree =
+            se.isFree == null ? constEmpty : (se.isFree! ? loc.free : loc.pay);
+        String sIsOutdoor = se.isOutdoor == null
+            ? constEmpty
+            : (se.isOutdoor! ? loc.outdoor : loc.indoor);
+        bool matchedSEText = se.city.toLowerCase().contains(word) ||
+            se.location.toLowerCase().contains(word) ||
+            se.name.toLowerCase().contains(word) ||
+            se.type.toLowerCase().contains(word) ||
+            se.description.toLowerCase().contains(word) ||
+            //se.fee.toLowerCase().contains(word) ||
+            se.unit.toLowerCase().contains(word) ||
+            sIsFree.toLowerCase().contains(word) ||
+            sIsOutdoor.toLowerCase().contains(word);
+        if (matchedSEText) {
+          return matchedSEText;
+        }
+        // 子事件年齡判斷
+        if (ageRangeMatch != null) {
+          final int kwStart = int.parse(ageRangeMatch.group(1)!);
+          final int kwEnd = int.parse(ageRangeMatch.group(2)!);
+          final int seStart = se.ageMin ?? 0;
+          final int seEnd = se.ageMax ?? 999;
+          if (!(kwEnd < seStart || kwStart > seEnd)) {
+            return true;
+          }
+        } else if (ageSingleMatch != null) {
+          final int kwAge = int.parse(ageSingleMatch.group(1)!);
+          if ((se.ageMin ?? 0) <= kwAge && (se.ageMax ?? 999) >= kwAge) {
+            return true;
+          }
+        }
+        return false;
+      });
+      return matchedSubEvents;
     });
 
     final endDate = e.endDate ?? e.startDate;

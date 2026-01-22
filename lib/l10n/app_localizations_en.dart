@@ -207,6 +207,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excelColumnHeaderSponsor => 'Sponsor';
 
   @override
+  String get excelColumnHeaderAgeMin => 'Min. Age';
+
+  @override
+  String get excelColumnHeaderAgeMax => 'Max Age';
+
+  @override
+  String get excelColumnHeaderIsFree => 'Free ?';
+
+  @override
+  String get excelColumnHeaderPriceMin => 'Min. Price';
+
+  @override
+  String get excelColumnHeaderPriceMax => 'Max Price';
+
+  @override
+  String get excelColumnHeaderIsOutdoor => 'Outdoor ?';
+
+  @override
   String get downloaded => '✅ Downloaded';
 
   @override
@@ -241,6 +259,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sponsor => 'Sponsor';
+
+  @override
+  String get ageMin => 'Min. Age';
+
+  @override
+  String get ageMax => 'Max Age';
+
+  @override
+  String get priceMin => 'Min. Price';
+
+  @override
+  String get priceMax => 'Max Price';
+
+  @override
+  String get isFree => 'Free ?';
+
+  @override
+  String get isOutdoor => 'Outdoor ?';
+
+  @override
+  String get toBeDetermined => 'To Be Determined';
+
+  @override
+  String get free => 'Free';
+
+  @override
+  String get pay => 'Pay';
+
+  @override
+  String get outdoor => 'Outdoor';
+
+  @override
+  String get indoor => 'Indoor';
 
   @override
   String get masterUrl => 'Link';

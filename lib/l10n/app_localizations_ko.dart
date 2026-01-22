@@ -207,6 +207,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get excelColumnHeaderSponsor => '관련 기관';
 
   @override
+  String get excelColumnHeaderAgeMin => '최소 연령';
+
+  @override
+  String get excelColumnHeaderAgeMax => '최대 연령';
+
+  @override
+  String get excelColumnHeaderIsFree => '무료 ?';
+
+  @override
+  String get excelColumnHeaderPriceMin => '최소 가격';
+
+  @override
+  String get excelColumnHeaderPriceMax => '최대 가격';
+
+  @override
+  String get excelColumnHeaderIsOutdoor => '옥외 ?';
+
+  @override
   String get downloaded => '✅ 다운로드가 완료되었습니다.';
 
   @override
@@ -241,6 +259,39 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sponsor => '관련 기관';
+
+  @override
+  String get ageMin => '최소 연령';
+
+  @override
+  String get ageMax => '최대 연령';
+
+  @override
+  String get priceMin => '최소 가격';
+
+  @override
+  String get priceMax => '최대 가격';
+
+  @override
+  String get isFree => '무료 ?';
+
+  @override
+  String get isOutdoor => '옥외 ?';
+
+  @override
+  String get toBeDetermined => '미정';
+
+  @override
+  String get free => '무료';
+
+  @override
+  String get pay => '지불하다';
+
+  @override
+  String get outdoor => '옥외';
+
+  @override
+  String get indoor => '실내';
 
   @override
   String get masterUrl => '링크';

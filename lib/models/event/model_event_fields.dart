@@ -11,7 +11,7 @@ class EventFields {
   static const String name = 'name';
   static const String type = 'type';
   static const String description = 'description';
-  static const String fee = 'fee';
+  //static const String fee = 'fee';
   static const String unit = 'unit';
   static const String subEvents = 'sub_events';
   static const String account = 'account';
@@ -20,4 +20,10 @@ class EventFields {
   static const String isHoliday = "is_holiday";
   static const String isTaiwanHoliday = "is_taiwan_holiday";
   static const String isApproved = "is_approved";
+  static const String ageMin = "age_min";
+  static const String ageMax = "age_max";
+  static const String isFree = "is_free";
+  static const String priceMin = "price_min";
+  static const String priceMax = "price_max";
+  static const String isOutdoor = "is_outdoor";
 }

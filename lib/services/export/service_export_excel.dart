@@ -20,21 +20,27 @@ class ServiceExportExcel {
       loc.excelColumnHeaderKeywords,
       loc.excelColumnHeaderCity,
       loc.excelColumnHeaderLocation,
-      loc.excelColumnHeaderFee,
+      //loc.excelColumnHeaderFee,
       loc.excelColumnHeaderStartDate,
       loc.excelColumnHeaderStartTime,
       loc.excelColumnHeaderEndDate,
       loc.excelColumnHeaderEndTime,
       loc.excelColumnHeaderDescription,
       loc.excelColumnHeaderSponsor,
+      loc.excelColumnHeaderAgeMin,
+      loc.excelColumnHeaderAgeMax,
+      loc.excelColumnHeaderIsFree,
+      loc.excelColumnHeaderPriceMin,
+      loc.excelColumnHeaderPriceMax,
+      loc.excelColumnHeaderIsOutdoor
     ];
 
     sheet.appendRow(headers.map(_textCell).toList());
 
     for (final e in events) {
-      _appendEventRow(sheet: sheet, event: e);
+      _appendEventRow(sheet: sheet, event: e, loc: loc);
       for (final sub in e.subEvents) {
-        _appendEventRow(sheet: sheet, event: sub, indent: '  └ ');
+        _appendEventRow(sheet: sheet, event: sub, indent: '  └ ', loc: loc);
       }
     }
     return Uint8List.fromList(excel.encode()!);
@@ -43,19 +49,26 @@ class ServiceExportExcel {
   void _appendEventRow(
       {required Sheet sheet,
       required EventBase event,
-      String indent = constEmpty}) {
+      String indent = constEmpty,
+      required AppLocalizations loc}) {
     final row = [
       _textCell('$indent${event.name}'),
       _textCell(event.type),
       _textCell(event.city),
       _textCell(event.location),
-      _textCell(event.fee),
+      //_textCell(event.fee),
       _textCell(event.startDate?.formatDateString() ?? constEmpty),
       _textCell(event.startTime?.formatTimeString() ?? constEmpty),
       _textCell(event.endDate?.formatDateString() ?? constEmpty),
       _textCell(event.endTime?.formatTimeString() ?? constEmpty),
       _textCell(event.description),
       _textCell(event.unit),
+      _textCell(event.ageMin?.toString() ?? constEmpty),
+      _textCell(event.ageMax?.toString() ?? constEmpty),
+      _textCell(event.isFree == null ? constEmpty : ( event.isFree! ? loc.free: loc.pay)),
+      _textCell(event.priceMin?.toString() ?? constEmpty),
+      _textCell(event.priceMax?.toString() ?? constEmpty),
+      _textCell(event.isOutdoor == null ? constEmpty : ( event.isOutdoor! ? loc.outdoor: loc.indoor)),
     ];
     sheet.appendRow(row);
   }

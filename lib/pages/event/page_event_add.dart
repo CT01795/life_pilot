@@ -4,11 +4,11 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/controllers/event/controller_page_event_add.dart';
 import 'package:life_pilot/core/app_navigator.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/date_time.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_event_fields.dart';
-import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
@@ -43,6 +43,9 @@ class _PageEventAddState extends State<PageEventAdd> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).unfocus();
+    });
     controllerAdd = widget.controllerEvent.createAddController(
       existingEvent: widget.existingEvent,
       initialDate: widget.initialDate,
@@ -107,8 +110,10 @@ class _PageEventAddState extends State<PageEventAdd> {
                     ..._buildTextFields(loc: loc, ctl: ctl),
                     Gaps.h16,
                     Text(loc.eventSub),
-                    ...List.generate(ctl.subEvents.length,
-                        (index) => _buildSubEventCard(loc: loc, ctl: ctl, index: index)),
+                    ...List.generate(
+                        ctl.subEvents.length,
+                        (index) => _buildSubEventCard(
+                            loc: loc, ctl: ctl, index: index)),
                     ElevatedButton.icon(
                       onPressed: () {
                         final newSub = EventItem(id: ctl.uuid.v4())
@@ -117,7 +122,13 @@ class _PageEventAddState extends State<PageEventAdd> {
                           ..startTime = ctl.startTime
                           ..endTime = ctl.endTime
                           ..city = ctl.city
-                          ..location = ctl.location;
+                          ..location = ctl.location
+                          ..ageMin = ctl.ageMin
+                          ..ageMax = ctl.ageMax
+                          ..isFree = ctl.isFree
+                          ..priceMin = ctl.priceMin
+                          ..priceMax = ctl.priceMax
+                          ..isOutdoor = ctl.isOutdoor;
                         setState(() {
                           final newIndex = newSub.id;
                           ctl.subEvents.add(newSub);
@@ -127,12 +138,15 @@ class _PageEventAddState extends State<PageEventAdd> {
                             EventFields.name: newSub.name,
                             EventFields.type: newSub.type,
                             EventFields.description: newSub.description,
-                            EventFields.fee: newSub.fee,
+                            //EventFields.fee: newSub.fee,
                             EventFields.unit: newSub.unit,
-                            EventFields.masterUrl: newSub.masterUrl ?? constEmpty,
+                            EventFields.masterUrl:
+                                newSub.masterUrl ?? constEmpty,
                           };
                           subFields.forEach((key, value) {
-                            ctl.initController(key: '${key}_sub_$newIndex', initialValue: value);
+                            ctl.initController(
+                                key: '${key}_sub_$newIndex',
+                                initialValue: value);
                           });
                         });
                         // 自動滑到最下
@@ -161,7 +175,9 @@ class _PageEventAddState extends State<PageEventAdd> {
   // 🧱 組件建構部分
   // =====================================================
   List<Widget> _buildTextFields(
-      {required AppLocalizations loc, required ControllerPageEventAdd ctl, String? index}) {
+      {required AppLocalizations loc,
+      required ControllerPageEventAdd ctl,
+      String? index}) {
     Map<String, String> fields = {
       EventFields.city: loc.city,
       EventFields.location: loc.location,
@@ -169,12 +185,53 @@ class _PageEventAddState extends State<PageEventAdd> {
       EventFields.type: loc.keywords,
       EventFields.masterUrl: loc.masterUrl,
       EventFields.description: loc.description,
-      EventFields.fee: loc.fee,
+      //EventFields.fee: loc.fee,
       EventFields.unit: loc.sponsor,
+      EventFields.ageMin: loc.ageMin,
+      EventFields.ageMax: loc.excelColumnHeaderAgeMax,
+      EventFields.isFree: loc.isFree,
+      EventFields.priceMin: loc.priceMin,
+      EventFields.priceMax: loc.priceMax,
+      EventFields.isOutdoor: loc.isOutdoor,
     };
-    if(index != null) fields.remove(EventFields.city);
+    if (index != null) fields.remove(EventFields.city);
     return fields.entries.map((e) {
       final keyField = index == null ? e.key : '${e.key}_sub_$index';
+      // ✅ isFree 下拉選單
+      if (e.key == EventFields.isFree) {
+        return DropdownButtonFormField<String>(
+          initialValue: ctl.isFree == null ? constEmpty : ctl.isFree.toString().toLowerCase(), // 預設值
+          decoration: InputDecoration(labelText: e.value),
+          items: [
+            DropdownMenuItem(value: constEmpty, child: Text(loc.toBeDetermined)),
+            DropdownMenuItem(value: "true", child: Text(loc.free)),
+            DropdownMenuItem(value: "false", child: Text(loc.pay)),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              ctl.updateField(keyField, value.toString());
+            }
+          },
+        );
+      }
+
+      // ✅ isOutdoor 下拉選單
+      if (e.key == EventFields.isOutdoor) {
+        return DropdownButtonFormField<String>(
+          initialValue: ctl.isOutdoor == null ? constEmpty : ctl.isOutdoor.toString().toLowerCase(), // 預設值
+          decoration: InputDecoration(labelText: e.value),
+          items: [
+            DropdownMenuItem(value: constEmpty, child: Text(loc.toBeDetermined)),
+            DropdownMenuItem(value: "true", child: Text(loc.outdoor)),
+            DropdownMenuItem(value: "false", child: Text(loc.indoor)),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              ctl.updateField(keyField, value.toString());
+            }
+          },
+        );
+      }
       return SpeechTextField(
         keyField: keyField,
         label: e.value,
@@ -185,7 +242,10 @@ class _PageEventAddState extends State<PageEventAdd> {
     }).toList();
   }
 
-  Widget _buildDateTimeRow({required AppLocalizations loc, required ControllerPageEventAdd ctl, int? index}) {
+  Widget _buildDateTimeRow(
+      {required AppLocalizations loc,
+      required ControllerPageEventAdd ctl,
+      int? index}) {
     final dStart =
         index == null ? ctl.startDate : ctl.subEvents[index].startDate;
     final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
@@ -305,7 +365,10 @@ class _PageEventAddState extends State<PageEventAdd> {
   }
 
   Widget _buildDateTile(
-      {required AppLocalizations loc, DateTime? date, required VoidCallback onTap, required String type}) {
+      {required AppLocalizations loc,
+      DateTime? date,
+      required VoidCallback onTap,
+      required String type}) {
     final text = date != null
         ? date.formatDateString(passYear: false, formatShow: true)
         : (type == CalendarMisc.startToS ? loc.startDate : loc.endDate);
@@ -319,7 +382,10 @@ class _PageEventAddState extends State<PageEventAdd> {
   }
 
   Widget _buildTimeTile(
-      {required AppLocalizations loc, TimeOfDay? time, required VoidCallback onTap, required String type}) {
+      {required AppLocalizations loc,
+      TimeOfDay? time,
+      required VoidCallback onTap,
+      required String type}) {
     final text = time?.format(context) ??
         (type == CalendarMisc.startToS ? loc.startTime : loc.endTime);
     return ListTile(
@@ -332,7 +398,9 @@ class _PageEventAddState extends State<PageEventAdd> {
   }
 
   Widget _buildSubEventCard(
-      {required AppLocalizations loc, required ControllerPageEventAdd ctl, required int index}) {
+      {required AppLocalizations loc,
+      required ControllerPageEventAdd ctl,
+      required int index}) {
     final d = ctl.subEvents[index];
 
     return Card(

@@ -495,6 +495,42 @@ abstract class AppLocalizations {
   /// **'Sponsor'**
   String get excelColumnHeaderSponsor;
 
+  /// Label for excelColumnHeaderAgeMin
+  ///
+  /// In en, this message translates to:
+  /// **'Min. Age'**
+  String get excelColumnHeaderAgeMin;
+
+  /// Label for excelColumnHeaderAgeMax
+  ///
+  /// In en, this message translates to:
+  /// **'Max Age'**
+  String get excelColumnHeaderAgeMax;
+
+  /// Label for excelColumnHeaderIsFree
+  ///
+  /// In en, this message translates to:
+  /// **'Free ?'**
+  String get excelColumnHeaderIsFree;
+
+  /// Label for excelColumnHeaderPriceMin
+  ///
+  /// In en, this message translates to:
+  /// **'Min. Price'**
+  String get excelColumnHeaderPriceMin;
+
+  /// Label for excelColumnHeaderPriceMax
+  ///
+  /// In en, this message translates to:
+  /// **'Max Price'**
+  String get excelColumnHeaderPriceMax;
+
+  /// Label for excelColumnHeaderIsOutdoor
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor ?'**
+  String get excelColumnHeaderIsOutdoor;
+
   /// Label for downloaded
   ///
   /// In en, this message translates to:
@@ -566,6 +602,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sponsor'**
   String get sponsor;
+
+  /// Label for ageMin
+  ///
+  /// In en, this message translates to:
+  /// **'Min. Age'**
+  String get ageMin;
+
+  /// Label for ageMax
+  ///
+  /// In en, this message translates to:
+  /// **'Max Age'**
+  String get ageMax;
+
+  /// Label for priceMin
+  ///
+  /// In en, this message translates to:
+  /// **'Min. Price'**
+  String get priceMin;
+
+  /// Label for priceMax
+  ///
+  /// In en, this message translates to:
+  /// **'Max Price'**
+  String get priceMax;
+
+  /// Label for isFree
+  ///
+  /// In en, this message translates to:
+  /// **'Free ?'**
+  String get isFree;
+
+  /// Label for isOutdoor
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor ?'**
+  String get isOutdoor;
+
+  /// Label for toBeDetermined
+  ///
+  /// In en, this message translates to:
+  /// **'To Be Determined'**
+  String get toBeDetermined;
+
+  /// Label for free
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get free;
+
+  /// Label for pay
+  ///
+  /// In en, this message translates to:
+  /// **'Pay'**
+  String get pay;
+
+  /// Label for outdoor
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor'**
+  String get outdoor;
+
+  /// Label for indoor
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor'**
+  String get indoor;
 
   /// Label for masterUrl
   ///

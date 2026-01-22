@@ -134,7 +134,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
   }
 
   Widget _buildBody(AppLocalizations loc) {
-    final events = _model.filteredEvents;
+    final events = _model.getFilteredEvents(loc);
     final scrollController = _model.scrollController;
 
     if (events.isEmpty) {

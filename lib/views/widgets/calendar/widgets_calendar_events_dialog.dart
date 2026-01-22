@@ -143,6 +143,7 @@ Future<bool> showCalendarEventsDialog({
                               canDelete: controllerCalendar.controllerEvent.canDelete(
                                   account: event.account ?? constEmpty),
                               showSubEvents: true,
+                              loc: loc
                             ),
                             tableName: tableName,
                             onTap: () => Navigator.pop(context),
