@@ -15,7 +15,7 @@ abstract class EventBase {
   String get name;
   String get type;
   String get description;
-  String get fee;
+  //String get fee;
   String get unit;
   String? get account;
   RepeatRule get repeatOptions;
@@ -23,6 +23,12 @@ abstract class EventBase {
   bool get isHoliday;
   bool get isTaiwanHoliday;
   bool get isApproved;
+  int? get ageMin;
+  int? get ageMax;
+  bool? get isFree;
+  double? get priceMin;
+  double? get priceMax;
+  bool? get isOutdoor;
   // ⬇️ 改為 getter + setter
   List<EventItem> get subEvents;
   set subEvents(List<EventItem> value);

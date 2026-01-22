@@ -207,6 +207,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get excelColumnHeaderSponsor => '相關單位';
 
   @override
+  String get excelColumnHeaderAgeMin => '最低年齡';
+
+  @override
+  String get excelColumnHeaderAgeMax => '最大年齡';
+
+  @override
+  String get excelColumnHeaderIsFree => '免費 ?';
+
+  @override
+  String get excelColumnHeaderPriceMin => '最低價格';
+
+  @override
+  String get excelColumnHeaderPriceMax => '最高價格';
+
+  @override
+  String get excelColumnHeaderIsOutdoor => '戶外 ?';
+
+  @override
   String get downloaded => '✅ 已下載';
 
   @override
@@ -241,6 +259,39 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sponsor => '相關單位';
+
+  @override
+  String get ageMin => '最低年齡';
+
+  @override
+  String get ageMax => '最大年齡';
+
+  @override
+  String get priceMin => '最低價格';
+
+  @override
+  String get priceMax => '最高價格';
+
+  @override
+  String get isFree => '免費 ?';
+
+  @override
+  String get isOutdoor => '室外 ?';
+
+  @override
+  String get toBeDetermined => '待定';
+
+  @override
+  String get free => '免費';
+
+  @override
+  String get pay => '付費';
+
+  @override
+  String get outdoor => '戶外';
+
+  @override
+  String get indoor => '室內';
 
   @override
   String get masterUrl => '連結';

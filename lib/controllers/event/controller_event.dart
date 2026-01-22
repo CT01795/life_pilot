@@ -258,14 +258,25 @@ class ControllerEvent extends ChangeNotifier {
     required String parentLocation,
     required bool canDelete,
     bool showSubEvents = true,
+    required AppLocalizations loc,
   }) {
     final locationDisplay = (event.city.isNotEmpty || event.location.isNotEmpty)
         ? '${event.city}．${event.location}'
         : constEmpty;
 
+    String isFree = event.isFree == null
+        ? constEmpty
+        : (event.isFree! ? loc.free : loc.pay);
+    String isOutdoor = event.isOutdoor == null
+        ? constEmpty
+        : (event.isOutdoor! ? loc.outdoor : loc.indoor);
+    String ageRange = event.ageMin == null
+        ? constEmpty
+        : "${event.ageMin}y~${event.ageMax == null ? constEmpty : "${event.ageMax}y"}";
     // 處理 tags
-    final tagsRawData =
-        <String>[event.fee, event.type].where((t) => t.isNotEmpty).toList();
+    final tagsRawData = <String>[isFree, isOutdoor, ageRange, event.type]
+        .where((t) => t.isNotEmpty)
+        .toList();
 
     final tags = tagsRawData
         .expand((t) => t.split(RegExp(r'[\s,，]')))
@@ -291,15 +302,21 @@ class ControllerEvent extends ChangeNotifier {
       subEvents: showSubEvents
           ? event.subEvents
               .map((sub) => buildEventViewModel(
-                    event: sub,
-                    parentLocation: locationDisplay,
-                    canDelete: canDelete,
-                    showSubEvents: showSubEvents,
-                  ))
+                  event: sub,
+                  parentLocation: locationDisplay,
+                  canDelete: canDelete,
+                  showSubEvents: showSubEvents,
+                  loc: loc))
               .toList()
           : const [],
       canDelete: canDelete,
       showSubEvents: showSubEvents,
+      ageMin: event.ageMin,
+      ageMax: event.ageMax,
+      isFree: event.isFree,
+      priceMin: event.priceMin,
+      priceMax: event.priceMax,
+      isOutdoor: event.isOutdoor,
     );
   }
 
@@ -323,21 +340,32 @@ class EventViewModel {
   final bool canDelete;
   final bool showSubEvents;
   final DateTime? startDate;
+  final int? ageMin;
+  final int? ageMax;
+  final bool? isFree;
+  final double? priceMin;
+  final double? priceMax;
+  final bool? isOutdoor;
 
-  EventViewModel({
-    required this.name,
-    required this.showDate,
-    required this.startDate,
-    required this.dateRange,
-    required this.tags,
-    required this.hasLocation,
-    required this.locationDisplay,
-    this.masterUrl,
-    this.description = constEmpty,
-    this.subEvents = const [],
-    this.canDelete = false,
-    this.showSubEvents = true,
-  });
+  EventViewModel(
+      {required this.name,
+      required this.showDate,
+      required this.startDate,
+      required this.dateRange,
+      required this.tags,
+      required this.hasLocation,
+      required this.locationDisplay,
+      this.masterUrl,
+      this.description = constEmpty,
+      this.subEvents = const [],
+      this.canDelete = false,
+      this.showSubEvents = true,
+      this.ageMin,
+      this.ageMax,
+      this.isFree,
+      this.priceMin,
+      this.priceMax,
+      this.isOutdoor});
 }
 
 /*優化後的效益

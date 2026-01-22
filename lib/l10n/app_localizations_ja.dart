@@ -207,6 +207,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get excelColumnHeaderSponsor => '主催者';
 
   @override
+  String get excelColumnHeaderAgeMin => '最低年齢';
+
+  @override
+  String get excelColumnHeaderAgeMax => '最大年齢';
+
+  @override
+  String get excelColumnHeaderIsFree => '無料 ?';
+
+  @override
+  String get excelColumnHeaderPriceMin => '最低価格';
+
+  @override
+  String get excelColumnHeaderPriceMax => '最高価格';
+
+  @override
+  String get excelColumnHeaderIsOutdoor => '屋外 ?';
+
+  @override
   String get downloaded => '✅ ダウンロード済み';
 
   @override
@@ -241,6 +259,39 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sponsor => '主催者';
+
+  @override
+  String get ageMin => '最低年齢';
+
+  @override
+  String get ageMax => '最大年齢';
+
+  @override
+  String get priceMin => '最低価格';
+
+  @override
+  String get priceMax => '最高価格';
+
+  @override
+  String get isFree => '無料 ？';
+
+  @override
+  String get isOutdoor => '屋外 ?';
+
+  @override
+  String get toBeDetermined => '未定';
+
+  @override
+  String get free => '無料';
+
+  @override
+  String get pay => '支払う';
+
+  @override
+  String get outdoor => '屋外';
+
+  @override
+  String get indoor => '屋内';
 
   @override
   String get masterUrl => 'リンク';

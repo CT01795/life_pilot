@@ -5,6 +5,7 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/date_time.dart';
 import 'package:life_pilot/core/event/filter_sort_events.dart';
 import 'package:life_pilot/core/provider_locale.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_search_filter.dart';
 import 'package:life_pilot/services/calendar/service_calendar.dart';
@@ -28,10 +29,11 @@ class ModelEventCalendar {
   final Set<String> selectedEventIds = {};
   final Set<String> removedEventIds = {};
 
-  List<EventItem> get filteredEvents => utilsFilterEvents(
+  List<EventItem> getFilteredEvents(AppLocalizations loc) => utilsFilterEvents(
         events: events,
         filter: searchFilter,
         removedEventIds: removedEventIds,
+        loc: loc
       );
 
   void toggleSearchPanel(bool value) {

@@ -33,8 +33,8 @@ mixin EventBaseMixin implements EventBase {
   String type = constEmpty;
   @override
   String description = constEmpty;
-  @override
-  String fee = constEmpty;
+  //@override
+  //String fee = constEmpty;
   @override
   String unit = constEmpty;
   @override
@@ -49,6 +49,18 @@ mixin EventBaseMixin implements EventBase {
   bool isTaiwanHoliday = false;
   @override
   bool isApproved = false;
+  @override
+  int? ageMin;
+  @override
+  int? ageMax;
+  @override
+  bool? isFree;
+  @override
+  double? priceMin;
+  @override
+  double? priceMax;
+  @override
+  bool? isOutdoor;
 
   // -------------------- JSON --------------------
   @override
@@ -66,7 +78,7 @@ mixin EventBaseMixin implements EventBase {
       EventFields.name: name,
       EventFields.type: type,
       EventFields.description: description,
-      EventFields.fee: fee,
+      //EventFields.fee: fee,
       EventFields.unit: unit,
       EventFields.account: account,
       EventFields.repeatOptions: repeatOptions.key,
@@ -76,6 +88,12 @@ mixin EventBaseMixin implements EventBase {
       EventFields.isHoliday: isHoliday,
       EventFields.isTaiwanHoliday: isTaiwanHoliday,
       EventFields.isApproved: isApproved,
+      EventFields.ageMin: ageMin,
+      EventFields.ageMax: ageMax,
+      EventFields.isFree: isFree,
+      EventFields.priceMin: priceMin,
+      EventFields.priceMax: priceMax,
+      EventFields.isOutdoor: isOutdoor,
       EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
     };
   }
@@ -94,7 +112,7 @@ mixin EventBaseMixin implements EventBase {
     name = json[EventFields.name] ?? constEmpty;
     type = json[EventFields.type] ?? constEmpty;
     description = json[EventFields.description] ?? constEmpty;
-    fee = json[EventFields.fee] ?? constEmpty;
+    //fee = json[EventFields.fee] ?? constEmpty;
     unit = json[EventFields.unit] ?? constEmpty;
     account = json[EventFields.account] ?? constEmpty;
     repeatOptions =
@@ -104,6 +122,12 @@ mixin EventBaseMixin implements EventBase {
     isHoliday = json[EventFields.isHoliday] == true;
     isTaiwanHoliday = json[EventFields.isTaiwanHoliday] == true;
     isApproved = json[EventFields.isApproved] == true;
+    ageMin = json[EventFields.ageMin];
+    ageMax = json[EventFields.ageMax];
+    isFree = json[EventFields.isFree];
+    priceMin = json[EventFields.priceMin];
+    priceMax = json[EventFields.priceMax];
+    isOutdoor = json[EventFields.isOutdoor];
     final subEventsJson = json[EventFields.subEvents];
     if (subEventsJson is List && subEventsJson.isNotEmpty) {
       subEvents = subEventsJson
@@ -122,6 +146,12 @@ mixin EventBaseMixin implements EventBase {
     endTime = parent.endTime;
     city = parent.city;
     location = parent.location;
+    ageMin = parent.ageMin;
+    ageMax = parent.ageMax;
+    isFree = parent.isFree;
+    priceMin = parent.priceMin;
+    priceMax = parent.priceMax;
+    isOutdoor = parent.isOutdoor;
   }
 
   DateTime? fromStringOrNull(String? date) {

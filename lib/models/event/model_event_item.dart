@@ -22,7 +22,7 @@ class EventItem with EventBaseMixin implements EventBase {
     String? name,
     String? type,
     String? description,
-    String? fee,
+    //String? fee,
     String? unit,
     String? account,
     RepeatRule? repeatOptions,
@@ -30,6 +30,12 @@ class EventItem with EventBaseMixin implements EventBase {
     bool? isHoliday,
     bool? isTaiwanHoliday,
     bool? isApproved,
+    int? ageMin,
+    int? ageMax,
+    bool? isFree,
+    double? priceMin,
+    double? priceMax,
+    bool? isOutdoor
   }) : super() {
     this.id = id ?? this.id;
     _subEvents = subEvents ?? [];
@@ -44,7 +50,7 @@ class EventItem with EventBaseMixin implements EventBase {
     this.name = name ?? this.name;
     this.type = type ?? this.type;
     this.description = description ?? this.description;
-    this.fee = fee ?? this.fee;
+    //this.fee = fee ?? this.fee;
     this.unit = unit ?? this.unit;
     this.account = account ?? this.account;
     this.repeatOptions = repeatOptions ?? this.repeatOptions;
@@ -52,6 +58,12 @@ class EventItem with EventBaseMixin implements EventBase {
     this.isHoliday = isHoliday ?? this.isHoliday;
     this.isTaiwanHoliday = isTaiwanHoliday ?? this.isTaiwanHoliday;
     this.isApproved = isApproved ?? this.isApproved;
+    this.ageMin = ageMin ?? this.ageMax;
+    this.ageMax = ageMax ?? this.ageMin;
+    this.isFree = isFree ?? this.isFree;
+    this.priceMin = priceMin ?? this.priceMin;
+    this.priceMax = priceMax ?? this.priceMax;
+    this.isOutdoor = isOutdoor ?? this.isOutdoor;
   }
 
   // ✅ 正確實作 EventBase 要求的 getter/setter
@@ -82,7 +94,7 @@ class EventItem with EventBaseMixin implements EventBase {
     String? newName,
     String? newType,
     String? newDescription,
-    String? newFee,
+    //String? newFee,
     String? newUnit,
     String? newAccount,
     RepeatRule? newRepeatOptions,
@@ -90,6 +102,12 @@ class EventItem with EventBaseMixin implements EventBase {
     bool? newIsHoliday,
     bool? newIsTaiwanHoliday,
     bool? newIsApproved,
+    int? newAgeMin,
+    int? newAgeMax,
+    bool? newIsFree,
+    double? newPriceMin,
+    double? newPriceMax,
+    bool? newIsOutdoor,
     List<EventItem>? newSubEvents,
   }) {
     return EventItem(
@@ -106,14 +124,21 @@ class EventItem with EventBaseMixin implements EventBase {
         name: newName ?? name,
         type: newType ?? type,
         description: newDescription ?? description,
-        fee: newFee ?? fee,
+        //fee: newFee ?? fee,
         unit: newUnit ?? unit,
         account: newAccount ?? account,
         repeatOptions: newRepeatOptions ?? repeatOptions,
         reminderOptions: newReminderOptions ?? reminderOptions,
         isHoliday: newIsHoliday ?? isHoliday,
         isTaiwanHoliday: newIsTaiwanHoliday ?? isTaiwanHoliday,
-        isApproved: newIsApproved ?? isApproved);
+        isApproved: newIsApproved ?? isApproved,
+        ageMin: newAgeMin ?? ageMin,
+        ageMax: newAgeMax ?? ageMax,
+        isFree: newIsFree ?? isFree,
+        priceMin: newPriceMin ?? priceMin,
+        priceMax: newPriceMax ?? priceMax,
+        isOutdoor: newIsOutdoor ?? isOutdoor,
+      );
   }
 
   static List<ReminderOption> parseReminderOptions({dynamic jsonValue}) {

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/date_time.dart';
@@ -30,9 +29,16 @@ class ControllerPageEventAdd extends ChangeNotifier {
   String name = constEmpty;
   String type = constEmpty;
   String description = constEmpty;
-  String fee = constEmpty;
+  //String fee = constEmpty;
   String unit = constEmpty;
   List<EventItem> subEvents = [];
+
+  int? ageMin;
+  int? ageMax;
+  bool? isFree;
+  double? priceMin;
+  double? priceMax;
+  bool? isOutdoor;
 
   String? masterGraphUrl;
   String? masterUrl;
@@ -51,13 +57,18 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // --- Debounce 用 ---
   Timer? _debounce;
 
-  ControllerPageEventAdd({
-    required this.auth,
-    required this.serviceEvent,
-    required this.tableName,
-    this.existingEvent,
-    this.initialDate,
-  }) {
+  ControllerPageEventAdd(
+      {required this.auth,
+      required this.serviceEvent,
+      required this.tableName,
+      this.existingEvent,
+      this.initialDate,
+      this.ageMin,
+      this.ageMax,
+      this.isFree,
+      this.priceMin,
+      this.priceMax,
+      this.isOutdoor}) {
     _init();
   }
 
@@ -76,12 +87,18 @@ class ControllerPageEventAdd extends ChangeNotifier {
     name = e?.name ?? constEmpty;
     type = e?.type ?? constEmpty;
     description = e?.description ?? constEmpty;
-    fee = e?.fee ?? constEmpty;
+    //fee = e?.fee ?? constEmpty;
     unit = e?.unit ?? constEmpty;
     subEvents = e != null ? List.from(e.subEvents) : [];
     account = e?.account ?? auth.currentAccount;
     reminderOptions = e?.reminderOptions ?? const [ReminderOption.dayBefore8am];
     repeatOptions = e?.repeatOptions ?? RepeatRule.once;
+    ageMin = e?.ageMin;
+    ageMax = e?.ageMax;
+    isFree = e?.isFree;
+    priceMin = e?.priceMin;
+    priceMax = e?.priceMax;
+    isOutdoor = e?.isOutdoor;
 
     final fields = {
       EventFields.city: city,
@@ -89,13 +106,20 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.name: name,
       EventFields.type: type,
       EventFields.description: description,
-      EventFields.fee: fee,
+      //EventFields.fee: fee,
       EventFields.unit: unit,
       EventFields.masterUrl: masterUrl ?? constEmpty,
+      EventFields.ageMin: ageMin,
+      EventFields.ageMax: ageMax,
+      EventFields.isFree: isFree,
+      EventFields.priceMin: priceMin,
+      EventFields.priceMax: priceMax,
+      EventFields.isOutdoor: isOutdoor,
     };
 
     for (final entry in fields.entries) {
-      initController(key: entry.key, initialValue: entry.value);
+      initController(
+          key: entry.key, initialValue: entry.value?.toString() ?? constEmpty);
     }
 
     // ✅ 初始化子事件控制器
@@ -106,15 +130,21 @@ class ControllerPageEventAdd extends ChangeNotifier {
         EventFields.name: sub.name,
         EventFields.type: sub.type,
         EventFields.description: sub.description,
-        EventFields.fee: sub.fee,
+        //EventFields.fee: sub.fee,
         EventFields.unit: sub.unit,
         EventFields.masterUrl: sub.masterUrl ?? constEmpty,
+        EventFields.ageMin: sub.ageMin,
+        EventFields.ageMax: sub.ageMax,
+        EventFields.isFree: sub.isFree,
+        EventFields.priceMin: sub.priceMin,
+        EventFields.priceMax: sub.priceMax,
+        EventFields.isOutdoor: sub.isOutdoor,
       };
 
       for (final entry in subFields.entries) {
         initController(
           key: '${entry.key}_sub_${sub.id}',
-          initialValue: entry.value,
+          initialValue: entry.value?.toString() == null || entry.value!.toString().isEmpty ? constEmpty : entry.value!.toString(),
         );
       }
     }
@@ -148,7 +178,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
       if (parts.length == 2) {
         final field = parts[0];
         final nowId = parts[1];
-        final sub = subEvents.firstWhere((e) => e.id == nowId, orElse: () => EventItem(id: nowId));
+        final sub = subEvents.firstWhere((e) => e.id == nowId,
+            orElse: () => EventItem(id: nowId));
         _updateSubEvent(sub, field, value);
         _notifyDebounced();
         return;
@@ -175,14 +206,32 @@ class ControllerPageEventAdd extends ChangeNotifier {
       case EventFields.description:
         description = value;
         break;
-      case EventFields.fee:
+      /*case EventFields.fee:
         fee = value;
-        break;
+        break;*/
       case EventFields.unit:
         unit = value;
         break;
       case EventFields.masterUrl:
         masterUrl = value;
+        break;
+      case EventFields.ageMin:
+        ageMin = value.isEmpty ? null : int.parse(value);
+        break;
+      case EventFields.ageMax:
+        ageMax = value.isEmpty ? null : int.parse(value);
+        break;
+      case EventFields.isFree:
+        isFree = value.isEmpty ? null : bool.parse(value);
+        break;
+      case EventFields.priceMin:
+        priceMin = value.isEmpty ? null : double.parse(value);
+        break;
+      case EventFields.priceMax:
+        priceMax = value.isEmpty ? null : double.parse(value);
+        break;
+      case EventFields.isOutdoor:
+        isOutdoor = value.isEmpty ? null : bool.parse(value);
         break;
     }
   }
@@ -201,14 +250,32 @@ class ControllerPageEventAdd extends ChangeNotifier {
       case EventFields.description:
         sub.description = value;
         break;
-      case EventFields.fee:
+      /*case EventFields.fee:
         sub.fee = value;
-        break;
+        break;*/
       case EventFields.unit:
         sub.unit = value;
         break;
       case EventFields.masterUrl:
         sub.masterUrl = value;
+        break;
+      case EventFields.ageMin:
+        sub.ageMin = value.isEmpty ? null : int.parse(value);
+        break;
+      case EventFields.ageMax:
+        sub.ageMax = value.isEmpty ? null : int.parse(value);
+        break;
+      case EventFields.isFree:
+        sub.isFree = value.isEmpty ? null : bool.parse(value);
+        break;
+      case EventFields.priceMin:
+        sub.priceMin = value.isEmpty ? null : double.parse(value);
+        break;
+      case EventFields.priceMax:
+        sub.priceMax = value.isEmpty ? null : double.parse(value);
+        break;
+      case EventFields.isOutdoor:
+        sub.isOutdoor = value.isEmpty ? null : bool.parse(value);
         break;
     }
   }
@@ -219,8 +286,10 @@ class ControllerPageEventAdd extends ChangeNotifier {
     subEvents.sort(_compareEvents);
 
     final updatedSubs = subEvents.map((sub) {
-      String getText(String field) =>
-          controllerMap['${field}_sub_${sub.id}']?.text ?? constEmpty;
+      String getText(String field) {
+        String? tmpValue = controllerMap['${field}_sub_${sub.id}']?.text;
+        return tmpValue == null || tmpValue.isEmpty ? constEmpty : tmpValue;
+      }
 
       return sub.copyWith(
         newSubEvents: [],
@@ -230,8 +299,26 @@ class ControllerPageEventAdd extends ChangeNotifier {
         newName: getText(EventFields.name),
         newType: getText(EventFields.type),
         newDescription: getText(EventFields.description),
-        newFee: getText(EventFields.fee),
+        //newFee: getText(EventFields.fee),
         newUnit: getText(EventFields.unit),
+        newAgeMin: getText(EventFields.ageMin).isEmpty
+            ? null
+            : int.parse(getText(EventFields.ageMin)),
+        newAgeMax: getText(EventFields.ageMax).isEmpty
+            ? null
+            : int.parse(getText(EventFields.ageMax)),
+        newIsFree: getText(EventFields.isFree).isEmpty
+            ? null
+            : bool.parse(getText(EventFields.isFree)),
+        newPriceMin: getText(EventFields.priceMin).isEmpty
+            ? null
+            : double.parse(getText(EventFields.priceMin)),
+        newPriceMax: getText(EventFields.priceMax).isEmpty
+            ? null
+            : double.parse(getText(EventFields.priceMax)),
+        newIsOutdoor: getText(EventFields.isOutdoor).isEmpty
+            ? null
+            : bool.parse(getText(EventFields.isOutdoor)),
         newAccount: auth.currentAccount,
         newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
         newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
@@ -254,12 +341,18 @@ class ControllerPageEventAdd extends ChangeNotifier {
       ..name = name
       ..type = type
       ..description = description
-      ..fee = fee
+      //..fee = fee
       ..unit = unit
       ..account = auth.currentAccount
       ..repeatOptions = existingEvent?.repeatOptions ?? repeatOptions
       ..reminderOptions = existingEvent?.reminderOptions ?? reminderOptions
-      ..masterGraphUrl = masterGraphUrl;
+      ..masterGraphUrl = masterGraphUrl
+      ..ageMin = ageMin
+      ..ageMax = ageMax
+      ..isFree = isFree
+      ..priceMin = priceMin
+      ..priceMax = priceMax
+      ..isOutdoor = isOutdoor;
   }
 
   int _compareEvents(EventItem a, EventItem b) {
