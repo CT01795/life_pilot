@@ -33,8 +33,8 @@ class EventItem with EventBaseMixin implements EventBase {
     int? ageMin,
     int? ageMax,
     bool? isFree,
-    double? priceMin,
-    double? priceMax,
+    num? priceMin,
+    num? priceMax,
     bool? isOutdoor
   }) : super() {
     this.id = id ?? this.id;
@@ -105,8 +105,8 @@ class EventItem with EventBaseMixin implements EventBase {
     int? newAgeMin,
     int? newAgeMax,
     bool? newIsFree,
-    double? newPriceMin,
-    double? newPriceMax,
+    num? newPriceMin,
+    num? newPriceMax,
     bool? newIsOutdoor,
     List<EventItem>? newSubEvents,
   }) {

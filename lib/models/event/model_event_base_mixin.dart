@@ -56,9 +56,9 @@ mixin EventBaseMixin implements EventBase {
   @override
   bool? isFree;
   @override
-  double? priceMin;
+  num? priceMin;
   @override
-  double? priceMax;
+  num? priceMax;
   @override
   bool? isOutdoor;
 
