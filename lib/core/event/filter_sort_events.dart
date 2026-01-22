@@ -3,6 +3,24 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_search_filter.dart';
 
+bool _matchPrice({
+  required int kwMin,
+  int? kwMax,
+  required double? priceMin,
+  required double? priceMax,
+}) {
+  final int eMin = (priceMin ?? 0).toInt();
+  final int eMax = (priceMax ?? 999999).toInt();
+
+  if (kwMax == null) {
+    // 單一價格：100
+    return eMin <= kwMin && eMax >= kwMin;
+  } else {
+    // 區間：100~200（有交集即可）
+    return !(kwMax < eMin || kwMin > eMax);
+  }
+}
+
 List<EventItem> utilsFilterEvents({
   required List<EventItem> events,
   required SearchFilter filter,
@@ -22,6 +40,7 @@ List<EventItem> utilsFilterEvents({
   }
   RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
   RegExp ageRange = RegExp(r'^(\d+)y~(\d+)y$'); // 例如 "18y~25y"
+  RegExp priceReg = RegExp(r'^\$?(\d+)(?:~\$?(\d+))?$');
   return events.where((e) {
     if (removedEventIds.contains(e.id)) return false;
     String isFree =
@@ -45,6 +64,7 @@ List<EventItem> utilsFilterEvents({
       // 🔹 年齡判斷
       final ageSingleMatch = ageSingle.firstMatch(word);
       final ageRangeMatch = ageRange.firstMatch(word);
+      final priceMatch = priceReg.firstMatch(word);
 
       if (ageRangeMatch != null) {
         final int kwStart = int.parse(ageRangeMatch.group(1)!);
@@ -58,6 +78,22 @@ List<EventItem> utilsFilterEvents({
       } else if (ageSingleMatch != null) {
         final int kwAge = int.parse(ageSingleMatch.group(1)!);
         if ((e.ageMin ?? 0) <= kwAge && (e.ageMax ?? 999) >= kwAge) {
+          return true;
+        }
+      }
+
+      // 🔹 價格判斷（主事件）
+      if (priceMatch != null) {
+        final int kwMin = int.parse(priceMatch.group(1)!);
+        final int? kwMax =
+            priceMatch.group(2) != null ? int.parse(priceMatch.group(2)!) : null;
+
+        if (_matchPrice(
+          kwMin: kwMin,
+          kwMax: kwMax,
+          priceMin: e.priceMin,
+          priceMax: e.priceMax,
+        )) {
           return true;
         }
       }
@@ -92,6 +128,22 @@ List<EventItem> utilsFilterEvents({
         } else if (ageSingleMatch != null) {
           final int kwAge = int.parse(ageSingleMatch.group(1)!);
           if ((se.ageMin ?? 0) <= kwAge && (se.ageMax ?? 999) >= kwAge) {
+            return true;
+          }
+        }
+
+        // 🔹 子事件價格判斷
+        if (priceMatch != null) {
+          final int kwMin = int.parse(priceMatch.group(1)!);
+          final int? kwMax =
+              priceMatch.group(2) != null ? int.parse(priceMatch.group(2)!) : null;
+
+          if (_matchPrice(
+            kwMin: kwMin,
+            kwMax: kwMax,
+            priceMin: se.priceMin,
+            priceMax: se.priceMax,
+          )) {
             return true;
           }
         }
