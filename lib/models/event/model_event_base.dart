@@ -23,8 +23,8 @@ abstract class EventBase {
   bool get isHoliday;
   bool get isTaiwanHoliday;
   bool get isApproved;
-  int? get ageMin;
-  int? get ageMax;
+  num? get ageMin;
+  num? get ageMax;
   bool? get isFree;
   num? get priceMin;
   num? get priceMax;

@@ -33,8 +33,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
   String unit = constEmpty;
   List<EventItem> subEvents = [];
 
-  int? ageMin;
-  int? ageMax;
+  num? ageMin;
+  num? ageMax;
   bool? isFree;
   num? priceMin;
   num? priceMax;
