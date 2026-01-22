@@ -69,8 +69,8 @@ List<EventItem> utilsFilterEvents({
       if (ageRangeMatch != null) {
         final int kwStart = int.parse(ageRangeMatch.group(1)!);
         final int kwEnd = int.parse(ageRangeMatch.group(2)!);
-        final int eStart = e.ageMin ?? 0;
-        final int eEnd = e.ageMax ?? 999;
+        final num eStart = e.ageMin ?? 0;
+        final num eEnd = e.ageMax ?? 999;
         // 🔹 區間有交集即可
         if (!(kwEnd < eStart || kwStart > eEnd)) {
           return true;
@@ -120,8 +120,8 @@ List<EventItem> utilsFilterEvents({
         if (ageRangeMatch != null) {
           final int kwStart = int.parse(ageRangeMatch.group(1)!);
           final int kwEnd = int.parse(ageRangeMatch.group(2)!);
-          final int seStart = se.ageMin ?? 0;
-          final int seEnd = se.ageMax ?? 999;
+          final num seStart = se.ageMin ?? 0;
+          final num seEnd = se.ageMax ?? 999;
           if (!(kwEnd < seStart || kwStart > seEnd)) {
             return true;
           }

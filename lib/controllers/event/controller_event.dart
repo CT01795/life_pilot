@@ -343,8 +343,8 @@ class EventViewModel {
   final bool canDelete;
   final bool showSubEvents;
   final DateTime? startDate;
-  final int? ageMin;
-  final int? ageMax;
+  final num? ageMin;
+  final num? ageMax;
   final bool? isFree;
   final num? priceMin;
   final num? priceMax;

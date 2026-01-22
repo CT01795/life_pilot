@@ -50,9 +50,9 @@ mixin EventBaseMixin implements EventBase {
   @override
   bool isApproved = false;
   @override
-  int? ageMin;
+  num? ageMin;
   @override
-  int? ageMax;
+  num? ageMax;
   @override
   bool? isFree;
   @override
