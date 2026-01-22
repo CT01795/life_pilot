@@ -144,7 +144,10 @@ class ControllerPageEventAdd extends ChangeNotifier {
       for (final entry in subFields.entries) {
         initController(
           key: '${entry.key}_sub_${sub.id}',
-          initialValue: entry.value?.toString() == null || entry.value!.toString().isEmpty ? constEmpty : entry.value!.toString(),
+          initialValue:
+              entry.value?.toString() == null || entry.value!.toString().isEmpty
+                  ? constEmpty
+                  : entry.value!.toString(),
         );
       }
     }
@@ -217,18 +220,34 @@ class ControllerPageEventAdd extends ChangeNotifier {
         break;
       case EventFields.ageMin:
         ageMin = value.isEmpty ? null : int.parse(value);
+        if (ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
+          ageMax = ageMin;
+          controllerMap[EventFields.ageMax]?.text = ageMax.toString();
+        }
         break;
       case EventFields.ageMax:
         ageMax = value.isEmpty ? null : int.parse(value);
+        if (ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
+          ageMin = ageMax;
+          controllerMap[EventFields.ageMin]?.text = ageMin.toString();
+        }
         break;
       case EventFields.isFree:
         isFree = value.isEmpty ? null : bool.parse(value);
         break;
       case EventFields.priceMin:
         priceMin = value.isEmpty ? null : double.parse(value);
+        if (priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
+          priceMax = priceMin;
+          controllerMap[EventFields.priceMax]?.text = priceMax.toString();
+        }
         break;
       case EventFields.priceMax:
         priceMax = value.isEmpty ? null : double.parse(value);
+        if (priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
+          priceMin = priceMax;
+          controllerMap[EventFields.priceMin]?.text = priceMin.toString();
+        }
         break;
       case EventFields.isOutdoor:
         isOutdoor = value.isEmpty ? null : bool.parse(value);
