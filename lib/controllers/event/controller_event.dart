@@ -273,8 +273,11 @@ class ControllerEvent extends ChangeNotifier {
     String ageRange = event.ageMin == null
         ? constEmpty
         : "${event.ageMin}y~${event.ageMax == null ? constEmpty : "${event.ageMax}y"}";
+    String priceRange = event.priceMin == null
+        ? constEmpty
+        : "\$${event.priceMin}~${event.priceMax == null ? constEmpty : "\$${event.priceMax}"}";
     // 處理 tags
-    final tagsRawData = <String>[isFree, isOutdoor, ageRange, event.type]
+    final tagsRawData = <String>[isFree, isOutdoor, ageRange, priceRange, event.type]
         .where((t) => t.isNotEmpty)
         .toList();
 
