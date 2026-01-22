@@ -58,8 +58,8 @@ class EventItem with EventBaseMixin implements EventBase {
     this.isHoliday = isHoliday ?? this.isHoliday;
     this.isTaiwanHoliday = isTaiwanHoliday ?? this.isTaiwanHoliday;
     this.isApproved = isApproved ?? this.isApproved;
-    this.ageMin = ageMin ?? this.ageMax;
-    this.ageMax = ageMax ?? this.ageMin;
+    this.ageMin = ageMin ?? this.ageMin;
+    this.ageMax = ageMax ?? this.ageMax;
     this.isFree = isFree ?? this.isFree;
     this.priceMin = priceMin ?? this.priceMin;
     this.priceMax = priceMax ?? this.priceMax;
