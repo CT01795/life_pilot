@@ -3,7 +3,7 @@ class AccountingPreview {
   String description;
   int value;
   String? currency;
-  double? exchangeRate;
+  num? exchangeRate;
 
   AccountingPreview({
     this.id,
@@ -18,7 +18,7 @@ class AccountingPreview {
     String? description,
     int? value,
     String? currency,
-    double? exchangeRate,
+    num? exchangeRate,
   }) {
     return AccountingPreview(
       id: id ?? this.id,

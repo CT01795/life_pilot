@@ -26,8 +26,8 @@ abstract class EventBase {
   int? get ageMin;
   int? get ageMax;
   bool? get isFree;
-  double? get priceMin;
-  double? get priceMax;
+  num? get priceMin;
+  num? get priceMax;
   bool? get isOutdoor;
   // ⬇️ 改為 getter + setter
   List<EventItem> get subEvents;

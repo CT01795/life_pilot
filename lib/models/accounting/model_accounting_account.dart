@@ -7,7 +7,7 @@ class ModelAccountingAccount {
   final int points;
   final int balance;
   String? currency; 
-  double? exchangeRate; // 與主要幣別轉換用
+  num? exchangeRate; // 與主要幣別轉換用
 
   ModelAccountingAccount({
     required this.id,
@@ -26,7 +26,7 @@ class ModelAccountingAccount {
     int? points,
     int? balance,
     String? currency,
-    double? exchangeRate
+    num? exchangeRate
   }) {
     return ModelAccountingAccount(
       id: id ?? this.id,

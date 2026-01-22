@@ -6,8 +6,8 @@ import 'package:life_pilot/models/event/model_search_filter.dart';
 bool _matchPrice({
   required int kwMin,
   int? kwMax,
-  required double? priceMin,
-  required double? priceMax,
+  required num? priceMin,
+  required num? priceMax,
 }) {
   final int eMin = (priceMin ?? 0).toInt();
   final int eMax = (priceMax ?? 999999).toInt();

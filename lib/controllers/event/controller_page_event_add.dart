@@ -36,8 +36,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
   int? ageMin;
   int? ageMax;
   bool? isFree;
-  double? priceMin;
-  double? priceMax;
+  num? priceMin;
+  num? priceMax;
   bool? isOutdoor;
 
   String? masterGraphUrl;

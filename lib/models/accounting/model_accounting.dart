@@ -8,7 +8,7 @@ class ModelAccounting {
   final String type;
   final int value;
   final String currency; 
-  double? exchangeRate; 
+  num? exchangeRate; 
 
   late final DateTime localTime;
   late final String displayTime;
@@ -31,7 +31,7 @@ class ModelAccounting {
     String? description,
     int? value,
     String? currency,
-    double? exchangeRate,
+    num? exchangeRate,
   }) {
     return ModelAccounting(
       id: id,

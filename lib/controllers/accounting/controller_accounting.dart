@@ -12,7 +12,7 @@ class ControllerAccounting extends ChangeNotifier {
   ControllerAuth? auth;
   final String accountId;
   final ControllerAccountingAccount accountController;
-  double? currentExchangeRate;
+  num? currentExchangeRate;
   String? _currentCurrency;
 
   String get currentType => accountController.currentType;
@@ -66,7 +66,7 @@ class ControllerAccounting extends ChangeNotifier {
   }
 
   Future<List<AccountingPreview>> parseFromSpeech(
-      String text, String? currency, double? exchangeRate) async {
+      String text, String? currency, num? exchangeRate) async {
     final results = NLPService.parseMulti(text);
 
     return results

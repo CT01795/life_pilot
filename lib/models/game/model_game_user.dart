@@ -4,7 +4,7 @@ class ModelGameUser {
   String? id = constEmpty;
   String? userName;
   String? gameId = constEmpty;
-  double? score = 0;
+  num? score = 0;
   DateTime? createdAt;
   String? gameType = constEmpty;
   String? gameName = constEmpty;

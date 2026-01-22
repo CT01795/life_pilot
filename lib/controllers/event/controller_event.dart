@@ -346,8 +346,8 @@ class EventViewModel {
   final int? ageMin;
   final int? ageMax;
   final bool? isFree;
-  final double? priceMin;
-  final double? priceMax;
+  final num? priceMin;
+  final num? priceMax;
   final bool? isOutdoor;
 
   EventViewModel(
