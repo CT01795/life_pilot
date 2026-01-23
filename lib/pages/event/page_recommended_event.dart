@@ -33,7 +33,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
   late final ModelEventCalendar _modelEventCalendar;
 
   @override
-  Future<void> initState() async {
+  void initState() {
     super.initState();
     final context = this.context; // ✅ 避免多次 lookup
     final auth = context.read<ControllerAuth>();
