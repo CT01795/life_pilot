@@ -277,9 +277,13 @@ class ControllerEvent extends ChangeNotifier {
         ? constEmpty
         : "\$${event.priceMin}~${event.priceMax == null ? constEmpty : "\$${event.priceMax}"}";
     // 處理 tags
-    final tagsRawData = <String>[isFree, isOutdoor, ageRange, priceRange, event.type]
-        .where((t) => t.isNotEmpty)
-        .toList();
+    final tagsRawData = <String>[
+      isFree,
+      isOutdoor,
+      ageRange,
+      priceRange,
+      event.type
+    ].where((t) => t.isNotEmpty).toList();
 
     final tags = tagsRawData
         .expand((t) => t.split(RegExp(r'[\s,，]')))

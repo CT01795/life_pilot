@@ -1,0 +1,148 @@
+// lib/services/event_service.dart
+import 'package:http/http.dart' as http;
+import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/event/model_event_item.dart';
+import 'package:life_pilot/core/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:html/parser.dart' show parse;
+import 'package:html/dom.dart';
+import 'package:uuid/uuid.dart';
+
+class ServiceEventPublic {
+  final client = Supabase.instance.client;
+  final Duration perEventDelay;
+  final Set<String> seenUrls = {};
+  ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
+
+  Future<void> fetchAndSaveAllEventsStrolltimes() async {
+    final url = 'https://strolltimes.com/weekend-events/';
+    DateTime today = DateTime.now();
+    today = DateTime(today.year, today.month, today.day);
+    // 檢查今日是否已經檢視過
+    bool exists = await checkIfUrlExists(url, today);
+    if (exists) {
+      return;
+    }
+
+    final events = await fetchPageEventsStrolltimes(url, today);
+
+    if (events == null || events.isEmpty) {
+      return;
+    }
+
+    for (final event in events) {
+      // 存入 Supabase
+      final Map<String, dynamic> data = event.toJson();
+      client.from(TableNames.recommendedEvents).insert([data]);
+    }
+  }
+
+  Future<List<EventItem>?> fetchPageEventsStrolltimes(String url, DateTime today) async {
+    final res = await http.get(Uri.parse(url), headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)'
+    });
+    if (res.statusCode != 200) return [];
+
+    final document = parse(res.body);
+    // 抓所有 <a>，找 href 以 /weekend-events/ 開頭
+    // 1️⃣ 找第一筆 /weekend-events/ 連結
+    final eventLinkElement = document
+        .querySelectorAll('a')
+        .where((a) =>
+            a.attributes['href']
+                ?.startsWith('https://strolltimes.com/weekend-events/') ??
+            false)
+        .cast<Element>()
+        .toList();
+
+    final firstEvent =
+        eventLinkElement.isNotEmpty ? eventLinkElement.first : null;
+
+    String? firstEventLink;
+    if (firstEvent != null) {
+      firstEventLink = firstEvent.attributes['href']!;
+      final firstEventTitle = firstEvent.attributes['title'];
+      logger.i('第一筆活動連結: $firstEventLink, $firstEventTitle');
+    } else {
+      return null;
+    }
+    // 2️⃣ 點進去抓活動頁面內容
+    final eventResp = await http.get(Uri.parse(firstEventLink));
+
+    if (eventResp.statusCode != 200) {
+      logger.e('抓活動頁面失敗: ${eventResp.statusCode}');
+      return null;
+    }
+
+    final eventDoc = parse(eventResp.body);
+
+    // 找到所有 <h2> 標題
+    final h2List = eventDoc.querySelectorAll('h2.wp-block-heading');
+    List<EventItem> tmpList = [];
+    final Uuid uuid = const Uuid();
+    for (var h2 in h2List) {
+      final title = h2.text.trim();
+      logger.i('=== 標題: $title ===');
+
+      // 找到該 h2 之後的 <figure class="wp-block-table">
+      var sibling = h2.nextElementSibling;
+      while (sibling != null) {
+        if (sibling.localName == 'figure' &&
+            sibling.classes.contains('wp-block-table')) {
+          final table = sibling.querySelector('table');
+          if (table != null) {
+            final rows = table.querySelectorAll('tbody tr');
+            for (var row in rows) {
+              final cells = row.querySelectorAll('td');
+              if (cells.length >= 4) {
+                DateTime? startDate = DateTime.tryParse(cells[0].text.trim());
+                DateTime? endDate = DateTime.tryParse(cells[1].text.trim());
+                if (startDate != null &&
+                    endDate != null &&
+                    !endDate.isBefore(today)) {
+                  final location = cells[3].text.trim();
+                  // 取得活動名稱和 href
+                  final aTag = cells[2].querySelector('a');
+                  final eventName = aTag?.text.trim() ?? '';
+                  final eventHref = aTag?.attributes['href'] ?? '';
+                  final eventItem = EventItem(
+                    id: uuid.v4(),
+                    masterUrl: eventHref,
+                    startDate: startDate,
+                    endDate: endDate,
+                    city: title,
+                    location: location,
+                    name: eventName,
+                    account: AuthConstants.sysAdminEmail,
+                  );
+                  tmpList.add(eventItem);
+                }
+              }
+            }
+          }
+          break; // 找到 table 就跳出 while
+        }
+        sibling = sibling.nextElementSibling;
+      }
+    }
+    return tmpList;
+  }
+
+  Future<bool> checkIfUrlExists(String url, DateTime today) async {
+    final result = await client
+        .from(TableNames.recommendedEventUrl)
+        .select('master_url')
+        .eq('start_date', today)
+        .limit(1);
+
+    if(result.isNotEmpty){
+      await client
+        .from(TableNames.recommendedEventUrl)
+        .insert({
+          'master_url': url,
+          'start_date': today.toIso8601String(),
+        });
+    }
+    return result.isNotEmpty;
+  }
+}

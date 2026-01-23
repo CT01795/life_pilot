@@ -9,6 +9,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_base_event.dart';
 import 'package:life_pilot/services/event/service_event.dart';
+import 'package:life_pilot/services/event/service_event_public.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_permission.dart';
@@ -32,7 +33,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
   late final ModelEventCalendar _modelEventCalendar;
 
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
     final context = this.context; // ✅ 避免多次 lookup
     final auth = context.read<ControllerAuth>();
@@ -50,6 +51,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       modelEventCalendar: _modelEventCalendar,
       controllerNotification: controllerNotification,
     );
+    //ServiceEventPublic().fetchAndSaveAllEventsStrolltimes(); //TODO
   }
 
   @override
