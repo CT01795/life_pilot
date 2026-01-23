@@ -72,6 +72,7 @@ dependencies:
   html_editor_enhanced: ^2.7.1
   flutter_widget_from_html_core: ^0.17.0
   flutter_html: ^3.0.0
+  html: ^0.15.6
 
 dev_dependencies:
   flutter_test:
