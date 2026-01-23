@@ -71,7 +71,7 @@ class _PageEventAddState extends State<PageEventAdd> {
         if (!_focusNodes[key]!.hasFocus) {
           // 離焦時更新
           controllerAdd.updateField(
-              key, controllerAdd.getController(key: key).text);
+              key, controllerAdd.getController(key: key).text, true);
         }
       });
     }
@@ -239,7 +239,7 @@ class _PageEventAddState extends State<PageEventAdd> {
           ],
           onChanged: (value) {
             if (value != null) {
-              ctl.updateField(keyField, value);
+              ctl.updateField(keyField, value, false);
             }
           },
         );
@@ -260,7 +260,7 @@ class _PageEventAddState extends State<PageEventAdd> {
           ],
           onChanged: (value) {
             if (value != null) {
-              ctl.updateField(keyField, value);
+              ctl.updateField(keyField, value, false);
             }
           },
         );
@@ -291,14 +291,11 @@ class _PageEventAddState extends State<PageEventAdd> {
                   contentPadding: const EdgeInsets.all(6),
                 ),
                 focusNode: getFocusNode(minKey),
-                onEditingComplete: () {
-                  ctl.updateField(minKey, ctl.getController(key: minKey).text);
-                  // 隱藏鍵盤
-                  FocusScope.of(context).unfocus();
+                onChanged: (value) {
+                  ctl.updateField(minKey, ctl.getController(key: minKey).text, false);
                 },
               ),
             ),
-
             // 中間的 "～" 8%
             Expanded(
               flex: 8,
@@ -323,10 +320,8 @@ class _PageEventAddState extends State<PageEventAdd> {
                   contentPadding: const EdgeInsets.all(6),
                 ),
                 focusNode: getFocusNode(maxKey),
-                onEditingComplete: () {
-                  ctl.updateField(maxKey, ctl.getController(key: maxKey).text);
-                  // 隱藏鍵盤
-                  FocusScope.of(context).unfocus();
+                onChanged: (value) {
+                  ctl.updateField(maxKey, ctl.getController(key: maxKey).text, false);
                 },
               ),
             ),
@@ -339,7 +334,7 @@ class _PageEventAddState extends State<PageEventAdd> {
         label: e.value,
         controller: ctl,
         loc: loc,
-        onChanged: (v) => ctl.updateField(keyField, v),
+        onChanged: (v) => ctl.updateField(keyField, v, false),
       );
     }).toList();
   }
