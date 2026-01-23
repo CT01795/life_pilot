@@ -174,7 +174,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   }
 
   // 更新欄位（主事件 / 子事件）
-  void updateField(String key, String value) {
+  void updateField(String key, String value, bool check) {
     // ✅ 判斷是否是 subEvent 欄位
     if (key.contains('_sub_')) {
       final parts = key.split('_sub_');
@@ -183,16 +183,16 @@ class ControllerPageEventAdd extends ChangeNotifier {
         final nowId = parts[1];
         final sub = subEvents.firstWhere((e) => e.id == nowId,
             orElse: () => EventItem(id: nowId));
-        _updateSubEvent(sub, field, value);
+        _updateSubEvent(key, sub, field, value, check);
         _notifyDebounced();
         return;
       }
     }
-    _updateMainField(key, value);
+    _updateMainField(key, value, check);
     _notifyDebounced();
   }
 
-  void _updateMainField(String key, String value) {
+  void _updateMainField(String key, String value, bool check) {
     switch (key) {
       case EventFields.city:
         city = value;
@@ -219,15 +219,15 @@ class ControllerPageEventAdd extends ChangeNotifier {
         masterUrl = value;
         break;
       case EventFields.ageMin:
-        ageMin = value.isEmpty ? null : int.parse(value);
-        if (ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
+        ageMin = value.isEmpty ? null : num.parse(value);
+        if (check && ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
           ageMax = ageMin;
           controllerMap[EventFields.ageMax]?.text = ageMax.toString();
         }
         break;
       case EventFields.ageMax:
-        ageMax = value.isEmpty ? null : int.parse(value);
-        if (ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
+        ageMax = value.isEmpty ? null : num.parse(value);
+        if (check && ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
           ageMin = ageMax;
           controllerMap[EventFields.ageMin]?.text = ageMin.toString();
         }
@@ -236,15 +236,15 @@ class ControllerPageEventAdd extends ChangeNotifier {
         isFree = value.isEmpty ? null : bool.parse(value);
         break;
       case EventFields.priceMin:
-        priceMin = value.isEmpty ? null : double.parse(value);
-        if (priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
+        priceMin = value.isEmpty ? null : num.parse(value);
+        if (check && priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
           priceMax = priceMin;
           controllerMap[EventFields.priceMax]?.text = priceMax.toString();
         }
         break;
       case EventFields.priceMax:
-        priceMax = value.isEmpty ? null : double.parse(value);
-        if (priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
+        priceMax = value.isEmpty ? null : num.parse(value);
+        if (check && priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
           priceMin = priceMax;
           controllerMap[EventFields.priceMin]?.text = priceMin.toString();
         }
@@ -255,7 +255,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
     }
   }
 
-  void _updateSubEvent(EventItem sub, String key, String value) {
+  void _updateSubEvent(String mapKey, EventItem sub, String key, String value, bool check) {
     switch (key) {
       case EventFields.location:
         sub.location = value;
@@ -279,19 +279,35 @@ class ControllerPageEventAdd extends ChangeNotifier {
         sub.masterUrl = value;
         break;
       case EventFields.ageMin:
-        sub.ageMin = value.isEmpty ? null : int.parse(value);
+        sub.ageMin = value.isEmpty ? null : num.parse(value);
+        if (check && sub.ageMin != null && sub.ageMax != null && sub.ageMin!.compareTo(sub.ageMax!) > 0) {
+          sub.ageMax = sub.ageMin;
+          controllerMap[mapKey.replaceAll(EventFields.ageMin, EventFields.ageMax)]?.text = sub.ageMax.toString();
+        }
         break;
       case EventFields.ageMax:
-        sub.ageMax = value.isEmpty ? null : int.parse(value);
+        sub.ageMax = value.isEmpty ? null : num.parse(value);
+        if (check && sub.ageMin != null && sub.ageMax != null && sub.ageMin!.compareTo(sub.ageMax!) > 0) {
+          sub.ageMin = sub.ageMax;
+          controllerMap[mapKey.replaceAll(EventFields.ageMax, EventFields.ageMin)]?.text = sub.ageMin.toString();
+        }
         break;
       case EventFields.isFree:
         sub.isFree = value.isEmpty ? null : bool.parse(value);
         break;
       case EventFields.priceMin:
-        sub.priceMin = value.isEmpty ? null : double.parse(value);
+        sub.priceMin = value.isEmpty ? null : num.parse(value);
+        if (check && sub.priceMin != null && sub.priceMax != null && sub.priceMin!.compareTo(sub.priceMax!) > 0) {
+          sub.priceMax = sub.priceMin;
+          controllerMap[mapKey.replaceAll(EventFields.priceMin, EventFields.priceMax)]?.text = sub.priceMax.toString();
+        }
         break;
       case EventFields.priceMax:
-        sub.priceMax = value.isEmpty ? null : double.parse(value);
+        sub.priceMax = value.isEmpty ? null : num.parse(value);
+        if (check && sub.priceMin != null && sub.priceMax != null && sub.priceMin!.compareTo(sub.priceMax!) > 0) {
+          sub.priceMin = sub.priceMax;
+          controllerMap[mapKey.replaceAll(EventFields.priceMax, EventFields.priceMin)]?.text = sub.priceMin.toString();
+        }
         break;
       case EventFields.isOutdoor:
         sub.isOutdoor = value.isEmpty ? null : bool.parse(value);
@@ -322,19 +338,19 @@ class ControllerPageEventAdd extends ChangeNotifier {
         newUnit: getText(EventFields.unit),
         newAgeMin: getText(EventFields.ageMin).isEmpty
             ? null
-            : int.parse(getText(EventFields.ageMin)),
+            : num.parse(getText(EventFields.ageMin)),
         newAgeMax: getText(EventFields.ageMax).isEmpty
             ? null
-            : int.parse(getText(EventFields.ageMax)),
+            : num.parse(getText(EventFields.ageMax)),
         newIsFree: getText(EventFields.isFree).isEmpty
             ? null
             : bool.parse(getText(EventFields.isFree)),
         newPriceMin: getText(EventFields.priceMin).isEmpty
             ? null
-            : double.parse(getText(EventFields.priceMin)),
+            : num.parse(getText(EventFields.priceMin)),
         newPriceMax: getText(EventFields.priceMax).isEmpty
             ? null
-            : double.parse(getText(EventFields.priceMax)),
+            : num.parse(getText(EventFields.priceMax)),
         newIsOutdoor: getText(EventFields.isOutdoor).isEmpty
             ? null
             : bool.parse(getText(EventFields.isOutdoor)),

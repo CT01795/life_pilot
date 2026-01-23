@@ -4,13 +4,13 @@ import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_search_filter.dart';
 
 bool _matchPrice({
-  required int kwMin,
-  int? kwMax,
+  required num kwMin,
+  num? kwMax,
   required num? priceMin,
   required num? priceMax,
 }) {
-  final int eMin = (priceMin ?? 0).toInt();
-  final int eMax = (priceMax ?? 999999).toInt();
+  final num eMin = (priceMin ?? 0);
+  final num eMax = (priceMax ?? 999999);
 
   if (kwMax == null) {
     // 單一價格：100
@@ -67,8 +67,8 @@ List<EventItem> utilsFilterEvents({
       final priceMatch = priceReg.firstMatch(word);
 
       if (ageRangeMatch != null) {
-        final int kwStart = int.parse(ageRangeMatch.group(1)!);
-        final int kwEnd = int.parse(ageRangeMatch.group(2)!);
+        final num kwStart = num.parse(ageRangeMatch.group(1)!);
+        final num kwEnd = num.parse(ageRangeMatch.group(2)!);
         final num eStart = e.ageMin ?? 0;
         final num eEnd = e.ageMax ?? 999;
         // 🔹 區間有交集即可
@@ -76,7 +76,7 @@ List<EventItem> utilsFilterEvents({
           return true;
         }
       } else if (ageSingleMatch != null) {
-        final int kwAge = int.parse(ageSingleMatch.group(1)!);
+        final num kwAge = num.parse(ageSingleMatch.group(1)!);
         if ((e.ageMin ?? 0) <= kwAge && (e.ageMax ?? 999) >= kwAge) {
           return true;
         }
@@ -84,9 +84,9 @@ List<EventItem> utilsFilterEvents({
 
       // 🔹 價格判斷（主事件）
       if (priceMatch != null) {
-        final int kwMin = int.parse(priceMatch.group(1)!);
-        final int? kwMax =
-            priceMatch.group(2) != null ? int.parse(priceMatch.group(2)!) : null;
+        final num kwMin = num.parse(priceMatch.group(1)!);
+        final num? kwMax =
+            priceMatch.group(2) != null ? num.parse(priceMatch.group(2)!) : null;
 
         if (_matchPrice(
           kwMin: kwMin,
@@ -118,15 +118,15 @@ List<EventItem> utilsFilterEvents({
         }
         // 子事件年齡判斷
         if (ageRangeMatch != null) {
-          final int kwStart = int.parse(ageRangeMatch.group(1)!);
-          final int kwEnd = int.parse(ageRangeMatch.group(2)!);
+          final num kwStart = num.parse(ageRangeMatch.group(1)!);
+          final num kwEnd = num.parse(ageRangeMatch.group(2)!);
           final num seStart = se.ageMin ?? 0;
           final num seEnd = se.ageMax ?? 999;
           if (!(kwEnd < seStart || kwStart > seEnd)) {
             return true;
           }
         } else if (ageSingleMatch != null) {
-          final int kwAge = int.parse(ageSingleMatch.group(1)!);
+          final num kwAge = num.parse(ageSingleMatch.group(1)!);
           if ((se.ageMin ?? 0) <= kwAge && (se.ageMax ?? 999) >= kwAge) {
             return true;
           }
@@ -134,9 +134,9 @@ List<EventItem> utilsFilterEvents({
 
         // 🔹 子事件價格判斷
         if (priceMatch != null) {
-          final int kwMin = int.parse(priceMatch.group(1)!);
-          final int? kwMax =
-              priceMatch.group(2) != null ? int.parse(priceMatch.group(2)!) : null;
+          final num kwMin = num.parse(priceMatch.group(1)!);
+          final num? kwMax =
+              priceMatch.group(2) != null ? num.parse(priceMatch.group(2)!) : null;
 
           if (_matchPrice(
             kwMin: kwMin,
