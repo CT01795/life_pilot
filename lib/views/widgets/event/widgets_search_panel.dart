@@ -22,16 +22,16 @@ Widget widgetsSearchPanel({
           decoration: InputDecoration(
             hintText: loc.searchKeywords,
             prefixIcon: const Icon(Icons.search),
-            suffixIcon: filter.keywords.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    tooltip: loc.clear,
-                    onPressed: controllerEvent.clearSearchFilters, 
-                  )
-                : null,
+            suffixIcon: IconButton(
+                icon: const Icon(Icons.clear),
+                tooltip: loc.clear,
+                onPressed: () {
+                  controllerEvent.updateKeywords(null);
+                },
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          onChanged: (value) => controllerEvent.updateSearch(keywords: value.trim()),
+          onChanged: (value) => controllerEvent.updateKeywords(value.trim()),
         ),
         if (controllerEvent.showDate()) ...[
           Gaps.h8,
@@ -43,7 +43,7 @@ Widget widgetsSearchPanel({
                   date: filter.startDate,
                   label: loc.startDate,
                   icon: Icons.date_range,
-                  onDateChanged: (value) => controllerEvent.updateSearch(startDate: value), 
+                  onDateChanged: (value) => controllerEvent.updateStartDate(value), 
                   loc: loc,
                 ),
               ),
@@ -54,7 +54,7 @@ Widget widgetsSearchPanel({
                   date: filter.endDate,
                   label: loc.endDate,
                   icon: Icons.date_range,
-                  onDateChanged: (value) => controllerEvent.updateSearch(endDate: value), 
+                  onDateChanged: (value) => controllerEvent.updateEndDate(value), 
                   loc: loc,
                 ),
               ),

@@ -38,16 +38,17 @@ class ModelEventCalendar {
 
   void toggleSearchPanel(bool value) {
     showSearchPanel = value;
-    if (!value) clearSearchFilters();
+    if (!value) clearSearchAll();
   }
 
-  void clearSearchFilters() {
+  void clearSearchAll() {
     searchFilter.clear();
     searchController.clear();
   }
 
-  void updateSearchKeywords(String keywords) {
-    searchFilter.keywords = keywords;
+  void updateSearchKeywords(String? keywords) {
+    searchFilter.keywords = keywords ?? constEmpty;
+    if(keywords == null) searchController.clear();
   }
 
   void updateStartDate(DateTime? date) {
