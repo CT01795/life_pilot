@@ -34,8 +34,10 @@ class WidgetsEventSubCard extends StatelessWidget {
             WidgetsEventCard.tags(typeList: event.tags),
           if (event.hasLocation)
             Text(event.locationDisplay,
-              overflow: TextOverflow.ellipsis,
-              softWrap: true,),
+              softWrap: true, // 允許換行
+              overflow: TextOverflow.visible, // 文字超過不截斷
+              //overflow: TextOverflow.ellipsis,
+            ),
           if (event.masterUrl?.isNotEmpty == true)
             WidgetsEventCard.link(loc: loc, url: event.masterUrl!),
         ],
