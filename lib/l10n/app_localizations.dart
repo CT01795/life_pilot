@@ -720,7 +720,7 @@ abstract class AppLocalizations {
   /// Label for searchKeywords
   ///
   /// In en, this message translates to:
-  /// **'Keyword (blank separated)'**
+  /// **'Keyword (comma separated)'**
   String get searchKeywords;
 
   /// Label for dateClear

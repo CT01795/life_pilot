@@ -318,7 +318,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
-  String get searchKeywords => 'Keyword (blank separated)';
+  String get searchKeywords => 'Keyword (comma separated)';
 
   @override
   String get dateClear => 'Date clear';

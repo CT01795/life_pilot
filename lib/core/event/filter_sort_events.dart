@@ -30,7 +30,8 @@ List<EventItem> utilsFilterEvents({
   // 🧠 預先處理關鍵字（全部轉小寫）
   final List<String> keywords = filter.keywords
       .toLowerCase()
-      .split(RegExp(r'\s+'))
+      .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔 //.split(RegExp(r'\s+'))
+      .map((s) => s.trim()) // 只修剪每個 tag 前後空白
       .where((word) => word.isNotEmpty)
       .toList();
 

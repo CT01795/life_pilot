@@ -318,7 +318,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get save => '儲存';
 
   @override
-  String get searchKeywords => '關鍵字搜尋(空白分隔)';
+  String get searchKeywords => '關鍵字搜尋(逗點分隔)';
 
   @override
   String get dateClear => '清除日期';
@@ -441,7 +441,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get repeatOptionsEveryTwoMonths => '每兩個月';
 
   @override
-  String get repeatOptionsEveryYear => 'Every year';
+  String get repeatOptionsEveryYear => '每年';
 
   @override
   String get repeatOptionsEvery => '每';

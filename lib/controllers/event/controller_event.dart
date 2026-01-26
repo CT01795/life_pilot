@@ -238,7 +238,26 @@ class ControllerEvent extends ChangeNotifier {
     String? keywords,
   ) {
     modelEventCalendar.updateSearchKeywords(keywords);
+    
+    final controller = modelEventCalendar.searchController;
+    final filter = modelEventCalendar.searchFilter;
+
+    if (keywords == null || keywords.isEmpty) {
+      filter.tags.clear();
+      controller.clear();
+      notifyListeners();
+      return;
+    }
+
+    // 如果最後一個字元是空白 → 產生 tag
+    final keywordList = keywords.split(RegExp(r'[,，\s]+')).map((s) => s.trim()) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔
+      .where((s) => s.isNotEmpty).toList();
+    filter.tags.clear();
+    if (keywordList.isNotEmpty) {
+      filter.tags = keywordList;
+    }
     notifyListeners();
+    return;
   }
 
   void updateStartDate(

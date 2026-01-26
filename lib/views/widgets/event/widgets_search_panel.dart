@@ -33,6 +33,21 @@ Widget widgetsSearchPanel({
           ),
           onChanged: (value) => controllerEvent.updateKeywords(value.trim()),
         ),
+        if (filter.tags.isNotEmpty) ...[
+          Gaps.h8,
+          Align(
+            alignment: Alignment.topLeft, // 整個 Wrap 靠左上對齊
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: filter.tags.map((tag) {
+                return Chip(
+                  label: Text(tag),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
         if (controllerEvent.showDate()) ...[
           Gaps.h8,
           Row(
@@ -60,7 +75,7 @@ Widget widgetsSearchPanel({
               ),
             ],
           ),
-        ]
+        ],
       ],
     ),
   );

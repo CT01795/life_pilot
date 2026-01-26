@@ -2,6 +2,7 @@ import 'package:life_pilot/core/const.dart';
 
 class SearchFilter {
   String keywords;
+  List<String> tags = [];
   DateTime? startDate;
   DateTime? endDate;
 
@@ -13,6 +14,7 @@ class SearchFilter {
 
   void clear() {
     keywords = constEmpty;
+    tags = [];
     startDate = null;
     endDate = null;
   }

@@ -51,7 +51,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       modelEventCalendar: _modelEventCalendar,
       controllerNotification: controllerNotification,
     );
-    ServiceEventPublic().fetchAndSaveAllEventsStrolltimes(); //TODO
+    ServiceEventPublic().fetchAndSaveAllEvents();
   }
 
   @override

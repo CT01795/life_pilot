@@ -318,7 +318,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get save => '保存';
 
   @override
-  String get searchKeywords => 'キーワード検索（スペースで区切る）';
+  String get searchKeywords => 'キーワード検索（カンマ区切り）';
 
   @override
   String get dateClear => '日付をクリア';
@@ -432,7 +432,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get repeatOptionsEveryWeek => '每週';
 
   @override
-  String get repeatOptionsEveryTwoWeeks => 'Every two weeks';
+  String get repeatOptionsEveryTwoWeeks => '2週間ごと';
 
   @override
   String get repeatOptionsEveryMonth => '每月';
