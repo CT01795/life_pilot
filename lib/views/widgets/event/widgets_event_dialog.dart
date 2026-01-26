@@ -30,7 +30,7 @@ class WidgetsEventDialog extends StatelessWidget {
           ),
           PositionedDirectional(
             end: Gaps.w8.width,
-            top: Gaps.h8.height,
+            top: Gaps.h48.height,
             child: _buildCloseButton(context: context, loc: loc),
           ),
         ],

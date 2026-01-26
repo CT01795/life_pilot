@@ -258,8 +258,9 @@ class _WidgetsEventCardBody extends StatelessWidget {
           Expanded(
               child: Text(eventViewModel.name,
             style: const TextStyle(fontWeight: FontWeight.bold),
-            overflow: TextOverflow.ellipsis, // 防止文字過長
-            softWrap: true,
+            softWrap: true, // 允許換行
+            overflow: TextOverflow.visible, // 文字超過不截斷
+            //overflow: TextOverflow.ellipsis, // 防止文字過長
           )),
           if (trailing != null)
             Builder(
@@ -341,7 +342,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
           );
 
     return GestureDetector(
-      onTap: onTap, //TODO eventViewModel.subEvents.isNotEmpty ? onTap : null
+      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
       child: Stack(
         children: [
           container,
