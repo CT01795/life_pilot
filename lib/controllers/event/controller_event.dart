@@ -234,19 +234,24 @@ class ControllerEvent extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearSearchFilters() {
-    modelEventCalendar.clearSearchFilters();
+  void updateKeywords(
+    String? keywords,
+  ) {
+    modelEventCalendar.updateSearchKeywords(keywords);
     notifyListeners();
   }
 
-  void updateSearch({
-    String? keywords,
+  void updateStartDate(
     DateTime? startDate,
+  ) {
+    modelEventCalendar.updateStartDate(startDate);
+    notifyListeners();
+  }
+
+  void updateEndDate(
     DateTime? endDate,
-  }) {
-    if (keywords != null) modelEventCalendar.updateSearchKeywords(keywords);
-    if (startDate != null) modelEventCalendar.updateStartDate(startDate);
-    if (endDate != null) modelEventCalendar.updateEndDate(endDate);
+  ) {
+    modelEventCalendar.updateEndDate(endDate);
     notifyListeners();
   }
 

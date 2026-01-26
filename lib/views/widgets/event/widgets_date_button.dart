@@ -25,9 +25,7 @@ Widget widgetsDateButton({
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
             );
-            if (picked != null) {
-              onDateChanged(picked);
-            }
+            onDateChanged(picked);
           },
         ),
       ),
