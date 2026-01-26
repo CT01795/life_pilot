@@ -341,7 +341,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
           );
 
     return GestureDetector(
-      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
+      onTap: onTap, //TODO eventViewModel.subEvents.isNotEmpty ? onTap : null
       child: Stack(
         children: [
           container,
