@@ -301,6 +301,7 @@ class ControllerEvent extends ChangeNotifier {
       name: event.name,
       showDate: tableName != TableNames.recommendedAttractions,
       startDate: event.startDate,
+      endDate: event.endDate,
       dateRange: tableName != TableNames.recommendedAttractions
           ? '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.startToS)}'
               '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.endToE)}'
@@ -352,6 +353,7 @@ class EventViewModel {
   final bool canDelete;
   final bool showSubEvents;
   final DateTime? startDate;
+  final DateTime? endDate;
   final num? ageMin;
   final num? ageMax;
   final bool? isFree;
@@ -363,6 +365,7 @@ class EventViewModel {
       {required this.name,
       required this.showDate,
       required this.startDate,
+      required this.endDate,
       required this.dateRange,
       required this.tags,
       required this.hasLocation,

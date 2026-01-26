@@ -15,11 +15,11 @@ class ControllerPageEventWeather extends ChangeNotifier {
   ControllerPageEventWeather(this.serviceWeather);
 
   Future<void> loadWeather(
-      {required String locationDisplay, required DateTime? startDate, required String tableName}) async {
+      {required String locationDisplay, required DateTime? startDate, required DateTime? endDate, required String tableName}) async {
     final today = DateTime.now();
     if (loading ||
         locationDisplay.isEmpty ||
-        (tableName != TableNames.recommendedAttractions && startDate != null && 
+        (tableName != TableNames.recommendedAttractions && startDate != null &&
             ((today.add(Duration(days: 7))).isBefore(startDate) ||
                 today.isAfter(startDate)))) {
       return;
