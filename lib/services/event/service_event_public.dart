@@ -1,11 +1,12 @@
 // lib/services/event_service.dart
+import 'package:html/dom.dart';
+import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/core/logger.dart';
+import 'package:life_pilot/models/event/model_event_item.dart';
+import 'package:life_pilot/services/event/service_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:html/parser.dart' show parse;
-import 'package:html/dom.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceEventPublic {
@@ -24,20 +25,47 @@ class ServiceEventPublic {
       return;
     }
 
-    final events = await fetchPageEventsStrolltimes(url, today);
+    try {
+      await client.from(TableNames.recommendedEventUrl).upsert(
+        {'master_url': url, 'start_date': today.toIso8601String()},
+        onConflict: 'master_url,start_date',
+      );
 
-    if (events == null || events.isEmpty) {
-      return;
-    }
+      final events = await fetchPageEventsStrolltimes(url, today);
 
-    for (final event in events) {
-      // 存入 Supabase
-      final Map<String, dynamic> data = event.toJson();
-      client.from(TableNames.recommendedEvents).insert([data]);
+      if (events == null || events.isEmpty) {
+        return;
+      }
+
+      final dbEvents = await ServiceEvent().getEvents(
+        tableName: TableNames.recommendedEvents,
+        inputUser: AuthConstants.sysAdminEmail,
+      );
+
+      if (dbEvents != null && dbEvents.isNotEmpty) {
+        final dbNameSet = dbEvents
+            .map((e) => e.name)
+            .where((name) => name.isNotEmpty)
+            .toSet();
+        final filteredEvents = events.where((e) {
+          final name = e.name;
+          return !dbNameSet.contains(name);
+        }).toList();
+
+        final dataList = filteredEvents.map((e) => e.toJson()).toList();
+        await client.from(TableNames.recommendedEvents).insert(dataList);
+      }
+      else{
+        final dataList = events.map((e) => e.toJson()).toList();
+        await client.from(TableNames.recommendedEvents).insert(dataList);
+      }
+    } on Exception catch (ex) {
+      logger.e(ex);
     }
   }
 
-  Future<List<EventItem>?> fetchPageEventsStrolltimes(String url, DateTime today) async {
+  Future<List<EventItem>?> fetchPageEventsStrolltimes(
+      String url, DateTime today) async {
     final res = await http.get(Uri.parse(url), headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)'
     });
@@ -81,9 +109,11 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final Uuid uuid = const Uuid();
     for (var h2 in h2List) {
-      final title = h2.text.trim();
+      final title = h2.text.trim().replaceAll("活動", constEmpty);
       logger.i('=== 標題: $title ===');
-
+      if (title.contains("地圖")) {
+        continue;
+      }
       // 找到該 h2 之後的 <figure class="wp-block-table">
       var sibling = h2.nextElementSibling;
       while (sibling != null) {
@@ -121,6 +151,8 @@ class ServiceEventPublic {
             }
           }
           break; // 找到 table 就跳出 while
+        } else if (sibling.innerHtml.contains("未蒐集")) {
+          break;
         }
         sibling = sibling.nextElementSibling;
       }
@@ -134,15 +166,6 @@ class ServiceEventPublic {
         .select('master_url')
         .eq('start_date', today)
         .limit(1);
-
-    if(result.isNotEmpty){
-      await client
-        .from(TableNames.recommendedEventUrl)
-        .insert({
-          'master_url': url,
-          'start_date': today.toIso8601String(),
-        });
-    }
     return result.isNotEmpty;
   }
 }
