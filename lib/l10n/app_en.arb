@@ -210,7 +210,7 @@
   "@eventSub": {"description": "Label for Detailed activities"},
   "save": "Save",
   "@save": {"description": "Label for save"},
-  "searchKeywords": "Keyword (blank separated)",
+  "searchKeywords": "Keyword (comma separated)",
   "@searchKeywords": {"description": "Label for searchKeywords"},
   "dateClear": "Date clear",
   "@dateClear": {"description": "Label for dateClear"},

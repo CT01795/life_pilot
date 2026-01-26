@@ -15,14 +15,40 @@ class ServiceEventPublic {
   final Set<String> seenUrls = {};
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
 
-  Future<void> fetchAndSaveAllEventsStrolltimes() async {
-    final url = 'https://strolltimes.com/weekend-events/';
+  Future<void> fetchAndSaveAllEvents() async {
+    //==================================== 取得目前資料庫事件 ====================================
+    Set<String> dbNameSet = (await ServiceEvent().getEvents(
+      tableName: TableNames.recommendedEvents,
+      inputUser: AuthConstants.sysAdminEmail,
+    ) ?? []).map((e) => e.name).where((name) => name.isNotEmpty).toSet();
+
     DateTime today = DateTime.now();
     today = DateTime(today.year, today.month, today.day);
+    //==================================== 取得外部資源事件 strolltimesUrl ====================================
+    final strolltimesUrl = 'https://strolltimes.com/weekend-events/';
+    if (await checkEventsUrl(strolltimesUrl, today)) {
+      try {
+        List<EventItem> strolltimesList =
+            await fetchPageEventsStrolltimes(strolltimesUrl, today) ?? [];
+
+        //==================================== strolltimesList事件寫入 ====================================
+        List<Map> dataList = strolltimesList.isEmpty ? [] : (dbNameSet.isEmpty ? strolltimesList : strolltimesList.where((e) {
+          final name = e.name;
+          return !dbNameSet.contains(name);
+        }).toList()).map((e) => e.toJson()).toList();
+
+        if(dataList.isNotEmpty) await client.from(TableNames.recommendedEvents).insert(dataList);
+      } on Exception catch (ex) {
+        logger.e(ex);
+      }
+    }
+  }
+
+  Future<bool> checkEventsUrl(String url, DateTime today) async {
     // 檢查今日是否已經檢視過
     bool exists = await checkIfUrlExists(url, today);
     if (exists) {
-      return;
+      return false;
     }
 
     try {
@@ -30,37 +56,10 @@ class ServiceEventPublic {
         {'master_url': url, 'start_date': today.toIso8601String()},
         onConflict: 'master_url,start_date',
       );
-
-      final events = await fetchPageEventsStrolltimes(url, today);
-
-      if (events == null || events.isEmpty) {
-        return;
-      }
-
-      final dbEvents = await ServiceEvent().getEvents(
-        tableName: TableNames.recommendedEvents,
-        inputUser: AuthConstants.sysAdminEmail,
-      );
-
-      if (dbEvents != null && dbEvents.isNotEmpty) {
-        final dbNameSet = dbEvents
-            .map((e) => e.name)
-            .where((name) => name.isNotEmpty)
-            .toSet();
-        final filteredEvents = events.where((e) {
-          final name = e.name;
-          return !dbNameSet.contains(name);
-        }).toList();
-
-        final dataList = filteredEvents.map((e) => e.toJson()).toList();
-        await client.from(TableNames.recommendedEvents).insert(dataList);
-      }
-      else{
-        final dataList = events.map((e) => e.toJson()).toList();
-        await client.from(TableNames.recommendedEvents).insert(dataList);
-      }
+      return true;
     } on Exception catch (ex) {
       logger.e(ex);
+      return false;
     }
   }
 

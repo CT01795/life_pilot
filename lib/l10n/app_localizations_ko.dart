@@ -318,7 +318,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get save => '저장';
 
   @override
-  String get searchKeywords => '키워드 검색(공백 구분)';
+  String get searchKeywords => '키워드 검색(쉼표로 구분됨)';
 
   @override
   String get dateClear => '날짜 초기화';
