@@ -339,6 +339,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get delete => '刪除';
 
   @override
+  String get like => '喜歡';
+
+  @override
+  String get dislike => '不喜歡';
+
+  @override
   String get eventDelete => '刪除活動';
 
   @override

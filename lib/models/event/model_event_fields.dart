@@ -26,4 +26,6 @@ class EventFields {
   static const String priceMin = "price_min";
   static const String priceMax = "price_max";
   static const String isOutdoor = "is_outdoor";
+  static const String isLike = "is_like";
+  static const String isDislike = "is_dislike";
 }

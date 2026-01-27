@@ -35,7 +35,9 @@ class EventItem with EventBaseMixin implements EventBase {
     bool? isFree,
     num? priceMin,
     num? priceMax,
-    bool? isOutdoor
+    bool? isOutdoor,
+    bool? isLike,
+    bool? isDislike,
   }) : super() {
     this.id = id ?? this.id;
     _subEvents = subEvents ?? [];
@@ -64,6 +66,8 @@ class EventItem with EventBaseMixin implements EventBase {
     this.priceMin = priceMin ?? this.priceMin;
     this.priceMax = priceMax ?? this.priceMax;
     this.isOutdoor = isOutdoor ?? this.isOutdoor;
+    this.isLike = isLike ?? this.isLike;
+    this.isDislike = isDislike ?? this.isDislike;
   }
 
   // ✅ 正確實作 EventBase 要求的 getter/setter
@@ -108,6 +112,8 @@ class EventItem with EventBaseMixin implements EventBase {
     num? newPriceMin,
     num? newPriceMax,
     bool? newIsOutdoor,
+    bool? newIsLike,
+    bool? newIsDislike,
     List<EventItem>? newSubEvents,
   }) {
     return EventItem(
@@ -138,6 +144,8 @@ class EventItem with EventBaseMixin implements EventBase {
         priceMin: newPriceMin ?? priceMin,
         priceMax: newPriceMax ?? priceMax,
         isOutdoor: newIsOutdoor ?? isOutdoor,
+        isLike: newIsLike?? isLike,
+        isDislike: newIsDislike ?? isDislike,
       );
   }
 

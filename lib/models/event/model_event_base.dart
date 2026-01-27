@@ -29,6 +29,8 @@ abstract class EventBase {
   num? get priceMin;
   num? get priceMax;
   bool? get isOutdoor;
+  bool? get isLike;
+  bool? get isDislike;
   // ⬇️ 改為 getter + setter
   List<EventItem> get subEvents;
   set subEvents(List<EventItem> value);

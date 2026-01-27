@@ -61,6 +61,10 @@ mixin EventBaseMixin implements EventBase {
   num? priceMax;
   @override
   bool? isOutdoor;
+  @override
+  bool? isLike;
+  @override
+  bool? isDislike;
 
   // -------------------- JSON --------------------
   @override
@@ -94,6 +98,8 @@ mixin EventBaseMixin implements EventBase {
       EventFields.priceMin: priceMin,
       EventFields.priceMax: priceMax,
       EventFields.isOutdoor: isOutdoor,
+      //EventFields.isLike: isLike,
+      //EventFields.isDislike: isDislike,
       EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
     };
   }
@@ -128,6 +134,8 @@ mixin EventBaseMixin implements EventBase {
     priceMin = json[EventFields.priceMin];
     priceMax = json[EventFields.priceMax];
     isOutdoor = json[EventFields.isOutdoor];
+    isLike = json[EventFields.isLike];
+    isDislike = json[EventFields.isDislike];
     final subEventsJson = json[EventFields.subEvents];
     if (subEventsJson is List && subEventsJson.isNotEmpty) {
       subEvents = subEventsJson
@@ -152,6 +160,8 @@ mixin EventBaseMixin implements EventBase {
     priceMin = parent.priceMin;
     priceMax = parent.priceMax;
     isOutdoor = parent.isOutdoor;
+    isLike = parent.isLike;
+    isDislike = parent.isDislike;
   }
 
   DateTime? fromStringOrNull(String? date) {

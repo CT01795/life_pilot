@@ -339,6 +339,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get delete => '삭제';
 
   @override
+  String get like => '좋다';
+
+  @override
+  String get dislike => '싫어함';
+
+  @override
   String get eventDelete => '이벤트 삭제';
 
   @override

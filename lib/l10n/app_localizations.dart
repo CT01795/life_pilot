@@ -759,6 +759,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get delete;
 
+  /// Label for like
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get like;
+
+  /// Label for dislike
+  ///
+  /// In en, this message translates to:
+  /// **'Dislike'**
+  String get dislike;
+
   /// Label for eventDelete
   ///
   /// In en, this message translates to:

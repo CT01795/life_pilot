@@ -39,6 +39,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
   num? priceMin;
   num? priceMax;
   bool? isOutdoor;
+  bool? isLike;
+  bool? isDislike;
 
   String? masterGraphUrl;
   String? masterUrl;
@@ -68,7 +70,9 @@ class ControllerPageEventAdd extends ChangeNotifier {
       this.isFree,
       this.priceMin,
       this.priceMax,
-      this.isOutdoor}) {
+      this.isOutdoor,
+      this.isLike,
+      this.isDislike}) {
     _init();
   }
 
@@ -99,6 +103,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
     priceMin = e?.priceMin;
     priceMax = e?.priceMax;
     isOutdoor = e?.isOutdoor;
+    isLike = e?.isLike;
+    isDislike = e?.isDislike;
 
     final fields = {
       EventFields.city: city,
@@ -115,6 +121,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.priceMin: priceMin,
       EventFields.priceMax: priceMax,
       EventFields.isOutdoor: isOutdoor,
+      EventFields.isLike: isLike,
+      EventFields.isDislike: isDislike
     };
 
     for (final entry in fields.entries) {
@@ -139,6 +147,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
         EventFields.priceMin: sub.priceMin,
         EventFields.priceMax: sub.priceMax,
         EventFields.isOutdoor: sub.isOutdoor,
+        EventFields.isLike: sub.isLike,
+        EventFields.isDislike: sub.isDislike
       };
 
       for (final entry in subFields.entries) {
@@ -220,14 +230,20 @@ class ControllerPageEventAdd extends ChangeNotifier {
         break;
       case EventFields.ageMin:
         ageMin = value.isEmpty ? null : num.parse(value);
-        if (check && ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
+        if (check &&
+            ageMin != null &&
+            ageMax != null &&
+            ageMin!.compareTo(ageMax!) > 0) {
           ageMax = ageMin;
           controllerMap[EventFields.ageMax]?.text = ageMax.toString();
         }
         break;
       case EventFields.ageMax:
         ageMax = value.isEmpty ? null : num.parse(value);
-        if (check && ageMin != null && ageMax != null && ageMin!.compareTo(ageMax!) > 0) {
+        if (check &&
+            ageMin != null &&
+            ageMax != null &&
+            ageMin!.compareTo(ageMax!) > 0) {
           ageMin = ageMax;
           controllerMap[EventFields.ageMin]?.text = ageMin.toString();
         }
@@ -237,14 +253,20 @@ class ControllerPageEventAdd extends ChangeNotifier {
         break;
       case EventFields.priceMin:
         priceMin = value.isEmpty ? null : num.parse(value);
-        if (check && priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
+        if (check &&
+            priceMin != null &&
+            priceMax != null &&
+            priceMin!.compareTo(priceMax!) > 0) {
           priceMax = priceMin;
           controllerMap[EventFields.priceMax]?.text = priceMax.toString();
         }
         break;
       case EventFields.priceMax:
         priceMax = value.isEmpty ? null : num.parse(value);
-        if (check && priceMin != null && priceMax != null && priceMin!.compareTo(priceMax!) > 0) {
+        if (check &&
+            priceMin != null &&
+            priceMax != null &&
+            priceMin!.compareTo(priceMax!) > 0) {
           priceMin = priceMax;
           controllerMap[EventFields.priceMin]?.text = priceMin.toString();
         }
@@ -252,10 +274,17 @@ class ControllerPageEventAdd extends ChangeNotifier {
       case EventFields.isOutdoor:
         isOutdoor = value.isEmpty ? null : bool.parse(value);
         break;
+      case EventFields.isLike:
+        isLike = value.isEmpty ? null : bool.parse(value);
+        break;
+      case EventFields.isDislike:
+        isDislike = value.isEmpty ? null : bool.parse(value);
+        break;
     }
   }
 
-  void _updateSubEvent(String mapKey, EventItem sub, String key, String value, bool check) {
+  void _updateSubEvent(
+      String mapKey, EventItem sub, String key, String value, bool check) {
     switch (key) {
       case EventFields.location:
         sub.location = value;
@@ -280,16 +309,26 @@ class ControllerPageEventAdd extends ChangeNotifier {
         break;
       case EventFields.ageMin:
         sub.ageMin = value.isEmpty ? null : num.parse(value);
-        if (check && sub.ageMin != null && sub.ageMax != null && sub.ageMin!.compareTo(sub.ageMax!) > 0) {
+        if (check &&
+            sub.ageMin != null &&
+            sub.ageMax != null &&
+            sub.ageMin!.compareTo(sub.ageMax!) > 0) {
           sub.ageMax = sub.ageMin;
-          controllerMap[mapKey.replaceAll(EventFields.ageMin, EventFields.ageMax)]?.text = sub.ageMax.toString();
+          controllerMap[
+                  mapKey.replaceAll(EventFields.ageMin, EventFields.ageMax)]
+              ?.text = sub.ageMax.toString();
         }
         break;
       case EventFields.ageMax:
         sub.ageMax = value.isEmpty ? null : num.parse(value);
-        if (check && sub.ageMin != null && sub.ageMax != null && sub.ageMin!.compareTo(sub.ageMax!) > 0) {
+        if (check &&
+            sub.ageMin != null &&
+            sub.ageMax != null &&
+            sub.ageMin!.compareTo(sub.ageMax!) > 0) {
           sub.ageMin = sub.ageMax;
-          controllerMap[mapKey.replaceAll(EventFields.ageMax, EventFields.ageMin)]?.text = sub.ageMin.toString();
+          controllerMap[
+                  mapKey.replaceAll(EventFields.ageMax, EventFields.ageMin)]
+              ?.text = sub.ageMin.toString();
         }
         break;
       case EventFields.isFree:
@@ -297,20 +336,36 @@ class ControllerPageEventAdd extends ChangeNotifier {
         break;
       case EventFields.priceMin:
         sub.priceMin = value.isEmpty ? null : num.parse(value);
-        if (check && sub.priceMin != null && sub.priceMax != null && sub.priceMin!.compareTo(sub.priceMax!) > 0) {
+        if (check &&
+            sub.priceMin != null &&
+            sub.priceMax != null &&
+            sub.priceMin!.compareTo(sub.priceMax!) > 0) {
           sub.priceMax = sub.priceMin;
-          controllerMap[mapKey.replaceAll(EventFields.priceMin, EventFields.priceMax)]?.text = sub.priceMax.toString();
+          controllerMap[
+                  mapKey.replaceAll(EventFields.priceMin, EventFields.priceMax)]
+              ?.text = sub.priceMax.toString();
         }
         break;
       case EventFields.priceMax:
         sub.priceMax = value.isEmpty ? null : num.parse(value);
-        if (check && sub.priceMin != null && sub.priceMax != null && sub.priceMin!.compareTo(sub.priceMax!) > 0) {
+        if (check &&
+            sub.priceMin != null &&
+            sub.priceMax != null &&
+            sub.priceMin!.compareTo(sub.priceMax!) > 0) {
           sub.priceMin = sub.priceMax;
-          controllerMap[mapKey.replaceAll(EventFields.priceMax, EventFields.priceMin)]?.text = sub.priceMin.toString();
+          controllerMap[
+                  mapKey.replaceAll(EventFields.priceMax, EventFields.priceMin)]
+              ?.text = sub.priceMin.toString();
         }
         break;
       case EventFields.isOutdoor:
         sub.isOutdoor = value.isEmpty ? null : bool.parse(value);
+        break;
+      case EventFields.isLike:
+        sub.isLike = value.isEmpty ? null : bool.parse(value);
+        break;
+      case EventFields.isDislike:
+        sub.isDislike = value.isEmpty ? null : bool.parse(value);
         break;
     }
   }
@@ -354,6 +409,12 @@ class ControllerPageEventAdd extends ChangeNotifier {
         newIsOutdoor: getText(EventFields.isOutdoor).isEmpty
             ? null
             : bool.parse(getText(EventFields.isOutdoor)),
+        newIsLike: getText(EventFields.isLike).isEmpty
+            ? null
+            : bool.parse(getText(EventFields.isLike)),
+        newIsDislike: getText(EventFields.isDislike).isEmpty
+            ? null
+            : bool.parse(getText(EventFields.isDislike)),
         newAccount: auth.currentAccount,
         newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
         newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
@@ -387,7 +448,9 @@ class ControllerPageEventAdd extends ChangeNotifier {
       ..isFree = isFree
       ..priceMin = priceMin
       ..priceMax = priceMax
-      ..isOutdoor = isOutdoor;
+      ..isOutdoor = isOutdoor
+      ..isLike = isLike
+      ..isDislike = isDislike;
   }
 
   int _compareEvents(EventItem a, EventItem b) {

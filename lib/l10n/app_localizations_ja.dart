@@ -339,6 +339,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get delete => '削除';
 
   @override
+  String get like => '好き';
+
+  @override
+  String get dislike => '嫌い';
+
+  @override
   String get eventDelete => 'イベントを削除';
 
   @override
