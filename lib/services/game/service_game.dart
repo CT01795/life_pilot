@@ -16,7 +16,7 @@ class ServiceGame {
       required double newScore,
       required String? newGameId,
       bool? newIsPass}) async {
-    if (newScore == 0) {
+    if (newScore == 0 || newScore < 2) {
       //不紀錄0分
       return;
     }
