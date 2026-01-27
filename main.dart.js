@@ -147692,7 +147692,7 @@ rR(a,b,c,d){return this.ao3(a,b,c,d)},
 Bw(a,b,c){return this.rR(a,null,b,c)},
 ao3(a,b,c,d){var s=0,r=A.q(t.H),q,p=this
 var $async$rR=A.m(function(e,f){if(e===1)return A.n(f,r)
-while(true)switch(s){case 0:if(c===0){s=1
+while(true)switch(s){case 0:if(c===0||c<2){s=1
 break}s=3
 return A.h(p.a.dR("game_user").jc(0,A.J(["game_id",a,"score",c,"name",d,"is_pass",b,"created_at",new A.aT(Date.now(),0,!1).fZ()],t.N,t.X)),$async$rR)
 case 3:case 1:return A.o(q,r)}})
