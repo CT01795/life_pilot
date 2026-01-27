@@ -158,8 +158,9 @@ class ServiceEvent{
       {required EventItem event, required String account}) async {
     try {
       final Map<String, dynamic> data = {"id": event.id, "is_like": event.isLike, "is_dislike": event.isDislike, "account": account};
-      var query =
-          client.from(TableNames.recommendedEventsFavor).upsert(data).eq(EventFields.id, event.id);
+      var query = client
+            .from(TableNames.recommendedEventsFavor)
+            .upsert(data);
       await query;
     } catch (ex, stacktrace) {
       logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);
