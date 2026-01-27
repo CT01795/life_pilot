@@ -81,7 +81,7 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "assets/assets/maps/central_europ.png": "35410cb48f45b5bb7e76e522ce6ac29b",
 "assets/assets/maps/new_zealand.png": "7f0bfcbed4bdc6acab4e6521939c1e59",
 "assets/assets/maps/okinawa.png": "b34b95a6182b4061d53705dbd9a2bacf",
-"assets/fonts/MaterialIcons-Regular.otf": "7521bf5c949c603a635e165bcac9893b",
+"assets/fonts/MaterialIcons-Regular.otf": "1b262c921beb956599ccd5e3d36971c7",
 "assets/NOTICES": "cb8887470ddcfaeaa9e909e747d04099",
 "assets/packages/flutter_inappwebview_web/assets/web/web_support.js": "509ae636cfdd93e49b5a6eaf0f06d79f",
 "assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "33b7d9392238c04c131b6ce224e13711",
@@ -113,9 +113,9 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "canvaskit/canvaskit.js.symbols": "58832fbed59e00d2190aa295c4d70360",
 "canvaskit/skwasm.js.symbols": "0088242d10d7e7d6d2649d1fe1bda7c1",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
-"flutter_bootstrap.js": "7a2ecfcbfbb838206d8bfba8a583d066",
+"flutter_bootstrap.js": "80ebbd85a813b32ebb78e0067d859688",
 "version.json": "3d24f8e1c43390d4ffe74cc3fce20e2a",
-"main.dart.js": "688b1fd9a38f1524ec4ddae336043a96"};
+"main.dart.js": "2a67233f41d2e8900b8251daedc34153"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
