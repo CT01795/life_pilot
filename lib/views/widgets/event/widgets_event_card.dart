@@ -17,6 +17,8 @@ class WidgetsEventCard extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onLike;
+  final VoidCallback? onDislike;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -27,6 +29,8 @@ class WidgetsEventCard extends StatelessWidget {
     required this.tableName,
     this.onTap,
     this.onDelete,
+    this.onLike,
+    this.onDislike,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -41,10 +45,11 @@ class WidgetsEventCard extends StatelessWidget {
         // ✅ 延遲呼叫，避免在 build 階段或 widget 被移除時觸發
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!ctrl.disposed) {
-            ctrl.loadWeather(locationDisplay: eventViewModel.locationDisplay, 
-              startDate: eventViewModel.startDate, 
-              endDate: eventViewModel.endDate,
-              tableName: tableName);
+            ctrl.loadWeather(
+                locationDisplay: eventViewModel.locationDisplay,
+                startDate: eventViewModel.startDate,
+                endDate: eventViewModel.endDate,
+                tableName: tableName);
           }
         });
 
@@ -55,6 +60,8 @@ class WidgetsEventCard extends StatelessWidget {
         tableName: tableName,
         onTap: onTap,
         onDelete: onDelete,
+        onLike: onLike,
+        onDislike: onDislike,
         trailing: trailing,
         showSubEvents: showSubEvents,
       ),
@@ -111,6 +118,8 @@ class _WidgetsEventCardBody extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onLike;
+  final VoidCallback? onDislike;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -120,6 +129,8 @@ class _WidgetsEventCardBody extends StatelessWidget {
     required this.tableName,
     this.onTap,
     this.onDelete,
+    this.onLike,
+    this.onDislike,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -148,15 +159,17 @@ class _WidgetsEventCardBody extends StatelessWidget {
               icon: Container(
                 width: 42,
                 height: 42,
-                decoration: todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
-                    ? BoxDecoration(
-                        color: Colors.grey.shade300,
-                        shape: BoxShape.circle,
-                      )
-                    : null,
+                decoration:
+                    todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
+                        ? BoxDecoration(
+                            color: Colors.grey.shade300,
+                            shape: BoxShape.circle,
+                          )
+                        : null,
                 padding: const EdgeInsets.all(1),
                 child: FutureBuilder<bool>(
-                  future: assetExists('assets/weather_icons/${todayWeather.icon}.png'),
+                  future: assetExists(
+                      'assets/weather_icons/${todayWeather.icon}.png'),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
                       return const SizedBox(width: 40, height: 40);
@@ -196,29 +209,35 @@ class _WidgetsEventCardBody extends StatelessWidget {
                                 '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMin.toStringAsFixed(1)) {
-                              tmp = '$tmp\nMin:${w.tempMin.toStringAsFixed(1)}°C';
+                              tmp =
+                                  '$tmp\nMin:${w.tempMin.toStringAsFixed(1)}°C';
                             }
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMax.toStringAsFixed(1)) {
-                              tmp = '$tmp~Max:${w.tempMax.toStringAsFixed(1)}°C';
+                              tmp =
+                                  '$tmp~Max:${w.tempMax.toStringAsFixed(1)}°C';
                             }
                             tmp = '$tmp\n';
                             return ListTile(
                               leading: Container(
                                 width: 42,
                                 height: 42,
-                                decoration: w.main == 'Clouds' || w.main == 'Rain'
-                                    ? BoxDecoration(
-                                        color: Colors.grey.shade300,
-                                        shape: BoxShape.circle,
-                                      )
-                                    : null,
+                                decoration:
+                                    w.main == 'Clouds' || w.main == 'Rain'
+                                        ? BoxDecoration(
+                                            color: Colors.grey.shade300,
+                                            shape: BoxShape.circle,
+                                          )
+                                        : null,
                                 padding: const EdgeInsets.all(1),
                                 child: FutureBuilder<bool>(
-                                  future: assetExists('assets/weather_icons/${w.icon}.png'),
+                                  future: assetExists(
+                                      'assets/weather_icons/${w.icon}.png'),
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState != ConnectionState.done) {
-                                      return const SizedBox(width: 40, height: 40);
+                                    if (snapshot.connectionState !=
+                                        ConnectionState.done) {
+                                      return const SizedBox(
+                                          width: 40, height: 40);
                                     }
                                     final exists = snapshot.data ?? false;
                                     return exists
@@ -256,7 +275,8 @@ class _WidgetsEventCardBody extends StatelessWidget {
 
           Gaps.w8,
           Expanded(
-              child: Text(eventViewModel.name,
+              child: Text(
+            eventViewModel.name,
             style: const TextStyle(fontWeight: FontWeight.bold),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
@@ -307,7 +327,8 @@ class _WidgetsEventCardBody extends StatelessWidget {
                   );
                 }
               },
-              child: Text(eventViewModel.locationDisplay,
+              child: Text(
+                eventViewModel.locationDisplay,
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
@@ -315,8 +336,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
               ),
             ),
           if (eventViewModel.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(
-                loc: loc, url: eventViewModel.masterUrl!),
+            WidgetsEventCard.link(loc: loc, url: eventViewModel.masterUrl!),
           if (eventViewModel.description.isNotEmpty)
             Text(eventViewModel.description),
           if (showSubEvents)
@@ -346,16 +366,46 @@ class _WidgetsEventCardBody extends StatelessWidget {
       child: Stack(
         children: [
           container,
-          if (eventViewModel.canDelete && onDelete != null)
-            PositionedDirectional(
-              end: Gaps.w24.width,
-              bottom: Gaps.h8.height,
-              child: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                tooltip: loc.delete,
-                onPressed: onDelete,
-              ),
+          PositionedDirectional(
+            end: Gaps.w16.width,
+            bottom: Gaps.h8.height,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 👍 Favor（登入即可）
+                IconButton(
+                  icon: Icon(
+                    eventViewModel.isLike == true
+                        ? Icons.favorite_outlined
+                        : Icons.favorite_outline,
+                    color: Colors.pinkAccent,
+                  ),
+                  tooltip: loc.like,
+                  onPressed: onLike,
+                ),
+
+                // 🚫 Not Favor（登入即可）
+                IconButton(
+                  icon: Icon(
+                    eventViewModel.isDislike == true
+                        ? Icons.sentiment_neutral_sharp
+                        : Icons.sentiment_dissatisfied_outlined,
+                    color: Colors.grey,
+                  ),
+                  tooltip: loc.dislike,
+                  onPressed: onDislike,
+                ),
+
+                // 🗑 Delete（只有 canDelete）
+                if (eventViewModel.canDelete && onDelete != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    tooltip: loc.delete,
+                    onPressed: onDelete,
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );

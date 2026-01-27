@@ -33,6 +33,7 @@ class AuthConstants {
 class TableNames {
   static const calendarEvents = "calendar_events";
   static const recommendedEvents = "recommended_events";
+  static const recommendedEventsFavor = "recommended_events_favor";
   static const recommendedEventUrl = "recommended_event_url";
   static const recommendedAttractions = "recommended_attractions";
   static const memoryTrace = "memory_trace";

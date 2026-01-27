@@ -98,6 +98,20 @@ class ControllerEvent extends ChangeNotifier {
             tableName != TableNames.memoryTrace);
   }
 
+  Future<void> likeEvent({required EventItem event, required String account}) async {
+    event.isLike = event.isLike == true ? false : true;
+    event.isDislike = event.isLike == true ? false : event.isDislike;
+    await serviceEvent.updateLikeEvent(event: event, account: account);
+    await loadEvents();
+  }
+
+  Future<void> dislikeEvent({required EventItem event, required String account}) async {
+    event.isDislike = event.isDislike == true ? false : true;
+    event.isLike = event.isDislike == true ? false : event.isLike;
+    await serviceEvent.updateLikeEvent(event: event, account: account);
+    await loadEvents();
+  }
+
   // ✅ 建立單筆事件控制器
   ControllerPageEventAdd createAddController({
     EventItem? existingEvent,
@@ -238,7 +252,7 @@ class ControllerEvent extends ChangeNotifier {
     String? keywords,
   ) {
     modelEventCalendar.updateSearchKeywords(keywords);
-    
+
     final controller = modelEventCalendar.searchController;
     final filter = modelEventCalendar.searchFilter;
 
@@ -250,8 +264,12 @@ class ControllerEvent extends ChangeNotifier {
     }
 
     // 如果最後一個字元是空白 → 產生 tag
-    final keywordList = keywords.split(RegExp(r'[,，\s]+')).map((s) => s.trim()) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔
-      .where((s) => s.isNotEmpty).toList();
+    final keywordList = keywords
+        .split(RegExp(r'[,，\s]+'))
+        .map((s) => s
+            .trim()) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔
+        .where((s) => s.isNotEmpty)
+        .toList();
     filter.tags.clear();
     if (keywordList.isNotEmpty) {
       filter.tags = keywordList;
@@ -349,6 +367,8 @@ class ControllerEvent extends ChangeNotifier {
       priceMin: event.priceMin,
       priceMax: event.priceMax,
       isOutdoor: event.isOutdoor,
+      isLike: event.isLike,
+      isDislike: event.isDislike,
     );
   }
 
@@ -379,6 +399,8 @@ class EventViewModel {
   final num? priceMin;
   final num? priceMax;
   final bool? isOutdoor;
+  final bool? isLike;
+  final bool? isDislike;
 
   EventViewModel(
       {required this.name,
@@ -399,7 +421,9 @@ class EventViewModel {
       this.isFree,
       this.priceMin,
       this.priceMax,
-      this.isOutdoor});
+      this.isOutdoor,
+      this.isLike,
+      this.isDislike});
 }
 
 /*優化後的效益
