@@ -140593,7 +140593,7 @@ if(!r){if(o==="\u5abd\u5abd")r=a==="mom"||a==="mother"||a.toLowerCase()==="mummy
 else r=!1
 if(!r){if(o==="\u8173\u8e0f\u8eca")r=a==="bike"||a==="bicycle"
 else r=!1
-if(!r){if(o==="\u6469\u6258\u8eca")r=a==="motocycle"||a==="motorbike"
+if(!r){if(o==="\u6469\u6258\u8eca")r=a==="motorcycle"||a==="motorbike"
 else r=!1
 if(!r){if(o==="\u85af\u689d"){o=!0
 if(a!=="fries")if(a!=="chips")o=A.by(a," ","").toLowerCase()==="frenchfries"}else o=!1
