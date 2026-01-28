@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/model_game_translation.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
@@ -72,7 +73,15 @@ class ControllerGameTranslation extends ChangeNotifier {
 
     lastAnswer = answer;
     answeredCount++;
-    final isRightAnswer = answer == currentQuestion!.correctAnswer;
+    final isRightAnswer = answer == currentQuestion!.correctAnswer 
+      || (currentQuestion!.question == "爸爸" && (answer == "father" || answer.toLowerCase() == "daddy" || answer.toLowerCase() == "dad"))
+      || (currentQuestion!.question == "沙發" && (answer == "sofa" || answer == "couch"))
+      || (currentQuestion!.question == "媽媽" && (answer == "mom" || answer == "mother" || answer.toLowerCase() == "mummy" || answer.toLowerCase() == "mommy"))
+      || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"))
+      || (currentQuestion!.question == "摩托車" && (answer == "motocycle" || answer == "motorbike"))
+      || (currentQuestion!.question == "薯條" && (answer == "fries" || answer == "chips" || answer.replaceAll(" ", constEmpty).toLowerCase() == "frenchfries"))
+      || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"))
+      || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"));
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;
