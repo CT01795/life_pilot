@@ -15,6 +15,35 @@ class ServiceEventPublic {
   final Set<String> seenUrls = {};
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
 
+  Future<bool> checkIfUrlExists(String url, DateTime today) async {
+    final result = await client
+        .from(TableNames.recommendedEventUrl)
+        .select('master_url')
+        .eq('start_date', today)
+        .eq('master_url', url)
+        .limit(1);
+    return result.isNotEmpty;
+  }
+
+  Future<bool> checkEventsUrl(String url, DateTime today) async {
+    // 檢查今日是否已經檢視過
+    bool exists = await checkIfUrlExists(url, today);
+    if (exists) {
+      return false;
+    }
+
+    try {
+      await client.from(TableNames.recommendedEventUrl).upsert(
+        {'master_url': url, 'start_date': today.toIso8601String()},
+        onConflict: 'master_url,start_date',
+      );
+      return true;
+    } on Exception catch (ex) {
+      logger.e(ex);
+      return false;
+    }
+  }
+
   Future<void> fetchAndSaveAllEvents() async {
     //==================================== 取得目前資料庫事件 ====================================
     Set<String> dbNameSet = (await ServiceEvent().getEvents(
@@ -42,27 +71,30 @@ class ServiceEventPublic {
         logger.e(ex);
       }
     }
+    //==================================== 取得外部資源事件 Accupass ====================================
+    /*final accupassUrl = 'https://www.accupass.com/search?p=free';
+    if (await checkEventsUrl(accupassUrl, today)) {
+      try {
+        List<EventItem> accupassList =
+            await fetchPageEventsAccupass(accupassUrl, today) ?? [];
+
+        //==================================== strolltimesList事件寫入 ====================================
+        List<Map> dataList = accupassList.isEmpty ? [] : (dbNameSet.isEmpty ? accupassList : accupassList.where((e) {
+          final name = e.name;
+          return !dbNameSet.contains(name);
+        }).toList()).map((e) => e.toJson()).toList();
+
+        if(dataList.isNotEmpty) await client.from(TableNames.recommendedEvents).insert(dataList);
+      } on Exception catch (ex) {
+        logger.e(ex);
+      }
+    }*/
   }
 
-  Future<bool> checkEventsUrl(String url, DateTime today) async {
-    // 檢查今日是否已經檢視過
-    bool exists = await checkIfUrlExists(url, today);
-    if (exists) {
-      return false;
-    }
+  //==================================== 取得外部資源事件 Accupass ====================================
+ 
 
-    try {
-      await client.from(TableNames.recommendedEventUrl).upsert(
-        {'master_url': url, 'start_date': today.toIso8601String()},
-        onConflict: 'master_url,start_date',
-      );
-      return true;
-    } on Exception catch (ex) {
-      logger.e(ex);
-      return false;
-    }
-  }
-
+  //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
       String url, DateTime today) async {
     final res = await http.get(Uri.parse(url), headers: {
@@ -157,14 +189,5 @@ class ServiceEventPublic {
       }
     }
     return tmpList;
-  }
-
-  Future<bool> checkIfUrlExists(String url, DateTime today) async {
-    final result = await client
-        .from(TableNames.recommendedEventUrl)
-        .select('master_url')
-        .eq('start_date', today)
-        .limit(1);
-    return result.isNotEmpty;
   }
 }
