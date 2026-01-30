@@ -24,9 +24,9 @@ class PageGameSteamScratchBlocklyEditor extends StatefulWidget {
 
 class PageGameSteamScratchBlocklyEditorState
     extends State<PageGameSteamScratchBlocklyEditor> {
-  static html.IFrameElement? iframe;
-  static bool _iframeRegistered = false;
-  static int? windowMaxBlocksPending;
+  html.IFrameElement? iframe;
+  bool _iframeRegistered = false;
+  int? windowMaxBlocksPending;
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class PageGameSteamScratchBlocklyEditorState
     logger.i("🌟 Web Editor State 建立成功：$this");
     if (!_iframeRegistered) {
       // ignore: undefined_prefixed_name
-      platformViewRegistry.registerViewFactory('blockly-iframe', (int viewId) {
+      platformViewRegistry.registerViewFactory('blockly-iframe-scratch', (int viewId) {
         final frame = html.IFrameElement()
           ..src = 'assets/blockly/index.html'
           ..style.border = 'none'
@@ -120,6 +120,6 @@ class PageGameSteamScratchBlocklyEditorState
 
   @override
   Widget build(BuildContext context) {
-    return HtmlElementView(viewType: 'blockly-iframe');
+    return HtmlElementView(viewType: 'blockly-iframe-scratch');
   }
 }

@@ -2,89 +2,100 @@ import 'dart:math';
 
 import 'package:life_pilot/models/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
 
-
 class GameSteamScratchMazeLevelGenerator {
   ModelGameSteamScratchMazeLevel generateLevel(int levelNumber) {
     final rand = Random();
-    final width = (levelNumber * 1.1).toInt() + 2;
+
+    // -----------------------------
+    // 1️⃣ 設定迷宮尺寸（奇數正方形）
+    // -----------------------------
+    final baseSize = 17;
+    final size = baseSize + (levelNumber ~/ 3) * 2;
+    final width = size % 2 == 0 ? size + 1 : size;
     final height = width;
 
-    final occupied = <String>{}; // 記錄已占位置
-    final obstacles = <ModelGameSteamScratchMazeObstacle>[];
+    // false = 牆, true = 路
+    final maze =
+        List.generate(width, (_) => List.generate(height, (_) => false));
     final fruits = <ModelGameSteamScratchMazeFruit>[];
 
-    int numObstacles = (levelNumber * 1.4).toInt();
-    int numFruits = numObstacles;
+    const startX = 0;
+    const startY = 0;
+    final exitX = width - 1; // 右上角出口
+    final exitY = height - 1;
 
-    // 玩家起點
-    final startX = 0;
-    final startY = 0;
-    occupied.add('${startX}_$startY');
+    // -----------------------------
+    // 2️⃣ 隨機 DFS 挖迷宮（保證出口可達）
+    // -----------------------------
+    void carve(int x, int y) {
+      maze[x][y] = true;
 
-    // -------------------------------
-    // 1️⃣ 生成寶藏（固定在右下角前一格）
-    // -------------------------------
-    final treasureX = width - 1;
-    final treasureY = height - 1;
+      final dirs = [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]..shuffle(rand);
 
-    occupied.add('${treasureX}_$treasureY');
-    final treasure = ModelGameSteamScratchMazeTreasure(x: treasureX, y: treasureY);
+      for (var d in dirs) {
+        int nx = x + d[0] * 2;
+        int ny = y + d[1] * 2;
 
-    // -------------------------------
-    // 2️⃣ 生成水果
-    // -------------------------------
-    int attempts = 0;
-    while (fruits.length < numFruits && attempts < numFruits * 5) {
-      final x = rand.nextInt(width);
-      final y = rand.nextInt(height);
-      final posKey = '${x}_$y';
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
 
-      if (!occupied.contains(posKey)) {
-        occupied.add(posKey);
-        fruits.add(ModelGameSteamScratchMazeFruit(x: x, y: y));
-      }
-      attempts++;
-    }
-
-    final treasureDirs = [
-      [0, 1],
-      [0, -1],
-      [1, 0],
-      [-1, 0],
-    ];
-    final treasureOpenPositions = <String>[];
-    for (var dir in treasureDirs) {
-      int nx = treasureX + dir[0];
-      int ny = treasureY + dir[1];
-      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-        treasureOpenPositions.add('${nx}_$ny');
-      }
-      nx = startX + dir[0];
-      ny = startY + dir[1];
-      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-        treasureOpenPositions.add('${nx}_$ny');
+        // 打通中間牆
+        if (!maze[nx][ny]) {
+          maze[x + d[0]][y + d[1]] = true;
+          carve(nx, ny);
+        }
       }
     }
 
-    // -------------------------------
-    // 3️⃣ 生成障礙物（避開寶藏及寶藏至少保留一方向空格）
-    // -------------------------------
-    attempts = 0;
-    while (obstacles.length < numObstacles && attempts < numObstacles * 10) {
-      final x = rand.nextInt(width);
-      final y = rand.nextInt(height);
-      final posKey = '${x}_$y';
+    carve(startX, startY);
 
-      // 避開寶藏本身、寶藏周圍空格、起點
-      if (occupied.contains(posKey) || treasureOpenPositions.contains(posKey)) {
-        attempts++;
-        continue;
+    // -----------------------------
+    // 3️⃣ 隨機打牆增加岔路
+    // -----------------------------
+    for (int x = 1; x < width - 1; x++) {
+      for (int y = 1; y < height - 1; y++) {
+        // 如果是牆，且鄰格有路，則有小機率打通形成岔路
+        if (!maze[x][y]) {
+          int adjacentPaths = 0;
+          if (maze[x + 1][y]) adjacentPaths++;
+          if (maze[x - 1][y]) adjacentPaths++;
+          if (maze[x][y + 1]) adjacentPaths++;
+          if (maze[x][y - 1]) adjacentPaths++;
+
+          if (adjacentPaths == 2 && rand.nextInt(100) < 10) {
+            maze[x][y] = true; // 10% 機率打通牆
+          }
+        }
       }
-
-      occupied.add(posKey);
-      obstacles.add(ModelGameSteamScratchMazeObstacle(x: x, y: y));
-      attempts++;
     }
+
+    // -----------------------------
+    // 4️⃣ 確保出口可達
+    // -----------------------------
+    maze[exitX][exitY] = true;
+    if (!maze[exitX - 1][exitY]) maze[exitX - 1][exitY] = true;
+    if (!maze[exitX][exitY - 1]) maze[exitX][exitY - 1] = true;
+
+    // -----------------------------
+    // 5️⃣ 生成障礙物（牆）
+    // -----------------------------
+    final obstacles = <ModelGameSteamScratchMazeObstacle>[];
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        if (!maze[x][y]) {
+          obstacles.add(ModelGameSteamScratchMazeObstacle(x: x, y: y));
+        }
+      }
+    }
+
+    // -----------------------------
+    // 6️⃣ 寶藏放在出口
+    // -----------------------------
+    final treasure = ModelGameSteamScratchMazeTreasure(x: exitX, y: exitY);
 
     return ModelGameSteamScratchMazeLevel(
       levelNumber: levelNumber,

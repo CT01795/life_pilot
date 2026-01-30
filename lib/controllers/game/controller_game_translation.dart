@@ -81,7 +81,7 @@ class ControllerGameTranslation extends ChangeNotifier {
       || (currentQuestion!.question == "摩托車" && (answer == "motorcycle" || answer == "motorbike"))
       || (currentQuestion!.question == "薯條" && (answer == "fries" || answer == "chips" || answer.replaceAll(" ", constEmpty).toLowerCase() == "frenchfries"))
       || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"))
-      || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"));
+      || (currentQuestion!.question == "miss" && (answer == "錯過或想念" || answer == "未婚的女人"));
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;

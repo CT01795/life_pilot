@@ -6,8 +6,8 @@ import 'dart:ui_web';
 import 'package:flutter/material.dart';
 // ignore: deprecated_member_use
 import 'package:js/js_util.dart' as js_util;
-import 'package:life_pilot/controllers/game/steam_scratch/controller_game_steam_scratch.dart';
-import 'package:life_pilot/models/game/steam_scratch/blockly_parser.dart';
+import 'package:life_pilot/controllers/game/steam_scratch_maze/controller_game_steam_scratch_maze.dart';
+import 'package:life_pilot/models/game/steam_scratch_maze/blockly_parser.dart';
 
 import '../../../core/logger.dart';
 
@@ -24,9 +24,9 @@ class PageGameSteamScratchMazeBlocklyEditor extends StatefulWidget {
 
 class PageGameSteamScratchMazeBlocklyEditorState
     extends State<PageGameSteamScratchMazeBlocklyEditor> {
-  static html.IFrameElement? iframe;
-  static bool _iframeRegistered = false;
-  static int? windowMaxBlocksPending;
+  html.IFrameElement? iframe;
+  bool _iframeRegistered = false;
+  int? windowMaxBlocksPending;
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class PageGameSteamScratchMazeBlocklyEditorState
     logger.i("🌟 Web Editor State 建立成功：$this");
     if (!_iframeRegistered) {
       // ignore: undefined_prefixed_name
-      platformViewRegistry.registerViewFactory('blockly-iframe', (int viewId) {
+      platformViewRegistry.registerViewFactory('blockly-iframe-scratch-maze', (int viewId) {
         final frame = html.IFrameElement()
           ..src = 'assets/blockly/index.html'
           ..style.border = 'none'
@@ -120,6 +120,6 @@ class PageGameSteamScratchMazeBlocklyEditorState
 
   @override
   Widget build(BuildContext context) {
-    return HtmlElementView(viewType: 'blockly-iframe');
+    return HtmlElementView(viewType: 'blockly-iframe-scratch-maze');
   }
 }
