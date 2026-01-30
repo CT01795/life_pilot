@@ -1,26 +1,21 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 
-enum Direction { north, east, south, west }
-
 class GameState {
   int x = 0;
   int y = 0;
   int score = 0;
   bool treasureCollected = false;
-  Direction facing = Direction.east;
 
   GameState copy() => GameState()
     ..x = x
     ..y = y
     ..score = score
-    ..treasureCollected = treasureCollected
-    ..facing = facing;
+    ..treasureCollected = treasureCollected;
 }
 
 // -------------------- Command 定義 --------------------
@@ -40,24 +35,6 @@ class BackwardCommand extends Command {
   @override
   Future<bool> execute(ControllerGameSteamScratchMaze game) async {
     return await game.moveBackward();
-  }
-}
-
-class TurnLeftCommand extends Command {
-  @override
-  Future<bool> execute(ControllerGameSteamScratchMaze game) async {
-    game.state.facing =
-        Direction.values[(game.state.facing.index + 3) % 4]; // 左轉 90 度
-    return await game.moveForward();
-  }
-}
-
-class TurnRightCommand extends Command {
-  @override
-  Future<bool> execute(ControllerGameSteamScratchMaze game) async {
-    game.state.facing =
-        Direction.values[(game.state.facing.index + 1) % 4]; // 右轉 90 度
-    return await game.moveForward();
   }
 }
 
@@ -155,83 +132,93 @@ class ControllerGameSteamScratchMaze {
 
   // ---------------- Movement ----------------
   Future<bool> moveForward() async {
-    switch (state.facing) {
-      case Direction.north:
-        state.y += 1;
+    int newX = state.x;
+    int newY = state.y;
+    while (await _isWalkable(newX + 1, newY)) {
+      newX += 1;
+      // ✅ 更新 ValueNotifier
+      stateNotifier.value = state.copy()
+        ..x = newX
+        ..y = newY;
+      await Future.delayed(Duration(milliseconds: 400));
+      if (await _isWalkable(newX, newY - 1) ||
+          await _isWalkable(newX, newY + 1)) { //岔路處跳出
         break;
-      case Direction.east:
-        state.x += 1;
-        break;
-      case Direction.south:
-        state.y -= 1;
-        break;
-      case Direction.west:
-        state.x -= 1;
-        break;
+      }
     }
-    return _afterMovement();
+    return true; // _afterMovement();
   }
 
   Future<bool> moveBackward() async {
-    switch (state.facing) {
-      case Direction.north:
-        state.y -= 1;
+    int newX = state.x;
+    int newY = state.y;
+    while (await _isWalkable(newX - 1, newY)) {
+      newX -= 1;
+      // ✅ 更新 ValueNotifier
+      stateNotifier.value = state.copy()
+        ..x = newX
+        ..y = newY;  
+      await Future.delayed(Duration(milliseconds: 400));
+      if (await _isWalkable(newX, newY - 1) ||
+          await _isWalkable(newX, newY + 1)) { //岔路處跳出
         break;
-      case Direction.east:
-        state.x -= 1;
-        break;
-      case Direction.south:
-        state.y += 1;
-        break;
-      case Direction.west:
-        state.x += 1;
-        break;
+      }
     }
-    return _afterMovement();
+    return true; // _afterMovement();
   }
 
   Future<bool> jumpUp() async {
-    state.y += 1;
-    return _afterMovement();
+    int newX = state.x;
+    int newY = state.y;
+    while (await _isWalkable(newX, newY + 1)) {
+      newY += 1;
+      // ✅ 更新 ValueNotifier
+      stateNotifier.value = state.copy()
+        ..x = newX
+        ..y = newY;
+      await Future.delayed(Duration(milliseconds: 400));
+      if (await _isWalkable(newX - 1, newY) ||
+          await _isWalkable(newX + 1, newY)) { //岔路處跳出
+        break;
+      }
+    }
+    return true; // _afterMovement();
   }
 
   Future<bool> jumpDown() async {
-    state.y -= 1;
-    return _afterMovement();
+    int newX = state.x;
+    int newY = state.y;
+    while (await _isWalkable(newX, newY - 1)) {
+      newY -= 1;
+      // ✅ 更新 ValueNotifier
+      stateNotifier.value = state.copy()
+        ..x = newX
+        ..y = newY;
+      await Future.delayed(Duration(milliseconds: 400));
+      if (await _isWalkable(newX - 1, newY) ||
+          await _isWalkable(newX + 1, newY)) { //岔路處跳出
+        break;
+      }
+    }
+    return true; // _afterMovement();
+  }
+
+  Future<bool> _isWalkable(int x, int y) async {
+    // 延遲 400ms 再回傳
+    if (_scoreSaved) return false; // 已經過關 → 不要再檢查
+    if (x < 0 || y < 0 || x > level.treasure.x || y > level.treasure.y) {
+      return false;
+    }
+    for (var obs in level.obstacles) {
+      if (obs.x == x && obs.y == y) return false; // 牆
+    }
+    _checkFruit();
+    return await _checkTreasure();
   }
 
   Future<bool> _afterMovement() async {
-    // 延遲 400ms 再回傳
-    await Future.delayed(Duration(milliseconds: 400));
-
-    if (_scoreSaved) return false; // 已經過關 → 不要再檢查
-
-    // 先更新位置
-    state.x = state.x.clamp(-1, level.treasure.x + 1);
-    state.y = state.y.clamp(-1, level.treasure.y + 1); // ✅ 防止已卸載 widget 呼叫 setState
-    stateNotifier.value = state.copy();
-
-    // 掉下懸崖檢查
-    if (state.x < 0 || state.x > level.treasure.x || state.y < 0 || state.y > level.treasure.y) {
-      _notifyEvent(ModelGameEvent(EnumGameEventType.obstacle, "Fall off a cliff！"));
-      return false; // 停止遊戲
-    }
-
-    if (_checkObstacle()) return false;
     _checkFruit();
-    return _checkTreasure();
-  }
-
-  // ---- 檢查障礙 ----
-  bool _checkObstacle() {
-    for (var obs in level.obstacles) {
-      if (obs.x == state.x && obs.y == state.y) {
-        state.score += obs.scoreValue;
-        _notifyEvent(ModelGameEvent(EnumGameEventType.obstacle, "Hit an obstacle！"));
-        return true;
-      }
-    }
-    return false;
+    return await _checkTreasure();
   }
 
   // ---- 檢查水果 ----
@@ -240,29 +227,22 @@ class ControllerGameSteamScratchMaze {
       if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
         fruit.collected = true;
         state.score += fruit.scoreValue;
-        _notifyEvent(
-            ModelGameEvent(EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
+        _notifyEvent(ModelGameEvent(
+            EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
       }
     }
   }
 
   // ---- 檢查寶藏 ----
-  bool _checkTreasure() {
+  Future<bool> _checkTreasure() async {
     if (!state.treasureCollected &&
         state.x == level.treasure.x &&
         state.y == level.treasure.y) {
-      if (state.score < min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
-        //至少要吃一點東西
-        _notifyEvent(ModelGameEvent(EnumGameEventType.warning,
-            "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!"));
-        return true;
-      }
       state.treasureCollected = true;
       state.score += level.treasure.scoreValue;
       _notifyEvent(ModelGameEvent(
           EnumGameEventType.treasure, "Treasure found！Score: ${state.score}"));
-      _saveScore(true);
-      return false;
+      await _saveScore(true);
     }
     return true;
   }

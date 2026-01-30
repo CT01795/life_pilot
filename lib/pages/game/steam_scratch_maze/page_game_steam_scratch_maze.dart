@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/game/steam_scratch_maze/controller_game_s
 import 'package:life_pilot/controllers/game/steam_scratch_maze/controller_game_steam_scratch_maze_level_generator.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
-import 'package:life_pilot/pages/game/steam_scratch_maze/page_game_steam_scratch_maze_blockly_editor_io.dart';
+import 'package:life_pilot/pages/game/steam_scratch_maze/page_game_steam_scratch_maze_blockly_editor.dart';
 import 'package:life_pilot/services/game/service_game.dart';
 import 'package:life_pilot/views/game/widgets_game_steam_scratch_maze_game_board.dart';
 import 'package:provider/provider.dart';
@@ -244,7 +244,7 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
             Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
-        title: Text('Scratch Game')),
+        title: Text('Scratch Game (Maze)')),
       body: Row(
         children: [
           // -----------------------------------------------------------------

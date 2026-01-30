@@ -40,12 +40,12 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
         case 'backward':
           cmds.add(BackwardCommand());
           break;
-        case 'turn_left':
+        /*case 'turn_left':
           cmds.add(TurnLeftCommand());
           break;
         case 'turn_right':
           cmds.add(TurnRightCommand());
-          break;
+          break;*/
         case 'jump_up':
           cmds.add(JumpUpCommand());
           break;

@@ -18,7 +18,7 @@ class PageGameSteamScratchBlocklyEditor extends StatefulWidget {
 class PageGameSteamScratchBlocklyEditorState
     extends State<PageGameSteamScratchBlocklyEditor> {
   late WebViewController controller;
-  static int? windowMaxBlocksPending;
+  int? windowMaxBlocksPending;
 
   @override
   void initState() {
