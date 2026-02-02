@@ -216,11 +216,6 @@ class ControllerGameSteamScratchMaze {
     return await _checkTreasure();
   }
 
-  Future<bool> _afterMovement() async {
-    _checkFruit();
-    return await _checkTreasure();
-  }
-
   // ---- 檢查水果 ----
   void _checkFruit() {
     for (var fruit in level.fruits) {

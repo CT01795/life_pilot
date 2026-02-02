@@ -33,7 +33,7 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
   final double maxEditorWidth = 600;
 
   // Editor 的 Key
-  final GlobalKey<PageGameSteamScratchMazeBlocklyEditorState> editorKey =
+  final GlobalKey<PageGameSteamScratchMazeBlocklyEditorState> editorKeyMaze =
       GlobalKey<PageGameSteamScratchMazeBlocklyEditorState>();
 
   @override
@@ -232,8 +232,8 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
 
     // ---- 2. 在每次 build 完成後更新到 iframe ----
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      logger.i("📢 editorKey.currentState = ${editorKey.currentState}");
-      editorKey.currentState?.setMaxBlocks(maxBlocks);
+      logger.i("📢 editorKeyMaze.currentState = ${editorKeyMaze.currentState}");
+      editorKeyMaze.currentState?.setMaxBlocks(maxBlocks);
     });
 
     return Scaffold(
@@ -274,7 +274,7 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                       ),
                       TextButton(
                         onPressed: () async {
-                          await editorKey.currentState?.requestBlocklyJson();
+                          await editorKeyMaze.currentState?.requestBlocklyJson();
                         },
                         child: Text("Start",
                             style: TextStyle(color: Colors.white)),
@@ -286,7 +286,7 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                 // ---------- Editor main ----------
                 Expanded(
                   child: PageGameSteamScratchMazeBlocklyEditor(
-                    key: editorKey,
+                    key: editorKeyMaze,
                     onCommandsReady: (cmds) async {
                       // ✅ 每次開始前重置遊戲
                       game.resetGame(); // 位置、分數、水果全部重置
