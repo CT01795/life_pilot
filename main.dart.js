@@ -146522,7 +146522,7 @@ A.al(s,!0).cf(!0)},
 $S:17}
 A.bfn.prototype={
 $1(a){var s=this.a.x
-$.d3().nM("\ud83d\udce2 editorKey.currentState = "+A.l(s.gY()))
+$.d3().nM("\ud83d\udce2 editorKeyMaze.currentState = "+A.l(s.gY()))
 s=s.gY()
 if(s!=null)s.SA(this.b)},
 $S:5}
