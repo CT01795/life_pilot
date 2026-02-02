@@ -51,7 +51,16 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       modelEventCalendar: _modelEventCalendar,
       controllerNotification: controllerNotification,
     );
-    ServiceEventPublic().fetchAndSaveAllEvents();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshEvents();
+    });
+  }
+
+  Future<void> _refreshEvents() async {
+    await ServiceEventPublic().fetchAndSaveAllEvents();
+
+    if (!mounted) return;
+    _controllerEvent.loadEvents(); // notifyListeners()
   }
 
   @override
