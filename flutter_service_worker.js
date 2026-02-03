@@ -81,8 +81,8 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "assets/assets/maps/central_europ.png": "35410cb48f45b5bb7e76e522ce6ac29b",
 "assets/assets/maps/new_zealand.png": "7f0bfcbed4bdc6acab4e6521939c1e59",
 "assets/assets/maps/okinawa.png": "b34b95a6182b4061d53705dbd9a2bacf",
-"assets/fonts/MaterialIcons-Regular.otf": "1b262c921beb956599ccd5e3d36971c7",
-"assets/NOTICES": "cb8887470ddcfaeaa9e909e747d04099",
+"assets/fonts/MaterialIcons-Regular.otf": "ff743ccfaeda2c64eae66c42b36d8a68",
+"assets/NOTICES": "23cc48fbf02b48946f42980ccf1f148a",
 "assets/packages/flutter_inappwebview_web/assets/web/web_support.js": "509ae636cfdd93e49b5a6eaf0f06d79f",
 "assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "33b7d9392238c04c131b6ce224e13711",
 "assets/packages/html_editor_enhanced/assets/summernote-lite.min.css": "570da368f96dc6433b8a1006c425ca7d",
@@ -113,9 +113,9 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "canvaskit/canvaskit.js.symbols": "58832fbed59e00d2190aa295c4d70360",
 "canvaskit/skwasm.js.symbols": "0088242d10d7e7d6d2649d1fe1bda7c1",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
-"flutter_bootstrap.js": "d5dc74b426176e9f15d7ec0981778586",
+"flutter_bootstrap.js": "dd9a0b4b1e14c43c36b106c95fb77f48",
 "version.json": "3d24f8e1c43390d4ffe74cc3fce20e2a",
-"main.dart.js": "bfd9f19db32bf42bceb0cb45e79cff5f"};
+"main.dart.js": "5719a0f67f6775936e4f017a7586f71c"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
