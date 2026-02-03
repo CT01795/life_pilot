@@ -18,10 +18,10 @@ class ServiceEventPublic {
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
 
   String safeCity(String location) =>
-    location.length >= 3 ? location.substring(0, 3) : location;
+      location.length >= 3 ? location.substring(0, 3) : location;
 
   String safeAddress(String location) =>
-    location.length > 3 ? location.substring(3) : constEmpty;
+      location.length > 3 ? location.substring(3) : constEmpty;
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
     final result = await client
@@ -130,7 +130,19 @@ class ServiceEventPublic {
     Set<String> tmpSet = {};
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
-
+    Map<String, String> typeMap = {
+      "2": "戲劇",
+      "3": "舞蹈",
+      "4": "親子",
+      "6": "展覽",
+      "7": "講座",
+      "8": "電影",
+      "11": "綜藝",
+      "13": "競賽",
+      "17": "演唱會",
+      "19": "研習課程",
+      "200": "閱讀"
+    };
     for (final item in data) {
       /// 1️⃣ 解析 endDate
       final endDateStr = item['endDate'];
@@ -144,6 +156,7 @@ class ServiceEventPublic {
       // 2️⃣ 判斷是否「免費」
       final showInfoList = item['showInfo'] as List<dynamic>? ?? [];
       final eventName = item['title'] ?? constEmpty;
+      final category = typeMap.containsKey(item['category'] ?? "9999") ? typeMap[item['category'] ?? "9999"] : null;
       final isFree = EventRule.isFreeEvent(item, showInfoList);
       final eventHref =
           "https://cloud.culture.tw/frontsite/inquiry/eventInquiryAction.do?method=showEventDetail&uid=${item['UID']}";
@@ -164,6 +177,7 @@ class ServiceEventPublic {
           startTime: subEvents[0].startTime,
           endDate: endDate,
           endTime: subEvents.length <= 1 ? subEvents[0].endTime : null,
+          type: category,
           city: safeCity(location0),
           location: "$locationName0(${safeAddress(location0)})",
           name: eventName,
@@ -192,9 +206,13 @@ class ServiceEventPublic {
       subEvents.add(EventItem(
         id: uuid.v4(),
         startDate: subStartDate,
-        startTime: subStartDateStrSplit.length > 1 ? DateTimeParser.parseTime(subStartDateStrSplit[1]) : null,
+        startTime: subStartDateStrSplit.length > 1
+            ? DateTimeParser.parseTime(subStartDateStrSplit[1])
+            : null,
         endDate: subEndDate,
-        endTime: subEndDateStrSplit.length > 1 ? DateTimeParser.parseTime(subEndDateStrSplit[1]) : null,
+        endTime: subEndDateStrSplit.length > 1
+            ? DateTimeParser.parseTime(subEndDateStrSplit[1])
+            : null,
         city: safeCity(location),
         location: locationName,
         name: eventName,
@@ -310,10 +328,11 @@ class EventRule {
     bool containPaid(String s) => _paidKeywords.any(s.contains);
 
     return !containPaid(item['title'] ?? constEmpty) &&
-        ( containFree(item['price'] ?? constEmpty) ||
-          containFree(item['discountInfo'] ?? constEmpty) ||
-          containFree(item['descriptionFilterHtml'] ?? constEmpty) ||
-          containFree(item['comment'] ?? '') ||
-          showInfoList.any((s) => containFree(s['locationName'] ?? constEmpty)));
+        (containFree(item['price'] ?? constEmpty) ||
+            containFree(item['discountInfo'] ?? constEmpty) ||
+            containFree(item['descriptionFilterHtml'] ?? constEmpty) ||
+            containFree(item['comment'] ?? '') ||
+            showInfoList
+                .any((s) => containFree(s['locationName'] ?? constEmpty)));
   }
 }
