@@ -1,4 +1,7 @@
 // lib/services/event_service.dart
+import 'dart:convert';
+
+import 'package:flutter/material.dart' hide Element;
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
@@ -72,7 +75,11 @@ class ServiceEventPublic {
                     ? strolltimesList
                     : strolltimesList.where((e) {
                         final name = e.name;
-                        return !dbNameSet.contains(name);
+                        bool resultBool = !dbNameSet.contains(name);
+                        if(resultBool){
+                          dbNameSet.add(name);
+                        }
+                        return resultBool;
                       }).toList())
                 .map((e) => e.toJson())
                 .toList();
@@ -85,26 +92,149 @@ class ServiceEventPublic {
       }
     }
     //==================================== 取得外部資源事件 Accupass ====================================
-    /*final accupassUrl = 'https://www.accupass.com/search?p=free';
-    if (await checkEventsUrl(accupassUrl, today)) {
+    final cloudCultureUrl =
+        'https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=all';
+    if (await checkEventsUrl(cloudCultureUrl, today)) {
       try {
-        List<EventItem> accupassList =
-            await fetchPageEventsAccupass(accupassUrl, today) ?? [];
+        List<EventItem> cloudCultureList =
+            await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
 
         //==================================== strolltimesList事件寫入 ====================================
-        List<Map> dataList = accupassList.isEmpty ? [] : (dbNameSet.isEmpty ? accupassList : accupassList.where((e) {
-          final name = e.name;
-          return !dbNameSet.contains(name);
-        }).toList()).map((e) => e.toJson()).toList();
+        List<Map> dataList = cloudCultureList.isEmpty
+            ? []
+            : (dbNameSet.isEmpty
+                    ? cloudCultureList
+                    : cloudCultureList.where((e) {
+                        final name = e.name;
+                        bool resultBool = !dbNameSet.contains(name);
+                        if(resultBool){
+                          dbNameSet.add(name);
+                        }
+                        return resultBool;
+                      }).toList())
+                .map((e) => e.toJson())
+                .toList();
 
-        if(dataList.isNotEmpty) await client.from(TableNames.recommendedEvents).insert(dataList);
+        if (dataList.isNotEmpty) {
+          await client.from(TableNames.recommendedEvents).insert(dataList);
+        }
       } on Exception catch (ex) {
         logger.e(ex);
       }
-    }*/
+    }
   }
 
-  //==================================== 取得外部資源事件 Accupass ====================================
+  //==================================== 取得外部資源事件 cloud.Culture ====================================
+  Future<List<EventItem>?> fetchPageEventsCloudCulture(
+      String url, DateTime today) async {
+    final res = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)',
+      },
+    );
+
+    if (res.statusCode != 200) return [];
+
+    final List<dynamic> data = jsonDecode(res.body);
+    Set<String> tmpSet = {};
+    List<EventItem> tmpList = [];
+    final uuid = const Uuid();
+
+    for (final item in data) {
+      /// 1️⃣ 解析 endDate
+      final endDateStr = item['endDate'];
+      if (endDateStr == null) continue;
+
+      final endDate = DateTime.tryParse(endDateStr.replaceAll('/', '-'));
+      if (endDate == null || endDate.isBefore(today)) continue;
+      DateTime? startDate = DateTime.tryParse(
+          (item['startDate'] ?? constEmpty).replaceAll('/', '-'));
+
+      // 2️⃣ 判斷是否「免費」
+      final price = item['price'] ?? constEmpty;
+      final discountInfo = item['discountInfo'] ?? constEmpty;
+      final descriptionFilterHtml = item['descriptionFilterHtml'] ?? constEmpty;
+      final comment = item['comment'] ?? constEmpty;
+      final showInfoList = item['showInfo'] as List<dynamic>? ?? [];
+      final eventName = item['title'] ?? constEmpty;
+      bool isFree = (price.contains('免費') ||
+              discountInfo.contains('免費') ||
+              descriptionFilterHtml.contains('免費') ||
+              comment.contains('免費'));
+      final eventHref =
+          "https://cloud.culture.tw/frontsite/inquiry/eventInquiryAction.do?method=showEventDetail&uid=${item['UID']}";
+      //3️⃣ 一個活動可能有多個場次
+      final show0 = showInfoList[0];
+      String locationName0 = show0['locationName'] ?? constEmpty;
+      if (eventName.contains('付費') || (!isFree && !locationName0.contains('免費'))) {
+        continue;
+      }
+      String location0 = show0['location'] ?? constEmpty;
+      if (!tmpSet.contains(eventName)) {
+        List<EventItem> subEvents = getSubEvents(showInfoList, uuid, eventName);
+        tmpList.add(EventItem(
+          id: uuid.v4(),
+          masterUrl: eventHref,
+          startDate: startDate,
+          startTime: subEvents[0].startTime,
+          endDate: endDate,
+          endTime: subEvents.length <= 1 ? subEvents[0].endTime : null,
+          city: location0.substring(0, 3),
+          location: "$locationName0(${location0.substring(3)})",
+          name: eventName,
+          subEvents: subEvents.length <= 1 ? [] : subEvents,
+          account: AuthConstants.sysAdminEmail,
+        ));
+        tmpSet.add(eventName);
+      }
+    }
+    return tmpList;
+  }
+
+  List<EventItem> getSubEvents(
+      List<dynamic> showInfoList, Uuid uuid, String eventName) {
+    List<EventItem> subEvents = [];
+    for (int i = 0; i < showInfoList.length; i++) {
+      final show = showInfoList[i];
+      final locationName = show['locationName'] ?? constEmpty;
+      final location = show['location'] ?? constEmpty;
+      final subStartDateStr = (show['time'] ?? constEmpty).toString();
+      final subStartDateStrSplit = subStartDateStr.split(" ");
+      final subStartDate =
+          DateTime.tryParse(subStartDateStrSplit[0].replaceAll('/', '-'));
+      final partsStartTime = subStartDateStrSplit.length > 1
+          ? subStartDateStrSplit[1].split(':')
+          : null;
+      final subEndDateStr = (show['endTime'] ?? constEmpty).toString();
+      final subEndDateStrSplit = subEndDateStr.split(" ");
+      final subEndDate =
+          DateTime.tryParse(subEndDateStrSplit[0].replaceAll('/', '-'));
+      final partsEndTime = subEndDateStrSplit.length > 1
+          ? subEndDateStrSplit[1].split(':')
+          : null;
+      subEvents.add(EventItem(
+        id: uuid.v4(),
+        startDate: subStartDate,
+        startTime: partsStartTime == null
+            ? null
+            : TimeOfDay(
+                hour: int.parse(partsStartTime[0]),
+                minute: int.parse(partsStartTime[1])),
+        endDate: subEndDate,
+        endTime: partsEndTime == null
+            ? null
+            : TimeOfDay(
+                hour: int.parse(partsEndTime[0]),
+                minute: int.parse(partsEndTime[1])),
+        city: location,
+        location: locationName,
+        name: eventName,
+        account: AuthConstants.sysAdminEmail,
+      ));
+    }
+    return subEvents;
+  }
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
