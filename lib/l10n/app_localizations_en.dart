@@ -159,7 +159,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memoryAddError => 'Do you want to add the memory again';
 
   @override
-  String get uploadExcel => 'Upload';
+  String get uploadExcel => 'Upload Csv';
 
   @override
   String get uploadFailed => '❌ Upload failed';

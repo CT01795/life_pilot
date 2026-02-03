@@ -159,7 +159,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get memoryAddError => '추억을 다시 추가하시겠습니까';
 
   @override
-  String get uploadExcel => 'Excel 업로드';
+  String get uploadExcel => 'Csv 업로드';
 
   @override
   String get uploadFailed => '❌ 업로드 실패';

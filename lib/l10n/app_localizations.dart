@@ -399,10 +399,10 @@ abstract class AppLocalizations {
   /// **'Do you want to add the memory again'**
   String get memoryAddError;
 
-  /// Label for uploadExcel
+  /// Label for uploadCsv
   ///
   /// In en, this message translates to:
-  /// **'Upload'**
+  /// **'Upload Csv'**
   String get uploadExcel;
 
   /// Label for uploadFailed

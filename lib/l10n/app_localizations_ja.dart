@@ -159,7 +159,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get memoryAddError => 'もう一度思い出を追加しますか';
 
   @override
-  String get uploadExcel => 'Excelにアップロード';
+  String get uploadExcel => 'Csv にアップロード';
 
   @override
   String get uploadFailed => '❌ アップロードに失敗しました';
