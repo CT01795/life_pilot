@@ -399,6 +399,42 @@ abstract class AppLocalizations {
   /// **'Do you want to add the memory again'**
   String get memoryAddError;
 
+  /// Label for uploadExcel
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get uploadExcel;
+
+  /// Label for uploadFailed
+  ///
+  /// In en, this message translates to:
+  /// **'❌ Upload failed'**
+  String get uploadFailed;
+
+  /// Label for uploadInProgress
+  ///
+  /// In en, this message translates to:
+  /// **'❌ The previous file upload is still in progress.'**
+  String get uploadInProgress;
+
+  /// Label for uploadSuccess
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Upload successful'**
+  String get uploadSuccess;
+
+  /// Label for notSupportUpload
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Not support upload'**
+  String get notSupportUpload;
+
+  /// Label for noEventsToUpload
+  ///
+  /// In en, this message translates to:
+  /// **'❌ No events to upload'**
+  String get noEventsToUpload;
+
   /// Label for noEventsToExport
   ///
   /// In en, this message translates to:

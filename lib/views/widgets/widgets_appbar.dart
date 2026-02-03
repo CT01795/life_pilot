@@ -10,6 +10,7 @@ AppBar widgetsWhiteAppBar({
   required String tableName,
   VoidCallback? onAdd,
   bool enableSearchAndExport = false,
+  required bool enableUpload,
 }) {
   return AppBar(
     title: Text(title, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold,)),
@@ -20,7 +21,8 @@ AppBar widgetsWhiteAppBar({
         handler: handler,
         loc: loc,
         onAdd: onAdd,
-        enableSearchAndExport: enableSearchAndExport),
+        enableSearchAndExport: enableSearchAndExport,
+        enableUpload: enableUpload),
   );
 }
 
@@ -29,6 +31,7 @@ List<Widget> _buildActions({
   required AppLocalizations loc,
   VoidCallback? onAdd,
   bool enableSearchAndExport = false,
+  required bool enableUpload,
 }) {
   final List<Widget> actions = [];
 
@@ -46,6 +49,14 @@ List<Widget> _buildActions({
             final exportResult = await handler.exportEvents(loc);
             AppNavigator.showSnackBar(exportResult);
           }),
+      if(enableUpload)
+        IconButton(
+            icon: const Icon(Icons.upload),
+            tooltip: loc.uploadExcel,
+            onPressed: () async {
+              final uploadResult = await handler.uploadEvents(loc);
+              AppNavigator.showSnackBar(uploadResult);
+            }),
     ]);
   }
 
