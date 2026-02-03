@@ -15,8 +15,13 @@ import 'package:uuid/uuid.dart';
 class ServiceEventPublic {
   final client = Supabase.instance.client;
   final Duration perEventDelay;
-  final Set<String> seenUrls = {};
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
+
+  String safeCity(String location) =>
+    location.length >= 3 ? location.substring(0, 3) : location;
+
+  String safeAddress(String location) =>
+    location.length > 3 ? location.substring(3) : constEmpty;
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
     final result = await client
@@ -47,6 +52,26 @@ class ServiceEventPublic {
     }
   }
 
+  Future<Set<String>> _insertIfNotExists(
+    List<EventItem> events,
+    Set<String> dbNameSet,
+  ) async {
+    if (events.isEmpty) return dbNameSet;
+
+    final newEvents = events.where((e) {
+      if (dbNameSet.contains(e.name)) return false;
+      dbNameSet.add(e.name);
+      return true;
+    }).toList();
+
+    if (newEvents.isNotEmpty) {
+      await client
+          .from(TableNames.recommendedEvents)
+          .insert(newEvents.map((e) => e.toJson()).toList());
+    }
+    return dbNameSet;
+  }
+
   Future<void> fetchAndSaveAllEvents() async {
     //==================================== 取得目前資料庫事件 ====================================
     Set<String> dbNameSet = (await ServiceEvent().getEvents(
@@ -58,8 +83,7 @@ class ServiceEventPublic {
         .where((name) => name.isNotEmpty)
         .toSet();
 
-    DateTime today = DateTime.now();
-    today = DateTime(today.year, today.month, today.day);
+    DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimesUrl ====================================
     final strolltimesUrl =
         "https://news.strolltimes.com/events/weekend/"; //'https://strolltimes.com/weekend-events/';
@@ -69,24 +93,7 @@ class ServiceEventPublic {
             await fetchPageEventsStrolltimes(strolltimesUrl, today) ?? [];
 
         //==================================== strolltimesList事件寫入 ====================================
-        List<Map> dataList = strolltimesList.isEmpty
-            ? []
-            : (dbNameSet.isEmpty
-                    ? strolltimesList
-                    : strolltimesList.where((e) {
-                        final name = e.name;
-                        bool resultBool = !dbNameSet.contains(name);
-                        if(resultBool){
-                          dbNameSet.add(name);
-                        }
-                        return resultBool;
-                      }).toList())
-                .map((e) => e.toJson())
-                .toList();
-
-        if (dataList.isNotEmpty) {
-          await client.from(TableNames.recommendedEvents).insert(dataList);
-        }
+        dbNameSet = await _insertIfNotExists(strolltimesList, dbNameSet);
       } on Exception catch (ex) {
         logger.e(ex);
       }
@@ -100,24 +107,7 @@ class ServiceEventPublic {
             await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
 
         //==================================== strolltimesList事件寫入 ====================================
-        List<Map> dataList = cloudCultureList.isEmpty
-            ? []
-            : (dbNameSet.isEmpty
-                    ? cloudCultureList
-                    : cloudCultureList.where((e) {
-                        final name = e.name;
-                        bool resultBool = !dbNameSet.contains(name);
-                        if(resultBool){
-                          dbNameSet.add(name);
-                        }
-                        return resultBool;
-                      }).toList())
-                .map((e) => e.toJson())
-                .toList();
-
-        if (dataList.isNotEmpty) {
-          await client.from(TableNames.recommendedEvents).insert(dataList);
-        }
+        dbNameSet = await _insertIfNotExists(cloudCultureList, dbNameSet);
       } on Exception catch (ex) {
         logger.e(ex);
       }
@@ -146,28 +136,22 @@ class ServiceEventPublic {
       final endDateStr = item['endDate'];
       if (endDateStr == null) continue;
 
-      final endDate = DateTime.tryParse(endDateStr.replaceAll('/', '-'));
+      final endDate = DateTimeParser.parseDate(endDateStr);
       if (endDate == null || endDate.isBefore(today)) continue;
-      DateTime? startDate = DateTime.tryParse(
-          (item['startDate'] ?? constEmpty).replaceAll('/', '-'));
+      DateTime? startDate =
+          DateTimeParser.parseDate((item['startDate'] ?? constEmpty));
 
       // 2️⃣ 判斷是否「免費」
-      final price = item['price'] ?? constEmpty;
-      final discountInfo = item['discountInfo'] ?? constEmpty;
-      final descriptionFilterHtml = item['descriptionFilterHtml'] ?? constEmpty;
-      final comment = item['comment'] ?? constEmpty;
       final showInfoList = item['showInfo'] as List<dynamic>? ?? [];
       final eventName = item['title'] ?? constEmpty;
-      bool isFree = (price.contains('免費') ||
-              discountInfo.contains('免費') ||
-              descriptionFilterHtml.contains('免費') ||
-              comment.contains('免費'));
+      final isFree = EventRule.isFreeEvent(item, showInfoList);
       final eventHref =
           "https://cloud.culture.tw/frontsite/inquiry/eventInquiryAction.do?method=showEventDetail&uid=${item['UID']}";
       //3️⃣ 一個活動可能有多個場次
+      if (showInfoList.isEmpty) continue;
       final show0 = showInfoList[0];
       String locationName0 = show0['locationName'] ?? constEmpty;
-      if (eventName.contains('付費') || (!isFree && !locationName0.contains('免費'))) {
+      if (!isFree) {
         continue;
       }
       String location0 = show0['location'] ?? constEmpty;
@@ -180,8 +164,8 @@ class ServiceEventPublic {
           startTime: subEvents[0].startTime,
           endDate: endDate,
           endTime: subEvents.length <= 1 ? subEvents[0].endTime : null,
-          city: location0.substring(0, 3),
-          location: "$locationName0(${location0.substring(3)})",
+          city: safeCity(location0),
+          location: "$locationName0(${safeAddress(location0)})",
           name: eventName,
           subEvents: subEvents.length <= 1 ? [] : subEvents,
           account: AuthConstants.sysAdminEmail,
@@ -201,33 +185,17 @@ class ServiceEventPublic {
       final location = show['location'] ?? constEmpty;
       final subStartDateStr = (show['time'] ?? constEmpty).toString();
       final subStartDateStrSplit = subStartDateStr.split(" ");
-      final subStartDate =
-          DateTime.tryParse(subStartDateStrSplit[0].replaceAll('/', '-'));
-      final partsStartTime = subStartDateStrSplit.length > 1
-          ? subStartDateStrSplit[1].split(':')
-          : null;
+      final subStartDate = DateTimeParser.parseDate(subStartDateStrSplit[0]);
       final subEndDateStr = (show['endTime'] ?? constEmpty).toString();
       final subEndDateStrSplit = subEndDateStr.split(" ");
-      final subEndDate =
-          DateTime.tryParse(subEndDateStrSplit[0].replaceAll('/', '-'));
-      final partsEndTime = subEndDateStrSplit.length > 1
-          ? subEndDateStrSplit[1].split(':')
-          : null;
+      final subEndDate = DateTimeParser.parseDate(subEndDateStrSplit[0]);
       subEvents.add(EventItem(
         id: uuid.v4(),
         startDate: subStartDate,
-        startTime: partsStartTime == null
-            ? null
-            : TimeOfDay(
-                hour: int.parse(partsStartTime[0]),
-                minute: int.parse(partsStartTime[1])),
+        startTime: subStartDateStrSplit.length > 1 ? DateTimeParser.parseTime(subStartDateStrSplit[1]) : null,
         endDate: subEndDate,
-        endTime: partsEndTime == null
-            ? null
-            : TimeOfDay(
-                hour: int.parse(partsEndTime[0]),
-                minute: int.parse(partsEndTime[1])),
-        city: location,
+        endTime: subEndDateStrSplit.length > 1 ? DateTimeParser.parseTime(subEndDateStrSplit[1]) : null,
+        city: safeCity(location),
         location: locationName,
         name: eventName,
         account: AuthConstants.sysAdminEmail,
@@ -284,9 +252,8 @@ class ServiceEventPublic {
           final cells = row.querySelectorAll('td');
           if (cells.length >= 4) {
             DateTime? startDate =
-                DateTime.tryParse(cells[0].text.trim().replaceAll('/', '-'));
-            DateTime? endDate =
-                DateTime.tryParse(cells[1].text.trim().replaceAll('/', '-'));
+                DateTimeParser.parseDate(cells[0].text.trim());
+            DateTime? endDate = DateTimeParser.parseDate(cells[1].text.trim());
             if (startDate != null &&
                 endDate != null &&
                 !endDate.isBefore(today)) {
@@ -313,5 +280,40 @@ class ServiceEventPublic {
       }
     }
     return tmpList;
+  }
+}
+
+class DateTimeParser {
+  static DateTime? parseDate(String? s) {
+    if (s == null || s.isEmpty) return null;
+    return DateTime.tryParse(s.replaceAll('/', '-'));
+  }
+
+  static TimeOfDay? parseTime(String? s) {
+    if (s == null) return null;
+
+    final match = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(s);
+    if (match == null) return null;
+
+    return TimeOfDay(
+      hour: int.parse(match.group(1)!),
+      minute: int.parse(match.group(2)!),
+    );
+  }
+}
+
+class EventRule {
+  static const _freeKeywords = ['免費', '自由入場', '索票'];
+  static const _paidKeywords = ['付費', '售票', '購票'];
+  static bool isFreeEvent(Map item, List<dynamic> showInfoList) {
+    bool containFree(String s) => _freeKeywords.any(s.contains);
+    bool containPaid(String s) => _paidKeywords.any(s.contains);
+
+    return !containPaid(item['title'] ?? constEmpty) &&
+        ( containFree(item['price'] ?? constEmpty) ||
+          containFree(item['discountInfo'] ?? constEmpty) ||
+          containFree(item['descriptionFilterHtml'] ?? constEmpty) ||
+          containFree(item['comment'] ?? '') ||
+          showInfoList.any((s) => containFree(s['locationName'] ?? constEmpty)));
   }
 }
