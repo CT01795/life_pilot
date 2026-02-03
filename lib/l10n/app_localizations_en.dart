@@ -159,6 +159,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memoryAddError => 'Do you want to add the memory again';
 
   @override
+  String get uploadExcel => 'Upload';
+
+  @override
+  String get uploadFailed => '❌ Upload failed';
+
+  @override
+  String get uploadInProgress => '❌ The previous file upload is still in progress.';
+
+  @override
+  String get uploadSuccess => '✅ Upload successful';
+
+  @override
+  String get notSupportUpload => '⚠️ Not support upload';
+
+  @override
+  String get noEventsToUpload => '❌ No events to upload';
+
+  @override
   String get noEventsToExport => '❌ No events to export';
 
   @override

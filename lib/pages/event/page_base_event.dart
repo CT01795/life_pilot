@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_appbar_actions.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
@@ -155,6 +156,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
       appBar: widgetsWhiteAppBar(
           title: widget.title,
           enableSearchAndExport: true,
+          enableUpload: widget.auth.currentAccount == AuthConstants.sysAdminEmail,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
           tableName: widget.tableName,

@@ -159,6 +159,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get memoryAddError => 'もう一度思い出を追加しますか';
 
   @override
+  String get uploadExcel => 'Excelにアップロード';
+
+  @override
+  String get uploadFailed => '❌ アップロードに失敗しました';
+
+  @override
+  String get uploadInProgress => '❌ 前回のファイルのアップロードはまだ進行中です。';
+
+  @override
+  String get uploadSuccess => '✅ アップロード成功';
+
+  @override
+  String get notSupportUpload => '⚠️ アップロードはサポートされていません';
+
+  @override
+  String get noEventsToUpload => '❌ アップロードするイベントはありません';
+
+  @override
   String get noEventsToExport => '❌ エクスポートするイベントがありません';
 
   @override

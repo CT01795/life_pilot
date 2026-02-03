@@ -159,6 +159,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get memoryAddError => '추억을 다시 추가하시겠습니까';
 
   @override
+  String get uploadExcel => 'Excel 업로드';
+
+  @override
+  String get uploadFailed => '❌ 업로드 실패';
+
+  @override
+  String get uploadInProgress => '❌ 이전 파일 업로드가 아직 진행 중입니다.';
+
+  @override
+  String get uploadSuccess => '✅ 업로드 성공';
+
+  @override
+  String get notSupportUpload => '⚠️ 업로드를 지원하지 않음';
+
+  @override
+  String get noEventsToUpload => '❌ 업로드할 이벤트가 없습니다.';
+
+  @override
   String get noEventsToExport => '❌ 내보낼 이벤트가 없습니다';
 
   @override

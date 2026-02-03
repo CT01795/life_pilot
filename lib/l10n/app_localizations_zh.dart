@@ -159,6 +159,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get memoryAddError => '要重複新增回憶嗎';
 
   @override
+  String get uploadExcel => '上傳 Excel';
+
+  @override
+  String get uploadFailed => '❌ 上傳失敗';
+
+  @override
+  String get uploadInProgress => '❌ 前次上傳尚在執行中';
+
+  @override
+  String get uploadSuccess => '✅ 上傳成功';
+
+  @override
+  String get notSupportUpload => '⚠️ 此平台尚未支援上傳';
+
+  @override
+  String get noEventsToUpload => '❌ 沒有可上傳的活動';
+
+  @override
   String get noEventsToExport => '❌ 沒有可匯出的活動';
 
   @override
@@ -174,7 +192,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notSupportExport => '⚠️ 此平台尚未支援匯出';
 
   @override
-  String get excelColumnHeaderId => '活動id_______________________';
+  String get excelColumnHeaderId => '活動 id_______________________';
 
   @override
   String get excelColumnHeaderMasterUrl => '活動網址_______________________';
