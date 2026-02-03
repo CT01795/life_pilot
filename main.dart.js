@@ -148293,57 +148293,61 @@ case 18:case 13:return A.o(null,r)
 case 1:return A.n(p.at(-1),r)}})
 return A.p($async$pM,r)},
 No(a,b){return this.aZ4(a,b)},
-aZ4(b3,b4){var s=0,r=A.q(t.IG),q,p=this,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2
-var $async$No=A.m(function(b5,b6){if(b5===1)return A.n(b6,r)
-while(true)switch(s){case 0:b1=t.N
+aZ4(b5,b6){var s=0,r=A.q(t.IG),q,p=this,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4
+var $async$No=A.m(function(b7,b8){if(b7===1)return A.n(b8,r)
+while(true)switch(s){case 0:b3=t.N
 s=3
-return A.h(A.JA(A.ek(b3,0,null),A.J(["User-Agent",u.J],b1,b1)),$async$No)
-case 3:b2=b6
-if(b2.b!==200){q=A.c([],t.CB)
+return A.h(A.JA(A.ek(b5,0,null),A.J(["User-Agent",u.J],b3,b3)),$async$No)
+case 3:b4=b8
+if(b4.b!==200){q=A.c([],t.CB)
 s=1
-break}o=B.ap.mP(0,A.jN(A.jL(b2.e)).cw(0,b2.w),null)
-n=A.aV(b1)
-b1=t.CB
-m=A.c([],b1)
-for(l=J.b4(o),k=t.kc,j=b4.a,i=b4.b;l.p();){h=l.gN(l)
-g=J.a4(h)
-f=g.h(h,"endDate")
-if(f==null)continue
-e=A.LK(f)
-d=!0
-if(e!=null){c=e.a
-if(c>=j)d=c===j&&e.b<i}if(d)continue
-d=g.h(h,"startDate")
-b=A.LK(d==null?"":d)
-a=k.a(g.h(h,"showInfo"))
-if(a==null)a=[]
-a0=g.h(h,"title")
-if(a0==null)a0=""
-a1=A.bQI(h,a)
-g=A.l(g.h(h,"UID"))
-d=J.a4(a)
-if(d.ga_(a))continue
-a2=d.h(a,0)
-d=J.a4(a2)
-a3=d.h(a2,"locationName")
-if(a3==null)a3=""
-if(!a1)continue
-a4=d.h(a2,"location")
-if(a4==null)a4=""
-if(!n.n(0,a0)){a5=p.ao4(a,B.cD,a0)
-d=B.cD.jl()
-c=a5[0]
-a6=c.fV$
-a7=a5.length<=1
-c=a7?c.h8$:null
-a8=a4.length
-a9=a8>=3?B.c.V(a4,0,3):a4
-a8=a8>3?B.c.d_(a4,3):""
-a7=a7?A.c([],b1):a5
-b0=new A.d5(A.c([],b1),B.cD.jl(),null,null,null,null,null,null,"","","","","","","",B.cN,B.en,!1,!1,!1,null,null,null,null,null,null,null,null)
-b0.IA("minavi@alumni.nccu.edu.tw",null,null,a9,null,e,c,d,null,null,null,null,null,null,null,a3+"("+a8+")",null,"https://cloud.culture.tw/frontsite/inquiry/eventInquiryAction.do?method=showEventDetail&uid="+g,a0,null,null,null,null,b,a6,a7,null,null)
-m.push(b0)
-n.t(0,a0)}}q=m
+break}o=B.ap.mP(0,A.jN(A.jL(b4.e)).cw(0,b4.w),null)
+n=A.aV(b3)
+m=t.CB
+l=A.c([],m)
+k=A.J(["2","\u6232\u5287","3","\u821e\u8e48","4","\u89aa\u5b50","6","\u5c55\u89bd","7","\u8b1b\u5ea7","8","\u96fb\u5f71","11","\u7d9c\u85dd","13","\u7af6\u8cfd","17","\u6f14\u5531\u6703","19","\u7814\u7fd2\u8ab2\u7a0b","200","\u95b1\u8b80"],b3,b3)
+for(b3=J.b4(o),j=t.kc,i=b6.a,h=b6.b;b3.p();){g=b3.gN(b3)
+f=J.a4(g)
+e=f.h(g,"endDate")
+if(e==null)continue
+d=A.LK(e)
+c=!0
+if(d!=null){b=d.a
+if(b>=i)c=b===i&&d.b<h}if(c)continue
+c=f.h(g,"startDate")
+a=A.LK(c==null?"":c)
+a0=j.a(f.h(g,"showInfo"))
+if(a0==null)a0=[]
+a1=f.h(g,"title")
+if(a1==null)a1=""
+c=f.h(g,"category")
+if(k.aq(0,c==null?"9999":c)){c=f.h(g,"category")
+a2=k.h(0,c==null?"9999":c)}else a2=null
+a3=A.bQI(g,a0)
+f=A.l(f.h(g,"UID"))
+c=J.a4(a0)
+if(c.ga_(a0))continue
+a4=c.h(a0,0)
+c=J.a4(a4)
+a5=c.h(a4,"locationName")
+if(a5==null)a5=""
+if(!a3)continue
+a6=c.h(a4,"location")
+if(a6==null)a6=""
+if(!n.n(0,a1)){a7=p.ao4(a0,B.cD,a1)
+c=B.cD.jl()
+b=a7[0]
+a8=b.fV$
+a9=a7.length<=1
+b=a9?b.h8$:null
+b0=a6.length
+b1=b0>=3?B.c.V(a6,0,3):a6
+b0=b0>3?B.c.d_(a6,3):""
+a9=a9?A.c([],m):a7
+b2=new A.d5(A.c([],m),B.cD.jl(),null,null,null,null,null,null,"","","","","","","",B.cN,B.en,!1,!1,!1,null,null,null,null,null,null,null,null)
+b2.IA("minavi@alumni.nccu.edu.tw",null,null,b1,null,d,b,c,null,null,null,null,null,null,null,a5+"("+b0+")",null,"https://cloud.culture.tw/frontsite/inquiry/eventInquiryAction.do?method=showEventDetail&uid="+f,a1,null,null,null,null,a,a8,a9,a2,null)
+l.push(b2)
+n.t(0,a1)}}q=l
 s=1
 break
 case 1:return A.o(q,r)}})
