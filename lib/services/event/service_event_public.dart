@@ -131,9 +131,11 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     Map<String, String> typeMap = {
+      "1": "音樂表演",
       "2": "戲劇",
       "3": "舞蹈",
       "4": "親子",
+      "5": "獨立音樂",
       "6": "展覽",
       "7": "講座",
       "8": "電影",
