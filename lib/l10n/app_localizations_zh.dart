@@ -159,7 +159,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get memoryAddError => '要重複新增回憶嗎';
 
   @override
-  String get uploadExcel => '上傳 Excel';
+  String get uploadExcel => '上傳 Csv';
 
   @override
   String get uploadFailed => '❌ 上傳失敗';
