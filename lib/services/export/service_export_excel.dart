@@ -16,6 +16,8 @@ class ServiceExportExcel {
 
     // Excel 標題列
     final headers = [
+      loc.excelColumnHeaderId,
+      loc.excelColumnHeaderMasterUrl,
       loc.excelColumnHeaderActivityName,
       loc.excelColumnHeaderKeywords,
       loc.excelColumnHeaderCity,
@@ -52,6 +54,8 @@ class ServiceExportExcel {
       String indent = constEmpty,
       required AppLocalizations loc}) {
     final row = [
+      _textCell(event.id),
+      _textCell(event.masterGraphUrl ?? constEmpty),
       _textCell('$indent${event.name}'),
       _textCell(event.type),
       _textCell(event.city),

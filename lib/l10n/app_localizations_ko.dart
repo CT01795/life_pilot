@@ -174,6 +174,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notSupportExport => '⚠️ 이 플랫폼은 내보내기를 지원하지 않습니다';
 
   @override
+  String get excelColumnHeaderId => '활동 id_______________________';
+
+  @override
+  String get excelColumnHeaderMasterUrl => '활동 url_______________________';
+
+  @override
   String get excelColumnHeaderActivityName => '활동 이름_______________________';
 
   @override

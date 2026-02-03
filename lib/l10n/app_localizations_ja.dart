@@ -174,6 +174,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notSupportExport => '⚠️ このプラットフォームではエクスポート非対応です';
 
   @override
+  String get excelColumnHeaderId => 'アクティビティ id_______________________';
+
+  @override
+  String get excelColumnHeaderMasterUrl => 'アクティビティ url_______________________';
+
+  @override
   String get excelColumnHeaderActivityName => 'アクティビティ名_______________________';
 
   @override

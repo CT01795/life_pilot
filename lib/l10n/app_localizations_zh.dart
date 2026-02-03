@@ -174,6 +174,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notSupportExport => '⚠️ 此平台尚未支援匯出';
 
   @override
+  String get excelColumnHeaderId => '活動id_______________________';
+
+  @override
+  String get excelColumnHeaderMasterUrl => '活動網址_______________________';
+
+  @override
   String get excelColumnHeaderActivityName => '活動名稱_______________________';
 
   @override
