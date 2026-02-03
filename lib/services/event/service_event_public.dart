@@ -59,8 +59,9 @@ class ServiceEventPublic {
     if (events.isEmpty) return dbNameSet;
 
     final newEvents = events.where((e) {
-      if (dbNameSet.contains(e.name)) return false;
+      if (dbNameSet.contains(e.name) || dbNameSet.contains(e.id)) return false;
       dbNameSet.add(e.name);
+      dbNameSet.add(e.id);
       return true;
     }).toList();
 
@@ -74,15 +75,18 @@ class ServiceEventPublic {
 
   Future<void> fetchAndSaveAllEvents() async {
     //==================================== 取得目前資料庫事件 ====================================
-    Set<String> dbNameSet = (await ServiceEvent().getEvents(
-              tableName: TableNames.recommendedEvents,
-              inputUser: AuthConstants.sysAdminEmail,
-            ) ??
-            [])
-        .map((e) => e.name)
-        .where((name) => name.isNotEmpty)
-        .toSet();
-
+    List<EventItem> historyList = (await ServiceEvent().getEvents(
+          tableName: TableNames.recommendedEvents,
+          inputUser: AuthConstants.sysAdminEmail,
+        ) ??
+        []);
+    Set<String> dbNameSet =
+        historyList.map((e) => e.name).where((name) => name.isNotEmpty).toSet();
+    dbNameSet.addAll(historyList
+        .map((e) => e.id)
+        .where((id) => id.isNotEmpty)
+        .toSet());
+        
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimesUrl ====================================
     final strolltimesUrl =
@@ -158,7 +162,9 @@ class ServiceEventPublic {
       // 2️⃣ 判斷是否「免費」
       final showInfoList = item['showInfo'] as List<dynamic>? ?? [];
       final eventName = item['title'] ?? constEmpty;
-      final category = typeMap.containsKey(item['category'] ?? "9999") ? typeMap[item['category'] ?? "9999"] : null;
+      final category = typeMap.containsKey(item['category'] ?? "9999")
+          ? typeMap[item['category'] ?? "9999"]
+          : null;
       final isFree = EventRule.isFreeEvent(item, showInfoList);
       final eventHref =
           "https://cloud.culture.tw/frontsite/inquiry/eventInquiryAction.do?method=showEventDetail&uid=${item['UID']}";

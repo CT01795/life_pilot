@@ -429,6 +429,18 @@ abstract class AppLocalizations {
   /// **'⚠️ Not support export'**
   String get notSupportExport;
 
+  /// Label for excelColumnHeaderId
+  ///
+  /// In en, this message translates to:
+  /// **'Activity id_______________________'**
+  String get excelColumnHeaderId;
+
+  /// Label for excelColumnHeaderMasterUrl
+  ///
+  /// In en, this message translates to:
+  /// **'Activity url_______________________'**
+  String get excelColumnHeaderMasterUrl;
+
   /// Label for excelColumnHeaderActivityName
   ///
   /// In en, this message translates to:

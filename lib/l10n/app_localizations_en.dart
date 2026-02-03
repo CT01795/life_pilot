@@ -174,6 +174,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notSupportExport => '⚠️ Not support export';
 
   @override
+  String get excelColumnHeaderId => 'Activity id_______________________';
+
+  @override
+  String get excelColumnHeaderMasterUrl => 'Activity url_______________________';
+
+  @override
   String get excelColumnHeaderActivityName => 'Activity name_______________________';
 
   @override
