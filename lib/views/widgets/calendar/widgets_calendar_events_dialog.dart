@@ -56,8 +56,10 @@ Future<bool> showCalendarEventsDialog({
       ),
     );
     if (result != null && result is EventItem) {
-      await controllerCalendar.goToMonth(
-        month: DateUtils.monthOnly(result.startDate!),
+      await handleCrossMonthTap(
+        controllerCalendar: controllerCalendar,
+        tappedDate: result.startDate!,
+        displayedMonth: controllerCalendar.currentMonth,
       );
       return true;
     }
@@ -106,11 +108,11 @@ Future<bool> showCalendarEventsDialog({
                             icon: Icon(Icons.add,
                                 size: IconTheme.of(context).size!),
                             tooltip: loc.add,
-                            onPressed: () {
-                              Navigator.push(
+                            onPressed: () async {
+                              final newEvent = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => PageEventAdd(
+                                    builder: (_) => PageEventAdd(
                                           auth: auth,
                                           serviceEvent: serviceEvent,
                                           controllerEvent: controllerCalendar.controllerEvent,
@@ -119,16 +121,15 @@ Future<bool> showCalendarEventsDialog({
                                               controllerCalendar.tableName,
                                           initialDate: date,
                                         )),
-                              ).then((value) {
-                                if (value != null && value is EventItem) {
-                                  controllerCalendar.goToMonth(
-                                    month:
-                                        DateUtils.monthOnly(value.startDate!),
-                                  );
-                                  Navigator.pop(
-                                      context, true); // ✅ 回傳 true 給外層
-                                }
-                              });
+                              );
+                              if (newEvent != null) {
+                                await handleCrossMonthTap(
+                                  controllerCalendar: controllerCalendar,
+                                  tappedDate: newEvent.startDate!,
+                                  displayedMonth: controllerCalendar.currentMonth,
+                                );
+                                Navigator.pop(context, true); // ✅ 回傳 true 給外層
+                              }
                             },
                           ),
                         ]

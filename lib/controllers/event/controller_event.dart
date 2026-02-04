@@ -54,18 +54,22 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   Future<void> saveEventWithNotification({
-    required EventItem event,
+    EventItem? oldEvent,
+    required EventItem newEvent,
     bool isNew = true,
   }) async {
     await serviceEvent.saveEvent(
         currentAccount: auth.currentAccount ?? constEmpty,
-        event: event,
+        event: newEvent,
         isNew: isNew,
         tableName: tableName);
-
-    await refreshNotification(
-      event: event,
-    );
+    if (tableName != TableNames.calendarEvents) return;
+    if (isNew) {
+      await servicePermission.checkExactAlarmPermission();
+      await controllerNotification.scheduleEventReminders(event: newEvent);
+    } else if (oldEvent != null) {
+      await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
+    }
   }
 
   // ✅ 刪除事件，並更新列表與通知 UI
@@ -98,14 +102,16 @@ class ControllerEvent extends ChangeNotifier {
             tableName != TableNames.memoryTrace);
   }
 
-  Future<void> likeEvent({required EventItem event, required String account}) async {
+  Future<void> likeEvent(
+      {required EventItem event, required String account}) async {
     event.isLike = event.isLike == true ? false : true;
     event.isDislike = event.isLike == true ? false : event.isDislike;
     await serviceEvent.updateLikeEvent(event: event, account: account);
     await loadEvents();
   }
 
-  Future<void> dislikeEvent({required EventItem event, required String account}) async {
+  Future<void> dislikeEvent(
+      {required EventItem event, required String account}) async {
     event.isDislike = event.isDislike == true ? false : true;
     event.isLike = event.isDislike == true ? false : event.isLike;
     await serviceEvent.updateLikeEvent(event: event, account: account);
@@ -130,21 +136,25 @@ class ControllerEvent extends ChangeNotifier {
   // 🔔 通知管理
   // ---------------------------------------------------------------------------
   Future<void> refreshNotification({
-    required EventItem event,
+    EventItem? oldEvent,
+    required EventItem newEvent,
   }) async {
     if (tableName != TableNames.calendarEvents) return;
-    await controllerNotification.cancelEventReminders(
-        eventId: event.id, reminderOptions: event.reminderOptions);
+    if (oldEvent != null) {
+      await controllerNotification.cancelEventReminders(
+          eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
+    }
     await servicePermission.checkExactAlarmPermission();
-    await controllerNotification.scheduleEventReminders(event: event);
+    await controllerNotification.scheduleEventReminders(event: newEvent);
   }
 
   Future<bool> updateAlarmSettings({
-    required EventItem event,
+    required EventItem oldEvent,
+    required EventItem newEvent,
   }) async {
     // Show dialog 交由 View 呼叫，這裡只處理邏輯
     // 例如取消舊通知、重新安排通知
-    await refreshNotification(event: event);
+    await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
     notifyListeners();
     return true;
   }
@@ -203,20 +213,15 @@ class ControllerEvent extends ChangeNotifier {
       fromTableName: tableName,
       toTableName: toTableName,
     );
-    if (targetEvent != null) {
+    if (targetEvent != null && toTableName == TableNames.calendarEvents) {
       await refreshNotification(
-        event: event,
+        newEvent: event,
       );
-      modelEventCalendar.toggleEventSelection(event.id, true);
-
-      if (toTableName == TableNames.calendarEvents) {
-        await controllerCalendar.loadCalendarEvents(
+      await controllerCalendar.loadCalendarEvents(
             month: event.startDate!, notify: false);
         controllerCalendar.goToMonth(month: DateTime.now(), notify: false);
-      }
-    } else {
-      modelEventCalendar.toggleEventSelection(event.id, false);
     }
+    modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
     notifyListeners();
   }
 
@@ -425,12 +430,3 @@ class EventViewModel {
       this.isLike,
       this.isDislike});
 }
-
-/*優化後的效益
-改進項	效果
-✅ refreshNotification 集中通知邏輯	避免重複取消與重新排程的程式
-✅ Future.wait 在刪除事件時並行執行	節省 I/O 時間約 30–40%
-✅ 移除重複 notifyListeners() 呼叫	減少 UI rebuild 負擔
-✅ 方法結構化分段	讓 IDE outline 清晰易讀
-✅ Null 安全強化	防止多層呼叫中 null 崩潰
-✅ 移除多餘參數傳遞	僅保留實際需要的依賴*/

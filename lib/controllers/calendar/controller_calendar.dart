@@ -187,9 +187,6 @@ class ControllerCalendar extends ChangeNotifier {
         tableName: tableName,
       ));
 
-      controllerEvent.refreshNotification(
-        event: event,
-      );
       dirtyMonths
         ..add(event.startDate!.toMonthKey())
         ..add(nextStart.toMonthKey());
@@ -345,11 +342,3 @@ class ControllerCalendar extends ChangeNotifier {
 
   void clearAll() => modelEventCalendar.clearAll();
 }
-
-/*改進重點總結
-批量 Future.wait 處理重複事件生成與儲存。
-_reloadEvents + loadCalendarEvents 統一，notify 可選。
-Async listener 用 unawaited 避免 Flutter 警告。
-showTodayNotifications 改成非阻塞多事件顯示。
-goToMonth 與 addEvent 支援可選不刷新 UI。
-快取清理僅針對受影響月份。*/

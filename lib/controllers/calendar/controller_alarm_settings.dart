@@ -30,7 +30,8 @@ class ControllerAlarmSettings {
       );
 
       await controllerCalendar.controllerEvent.saveEventWithNotification(
-        event: updatedEvent,
+        oldEvent: event,
+        newEvent: updatedEvent,
         isNew: false,
       );
 

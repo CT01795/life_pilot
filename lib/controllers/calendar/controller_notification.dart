@@ -40,7 +40,3 @@ class ControllerNotification {
         events: newEvents, close: closeText) : [];
   }
 }
-
-/*批量處理：scheduleMultipleReminders 可同時排多個提醒。
-簡化 async/await：initialize 不多餘的 await。
-統一單一事件排程，方便批量方法呼叫。*/
