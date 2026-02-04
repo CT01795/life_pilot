@@ -30,11 +30,13 @@ class _PageCalendarState extends State<PageCalendar> {
     super.didChangeDependencies();
     if (_isInitialized) return; // 避免重複初始化
     controller = context.read<ControllerCalendar>();
-    controller.init().then((_) async {
-      await controller.showTodayNotifications();
-    });
     pageController = PageController(initialPage: controller.pageIndex);
     _isInitialized = true;
+    // ⚡ async load，不阻塞 build
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.init();
+      await controller.showTodayNotifications();
+    });
   }
 
   @override

@@ -82,10 +82,11 @@ class _PageEventAddState extends State<PageEventAdd> {
     try {
       if (!(_formKey.currentState?.validate() ?? false)) return;
       FocusScope.of(context).unfocus();
-
+      
       final event = controllerAdd.toEventItem();
       await widget.controllerEvent.saveEventWithNotification(
-        event: event,
+        oldEvent: widget.existingEvent == null ? event : widget.existingEvent!,
+        newEvent: event,
         isNew: widget.existingEvent == null,
       );
 

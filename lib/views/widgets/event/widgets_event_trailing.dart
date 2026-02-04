@@ -95,7 +95,7 @@ Widget widgetsEventTrailing({
                   context, auth, controllerCalendar, serviceEvent, event, loc);
               if (updated) {
                 await controllerEvent.updateAlarmSettings(
-                    event: event); // ✅ 先更新資料
+                    oldEvent: event, newEvent: event); // ✅ 先更新資料
                 await controllerCalendar.loadCalendarEvents(
                     month: event.startDate!,
                     notify:
