@@ -143,11 +143,3 @@ class ControllerAuth extends ChangeNotifier {
   void goBackToLogin({String? email, String? password}) =>
       goToPage(AuthPage.login, email: email, password: password);
 }
-
-/*改進重點
-✅ Getter 封裝狀態變數	_isLoading → isLoading	防止外部直接修改內部狀態，提高封裝性
-✅ 集中更新方法 _update()	避免多重 notifyListeners()	每個流程只重繪一次，提高效能與穩定性
-✅ 抽出 _authenticate() 共用流程	登入、註冊、匿名登入共用 try/catch 結構	
-✅ 明確狀態流轉順序	登入→更新帳號→載入資料→通知 UI，消除閃爍與 race condition	
-✅ 使用 logger.e() 而非 logger.d()	區分開除錯與錯誤輸出層級	
-✅ 所有更新皆在 _update() 包裹	易於日後整合 batch 更新或 debounced rebuild*/

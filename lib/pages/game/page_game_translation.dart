@@ -138,10 +138,6 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                           // ⭐ 改成自訂 CheckBox 風格的 Radio
                           GestureDetector(
                             onTap: () => onAnswer(opt),
-                            /*() {
-                              controller.answer(opt);
-                              setState(() {});
-                            },*/
                             child: Container(
                               width: 60,
                               height: 60,

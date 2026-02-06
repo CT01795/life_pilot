@@ -163,18 +163,17 @@ class _ExpandableQuestionTile extends StatefulWidget {
 
 class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
   bool _expanded = false;
-  String? _previewTextCache;
-
-  String get previewText {
-    if (_previewTextCache != null) return _previewTextCache!;
-    if (widget.question.answer.isEmpty) return '（尚未填寫）';
-    _previewTextCache = _shortenHtml(widget.question.answer, 50);
-    return _previewTextCache!;
+  
+  String _shortenHtml(String html, int maxLength) {
+    final text = html.replaceAll(RegExp(r'<[^>]*>', multiLine: true), '');
+    if (text.length <= maxLength) return text;
+    return '${text.substring(0, maxLength)}...';
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.read<ControllerBusinessPlan>();
+    final notifier = c.answerNotifier(widget.sectionIndex, widget.questionIndex);
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -184,7 +183,7 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          if (c.planAnswerAt(widget.sectionIndex, widget.questionIndex).isEmpty) {
+          if (notifier.value.isEmpty) {
             // 空答案就直接進編輯頁
             c.jumpToQuestion(
               sectionIndex: widget.sectionIndex,
@@ -214,46 +213,18 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Selector<ControllerBusinessPlan, String>(
-            selector: (_, c) =>
-                c.planAnswerAt(widget.sectionIndex, widget.questionIndex),
+          child: ValueListenableBuilder<String>(
+            valueListenable: notifier,
             builder: (_, answer, __) {
               final previewText = answer.isEmpty
                   ? '（尚未填寫）'
                   : _shortenHtml(answer, 50);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _expanded
-                      ? Html(data: answer)
-                      : Text(
-                          previewText,
-                          style: answer.isEmpty
-                              ? TextStyle(color: Colors.grey.shade600)
-                              : null,
-                        ),
-                  if (!_expanded && answer.isNotEmpty)
-                    Padding(
-                      padding: Insets.directionalT6,
-                      child: Text(
-                        '點擊展開全文或長按編輯',
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                      ),
-                    ),
-                ],
-              );
+              return _expanded ? Html(data: answer) : Text(previewText);
             },
           ),
         ),
       ),
     );
-  }
-
-  String _shortenHtml(String html, int maxLength) {
-    final text = html.replaceAll(RegExp(r'<[^>]*>', multiLine: true), '');
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
   }
 }
 

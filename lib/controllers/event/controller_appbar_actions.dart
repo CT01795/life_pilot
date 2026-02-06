@@ -160,9 +160,3 @@ class ControllerAppBarActions extends ChangeNotifier {
     super.dispose();
   }
 }
-
-/*🚀 優化重點總結
-✅ Debounce 通知	使用 _notifyDebounced() 減少 UI rebuild（例如快速切換搜尋面板）
-✅ 狀態管理	加入 _isLoading、_isExporting 兩個旗標，可讓 UI 顯示「載入中」或「匯出中」
-✅ 例外處理更完整	捕捉 stackTrace 並記錄在 logger
-✅ 程式結構清晰	_setLoading() / _setExporting() 統一管理狀態更新*/

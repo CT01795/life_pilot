@@ -81,7 +81,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   void updateLocalization(AppLocalizations loc) {
-    closeText = loc.close; // 這裡的 loc.close 對應你的翻譯字串
+    closeText = loc.close;
     notifyListeners();
   }
 
@@ -98,7 +98,7 @@ class ControllerCalendar extends ChangeNotifier {
   // 核心事件載入與刷新
   // ------------------------
   Future<void> _reloadEvents({bool notify = true, DateTime? month}) async {
-    final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now()
+    final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now
     await modelEventCalendar.loadEventsFromService(
       serviceEvent: serviceEvent,
       month: targetMonth,
@@ -234,7 +234,6 @@ class ControllerCalendar extends ChangeNotifier {
           event.details,
           payload: event.payload,
         );
-        //await Future.delayed(const Duration(seconds: 1));
       }
     }
   }

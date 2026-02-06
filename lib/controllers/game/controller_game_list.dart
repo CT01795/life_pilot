@@ -40,9 +40,6 @@ class ControllerGameList extends ChangeNotifier {
   Future<List<ModelGameUser>> loadUserProgress(String gameType, String gameName) async {
     // 組 key
     final key = '$gameType|$gameName';
-    /*if (_userProgressCache.containsKey(key)) {
-      return _userProgressCache[key]!;
-    }*/
 
     isLoading = true;
     notifyListeners();

@@ -10,7 +10,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
   String? mainCurrency;
-  String _currentType = 'points'; // 預設值（不重要）
+  String _currentType = 'points'; // 預設值
 
   String get currentType => _currentType;
 
@@ -96,7 +96,6 @@ class ControllerAccountingAccount extends ChangeNotifier {
 
   Future<void> deleteAccount(String accountId) async {
     await service.deleteAccount(accountId: accountId, currentType: currentType);
-    //accounts.removeWhere((a) => a.id == accountId);
     await loadAccounts(force: true);
   }
 

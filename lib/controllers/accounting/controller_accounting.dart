@@ -106,17 +106,6 @@ class ControllerAccounting extends ChangeNotifier {
       newCurrency: newCurrency,
       newDescription: newDescription,
     );
-
-    // 更新本地 todayRecords
-    /*final index = todayRecords.indexWhere((r) => r.id == recordId);
-    if (index != -1) {
-      todayRecords[index] = todayRecords[index].copyWith(
-        value: newValue,
-        currency: newCurrency,
-        description: newDescription,
-      );
-      notifyListeners();
-    }*/
   }
 }
 

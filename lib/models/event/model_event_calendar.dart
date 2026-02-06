@@ -295,13 +295,3 @@ extension DateTimeExtension on DateTime {
   String toMonthKey() =>
       '$year-${month.toString().padLeft(2, CalendarMisc.zero)}';
 }
-
-/*這版優化點：
-_disposed 檢查
-每個 async 方法都會先檢查 isDisposed，避免 EngineFlutterView disposed 錯誤。
-
-Logger 安全化
-dispose 後不再 log。
-
-weeksCache 使用不變
-每個月的 week 結構只生成一次，避免重複計算。*/

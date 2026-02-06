@@ -73,9 +73,3 @@ class Locales {
 
   static const defaultLocale = Locale(zh);
 }
-
-/*改進重點說明
-✅ 使用 @immutable + 私有建構子	const AppConfig._()	保證類別不可被 new，也更語義化（只作為常數容器）
-✅ 分層清楚	AppConfig / SupabaseConfig / CalendarConfig / Locales	模組化結構，減少耦合、提高可維護性
-✅ 明確命名常數	defaultTimeZone、defaultLocale	可讀性更高，避免 magic string
-✅ 移除不必要 runtime 初始化	全部為 const	Flutter 編譯器可進行 compile-time 常量內聯，效能最佳化*/
