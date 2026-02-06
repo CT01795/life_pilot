@@ -120,12 +120,19 @@ class ServiceBusinessPlan {
   }
 
   // 取得 Plan + Section + Question（帶答案）
-  Future<List<ModelPlanSection>> fetchSectionsWithQuestions(String planId) async {
-    final sectionsRes = await supabase
+  Future<List<ModelPlanSection>> fetchSectionsWithQuestions(String planId,
+      {int? limit}) async {
+    final query = supabase
         .from('business_plan_section')
         .select('*')
         .eq('plan_id', planId)
         .order('sort_order', ascending: true);
+    PostgrestList sectionsRes;
+    if (limit != null) {
+      sectionsRes = await query.range(0, limit - 1);
+    } else {
+      sectionsRes = await query;
+    }
 
     List<ModelPlanSection> sections = [];
 
@@ -164,15 +171,14 @@ class ServiceBusinessPlan {
 
     return sections;
   }
-  
+
   Future<void> updatePlanTitle({
     required String planId,
     required String title,
   }) async {
     await supabase
         .from('business_plan')
-        .update({'title': title})
-        .eq('id', planId);
+        .update({'title': title}).eq('id', planId);
   }
 
   Future<void> upsertAnswer({
@@ -181,7 +187,7 @@ class ServiceBusinessPlan {
     required String questionId,
     required String answer,
   }) async {
-    try{
+    try {
       // 插入新的
       await supabase.from('business_plan_answer').insert({
         'id': const Uuid().v4(),
@@ -191,27 +197,25 @@ class ServiceBusinessPlan {
         'answer': answer,
         'updated_at': DateTime.now().toIso8601String(),
       });
-    }
-    on Exception{
-        await supabase
-      .from('business_plan_answer')
-      .update({
-        'answer': answer,
-        'updated_at': DateTime.now().toIso8601String(),
-      })
-      .eq('plan_id', planId)
-      .eq('section_id', sectionId)
-      .eq('question_id', questionId);
-      
+    } on Exception {
+      await supabase
+          .from('business_plan_answer')
+          .update({
+            'answer': answer,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('plan_id', planId)
+          .eq('section_id', sectionId)
+          .eq('question_id', questionId);
     }
   }
 
   Future<List<ModelBusinessPlan>> fetchPlans({required String user}) async {
     final res = await supabase
-      .from('business_plan')
-      .select()
-      .eq('created_by', user)
-      .order('created_at', ascending: false);
+        .from('business_plan')
+        .select()
+        .eq('created_by', user)
+        .order('created_at', ascending: false);
 
     if (res.isEmpty) return [];
 

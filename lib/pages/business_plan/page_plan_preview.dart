@@ -57,7 +57,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
         counter++;
       }
     }
-    throw Exception('Index out of range');
+    return PlanSectionItem('Loading...'); // fallback
   }
 
   @override
