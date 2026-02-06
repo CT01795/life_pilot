@@ -169,10 +169,20 @@ class ControllerBusinessPlan extends ChangeNotifier {
       currentPlan = summary.copyWith(sections: []);
       notifyListeners(); // 👉 UI 立刻顯示 Loading sections...
 
-      final sections = await service.fetchSectionsWithQuestions(planId);
-      currentPlan = currentPlan!.copyWith(sections: sections);
-      // 5️⃣ 全部完成後存 cache
-      _planCache[planId] = currentPlan!;
+      // 2️⃣ 先抓第一個 section
+      final firstSections =
+          await service.fetchSectionsWithQuestions(planId, limit: 1);
+      currentPlan = currentPlan!.copyWith(sections: firstSections);
+      notifyListeners();
+
+      // 3️⃣ 背景抓剩下的 sections
+      await service.fetchSectionsWithQuestions(planId, limit: null)
+        .then((restSections) {
+        final allSections = [...restSections];
+        currentPlan = currentPlan!.copyWith(sections: allSections);
+        _planCache[planId] = currentPlan!;
+        notifyListeners();
+      });
       sectionIndex = 0;
       questionIndex = 0;
     } catch (e, stack) {
@@ -202,7 +212,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     );
 
     // 2️⃣ 拉剛建立的 sections（帶題目）
-    final sections = await service.fetchSectionsWithQuestions(planId);
+    final sections = await service.fetchSectionsWithQuestions(planId, limit: null);
 
     currentPlan = ModelBusinessPlan(
       id: planId, // 使用剛建立的 planId
