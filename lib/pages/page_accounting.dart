@@ -18,26 +18,15 @@ class PageAccounting extends StatefulWidget {
 }
 
 class _PageAccountingState extends State<PageAccounting> {
-  late final ControllerAccountingAccount controller;
-  bool _isInitialized = false;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_isInitialized) return; // 避免重複初始化
-    controller = context.read<ControllerAccountingAccount>();
+    final controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await controller.setCurrentType('balance');
       await controller.askMainCurrency(context);
     });
-
-    _isInitialized = true;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -157,7 +146,7 @@ class _AccountCard extends StatelessWidget {
                 ),
               );
               if (needReload == true) {
-                await context.read<ControllerAccountingAccount>().loadAccounts();
+                await context.read<ControllerAccountingAccount>().loadAccounts(force: true);
               }
             },
             child: Padding(

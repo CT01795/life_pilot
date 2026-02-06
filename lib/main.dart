@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
 import 'package:life_pilot/config/config_app.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
@@ -19,6 +18,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/auth/model_auth_view.dart';
 import 'package:life_pilot/pages/page_point_record_detail.dart';
 import 'package:life_pilot/services/event/service_event.dart';
+import 'package:life_pilot/services/event/service_speech.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_accounting.dart';
@@ -87,8 +87,8 @@ void main() async {
         Provider<ServiceAccounting>(
           create: (_) => ServiceAccounting(Dio()),
         ),
-        Provider<ControllerAccountingSpeech>(
-          create: (_) => ControllerAccountingSpeech(),
+        Provider<ServiceSpeech>(
+          create: (_) => ServiceSpeech(),
         ),
         Provider<TtsService>(
           create: (_) => TtsService(),

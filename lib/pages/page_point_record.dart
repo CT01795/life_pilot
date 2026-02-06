@@ -18,24 +18,14 @@ class PagePointRecord extends StatefulWidget {
 }
 
 class _PagePointRecordState extends State<PagePointRecord> {
-  late final ControllerAccountingAccount controller;
-  bool _isInitialized = false;
-
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isInitialized) return; // 避免重複初始化
-    controller = context.read<ControllerAccountingAccount>();
-    // 延後到 build 完成再呼叫
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await controller.setCurrentType('points');
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<ControllerAccountingAccount>()
+          .setCurrentType('points');
     });
-    _isInitialized = true;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override

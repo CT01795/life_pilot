@@ -8,10 +8,11 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/services/event/service_speech.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
-class PageAccountingDetail extends StatefulWidget {
+class PageAccountingDetail extends StatelessWidget {
   final String accountId;
   final String accountName;
   final ServiceAccounting service;
@@ -22,37 +23,43 @@ class PageAccountingDetail extends StatefulWidget {
     required this.accountId,
     required this.accountName,
   });
-
+  
   @override
-  State<PageAccountingDetail> createState() => _PageAccountingDetailState();
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ControllerAccounting(
+            service: service,
+            auth: context.read<ControllerAuth>(),
+            accountId: accountId,
+            accountController: context.read<ControllerAccountingAccount>(),
+          )..loadToday(),
+        ),
+        Provider<ControllerAccountingSpeech>(
+          create: (_) => ControllerAccountingSpeech(),
+        ),
+      ],
+      child: _PageAccountingDetailView(),
+    );
+  }
 }
 
-class _PageAccountingDetailState extends State<PageAccountingDetail> {
-  late final TextEditingController _speechTextController;
-  late ControllerAccounting _controller;
-  final numberFormatter = NumberFormat('#,###');
-  late ModelAccountingAccount account;
+class _PageAccountingDetailView extends StatefulWidget {
+  const _PageAccountingDetailView();
 
   @override
-  void initState() {
-    super.initState();
-    final accountController = context.read<ControllerAccountingAccount>();
-    _speechTextController = TextEditingController();
-    _controller = ControllerAccounting(
-      service: widget.service,
-      auth: context.read<ControllerAuth>(),
-      accountId: widget.accountId,
-      accountController: accountController,
-    );
+  State<_PageAccountingDetailView> createState() =>
+      _PageAccountingDetailViewState();
+}
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadToday();
-      account = accountController.getAccountById(widget.accountId);
-    });
-  }
+class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
+  final TextEditingController _speechTextController = TextEditingController();
+  final numberFormatter = NumberFormat('#,###');
 
   @override
   void dispose() {
+    context.read<ServiceSpeech>().stopListening();
     _speechTextController.dispose();
     super.dispose();
   }
@@ -128,34 +135,30 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _controller,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context, true); // 返回上一頁並通知需要刷新
-            },
-          ),
-          title: Text(widget.accountName),
-          backgroundColor: Colors.blueAccent, // 可自定義顏色
-          elevation: 2,
-        ),
-        body: Consumer2<ControllerAccounting, ControllerAccountingAccount>(
-          builder: (context, pointsController, accountController, _) {
-            account = accountController.getAccountById(widget.accountId);
-            return Column(
-              children: [
-                Gaps.h8,
-                _buildSummary(account, pointsController),
-                _buildMicButton(context, pointsController),
-                const Divider(),
-                _buildTodayList(pointsController),
-              ],
-            );
+    final controller = context.watch<ControllerAccounting>();
+    final account = context
+        .watch<ControllerAccountingAccount>()
+        .getAccountById(controller.accountId);
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
+        title: Text(account.accountName),
+        backgroundColor: Colors.blueAccent, // 可自定義顏色
+        elevation: 2,
+      ),
+      body: Column(
+        children: [
+          Gaps.h8,
+          _buildSummary(account, controller),
+          _buildMicButton(context, controller),
+          const Divider(),
+          _buildTodayList(controller),
+        ],
       ),
     );
   }
@@ -260,15 +263,15 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
                 ),
               );
               if (updated != null) {
-                await _controller.updateAccountingDetail(
+                await controller.updateAccountingDetail(
                   recordId: updated.id,
                   newValue: updated.value,
                   newCurrency: updated.currency,
                   newDescription: updated.description,
                 );
-                await _controller.loadToday();
-                await context.read<ControllerAccountingAccount>().loadAccounts();
-                setState(() {});
+                await controller.loadToday();
+                await context.read<ControllerAccountingAccount>().loadAccounts(force: true);
+                //setState(() {});
               }
             },
           );
@@ -287,14 +290,14 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
           FloatingActionButton(
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
-              final speechController =
-                  context.read<ControllerAccountingSpeech>();
-              final text = await speechController.recordAndTranscribe();
-              if (text.isNotEmpty) {
-                setState(() {
-                  _speechTextController.text = text;
-                });
-              }
+              final speech = context.read<ServiceSpeech>();
+              if (speech.isListening) return; 
+              await speech.startListening(
+                onResult: (text) {
+                  if (!mounted) return;
+                  _speechTextController.text = text; // ✅ 不需要 setState
+                },
+              );
             },
           ),
           Gaps.w8,
@@ -323,7 +326,7 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
 
               await controller.commitRecords(
                   previews, controller.account.currency);
-              await context.read<ControllerAccountingAccount>().loadAccounts();
+              await context.read<ControllerAccountingAccount>().loadAccounts(force: true);
 
               final summary = previews.map((p) {
                 final v = p.value;
@@ -333,9 +336,7 @@ class _PageAccountingDetailState extends State<PageAccountingDetail> {
               await tts.speak('${previews.length} records created, $summary');
 
               // 清空輸入框
-              setState(() {
-                _speechTextController.clear();
-              });
+              _speechTextController.clear();
             },
             child: const Text('Submit'),
           ),
@@ -422,6 +423,7 @@ class TtsService {
   final FlutterTts _tts = FlutterTts();
 
   Future<void> speak(String text) async {
+    await _tts.stop();
     await _tts.setLanguage('zh-TW');
     await _tts.setSpeechRate(0.45);
     await _tts.speak(text);
