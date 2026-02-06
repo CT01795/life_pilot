@@ -183,10 +183,3 @@ class ReminderMapper {
   static Duration getDuration({required ReminderOption reminderOption}) =>
       _durationMap[reminderOption]!;
 }
-
-/*🚀 優化成果總覽
-可讀性	多層 switch、重複字串	統一封裝 + switch 表達式簡潔
-效能	多次字串比對（contains / split）	預先 lowercase、Map 查找 O(1)
-維護性	多處重複 key 定義	集中定義於 enum extension
-錯誤處理	無 fallback	firstWhere(orElse) 提供安全回傳
-結構	分散職責	完整分層：RepeatRule / Holiday / Reminder*/

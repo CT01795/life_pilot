@@ -504,10 +504,3 @@ class ControllerPageEventAdd extends ChangeNotifier {
     super.dispose();
   }
 }
-
-/*🚀 優化亮點
-✅ 效能優化	使用 _notifyDebounced()，輸入中不會連續 rebuild
-✅ 語音控制整合	startListening() / stopListening() / speakText() 集中管理
-✅ 結構清晰	主事件與子事件欄位更新各自封裝
-✅ 控制器集中管理	所有欄位共用一個 controllerMap
-✅ 無需額外檔案	所有邏輯保持在同一個檔案中，方便維護*/

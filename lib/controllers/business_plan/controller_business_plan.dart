@@ -19,11 +19,35 @@ class ControllerBusinessPlan extends ChangeNotifier {
   });
 
   String? currentPlanId;
+  ModelBusinessPlan? currentPlan;
+  List<ModelBusinessPlan> plans = [];
+  List<ModelPlanTemplate> templates = [];
 
+  int sectionIndex = 0;
+  int questionIndex = 0;
+
+  bool isPlansLoading = false; // 列表用
+  bool isCurrentPlanLoading = false; // Preview / Editor 用
+  bool isTemplateLoading = false;
+
+  String? _loadingPlanId;
+
+  // 單個 question 的 ValueNotifier
+  final Map<String, ValueNotifier<String>> _answerNotifiers = {};
+
+  // -------------------------
+  // Public Methods
+  // -------------------------
   void setCurrentPlanSummary(ModelBusinessPlan plan) {
     currentPlan = plan; // 只有 id / title
     currentPlanId = plan.id;
     // ❌ 不 notify（避免 preview 先 rebuild）
+  }
+
+  ValueNotifier<String> answerNotifier(int section, int question) {
+    final key = '$section-$question';
+    return _answerNotifiers.putIfAbsent(
+        key, () => ValueNotifier(planAnswerAt(section, question)));
   }
 
   // 取得指定 question 的 answer
@@ -33,18 +57,66 @@ class ControllerBusinessPlan extends ChangeNotifier {
         '';
   }
 
-  List<ModelBusinessPlan> plans = [];
-  ModelBusinessPlan? currentPlan;
+  ModelPlanQuestion get currentQuestion =>
+      currentPlan!.sections[sectionIndex].questions[questionIndex];
 
-  int sectionIndex = 0;
-  int questionIndex = 0;
+  int get totalQuestions => currentPlan!.sections.fold(0, (sum, s) => sum + s.questions.length,);
 
-  bool isPlansLoading = false; // 列表用
-  bool isCurrentPlanLoading = false; // Preview / Editor 用
+  int get currentQuestionNumber {
+    int count = 0;
+    for (int s = 0; s < sectionIndex; s++) {
+      count += currentPlan!.sections[s].questions.length;
+    }
+    return count + questionIndex + 1;
+  }
 
-  List<ModelPlanTemplate> templates = [];
-  bool isTemplateLoading = false;
+  double get progress => totalQuestions == 0 ? 0 : currentQuestionNumber / totalQuestions;
 
+  // -------------------------
+  // Navigation
+  // -------------------------
+  bool next() {
+    if (questionIndex <
+        currentPlan!.sections[sectionIndex].questions.length - 1) {
+      questionIndex++;
+      return true;
+    }
+
+    if (sectionIndex < currentPlan!.sections.length - 1) {
+      sectionIndex++;
+      questionIndex = 0;
+      return true;
+    }
+
+    return false;
+  }
+
+  bool previous() {
+    if (questionIndex > 0) {
+      questionIndex--;
+      return true;
+    }
+
+    if (sectionIndex > 0) {
+      sectionIndex--;
+      questionIndex = currentPlan!.sections[sectionIndex].questions.length - 1;
+      return true;
+    }
+
+    return false;
+  }
+
+  void jumpToQuestion({
+    required int sectionIndex,
+    required int questionIndex,
+  }) {
+    this.sectionIndex = sectionIndex;
+    this.questionIndex = questionIndex;
+  }
+
+  // -------------------------
+  // Load Data
+  // -------------------------
   Future<void> loadTemplates() async {
     isTemplateLoading = true;
     notifyListeners();
@@ -53,6 +125,65 @@ class ControllerBusinessPlan extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadPlans() async {
+    isPlansLoading = true;
+    notifyListeners();
+    try {
+      plans = await service.fetchPlans(
+          user: auth?.currentAccount ?? AuthConstants.guest);
+    } catch (e, stack) {
+      debugPrint('loadPlans error: $e');
+      debugPrintStack(stackTrace: stack);
+    } finally {
+      isPlansLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadPlanDetailIfNeeded(String planId) async {
+    if (isCurrentPlanLoading && _loadingPlanId == planId) return; // 🔒 關鍵
+    // 先從 cache 讀
+    if (_planCache.containsKey(planId)) {
+      // 如果 currentPlan 不是同一個 plan 或 sections 是空的，才 assign
+      if (currentPlan?.id != planId || currentPlan!.sections.isEmpty) {
+        currentPlan = _planCache[planId];
+        sectionIndex = 0;
+        questionIndex = 0;
+        notifyListeners();
+      }
+      return; // 不再抓 API
+    }
+
+    _loadingPlanId = planId;
+    isCurrentPlanLoading = true;
+    notifyListeners();
+    try {
+      // 2️⃣ 先建立「只有 id / title，sections 空」
+      final summary = currentPlan;
+      if (summary == null) return;
+
+      currentPlan = summary.copyWith(sections: []);
+      notifyListeners(); // 👉 UI 立刻顯示 Loading sections...
+
+      final sections = await service.fetchSectionsWithQuestions(planId);
+      currentPlan = currentPlan!.copyWith(sections: sections);
+      // 5️⃣ 全部完成後存 cache
+      _planCache[planId] = currentPlan!;
+      sectionIndex = 0;
+      questionIndex = 0;
+    } catch (e, stack) {
+      debugPrint('loadPlanDetailIfNeeded error: $e');
+      debugPrintStack(stackTrace: stack);
+    } finally {
+      _loadingPlanId = null;
+      isCurrentPlanLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // -------------------------
+  // Create & Update
+  // -------------------------
   Future<void> createPlanFromTemplate({
     required String title,
     required String templateId,
@@ -81,46 +212,13 @@ class ControllerBusinessPlan extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updatePlanTitleByIndex(int index, String newTitle) {
-    if (index < 0 || index >= plans.length) return;
-    final oldPlan = plans[index];
-    final updatedPlan = oldPlan.copyWith(title: newTitle);
-    plans[index] = updatedPlan;
-
-    // 如果正在編輯的 currentPlan 是同一個，順便更新
-    if (currentPlan?.id == oldPlan.id) {
-      currentPlan = currentPlan!.copyWith(
-        title: newTitle,
-        sections: currentPlan!.sections.isNotEmpty
-            ? currentPlan!.sections
-            : _planCache[oldPlan.id]?.sections ?? [], // 保留已經 load 的 sections
-      );
-      _planCache[oldPlan.id] = currentPlan!;
-    }
-
-    notifyListeners();
-
-    // 存到 DB
-    service
-        .updatePlanTitle(planId: oldPlan.id, title: newTitle)
-        .catchError((_) {
-      // 回滾
-      plans[index] = oldPlan;
-      if (currentPlan?.id == oldPlan.id) currentPlan = oldPlan;
-      _planCache[oldPlan.id] = oldPlan;
-      notifyListeners();
-    });
-  }
-
   Future<void> updateCurrentPlanTitle(String newTitle) async {
     if (currentPlan == null) return;
 
     final oldPlan = currentPlan!;
     currentPlan = oldPlan.copyWith(
       title: newTitle,
-      sections: currentPlan?.sections.isNotEmpty == true
-          ? currentPlan!.sections
-          : _planCache[oldPlan.id]?.sections ?? [],
+      sections: oldPlan.sections
     );
 
     final index = plans.indexWhere((p) => p.id == oldPlan.id);
@@ -151,10 +249,12 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
   Future<void> commitCurrentAnswer(String answer) async {
     final section = currentPlan!.sections[sectionIndex];
-    final questions = [...section.questions];
+    final question = section.questions[questionIndex];
 
-    // 保存舊資料，用於回滾
-    final oldAnswer = questions[questionIndex].answer;
+    final notifier = answerNotifier(sectionIndex, questionIndex);
+    notifier.value = answer;
+
+    final questions = [...section.questions];
 
     questions[questionIndex] =
         questions[questionIndex].copyWith(answer: answer);
@@ -165,10 +265,8 @@ class ControllerBusinessPlan extends ChangeNotifier {
     currentPlan = currentPlan!.copyWith(
       sections: newSections,
     );
+    _planCache[currentPlan!.id] = currentPlan!;
 
-    notifyListeners(); // UI 立即更新
-
-    final question = questions[questionIndex];
     try {
       await service.upsertAnswer(
         planId: currentPlan!.id,
@@ -176,140 +274,16 @@ class ControllerBusinessPlan extends ChangeNotifier {
         questionId: question.id,
         answer: answer,
       );
-
-      // 同步 cache
-      _planCache[currentPlan!.id] = currentPlan!;
     } catch (e, stack) {
       debugPrint('commitCurrentAnswer error: $e');
       debugPrintStack(stackTrace: stack);
 
       // 回滾到舊資料
       questions[questionIndex] =
-          questions[questionIndex].copyWith(answer: oldAnswer);
+          questions[questionIndex].copyWith(answer: question.answer);
       newSections[sectionIndex] = section.copyWith(questions: questions);
       currentPlan = currentPlan!.copyWith(sections: newSections);
-      notifyListeners();
-    }
-  }
-
-  Future<void> loadPlans() async {
-    isPlansLoading = true;
-    notifyListeners();
-    try {
-      plans = await service.fetchPlans(
-          user: auth?.currentAccount ?? AuthConstants.guest);
-    } catch (e, stack) {
-      debugPrint('loadPlans error: $e');
-      debugPrintStack(stackTrace: stack);
-    } finally {
-      isPlansLoading = false;
-      notifyListeners(); // 🔥 關鍵
-    }
-  }
-
-  ModelPlanQuestion get currentQuestion =>
-      currentPlan!.sections[sectionIndex].questions[questionIndex];
-
-  bool next() {
-    if (questionIndex <
-        currentPlan!.sections[sectionIndex].questions.length - 1) {
-      questionIndex++;
-      notifyListeners();
-      return true;
-    }
-
-    if (sectionIndex < currentPlan!.sections.length - 1) {
-      sectionIndex++;
-      questionIndex = 0;
-      notifyListeners();
-      return true;
-    }
-
-    return false;
-  }
-
-  bool previous() {
-    if (questionIndex > 0) {
-      questionIndex--;
-      notifyListeners();
-      return true;
-    }
-
-    if (sectionIndex > 0) {
-      sectionIndex--;
-      questionIndex = currentPlan!.sections[sectionIndex].questions.length - 1;
-      notifyListeners();
-      return true;
-    }
-
-    return false;
-  }
-
-  void jumpToQuestion({
-    required int sectionIndex,
-    required int questionIndex,
-  }) {
-    this.sectionIndex = sectionIndex;
-    this.questionIndex = questionIndex;
-  }
-
-  int get totalQuestions => currentPlan!.sections.fold(
-        0,
-        (sum, s) => sum + s.questions.length,
-      );
-
-  int get currentQuestionNumber {
-    int count = 0;
-    for (int s = 0; s < sectionIndex; s++) {
-      count += currentPlan!.sections[s].questions.length;
-    }
-    return count + questionIndex + 1;
-  }
-
-  double get progress => currentQuestionNumber / totalQuestions;
-  String? _loadingPlanId;
-  Future<void> loadPlanDetailIfNeeded(String planId) async {
-    if (isCurrentPlanLoading && _loadingPlanId == planId) return; // 🔒 關鍵
-    // 先從 cache 讀
-    if (_planCache.containsKey(planId)) {
-      // 如果 currentPlan 不是同一個 plan 或 sections 是空的，才 assign
-      if (currentPlan?.id != planId || currentPlan!.sections.isEmpty) {
-        currentPlan = _planCache[planId];
-        sectionIndex = 0;
-        questionIndex = 0;
-        notifyListeners();
-      }
-      return; // 不再抓 API
-    }
-
-    _loadingPlanId = planId;
-    isCurrentPlanLoading = true;
-    try {
-      // 2️⃣ 先建立「只有 id / title，sections 空」
-      final summary = currentPlan;
-      if (summary == null) return;
-
-      currentPlan = summary.copyWith(sections: []);
-      notifyListeners(); // 👉 UI 立刻顯示 Loading sections...
-
-      await for (final section
-        in service.streamSectionsWithQuestions(planId)) {
-        currentPlan = currentPlan!.copyWith(
-          sections: [...currentPlan!.sections, section],
-        );
-        notifyListeners(); // 👈 每個 section 都刷新
-      }
-
-      // 5️⃣ 全部完成後存 cache
-      _planCache[planId] = currentPlan!;
-      sectionIndex = 0;
-      questionIndex = 0;
-    } catch (e, stack) {
-      debugPrint('loadPlanDetailIfNeeded error: $e');
-      debugPrintStack(stackTrace: stack);
-    } finally {
-      _loadingPlanId = null;
-      isCurrentPlanLoading = false;
+      notifier.value = question.answer;
       notifyListeners();
     }
   }

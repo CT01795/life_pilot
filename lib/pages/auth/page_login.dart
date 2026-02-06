@@ -158,10 +158,3 @@ class _PageLoginState extends State<PageLogin> {
     });
   }
 }
-
-/*🔍 優化重點說明
-效能	使用 late final 初始化控制器與 FocusNode	減少 null 檢查，效能更穩定
-安全性	登入/重設密碼後都加上 if (!mounted)	防止 widget 已卸載後仍更新 UI
-結構清晰	拆分 _tryLogin()、_handleResetPassword()、_navigateToRegister()	職責分明，未來擴充（如驗證輸入）更方便
-Focus 管理	透過 _passwordFocus.requestFocus()	取代 FocusScope.of(context) 使邏輯更穩定
-UI 精簡	移除多餘容器，簡化排版	減少 widget rebuild，畫面更輕量*/

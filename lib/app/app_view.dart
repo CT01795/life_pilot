@@ -23,7 +23,6 @@ class _AppViewState extends State<AppView> {
 
   @override
   Widget build(BuildContext context) {
-    //final localeProvider = context.watch<ProviderLocale>();
     // ✅ 只監聽 locale，不重建整個 MaterialApp
     return RepaintBoundary(
       key: app_navigator.rootRepaintBoundaryKey, // 🌟 全局 RepaintBoundary
@@ -68,20 +67,3 @@ class _AppHome extends StatelessWidget {
     );
   }
 }
-
-/*🚀 優化重點解析
-
-Selector 取代 watch
-只讓語言（locale）變化時重建 MaterialApp
-其他 Provider 更新（例如登入狀態、主題等）不會觸發整個 app rebuild
-🔹大幅降低 rebuild 成本。
-
-初始化搬出 build()
-initErrorHandling() 應該只初始化一次，放在 initState() 最乾淨。
-
-child ?? SizedBox.shrink()
-避免 child 為 null 時 crash，防禦性寫法。
-
-_AppHome 分離
-當語言切換時，只有 MaterialApp rebuild，
-而 PageAuthCheck 不會整個重新建立，保留內部狀態（例如登入檢查結果）。*/

@@ -163,10 +163,3 @@ class ControllerPageMain extends ChangeNotifier {
     super.dispose();
   }
 }
-
-/*💡 優化重點說明
-🔁 _notifyDebounced()	防止語系或頁面快速切換時的多次 rebuild
-🧠 _validateSelectedPage()	確保使用者登出後不會停留在私人頁面
-🧩 _updateIfChanged() 整合概念	實際用邏輯合併 auth / loc / locale 更新邏輯
-🧱 清楚封裝 getter	外部不直接改內部狀態，強化封裝與可維護性
-🧭 Log 訊息加入	方便偵錯登入狀態切換導致頁面重置的狀況*/

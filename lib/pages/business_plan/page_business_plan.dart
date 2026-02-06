@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
-import 'package:life_pilot/models/business_plan/model_business_plan.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_preview.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_select_template.dart';
 import 'package:provider/provider.dart';
@@ -16,51 +15,36 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
   bool isEditingTitle = false;
   @override
   Widget build(BuildContext context) {
+    final c = context.watch<ControllerBusinessPlan>();
+    if (c.isPlansLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (c.plans.isEmpty) {
+      return const Center(child: Text('No plans yet'));
+    }
     return Scaffold(
-      body: Selector<ControllerBusinessPlan, bool>(
-        selector: (_, c) => c.isPlansLoading,
-        builder: (_, isLoading, __) {
-          if (isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return Selector<ControllerBusinessPlan, List<ModelBusinessPlan>>(
-            selector: (_, c) => c.plans,
-            builder: (_, plans, __) {
-              if (plans.isEmpty) {
-                return const Center(child: Text('No plans yet'));
-              }
-
-              return ListView.builder(
-                itemCount: plans.length,
-                itemBuilder: (_, i) {
-                  return Selector<ControllerBusinessPlan, String>(
-                    selector: (_, c) => c.plans[i].title, // 監聽這個 plan 的 title
-                    builder: (_, title, __) {
-                      return ListTile(
-                        title: InlineEditableTitle(
-                          initialText: title,
-                          onSave: (newTitle) {
-                            context.read<ControllerBusinessPlan>().updatePlanTitleByIndex(i, newTitle);
-                          },
-                          onEditingChanged: (editing) {
-                            setState(() => isEditingTitle = editing);
-                          },
-                        ),
-                        onTap: () {
-                          if (isEditingTitle) return; // 🔒 編輯中鎖定跳頁
-                          final plan = context.read<ControllerBusinessPlan>().plans[i];
-                          context.read<ControllerBusinessPlan>().setCurrentPlanSummary(plan);
-                          context.read<ControllerBusinessPlan>().loadPlanDetailIfNeeded(plan.id);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const PagePlanPreview()),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
+      body: ListView.builder(
+        itemCount: c.plans.length,
+        itemBuilder: (_, i) {
+          final plan = c.plans[i];
+          return ListTile(
+            title: InlineEditableTitle(
+              initialText: plan.title,
+              onSave: (newTitle) {
+                context.read<ControllerBusinessPlan>().updateCurrentPlanTitle(newTitle);
+              },
+              onEditingChanged: (editing) {
+                setState(() => isEditingTitle = editing);
+              },
+            ),
+            onTap: () {
+              if (isEditingTitle) return; // 🔒 編輯中鎖定跳頁
+              context.read<ControllerBusinessPlan>().setCurrentPlanSummary(plan);
+              context.read<ControllerBusinessPlan>().loadPlanDetailIfNeeded(plan.id);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PagePlanPreview()),
               );
             },
           );
