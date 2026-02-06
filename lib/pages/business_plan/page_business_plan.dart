@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
+import 'package:life_pilot/pages/business_plan/page_plan_editor.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_preview.dart';
 import 'package:life_pilot/pages/business_plan/page_plan_select_template.dart';
 import 'package:provider/provider.dart';
@@ -122,7 +123,15 @@ class _InlineEditableTitleState extends State<InlineEditableTitle> {
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.grey),
-            onPressed: () => _setEditing(true), // 點鉛筆進入編輯
+            onPressed: () {
+              final c = context.read<ControllerBusinessPlan>();
+              // 先確保 current plan 與當前題目
+              c.jumpToQuestion(sectionIndex: 0, questionIndex: 0);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PagePlanEditor()),
+              );
+            }, // 點鉛筆進入編輯
           ),
         ],
       );
