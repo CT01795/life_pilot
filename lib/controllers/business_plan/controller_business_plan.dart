@@ -79,12 +79,14 @@ class ControllerBusinessPlan extends ChangeNotifier {
     if (questionIndex <
         currentPlan!.sections[sectionIndex].questions.length - 1) {
       questionIndex++;
+      notifyListeners();
       return true;
     }
 
     if (sectionIndex < currentPlan!.sections.length - 1) {
       sectionIndex++;
       questionIndex = 0;
+      notifyListeners();
       return true;
     }
 
@@ -94,12 +96,14 @@ class ControllerBusinessPlan extends ChangeNotifier {
   bool previous() {
     if (questionIndex > 0) {
       questionIndex--;
+      notifyListeners();
       return true;
     }
 
     if (sectionIndex > 0) {
       sectionIndex--;
       questionIndex = currentPlan!.sections[sectionIndex].questions.length - 1;
+      notifyListeners();
       return true;
     }
 
