@@ -31,7 +31,6 @@ class ControllerCalendar extends ChangeNotifier {
   late ControllerEvent controllerEvent;
   Locale? _lastLocale;
 
-  bool get isLoading => modelEventCalendar.isLoading;
   bool get isInitialized => modelEventCalendar.isInitialized;
 
   // 給 PageView 初始用的基準年月
@@ -45,6 +44,8 @@ class ControllerCalendar extends ChangeNotifier {
   int get pageIndex =>
       (currentMonth.year - baseDate.year) * 12 +
       (currentMonth.month - baseDate.month);
+
+  int _reloadToken = 0;
 
   ControllerCalendar(
       {required this.modelEventCalendar,
@@ -86,10 +87,9 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    if (!modelEventCalendar.isInitialized) {
-      await _reloadEvents(notify: false);
-    }
-
+    if (modelEventCalendar.isInitialized) return;
+    modelEventCalendar.isInitialized = true; // 提前鎖
+    await goToMonth(month: currentMonth, notify: false);
     await checkAndGenerateNextEvents();
     notifyListeners();
   }
@@ -99,14 +99,27 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------------
   Future<void> _reloadEvents({bool notify = true, DateTime? month}) async {
     final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now
-    await modelEventCalendar.loadEventsFromService(
+    final int myToken = ++_reloadToken; // 每次呼叫都生成新的 token
+    List<EventItem> result = await modelEventCalendar.loadEventsFromService(
       serviceEvent: serviceEvent,
       month: targetMonth,
       auth: auth,
       localeProvider: localeProvider,
       tableName: tableName,
     );
-    if (notify) notifyListeners();
+
+    // ❗只允許最新請求寫入 model
+    if (_reloadToken != myToken) {
+      return;
+    }
+    if (result.isEmpty) {
+      result = [];
+    }
+    modelEventCalendar.cacheMonthEvents(targetMonth, result);
+    modelEventCalendar.setEvents(result);
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   // 載入月曆事件（含服務端與假日）
@@ -117,16 +130,16 @@ class ControllerCalendar extends ChangeNotifier {
 
   // 跳轉月並同步資料（若有快取則不重新拉）
   Future<void> goToMonth({required DateTime month, bool notify = true}) async {
-    currentMonth = DateUtils.dateOnly(month);
-    final key = currentMonth.toMonthKey();
+    final targetMonth = DateUtils.dateOnly(month);
+    final key = targetMonth.toMonthKey();
+    currentMonth = targetMonth;
     if (modelEventCalendar.cachedEvents.containsKey(key)) {
       // ✅ 同步更新 events
       modelEventCalendar.setMonthFromCache(key);
+      if (notify) notifyListeners();
     } else {
-      await _reloadEvents(month: currentMonth, notify: false);
+      await _reloadEvents(month: targetMonth, notify: notify);
     }
-
-    if (notify) notifyListeners();
   }
 
   // 月份操作

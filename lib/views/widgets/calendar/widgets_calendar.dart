@@ -458,6 +458,6 @@ Future<void> handleCrossMonthTap({
     // 預載其他月份事件，但不改 displayedMonth
     await controllerCalendar.loadCalendarEvents(
         month: DateTime(tappedDate.year, tappedDate.month), notify: false);
-    await controllerCalendar.goToMonth(month: displayedMonth, notify: false);
+    await controllerCalendar.goToMonth(month: displayedMonth, notify: true);
   }
 }

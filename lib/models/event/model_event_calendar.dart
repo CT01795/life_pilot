@@ -16,7 +16,6 @@ import '../../core/logger.dart';
 class ModelEventCalendar {
   //--------------------------- 共用 ---------------------------
   List<EventItem> events = [];
-  bool isLoading = false;
   bool isInitialized = false;
   bool _disposed = false;
 
@@ -30,11 +29,10 @@ class ModelEventCalendar {
   final Set<String> removedEventIds = {};
 
   List<EventItem> getFilteredEvents(AppLocalizations loc) => utilsFilterEvents(
-        events: events,
-        filter: searchFilter,
-        removedEventIds: removedEventIds,
-        loc: loc
-      );
+      events: events,
+      filter: searchFilter,
+      removedEventIds: removedEventIds,
+      loc: loc);
 
   void toggleSearchPanel(bool value) {
     showSearchPanel = value;
@@ -48,7 +46,7 @@ class ModelEventCalendar {
 
   void updateSearchKeywords(String? keywords) {
     searchFilter.keywords = keywords ?? constEmpty;
-    if(keywords == null) searchController.clear();
+    if (keywords == null) searchController.clear();
   }
 
   void updateStartDate(DateTime? date) {
@@ -125,21 +123,19 @@ class ModelEventCalendar {
     });
   }
 
-  Future<void> loadEventsFromService({
+  Future<List<EventItem>> loadEventsFromService({
     required ServiceEvent serviceEvent,
     required DateTime month,
     required ControllerAuth? auth,
     required ProviderLocale localeProvider,
     required String tableName,
   }) async {
-    if (isLoading || isDisposed) return;
-    isLoading = true;
-
+    if (isDisposed) return [];
     try {
-      currentMonth = DateUtils.monthOnly(month); // ✅ 加這行
+      DateTime tmpMonth = DateUtils.monthOnly(month); // ✅ 加這行
       final user = auth?.currentAccount;
       final locale = localeProvider.locale;
-      final weeks = getWeeks(currentMonth);
+      final weeks = getWeeks(tmpMonth);
       final start = weeks.first.first;
       final end = weeks.last.last;
 
@@ -152,19 +148,18 @@ class ModelEventCalendar {
           locale,
           await serviceEvent.getKey(keyName: "GOOGLE_API_KEY"));
 
-      if (isDisposed) return;
+      if (isDisposed) return [];
 
-      events = [...?serverEvents, ...holidays]
+      return [...?serverEvents, ...holidays]
         ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
 
-      cacheMonthEvents(currentMonth, events);
+      //cacheMonthEvents(tmpMonth, events);
+      //currentMonth = tmpMonth;
     } catch (e, st) {
       if (!isDisposed) {
         logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
       }
       rethrow;
-    } finally {
-      isLoading = false;
     }
   }
 
