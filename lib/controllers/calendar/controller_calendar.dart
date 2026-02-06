@@ -46,6 +46,7 @@ class ControllerCalendar extends ChangeNotifier {
       (currentMonth.month - baseDate.month);
 
   int _reloadToken = 0;
+  bool _isChangingMonth = false;
 
   ControllerCalendar(
       {required this.modelEventCalendar,
@@ -130,15 +131,21 @@ class ControllerCalendar extends ChangeNotifier {
 
   // 跳轉月並同步資料（若有快取則不重新拉）
   Future<void> goToMonth({required DateTime month, bool notify = true}) async {
-    final targetMonth = DateUtils.dateOnly(month);
-    final key = targetMonth.toMonthKey();
-    currentMonth = targetMonth;
-    if (modelEventCalendar.cachedEvents.containsKey(key)) {
-      // ✅ 同步更新 events
-      modelEventCalendar.setMonthFromCache(key);
-      if (notify) notifyListeners();
-    } else {
-      await _reloadEvents(month: targetMonth, notify: notify);
+    if (_isChangingMonth) return;
+    _isChangingMonth = true;
+    try {
+      final targetMonth = DateUtils.dateOnly(month);
+      final key = targetMonth.toMonthKey();
+      currentMonth = targetMonth;
+      if (modelEventCalendar.cachedEvents.containsKey(key)) {
+        // ✅ 同步更新 events
+        modelEventCalendar.setMonthFromCache(key);
+        if (notify) notifyListeners();
+      } else {
+        await _reloadEvents(month: targetMonth, notify: notify);
+      }
+    } finally {
+      _isChangingMonth = false;
     }
   }
 
