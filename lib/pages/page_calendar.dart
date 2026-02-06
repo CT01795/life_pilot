@@ -54,9 +54,6 @@ class _PageCalendarState extends State<PageCalendar> {
       body: AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
-          if (controller.modelEventCalendar.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
           final month = controller.currentMonth;
           final isCurrentMonth = DateTimeCompare.isCurrentMonth(month);
           return Column(children: [
@@ -139,7 +136,12 @@ class _PageCalendarState extends State<PageCalendar> {
 
   void _updatePageController(int index) {
     if (pageController.hasClients && pageController.page?.round() != index) {
-      pageController.jumpToPage(index);
+      //pageController.jumpToPage(index);
+      pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 }
