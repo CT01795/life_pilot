@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:speech_to_text/speech_to_text.dart';
 
 class ControllerAccountingSpeech {
@@ -13,11 +15,10 @@ class SpeechService {
   final SpeechToText _speech = SpeechToText();
 
   Future<String> listenOnce() async {
-    final available = await _speech.initialize();
-    if (!available) return '';
+    if (!await _speech.initialize()) return '';
 
-    String resultText = '';
-
+    final completer = Completer<String>();
+    
     await _speech.listen(
       localeId: 'zh_TW',
       listenOptions: SpeechListenOptions(
@@ -26,16 +27,19 @@ class SpeechService {
         cancelOnError: true,
       ),
       onResult: (result) {
-        if (result.finalResult) {
-          resultText = result.recognizedWords;
+        if (result.finalResult && !completer.isCompleted) {
+          completer.complete(result.recognizedWords);
+          _speech.stop();
         }
       },
     );
 
-    // 最多聽 5 秒
-    await Future.delayed(const Duration(seconds: 5));
-    await _speech.stop();
-
-    return resultText;
+    return completer.future.timeout(
+      const Duration(seconds: 6),
+      onTimeout: () {
+        _speech.stop();
+        return '';
+      },
+    );
   }
 }

@@ -8,10 +8,11 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/services/event/service_speech.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
-class PagePointRecordDetail extends StatefulWidget {
+class PagePointRecordDetail extends StatelessWidget {
   final String accountId;
   final String accountName;
   final ServiceAccounting service;
@@ -24,33 +25,41 @@ class PagePointRecordDetail extends StatefulWidget {
   });
 
   @override
-  State<PagePointRecordDetail> createState() => _PagePointRecordDetailState();
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ControllerAccounting(
+            service: service,
+            auth: context.read<ControllerAuth>(),
+            accountId: accountId,
+            accountController: context.read<ControllerAccountingAccount>(),
+          )..loadToday(),
+        ),
+        Provider<ControllerAccountingSpeech>(
+          create: (_) => ControllerAccountingSpeech(),
+        ),
+      ],
+      child: _PageAccountingDetailView(),
+    );
+  }
 }
 
-class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
-  late final TextEditingController _speechTextController;
-  late ControllerAccounting _controller;
+class _PageAccountingDetailView extends StatefulWidget {
+  const _PageAccountingDetailView();
+
+  @override
+  State<_PageAccountingDetailView> createState() =>
+      _PageAccountingDetailViewState();
+}
+
+class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
+  final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
 
   @override
-  void initState() {
-    super.initState();
-    _speechTextController = TextEditingController();
-
-    _controller = ControllerAccounting(
-      service: widget.service,
-      auth: context.read<ControllerAuth>(),
-      accountId: widget.accountId,
-      accountController: context.read<ControllerAccountingAccount>(),
-    );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadToday();
-    });
-  }
-
-  @override
   void dispose() {
+    context.read<ServiceSpeech>().stopListening();
     _speechTextController.dispose();
     super.dispose();
   }
@@ -151,39 +160,35 @@ class _PagePointRecordDetailState extends State<PagePointRecordDetail> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _controller,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context, true); // 返回上一頁並通知需要刷新
-            },
-          ),
-          title: Text(widget.accountName),
-          backgroundColor: Colors.blueAccent, // 可自定義顏色
-          elevation: 2,
-        ),
-        body: Consumer2<ControllerAccounting, ControllerAccountingAccount>(
-          builder: (context, pointsController, accountController, _) {
-            final account = accountController.getAccountById(widget.accountId);
-            return Column(
-              children: [
-                Gaps.h8,
-                _buildSummary(account, pointsController),
-                _buildMicButton(context, pointsController),
-                const Divider(),
-                _buildTodayList(pointsController),
-              ],
-            );
+    final controller = context.watch<ControllerAccounting>();
+    final account = context
+        .watch<ControllerAccountingAccount>()
+        .getAccountById(controller.accountId);
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
+        title: Text(account.accountName),
+        backgroundColor: Colors.blueAccent, // 可自定義顏色
+        elevation: 2,
+      ),
+      body: Column(
+        children: [
+          Gaps.h8,
+          _buildSummary(account, controller),
+          _buildMicButton(context, controller),
+          const Divider(),
+          _buildTodayList(controller),
+        ],
       ),
     );
   }
 
-    Widget _buildSummary(
+  Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
     String currency = account.currency ?? '';
     int totalValue =
@@ -415,6 +420,7 @@ class TtsService {
   final FlutterTts _tts = FlutterTts();
 
   Future<void> speak(String text) async {
+    await _tts.stop();
     await _tts.setLanguage('zh-TW');
     await _tts.setSpeechRate(0.45);
     await _tts.speak(text);

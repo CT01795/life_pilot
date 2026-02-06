@@ -20,7 +20,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
 
     _currentType = type;
     isLoaded = false;
-    await loadAccounts();
+    await loadAccounts(force: true);
   }
 
   ControllerAccountingAccount({
@@ -67,7 +67,9 @@ class ControllerAccountingAccount extends ChangeNotifier {
   bool isLoading = false;
   bool isLoaded = false;
 
-  Future<void> loadAccounts() async {
+  Future<void> loadAccounts({bool force = false}) async {
+    if (isLoading) return;
+    if (!force && isLoaded) return;
     isLoading = true;
     notifyListeners();
     accounts = await service.fetchAccounts(
@@ -89,13 +91,13 @@ class ControllerAccountingAccount extends ChangeNotifier {
       currentType: currentType,
     );
     // ⭐ 統一來源：重新拉一次
-    await loadAccounts();
+    await loadAccounts(force: true);
   }
 
   Future<void> deleteAccount(String accountId) async {
     await service.deleteAccount(accountId: accountId, currentType: currentType);
     //accounts.removeWhere((a) => a.id == accountId);
-    await loadAccounts();
+    await loadAccounts(force: true);
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {
@@ -149,7 +151,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
       accountId: accountId,
       currency: currency,
     );
-    await loadAccounts();
+    await loadAccounts(force: true);
   }
 
   static final ModelAccountingAccount dummyAccount = ModelAccountingAccount(

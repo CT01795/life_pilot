@@ -34,15 +34,6 @@ class ControllerAccounting extends ChangeNotifier {
 
   int todayTotal = 0;
 
-  void _recalculateTodayTotal(String? currency) {
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-
-    todayTotal = todayRecords
-        .where((r) => r.localTime.isAfter(todayStart) && r.currency == currency)
-        .fold(0, (sum, r) => sum + r.value);
-  }
-
   ModelAccountingAccount get account =>
       accountController.getAccountById(accountId);
 
@@ -61,7 +52,13 @@ class ControllerAccounting extends ChangeNotifier {
       currentCurrency = accountController.mainCurrency;
     }
 
-    _recalculateTodayTotal(account.currency);
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    todayTotal = todayRecords
+      .where((r) =>
+          r.currency == currentCurrency &&
+          r.localTime.isAfter(todayStart))
+      .fold(0, (s, r) => s + r.value);
     notifyListeners();
   }
 
@@ -124,13 +121,12 @@ class ControllerAccounting extends ChangeNotifier {
 }
 
 class NLPService {
+  // ① 加 / 扣 + 數字（阿拉伯 or 中文）
+  static final regex = RegExp(
+    r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十兩]+)\s*(分|點|元)?',
+  );
   static List<AccountingParsedResult> parseMulti(String text) {
     final results = <AccountingParsedResult>[];
-
-    // ① 加 / 扣 + 數字（阿拉伯 or 中文）
-    final regex = RegExp(
-      r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十兩]+)\s*(分|點|元)?',
-    );
 
     for (final m in regex.allMatches(text)) {
       String action = m.group(1)?.trim() ?? constEmpty;

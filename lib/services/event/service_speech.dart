@@ -14,7 +14,11 @@ class ServiceSpeech {
 
   ServiceSpeech({stt.SpeechToText? speech, FlutterTts? tts})
       : _speech = speech ?? stt.SpeechToText(),
-        _tts = tts ?? FlutterTts();
+        _tts = tts ?? FlutterTts(){
+    _tts.setCompletionHandler(() {
+      _isSpeaking = false;
+    });
+  }
 
   // 狀態暴露
   bool get isInitialized => _initialized;
@@ -55,10 +59,15 @@ class ServiceSpeech {
       _isListening = true;
       _speech.listen(
         onResult: (result) {
-          onResult(result.recognizedWords);
+          if (result.finalResult) {
+            onResult(result.recognizedWords);
+            stopListening(); // ✅ 自動停
+          }
         },
         listenOptions: stt.SpeechListenOptions(
-          listenMode: stt.ListenMode.dictation,
+          listenMode: stt.ListenMode.confirmation,
+          partialResults: false,
+          cancelOnError: true,
         ),
       );
       return true;
