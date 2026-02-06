@@ -18,7 +18,8 @@ class ModelEventCalendar {
   List<EventItem> events = [];
   bool isInitialized = false;
   bool _disposed = false;
-
+  // ⭐ 新增：每個月的 flat events cache（避免重複展平）
+final Map<String, List<EventItem>> flatMonthEventsCache = {};
   //--------------------------- event ---------------------------
   final searchFilter = SearchFilter();
   final TextEditingController searchController = TextEditingController();
@@ -168,6 +169,7 @@ class ModelEventCalendar {
     final weeks = getWeeks(month);
     final tmp = groupEventsByWeekAndDay(weeks: weeks, events: events);
     cachedEvents[key] = tmp;
+    flatMonthEventsCache[key] = events.toSet().toList();
   }
 
   // 依照週、日將事件分組
@@ -258,12 +260,14 @@ class ModelEventCalendar {
 
     for (var key in keysToRemove) {
       cachedEvents.remove(key);
+      flatMonthEventsCache.remove(key);
     }
   }
 
   void clearAll() {
     events.clear();
     cachedEvents.clear();
+    flatMonthEventsCache.clear();
     weeksCache.clear();
   }
 
@@ -272,17 +276,7 @@ class ModelEventCalendar {
   }
 
   void setMonthFromCache(String key) {
-    final allCached = cachedEvents[key]!;
-    final allEvents = <EventItem>[];
-
-    for (var week in allCached.values) {
-      for (var dayEvents in week.values) {
-        allEvents.addAll(dayEvents);
-      }
-    }
-
-    // 移除重複事件
-    events = allEvents.toSet().toList();
+    events = flatMonthEventsCache[key] ?? [];
   }
 }
 
