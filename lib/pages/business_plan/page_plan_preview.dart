@@ -80,14 +80,13 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
               IconButton(
                 icon: Icon(editingTitle ? Icons.check : Icons.edit, color: Colors.white,),
                 onPressed: () {
-                  if (editingTitle) {
-                    final text = _titleKey.currentState?.currentText ?? '';
-                    if (text.trim().isNotEmpty) {
-                      context.read<ControllerBusinessPlan>()
-                          .updateCurrentPlanTitle(text);
-                    }
-                  }
-                  setState(() => editingTitle = !editingTitle);
+                  final c = context.read<ControllerBusinessPlan>();
+                  // 先確保 current plan 與當前題目
+                  c.jumpToQuestion(sectionIndex: 0, questionIndex: 0);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PagePlanEditor()),
+                  );
                 },
               ),
             ],
