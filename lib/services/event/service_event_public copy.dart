@@ -2,9 +2,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart' hide Element;
+import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
@@ -82,13 +82,15 @@ class ServiceEventPublic {
         []);
     Set<String> dbNameSet =
         historyList.map((e) => e.name).where((name) => name.isNotEmpty).toSet();
-    dbNameSet.addAll(
-        historyList.map((e) => e.id).where((id) => id.isNotEmpty).toSet());
-
+    dbNameSet.addAll(historyList
+        .map((e) => e.id)
+        .where((id) => id.isNotEmpty)
+        .toSet());
+        
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimesUrl ====================================
     final strolltimesUrl =
-        "https://strolltimes.com/weekend.json"; //https://news.strolltimes.com/events/weekend/"; //'https://strolltimes.com/weekend-events/';
+        "https://news.strolltimes.com/events/weekend/"; //'https://strolltimes.com/weekend-events/';
     if (await checkEventsUrl(strolltimesUrl, today)) {
       try {
         List<EventItem> strolltimesList =
@@ -230,20 +232,32 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
-      String inUrl, DateTime today) async {
-    final url = Uri.parse(inUrl);
-    final res = await http.get(url);
+      String url, DateTime today) async {
+    final res = await http.get(Uri.parse(url), headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)'
+    });
     if (res.statusCode != 200) return [];
-    final List<dynamic> data = jsonDecode(res.body);
-    List<dynamic> links =
-        data.take(2).map((e) => 'https://strolltimes.com${e['link']}').toList();
+    final document = parse(res.body);
+
+    // 取側邊欄最新的活動子頁
+    final links = document
+        .querySelectorAll('ul.menu__list li a')
+        .where((a) =>
+            a.attributes['href']?.startsWith('/events/weekend/') ?? false)
+        .cast<Element>()
+        .toList();
+
     if (links.isEmpty) return [];
 
     Set<String> tmpSet = {};
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     for (int i = 1; i < links.length; i++) {
-      final res2 = await http.get(Uri.parse(links[i]), headers: {
+      final latestPath = links[i].attributes['href'];
+      if (latestPath == null) continue;
+
+      String url2 = 'https://news.strolltimes.com$latestPath';
+      final res2 = await http.get(Uri.parse(url2), headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)'
       });
       if (res2.statusCode != 200) return [];
@@ -263,8 +277,9 @@ class ServiceEventPublic {
         for (var row in rows) {
           final cells = row.querySelectorAll('td');
           if (cells.length >= 4) {
-            DateTime? startDate = cells[0].text.trim().length >= 8 ? DateFormat('yyyy/M/d').parse(cells[0].text.trim()) : null;
-            DateTime? endDate = cells[1].text.trim().length >= 8 ? DateFormat('yyyy/M/d').parse(cells[1].text.trim()) : null;
+            DateTime? startDate =
+                DateTimeParser.parseDate(cells[0].text.trim());
+            DateTime? endDate = DateTimeParser.parseDate(cells[1].text.trim());
             if (startDate != null &&
                 endDate != null &&
                 !endDate.isBefore(today)) {
