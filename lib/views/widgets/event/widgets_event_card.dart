@@ -42,13 +42,11 @@ class WidgetsEventCard extends StatelessWidget {
     final serviceWeather = context.read<ServiceWeather>();
     final serviceEvent = context.read<ServiceEvent>();
     final controllerAuth = context.read<ControllerAuth>();
-    final controllerEvent = context.read<ControllerEvent>();
     return ChangeNotifierProvider(
       create: (_) => ControllerEventCard(
         serviceWeather: serviceWeather,
         serviceEvent: serviceEvent,
         controllerAuth: controllerAuth,
-        controllerEvent: controllerEvent,
       )..loadWeather(
           locationDisplay: eventViewModel.locationDisplay,
           startDate: eventViewModel.startDate,
@@ -81,7 +79,11 @@ class WidgetsEventCard extends StatelessWidget {
             '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
         // 🔹 呼叫 function 更新資料庫
         final controllerEventCard = context.read<ControllerEventCard>();
-        controllerEventCard.onOpenLink(eventViewModel);
+        await controllerEventCard.onOpenLink(eventViewModel);
+        final controllerEvent = context.read<ControllerEvent>();
+        if (controllerEvent.tableName == TableNames.recommendedEvents) {
+          controllerEvent.loadEvents();
+        }
       },
       child: Text(
         loc.clickHereToSeeMore,
@@ -329,7 +331,11 @@ class _WidgetsEventCardBody extends StatelessWidget {
                   );
                 }
                 // 🔹 呼叫 function 更新資料庫
-                ctrl.onOpenMap(eventViewModel);
+                await ctrl.onOpenMap(eventViewModel);
+                final controllerEvent = context.read<ControllerEvent>();
+                if (controllerEvent.tableName == TableNames.recommendedEvents) {
+                  controllerEvent.loadEvents();
+                }
               },
               child: Text(
                 eventViewModel.locationDisplay,

@@ -12,7 +12,6 @@ class ControllerEventCard extends ChangeNotifier {
   final ServiceWeather serviceWeather;
   final ServiceEvent serviceEvent;
   final ControllerAuth controllerAuth;
-  final ControllerEvent controllerEvent;
 
   List<EventWeather> forecast = [];
   bool loading = false;
@@ -23,7 +22,6 @@ class ControllerEventCard extends ChangeNotifier {
     required this.serviceEvent,
     required this.serviceWeather,
     required this.controllerAuth,
-    required this.controllerEvent,
   });
 
   Future<void> loadWeather(
@@ -56,10 +54,6 @@ class ControllerEventCard extends ChangeNotifier {
       column: 'page_views',
       account: controllerAuth.currentAccount ?? AuthConstants.guest,
     );
-
-    if (controllerEvent.tableName == TableNames.recommendedEvents) {
-      controllerEvent.loadEvents();
-    }
   }
 
   Future<void> onOpenMap(EventViewModel event) async {
@@ -69,10 +63,6 @@ class ControllerEventCard extends ChangeNotifier {
       column: 'card_clicks',
       account: controllerAuth.currentAccount ?? AuthConstants.guest,
     );
-
-    if (controllerEvent.tableName == TableNames.recommendedEvents) {
-      controllerEvent.loadEvents();
-    }
   }
   
   @override
