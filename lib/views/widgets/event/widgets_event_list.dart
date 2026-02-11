@@ -86,12 +86,13 @@ class WidgetsEventList extends StatelessWidget {
                       }
                     }
                   : null,
-              onLike: () async {
+              onLike: tableName == TableNames.recommendedEvents ? () async {
                 await controllerEvent.likeEvent(event: event, account: auth.currentAccount ?? AuthConstants.guest);
-              },
-              onDislike: () async {
+              } : null,
+              
+              onDislike: tableName == TableNames.recommendedEvents ? () async {
                 await controllerEvent.dislikeEvent(event: event, account: auth.currentAccount ?? AuthConstants.guest);
-              },
+              } : null,
               trailing: widgetsEventTrailing(
                 context: context,
                 auth: auth,

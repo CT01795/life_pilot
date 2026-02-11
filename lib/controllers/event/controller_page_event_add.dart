@@ -41,6 +41,12 @@ class ControllerPageEventAdd extends ChangeNotifier {
   bool? isOutdoor;
   bool? isLike;
   bool? isDislike;
+  int? pageViews;
+  int? cardClicks;
+  int? saves;
+  int? registrationClicks;
+  int? likeCounts;
+  int? dislikeCounts;
 
   String? masterGraphUrl;
   String? masterUrl;
@@ -59,20 +65,27 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // --- Debounce 用 ---
   Timer? _debounce;
 
-  ControllerPageEventAdd(
-      {required this.auth,
-      required this.serviceEvent,
-      required this.tableName,
-      this.existingEvent,
-      this.initialDate,
-      this.ageMin,
-      this.ageMax,
-      this.isFree,
-      this.priceMin,
-      this.priceMax,
-      this.isOutdoor,
-      this.isLike,
-      this.isDislike}) {
+  ControllerPageEventAdd({
+    required this.auth,
+    required this.serviceEvent,
+    required this.tableName,
+    this.existingEvent,
+    this.initialDate,
+    this.ageMin,
+    this.ageMax,
+    this.isFree,
+    this.priceMin,
+    this.priceMax,
+    this.isOutdoor,
+    this.isLike,
+    this.isDislike,
+    this.pageViews,
+    this.cardClicks,
+    this.saves,
+    this.registrationClicks,
+    this.likeCounts,
+    this.dislikeCounts,
+  }) {
     _init();
   }
 
@@ -105,7 +118,12 @@ class ControllerPageEventAdd extends ChangeNotifier {
     isOutdoor = e?.isOutdoor;
     isLike = e?.isLike;
     isDislike = e?.isDislike;
-
+    pageViews = e?.pageViews;
+    cardClicks = e?.cardClicks;
+    saves = e?.saves;
+    registrationClicks = e?.registrationClicks;
+    likeCounts = e?.likeCounts;
+    dislikeCounts = e?.dislikeCounts;
     final fields = {
       EventFields.city: city,
       EventFields.location: location,
@@ -122,7 +140,13 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.priceMax: priceMax,
       EventFields.isOutdoor: isOutdoor,
       EventFields.isLike: isLike,
-      EventFields.isDislike: isDislike
+      EventFields.isDislike: isDislike,
+      EventFields.pageViews: pageViews,
+      EventFields.cardClicks: cardClicks,
+      EventFields.saves: saves,
+      EventFields.registrationClicks: registrationClicks,
+      EventFields.likeCounts: likeCounts,
+      EventFields.dislikeCounts: dislikeCounts,
     };
 
     for (final entry in fields.entries) {
@@ -148,7 +172,13 @@ class ControllerPageEventAdd extends ChangeNotifier {
         EventFields.priceMax: sub.priceMax,
         EventFields.isOutdoor: sub.isOutdoor,
         EventFields.isLike: sub.isLike,
-        EventFields.isDislike: sub.isDislike
+        EventFields.isDislike: sub.isDislike,
+        EventFields.pageViews: sub.pageViews,
+        EventFields.cardClicks: sub.cardClicks,
+        EventFields.saves: sub.saves,
+        EventFields.registrationClicks: sub.registrationClicks,
+        EventFields.likeCounts: sub.likeCounts,
+        EventFields.dislikeCounts: sub.dislikeCounts,
       };
 
       for (final entry in subFields.entries) {
@@ -415,6 +445,13 @@ class ControllerPageEventAdd extends ChangeNotifier {
         newIsDislike: getText(EventFields.isDislike).isEmpty
             ? null
             : bool.parse(getText(EventFields.isDislike)),
+        newPageViews: existingEvent?.pageViews ?? pageViews,
+        newCardClicks: existingEvent?.cardClicks ?? cardClicks,
+        newSaves: existingEvent?.saves ?? saves,
+        newRegistrationClicks:
+            existingEvent?.registrationClicks ?? registrationClicks,
+        newLikeCounts: existingEvent?.likeCounts ?? likeCounts,
+        newDislikeCounts: existingEvent?.dislikeCounts ?? dislikeCounts,
         newAccount: auth.currentAccount,
         newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
         newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
@@ -450,7 +487,14 @@ class ControllerPageEventAdd extends ChangeNotifier {
       ..priceMax = priceMax
       ..isOutdoor = isOutdoor
       ..isLike = isLike
-      ..isDislike = isDislike;
+      ..isDislike = isDislike
+      ..pageViews = existingEvent?.pageViews ?? pageViews
+      ..cardClicks = existingEvent?.cardClicks ?? cardClicks
+      ..saves = existingEvent?.saves ?? saves
+      ..registrationClicks =
+          existingEvent?.registrationClicks ?? registrationClicks
+      ..likeCounts = existingEvent?.likeCounts ?? likeCounts
+      ..dislikeCounts = existingEvent?.dislikeCounts ?? dislikeCounts;
   }
 
   int _compareEvents(EventItem a, EventItem b) {

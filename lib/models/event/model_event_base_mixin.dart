@@ -65,6 +65,18 @@ mixin EventBaseMixin implements EventBase {
   bool? isLike;
   @override
   bool? isDislike;
+  @override
+  int? pageViews;
+  @override
+  int? cardClicks;
+  @override
+  int? saves;
+  @override
+  int? registrationClicks;
+  @override
+  int? likeCounts;
+  @override
+  int? dislikeCounts;
 
   // -------------------- JSON --------------------
   @override
@@ -100,6 +112,12 @@ mixin EventBaseMixin implements EventBase {
       EventFields.isOutdoor: isOutdoor,
       //EventFields.isLike: isLike,
       //EventFields.isDislike: isDislike,
+      EventFields.pageViews: pageViews,
+      EventFields.cardClicks: cardClicks,
+      EventFields.saves: saves,
+      EventFields.registrationClicks: registrationClicks,
+      EventFields.likeCounts: likeCounts,
+      EventFields.dislikeCounts: dislikeCounts,
       EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
     };
   }
@@ -136,6 +154,12 @@ mixin EventBaseMixin implements EventBase {
     isOutdoor = json[EventFields.isOutdoor];
     isLike = json[EventFields.isLike];
     isDislike = json[EventFields.isDislike];
+    pageViews = json[EventFields.pageViews];
+    cardClicks = json[EventFields.cardClicks];
+    saves = json[EventFields.saves];
+    registrationClicks = json[EventFields.registrationClicks];
+    likeCounts = json[EventFields.likeCounts];
+    dislikeCounts = json[EventFields.dislikeCounts];
     final subEventsJson = json[EventFields.subEvents];
     if (subEventsJson is List && subEventsJson.isNotEmpty) {
       subEvents = subEventsJson
@@ -162,6 +186,12 @@ mixin EventBaseMixin implements EventBase {
     isOutdoor = parent.isOutdoor;
     isLike = parent.isLike;
     isDislike = parent.isDislike;
+    pageViews = parent.pageViews;
+    cardClicks = parent.cardClicks;
+    saves = parent.saves;
+    registrationClicks = parent.registrationClicks;
+    likeCounts = parent.likeCounts;
+    dislikeCounts = parent.dislikeCounts;
   }
 
   DateTime? fromStringOrNull(String? date) {

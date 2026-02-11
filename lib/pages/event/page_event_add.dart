@@ -150,7 +150,13 @@ class _PageEventAddState extends State<PageEventAdd> {
                           ..priceMax = ctl.priceMax
                           ..isOutdoor = ctl.isOutdoor
                           ..isLike = ctl.isLike
-                          ..isDislike = ctl.isDislike;
+                          ..isDislike = ctl.isDislike
+                          ..pageViews = ctl.pageViews
+                          ..cardClicks = ctl.cardClicks
+                          ..saves = ctl.saves
+                          ..registrationClicks = ctl.registrationClicks
+                          ..likeCounts = ctl.likeCounts
+                          ..dislikeCounts = ctl.dislikeCounts;
                         setState(() {
                           final newIndex = newSub.id;
                           ctl.subEvents.add(newSub);

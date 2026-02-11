@@ -38,6 +38,12 @@ class EventItem with EventBaseMixin implements EventBase {
     bool? isOutdoor,
     bool? isLike,
     bool? isDislike,
+    int? pageViews,
+    int? cardClicks,
+    int? saves,
+    int? registrationClicks,
+    int? likeCounts,
+    int? dislikeCounts
   }) : super() {
     this.id = id ?? this.id;
     _subEvents = subEvents ?? [];
@@ -68,6 +74,12 @@ class EventItem with EventBaseMixin implements EventBase {
     this.isOutdoor = isOutdoor ?? this.isOutdoor;
     this.isLike = isLike ?? this.isLike;
     this.isDislike = isDislike ?? this.isDislike;
+    this.pageViews = pageViews ?? this.pageViews;
+    this.cardClicks = cardClicks ?? this.cardClicks;
+    this.saves = saves ?? this.saves;
+    this.registrationClicks = registrationClicks ?? this.registrationClicks;
+    this.likeCounts = likeCounts ?? this.likeCounts;
+    this.dislikeCounts = dislikeCounts ?? this.dislikeCounts;
   }
 
   // ✅ 正確實作 EventBase 要求的 getter/setter
@@ -114,6 +126,12 @@ class EventItem with EventBaseMixin implements EventBase {
     bool? newIsOutdoor,
     bool? newIsLike,
     bool? newIsDislike,
+    int? newPageViews,
+    int? newCardClicks,
+    int? newSaves,
+    int? newRegistrationClicks,
+    int? newLikeCounts,
+    int? newDislikeCounts,
     List<EventItem>? newSubEvents,
   }) {
     return EventItem(
@@ -146,6 +164,12 @@ class EventItem with EventBaseMixin implements EventBase {
         isOutdoor: newIsOutdoor ?? isOutdoor,
         isLike: newIsLike?? isLike,
         isDislike: newIsDislike ?? isDislike,
+        pageViews: newPageViews ?? pageViews,
+        cardClicks: newCardClicks ?? cardClicks,
+        saves: newSaves ?? saves,
+        registrationClicks: newRegistrationClicks ?? registrationClicks,
+        likeCounts: newLikeCounts ?? likeCounts,
+        dislikeCounts: newDislikeCounts ?? dislikeCounts,
       );
   }
 

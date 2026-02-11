@@ -68,6 +68,16 @@ Widget widgetsEventTrailing({
                           tableName == TableNames.calendarEvents
                               ? loc.memoryAddOk
                               : loc.eventAddOk);
+                      // 🔹 呼叫 function 更新資料庫
+                      if(controllerEvent.tableName == TableNames.recommendedEvents){
+                        await serviceEvent.incrementEventCounter(
+                          eventId: event.id,
+                          eventName: event.name, // 或者用 eventViewModel.name
+                          column: 'saves', //收藏到行事曆
+                          account: auth.currentAccount ?? AuthConstants.guest
+                        );
+                        controllerEvent.loadEvents();
+                      }
                     } else {
                       controllerEvent.toggleEventSelection(event.id, false);
                     }

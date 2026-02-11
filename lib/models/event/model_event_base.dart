@@ -31,6 +31,12 @@ abstract class EventBase {
   bool? get isOutdoor;
   bool? get isLike;
   bool? get isDislike;
+  int? get pageViews;
+  int? get cardClicks;
+  int? get saves;
+  int? get registrationClicks;
+  int? get likeCounts;
+  int? get dislikeCounts;
   // ⬇️ 改為 getter + setter
   List<EventItem> get subEvents;
   set subEvents(List<EventItem> value);

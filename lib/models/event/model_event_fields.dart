@@ -28,4 +28,10 @@ class EventFields {
   static const String isOutdoor = "is_outdoor";
   static const String isLike = "is_like";
   static const String isDislike = "is_dislike";
+  static const String pageViews = "page_views";
+  static const String cardClicks = "card_clicks";
+  static const String saves = "saves";
+  static const String registrationClicks = "registration_clicks";
+  static const String likeCounts = "like_counts";
+  static const String dislikeCounts = "dislike_counts";
 }

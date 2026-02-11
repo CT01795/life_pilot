@@ -107,6 +107,15 @@ class ControllerEvent extends ChangeNotifier {
     event.isLike = event.isLike == true ? false : true;
     event.isDislike = event.isLike == true ? false : event.isDislike;
     await serviceEvent.updateLikeEvent(event: event, account: account);
+    if(tableName == TableNames.recommendedEvents || tableName == TableNames.calendarEvents || tableName == TableNames.memoryTrace){
+      // 🔹 呼叫 function 更新資料庫
+      await serviceEvent.incrementEventCounter(
+        eventId: event.id,
+        eventName: event.name, // 或者用 eventViewModel.name
+        column: event.isLike == true ? 'like_counts' : 'card_clicks',
+        account: auth.currentAccount ?? AuthConstants.guest
+      );
+    }
     await loadEvents();
   }
 
@@ -115,6 +124,15 @@ class ControllerEvent extends ChangeNotifier {
     event.isDislike = event.isDislike == true ? false : true;
     event.isLike = event.isDislike == true ? false : event.isLike;
     await serviceEvent.updateLikeEvent(event: event, account: account);
+    if(tableName == TableNames.recommendedEvents || tableName == TableNames.calendarEvents || tableName == TableNames.memoryTrace){
+      // 🔹 呼叫 function 更新資料庫
+      await serviceEvent.incrementEventCounter(
+        eventId: event.id,
+        eventName: event.name, // 或者用 eventViewModel.name
+        column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
+        account: auth.currentAccount ?? AuthConstants.guest
+      );
+    }
     await loadEvents();
   }
 
@@ -218,8 +236,8 @@ class ControllerEvent extends ChangeNotifier {
         newEvent: event,
       );
       await controllerCalendar.loadCalendarEvents(
-            month: event.startDate!, notify: false);
-        controllerCalendar.goToMonth(month: DateTime.now(), notify: false);
+          month: event.startDate!, notify: false);
+      controllerCalendar.goToMonth(month: DateTime.now(), notify: false);
     }
     modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
     notifyListeners();
@@ -340,6 +358,7 @@ class ControllerEvent extends ChangeNotifier {
         .toList();
 
     return EventViewModel(
+      id: event.id,
       name: event.name,
       showDate: tableName != TableNames.recommendedAttractions,
       startDate: event.startDate,
@@ -374,6 +393,12 @@ class ControllerEvent extends ChangeNotifier {
       isOutdoor: event.isOutdoor,
       isLike: event.isLike,
       isDislike: event.isDislike,
+      pageViews: event.pageViews,
+      cardClicks: event.cardClicks,
+      saves: event.saves,
+      registrationClicks: event.registrationClicks,
+      likeCounts: event.likeCounts,
+      dislikeCounts: event.dislikeCounts,
     );
   }
 
@@ -385,6 +410,7 @@ class ControllerEvent extends ChangeNotifier {
 
 // EventController → 單筆事件顯示的欄位包裝（提供 View 用的 getter）
 class EventViewModel {
+  final String id;
   final String name;
   final bool showDate;
   final String dateRange;
@@ -406,27 +432,41 @@ class EventViewModel {
   final bool? isOutdoor;
   final bool? isLike;
   final bool? isDislike;
+  final int? pageViews;
+  final int? cardClicks;
+  final int? saves;
+  final int? registrationClicks;
+  final int? likeCounts;
+  final int? dislikeCounts;
 
-  EventViewModel(
-      {required this.name,
-      required this.showDate,
-      required this.startDate,
-      required this.endDate,
-      required this.dateRange,
-      required this.tags,
-      required this.hasLocation,
-      required this.locationDisplay,
-      this.masterUrl,
-      this.description = constEmpty,
-      this.subEvents = const [],
-      this.canDelete = false,
-      this.showSubEvents = true,
-      this.ageMin,
-      this.ageMax,
-      this.isFree,
-      this.priceMin,
-      this.priceMax,
-      this.isOutdoor,
-      this.isLike,
-      this.isDislike});
+  EventViewModel({
+    required this.id,
+    required this.name,
+    required this.showDate,
+    required this.startDate,
+    required this.endDate,
+    required this.dateRange,
+    required this.tags,
+    required this.hasLocation,
+    required this.locationDisplay,
+    this.masterUrl,
+    this.description = constEmpty,
+    this.subEvents = const [],
+    this.canDelete = false,
+    this.showSubEvents = true,
+    this.ageMin,
+    this.ageMax,
+    this.isFree,
+    this.priceMin,
+    this.priceMax,
+    this.isOutdoor,
+    this.isLike,
+    this.isDislike,
+    this.pageViews,
+    this.cardClicks,
+    this.saves,
+    this.registrationClicks,
+    this.likeCounts,
+    this.dislikeCounts,
+  });
 }

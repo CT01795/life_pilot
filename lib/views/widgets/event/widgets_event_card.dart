@@ -3,11 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/controllers/event/controller_page_event_weather.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/service_weather.dart';
 import 'package:life_pilot/views/widgets/event/widgets_event_sub_card.dart';
 import 'package:provider/provider.dart';
@@ -68,16 +70,30 @@ class WidgetsEventCard extends StatelessWidget {
     );
   }
 
-  static Widget link({
-    required AppLocalizations loc,
-    required String url,
-  }) {
+  static Widget link(
+      {required BuildContext context,
+      required AppLocalizations loc,
+      required String url,
+      required EventViewModel eventViewModel}) {
     return InkWell(
       onTap: () async {
         final uri = Uri.parse(url);
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         AppNavigator.showSnackBar(
             '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
+        // 🔹 呼叫 function 更新資料庫
+        final serviceEvent = context.read<ServiceEvent>();
+        final controllerAuth = context.read<ControllerAuth>();
+        await serviceEvent.incrementEventCounter(
+          eventId: eventViewModel.id,
+          eventName: eventViewModel.name, // 或者用 eventViewModel.name
+          column: 'page_views',
+          account: controllerAuth.currentAccount ?? AuthConstants.guest
+        );
+        final controllerEvent = context.read<ControllerEvent>();
+        if (controllerEvent.tableName == TableNames.recommendedEvents) {
+          controllerEvent.loadEvents();
+        }
       },
       child: Text(
         loc.clickHereToSeeMore,
@@ -326,6 +342,19 @@ class _WidgetsEventCardBody extends StatelessWidget {
                     SnackBar(content: Text('Can\'t open map：$e')),
                   );
                 }
+                // 🔹 呼叫 function 更新資料庫
+                final serviceEvent = context.read<ServiceEvent>();
+                final controllerAuth = context.read<ControllerAuth>();
+                await serviceEvent.incrementEventCounter(
+                  eventId: eventViewModel.id,
+                  eventName: eventViewModel.name, // 或者用 eventViewModel.name
+                  column: 'card_clicks',
+                  account: controllerAuth.currentAccount ?? AuthConstants.guest
+                );
+                final controllerEvent = context.read<ControllerEvent>();
+                if (controllerEvent.tableName == TableNames.recommendedEvents) {
+                  controllerEvent.loadEvents();
+                }
               },
               child: Text(
                 eventViewModel.locationDisplay,
@@ -336,7 +365,11 @@ class _WidgetsEventCardBody extends StatelessWidget {
               ),
             ),
           if (eventViewModel.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(loc: loc, url: eventViewModel.masterUrl!),
+            WidgetsEventCard.link(
+                context: context,
+                loc: loc,
+                url: eventViewModel.masterUrl!,
+                eventViewModel: eventViewModel),
           if (eventViewModel.description.isNotEmpty)
             Text(eventViewModel.description),
           if (showSubEvents)
@@ -373,28 +406,30 @@ class _WidgetsEventCardBody extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 👍 Favor（登入即可）
-                IconButton(
-                  icon: Icon(
-                    eventViewModel.isLike == true
-                        ? Icons.favorite_outlined
-                        : Icons.favorite_outline,
-                    color: Colors.pinkAccent,
-                  ),
-                  tooltip: loc.like,
-                  onPressed: onLike,
+                if(onLike != null)
+                  IconButton(
+                    icon: Icon(
+                      eventViewModel.isLike == true
+                          ? Icons.favorite_outlined
+                          : Icons.favorite_outline,
+                      color: Colors.pinkAccent,
+                    ),
+                    tooltip: loc.like,
+                    onPressed: onLike,
                 ),
 
                 // 🚫 Not Favor（登入即可）
-                IconButton(
-                  icon: Icon(
-                    eventViewModel.isDislike == true
-                        ? Icons.sentiment_neutral_sharp
-                        : Icons.sentiment_dissatisfied_outlined,
-                    color: Colors.grey,
+                if(onDislike != null)
+                  IconButton(
+                    icon: Icon(
+                      eventViewModel.isDislike == true
+                          ? Icons.sentiment_neutral_sharp
+                          : Icons.sentiment_dissatisfied_outlined,
+                      color: Colors.grey,
+                    ),
+                    tooltip: loc.dislike,
+                    onPressed: onDislike,
                   ),
-                  tooltip: loc.dislike,
-                  onPressed: onDislike,
-                ),
 
                 // 🗑 Delete（只有 canDelete）
                 if (eventViewModel.canDelete && onDelete != null)
