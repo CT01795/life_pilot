@@ -168,6 +168,28 @@ class ServiceEvent{
     }
   }
 
+  Future<void> incrementEventCounter({
+    required String? eventId,
+    required String? eventName,
+    required String column,
+    required String account,
+  }) async {
+
+    try {
+      await client.rpc(
+        'increment_event_counter',
+        params: {
+          'p_event_id': eventId,
+          'p_event_name': eventName,
+          'p_column': column,
+          'p_account': account,
+        },
+      );
+    } catch (e) {
+      logger.e('Error incrementEventCounter $column: $e');
+    }
+  }
+
 
   // --- 私有方法 ---
   void _validateEvent(

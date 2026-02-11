@@ -39,7 +39,7 @@ class WidgetsEventSubCard extends StatelessWidget {
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(loc: loc, url: event.masterUrl!),
+            WidgetsEventCard.link(context:context, loc: loc, url: event.masterUrl!, eventViewModel: event),
         ],
       ),
     );
