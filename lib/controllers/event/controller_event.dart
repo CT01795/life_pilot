@@ -107,14 +107,15 @@ class ControllerEvent extends ChangeNotifier {
     event.isLike = event.isLike == true ? false : true;
     event.isDislike = event.isLike == true ? false : event.isDislike;
     await serviceEvent.updateLikeEvent(event: event, account: account);
-    if(tableName == TableNames.recommendedEvents || tableName == TableNames.calendarEvents || tableName == TableNames.memoryTrace){
+    if (tableName == TableNames.recommendedEvents ||
+        tableName == TableNames.calendarEvents ||
+        tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
       await serviceEvent.incrementEventCounter(
-        eventId: event.id,
-        eventName: event.name, // 或者用 eventViewModel.name
-        column: event.isLike == true ? 'like_counts' : 'card_clicks',
-        account: auth.currentAccount ?? AuthConstants.guest
-      );
+          eventId: event.id,
+          eventName: event.name, // 或者用 eventViewModel.name
+          column: event.isLike == true ? 'like_counts' : 'card_clicks',
+          account: auth.currentAccount ?? AuthConstants.guest);
     }
     await loadEvents();
   }
@@ -124,14 +125,15 @@ class ControllerEvent extends ChangeNotifier {
     event.isDislike = event.isDislike == true ? false : true;
     event.isLike = event.isDislike == true ? false : event.isLike;
     await serviceEvent.updateLikeEvent(event: event, account: account);
-    if(tableName == TableNames.recommendedEvents || tableName == TableNames.calendarEvents || tableName == TableNames.memoryTrace){
+    if (tableName == TableNames.recommendedEvents ||
+        tableName == TableNames.calendarEvents ||
+        tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
       await serviceEvent.incrementEventCounter(
-        eventId: event.id,
-        eventName: event.name, // 或者用 eventViewModel.name
-        column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
-        account: auth.currentAccount ?? AuthConstants.guest
-      );
+          eventId: event.id,
+          eventName: event.name, // 或者用 eventViewModel.name
+          column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
+          account: auth.currentAccount ?? AuthConstants.guest);
     }
     await loadEvents();
   }
@@ -231,6 +233,7 @@ class ControllerEvent extends ChangeNotifier {
       fromTableName: tableName,
       toTableName: toTableName,
     );
+    modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
     if (targetEvent != null && toTableName == TableNames.calendarEvents) {
       await refreshNotification(
         newEvent: event,
@@ -238,9 +241,17 @@ class ControllerEvent extends ChangeNotifier {
       await controllerCalendar.loadCalendarEvents(
           month: event.startDate!, notify: false);
       controllerCalendar.goToMonth(month: DateTime.now(), notify: false);
+
+      // 🔹 呼叫 function 更新資料庫
+      await serviceEvent.incrementEventCounter(
+          eventId: event.id,
+          eventName: event.name, // 或者用 eventViewModel.name
+          column: 'saves', //收藏到行事曆
+          account: auth.currentAccount ?? AuthConstants.guest);
+      await loadEvents();
+    } else {
+      notifyListeners();
     }
-    modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
-    notifyListeners();
   }
 
   String buildTransferMessage({

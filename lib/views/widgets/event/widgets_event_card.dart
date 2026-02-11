@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
-import 'package:life_pilot/controllers/event/controller_page_event_weather.dart';
+import 'package:life_pilot/controllers/event/controller_event_card.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -40,23 +40,21 @@ class WidgetsEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final serviceWeather = context.read<ServiceWeather>();
+    final serviceEvent = context.read<ServiceEvent>();
+    final controllerAuth = context.read<ControllerAuth>();
+    final controllerEvent = context.read<ControllerEvent>();
     return ChangeNotifierProvider(
-      create: (_) {
-        final ctrl = ControllerPageEventWeather(serviceWeather);
-
-        // ✅ 延遲呼叫，避免在 build 階段或 widget 被移除時觸發
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!ctrl.disposed) {
-            ctrl.loadWeather(
-                locationDisplay: eventViewModel.locationDisplay,
-                startDate: eventViewModel.startDate,
-                endDate: eventViewModel.endDate,
-                tableName: tableName);
-          }
-        });
-
-        return ctrl;
-      },
+      create: (_) => ControllerEventCard(
+        serviceWeather: serviceWeather,
+        serviceEvent: serviceEvent,
+        controllerAuth: controllerAuth,
+        controllerEvent: controllerEvent,
+      )..loadWeather(
+          locationDisplay: eventViewModel.locationDisplay,
+          startDate: eventViewModel.startDate,
+          endDate: eventViewModel.endDate,
+          tableName: tableName,
+      ),
       child: _WidgetsEventCardBody(
         eventViewModel: eventViewModel,
         tableName: tableName,
@@ -82,18 +80,8 @@ class WidgetsEventCard extends StatelessWidget {
         AppNavigator.showSnackBar(
             '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
         // 🔹 呼叫 function 更新資料庫
-        final serviceEvent = context.read<ServiceEvent>();
-        final controllerAuth = context.read<ControllerAuth>();
-        await serviceEvent.incrementEventCounter(
-          eventId: eventViewModel.id,
-          eventName: eventViewModel.name, // 或者用 eventViewModel.name
-          column: 'page_views',
-          account: controllerAuth.currentAccount ?? AuthConstants.guest
-        );
-        final controllerEvent = context.read<ControllerEvent>();
-        if (controllerEvent.tableName == TableNames.recommendedEvents) {
-          controllerEvent.loadEvents();
-        }
+        final controllerEventCard = context.read<ControllerEventCard>();
+        controllerEventCard.onOpenLink(eventViewModel);
       },
       child: Text(
         loc.clickHereToSeeMore,
@@ -153,17 +141,15 @@ class _WidgetsEventCardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final weatherCtrl = context.watch<ControllerPageEventWeather>();
+    final ctrl = context.watch<ControllerEventCard>();
     final now = DateTime.now();
     final tmpDate = formatDateRange(now, eventViewModel.dateRange);
     final eventDate =
         DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
 
-    final showWeatherIcon =
-        weatherCtrl.forecast.isNotEmpty && eventDate.isAfter(now);
+    final showWeatherIcon = ctrl.forecast.isNotEmpty && eventDate.isAfter(now);
 
-    final todayWeather =
-        weatherCtrl.forecast.isNotEmpty ? weatherCtrl.forecast.first : null;
+    final todayWeather = ctrl.forecast.isNotEmpty ? ctrl.forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -220,7 +206,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: weatherCtrl.forecast.map((w) {
+                          children: ctrl.forecast.map((w) {
                             String tmp =
                                 '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
@@ -343,18 +329,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
                   );
                 }
                 // 🔹 呼叫 function 更新資料庫
-                final serviceEvent = context.read<ServiceEvent>();
-                final controllerAuth = context.read<ControllerAuth>();
-                await serviceEvent.incrementEventCounter(
-                  eventId: eventViewModel.id,
-                  eventName: eventViewModel.name, // 或者用 eventViewModel.name
-                  column: 'card_clicks',
-                  account: controllerAuth.currentAccount ?? AuthConstants.guest
-                );
-                final controllerEvent = context.read<ControllerEvent>();
-                if (controllerEvent.tableName == TableNames.recommendedEvents) {
-                  controllerEvent.loadEvents();
-                }
+                ctrl.onOpenMap(eventViewModel);
               },
               child: Text(
                 eventViewModel.locationDisplay,
@@ -406,7 +381,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 👍 Favor（登入即可）
-                if(onLike != null)
+                if (onLike != null)
                   IconButton(
                     icon: Icon(
                       eventViewModel.isLike == true
@@ -416,10 +391,10 @@ class _WidgetsEventCardBody extends StatelessWidget {
                     ),
                     tooltip: loc.like,
                     onPressed: onLike,
-                ),
+                  ),
 
                 // 🚫 Not Favor（登入即可）
-                if(onDislike != null)
+                if (onDislike != null)
                   IconButton(
                     icon: Icon(
                       eventViewModel.isDislike == true
