@@ -29,6 +29,39 @@ class ServiceAccounting {
     return null;
   }
 
+  Future<ModelAccountingAccount?> findAccountByEventId(
+      {required String eventId, required String user}) async {
+    // 或者直接從 Supabase 查詢
+    try {
+      final res = await supabase
+          .from('accounting_account')
+          .select('*')
+          .eq('id', eventId)
+          .eq('created_by', user)
+          .eq('is_valid', true)
+          .limit(1)
+          .single();
+
+      final bytes = await compute<String?, Uint8List?>(
+        decodeBase64InIsolate,
+        res['master_graph_url'],
+      );
+
+      return ModelAccountingAccount(
+        id: res['id'],
+        accountName: res['account'],
+        category: res['category'],
+        masterGraphUrl: bytes,
+        points: (res['points'] ?? 0).toInt(),
+        balance: (res['balance'] ?? 0).toInt(),
+        currency: res['main_currency'],
+        exchangeRate: res['exchange_rate'],
+      );
+    } on Exception{
+      return null;
+    }
+  }
+
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
     required String currentType,
@@ -63,8 +96,11 @@ class ServiceAccounting {
     }));
   }
 
-  Future<String> fetchLatestAccount(
-      {required String user, required String currentType, required String category,}) async {
+  Future<String> fetchLatestAccount({
+    required String user,
+    required String currentType,
+    required String category,
+  }) async {
     String currentTable = currentType == 'balance'
         ? 'accounting_account'
         : 'point_record_account';
@@ -74,7 +110,8 @@ class ServiceAccounting {
         .eq('created_by', user)
         .eq('is_valid', true)
         .eq('category', category);
-    final res = await query.order('created_at', ascending: false)
+    final res = await query
+        .order('created_at', ascending: false)
         .limit(1)
         .maybeSingle();
 
@@ -86,7 +123,8 @@ class ServiceAccounting {
       required String user,
       required String? currency,
       required String currentType,
-      required String category,}) async {
+      required String category,
+      String? eventId}) async {
     String currentTable = currentType == 'balance'
         ? 'accounting_account'
         : 'point_record_account';
@@ -110,12 +148,22 @@ class ServiceAccounting {
             .select()
             .single();
       } else {
-        throw Exception('Account already exists'); // 已存在有效帳戶
+        if (eventId != null) {
+          result = await supabase
+              .from(currentTable)
+              .select('*')
+              .eq('created_by', user)
+              .eq('account', name)
+              .single();
+        } else {
+          throw Exception('Account already exists'); // 已存在有效帳戶
+        }
       }
     } else {
       result = await supabase
           .from(currentTable)
           .insert({
+            'id': eventId,
             'account': name,
             'created_by': user,
             'category': category,
