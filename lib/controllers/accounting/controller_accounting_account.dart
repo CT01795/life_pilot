@@ -1,10 +1,14 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/pages/page_accounting_detail.dart';
 import 'package:life_pilot/services/service_accounting.dart';
+import 'package:provider/provider.dart';
 
 enum AccountCategory {
   personal,
@@ -16,7 +20,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
   String? mainCurrency;
-  String _currentType = 'points'; // 預設值
+  String _currentType = 'balance'; // 預設值
 
   String get currentType => _currentType;
 
@@ -144,10 +148,9 @@ class ControllerAccountingAccount extends ChangeNotifier {
     notifyListeners();
   }
 
-  ModelAccountingAccount getAccountById(String id) => accounts.firstWhere(
-        (a) => a.id == id,
-        orElse: () => dummyAccount,
-      );
+  ModelAccountingAccount? getAccountById(String id) {
+    return accounts.firstWhereOrNull((a) => a.id == id);
+  }
 
   Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId}) async {
@@ -197,4 +200,201 @@ class ControllerAccountingAccount extends ChangeNotifier {
       balance: 0,
       currency: null,
       category: '');
+
+  // 共用方法：點 Accounting
+  Future<void> handleAccounting({
+    required BuildContext context,
+    required String eventId,
+  }) async {
+    // 1️⃣ 嘗試找對應 eventId 的帳戶
+    ModelAccountingAccount? existingAccount = await findAccountByEventId(
+      eventId: eventId,
+    );
+
+    // 2️⃣ 如果存在帳戶 → 直接跳 Accounting 頁
+    if (existingAccount != null) {
+      await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PageAccountingDetail(
+            service: context.read<ServiceAccounting>(),
+            account: existingAccount,
+            currentType: 'balance',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 3️⃣ 如果不存在 → 顯示帳戶選擇 Dialog
+    final selectedAccount = await _showAccountPickerDialog(context, eventId);
+    if (selectedAccount == null) return;
+
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PageAccountingDetail(
+          service: context.read<ServiceAccounting>(),
+          account: selectedAccount,
+          currentType: 'balance',
+        ),
+      ),
+    );
+  }
+
+  // 復用原本 Dialog
+  Future<ModelAccountingAccount?> _showAccountPickerDialog(
+      BuildContext context, String eventId) {
+    final loc = AppLocalizations.of(context)!;
+    return showDialog<ModelAccountingAccount>(
+      context: context,
+      builder: (_) {
+        return DefaultTabController(
+          length: 2,
+          child: Dialog(
+            child: SizedBox(
+              height: 500,
+              child: Column(
+                children: [
+                  TabBar(
+                    tabs: [
+                      Tab(text: loc.accountPersonal),
+                      Tab(text: loc.accountProject),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _AccountListView(
+                            category: AccountCategory.personal.name,
+                            eventId: eventId),
+                        _AccountListView(
+                            category: AccountCategory.project.name,
+                            eventId: eventId),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AccountListView extends StatefulWidget {
+  final String category;
+  final String eventId;
+
+  const _AccountListView({required this.category, required this.eventId});
+
+  @override
+  State<_AccountListView> createState() => _AccountListViewState();
+}
+
+class _AccountListViewState extends State<_AccountListView> {
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = context.read<ControllerAccountingAccount>();
+    // 延後到 build 完成再呼叫
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.setCategory(widget.category);
+      await controller.setCurrentType(type: 'balance');
+      await controller.askMainCurrency(context: context);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ControllerAccountingAccount>(
+      builder: (_, controller, __) {
+        final accounts = controller.accounts;
+
+        if (controller.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: accounts.length,
+                itemBuilder: (_, index) {
+                  final account = accounts[index];
+                  return ListTile(
+                    title: Text(account.accountName),
+                    onTap: () {
+                      Navigator.pop(context, account);
+                    },
+                  );
+                },
+              ),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text("New Account"),
+              onPressed: () async {
+                final textController = TextEditingController();
+
+                final created = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    content: TextField(
+                      controller: textController,
+                      decoration:
+                          const InputDecoration(hintText: 'Account name'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final modelAccountingAccount =
+                              await controller.createAccount(
+                            name: textController.text,
+                            eventId: widget.eventId,
+                          );
+                          Navigator.pop(context, true);
+                          // 如果新增的帳戶 category 與目前 Tab 不符
+                          if (modelAccountingAccount.category !=
+                              widget.category) {
+                            // 切換到正確 Tab
+                            final parentTabController =
+                                DefaultTabController.of(context);
+                            int tabIndex = modelAccountingAccount.category ==
+                                    AccountCategory.personal.name
+                                ? 0
+                                : 1;
+                            parentTabController.animateTo(tabIndex);
+
+                            // 同時更新帳戶列表
+                            await controller
+                                .setCategory(modelAccountingAccount.category);
+                          } else {
+                            // 如果同 Tab，直接刷新
+                            //await controller.setCategory(widget.category);
+                          }
+                        },
+                        child: const Text('Create'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (created == true) {
+                  controller.setCategory(widget.category);
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

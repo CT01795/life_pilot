@@ -13,15 +13,15 @@ import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecordDetail extends StatelessWidget {
-  final String accountId;
-  final String accountName;
+  final ModelAccountingAccount account;
+  final String currentType;
   final ServiceAccounting service;
 
   const PagePointRecordDetail({
     super.key,
     required this.service,
-    required this.accountId,
-    required this.accountName,
+    required this.account,
+    required this.currentType,
   });
 
   @override
@@ -32,8 +32,8 @@ class PagePointRecordDetail extends StatelessWidget {
           create: (_) => ControllerAccounting(
             service: service,
             auth: context.read<ControllerAuth>(),
-            accountId: accountId,
-            accountController: context.read<ControllerAccountingAccount>(),
+            account: account,
+            currentType: currentType
           )..loadToday(),
         ),
         Provider<ControllerAccountingSpeech>(
@@ -161,9 +161,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ControllerAccounting>();
-    final account = context
-        .watch<ControllerAccountingAccount>()
-        .getAccountById(controller.accountId);
+    final account = controller.account;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -331,9 +329,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               // ❶ 取這次變動的總值
               final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
               // ❷ 更新主頁帳戶
-              final accountController =
+              final ctrlAA =
                   context.read<ControllerAccountingAccount>();
-              accountController.updateAccountTotals(
+              ctrlAA.updateAccountTotals(
                 accountId: controller.account.id,
                 deltaPoints: delta,
                 deltaBalance: 0,
