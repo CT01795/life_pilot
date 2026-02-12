@@ -18,8 +18,8 @@ class PagePointRecord extends StatefulWidget {
   State<PagePointRecord> createState() => _PagePointRecordState();
 }
 
-class _PagePointRecordState extends State<PagePointRecord> with SingleTickerProviderStateMixin {
-
+class _PagePointRecordState extends State<PagePointRecord>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -27,15 +27,11 @@ class _PagePointRecordState extends State<PagePointRecord> with SingleTickerProv
     super.initState();
 
     _tabController = TabController(length: 3, vsync: this);
-
-    // 預設 personal
     _tabController.index = 0;
-
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
 
       final controller = context.read<ControllerAccountingAccount>();
-
       switch (_tabController.index) {
         case 0:
           controller.setCategory(AccountCategory.personal);
@@ -62,9 +58,11 @@ class _PagePointRecordState extends State<PagePointRecord> with SingleTickerProv
     final controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await controller.setCategory(AccountCategory.personal);
-      await controller.setCurrentType(
-          type: 'points');
+      if (_tabController.index == 0 &&
+          controller.category != AccountCategory.personal.name) {
+        await controller.setCategory(AccountCategory.personal);
+      }
+      await controller.setCurrentType(type: 'points');
     });
   }
 
@@ -78,9 +76,9 @@ class _PagePointRecordState extends State<PagePointRecord> with SingleTickerProv
         child: SafeArea(
           child: TabBar(
             controller: _tabController,
-            labelColor: Colors.white,          // 選中顏色
+            labelColor: Colors.white, // 選中顏色
             unselectedLabelColor: Colors.white70, // 未選中顏色
-            indicatorColor: Colors.white,      // 底線顏色
+            indicatorColor: Colors.white, // 底線顏色
             tabs: [
               Tab(text: loc.accountPersonal),
               Tab(text: loc.accountProject),
@@ -99,7 +97,7 @@ class _PagePointRecordState extends State<PagePointRecord> with SingleTickerProv
   }
 
   Widget _buildBody() {
-  return Selector<ControllerAccountingAccount, bool>(
+    return Selector<ControllerAccountingAccount, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
         if (isLoading) {
@@ -284,7 +282,7 @@ class _AccountCard extends StatelessWidget {
                                 text: '${formatter.format(account.points)} 分',
                                 style: TextStyle(
                                     color: account.points >= 0
-                                        ? Color(0xFF388E3C) 
+                                        ? Color(0xFF388E3C)
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20),
@@ -321,39 +319,42 @@ class _AccountCard extends StatelessWidget {
                   ),
 
                   Column(
-                    mainAxisSize: MainAxisSize.min, // 依內容大小自適應
-                    children: [
-                      Gaps.h80,
-                      // ===== 刪除 =====
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        color: Colors.redAccent,
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              content: Text('Delete ${account.accountName}?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            ),
-                          );
+                      mainAxisSize: MainAxisSize.min, // 依內容大小自適應
+                      children: [
+                        Gaps.h80,
+                        // ===== 刪除 =====
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          color: Colors.redAccent,
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                content: Text('Delete ${account.accountName}?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                          if (confirm == true) {
-                            final controller = context.read<ControllerAccountingAccount>();
-                            await controller.deleteAccount(accountId: account.id);
-                          }
-                        },
-                      ),
-                    ]
-                  )
+                            if (confirm == true) {
+                              final controller =
+                                  context.read<ControllerAccountingAccount>();
+                              await controller.deleteAccount(
+                                  accountId: account.id);
+                            }
+                          },
+                        ),
+                      ])
                 ],
               ),
             ),

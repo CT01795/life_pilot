@@ -27,15 +27,11 @@ class _PageAccountingState extends State<PageAccounting>
     super.initState();
 
     _tabController = TabController(length: 3, vsync: this);
-
-    // 預設 personal
     _tabController.index = 0;
-
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
 
       final controller = context.read<ControllerAccountingAccount>();
-
       switch (_tabController.index) {
         case 0:
           controller.setCategory(AccountCategory.personal);
@@ -62,7 +58,10 @@ class _PageAccountingState extends State<PageAccounting>
     final controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await controller.setCategory(AccountCategory.personal);
+      if (_tabController.index == 0 &&
+          controller.category != AccountCategory.personal.name) {
+        await controller.setCategory(AccountCategory.personal);
+      }
       await controller.setCurrentType(
           type: 'balance');
       await controller.askMainCurrency(
