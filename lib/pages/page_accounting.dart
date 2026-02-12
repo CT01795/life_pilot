@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/pages/page_accounting_detail.dart';
 import 'package:life_pilot/services/service_accounting.dart';
@@ -71,6 +72,7 @@ class _PageAccountingState extends State<PageAccounting>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       body: _buildBody(),
       bottomNavigationBar: Container(
@@ -81,10 +83,10 @@ class _PageAccountingState extends State<PageAccounting>
             labelColor: Colors.white,          // 選中顏色
             unselectedLabelColor: Colors.white70, // 未選中顏色
             indicatorColor: Colors.white,      // 底線顏色
-            tabs: const [
-              Tab(text: 'Personal'),
-              Tab(text: 'Project'),
-              //Tab(text: 'Master'),
+            tabs: [
+              Tab(text: loc.accountPersonal),
+              Tab(text: loc.accountProject),
+              //Tab(text: loc.accountMaster),
             ],
           ),
         ),
