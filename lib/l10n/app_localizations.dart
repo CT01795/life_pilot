@@ -303,6 +303,24 @@ abstract class AppLocalizations {
   /// **'Go add some memories!'**
   String get memoryTraceZero;
 
+  /// Label for accountPersonal
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get accountPersonal;
+
+  /// Label for accountProject
+  ///
+  /// In en, this message translates to:
+  /// **'Journey'**
+  String get accountProject;
+
+  /// Label for accountMaster
+  ///
+  /// In en, this message translates to:
+  /// **'Master'**
+  String get accountMaster;
+
   /// Label for accountRecords
   ///
   /// In en, this message translates to:
