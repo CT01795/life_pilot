@@ -6,6 +6,12 @@ import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 
+enum AccountCategory {
+  personal,
+  project,
+  master,
+}
+
 class ControllerAccountingAccount extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
@@ -14,8 +20,18 @@ class ControllerAccountingAccount extends ChangeNotifier {
 
   String get currentType => _currentType;
 
+  AccountCategory _currentCategory = AccountCategory.personal;
+  String get category => _currentCategory.name;
+
+  Future<void> setCategory(AccountCategory category) async {
+    if (_currentCategory == category) return;
+    _currentCategory = category;
+    await loadAccounts(force: true);
+    notifyListeners();
+  }
+
   // ⭐ 關鍵：由頁面來決定
-  Future<void> setCurrentType(String type) async {
+  Future<void> setCurrentType({required String type}) async {
     if (_currentType == type && isLoaded) return;
 
     _currentType = type;
@@ -28,10 +44,12 @@ class ControllerAccountingAccount extends ChangeNotifier {
     required this.auth,
   });
 
-  Future<void> askMainCurrency(BuildContext context) async {
+  Future<void> askMainCurrency({required BuildContext context}) async {
     if (accounts.isNotEmpty) {
       mainCurrency = await service.fetchLatestAccount(
-          user: auth?.currentAccount ?? constEmpty, currentType: currentType);
+          user: auth?.currentAccount ?? constEmpty,
+          currentType: currentType,
+          category: category);
       notifyListeners();
       return;
     }
@@ -73,28 +91,32 @@ class ControllerAccountingAccount extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     accounts = await service.fetchAccounts(
-      user: auth?.currentAccount ?? constEmpty,
-      currentType: currentType
-    );
+        user: auth?.currentAccount ?? constEmpty,
+        currentType: currentType,
+        category: category);
     isLoading = false;
     isLoaded = true;
     notifyListeners();
   }
 
-  Future<void> createAccount(String name) async {
-    mainCurrency = await service.fetchLatestAccount(
-          user: auth?.currentAccount ?? constEmpty, currentType: currentType);
+  Future<void> createAccount({required String name}) async {
+    if (mainCurrency == null || mainCurrency!.isEmpty) {
+      mainCurrency = await service.fetchLatestAccount(
+          user: auth?.currentAccount ?? constEmpty,
+          currentType: currentType,
+          category: category);
+    }
     await service.createAccount(
-      name: name,
-      user: auth?.currentAccount ?? constEmpty,
-      currency: mainCurrency,
-      currentType: currentType,
-    );
+        name: name,
+        user: auth?.currentAccount ?? constEmpty,
+        currency: mainCurrency,
+        currentType: currentType,
+        category: category);
     // ⭐ 統一來源：重新拉一次
     await loadAccounts(force: true);
   }
 
-  Future<void> deleteAccount(String accountId) async {
+  Future<void> deleteAccount({required String accountId}) async {
     await service.deleteAccount(accountId: accountId, currentType: currentType);
     await loadAccounts(force: true);
   }
@@ -103,8 +125,8 @@ class ControllerAccountingAccount extends ChangeNotifier {
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
 
     // 上傳圖片給後端，後端返回可訪問 URL
-    final newImage =
-        await service.uploadAccountImageBytesDirect(accountId, bytes, currentType);
+    final newImage = await service.uploadAccountImageBytesDirect(
+        accountId, bytes, currentType);
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
@@ -128,7 +150,8 @@ class ControllerAccountingAccount extends ChangeNotifier {
     required int deltaBalance,
     required String? currency,
   }) {
-    final index = accounts.indexWhere((a) => a.id == accountId && (currency == null || a.currency == currency));
+    final index = accounts.indexWhere((a) =>
+        a.id == accountId && (currency == null || a.currency == currency));
     if (index == -1) return;
 
     final old = accounts[index];
@@ -142,10 +165,10 @@ class ControllerAccountingAccount extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> changeMainCurrency(
-    String accountId,
-    String currency,
-  ) async {
+  Future<void> changeMainCurrency({
+    required String accountId,
+    required String currency,
+  }) async {
     await service.switchMainCurrency(
       accountId: accountId,
       currency: currency,
@@ -154,5 +177,10 @@ class ControllerAccountingAccount extends ChangeNotifier {
   }
 
   static final ModelAccountingAccount dummyAccount = ModelAccountingAccount(
-      id: '__dummy__', accountName: '', points: 0, balance: 0, currency: null);
+      id: '__dummy__',
+      accountName: '',
+      points: 0,
+      balance: 0,
+      currency: null,
+      category: '');
 }

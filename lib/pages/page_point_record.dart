@@ -17,48 +17,75 @@ class PagePointRecord extends StatefulWidget {
   State<PagePointRecord> createState() => _PagePointRecordState();
 }
 
-class _PagePointRecordState extends State<PagePointRecord> {
+class _PagePointRecordState extends State<PagePointRecord> with SingleTickerProviderStateMixin {
+
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<ControllerAccountingAccount>()
-          .setCurrentType('points');
+
+    _tabController = TabController(length: 3, vsync: this);
+
+    // 預設 personal
+    _tabController.index = 0;
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+
+      final controller = context.read<ControllerAccountingAccount>();
+
+      switch (_tabController.index) {
+        case 0:
+          controller.setCategory(AccountCategory.personal);
+          break;
+        case 1:
+          controller.setCategory(AccountCategory.project);
+          break;
+        case 2:
+          controller.setCategory(AccountCategory.master);
+          break;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = context.read<ControllerAccountingAccount>();
+    // 延後到 build 完成再呼叫
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.setCategory(AccountCategory.personal);
+      await controller.setCurrentType(
+          type: 'points');
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Selector<ControllerAccountingAccount, bool>(
-        selector: (_, c) => c.isLoading,
-        builder: (context, isLoading, _) {
-          if (isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return Selector<ControllerAccountingAccount,
-                  List<ModelAccountingAccount>>(
-              selector: (_, c) => c.accounts,
-              builder: (context, accounts, _) {
-                if (accounts.isEmpty) {
-                  return const Center(
-                    child: Text('No accounts yet'),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: accounts.length,
-                  itemBuilder: (context, index) {
-                    return _AccountCard(
-                      key: ValueKey(accounts[index].id),
-                      accountId: accounts[index].id, // ✅ 只傳 id
-                    );
-                  },
-                );
-              });
-        },
+      body: _buildBody(),
+      bottomNavigationBar: Container(
+        color: Colors.blueAccent, // 背景色
+        child: SafeArea(
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,          // 選中顏色
+            unselectedLabelColor: Colors.white70, // 未選中顏色
+            indicatorColor: Colors.white,      // 底線顏色
+            tabs: const [
+              Tab(text: 'Personal'),
+              Tab(text: 'Project'),
+              //Tab(text: 'Master'),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add, size: 50),
@@ -66,6 +93,38 @@ class _PagePointRecordState extends State<PagePointRecord> {
           _showAddDialog(context);
         },
       ),
+    );
+  }
+
+  Widget _buildBody() {
+  return Selector<ControllerAccountingAccount, bool>(
+      selector: (_, c) => c.isLoading,
+      builder: (context, isLoading, _) {
+        if (isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Selector<ControllerAccountingAccount,
+                List<ModelAccountingAccount>>(
+            selector: (_, c) => c.accounts,
+            builder: (context, accounts, _) {
+              if (accounts.isEmpty) {
+                return const Center(
+                  child: Text('No accounts yet'),
+                );
+              }
+
+              return ListView.builder(
+                itemCount: accounts.length,
+                itemBuilder: (context, index) {
+                  return _AccountCard(
+                    key: ValueKey(accounts[index].id),
+                    accountId: accounts[index].id, // ✅ 只傳 id
+                  );
+                },
+              );
+            });
+      },
     );
   }
 
@@ -88,7 +147,7 @@ class _PagePointRecordState extends State<PagePointRecord> {
           ElevatedButton(
             onPressed: () async {
               try {
-                await controller.createAccount(textController.text);
+                await controller.createAccount(name: textController.text);
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -286,9 +345,8 @@ class _AccountCard extends StatelessWidget {
                           );
 
                           if (confirm == true) {
-                            await context
-                                .read<ControllerAccountingAccount>()
-                                .deleteAccount(account.id);
+                            final controller = context.read<ControllerAccountingAccount>();
+                            await controller.deleteAccount(accountId: account.id);
                           }
                         },
                       ),

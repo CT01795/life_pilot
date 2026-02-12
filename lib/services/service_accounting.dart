@@ -29,17 +29,21 @@ class ServiceAccounting {
     return null;
   }
 
-  Future<List<ModelAccountingAccount>> fetchAccounts(
-      {required String user, required String currentType}) async {
+  Future<List<ModelAccountingAccount>> fetchAccounts({
+    required String user,
+    required String currentType,
+    required String category, // personal / project
+  }) async {
     String currentTable = currentType == 'balance'
         ? 'accounting_account'
         : 'point_record_account';
-    final res = await supabase
+    var query = supabase
         .from(currentTable)
         .select()
         .eq('created_by', user)
         .eq('is_valid', true)
-        .order('account', ascending: true);
+        .eq('category', category);
+    final res = await query.order('account', ascending: true);
 
     return Future.wait((res as List).map((e) async {
       final bytes = await compute<String?, Uint8List?>(
@@ -49,6 +53,7 @@ class ServiceAccounting {
       return ModelAccountingAccount(
         id: e['id'],
         accountName: e['account'],
+        category: e['category'],
         masterGraphUrl: bytes,
         points: (e['points'] ?? 0).toInt(),
         balance: (e['balance'] ?? 0).toInt(),
@@ -59,16 +64,17 @@ class ServiceAccounting {
   }
 
   Future<String> fetchLatestAccount(
-      {required String user, required String currentType}) async {
+      {required String user, required String currentType, required String category,}) async {
     String currentTable = currentType == 'balance'
         ? 'accounting_account'
         : 'point_record_account';
-    final res = await supabase
+    var query = supabase
         .from(currentTable)
         .select()
         .eq('created_by', user)
         .eq('is_valid', true)
-        .order('created_at', ascending: false)
+        .eq('category', category);
+    final res = await query.order('created_at', ascending: false)
         .limit(1)
         .maybeSingle();
 
@@ -79,26 +85,28 @@ class ServiceAccounting {
       {required String name,
       required String user,
       required String? currency,
-      required String currentType}) async {
+      required String currentType,
+      required String category,}) async {
     String currentTable = currentType == 'balance'
         ? 'accounting_account'
         : 'point_record_account';
     // 先檢查是否有重複帳戶
-    final res = await supabase
+    var query = supabase
         .from(currentTable)
-        .select('id, is_valid')
+        .select('id, is_valid, category')
         .eq('created_by', user)
-        .eq('account', name)
-        .maybeSingle();
+        .eq('account', name);
+    final res = await query.maybeSingle();
 
     PostgrestMap result;
     if (res != null) {
-      if (res['is_valid'] == false) {
+      if (res['is_valid'] == false && res['category'] == category) {
         // 帳戶存在但被刪除 → 直接改成 true
         result = await supabase
             .from(currentTable)
             .update({'is_valid': true})
             .eq('id', res['id'])
+            .eq('category', res['category'])
             .select()
             .single();
       } else {
@@ -110,6 +118,7 @@ class ServiceAccounting {
           .insert({
             'account': name,
             'created_by': user,
+            'category': category,
             'points': 0,
             'balance': 0,
             'main_currency': currency, // 或 mainCurrency
@@ -123,6 +132,7 @@ class ServiceAccounting {
     return ModelAccountingAccount(
         id: result['id'],
         accountName: result['account'],
+        category: result['category'],
         masterGraphUrl: bytes,
         points: (result['points'] ?? 0).toInt(),
         balance: (result['balance'] ?? 0).toInt(),
@@ -161,8 +171,7 @@ class ServiceAccounting {
 
   // ===== 明細 =====
   Future<List<ModelAccounting>> fetchTodayRecords(
-      {required String accountId,
-      required String type}) async {
+      {required String accountId, required String type}) async {
     String currentFunc = type == 'balance'
         ? 'fetch_today_accountings'
         : 'fetch_today_point_records';
@@ -182,18 +191,18 @@ class ServiceAccounting {
               type: e['type'],
               value: (e['value'] ?? 0).toInt(),
               currency: e.containsKey('currency') ? e['currency'] : '',
-              exchangeRate: e.containsKey('exchange_rate')
-                ? e['exchange_rate'] : null,
+              exchangeRate:
+                  e.containsKey('exchange_rate') ? e['exchange_rate'] : null,
             ))
         .toList();
   }
 
-  Future<void> insertRecordsBatch({
-    required String accountId,
-    required String type,
-    required List<AccountingPreview> records,
-    required String? currency,
-    required String currentType}) async {
+  Future<void> insertRecordsBatch(
+      {required String accountId,
+      required String type,
+      required List<AccountingPreview> records,
+      required String? currency,
+      required String currentType}) async {
     String currentFunc = currentType == 'balance'
         ? 'add_accountings_batch'
         : 'add_point_records_batch';

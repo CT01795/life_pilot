@@ -16,14 +16,13 @@ class PageAccountingDetail extends StatelessWidget {
   final String accountId;
   final String accountName;
   final ServiceAccounting service;
-
   const PageAccountingDetail({
     super.key,
     required this.service,
     required this.accountId,
     required this.accountName,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -270,7 +269,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   newDescription: updated.description,
                 );
                 await controller.loadToday();
-                await context.read<ControllerAccountingAccount>().loadAccounts(force: true);
+                final ctrlAA = context.read<ControllerAccountingAccount>();
+                await ctrlAA.loadAccounts(force: true);
                 //setState(() {});
               }
             },
@@ -291,7 +291,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
               final speech = context.read<ServiceSpeech>();
-              if (speech.isListening) return; 
+              if (speech.isListening) return;
               await speech.startListening(
                 onResult: (text) {
                   if (!mounted) return;
@@ -326,7 +326,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
               await controller.commitRecords(
                   previews, controller.account.currency);
-              await context.read<ControllerAccountingAccount>().loadAccounts(force: true);
+              final ctrlAA = context.read<ControllerAccountingAccount>();
+              await ctrlAA.loadAccounts(force: true);
 
               final summary = previews.map((p) {
                 final v = p.value;
@@ -348,7 +349,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   // 回傳修改後的 AccountingPreview，取消則回傳 null
   Future<AccountingPreview?> _showEditDetailDialog(
       BuildContext context, AccountingPreview record) async {
-    final valueController = TextEditingController(text: record.value.toString());
+    final valueController =
+        TextEditingController(text: record.value.toString());
     final descController = TextEditingController(text: record.description);
     String currency = record.currency ?? '';
 

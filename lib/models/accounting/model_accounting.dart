@@ -7,7 +7,7 @@ class ModelAccounting {
   final String description;
   final String type;
   final int value;
-  final String currency; 
+  final String currency;
   num? exchangeRate; 
 
   late final DateTime localTime;

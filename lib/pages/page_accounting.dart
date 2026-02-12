@@ -17,29 +17,97 @@ class PageAccounting extends StatefulWidget {
   State<PageAccounting> createState() => _PageAccountingState();
 }
 
-class _PageAccountingState extends State<PageAccounting> {
+class _PageAccountingState extends State<PageAccounting>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _tabController = TabController(length: 3, vsync: this);
+
+    // 預設 personal
+    _tabController.index = 0;
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+
+      final controller = context.read<ControllerAccountingAccount>();
+
+      switch (_tabController.index) {
+        case 0:
+          controller.setCategory(AccountCategory.personal);
+          break;
+        case 1:
+          controller.setCategory(AccountCategory.project);
+          break;
+        case 2:
+          controller.setCategory(AccountCategory.master);
+          break;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final controller = context.read<ControllerAccountingAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await controller.setCurrentType('balance');
-      await controller.askMainCurrency(context);
+      await controller.setCategory(AccountCategory.personal);
+      await controller.setCurrentType(
+          type: 'balance');
+      await controller.askMainCurrency(
+          context: context);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Selector<ControllerAccountingAccount, bool>(
-        selector: (_, c) => c.isLoading,
-        builder: (context, isLoading, _) {
-          if (isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: _buildBody(),
+      bottomNavigationBar: Container(
+        color: Colors.blueAccent, // 背景色
+        child: SafeArea(
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,          // 選中顏色
+            unselectedLabelColor: Colors.white70, // 未選中顏色
+            indicatorColor: Colors.white,      // 底線顏色
+            tabs: const [
+              Tab(text: 'Personal'),
+              Tab(text: 'Project'),
+              //Tab(text: 'Master'),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add, size: 50),
+        onPressed: () {
+          _showAddDialog(context);
+        },
+      ),
+    );
+  }
 
-          return Selector<ControllerAccountingAccount, List<ModelAccountingAccount>>(
+  Widget _buildBody() {
+    return Selector<ControllerAccountingAccount, bool>(
+      selector: (_, c) => c.isLoading,
+      builder: (context, isLoading, _) {
+        if (isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Selector<ControllerAccountingAccount,
+                List<ModelAccountingAccount>>(
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
               if (accounts.isEmpty) {
@@ -57,16 +125,8 @@ class _PageAccountingState extends State<PageAccounting> {
                   );
                 },
               );
-            }
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add, size: 50),
-        onPressed: () {
-          _showAddDialog(context);
-        },
-      ),
+            });
+      },
     );
   }
 
@@ -89,7 +149,8 @@ class _PageAccountingState extends State<PageAccounting> {
           ElevatedButton(
             onPressed: () async {
               try {
-                await controller.createAccount(textController.text);
+                await controller.createAccount(
+                    name: textController.text);
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -115,6 +176,7 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.read<ControllerAccountingAccount>();
     return Selector<ControllerAccountingAccount, ModelAccountingAccount>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) =>
@@ -146,7 +208,8 @@ class _AccountCard extends StatelessWidget {
                 ),
               );
               if (needReload == true) {
-                await context.read<ControllerAccountingAccount>().loadAccounts(force: true);
+                await controller.loadAccounts(
+                    force: true);
               }
             },
             child: Padding(
@@ -227,7 +290,8 @@ class _AccountCard extends StatelessWidget {
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: '${formatter.format(account.balance)} 元', // 資料還沒來先顯示 '-'
+                                text:
+                                    '${formatter.format(account.balance)} 元', // 資料還沒來先顯示 '-'
                                 style: TextStyle(
                                     color: account.balance >= 0
                                         ? Color(0xFF388E3C) // 綠色
@@ -250,8 +314,8 @@ class _AccountCard extends StatelessWidget {
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: 
-                                  '${formatter.format(account.points)} 分', // 資料還沒來先顯示 '-'
+                                text:
+                                    '${formatter.format(account.points)} 分', // 資料還沒來先顯示 '-'
                                 style: TextStyle(
                                     color: account.points >= 0
                                         ? Color(0xFF757575)
@@ -266,64 +330,64 @@ class _AccountCard extends StatelessWidget {
                     ),
                   ),
                   Column(
-                    mainAxisSize: MainAxisSize.min, // 依內容大小自適應
-                    children: [
-                      //幣別切換按鈕
-                      IconButton(
-                        icon: const Icon(Icons.currency_exchange),
-                        onPressed: () async {
-                          final selected = await showDialog<String>(
-                            context: context,
-                            builder: (_) => SimpleDialog(
-                              title: const Text('Switching Currency'),
-                              children: currencyList.map((c) {
-                                return SimpleDialogOption(
-                                  child: Text(c),
-                                  onPressed: () => Navigator.pop(context, c),
-                                );
-                              }).toList(),
-                            ),
-                          );
+                      mainAxisSize: MainAxisSize.min, // 依內容大小自適應
+                      children: [
+                        //幣別切換按鈕
+                        IconButton(
+                          icon: const Icon(Icons.currency_exchange),
+                          onPressed: () async {
+                            final selected = await showDialog<String>(
+                              context: context,
+                              builder: (_) => SimpleDialog(
+                                title: const Text('Switching Currency'),
+                                children: currencyList.map((c) {
+                                  return SimpleDialogOption(
+                                    child: Text(c),
+                                    onPressed: () => Navigator.pop(context, c),
+                                  );
+                                }).toList(),
+                              ),
+                            );
 
-                          if (selected != null) {
-                            await context
-                                .read<ControllerAccountingAccount>()
-                                .changeMainCurrency(account.id, selected);
-                          }
-                        },
-                      ),
-                      Gaps.h32,
-                      // ===== 刪除 =====
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        color: Colors.redAccent,
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              content: Text('Delete ${account.accountName}?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            ),
-                          );
+                            if (selected != null) {
+                              await controller.changeMainCurrency(
+                                  accountId: account.id,
+                                  currency: selected);
+                            }
+                          },
+                        ),
+                        Gaps.h32,
+                        // ===== 刪除 =====
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          color: Colors.redAccent,
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                content: Text('Delete ${account.accountName}?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                          if (confirm == true) {
-                            await context
-                                .read<ControllerAccountingAccount>()
-                                .deleteAccount(account.id);
-                          }
-                        },
-                      ),
-                    ]
-                  )
+                            if (confirm == true) {
+                              await controller.deleteAccount(
+                                  accountId: account.id);
+                            }
+                          },
+                        ),
+                      ])
                 ],
               ),
             ),
