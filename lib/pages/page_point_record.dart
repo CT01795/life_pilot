@@ -34,13 +34,13 @@ class _PagePointRecordState extends State<PagePointRecord>
       final controller = context.read<ControllerAccountingAccount>();
       switch (_tabController.index) {
         case 0:
-          controller.setCategory(AccountCategory.personal);
+          controller.setCategory(AccountCategory.personal.name);
           break;
         case 1:
-          controller.setCategory(AccountCategory.project);
+          controller.setCategory(AccountCategory.project.name);
           break;
         case 2:
-          controller.setCategory(AccountCategory.master);
+          controller.setCategory(AccountCategory.master.name);
           break;
       }
     });
@@ -60,7 +60,7 @@ class _PagePointRecordState extends State<PagePointRecord>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_tabController.index == 0 &&
           controller.category != AccountCategory.personal.name) {
-        await controller.setCategory(AccountCategory.personal);
+        await controller.setCategory(AccountCategory.personal.name);
       }
       await controller.setCurrentType(type: 'points');
     });

@@ -20,10 +20,12 @@ class ControllerAccountingAccount extends ChangeNotifier {
 
   String get currentType => _currentType;
 
-  AccountCategory? _currentCategory;
-  String get category => _currentCategory == null ? AccountCategory.personal.name : _currentCategory!.name;
+  String? _currentCategory;
+  String get category => _currentCategory == null
+      ? AccountCategory.personal.name
+      : _currentCategory!;
 
-  Future<void> setCategory(AccountCategory category) async {
+  Future<void> setCategory(String category) async {
     if (_currentCategory == category) return;
     _currentCategory = category;
     await loadAccounts(force: true);
@@ -45,7 +47,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
   });
 
   Future<void> askMainCurrency({required BuildContext context}) async {
-    if (accounts.isNotEmpty) {
+    if (accounts.isNotEmpty || mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await service.fetchLatestAccount(
           user: auth?.currentAccount ?? constEmpty,
           currentType: currentType,
@@ -99,21 +101,24 @@ class ControllerAccountingAccount extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> createAccount({required String name}) async {
+  Future<ModelAccountingAccount> createAccount(
+      {required String name, String? eventId}) async {
     if (mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await service.fetchLatestAccount(
           user: auth?.currentAccount ?? constEmpty,
           currentType: currentType,
           category: category);
     }
-    await service.createAccount(
+    final modelAccountingAccount = await service.createAccount(
         name: name,
         user: auth?.currentAccount ?? constEmpty,
         currency: mainCurrency,
         currentType: currentType,
-        category: category);
+        category: category,
+        eventId: eventId);
     // ⭐ 統一來源：重新拉一次
     await loadAccounts(force: true);
+    return modelAccountingAccount;
   }
 
   Future<void> deleteAccount({required String accountId}) async {
@@ -143,6 +148,15 @@ class ControllerAccountingAccount extends ChangeNotifier {
         (a) => a.id == id,
         orElse: () => dummyAccount,
       );
+
+  Future<ModelAccountingAccount?> findAccountByEventId(
+      {required String eventId}) async {
+    // 或者直接從 Supabase 查詢
+    return await service.findAccountByEventId(
+      eventId: eventId,
+      user: auth?.currentAccount ?? constEmpty,
+    );
+  }
 
   void updateAccountTotals({
     required String accountId,

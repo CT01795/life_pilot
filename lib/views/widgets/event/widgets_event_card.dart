@@ -21,6 +21,7 @@ class WidgetsEventCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onLike;
   final VoidCallback? onDislike;
+  final VoidCallback? onAccounting;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -33,6 +34,7 @@ class WidgetsEventCard extends StatelessWidget {
     this.onDelete,
     this.onLike,
     this.onDislike,
+    this.onAccounting,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -52,7 +54,7 @@ class WidgetsEventCard extends StatelessWidget {
           startDate: eventViewModel.startDate,
           endDate: eventViewModel.endDate,
           tableName: tableName,
-      ),
+        ),
       child: _WidgetsEventCardBody(
         eventViewModel: eventViewModel,
         tableName: tableName,
@@ -60,6 +62,7 @@ class WidgetsEventCard extends StatelessWidget {
         onDelete: onDelete,
         onLike: onLike,
         onDislike: onDislike,
+        onAccounting: onAccounting,
         trailing: trailing,
         showSubEvents: showSubEvents,
       ),
@@ -126,6 +129,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onLike;
   final VoidCallback? onDislike;
+  final VoidCallback? onAccounting;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -137,6 +141,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
     this.onDelete,
     this.onLike,
     this.onDislike,
+    this.onAccounting,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -411,7 +416,12 @@ class _WidgetsEventCardBody extends StatelessWidget {
                     tooltip: loc.dislike,
                     onPressed: onDislike,
                   ),
-
+                if (onAccounting != null)
+                  IconButton(
+                    icon: Icon(Icons.currency_exchange),
+                    tooltip: loc.accountRecords,
+                    onPressed: onAccounting,
+                  ),
                 // 🗑 Delete（只有 canDelete）
                 if (eventViewModel.canDelete && onDelete != null)
                   IconButton(
