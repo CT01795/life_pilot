@@ -111,6 +111,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memoryTraceZero => 'Go add some memories!';
 
   @override
+  String get accountPersonal => 'Personal';
+
+  @override
+  String get accountProject => 'Journey';
+
+  @override
+  String get accountMaster => 'Master';
+
+  @override
   String get accountRecords => 'Account Records';
 
   @override

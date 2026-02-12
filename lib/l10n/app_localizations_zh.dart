@@ -111,6 +111,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get memoryTraceZero => '去創造更多回憶吧！';
 
   @override
+  String get accountPersonal => '個人';
+
+  @override
+  String get accountProject => '旅程';
+
+  @override
+  String get accountMaster => '總帳戶';
+
+  @override
   String get accountRecords => '記帳';
 
   @override

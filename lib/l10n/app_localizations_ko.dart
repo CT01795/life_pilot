@@ -111,6 +111,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get memoryTraceZero => '어서 추억을 추가해봐요!';
 
   @override
+  String get accountPersonal => '개인의';
+
+  @override
+  String get accountProject => '여행';
+
+  @override
+  String get accountMaster => '그룹';
+
+  @override
   String get accountRecords => '가계부 기록';
 
   @override

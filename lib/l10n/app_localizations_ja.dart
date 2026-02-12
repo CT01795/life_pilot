@@ -111,6 +111,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get memoryTraceZero => 'さあ、思い出を追加しよう！';
 
   @override
+  String get accountPersonal => '個人的';
+
+  @override
+  String get accountProject => '旅';
+
+  @override
+  String get accountMaster => 'グループ';
+
+  @override
   String get accountRecords => '収支記録';
 
   @override
