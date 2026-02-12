@@ -20,8 +20,8 @@ class ControllerAccountingAccount extends ChangeNotifier {
 
   String get currentType => _currentType;
 
-  AccountCategory _currentCategory = AccountCategory.personal;
-  String get category => _currentCategory.name;
+  AccountCategory? _currentCategory;
+  String get category => _currentCategory == null ? AccountCategory.personal.name : _currentCategory!.name;
 
   Future<void> setCategory(AccountCategory category) async {
     if (_currentCategory == category) return;
