@@ -173,13 +173,22 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ControllerAccountingAccount, ModelAccountingAccount>(
+    final controller = context.read<ControllerAccountingAccount>();
+    return Selector<ControllerAccountingAccount, ModelAccountingAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
-      shouldRebuild: (prev, next) =>
-          prev.points != next.points ||
+      shouldRebuild: (prev, next) {
+        if (prev == null && next == null) return false;
+        if (prev == null || next == null) return true;
+        return prev.points != next.points ||
           prev.balance != next.balance ||
-          prev.masterGraphUrl != next.masterGraphUrl,
+          prev.masterGraphUrl != next.masterGraphUrl;
+      },
       builder: (context, account, _) {
+        if (account == null) {
+          return const SizedBox.shrink();
+          // 或 return Center(child: CircularProgressIndicator());
+        }
+
         final formatter = NumberFormat('#,###');
 
         return Card(
@@ -195,8 +204,8 @@ class _AccountCard extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => PagePointRecordDetail(
                     service: context.read<ServiceAccounting>(),
-                    accountId: account.id,
-                    accountName: account.accountName,
+                    account: account,
+                    currentType: controller.currentType,
                   ),
                 ),
               );
@@ -347,8 +356,6 @@ class _AccountCard extends StatelessWidget {
                             );
 
                             if (confirm == true) {
-                              final controller =
-                                  context.read<ControllerAccountingAccount>();
                               await controller.deleteAccount(
                                   accountId: account.id);
                             }

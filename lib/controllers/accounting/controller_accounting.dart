@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting.dart';
@@ -10,15 +9,12 @@ import 'package:life_pilot/services/service_accounting.dart';
 class ControllerAccounting extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
-  final String accountId;
-  final ControllerAccountingAccount accountController;
+  final ModelAccountingAccount account;
+  final String currentType;
   num? currentExchangeRate;
   String? _currentCurrency;
 
-  String get currentType => accountController.currentType;
-
-  String? get currentCurrency =>
-      _currentCurrency ?? accountController.mainCurrency;
+  String? get currentCurrency => _currentCurrency ?? account.currency;
 
   set currentCurrency(String? value) {
     _currentCurrency = value;
@@ -28,14 +24,11 @@ class ControllerAccounting extends ChangeNotifier {
   ControllerAccounting(
       {required this.service,
       required this.auth,
-      required this.accountId,
-      required this.accountController,
+      required this.account,
+      required this.currentType,
       this.currentExchangeRate});
 
   int todayTotal = 0;
-
-  ModelAccountingAccount get account =>
-      accountController.getAccountById(accountId);
 
   List<ModelAccounting> todayRecords = [];
 
@@ -49,16 +42,15 @@ class ControllerAccounting extends ChangeNotifier {
       currentCurrency = todayRecords.last.currency;
       currentExchangeRate = todayRecords.last.exchangeRate;
     } else {
-      currentCurrency = accountController.mainCurrency;
+      currentCurrency = account.currency;
     }
 
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     todayTotal = todayRecords
-      .where((r) =>
-          r.currency == currentCurrency &&
-          r.localTime.isAfter(todayStart))
-      .fold(0, (s, r) => s + r.value);
+        .where((r) =>
+            r.currency == currentCurrency && r.localTime.isAfter(todayStart))
+        .fold(0, (s, r) => s + r.value);
     notifyListeners();
   }
 

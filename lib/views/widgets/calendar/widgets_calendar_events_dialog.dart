@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
@@ -8,15 +9,14 @@ import 'package:life_pilot/core/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_event_add.dart';
-import 'package:life_pilot/pages/page_accounting_detail.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/services/service_accounting.dart';
 import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
 import 'package:life_pilot/views/widgets/event/widgets_event_trailing.dart';
 import 'package:life_pilot/views/widgets/calendar/widgets_calendar.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/date_time.dart';
 import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
+import 'package:provider/provider.dart';
 
 Future<bool> showCalendarEventsDialog({
   required ControllerAuth auth,
@@ -174,26 +174,10 @@ Future<bool> showCalendarEventsDialog({
                                     Navigator.pop(
                                         context, true); // ✅ 回傳 true 給外層
                                   },
-                           /* onAccounting: () async {
-                              final selectedAccount = await _showAccountPickerDialog(context);
-
-                              if (selectedAccount == null) return;
-
-                              final result = await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PageAccountingDetail(
-                                    service: context.read<ServiceAccounting>(),
-                                    accountId: selectedAccount.id,
-                                    accountName: selectedAccount.accountName,
-                                  ),
-                                ),
-                              );
-
-                              if (result == true) {
-                                // 這裡可以 reload event 或 refresh UI
-                              }
-                            }, //TODO*/
+                            onAccounting: () => context.read<ControllerAccountingAccount>().handleAccounting(
+                              context: context,
+                              eventId: event.id,
+                            ),
                             trailing: widgetsEventTrailing(
                               context: context,
                               auth: auth,
