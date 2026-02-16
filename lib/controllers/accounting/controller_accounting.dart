@@ -70,15 +70,38 @@ class ControllerAccounting extends ChangeNotifier {
   }
 
   Future<void> commitRecords(
-      List<AccountingPreview> previews, String? currency) async {
-    await service.insertRecordsBatch(
+    List<AccountingPreview> previews,
+    String? currency,
+  ) async {
+    final usedCurrency = currency;
+  
+    debugPrint('===== commitRecords START =====');
+    debugPrint('accountId: ${account.id}');
+    debugPrint('currentType: $currentType');
+    debugPrint('currency: $usedCurrency');
+    debugPrint('records count: ${previews.length}');
+    debugPrint('records data: $previews');
+  
+    try {
+      await service.insertRecordsBatch(
         accountId: account.id,
         type: currentType,
         records: previews,
-        currency: currency ?? 'TWD',
-        currentType: currentType);
-
-    await loadToday();
+        currency: usedCurrency,
+        currentType: currentType,
+      );
+  
+      debugPrint('insertRecordsBatch SUCCESS');
+  
+      await loadToday();
+      debugPrint('loadToday SUCCESS');
+  
+    } catch (e, stackTrace) {
+      debugPrint('insertRecordsBatch ERROR: $e');
+      debugPrint('stackTrace: $stackTrace');
+    }
+  
+    debugPrint('===== commitRecords END =====');
   }
 
   // 更新單筆 accounting_detail
