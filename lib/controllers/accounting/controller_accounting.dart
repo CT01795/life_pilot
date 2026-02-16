@@ -75,7 +75,7 @@ class ControllerAccounting extends ChangeNotifier {
         accountId: account.id,
         type: currentType,
         records: previews,
-        currency: currency,
+        currency: currency ?? 'TWD',
         currentType: currentType);
 
     await loadToday();
