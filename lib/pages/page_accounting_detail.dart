@@ -58,7 +58,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   @override
   void dispose() {
-    context.read<ServiceSpeech>().stopListening();
+    _speech.stopListening();
     _speechTextController.dispose();
     super.dispose();
   }
