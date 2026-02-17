@@ -49,7 +49,8 @@ class ControllerAccounting extends ChangeNotifier {
     final todayStart = DateTime(now.year, now.month, now.day);
     todayTotal = todayRecords
         .where((r) =>
-            r.currency == currentCurrency && r.localTime.isAfter(todayStart))
+            r.currency == currentCurrency &&
+        r.localTime != null && r.localTime!.isAfter(todayStart))
         .fold(0, (s, r) => s + r.value);
     notifyListeners();
   }
