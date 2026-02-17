@@ -324,9 +324,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               if (confirmed != true) return;
 
               final tts = context.read<TtsService>();
+              final ctrlAA = context.read<ControllerAccountingAccount>();
               await controller.commitRecords(
                   previews, controller.account.currency);
-              final ctrlAA = context.read<ControllerAccountingAccount>();
               await ctrlAA.loadAccounts(force: true);
 
               final summary = previews.map((p) {
