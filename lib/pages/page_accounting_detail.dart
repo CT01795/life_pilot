@@ -259,6 +259,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   exchangeRate: null,
                 ),
               );
+              if (!mounted) return;
               if (updated != null) {
                 await controller.updateAccountingDetail(
                   recordId: updated.id,
@@ -320,6 +321,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   controller.currentExchangeRate);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
+              if (!mounted) return;
               if (confirmed != true) return;
 
               final tts = context.read<TtsService>();
