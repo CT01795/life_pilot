@@ -337408,6 +337408,11 @@
             case 3:
               // returning from await.
               updated = $async$result;
+              if (t2._framework$_element == null) {
+                // goto return
+                $async$goto = 1;
+                break;
+              }
               $async$goto = updated != null ? 4 : 5;
               break;
             case 4:
@@ -337487,7 +337492,7 @@
     call$0() {
       var $async$goto = 0,
         $async$completer = A._makeAsyncAwaitCompleter(type$.void),
-        $async$returnValue, $async$self = this, t4, t5, previews, t6, tts, ctrlAA, summary, t1, t2, t3;
+        $async$returnValue, $async$self = this, t4, t5, previews, t6, confirmed, tts, ctrlAA, summary, t1, t2, t3;
       var $async$call$0 = A._wrapJsFunctionForAsync(function($async$errorCode, $async$result) {
         if ($async$errorCode === 1)
           return A._asyncRethrow($async$result, $async$completer);
@@ -337521,7 +337526,13 @@
               return A._asyncAwait(t1.showVoiceConfirmDialog$2(t6, previews), $async$call$0);
             case 4:
               // returning from await.
-              if ($async$result !== true) {
+              confirmed = $async$result;
+              if (t1._framework$_element == null) {
+                // goto return
+                $async$goto = 1;
+                break;
+              }
+              if (confirmed !== true) {
                 // goto return
                 $async$goto = 1;
                 break;
