@@ -249,6 +249,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   fontSize: 18),
             ),
             onTap: () async {
+              final ctrlAA = context.read<ControllerAccountingAccount>();
               final updated = await _showEditDetailDialog(
                 context,
                 AccountingPreview(
@@ -267,7 +268,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   newDescription: updated.description,
                 );
                 await controller.loadToday();
-                final ctrlAA = context.read<ControllerAccountingAccount>();
+                if (!mounted) return;
                 await ctrlAA.loadAccounts(force: true);
                 //setState(() {});
               }
