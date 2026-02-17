@@ -39,7 +39,7 @@ class ControllerAccounting extends ChangeNotifier {
     );
 
     if (todayRecords.isNotEmpty) {
-      currentCurrency = todayRecords.last.currency;
+      currentCurrency = todayRecords.last.currency ?? account.currency;
       currentExchangeRate = todayRecords.last.exchangeRate;
     } else {
       currentCurrency = account.currency;
