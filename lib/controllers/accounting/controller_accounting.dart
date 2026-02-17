@@ -74,14 +74,7 @@ class ControllerAccounting extends ChangeNotifier {
     String? currency,
   ) async {
     final usedCurrency = currency;
-  
-    print('===== commitRecords START =====');
-    print('accountId: ${account.id}');
-    print('currentType: $currentType');
-    print('currency: $usedCurrency');
-    print('records count: ${previews.length}');
-    print('records data: $previews');
-  
+    
     try {
       await service.insertRecordsBatch(
         accountId: account.id,
@@ -91,17 +84,12 @@ class ControllerAccounting extends ChangeNotifier {
         currentType: currentType,
       );
   
-      print('insertRecordsBatch SUCCESS');
-  
       await loadToday();
-      print('loadToday SUCCESS');
   
     } catch (e, stackTrace) {
       print('insertRecordsBatch ERROR: $e');
       print('stackTrace: $stackTrace');
     }
-  
-    print('===== commitRecords END =====');
   }
 
   // 更新單筆 accounting_detail
