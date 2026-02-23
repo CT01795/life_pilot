@@ -20,21 +20,17 @@ class ControllerAccounting extends ChangeNotifier {
     if (_currentCurrency != null) {
       return _currentCurrency;
     }
-    final account = getAccount();
-    if (account == null) return null;
-
+    final account = getAccount(accountId);
     return account.currency;
   }
 
-  int get totalValue {
-    final account = getAccount();
-    if (account == null) return 0;
-
+  int totalValue(String? inputAccountId) {
+    final account = getAccount(inputAccountId ?? accountId);
     return currentType == 'balance' ? account.balance : account.points;
   }
 
-  ModelAccountingAccount? getAccount() {
-    return accountController.getAccountById(accountId);
+  ModelAccountingAccount getAccount(String? inputAccountId) {
+    return accountController.getAccountById(inputAccountId ?? accountId);
   }
 
   set currentCurrency(String? value) {
@@ -54,9 +50,9 @@ class ControllerAccounting extends ChangeNotifier {
 
   List<ModelAccounting> todayRecords = [];
 
-  Future<void> loadToday() async {
+  Future<void> loadToday({String? inputAccountId}) async {
     todayRecords = await service.fetchTodayRecords(
-      accountId: accountId,
+      accountId: inputAccountId ?? accountId,
       type: currentType,
     );
 
@@ -64,8 +60,7 @@ class ControllerAccounting extends ChangeNotifier {
       currentCurrency = todayRecords.last.currency;
       currentExchangeRate = todayRecords.last.exchangeRate;
     } else {
-      final account = getAccount();
-      if (account == null) return;
+      final account = getAccount(inputAccountId ?? accountId);
       currentCurrency = account.currency;
     }
 
@@ -93,16 +88,16 @@ class ControllerAccounting extends ChangeNotifier {
         .toList();
   }
 
-  Future<void> commitRecords(
-      List<AccountingPreview> previews, String? currency) async {
+  Future<void> commitRecords(List<AccountingPreview> previews, String? currency,
+      {String? inputAccountId}) async {
     await service.insertRecordsBatch(
-        accountId: accountId,
+        accountId: inputAccountId ?? accountId,
         type: currentType,
         records: previews,
         currency: currency,
         currentType: currentType);
 
-    await loadToday();
+    await loadToday(inputAccountId: inputAccountId ?? accountId);
   }
 
   // 更新單筆 accounting_detail

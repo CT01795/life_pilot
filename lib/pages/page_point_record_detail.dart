@@ -40,13 +40,14 @@ class PagePointRecordDetail extends StatelessWidget {
           create: (_) => ControllerAccountingSpeech(),
         ),
       ],
-      child: _PageAccountingDetailView(),
+      child: _PageAccountingDetailView(account),
     );
   }
 }
 
 class _PageAccountingDetailView extends StatefulWidget {
-  const _PageAccountingDetailView();
+  final ModelAccountingAccount account;
+  const _PageAccountingDetailView(this.account);
 
   @override
   State<_PageAccountingDetailView> createState() =>
@@ -161,7 +162,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ControllerAccounting>();
-    final account = controller.getAccount();
+    final account = controller.getAccount(widget.account.id);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -170,7 +171,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
-        title: Text(account!.accountName),
+        title: Text(account.accountName),
         backgroundColor: Colors.blueAccent, // 可自定義顏色
         elevation: 2,
       ),
@@ -189,7 +190,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
     String currency = account.currency ?? '';
-    int totalValue = controller.totalValue;
+    int totalValue = controller.totalValue(widget.account.id);
 
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,

@@ -9,6 +9,7 @@ import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/pages/page_accounting_detail.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 enum AccountCategory {
   personal,
@@ -91,7 +92,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
   bool isLoading = false;
   bool isLoaded = false;
 
-  Future<void> loadAccounts({bool force = false}) async {
+  Future<void> loadAccounts({bool force = false, String? inputCategory}) async {
     if (isLoading) return;
     if (!force && isLoaded) return;
     isLoading = true;
@@ -99,7 +100,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
     accounts = await service.fetchAccounts(
         user: auth?.currentAccount ?? constEmpty,
         currentType: currentType,
-        category: category);
+        category: inputCategory ?? category);
     isLoading = false;
     isLoaded = true;
     notifyListeners();
@@ -148,8 +149,9 @@ class ControllerAccountingAccount extends ChangeNotifier {
     notifyListeners();
   }
 
-  ModelAccountingAccount? getAccountById(String id) {
-    return accounts.firstWhereOrNull((a) => a.id == id);
+  ModelAccountingAccount getAccountById(String id) {
+    final returnAccount = accounts.firstWhereOrNull((a) => a.id == id);
+    return returnAccount ?? ModelAccountingAccount(id: Uuid().v4(), accountName: 'dummy', category: 'balance');
   }
 
   Future<ModelAccountingAccount?> findAccountByEventId(
@@ -295,7 +297,6 @@ class _AccountListView extends StatefulWidget {
 }
 
 class _AccountListViewState extends State<_AccountListView> {
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();

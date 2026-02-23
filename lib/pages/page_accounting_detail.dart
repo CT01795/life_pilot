@@ -39,13 +39,14 @@ class PageAccountingDetail extends StatelessWidget {
           create: (_) => ControllerAccountingSpeech(),
         ),
       ],
-      child: _PageAccountingDetailView(),
+      child: _PageAccountingDetailView(account),
     );
   }
 }
 
 class _PageAccountingDetailView extends StatefulWidget {
-  const _PageAccountingDetailView();
+  final ModelAccountingAccount account;
+  const _PageAccountingDetailView(this.account);
 
   @override
   State<_PageAccountingDetailView> createState() =>
@@ -135,7 +136,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ControllerAccounting>();
-    final account = controller.getAccount();
+    final account = widget.account;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -144,7 +145,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
-        title: Text(account == null ? constEmpty : account.accountName),
+        title: Text(account.accountName),
         backgroundColor: Colors.blueAccent, // 可自定義顏色
         elevation: 2,
       ),
@@ -161,12 +162,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildSummary(
-      ModelAccountingAccount? account, ControllerAccounting controller) {
-    if (account == null) {
-      return SizedBox.shrink(); // 返回一個不佔空間的 widget
-    }
+      ModelAccountingAccount account, ControllerAccounting controller) {
     String currency = account.currency ?? '';
-    int totalValue = controller.totalValue;
+    int totalValue = controller.totalValue(account.id);
 
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -326,7 +324,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               await controller.commitRecords(
                   previews, controller.currentCurrency);
               final ctrlAA = context.read<ControllerAccountingAccount>();
-              await ctrlAA.loadAccounts(force: true);
+              if (widget.account.category == 'personal') {
+                await ctrlAA.loadAccounts(force: true);
+              }else{
+                await ctrlAA.loadAccounts(force: true, inputCategory: 'project');
+              }
 
               // 清空輸入框
               setState(() {
