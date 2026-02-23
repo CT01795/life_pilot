@@ -101,17 +101,37 @@ class ServiceEventPublic {
       }
     }
     //==================================== 取得外部資源事件 Accupass ====================================
-    final cloudCultureUrl =
-        'https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=all';
-    if (await checkEventsUrl(cloudCultureUrl, today)) {
-      try {
-        List<EventItem> cloudCultureList =
-            await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
+    Map<int, String> tmpMap = {
+      1: "音樂",
+      2: "戲劇",
+      3: "舞蹈",
+      4: "親子",
+      5: "獨立音樂",
+      6: "展覽",
+      7: "講座",
+      8: "電影",
+      11: "綜藝",
+      13: "競賽",
+      14: "徵選",
+      15: "其他",
+      17: "演唱會",
+      19: "研習課程",
+      200: "閱讀"
+    };
+    for (int i in tmpMap.keys) {
+      final cloudCultureUrl =
+          'https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=$i';
 
-        //==================================== strolltimesList事件寫入 ====================================
-        dbNameSet = await _insertIfNotExists(cloudCultureList, dbNameSet);
-      } on Exception catch (ex) {
-        logger.e(ex);
+      if (await checkEventsUrl(cloudCultureUrl, today)) {
+        try {
+          List<EventItem> cloudCultureList =
+              await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
+
+          //==================================== strolltimesList事件寫入 ====================================
+          dbNameSet = await _insertIfNotExists(cloudCultureList, dbNameSet);
+        } on Exception catch (ex) {
+          logger.e(ex);
+        }
       }
     }
   }
@@ -263,8 +283,12 @@ class ServiceEventPublic {
         for (var row in rows) {
           final cells = row.querySelectorAll('td');
           if (cells.length >= 4) {
-            DateTime? startDate = cells[0].text.trim().length >= 8 ? DateFormat('yyyy/M/d').parse(cells[0].text.trim()) : null;
-            DateTime? endDate = cells[1].text.trim().length >= 8 ? DateFormat('yyyy/M/d').parse(cells[1].text.trim()) : null;
+            DateTime? startDate = cells[0].text.trim().length >= 8
+                ? DateFormat('yyyy/M/d').parse(cells[0].text.trim())
+                : null;
+            DateTime? endDate = cells[1].text.trim().length >= 8
+                ? DateFormat('yyyy/M/d').parse(cells[1].text.trim())
+                : null;
             if (startDate != null &&
                 endDate != null &&
                 !endDate.isBefore(today)) {
