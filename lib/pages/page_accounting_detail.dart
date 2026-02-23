@@ -144,7 +144,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
-        title: Text(account!.accountName),
+        title: Text(account == null ? constEmpty : account.accountName),
         backgroundColor: Colors.blueAccent, // 可自定義顏色
         elevation: 2,
       ),
@@ -161,7 +161,10 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildSummary(
-      ModelAccountingAccount account, ControllerAccounting controller) {
+      ModelAccountingAccount? account, ControllerAccounting controller) {
+    if (account == null) {
+      return SizedBox.shrink(); // 返回一個不佔空間的 widget
+    }
     String currency = account.currency ?? '';
     int totalValue = controller.totalValue;
 
