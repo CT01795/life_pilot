@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
@@ -87,10 +88,17 @@ class ControllerAppBarActions extends ChangeNotifier {
         type: FileType.custom,
         allowedExtensions: ['csv', 'xlsx'],
         allowMultiple: false,
+        withData: true,
       );
       if (result == null || result.files.isEmpty) return loc.uploadFailed;
       final file = result.files.first;
-      final bytes = result.files.first.bytes;
+      var bytes = result.files.first.bytes;
+      // 如果 bytes 為 null，嘗試用 path 讀
+      if ((bytes == null || bytes.isEmpty) && result.files.first.path != null) {
+        bytes = await File(result.files.first.path!).readAsBytes();
+      }
+
+      // bytes 還是 null 才回傳失敗
       if (bytes == null || bytes.isEmpty) return loc.uploadFailed;
 
       final filename = file.name.toLowerCase();
