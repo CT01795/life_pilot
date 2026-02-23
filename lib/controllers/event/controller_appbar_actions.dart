@@ -8,10 +8,14 @@ import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/logger.dart';
+import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:charset/charset.dart';
+import 'package:uuid/uuid.dart';
+import 'package:excel/excel.dart';
 
 class ControllerAppBarActions extends ChangeNotifier {
   final ControllerAuth auth;
@@ -81,26 +85,58 @@ class ControllerAppBarActions extends ChangeNotifier {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv'],
+        allowedExtensions: ['csv', 'xlsx'],
         allowMultiple: false,
       );
       if (result == null || result.files.isEmpty) return loc.uploadFailed;
+      final file = result.files.first;
       final bytes = result.files.first.bytes;
       if (bytes == null || bytes.isEmpty) return loc.uploadFailed;
 
-      final csv = utf8.decode(bytes);
-      final events = excelService.parseCsv(csv);
-      if (events.isEmpty) return loc.noEventsToUpload;
+      final filename = file.name.toLowerCase();
+      List<EventItem> events = [];
+      if (filename.endsWith('.csv')) {
+        String csv;
+        try {
+          csv = utf8.decode(bytes);
+        } catch (e, s) {
+          logger.e('❌ utf8 decode error: $e', stackTrace: s);
+          csv = Charset.getByName('big5')!.decode(bytes);
+        }
+        events = excelService.parseCsv(csv);
+      }else if (filename.endsWith('.xlsx')) {
+        final excel = Excel.decodeBytes(bytes);
+        final sheet = excel.tables.values.first;
+        events = excelService.parseExcel(sheet);
+      }
+
+      if (events.isEmpty) {
+        return loc.noEventsToUpload;
+      }
 
       // 3. 更新 / 新增
+      EventItem? tmpMaster;
+      List<EventItem>? eventList;
       for (final event in events) {
-        final eventList =
-            await serviceEvent.getEvents(tableName: tableName, id: event.id);
-        await serviceEvent.saveEvent(
-            currentAccount: auth.currentAccount ?? constEmpty,
-            event: event,
-            isNew: eventList == null || eventList.isEmpty,
-            tableName: tableName);
+        if (!event.name.startsWith("  └")) {
+          tmpMaster = event;
+          eventList = await serviceEvent.getEvents(
+              tableName: tableName, id: event.id.isNotEmpty ? event.id : null);
+          await serviceEvent.saveEvent(
+              currentAccount: auth.currentAccount ?? constEmpty,
+              event: event,
+              isNew: eventList == null || eventList.isEmpty,
+              tableName: tableName);
+        } else {
+          event.name = event.name.replaceAll("  └ ", "");
+          event.id = event.id.isNotEmpty ? event.id : Uuid().v4();
+          tmpMaster!.subEvents.add(event);
+          await serviceEvent.saveEvent(
+              currentAccount: auth.currentAccount ?? constEmpty,
+              event: tmpMaster,
+              isNew: false,
+              tableName: tableName);
+        }
       }
       await refreshEvents();
       return loc.uploadSuccess;

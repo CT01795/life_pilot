@@ -69,10 +69,14 @@ class ServiceExportExcel {
       _textCell(event.unit),
       _textCell(event.ageMin?.toString() ?? constEmpty),
       _textCell(event.ageMax?.toString() ?? constEmpty),
-      _textCell(event.isFree == null ? constEmpty : ( event.isFree! ? loc.free: loc.pay)),
+      _textCell(event.isFree == null
+          ? constEmpty
+          : (event.isFree! ? loc.free : loc.pay)),
       _textCell(event.priceMin?.toString() ?? constEmpty),
       _textCell(event.priceMax?.toString() ?? constEmpty),
-      _textCell(event.isOutdoor == null ? constEmpty : ( event.isOutdoor! ? loc.outdoor: loc.indoor)),
+      _textCell(event.isOutdoor == null
+          ? constEmpty
+          : (event.isOutdoor! ? loc.outdoor : loc.indoor)),
       _textCell(event.id),
       _textCell(event.masterUrl ?? constEmpty),
     ];
@@ -86,32 +90,180 @@ class ServiceExportExcel {
     if (rows.length <= 1) return [];
 
     List<EventItem> events = [];
-
+    final headerRow = rows[0];
+    Map<String, int> colsToDetail = {};
+    for (int i = 0; i < headerRow.length; i++) {
+      final tmp = headerRow[i].toString();
+      if (tmp.contains("活動名稱")) {
+        colsToDetail["name"] = i;
+      } else if (tmp.contains("關鍵字")) {
+        colsToDetail["type"] = i;
+      } else if (tmp.contains("縣市")) {
+        colsToDetail["city"] = i;
+      } else if (tmp.contains("地點")) {
+        colsToDetail["location"] = i;
+      } else if (tmp.contains("開始日期")) {
+        colsToDetail["startDate"] = i;
+      } else if (tmp.contains("開始時間")) {
+        colsToDetail["startTime"] = i;
+      } else if (tmp.contains("結束日期")) {
+        colsToDetail["endDate"] = i;
+      } else if (tmp.contains("結束時間")) {
+        colsToDetail["endTime"] = i;
+      } else if (tmp.contains("描述")) {
+        colsToDetail["description"] = i;
+      } else if (tmp.contains("相關單位")) {
+        colsToDetail["unit"] = i;
+      } else if (tmp.contains("最低年齡")) {
+        colsToDetail["ageMin"] = i;
+      } else if (tmp.contains("最大年齡")) {
+        colsToDetail["ageMax"] = i;
+      } else if (tmp.contains("免費")) {
+        colsToDetail["isFree"] = i;
+      } else if (tmp.contains("最低價格")) {
+        colsToDetail["priceMin"] = i;
+      } else if (tmp.contains("最高價格")) {
+        colsToDetail["priceMax"] = i;
+      } else if (tmp.contains("戶外")) {
+        colsToDetail["isOutdoor"] = i;
+      } else if (tmp.contains("活動 id")) {
+        colsToDetail["id"] = i;
+      } else if (tmp.contains("活動網址")) {
+        colsToDetail["masterUrl"] = i;
+      }
+    }
     // 假設第 1 列是 header
     for (int i = 1; i < rows.length; i++) {
       final row = rows[i];
       if (row.isEmpty || row.length <= 17) continue;
       events.add(EventItem(
-        name: row[0]?.toString(),
-        type: row[1]?.toString(),
-        city: row[2]?.toString(),
-        location: row[3]?.toString(),
-        //fee: row[?]?.toString(),
-        startDate: DateTime.tryParse(row[4]?.toString() ?? constEmpty),
-        startTime: DateTimeParser.parseTime(row[5]?.toString() ?? constEmpty),
-        endDate: DateTime.tryParse(row[6]?.toString() ?? constEmpty),
-        endTime: DateTimeParser.parseTime(row[7]?.toString() ?? constEmpty),
-        description: row[8]?.toString(),
-        unit: row[9]?.toString(),
-        ageMin: (row[10]?.toString() ?? constEmpty).trim().isNotEmpty ? num.parse(row[10]!.value!.toString().trim()) : null,
-        ageMax: (row[11]?.toString() ?? constEmpty).trim().isNotEmpty ? num.parse(row[11]!.value!.toString().trim()) : null,
-        isFree: (row[12]?.toString() ?? constEmpty).trim().isNotEmpty ? row[12]?.toString().contains("免費") : null,
-        priceMin: (row[13]?.toString() ?? constEmpty).trim().isNotEmpty ? num.parse(row[13]!.value!.toString().trim()) : null,
-        priceMax: (row[14]?.toString() ?? constEmpty).trim().isNotEmpty ? num.parse(row[14]!.value!.toString().trim()) : null,
-        isOutdoor: (row[15]?.toString() ?? constEmpty).trim().isNotEmpty ? row[15]?.toString().contains("戶外") : null,
-        id: row[16]?.toString(),
-        masterUrl: row[17]?.toString(),
-      ));
+          name: row[colsToDetail["name"] ?? 99]?.toString(),
+          type: row[colsToDetail["type"] ?? 99]?.toString(),
+          city: row[colsToDetail["city"] ?? 99]?.toString(),
+          location: row[colsToDetail["location"] ?? 99]?.toString(),
+          //fee: row[?]?.toString(),
+          startDate: DateTime.tryParse(
+              row[colsToDetail["startDate"] ?? 99]?.toString() ?? constEmpty),
+          startTime: DateTimeParser.parseTime(
+              row[colsToDetail["startTime"] ?? 99]?.toString() ?? constEmpty),
+          endDate: DateTime.tryParse(
+              row[colsToDetail["endDate"] ?? 99]?.toString() ?? constEmpty),
+          endTime: DateTimeParser.parseTime(
+              row[colsToDetail["endTime"] ?? 99]?.toString() ?? constEmpty),
+          description: row[colsToDetail["description"] ?? 99]?.toString(),
+          unit: row[colsToDetail["unit"] ?? 99]?.toString(),
+          ageMin: (row[colsToDetail["ageMin"] ?? 99]?.toString() ?? constEmpty).trim().isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim())
+              : null,
+          ageMax: (row[colsToDetail["ageMax"] ?? 99]?.toString() ?? constEmpty).trim().isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim())
+              : null,
+          isFree:
+              (row[colsToDetail["isFree"] ?? 99]?.toString() ?? constEmpty).trim().isNotEmpty
+                  ? row[colsToDetail["isFree"] ?? 99]?.toString().contains("免費")
+                  : null,
+          priceMin: (row[colsToDetail["priceMin"] ?? 99]?.toString() ?? constEmpty).trim().isNotEmpty
+              ? num.parse(row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim())
+              : null,
+          priceMax: (row[colsToDetail["priceMax"] ?? 99]?.toString() ?? constEmpty).trim().isNotEmpty ? num.parse(row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim()) : null,
+          isOutdoor: (row[colsToDetail["isOutdoor"] ?? 99]?.toString() ?? constEmpty).trim().isNotEmpty ? row[colsToDetail["isOutdoor"] ?? 99]?.toString().contains("戶外") : null,
+          id: row[colsToDetail["id"] ?? 99]?.toString(),
+          masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
+          subEvents: []));
+    }
+    return events;
+  }
+
+  List<EventItem> parseExcel(Sheet sheet) {
+    if (sheet.rows.length <= 1) return [];
+
+    List<EventItem> events = [];
+    final headerRow = sheet.rows[0];
+    Map<String, int> colsToDetail = {};
+    for (int i = 0; i < headerRow.length; i++) {
+      final tmp = headerRow[i]?.value?.toString();
+      if (tmp == null) {
+        continue;
+      }else if (tmp.contains("活動名稱")) {
+        colsToDetail["name"] = i;
+      } else if (tmp.contains("關鍵字")) {
+        colsToDetail["type"] = i;
+      } else if (tmp.contains("縣市")) {
+        colsToDetail["city"] = i;
+      } else if (tmp.contains("地點")) {
+        colsToDetail["location"] = i;
+      } else if (tmp.contains("開始日期")) {
+        colsToDetail["startDate"] = i;
+      } else if (tmp.contains("開始時間")) {
+        colsToDetail["startTime"] = i;
+      } else if (tmp.contains("結束日期")) {
+        colsToDetail["endDate"] = i;
+      } else if (tmp.contains("結束時間")) {
+        colsToDetail["endTime"] = i;
+      } else if (tmp.contains("描述")) {
+        colsToDetail["description"] = i;
+      } else if (tmp.contains("相關單位")) {
+        colsToDetail["unit"] = i;
+      } else if (tmp.contains("最低年齡")) {
+        colsToDetail["ageMin"] = i;
+      } else if (tmp.contains("最大年齡")) {
+        colsToDetail["ageMax"] = i;
+      } else if (tmp.contains("免費")) {
+        colsToDetail["isFree"] = i;
+      } else if (tmp.contains("最低價格")) {
+        colsToDetail["priceMin"] = i;
+      } else if (tmp.contains("最高價格")) {
+        colsToDetail["priceMax"] = i;
+      } else if (tmp.contains("戶外")) {
+        colsToDetail["isOutdoor"] = i;
+      } else if (tmp.contains("活動 id")) {
+        colsToDetail["id"] = i;
+      } else if (tmp.contains("活動網址")) {
+        colsToDetail["masterUrl"] = i;
+      }
+    }
+    // 假設第 1 列是 header
+    for (int i = 1; i < sheet.rows.length; i++) {
+      final row = sheet.rows[i];
+      if (row.isEmpty || row.length <= 17) continue;
+      events.add(EventItem(
+          name: row[colsToDetail["name"] ?? 99]?.value?.toString(),
+          type: row[colsToDetail["type"] ?? 99]?.value?.toString(),
+          city: row[colsToDetail["city"] ?? 99]?.value?.toString(),
+          location: row[colsToDetail["location"] ?? 99]?.value?.toString(),
+          //fee: row[?]?.value?.toString(),
+          startDate: DateTime.tryParse(
+              row[colsToDetail["startDate"] ?? 99]?.value?.toString() ?? constEmpty),
+          startTime: DateTimeParser.parseTime(
+              row[colsToDetail["startTime"] ?? 99]?.value?.toString() ?? constEmpty),
+          endDate: DateTime.tryParse(
+              row[colsToDetail["endDate"] ?? 99]?.value?.toString() ?? constEmpty),
+          endTime: DateTimeParser.parseTime(
+              row[colsToDetail["endTime"] ?? 99]?.value?.toString() ?? constEmpty),
+          description: row[colsToDetail["description"] ?? 99]?.value?.toString(),
+          unit: row[colsToDetail["unit"] ?? 99]?.value?.toString(),
+          ageMin: (row[colsToDetail["ageMin"] ?? 99]?.value?.toString() ?? constEmpty).trim().isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim())
+              : null,
+          ageMax: (row[colsToDetail["ageMax"] ?? 99]?.value?.toString() ?? constEmpty).trim().isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim())
+              : null,
+          isFree:
+              (row[colsToDetail["isFree"] ?? 99]?.value?.toString() ?? constEmpty).trim().isNotEmpty
+                  ? row[colsToDetail["isFree"] ?? 99]?.value?.toString().contains("免費")
+                  : null,
+          priceMin: (row[colsToDetail["priceMin"] ?? 99]?.value?.toString() ?? constEmpty).trim().isNotEmpty
+              ? num.parse(row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim())
+              : null,
+          priceMax: (row[colsToDetail["priceMax"] ?? 99]?.value?.toString() ?? constEmpty).trim().isNotEmpty ? num.parse(row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim()) : null,
+          isOutdoor: (row[colsToDetail["isOutdoor"] ?? 99]?.value?.toString() ?? constEmpty).trim().isNotEmpty ? row[colsToDetail["isOutdoor"] ?? 99]?.value?.toString().contains("戶外") : null,
+          id: row[colsToDetail["id"] ?? 99]?.value?.toString(),
+          masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.value?.toString(),
+          subEvents: []));
     }
     return events;
   }
