@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting.dart';
@@ -9,12 +10,32 @@ import 'package:life_pilot/services/service_accounting.dart';
 class ControllerAccounting extends ChangeNotifier {
   final ServiceAccounting service;
   ControllerAuth? auth;
-  final ModelAccountingAccount account;
+  final ControllerAccountingAccount accountController;
+  final String accountId;
   final String currentType;
   num? currentExchangeRate;
   String? _currentCurrency;
 
-  String? get currentCurrency => _currentCurrency ?? account.currency;
+  String? get currentCurrency {
+    if (_currentCurrency != null) {
+      return _currentCurrency;
+    }
+    final account = getAccount();
+    if (account == null) return null;
+
+    return account.currency;
+  }
+
+  int get totalValue {
+    final account = getAccount();
+    if (account == null) return 0;
+
+    return currentType == 'balance' ? account.balance : account.points;
+  }
+
+  ModelAccountingAccount? getAccount() {
+    return accountController.getAccountById(accountId);
+  }
 
   set currentCurrency(String? value) {
     _currentCurrency = value;
@@ -23,8 +44,9 @@ class ControllerAccounting extends ChangeNotifier {
 
   ControllerAccounting(
       {required this.service,
+      required this.accountController,
       required this.auth,
-      required this.account,
+      required this.accountId,
       required this.currentType,
       this.currentExchangeRate});
 
@@ -34,7 +56,7 @@ class ControllerAccounting extends ChangeNotifier {
 
   Future<void> loadToday() async {
     todayRecords = await service.fetchTodayRecords(
-      accountId: account.id,
+      accountId: accountId,
       type: currentType,
     );
 
@@ -42,6 +64,8 @@ class ControllerAccounting extends ChangeNotifier {
       currentCurrency = todayRecords.last.currency;
       currentExchangeRate = todayRecords.last.exchangeRate;
     } else {
+      final account = getAccount();
+      if (account == null) return;
       currentCurrency = account.currency;
     }
 
@@ -72,7 +96,7 @@ class ControllerAccounting extends ChangeNotifier {
   Future<void> commitRecords(
       List<AccountingPreview> previews, String? currency) async {
     await service.insertRecordsBatch(
-        accountId: account.id,
+        accountId: accountId,
         type: currentType,
         records: previews,
         currency: currency,

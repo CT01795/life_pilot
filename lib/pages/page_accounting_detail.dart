@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
@@ -30,8 +29,9 @@ class PageAccountingDetail extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ControllerAccounting(
             service: service,
+            accountController: context.read<ControllerAccountingAccount>(),
             auth: context.read<ControllerAuth>(),
-            account: account,
+            accountId: account.id,
             currentType: currentType,
           )..loadToday(),
         ),
@@ -135,7 +135,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ControllerAccounting>();
-    final account = controller.account;
+    final account = controller.getAccount();
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -144,7 +144,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             Navigator.pop(context, true); // 返回上一頁並通知需要刷新
           },
         ),
-        title: Text(account.accountName),
+        title: Text(account!.accountName),
         backgroundColor: Colors.blueAccent, // 可自定義顏色
         elevation: 2,
       ),
@@ -163,8 +163,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
     String currency = account.currency ?? '';
-    int totalValue =
-        controller.currentType == 'balance' ? account.balance : account.points;
+    int totalValue = controller.totalValue;
 
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -188,7 +187,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: controller.todayTotal >= 0 ? Colors.black : Colors.red,
+                color: totalValue >= 0 ? Colors.black : Colors.red,
               ),
               textAlign: TextAlign.right,
             ),
@@ -208,7 +207,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: totalValue >= 0 ? Colors.green : Colors.red,
+                color: controller.todayTotal >= 0 ? Colors.green : Colors.red,
               ),
               textAlign: TextAlign.right,
             ),
@@ -288,14 +287,14 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           FloatingActionButton(
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
-              final speech = context.read<ServiceSpeech>();
-              if (speech.isListening) return;
-              await speech.startListening(
-                onResult: (text) {
-                  if (!mounted) return;
-                  _speechTextController.text = text; // ✅ 不需要 setState
-                },
-              );
+              final speechController =
+                  context.read<ControllerAccountingSpeech>();
+              final text = await speechController.recordAndTranscribe();
+              if (text.isNotEmpty) {
+                setState(() {
+                  _speechTextController.text = text;
+                });
+              }
             },
           ),
           Gaps.w8,
@@ -316,26 +315,20 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               if (_speechTextController.text.isEmpty) return;
               final previews = await controller.parseFromSpeech(
                   _speechTextController.text,
-                  controller.account.currency,
+                  controller.currentCurrency,
                   controller.currentExchangeRate);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
-
-              final tts = context.read<TtsService>();
               await controller.commitRecords(
-                  previews, controller.account.currency);
+                  previews, controller.currentCurrency);
               final ctrlAA = context.read<ControllerAccountingAccount>();
               await ctrlAA.loadAccounts(force: true);
 
-              final summary = previews.map((p) {
-                final v = p.value;
-                return '${p.description}${v > 0 ? '加$v' : '扣${v.abs()}'}';
-              }).join('，');
-              await tts.speak('${previews.length} records created, $summary');
-
               // 清空輸入框
-              _speechTextController.clear();
+              setState(() {
+                _speechTextController.clear();
+              });
             },
             child: const Text('Submit'),
           ),
@@ -416,16 +409,5 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     );
 
     return result;
-  }
-}
-
-class TtsService {
-  final FlutterTts _tts = FlutterTts();
-
-  Future<void> speak(String text) async {
-    await _tts.stop();
-    await _tts.setLanguage('zh-TW');
-    await _tts.setSpeechRate(0.45);
-    await _tts.speak(text);
   }
 }

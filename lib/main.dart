@@ -16,7 +16,6 @@ import 'package:life_pilot/core/provider_locale.dart';
 import 'package:life_pilot/firebase_options.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/auth/model_auth_view.dart';
-import 'package:life_pilot/pages/page_point_record_detail.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/event/service_speech.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
@@ -89,9 +88,6 @@ void main() async {
         ),
         Provider<ServiceSpeech>(
           create: (_) => ServiceSpeech(),
-        ),
-        Provider<TtsService>(
-          create: (_) => TtsService(),
         ),
         Provider(create: (_) => ServiceBusinessPlan()),
         ChangeNotifierProxyProvider<ControllerAuth, ControllerBusinessPlan>(
