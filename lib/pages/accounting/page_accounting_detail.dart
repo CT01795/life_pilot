@@ -61,7 +61,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = context.read<ControllerAccounting>();
-      controller.currentCurrency = widget.account.currency ?? '';
+      controller.currentCurrency = widget.account.currency;
       controller.loadToday();
     });
   }
@@ -179,8 +179,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
     String currency = controller.currentCurrency ?? (account.currency ?? '');
-    int totalValue = controller.totalValue(account.id);
-    totalValue = totalValue == 0 ? account.balance : totalValue;
+    int totalValue = controller.totalValue == null || controller.totalValue == 0 ? account.balance : controller.totalValue!;
+    //totalValue = totalValue == 0 ? account.balance : totalValue;
 
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -282,9 +282,6 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   newCurrency: updated.currency,
                   newDescription: updated.description,
                 );
-                await controller.loadToday();
-                final ctrlAA = context.read<ControllerAccountingAccount>();
-                await ctrlAA.loadAccounts(force: true);
                 //setState(() {});
               }
             },
@@ -331,13 +328,13 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               if (_speechTextController.text.isEmpty) return;
               final previews = await controller.parseFromSpeech(
                   _speechTextController.text,
-                  controller.currentCurrency,
+                  controller.currentCurrency ?? widget.account.currency,
                   controller.currentExchangeRate);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
               await controller.commitRecords(
-                  previews, controller.currentCurrency);
+                  previews, controller.currentCurrency ?? widget.account.currency);
               final ctrlAA = context.read<ControllerAccountingAccount>();
               if (widget.account.category == 'personal') {
                 await ctrlAA.loadAccounts(force: true);
