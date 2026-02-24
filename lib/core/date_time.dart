@@ -98,6 +98,19 @@ class DateTimeFormatter {
             : DateFormat('M/d HH:mm').format(time)
         : DateFormat('yyyy/M/d HH:mm').format(time);
   }
+
+  static String? formatDateRange(DateTime now, String dateRange) {
+    String tmpDate = dateRange.split(" ")[0];
+    if (tmpDate.length < 10) {
+      tmpDate = '${now.year}/$tmpDate';
+    }
+    List<String> tmpDateElement = tmpDate.split("/");
+    if (tmpDateElement.length < 3) {
+      return null;
+    } else {
+      return '${tmpDateElement[0]}-${tmpDateElement[1].padLeft(2, '0')}-${tmpDateElement[2].padLeft(2, '0')}';
+    }
+  }
 }
 
 // -------------------- Date Utils --------------------

@@ -11,7 +11,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_fields.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
+import 'package:life_pilot/views/widgets/core/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class PageEventAdd extends StatefulWidget {

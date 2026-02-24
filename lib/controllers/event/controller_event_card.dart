@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/event/model_event_view.dart';
 import 'package:life_pilot/models/event/model_event_weather.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/service_weather.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/app_navigator.dart';
@@ -10,12 +10,12 @@ import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/models/event/model_event_view.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/core/widgets_confirmation_dialog.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_dialog.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_trailing.dart';
+import 'package:life_pilot/views/widgets/memory_trace/widgets_memory_card.dart';
+import 'package:life_pilot/views/widgets/memory_trace/widgets_memory_dialog.dart';
+import 'package:life_pilot/views/widgets/memory_trace/widgets_memory_trailing.dart';
 import 'package:provider/provider.dart';
 
-class WidgetsEventList extends StatelessWidget {
+class WidgetsMemoryList extends StatelessWidget {
   final ControllerAuth auth;
   final ServiceEvent serviceEvent;
   final List<EventItem> filteredEvents;
@@ -24,12 +24,10 @@ class WidgetsEventList extends StatelessWidget {
   final String toTableName;
   final ControllerEvent controllerEvent;
   final ModelEventCalendar modelEventCalendar;
-  final ControllerCalendar controllerCalendar;
 
-  const WidgetsEventList({
+  const WidgetsMemoryList({
     super.key,
     required this.auth,
-    required this.controllerCalendar,
     required this.serviceEvent,
     required this.filteredEvents,
     required this.scrollController,
@@ -59,7 +57,7 @@ class WidgetsEventList extends StatelessWidget {
                 showSubEvents: true,
                 loc: loc);
 
-            return WidgetsEventCard(
+            return WidgetsMemoryCard(
               eventViewModel: eventViewModel,
               tableName: tableName,
               onTap: () => _showEventDialog(
@@ -85,22 +83,14 @@ class WidgetsEventList extends StatelessWidget {
                       }
                     }
                   : null,
-              onLike: () async {
-                await controllerEvent.likeEvent(
-                    event: event,
-                    account: auth.currentAccount ?? AuthConstants.guest);
-              },
-              onDislike: () async {
-                await controllerEvent.dislikeEvent(
-                    event: event,
-                    account: auth.currentAccount ?? AuthConstants.guest);
-              },
-              onAccounting: null,
-              trailing: widgetsEventTrailing(
+              onAccounting: () => context.read<ControllerAccountingAccount>().handleAccounting(
+                context: context,
+                eventId: event.id,
+              ),
+              trailing: widgetsMemoryTrailing(
                 context: context,
                 auth: auth,
                 serviceEvent: serviceEvent,
-                controllerCalendar: controllerCalendar,
                 controllerEvent: controllerEvent,
                 modelEventCalendar: modelEventCalendar,
                 event: event,
@@ -123,7 +113,7 @@ class WidgetsEventList extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       barrierColor: const Color.fromARGB(200, 128, 128, 128),
-      builder: (_) => WidgetsEventDialog(
+      builder: (_) => WidgetsMemoryDialog(
         eventViewModel: eventViewModel,
         tableName: tableName,
       ),

@@ -1,9 +1,6 @@
-// lib/views/widgets/event/event_card_widgets.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/controllers/event/controller_event_card.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/const.dart';
@@ -13,29 +10,25 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_view.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/service_weather.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_sub_card.dart';
+import 'package:life_pilot/views/widgets/memory_trace/widgets_memory_sub_card.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class WidgetsEventCard extends StatelessWidget {
+class WidgetsMemoryCard extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
-  final VoidCallback? onLike;
-  final VoidCallback? onDislike;
   final VoidCallback? onAccounting;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
 
-  const WidgetsEventCard({
+  const WidgetsMemoryCard({
     super.key,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
     this.onDelete,
-    this.onLike,
-    this.onDislike,
     this.onAccounting,
     this.trailing,
     this.showSubEvents = true,
@@ -57,13 +50,11 @@ class WidgetsEventCard extends StatelessWidget {
           endDate: eventViewModel.endDate,
           tableName: tableName,
         ),
-      child: _WidgetsEventCardBody(
+      child: _WidgetsMemoryCardBody(
         eventViewModel: eventViewModel,
         tableName: tableName,
         onTap: onTap,
         onDelete: onDelete,
-        onLike: onLike,
-        onDislike: onDislike,
         onAccounting: onAccounting,
         trailing: trailing,
         showSubEvents: showSubEvents,
@@ -85,10 +76,6 @@ class WidgetsEventCard extends StatelessWidget {
         // 🔹 呼叫 function 更新資料庫
         final controllerEventCard = context.read<ControllerEventCard>();
         await controllerEventCard.onOpenLink(eventViewModel);
-        final controllerEvent = context.read<ControllerEvent>();
-        if (controllerEvent.tableName == TableNames.recommendedEvents) {
-          controllerEvent.loadEvents();
-        }
       },
       child: Text(
         loc.clickHereToSeeMore,
@@ -125,24 +112,20 @@ class WidgetsEventCard extends StatelessWidget {
   }
 }
 
-class _WidgetsEventCardBody extends StatelessWidget {
+class _WidgetsMemoryCardBody extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
-  final VoidCallback? onLike;
-  final VoidCallback? onDislike;
   final VoidCallback? onAccounting;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
 
-  const _WidgetsEventCardBody({
+  const _WidgetsMemoryCardBody({
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
     this.onDelete,
-    this.onLike,
-    this.onDislike,
     this.onAccounting,
     this.trailing,
     this.showSubEvents = true,
@@ -286,14 +269,13 @@ class _WidgetsEventCardBody extends StatelessWidget {
 
           Gaps.w8,
           Expanded(
-            child: Text(
-              eventViewModel.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              softWrap: true, // 允許換行
-              overflow: TextOverflow.visible, // 文字超過不截斷
-              //overflow: TextOverflow.ellipsis, // 防止文字過長
-            )
-          ),
+              child: Text(
+            eventViewModel.name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            softWrap: true, // 允許換行
+            overflow: TextOverflow.visible, // 文字超過不截斷
+            //overflow: TextOverflow.ellipsis, // 防止文字過長
+          )),
           if (trailing != null)
             Builder(
               builder: (context) {
@@ -314,7 +296,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
           if (eventViewModel.dateRange.isNotEmpty)
             Text(eventViewModel.dateRange),
           if (eventViewModel.tags.isNotEmpty)
-            WidgetsEventCard.tags(typeList: eventViewModel.tags),
+            WidgetsMemoryCard.tags(typeList: eventViewModel.tags),
           if (eventViewModel.hasLocation)
             InkWell(
               onTap: () async {
@@ -340,10 +322,6 @@ class _WidgetsEventCardBody extends StatelessWidget {
                 }
                 // 🔹 呼叫 function 更新資料庫
                 await ctrl.onOpenMap(eventViewModel);
-                final controllerEvent = context.read<ControllerEvent>();
-                if (controllerEvent.tableName == TableNames.recommendedEvents) {
-                  controllerEvent.loadEvents();
-                }
               },
               child: Text(
                 eventViewModel.locationDisplay,
@@ -354,7 +332,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
               ),
             ),
           if (eventViewModel.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(
+            WidgetsMemoryCard.link(
                 context: context,
                 loc: loc,
                 url: eventViewModel.masterUrl!,
@@ -363,7 +341,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
             Text(eventViewModel.description),
           if (showSubEvents)
             ...eventViewModel.subEvents
-                .map((sub) => WidgetsEventSubCard(event: sub)),
+                .map((sub) => WidgetsMemorySubCard(event: sub)),
         ],
       ),
     );
@@ -389,31 +367,6 @@ class _WidgetsEventCardBody extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 👍 Favor（登入即可）
-                if (onLike != null)
-                  IconButton(
-                    icon: Icon(
-                      eventViewModel.isLike == true
-                          ? Icons.favorite_outlined
-                          : Icons.favorite_outline,
-                      color: Colors.pinkAccent,
-                    ),
-                    tooltip: loc.like,
-                    onPressed: onLike,
-                  ),
-
-                // 🚫 Not Favor（登入即可）
-                if (onDislike != null)
-                  IconButton(
-                    icon: Icon(
-                      eventViewModel.isDislike == true
-                          ? Icons.sentiment_neutral_sharp
-                          : Icons.sentiment_dissatisfied_outlined,
-                      color: Colors.grey,
-                    ),
-                    tooltip: loc.dislike,
-                    onPressed: onDislike,
-                  ),
                 if (onAccounting != null)
                   IconButton(
                     icon: Icon(Icons.currency_exchange),

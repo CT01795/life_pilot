@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
@@ -15,8 +14,8 @@ import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_permission.dart';
 import 'package:provider/provider.dart';
 
-import '../../views/widgets/event/widgets_event_list.dart';
-import '../../views/widgets/event/widgets_search_panel.dart';
+import '../../views/widgets/memory_trace/widgets_memory_list.dart';
+import '../../views/widgets/core/widgets_search_panel.dart';
 
 class PageMemoryTrace extends StatefulWidget {
   const PageMemoryTrace({super.key});
@@ -82,7 +81,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     final serviceEvent = context.read<ServiceEvent>();
-    final calendar = context.read<ControllerCalendar>();
     final exportService = context.read<ServiceExportPlatform>();
     final excelService = context.read<ServiceExportExcel>();
     // 如果帳戶還沒載入，先顯示 loading
@@ -110,9 +108,8 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
           required List<EventItem> filteredEvents,
           required ScrollController scrollController,
         }) {
-          return WidgetsEventList(
+          return WidgetsMemoryList(
               serviceEvent: serviceEvent,
-              controllerCalendar: calendar,
               tableName: PageMemoryTrace._tableName,
               toTableName: PageMemoryTrace._toTableName,
               filteredEvents: filteredEvents,

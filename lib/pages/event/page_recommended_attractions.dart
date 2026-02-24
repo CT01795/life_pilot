@@ -12,10 +12,10 @@ import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_permission.dart';
+import 'package:life_pilot/views/widgets/core/widgets_search_panel.dart';
 import 'package:provider/provider.dart';
 
 import '../../views/widgets/event/widgets_event_list.dart';
-import '../../views/widgets/event/widgets_search_panel.dart';
 
 class PageRecommendedAttractions extends StatefulWidget {
   const PageRecommendedAttractions({super.key});

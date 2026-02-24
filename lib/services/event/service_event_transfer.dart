@@ -51,6 +51,7 @@ class ServiceEventTransfer {
       event.account = currentAccount;
       if (fromTableName == TableNames.recommendedAttractions) {
         event.id = Uuid().v4();
+        event.endDate = event.startDate;
       }
       await serviceEvent.saveEvent(
         currentAccount: currentAccount,
@@ -63,7 +64,9 @@ class ServiceEventTransfer {
       List<EventItem> sortedSubEvents = List.from(event.subEvents);
       sortedSubEvents.sort((a, b) => a.startDate!.compareTo(b.startDate!));
       sortedSubEvents.removeWhere((subEvent) =>
-          !subEvent.startDate!.isAfter(event.startDate!) && (subEvent.endDate == null || !subEvent.endDate!.isAfter(event.startDate!)));
+          !subEvent.startDate!.isAfter(event.startDate!) &&
+          (subEvent.endDate == null ||
+              !subEvent.endDate!.isAfter(event.startDate!)));
       if (sortedSubEvents.isNotEmpty) {
         final tmpEvent = sortedSubEvents[0];
         EventItem subEvent = tmpEvent.copyWith(

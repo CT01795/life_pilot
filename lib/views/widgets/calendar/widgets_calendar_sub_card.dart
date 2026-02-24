@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/event/model_event_view.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_calendar_card.dart';
 
-class WidgetsEventSubCard extends StatelessWidget {
+class WidgetsCalendarSubCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final EventViewModel event;
 
-  const WidgetsEventSubCard(
+  const WidgetsCalendarSubCard(
       {super.key,
       required this.event,
       this.onTap,
@@ -31,7 +31,7 @@ class WidgetsEventSubCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(event.dateRange),
           if(event.tags.isNotEmpty)
-            WidgetsEventCard.tags(typeList: event.tags),
+            WidgetsCalendarCard.tags(typeList: event.tags),
           if (event.hasLocation)
             Text(event.locationDisplay,
               softWrap: true, // 允許換行
@@ -39,7 +39,7 @@ class WidgetsEventSubCard extends StatelessWidget {
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(context:context, loc: loc, url: event.masterUrl!, eventViewModel: event),
+            WidgetsCalendarCard.link(context:context, loc: loc, url: event.masterUrl!, eventViewModel: event),
         ],
       ),
     );
