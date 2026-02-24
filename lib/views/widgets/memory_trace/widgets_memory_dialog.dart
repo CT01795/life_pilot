@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/event/model_event_view.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
+import 'package:life_pilot/views/widgets/memory_trace/widgets_memory_card.dart';
 
-class WidgetsEventDialog extends StatelessWidget {
+class WidgetsMemoryDialog extends StatelessWidget {
   final EventViewModel eventViewModel;
   final String tableName;
-  const WidgetsEventDialog({
+  const WidgetsMemoryDialog({
     super.key,
     required this.eventViewModel,
     required this.tableName,
@@ -22,7 +22,7 @@ class WidgetsEventDialog extends StatelessWidget {
       child: Stack(
         children: [
           SingleChildScrollView(
-            child: WidgetsEventCard(
+            child: WidgetsMemoryCard(
               eventViewModel: eventViewModel,
               tableName: tableName,
               onTap: () => Navigator.pop(context),

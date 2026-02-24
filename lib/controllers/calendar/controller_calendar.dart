@@ -360,4 +360,5 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   void clearAll() => modelEventCalendar.clearAll();
+  
 }

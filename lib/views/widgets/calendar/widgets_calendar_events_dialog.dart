@@ -10,12 +10,12 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_event_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/views/widgets/event/widgets_confirmation_dialog.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_trailing.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_calendar_card.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_calendar_trailing.dart';
+import 'package:life_pilot/views/widgets/core/widgets_confirmation_dialog.dart';
 import 'package:life_pilot/views/widgets/calendar/widgets_calendar.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/date_time.dart';
-import 'package:life_pilot/views/widgets/event/widgets_event_card.dart';
 import 'package:provider/provider.dart';
 
 Future<bool> showCalendarEventsDialog({
@@ -139,7 +139,7 @@ Future<bool> showCalendarEventsDialog({
                       if (updatedEventsOfDay.isNotEmpty)
                         // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
                         ...updatedEventsOfDay.map((event) {
-                          return WidgetsEventCard(
+                          return WidgetsCalendarCard(
                             eventViewModel: controllerCalendar.controllerEvent.buildEventViewModel(
                               event: event,
                               parentLocation: constEmpty,
@@ -178,7 +178,7 @@ Future<bool> showCalendarEventsDialog({
                               context: context,
                               eventId: event.id,
                             ),
-                            trailing: widgetsEventTrailing(
+                            trailing: widgetsCalendarTrailing(
                               context: context,
                               auth: auth,
                               serviceEvent: serviceEvent,

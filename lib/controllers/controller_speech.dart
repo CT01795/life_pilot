@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:speech_to_text/speech_to_text.dart';
 
-class ControllerPointRecordSpeech {
+class ControllerSpeech {
   
   final SpeechService _speechService = SpeechService();
 

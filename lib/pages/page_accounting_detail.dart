@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
+import 'package:life_pilot/controllers/controller_speech.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
 import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
@@ -32,8 +32,8 @@ class PageAccountingDetail extends StatelessWidget {
             accountId: account.id,
           )..loadToday(),
         ),
-        Provider<ControllerAccountingSpeech>(
-          create: (_) => ControllerAccountingSpeech(),
+        Provider<ControllerSpeech>(
+          create: (_) => ControllerSpeech(),
         ),
       ],
       child: _PageAccountingDetailView(account),
@@ -286,7 +286,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
               final speechController =
-                  context.read<ControllerAccountingSpeech>();
+                  context.read<ControllerSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
+import 'package:life_pilot/controllers/controller_speech.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record.dart';
 import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_speech.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/models/point_record/model_point_record_account.dart';
 import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
@@ -33,8 +33,8 @@ class PagePointRecordDetail extends StatelessWidget {
             accountId: account.id,
           )..loadToday(),
         ),
-        Provider<ControllerPointRecordSpeech>(
-          create: (_) => ControllerPointRecordSpeech(),
+        Provider<ControllerSpeech>(
+          create: (_) => ControllerSpeech(),
         ),
       ],
       child: _PagePointRecordDetailView(account),
@@ -275,7 +275,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
               final speechController =
-                  context.read<ControllerPointRecordSpeech>();
+                  context.read<ControllerSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {

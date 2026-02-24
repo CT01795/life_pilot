@@ -4,14 +4,14 @@ import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/app_navigator.dart';
-import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
 import 'package:life_pilot/pages/event/page_event_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
+import 'package:life_pilot/views/widgets/calendar/widgets_alarm_settings_dialog.dart';
 import 'package:life_pilot/views/widgets/core/widgets_confirmation_dialog.dart';
 
-Widget widgetsEventTrailing({
+Widget widgetsCalendarTrailing({
   required BuildContext context,
   required ControllerAuth auth,
   required ServiceEvent serviceEvent,
@@ -28,7 +28,7 @@ Widget widgetsEventTrailing({
     child: Row(
       mainAxisSize: MainAxisSize.min, // 避免 unbounded 爆錯
       children: [
-        if (!auth.isAnonymous && tableName != TableNames.memoryTrace)
+        if (!auth.isAnonymous)
           Flexible(
             fit: FlexFit.loose,
             child: Builder(
@@ -63,7 +63,8 @@ Widget widgetsEventTrailing({
                         controllerCalendar,
                         toTableName,
                       );
-                      AppNavigator.showSnackBar(loc.eventAddOk);
+                      AppNavigator.showSnackBar(
+                          loc.memoryAddOk);
                     } else {
                       controllerEvent.toggleEventSelection(event.id, false);
                     }
@@ -71,6 +72,33 @@ Widget widgetsEventTrailing({
                 );
               },
             ),
+          ),
+        if (!event.isHoliday)
+          // ⏰ 鬧鐘
+          IconButton(
+            icon: Icon(
+              event.reminderOptions.isNotEmpty
+                  ? Icons.alarm_on_rounded
+                  : Icons.alarm_rounded,
+              size: event.reminderOptions.isNotEmpty
+                  ? IconTheme.of(context).size! * 1.2
+                  : IconTheme.of(context).size!,
+              color:
+                  event.reminderOptions.isNotEmpty ? Colors.blue : Colors.black,
+            ),
+            tooltip: loc.setAlarm,
+            onPressed: () async {
+              final updated = await showAlarmSettingsDialog(
+                  context, auth, controllerCalendar, serviceEvent, event, loc);
+              if (updated) {
+                await controllerEvent.updateAlarmSettings(
+                    oldEvent: event, newEvent: event); // ✅ 先更新資料
+                await controllerCalendar.loadCalendarEvents(
+                    month: event.startDate!,
+                    notify: true);
+                Navigator.pop(context); // ✅ 最後關閉 dialog
+              }
+            },
           ),
         if (auth.currentAccount == event.account)
           IconButton(
@@ -103,17 +131,6 @@ Widget widgetsEventTrailing({
                   Navigator.of(context).pop();
                 }
               }),
-        if (tableName != TableNames.memoryTrace &&
-            !event.isApproved &&
-            auth.currentAccount == AuthConstants.sysAdminEmail)
-          IconButton(
-            icon: const Icon(Icons.task_alt),
-            tooltip: loc.review,
-            onPressed: () async {
-              await controllerEvent.approveEvent(event: event);
-            },
-          ),
-        Gaps.w24,
       ],
     ),
   );
