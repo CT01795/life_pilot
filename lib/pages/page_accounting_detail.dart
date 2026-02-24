@@ -266,7 +266,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 await controller.loadToday();
                 final ctrlAA = context.read<ControllerAccountingAccount>();
                 await ctrlAA.loadAccounts(force: true);
-                //setState(() {});
+                setState(() {});
               }
             },
           );

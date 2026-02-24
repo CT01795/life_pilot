@@ -55,11 +55,12 @@ class ControllerAccounting extends ChangeNotifier {
       type: currentType,
     );
 
-    if (todayRecords.isNotEmpty) {
+    final account = getAccount(inputAccountId ?? accountId);
+    if (todayRecords.isNotEmpty &&
+        todayRecords.last.currency == account.currency) {
       currentCurrency = todayRecords.last.currency;
       currentExchangeRate = todayRecords.last.exchangeRate;
     } else {
-      final account = getAccount(inputAccountId ?? accountId);
       currentCurrency = account.currency;
     }
 
@@ -90,10 +91,11 @@ class ControllerAccounting extends ChangeNotifier {
   Future<void> commitRecords(List<AccountingPreview> previews, String? currency,
       {String? inputAccountId}) async {
     await service.insertRecordsBatch(
-        accountId: inputAccountId ?? accountId,
-        type: currentType,
-        records: previews,
-        currency: currency,);
+      accountId: inputAccountId ?? accountId,
+      type: currentType,
+      records: previews,
+      currency: currency,
+    );
 
     await loadToday(inputAccountId: inputAccountId ?? accountId);
   }
