@@ -1,5 +1,6 @@
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
+import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/core/logger.dart';
 import 'package:life_pilot/core/calendar/utils_calendar.dart';
@@ -8,10 +9,12 @@ import 'package:life_pilot/services/event/service_event.dart';
 
 class ControllerAlarmSettings {
   final ControllerCalendar controllerCalendar;
+  final ControllerEvent controllerEvent;
   final ServiceEvent serviceEvent;
 
   ControllerAlarmSettings({
     required this.controllerCalendar,
+    required this.controllerEvent,
     required this.serviceEvent,
   });
 
@@ -29,7 +32,13 @@ class ControllerAlarmSettings {
         newRepeatOptions: repeat,
       );
 
-      await controllerCalendar.controllerEvent.saveEventWithNotification(
+      await controllerEvent.saveEvent(
+        oldEvent: event,
+        newEvent: updatedEvent,
+        isNew: false,
+      );
+
+      await controllerCalendar.saveEventWithNotification(
         oldEvent: event,
         newEvent: updatedEvent,
         isNew: false,

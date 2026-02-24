@@ -49,13 +49,14 @@ class WidgetsMemoryList extends StatelessWidget {
           itemCount: filteredEvents.length,
           itemBuilder: (context, index) {
             final event = filteredEvents[index];
-            EventViewModel eventViewModel = controllerEvent.buildEventViewModel(
+            EventViewModel eventViewModel = EventViewModel.buildEventViewModel(
                 event: event,
                 parentLocation: constEmpty,
-                canDelete: controllerEvent.canDelete(
-                    account: event.account ?? constEmpty),
+                canDelete: ControllerEvent.canDelete(
+                    account: event.account ?? constEmpty, auth: auth, tableName: tableName),
                 showSubEvents: true,
-                loc: loc);
+                loc: loc, 
+                tableName: tableName);
 
             return WidgetsMemoryCard(
               eventViewModel: eventViewModel,
@@ -64,8 +65,8 @@ class WidgetsMemoryList extends StatelessWidget {
                   context: context,
                   eventViewModel: eventViewModel,
                   tableName: tableName),
-              onDelete: controllerEvent.canDelete(
-                      account: event.account ?? constEmpty)
+              onDelete: ControllerEvent.canDelete(
+                      account: event.account ?? constEmpty, auth: auth, tableName: tableName)
                   ? () async {
                       final confirmed = await showConfirmationDialog(
                         content: '${loc.eventDelete}「${event.name}」？',

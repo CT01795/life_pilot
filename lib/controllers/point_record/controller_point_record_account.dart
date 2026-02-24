@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/pages/page_point_record_detail.dart';
+import 'package:life_pilot/pages/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/services/service_point_record.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -189,6 +189,7 @@ class ControllerPointRecordAccount extends ChangeNotifier {
                     tabs: [
                       Tab(text: loc.accountPersonal),
                       Tab(text: loc.accountProject),
+                      //Tab(text: loc.accountMaster),
                     ],
                   ),
                   Expanded(

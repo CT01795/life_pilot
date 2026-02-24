@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
-import 'package:life_pilot/controllers/calendar/controller_notification.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_page_event_add.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/core/date_time.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/event/model_event_base.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
-import 'package:life_pilot/models/event/model_event_view.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/event/service_event_transfer.dart';
-import 'package:life_pilot/services/service_permission.dart';
 
-// ControllerEvent → 整體事件管理、查詢、刪除、UI通知
-// EventController → 單筆事件顯示的欄位包裝（提供 View 用的 getter）
 class ControllerEvent extends ChangeNotifier {
   final ControllerAuth auth;
   final ServiceEvent serviceEvent;
-  final ServicePermission servicePermission;
-  ControllerNotification controllerNotification;
   final ModelEventCalendar modelEventCalendar;
   final String tableName;
   final String? toTableName;
@@ -30,8 +20,6 @@ class ControllerEvent extends ChangeNotifier {
   ControllerEvent(
       {required this.auth,
       required this.serviceEvent,
-      required this.servicePermission,
-      required this.controllerNotification,
       required this.modelEventCalendar,
       required this.tableName,
       this.toTableName,
@@ -54,7 +42,7 @@ class ControllerEvent extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveEventWithNotification({
+  Future<void> saveEvent({
     EventItem? oldEvent,
     required EventItem newEvent,
     bool isNew = true,
@@ -64,20 +52,11 @@ class ControllerEvent extends ChangeNotifier {
         event: newEvent,
         isNew: isNew,
         tableName: tableName);
-    if (tableName != TableNames.calendarEvents) return;
-    if (isNew) {
-      await servicePermission.checkExactAlarmPermission();
-      await controllerNotification.scheduleEventReminders(event: newEvent);
-    } else if (oldEvent != null) {
-      await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
-    }
   }
 
   // ✅ 刪除事件，並更新列表與通知 UI
   Future<void> deleteEvent(EventItem event) async {
     await Future.wait([
-      controllerNotification.cancelEventReminders(
-          eventId: event.id, reminderOptions: event.reminderOptions), // 取消通知
       serviceEvent.deleteEvent(
           currentAccount: auth.currentAccount ?? constEmpty,
           event: event,
@@ -97,7 +76,10 @@ class ControllerEvent extends ChangeNotifier {
     await loadEvents();
   }
 
-  bool canDelete({required String account}) {
+  static bool canDelete(
+      {required String account,
+      required ControllerAuth auth,
+      required tableName}) {
     return auth.currentAccount == account ||
         (auth.currentAccount == AuthConstants.sysAdminEmail &&
             tableName != TableNames.memoryTrace);
@@ -154,52 +136,16 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // 🔔 通知管理
-  // ---------------------------------------------------------------------------
-  Future<void> refreshNotification({
-    EventItem? oldEvent,
-    required EventItem newEvent,
-  }) async {
-    if (tableName != TableNames.calendarEvents) return;
-    if (oldEvent != null) {
-      await controllerNotification.cancelEventReminders(
-          eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
-    }
-    await servicePermission.checkExactAlarmPermission();
-    await controllerNotification.scheduleEventReminders(event: newEvent);
-  }
-
-  Future<bool> updateAlarmSettings({
-    required EventItem oldEvent,
-    required EventItem newEvent,
-  }) async {
-    // Show dialog 交由 View 呼叫，這裡只處理邏輯
-    // 例如取消舊通知、重新安排通知
-    await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
-    notifyListeners();
-    return true;
-  }
-
-  // ---------------------------------------------------------------------------
   // 🔁 事件編輯 / 同步 UI
   // ---------------------------------------------------------------------------
   Future<void> onEditEvent({
     required EventItem event,
     required EventItem? updatedEvent,
-    ControllerCalendar? controllerCalendar,
   }) async {
     if (updatedEvent == null) return;
     // 移除快取
     modelEventCalendar.updateCachedEvent(event: event);
-    if (tableName == TableNames.calendarEvents) {
-      if (updatedEvent.startDate!.year != event.startDate!.year ||
-          updatedEvent.startDate!.month != event.startDate!.month) {
-        await controllerCalendar?.loadCalendarEvents(
-            month: updatedEvent.startDate!, notify: false);
-      }
-      await controllerCalendar?.loadCalendarEvents(
-          month: event.startDate!, notify: true);
-    } else {
+    if (tableName != TableNames.calendarEvents) {
       await loadEvents(); // 自動刷新列表
     }
   }
@@ -220,11 +166,10 @@ class ControllerEvent extends ChangeNotifier {
         event: event, toTableName: toTableName, isChecked: isChecked);
   }
 
-  Future<void> handleEventCheckboxTransfer(
+  Future<EventItem?> handleEventCheckboxTransfer(
     bool isChecked,
     bool isAlreadyAdded,
     EventItem event,
-    ControllerCalendar controllerCalendar,
     String toTableName,
   ) async {
     final targetEvent = await serviceEventTransfer.toggleEventTransfer(
@@ -236,13 +181,6 @@ class ControllerEvent extends ChangeNotifier {
     );
     modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
     if (targetEvent != null && toTableName == TableNames.calendarEvents) {
-      await refreshNotification(
-        newEvent: event,
-      );
-      await controllerCalendar.loadCalendarEvents(
-          month: event.startDate!, notify: false);
-      controllerCalendar.goToMonth(month: DateTime.now(), notify: false);
-
       // 🔹 呼叫 function 更新資料庫
       await serviceEvent.incrementEventCounter(
           eventId: event.id,
@@ -253,6 +191,7 @@ class ControllerEvent extends ChangeNotifier {
     } else {
       notifyListeners();
     }
+    return targetEvent;
   }
 
   String buildTransferMessage({
@@ -325,93 +264,6 @@ class ControllerEvent extends ChangeNotifier {
   ) {
     modelEventCalendar.updateEndDate(endDate);
     notifyListeners();
-  }
-
-  // ---------------------------------------------------------------------------
-  // 🧩 UI 資料封裝
-  // ---------------------------------------------------------------------------
-  EventViewModel buildEventViewModel({
-    required EventBase event,
-    required String parentLocation,
-    required bool canDelete,
-    bool showSubEvents = true,
-    required AppLocalizations loc,
-  }) {
-    final locationDisplay = (event.city.isNotEmpty || event.location.isNotEmpty)
-        ? '${event.city}．${event.location}'
-        : constEmpty;
-
-    String isFree = event.isFree == null
-        ? constEmpty
-        : (event.isFree! ? loc.free : loc.pay);
-    String isOutdoor = event.isOutdoor == null
-        ? constEmpty
-        : (event.isOutdoor! ? loc.outdoor : loc.indoor);
-    String ageRange = event.ageMin == null
-        ? constEmpty
-        : "${event.ageMin}y~${event.ageMax == null ? constEmpty : "${event.ageMax}y"}";
-    String priceRange = event.priceMin == null
-        ? constEmpty
-        : "\$${event.priceMin}~${event.priceMax == null ? constEmpty : "\$${event.priceMax}"}";
-    // 處理 tags
-    final tagsRawData = <String>[
-      isFree,
-      isOutdoor,
-      ageRange,
-      priceRange,
-      event.type
-    ].where((t) => t.isNotEmpty).toList();
-
-    final tags = tagsRawData
-        .expand((t) => t.split(RegExp(r'[\s,，]')))
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .take(3)
-        .toList();
-
-    return EventViewModel(
-      id: event.id,
-      name: event.name,
-      showDate: tableName != TableNames.recommendedAttractions,
-      startDate: event.startDate,
-      endDate: event.endDate,
-      dateRange: tableName != TableNames.recommendedAttractions
-          ? '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.startToS)}'
-              '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.endToE)}'
-          : constEmpty,
-      tags: tags,
-      hasLocation:
-          locationDisplay.isNotEmpty && locationDisplay != parentLocation,
-      locationDisplay: locationDisplay,
-      masterUrl: event.masterUrl,
-      description: event.description,
-      subEvents: showSubEvents
-          ? event.subEvents
-              .map((sub) => buildEventViewModel(
-                  event: sub,
-                  parentLocation: locationDisplay,
-                  canDelete: canDelete,
-                  showSubEvents: showSubEvents,
-                  loc: loc))
-              .toList()
-          : const [],
-      canDelete: canDelete,
-      showSubEvents: showSubEvents,
-      ageMin: event.ageMin,
-      ageMax: event.ageMax,
-      isFree: event.isFree,
-      priceMin: event.priceMin,
-      priceMax: event.priceMax,
-      isOutdoor: event.isOutdoor,
-      isLike: event.isLike,
-      isDislike: event.isDislike,
-      pageViews: event.pageViews,
-      cardClicks: event.cardClicks,
-      saves: event.saves,
-      registrationClicks: event.registrationClicks,
-      likeCounts: event.likeCounts,
-      dislikeCounts: event.dislikeCounts,
-    );
   }
 
   // 判斷日期是否要顯示

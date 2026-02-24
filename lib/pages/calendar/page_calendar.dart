@@ -4,8 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/config/config_app.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
+import 'package:life_pilot/controllers/event/controller_event.dart';
+import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
-import 'package:life_pilot/pages/event/page_event_add.dart';
+import 'package:life_pilot/pages/calendar/page_calendar_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/calendar/widgets_calendar.dart';
 import 'package:life_pilot/core/date_time.dart';
@@ -22,6 +25,7 @@ class PageCalendar extends StatefulWidget {
 
 class _PageCalendarState extends State<PageCalendar> {
   late final ControllerCalendar controller;
+  late final ControllerEvent controllerEvent;
   late final PageController pageController;
   bool _isInitialized = false;
 
@@ -30,6 +34,17 @@ class _PageCalendarState extends State<PageCalendar> {
     super.didChangeDependencies();
     if (_isInitialized) return; // 避免重複初始化
     controller = context.read<ControllerCalendar>();
+    controllerEvent = ControllerEvent(
+      auth: context.read<ControllerAuth>(),
+      serviceEvent: context.read<ServiceEvent>(),
+      modelEventCalendar: context.read<ModelEventCalendar>(),
+      tableName: TableNames.calendarEvents, //TableNames.calendarEvents,
+      toTableName: TableNames.memoryTrace, //TableNames.memoryTrace,
+      onCalendarReload: () async {
+        await controller.reloadEvents(notify: true);
+      },
+    );
+    
     pageController = PageController(initialPage: controller.pageIndex);
     _isInitialized = true;
     // ⚡ async load，不阻塞 build
@@ -59,7 +74,9 @@ class _PageCalendarState extends State<PageCalendar> {
           return Column(children: [
             // 🔹 AppBar 只關注 month 與語言，不重建 CalendarBody
             Builder(builder: (context) {
-              final monthLabel = locale.languageCode == Locales.zh ? DateFormat('y/M').format(month) : DateFormat.yM(locale.toString()).format(month);
+              final monthLabel = locale.languageCode == Locales.zh
+                  ? DateFormat('y/M').format(month)
+                  : DateFormat.yM(locale.toString()).format(month);
               return CalendarAppBar(
                 monthLabel: monthLabel, //DateFormat('y / M').format(month),
                 monthColor: isCurrentMonth ? Colors.blueAccent : Colors.black,
@@ -85,14 +102,15 @@ class _PageCalendarState extends State<PageCalendar> {
                   final newEvent = await Navigator.push<EventItem?>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PageEventAdd(
+                      builder: (_) => PageCalendarAdd(
                         auth: auth,
                         serviceEvent: serviceEvent,
-                        controllerEvent: controller.controllerEvent,
+                        controllerCalendar: controller,
                         existingEvent: null,
                         tableName: tableName,
-                        initialDate:
-                            currentMonth.month == now.month ? now : currentMonth,
+                        initialDate: currentMonth.month == now.month
+                            ? now
+                            : currentMonth,
                       ),
                     ),
                   );
@@ -103,15 +121,15 @@ class _PageCalendarState extends State<PageCalendar> {
                     _updatePageController(controller.pageIndex);
                   }
                 },
-                onMonthTap: () =>
-                    _showMonthPicker(),
-                );
+                onMonthTap: () => _showMonthPicker(),
+              );
             }),
             // 🔹 CalendarBody 完全不受語言切換與 AppBar rebuild 影響
             Expanded(
               child: CalendarBody(
                 auth: auth,
                 controllerCalendar: controller,
+                controllerEvent: controllerEvent,
                 serviceEvent: serviceEvent,
                 pageController: pageController,
               ),

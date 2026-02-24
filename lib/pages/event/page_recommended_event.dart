@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
-import 'package:life_pilot/controllers/calendar/controller_notification.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/const.dart';
@@ -12,7 +10,6 @@ import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/event/service_event_public.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
-import 'package:life_pilot/services/service_permission.dart';
 import 'package:life_pilot/views/widgets/core/widgets_search_panel.dart';
 import 'package:provider/provider.dart';
 
@@ -38,18 +35,15 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
     final context = this.context; // ✅ 避免多次 lookup
     final auth = context.read<ControllerAuth>();
     final serviceEvent = context.read<ServiceEvent>();
-    final controllerNotification = context.read<ControllerNotification>();
 
     _modelEventCalendar = ModelEventCalendar();
 
     _controllerEvent = ControllerEvent(
       auth: auth,
       serviceEvent: serviceEvent,
-      servicePermission: ServicePermission(),
       tableName: PageRecommendedEvent._tableName,
       toTableName: PageRecommendedEvent._toTableName,
       modelEventCalendar: _modelEventCalendar,
-      controllerNotification: controllerNotification,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshEvents();
@@ -74,7 +68,6 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     final serviceEvent = context.read<ServiceEvent>();
-    final calendar = context.read<ControllerCalendar>();
     final exportService = context.read<ServiceExportPlatform>();
     final excelService = context.read<ServiceExportExcel>();
     // ✅ 回傳 Provider Scope，包住整個頁面
@@ -98,7 +91,6 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
           }) {
             return WidgetsEventList(
                 serviceEvent: serviceEvent,
-                controllerCalendar: calendar,
                 tableName: PageRecommendedEvent._tableName,
                 toTableName: PageRecommendedEvent._toTableName,
                 filteredEvents: filteredEvents,

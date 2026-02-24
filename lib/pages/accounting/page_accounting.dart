@@ -7,7 +7,7 @@ import 'package:life_pilot/controllers/accounting/controller_accounting_account.
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/pages/page_accounting_detail.dart';
+import 'package:life_pilot/pages/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 
@@ -26,10 +26,12 @@ class _PageAccountingState extends State<PageAccounting>
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.index = 0;
     final controller = context.read<ControllerAccountingAccount>();
-    controller.setCategory(AccountCategory.personal.name);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.setCategory(AccountCategory.personal.name);
+    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
       switch (_tabController.index) {

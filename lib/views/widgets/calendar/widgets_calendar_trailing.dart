@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
-import 'package:life_pilot/pages/event/page_event_add.dart';
+import 'package:life_pilot/pages/calendar/page_calendar_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/calendar/widgets_alarm_settings_dialog.dart';
 import 'package:life_pilot/views/widgets/core/widgets_confirmation_dialog.dart';
@@ -60,11 +60,9 @@ Widget widgetsCalendarTrailing({
                         tmpValue,
                         isAlreadyAdded,
                         event,
-                        controllerCalendar,
                         toTableName,
                       );
-                      AppNavigator.showSnackBar(
-                          loc.memoryAddOk);
+                      AppNavigator.showSnackBar(loc.memoryAddOk);
                     } else {
                       controllerEvent.toggleEventSelection(event.id, false);
                     }
@@ -89,13 +87,12 @@ Widget widgetsCalendarTrailing({
             tooltip: loc.setAlarm,
             onPressed: () async {
               final updated = await showAlarmSettingsDialog(
-                  context, auth, controllerCalendar, serviceEvent, event, loc);
+                  context, auth, controllerCalendar, controllerEvent, serviceEvent, event, loc);
               if (updated) {
-                await controllerEvent.updateAlarmSettings(
+                await controllerCalendar.updateAlarmSettings(
                     oldEvent: event, newEvent: event); // ✅ 先更新資料
                 await controllerCalendar.loadCalendarEvents(
-                    month: event.startDate!,
-                    notify: true);
+                    month: event.startDate!, notify: true);
                 Navigator.pop(context); // ✅ 最後關閉 dialog
               }
             },
@@ -108,11 +105,10 @@ Widget widgetsCalendarTrailing({
                 final updatedEvent =
                     await Navigator.of(context).push<EventItem?>(
                   MaterialPageRoute(
-                    builder: (_) => PageEventAdd(
+                    builder: (_) => PageCalendarAdd(
                       auth: auth,
                       serviceEvent: serviceEvent,
-                      controllerEvent:
-                          controllerEvent, // ✅ 傳遞目前這個 ControllerEvent 實例
+                      controllerCalendar: controllerCalendar,
                       tableName: tableName,
                       existingEvent: event,
                     ),
@@ -123,8 +119,9 @@ Widget widgetsCalendarTrailing({
                   await controllerEvent.onEditEvent(
                     event: event,
                     updatedEvent: updatedEvent,
-                    controllerCalendar: controllerCalendar,
                   );
+                  await controllerCalendar.onEditEvent(
+                    event: event, updatedEvent: updatedEvent);
                 }
                 // ✅ 只在確定有更新時再關閉外層對話框
                 if (Navigator.of(context).canPop()) {

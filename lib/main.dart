@@ -24,6 +24,7 @@ import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:life_pilot/services/service_business_plan.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
+import 'package:life_pilot/services/service_permission.dart';
 import 'package:life_pilot/services/service_point_record.dart';
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:life_pilot/services/service_weather.dart';
@@ -169,6 +170,7 @@ void main() async {
               auth: context.read<ControllerAuth>(),
               serviceEvent: context.read<ServiceEvent>(),
               controllerNotification: context.read<ControllerNotification>(),
+              servicePermission: ServicePermission(),
               localeProvider: context.read<ProviderLocale>(),
               tableName: TableNames.calendarEvents,
               toTableName: TableNames.memoryTrace,

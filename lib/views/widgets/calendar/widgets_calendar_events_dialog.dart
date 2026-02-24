@@ -3,12 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
+import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/core/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
-import 'package:life_pilot/pages/event/page_event_add.dart';
+import 'package:life_pilot/models/event/model_event_view.dart';
+import 'package:life_pilot/pages/calendar/page_calendar_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/calendar/widgets_calendar_card.dart';
 import 'package:life_pilot/views/widgets/calendar/widgets_calendar_trailing.dart';
@@ -21,6 +23,7 @@ import 'package:provider/provider.dart';
 Future<bool> showCalendarEventsDialog({
   required ControllerAuth auth,
   required ControllerCalendar controllerCalendar,
+  required ControllerEvent controllerEvent,
   required ServiceEvent serviceEvent,
   required DateTime date,
   required AppLocalizations loc,
@@ -47,10 +50,10 @@ Future<bool> showCalendarEventsDialog({
   if (eventsOfDay.isEmpty) {
     final result = await app_navigator.navigatorKey.currentState!.push(
       MaterialPageRoute(
-        builder: (_) => PageEventAdd(
+        builder: (_) => PageCalendarAdd(
           auth: auth,
           serviceEvent: serviceEvent,
-          controllerEvent: controllerCalendar.controllerEvent,
+          controllerCalendar: controllerCalendar,
           existingEvent: null,
           tableName: controllerCalendar.tableName,
           initialDate: date,
@@ -114,10 +117,10 @@ Future<bool> showCalendarEventsDialog({
                               final newEvent = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => PageEventAdd(
+                                    builder: (_) => PageCalendarAdd(
                                           auth: auth,
                                           serviceEvent: serviceEvent,
-                                          controllerEvent: controllerCalendar.controllerEvent,
+                                          controllerCalendar: controllerCalendar,
                                           existingEvent: null,
                                           tableName:
                                               controllerCalendar.tableName,
@@ -140,13 +143,14 @@ Future<bool> showCalendarEventsDialog({
                         // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
                         ...updatedEventsOfDay.map((event) {
                           return WidgetsCalendarCard(
-                            eventViewModel: controllerCalendar.controllerEvent.buildEventViewModel(
+                            eventViewModel: EventViewModel.buildEventViewModel(
                               event: event,
                               parentLocation: constEmpty,
-                              canDelete: controllerCalendar.controllerEvent.canDelete(
-                                  account: event.account ?? constEmpty),
+                              canDelete: ControllerEvent.canDelete(
+                                  account: event.account ?? constEmpty, auth: auth, tableName: tableName),
                               showSubEvents: true,
-                              loc: loc
+                              loc: loc,
+                              tableName: tableName,
                             ),
                             tableName: tableName,
                             onTap: () => Navigator.pop(context),
@@ -163,7 +167,7 @@ Future<bool> showCalendarEventsDialog({
 
                                     if (shouldDelete == true) {
                                       try {
-                                        await controllerCalendar.controllerEvent.deleteEvent(
+                                        await controllerCalendar.deleteEvent(
                                             event);
                                         AppNavigator.showSnackBar(loc.deleteOk);
                                       } catch (e) {
@@ -183,7 +187,7 @@ Future<bool> showCalendarEventsDialog({
                               auth: auth,
                               serviceEvent: serviceEvent,
                               controllerCalendar: controllerCalendar,
-                              controllerEvent: controllerCalendar.controllerEvent,
+                              controllerEvent: controllerEvent,
                               modelEventCalendar: modelEventCalendar,
                               event: event,
                               tableName: controllerCalendar.tableName,

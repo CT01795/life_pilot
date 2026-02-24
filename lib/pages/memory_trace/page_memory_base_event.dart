@@ -1,0 +1,175 @@
+import 'package:flutter/material.dart';
+import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/models/event/model_event_calendar.dart';
+import 'package:life_pilot/controllers/event/controller_appbar_actions.dart';
+import 'package:life_pilot/controllers/auth/controller_auth.dart';
+import 'package:life_pilot/controllers/event/controller_event.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/models/event/model_event_item.dart';
+import 'package:life_pilot/pages/memory_trace/page_memory_add.dart';
+import 'package:life_pilot/services/event/service_event.dart';
+import 'package:life_pilot/services/export/service_export_excel.dart';
+import 'package:life_pilot/services/export/service_export_platform.dart';
+
+import '../../views/widgets/widgets_appbar.dart';
+
+typedef EventListBuilder = Widget Function({
+  required List<EventItem> filteredEvents,
+  required ScrollController scrollController,
+});
+
+typedef SearchPanelBuilder = Widget Function({
+  required ModelEventCalendar modelEventCalendar,
+  required ControllerEvent controllerEvent,
+  required String tableName,
+  required AppLocalizations loc,
+  required BuildContext context,
+});
+
+class MemoryGenericEventPage extends StatefulWidget {
+  final ControllerEvent controllerEvent;
+  final ModelEventCalendar modelEventCalendar;
+  final String title;
+  final String emptyText;
+  final ControllerAuth auth;
+  final ServiceEvent serviceEvent;
+  final ServiceExportPlatform exportService; // ✅ 新增
+  final ServiceExportExcel excelService; // ✅ 新增
+  final String tableName;
+  final String? toTableName;
+  final EventListBuilder listBuilder;
+  final SearchPanelBuilder? searchPanelBuilder;
+
+  const MemoryGenericEventPage({
+    super.key,
+    required this.controllerEvent,
+    required this.modelEventCalendar,
+    required this.title,
+    required this.emptyText,
+    required this.auth,
+    required this.serviceEvent,
+    required this.exportService, // ✅ 新增
+    required this.excelService, // ✅ 新增
+    required this.tableName,
+    this.toTableName,
+    required this.listBuilder,
+    this.searchPanelBuilder,
+  });
+
+  @override
+  State<MemoryGenericEventPage> createState() => _MemoryGenericEventPageState();
+}
+
+class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
+  bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
+
+  ControllerEvent get _controller => widget.controllerEvent;
+  ModelEventCalendar get _model => widget.modelEventCalendar;
+
+  late final ControllerAppBarActions _appBarHandler;
+
+  @override
+  void initState() {
+    super.initState();
+    _appBarHandler = ControllerAppBarActions(
+      auth: widget.auth,
+      modelEventCalendar: widget.modelEventCalendar, // 使用頁面同一個 model
+      serviceEvent: widget.serviceEvent,
+      controllerEvent: widget.controllerEvent,       // 使用頁面同一個 controller
+      exportService: widget.exportService,
+      excelService: widget.excelService,
+      tableName: widget.tableName,
+    );
+
+    // ✅ 只在第一次建立時執行
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _safeLoadEvents();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // 若已載入過，則不再重複觸發
+    if (!_hasLoaded) {
+      _safeLoadEvents();
+    }
+  }
+
+  Future<void> _safeLoadEvents() async {
+    if (_hasLoaded) return;
+    _hasLoaded = true; 
+    await _controller.loadEvents();
+  }
+
+  Future<void> _onAddPressed(BuildContext context) async {
+    final newEvent = await Navigator.of(context).push<EventItem?>(
+      MaterialPageRoute(
+        builder: (_) => PageMemoryAdd(
+          auth: widget.auth,
+          serviceEvent: widget.serviceEvent,
+          controllerEvent: _controller,
+          tableName: widget.tableName,
+        ),
+      ),
+    );
+
+    if (newEvent != null) {
+      await _controller.loadEvents();
+    }
+  }
+
+  Widget _buildSearchPanel(AppLocalizations loc, BuildContext context) {
+    if (!_model.showSearchPanel || widget.searchPanelBuilder == null) {
+      return const SizedBox.shrink();
+    }
+
+    return widget.searchPanelBuilder!(
+      modelEventCalendar: _model,
+      controllerEvent: _controller,
+      tableName: widget.tableName,
+      loc: loc,
+      context: context,
+    );
+  }
+
+  Widget _buildBody(AppLocalizations loc) {
+    final events = _model.getFilteredEvents(loc);
+    final scrollController = _model.scrollController;
+
+    if (events.isEmpty) {
+      return Center(child: Text(widget.emptyText, textAlign: TextAlign.center));
+    }
+
+    return widget.listBuilder(
+      filteredEvents: events,
+      scrollController: scrollController,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      appBar: widgetsWhiteAppBar(
+          title: widget.title,
+          enableSearchAndExport: true,
+          enableUpload: widget.auth.currentAccount == AuthConstants.sysAdminEmail,
+          handler: _appBarHandler,
+          onAdd: () => _onAddPressed(context),
+          tableName: widget.tableName,
+          loc: loc),
+      body: AnimatedBuilder(
+        animation: Listenable.merge([_controller, _appBarHandler]),
+        builder: (context, _) => Column(
+          children: [
+            _buildSearchPanel(loc, context),
+            Expanded(child: _buildBody(loc)),
+          ],
+        ),
+      )
+    );
+  }
+}
