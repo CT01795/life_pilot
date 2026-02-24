@@ -89,6 +89,15 @@ class DateTimeFormatter {
     final dateTime = DateUtils.getDateTime(endDate, endTime);
     return ' - ${DateFormat(format).format(dateTime)}';
   }
+
+  static String formatTime(DateTime time) {
+    final now = DateTime.now();
+    return time.year == now.year
+        ? time.month == now.month && time.day == now.day
+            ? DateFormat('HH:mm').format(time)
+            : DateFormat('M/d HH:mm').format(time)
+        : DateFormat('yyyy/M/d HH:mm').format(time);
+  }
 }
 
 // -------------------- Date Utils --------------------

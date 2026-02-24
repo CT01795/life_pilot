@@ -3,12 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/accounting/model_accounting_account.dart';
+import 'package:life_pilot/models/point_record/model_point_record_account.dart';
 import 'package:life_pilot/pages/page_point_record_detail.dart';
-import 'package:life_pilot/services/service_accounting.dart';
+import 'package:life_pilot/services/service_point_record.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecord extends StatefulWidget {
@@ -28,10 +28,11 @@ class _PagePointRecordState extends State<PagePointRecord>
 
     _tabController = TabController(length: 3, vsync: this);
     _tabController.index = 0;
+    final controller = context.read<ControllerPointRecordAccount>();
+    controller.setCategory(AccountCategory.personal.name);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
 
-      final controller = context.read<ControllerAccountingAccount>();
       switch (_tabController.index) {
         case 0:
           controller.setCategory(AccountCategory.personal.name);
@@ -55,14 +56,13 @@ class _PagePointRecordState extends State<PagePointRecord>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final controller = context.read<ControllerAccountingAccount>();
+    final controller = context.read<ControllerPointRecordAccount>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_tabController.index == 0 &&
           controller.category != AccountCategory.personal.name) {
         await controller.setCategory(AccountCategory.personal.name);
       }
-      await controller.setCurrentType(type: 'points');
     });
   }
 
@@ -97,15 +97,15 @@ class _PagePointRecordState extends State<PagePointRecord>
   }
 
   Widget _buildBody() {
-    return Selector<ControllerAccountingAccount, bool>(
+    return Selector<ControllerPointRecordAccount, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
         if (isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<ControllerAccountingAccount,
-                List<ModelAccountingAccount>>(
+        return Selector<ControllerPointRecordAccount,
+                List<ModelPointRecordAccount>>(
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
               if (accounts.isEmpty) {
@@ -129,7 +129,7 @@ class _PagePointRecordState extends State<PagePointRecord>
   }
 
   void _showAddDialog(BuildContext context) {
-    final controller = context.read<ControllerAccountingAccount>();
+    final controller = context.read<ControllerPointRecordAccount>();
     final textController = TextEditingController();
 
     showDialog(
@@ -173,14 +173,13 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<ControllerAccountingAccount>();
-    return Selector<ControllerAccountingAccount, ModelAccountingAccount?>(
+    final controller = context.read<ControllerPointRecordAccount>();
+    return Selector<ControllerPointRecordAccount, ModelPointRecordAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
         return prev.points != next.points ||
-          prev.balance != next.balance ||
           prev.masterGraphUrl != next.masterGraphUrl;
       },
       builder: (context, account, _) {
@@ -203,9 +202,8 @@ class _AccountCard extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => PagePointRecordDetail(
-                    service: context.read<ServiceAccounting>(),
+                    service: context.read<ServicePointRecord>(),
                     account: account,
-                    currentType: controller.currentType,
                   ),
                 ),
               );
@@ -227,7 +225,7 @@ class _AccountCard extends StatelessWidget {
                       );
                       if (pickedFile != null) {
                         await context
-                            .read<ControllerAccountingAccount>()
+                            .read<ControllerPointRecordAccount>()
                             .updateAccountImage(account.id, pickedFile);
                       }
                     },
@@ -292,30 +290,6 @@ class _AccountCard extends StatelessWidget {
                                 style: TextStyle(
                                     color: account.points >= 0
                                         ? Color(0xFF388E3C)
-                                        : Color(0xFFD32F2F), // 紅色
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Gaps.h4,
-                        // Balance
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '${account.currency} ',
-                                style: TextStyle(
-                                    color: Color(0xFF757575),
-                                    fontSize: 20), // 中灰
-                              ),
-                              TextSpan(
-                                text:
-                                    '${formatter.format(account.balance)} 元', // 資料還沒來先顯示 '-'
-                                style: TextStyle(
-                                    color: account.balance >= 0
-                                        ? Color(0xFF757575) // 綠色
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20),

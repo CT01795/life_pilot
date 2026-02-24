@@ -1,41 +1,33 @@
 import 'dart:typed_data';
 
-class ModelAccountingAccount {
+class ModelPointRecordAccount {
   final String id;
   final String accountName;
   final Uint8List? masterGraphUrl;
-  final int balance;
-  String? currency;
-  num? exchangeRate; // 與主要幣別轉換用
+  final int points;
   final String category; // personal / project
 
-  ModelAccountingAccount({
+  ModelPointRecordAccount({
     required this.id,
     required this.accountName,
     required this.category,
     this.masterGraphUrl,
-    this.balance = 0,
-    this.currency,
-    this.exchangeRate,
+    this.points = 0,
   });
 
-  ModelAccountingAccount copyWith({
+  ModelPointRecordAccount copyWith({
     String? id,
     String? accountName,
     String? category,
     Uint8List? masterGraphUrl,
-    int? balance,
-    String? currency,
-    num? exchangeRate
+    int? points,
   }) {
-    return ModelAccountingAccount(
+    return ModelPointRecordAccount(
       id: id ?? this.id,
       accountName: accountName ?? this.accountName,
       category: category ?? this.category,
       masterGraphUrl: masterGraphUrl ?? this.masterGraphUrl,
-      balance: balance ?? this.balance,
-      currency: currency ?? this.currency,
-      exchangeRate: exchangeRate ?? this.exchangeRate,
+      points: points ?? this.points,
     );
   }
 }

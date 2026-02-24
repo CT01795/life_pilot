@@ -1,47 +1,39 @@
 import 'package:life_pilot/core/date_time.dart';
 
-class ModelAccounting {
+class ModelPointRecord {
   final String id;
   final String accountId;
   final DateTime createdAt;
   final String description;
   final String type;
   final int value;
-  final String currency;
-  num? exchangeRate; 
 
   late final DateTime localTime;
   late final String displayTime;
 
-  ModelAccounting({
+  ModelPointRecord({
     required this.id,
     required this.accountId,
     required this.createdAt,
     required this.description,
     required this.type,
     required this.value,
-    required this.currency,
-    this.exchangeRate
   }) {
     localTime = createdAt.toLocal();
     displayTime = DateTimeFormatter.formatTime(localTime);
   }
 
-  ModelAccounting copyWith({
+  ModelPointRecord copyWith({
     String? description,
     int? value,
-    String? currency,
-    num? exchangeRate,
   }) {
-    return ModelAccounting(
+    return ModelPointRecord(
       id: id,
       accountId: accountId,
       createdAt: createdAt,
       description: description ?? this.description,
       type: type,
       value: value ?? this.value,
-      currency: currency ?? this.currency,
-      exchangeRate: exchangeRate ?? this.exchangeRate,
     );
   }
 }

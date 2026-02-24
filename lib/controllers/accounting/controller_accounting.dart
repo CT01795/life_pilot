@@ -12,7 +12,7 @@ class ControllerAccounting extends ChangeNotifier {
   ControllerAuth? auth;
   final ControllerAccountingAccount accountController;
   final String accountId;
-  final String currentType;
+  final String currentType = 'balance';
   num? currentExchangeRate;
   String? _currentCurrency;
 
@@ -26,7 +26,7 @@ class ControllerAccounting extends ChangeNotifier {
 
   int totalValue(String? inputAccountId) {
     final account = getAccount(inputAccountId ?? accountId);
-    return currentType == 'balance' ? account.balance : account.points;
+    return account.balance;
   }
 
   ModelAccountingAccount getAccount(String? inputAccountId) {
@@ -43,7 +43,6 @@ class ControllerAccounting extends ChangeNotifier {
       required this.accountController,
       required this.auth,
       required this.accountId,
-      required this.currentType,
       this.currentExchangeRate});
 
   int todayTotal = 0;
@@ -94,8 +93,7 @@ class ControllerAccounting extends ChangeNotifier {
         accountId: inputAccountId ?? accountId,
         type: currentType,
         records: previews,
-        currency: currency,
-        currentType: currentType);
+        currency: currency,);
 
     await loadToday(inputAccountId: inputAccountId ?? accountId);
   }

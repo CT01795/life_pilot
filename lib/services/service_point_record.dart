@@ -2,16 +2,16 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/core/graph.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/models/accounting/model_accounting.dart';
-import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/models/point_record/model_point_record.dart';
+import 'package:life_pilot/models/point_record/model_point_record_account.dart';
+import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide MultipartFile;
 import 'package:dio/dio.dart';
 
-class ServiceAccounting {
+class ServicePointRecord {
   final Dio dio;
-  String currentTable = 'accounting_account';
-  ServiceAccounting(this.dio);
+  String currentTable = 'point_record_account';
+  ServicePointRecord(this.dio);
 
   final supabase = Supabase.instance.client;
 
@@ -30,7 +30,7 @@ class ServiceAccounting {
     return null;
   }
 
-  Future<ModelAccountingAccount?> findAccountByEventId(
+  Future<ModelPointRecordAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
     // 或者直接從 Supabase 查詢
     try {
@@ -48,21 +48,19 @@ class ServiceAccounting {
         res['master_graph_url'],
       );
 
-      return ModelAccountingAccount(
+      return ModelPointRecordAccount(
         id: res['id'],
         accountName: res['account'],
         category: res['category'],
         masterGraphUrl: bytes,
-        balance: (res['balance'] ?? 0).toInt(),
-        currency: res['main_currency'],
-        exchangeRate: res['exchange_rate'],
+        points: (res['points'] ?? 0).toInt(),
       );
     } on Exception{
       return null;
     }
   }
 
-  Future<List<ModelAccountingAccount>> fetchAccounts({
+  Future<List<ModelPointRecordAccount>> fetchAccounts({
     required String user,
     required String category, // personal / project
   }) async {
@@ -79,14 +77,12 @@ class ServiceAccounting {
         decodeBase64InIsolate,
         e['master_graph_url'],
       );
-      return ModelAccountingAccount(
+      return ModelPointRecordAccount(
         id: e['id'],
         accountName: e['account'],
         category: e['category'],
         masterGraphUrl: bytes,
-        balance: (e['balance'] ?? 0).toInt(),
-        currency: e['main_currency'],
-        exchangeRate: e['exchange_rate'],
+        points: (e['points'] ?? 0).toInt(),
       );
     }));
   }
@@ -109,7 +105,7 @@ class ServiceAccounting {
     return res?['main_currency'];
   }
 
-  Future<ModelAccountingAccount> createAccount(
+  Future<ModelPointRecordAccount> createAccount(
       {required String name,
       required String user,
       required String? currency,
@@ -155,23 +151,18 @@ class ServiceAccounting {
             'created_by': user,
             'category': category,
             'points': 0,
-            'balance': 0,
-            'main_currency': currency, // 或 mainCurrency
-            'exchange_rate': null,
           })
           .select()
           .single();
     }
 
     final bytes = parseMasterGraph(result['master_graph_url']);
-    return ModelAccountingAccount(
+    return ModelPointRecordAccount(
         id: result['id'],
         accountName: result['account'],
         category: result['category'],
         masterGraphUrl: bytes,
-        balance: (result['balance'] ?? 0).toInt(),
-        currency: result['main_currency'],
-        exchangeRate: result['exchange_rate']);
+        points: (result['points'] ?? 0).toInt(),);
   }
 
   Future<void> deleteAccount(
@@ -198,9 +189,9 @@ class ServiceAccounting {
   }
 
   // ===== 明細 =====
-  Future<List<ModelAccounting>> fetchTodayRecords(
+  Future<List<ModelPointRecord>> fetchTodayRecords(
       {required String accountId, required String type}) async {
-    String currentFunc = 'fetch_today_accountings';
+    String currentFunc = 'fetch_today_point_records';
     final res = await supabase.rpc(
       currentFunc,
       params: {
@@ -209,16 +200,13 @@ class ServiceAccounting {
       },
     );
     return (res as List)
-        .map((e) => ModelAccounting(
+        .map((e) => ModelPointRecord(
               id: e['id'],
               accountId: e['account_id'],
               createdAt: DateTime.parse(e['created_at']),
               description: e['description'],
               type: e['type'],
               value: (e['value'] ?? 0).toInt(),
-              currency: e.containsKey('currency') ? e['currency'] : '',
-              exchangeRate:
-                  e.containsKey('exchange_rate') ? e['exchange_rate'] : null,
             ))
         .toList();
   }
@@ -226,9 +214,8 @@ class ServiceAccounting {
   Future<void> insertRecordsBatch(
       {required String accountId,
       required String type,
-      required List<AccountingPreview> records,
-      required String? currency}) async {
-    String currentFunc = 'add_accountings_batch';
+      required List<PointRecordPreview> records}) async {
+    String currentFunc = 'add_point_records_batch';
     await supabase.rpc(
       currentFunc,
       params: {
@@ -238,39 +225,8 @@ class ServiceAccounting {
             .map((r) => {
                   'description': r.description,
                   'value': r.value,
-                  'currency': r.currency ?? currency,
                 })
             .toList(),
-      },
-    );
-  }
-
-  Future<void> switchMainCurrency({
-    required String accountId,
-    required String currency,
-  }) async {
-    await supabase.rpc(
-      'switch_main_currency',
-      params: {
-        'p_account_id': accountId,
-        'p_currency': currency,
-      },
-    );
-  }
-
-  Future<void> updateAccountingDetail({
-    required String detailId,
-    required int newValue,
-    required String newCurrency,
-    required String newDescription,
-  }) async {
-    await supabase.rpc(
-      'update_accounting_detail',
-      params: {
-        'p_detail_id': detailId,
-        'p_new_value': newValue,
-        'p_new_currency': newCurrency,
-        'p_new_description': newDescription,
       },
     );
   }
