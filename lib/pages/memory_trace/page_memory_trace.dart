@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/calendar/controller_notification.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
-import 'package:life_pilot/pages/event/page_base_event.dart';
+import 'package:life_pilot/pages/memory_trace/page_memory_base_event.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
-import 'package:life_pilot/services/service_permission.dart';
 import 'package:provider/provider.dart';
 
 import '../../views/widgets/memory_trace/widgets_memory_list.dart';
@@ -39,7 +37,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     final context = this.context; // ✅ 避免多次 lookup
     final auth = context.read<ControllerAuth>();
     final serviceEvent = context.read<ServiceEvent>();
-    final controllerNotification = context.read<ControllerNotification>();
     _accountController = context.read<ControllerAccountingAccount>();
 
     _modelEventCalendar = ModelEventCalendar();
@@ -47,13 +44,16 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     _controllerEvent = ControllerEvent(
       auth: auth,
       serviceEvent: serviceEvent,
-      servicePermission: ServicePermission(),
       tableName: PageMemoryTrace._tableName,
       toTableName: PageMemoryTrace._toTableName,
       modelEventCalendar: _modelEventCalendar,
-      controllerNotification: controllerNotification,
     );
-    _loadAccounts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadAccounts();
+      }
+    });
+
   }
 
   Future<void> _loadAccounts() async {
@@ -92,7 +92,7 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     // ✅ 但 build() 會重跑，因此 loc 會更新、文字立即刷新
     return ChangeNotifierProvider.value(
       value: _controllerEvent,
-      child: GenericEventPage(
+      child: MemoryGenericEventPage(
         auth: auth,
         serviceEvent: serviceEvent,
         controllerEvent: _controllerEvent,

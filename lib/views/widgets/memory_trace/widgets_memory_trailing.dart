@@ -4,7 +4,7 @@ import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
-import 'package:life_pilot/pages/event/page_event_add.dart';
+import 'package:life_pilot/pages/memory_trace/page_memory_add.dart';
 import 'package:life_pilot/services/event/service_event.dart';
 
 Widget widgetsMemoryTrailing({
@@ -30,11 +30,11 @@ Widget widgetsMemoryTrailing({
             final updatedEvent =
                 await Navigator.of(context).push<EventItem?>(
               MaterialPageRoute(
-                builder: (_) => PageEventAdd(
+                builder: (_) => PageMemoryAdd(
                   auth: auth,
                   serviceEvent: serviceEvent,
                   controllerEvent:
-                      controllerEvent, // ✅ 傳遞目前這個 ControllerEvent 實例
+                      controllerEvent,
                   tableName: tableName,
                   existingEvent: event,
                 ),

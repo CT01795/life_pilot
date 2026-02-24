@@ -24,12 +24,10 @@ class WidgetsEventList extends StatelessWidget {
   final String toTableName;
   final ControllerEvent controllerEvent;
   final ModelEventCalendar modelEventCalendar;
-  final ControllerCalendar controllerCalendar;
 
   const WidgetsEventList({
     super.key,
     required this.auth,
-    required this.controllerCalendar,
     required this.serviceEvent,
     required this.filteredEvents,
     required this.scrollController,
@@ -51,13 +49,14 @@ class WidgetsEventList extends StatelessWidget {
           itemCount: filteredEvents.length,
           itemBuilder: (context, index) {
             final event = filteredEvents[index];
-            EventViewModel eventViewModel = controllerEvent.buildEventViewModel(
+            EventViewModel eventViewModel = EventViewModel.buildEventViewModel(
                 event: event,
                 parentLocation: constEmpty,
-                canDelete: controllerEvent.canDelete(
-                    account: event.account ?? constEmpty),
+                canDelete: ControllerEvent.canDelete(
+                    account: event.account ?? constEmpty, auth: auth, tableName: tableName),
                 showSubEvents: true,
-                loc: loc);
+                loc: loc,
+                tableName: tableName);
 
             return WidgetsEventCard(
               eventViewModel: eventViewModel,
@@ -66,8 +65,8 @@ class WidgetsEventList extends StatelessWidget {
                   context: context,
                   eventViewModel: eventViewModel,
                   tableName: tableName),
-              onDelete: controllerEvent.canDelete(
-                      account: event.account ?? constEmpty)
+              onDelete: ControllerEvent.canDelete(
+                      account: event.account ?? constEmpty, auth: auth, tableName: tableName)
                   ? () async {
                       final confirmed = await showConfirmationDialog(
                         content: '${loc.eventDelete}「${event.name}」？',
@@ -100,8 +99,8 @@ class WidgetsEventList extends StatelessWidget {
                 context: context,
                 auth: auth,
                 serviceEvent: serviceEvent,
-                controllerCalendar: controllerCalendar,
                 controllerEvent: controllerEvent,
+                controllerCalendar: context.read<ControllerCalendar>(),
                 modelEventCalendar: modelEventCalendar,
                 event: event,
                 tableName: tableName,

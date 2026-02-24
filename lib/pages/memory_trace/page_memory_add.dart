@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
@@ -14,7 +13,7 @@ import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/views/widgets/core/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
-class PageEventAdd extends StatefulWidget {
+class PageMemoryAdd extends StatefulWidget {
   final ControllerAuth auth;
   final ServiceEvent serviceEvent;
   final ControllerEvent controllerEvent;
@@ -22,7 +21,7 @@ class PageEventAdd extends StatefulWidget {
   final EventItem? existingEvent;
   final DateTime? initialDate;
 
-  const PageEventAdd({
+  const PageMemoryAdd({
     super.key,
     required this.auth,
     required this.serviceEvent,
@@ -33,10 +32,10 @@ class PageEventAdd extends StatefulWidget {
   });
 
   @override
-  State<PageEventAdd> createState() => _PageEventAddState();
+  State<PageMemoryAdd> createState() => _PageMemoryAddState();
 }
 
-class _PageEventAddState extends State<PageEventAdd> {
+class _PageMemoryAddState extends State<PageMemoryAdd> {
   late final ControllerPageEventAdd controllerAdd;
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
@@ -162,6 +161,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                           ctl.subEvents.add(newSub);
                           // ✅ 初始化該子事件的控制器
                           final subFields = {
+                            EventFields.city: newSub.city,
                             EventFields.location: newSub.location,
                             EventFields.name: newSub.name,
                             EventFields.type: newSub.type,
@@ -214,129 +214,16 @@ class _PageEventAddState extends State<PageEventAdd> {
       EventFields.masterUrl: loc.masterUrl,
       EventFields.description: loc.description,
       //EventFields.fee: loc.fee,
-      EventFields.unit: loc.sponsor,
-      EventFields.ageMin: loc.ageMin,
+      //EventFields.unit: loc.sponsor,
+      //EventFields.ageMin: loc.ageMin,
       //EventFields.ageMax: loc.ageMax,
-      EventFields.isFree: loc.isFree,
-      EventFields.priceMin: loc.priceMin,
+      //EventFields.isFree: loc.isFree,
+      //EventFields.priceMin: loc.priceMin,
       //EventFields.priceMax: loc.priceMax,
-      EventFields.isOutdoor: loc.isOutdoor,
+      //EventFields.isOutdoor: loc.isOutdoor,
     };
-    if (index != null) {
-      //fields.remove(EventFields.city);
-      fields.remove(EventFields.ageMin);
-      //fields.remove(EventFields.ageMax);
-      fields.remove(EventFields.isFree);
-      fields.remove(EventFields.priceMin);
-      //fields.remove(EventFields.priceMax);
-      fields.remove(EventFields.isOutdoor);
-    }
     return fields.entries.map((e) {
       final keyField = index == null ? e.key : '${e.key}_sub_$index';
-      // ✅ isFree 下拉選單
-      if (e.key == EventFields.isFree) {
-        return DropdownButtonFormField<String>(
-          initialValue: ctl.isFree == null
-              ? constEmpty
-              : ctl.isFree.toString().toLowerCase(), // 預設值
-          decoration: InputDecoration(labelText: e.value),
-          items: [
-            DropdownMenuItem(
-                value: constEmpty, child: Text(loc.toBeDetermined)),
-            DropdownMenuItem(value: "true", child: Text(loc.free)),
-            DropdownMenuItem(value: "false", child: Text(loc.pay)),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              ctl.updateField(keyField, value, false);
-            }
-          },
-        );
-      }
-
-      // ✅ isOutdoor 下拉選單
-      if (e.key == EventFields.isOutdoor) {
-        return DropdownButtonFormField<String>(
-          initialValue: ctl.isOutdoor == null
-              ? constEmpty
-              : ctl.isOutdoor.toString().toLowerCase(), // 預設值
-          decoration: InputDecoration(labelText: e.value),
-          items: [
-            DropdownMenuItem(
-                value: constEmpty, child: Text(loc.toBeDetermined)),
-            DropdownMenuItem(value: "true", child: Text(loc.outdoor)),
-            DropdownMenuItem(value: "false", child: Text(loc.indoor)),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              ctl.updateField(keyField, value, false);
-            }
-          },
-        );
-      }
-      if (e.key == EventFields.ageMin || e.key == EventFields.priceMin) {
-        final isAge = e.key == EventFields.ageMin;
-        final minKey = index == null ? e.key : '${e.key}_sub_$index';
-        final maxKey = index == null
-            ? (isAge ? EventFields.ageMax : EventFields.priceMax)
-            : '${isAge ? EventFields.ageMax : EventFields.priceMax}_sub_$index';
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 最小值 46%
-            Expanded(
-              flex: 46,
-              child: TextFormField(
-                controller: ctl.getController(key: minKey),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: isAge ? loc.ageMin : loc.priceMin,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.all(6),
-                ),
-                focusNode: getFocusNode(minKey),
-                onChanged: (value) {
-                  ctl.updateField(
-                      minKey, ctl.getController(key: minKey).text, false);
-                },
-              ),
-            ),
-            // 中間的 "～" 8%
-            Expanded(
-              flex: 8,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text('～'),
-                ),
-              ),
-            ),
-
-            // 最大值 46%
-            Expanded(
-              flex: 46,
-              child: TextFormField(
-                controller: ctl.getController(key: maxKey),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: isAge ? loc.ageMax : loc.priceMax,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.all(6),
-                ),
-                focusNode: getFocusNode(maxKey),
-                onChanged: (value) {
-                  ctl.updateField(
-                      maxKey, ctl.getController(key: maxKey).text, false);
-                },
-              ),
-            ),
-          ],
-        );
-      }
-
       return SpeechTextField(
         keyField: keyField,
         label: e.value,

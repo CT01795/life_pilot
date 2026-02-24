@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/calendar/controller_alarm_settings.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
+import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/core/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/event/model_event_item.dart';
@@ -13,6 +14,7 @@ Future<bool> showAlarmSettingsDialog(
     BuildContext context,
     ControllerAuth auth,
     ControllerCalendar controllerCalendar,
+    ControllerEvent controllerEvent,
     ServiceEvent serviceEvent,
     EventItem event,
     AppLocalizations loc) async {
@@ -25,6 +27,7 @@ Future<bool> showAlarmSettingsDialog(
   // ✅ 直接建立 controllerAlarmSettings
   final controllerAlarm = ControllerAlarmSettings(
     controllerCalendar: controllerCalendar,
+    controllerEvent: controllerEvent,
     serviceEvent: serviceEvent,
   );
 

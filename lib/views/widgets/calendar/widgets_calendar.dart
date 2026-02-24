@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
+import 'package:life_pilot/controllers/event/controller_event.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/core/const.dart';
@@ -37,16 +38,19 @@ class CalendarAppBar extends StatelessWidget {
     final double navIconSize = buttonSize * 1.2;
     AppLocalizations loc = AppLocalizations.of(context)!;
 
-    Widget iconButton(IconData icon, VoidCallback onTap, String tooltip, double size) => IconButton(
-      icon: Icon(icon, size: navIconSize, color: monthColor),
-      tooltip: tooltip,
-      onPressed: onTap,
-    );
+    Widget iconButton(
+            IconData icon, VoidCallback onTap, String tooltip, double size) =>
+        IconButton(
+          icon: Icon(icon, size: navIconSize, color: monthColor),
+          tooltip: tooltip,
+          onPressed: onTap,
+        );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth, navIconSize),
+        iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth,
+            navIconSize),
         IconButton(
           icon: Icon(Icons.today, size: buttonSize, color: monthColor),
           tooltip: loc.today,
@@ -63,7 +67,8 @@ class CalendarAppBar extends StatelessWidget {
             ),
           ),
         ),
-        iconButton(Icons.arrow_right_rounded, onNext, loc.nextMonth, navIconSize),
+        iconButton(
+            Icons.arrow_right_rounded, onNext, loc.nextMonth, navIconSize),
         iconButton(Icons.add, onAdd, loc.add, buttonSize),
       ],
     );
@@ -74,6 +79,7 @@ class CalendarAppBar extends StatelessWidget {
 class CalendarBody extends StatelessWidget {
   final PageController pageController;
   final ControllerCalendar controllerCalendar;
+  final ControllerEvent controllerEvent;
   final ControllerAuth auth;
   final ServiceEvent serviceEvent;
 
@@ -81,6 +87,7 @@ class CalendarBody extends StatelessWidget {
     super.key,
     required this.auth,
     required this.controllerCalendar,
+    required this.controllerEvent,
     required this.pageController,
     required this.serviceEvent,
   });
@@ -117,6 +124,7 @@ class CalendarBody extends StatelessWidget {
                     auth: auth,
                     serviceEvent: serviceEvent,
                     controllerCalendar: controllerCalendar,
+                    controllerEvent: controllerEvent,
                     displayedMonth: monthToShow,
                   );
                 },
@@ -187,6 +195,7 @@ class WeekDayHeader extends StatelessWidget {
 
 class CalendarMonthView extends StatelessWidget {
   final ControllerCalendar controllerCalendar;
+  final ControllerEvent controllerEvent;
   final ControllerAuth auth;
   final ServiceEvent serviceEvent;
   final DateTime displayedMonth;
@@ -196,6 +205,7 @@ class CalendarMonthView extends StatelessWidget {
     required this.auth,
     required this.serviceEvent,
     required this.controllerCalendar,
+    required this.controllerEvent,
     required this.displayedMonth,
   });
 
@@ -216,6 +226,7 @@ class CalendarMonthView extends StatelessWidget {
             auth: auth,
             serviceEvent: serviceEvent,
             controllerCalendar: controllerCalendar,
+            controllerEvent: controllerEvent,
             week: week,
             displayedMonth: displayedMonth,
             weekRowKey: weekKeys[
@@ -229,6 +240,7 @@ class CalendarMonthView extends StatelessWidget {
 
 class WeekRow extends StatelessWidget {
   final ControllerCalendar controllerCalendar;
+  final ControllerEvent controllerEvent;
   final ControllerAuth auth;
   final ServiceEvent serviceEvent;
   final List<DateTime> week;
@@ -237,6 +249,7 @@ class WeekRow extends StatelessWidget {
   const WeekRow({
     super.key,
     required this.controllerCalendar,
+    required this.controllerEvent,
     required this.auth,
     required this.serviceEvent,
     required this.week,
@@ -289,6 +302,7 @@ class WeekRow extends StatelessWidget {
                           auth: auth,
                           modelEventCalendar:
                               controllerCalendar.modelEventCalendar,
+                          controllerEvent: controllerEvent,
                           serviceEvent: serviceEvent,
                           controllerCalendar: controllerCalendar,
                           date: date,
@@ -394,6 +408,7 @@ class WeekRow extends StatelessWidget {
                         auth: auth,
                         serviceEvent: serviceEvent,
                         controllerCalendar: controllerCalendar,
+                        controllerEvent: controllerEvent,
                         modelEventCalendar:
                             controllerCalendar.modelEventCalendar,
                         date: tappedDate,

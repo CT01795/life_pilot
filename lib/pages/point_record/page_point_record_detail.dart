@@ -31,7 +31,7 @@ class PagePointRecordDetail extends StatelessWidget {
             accountController: context.read<ControllerPointRecordAccount>(),
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
-          )..loadToday(),
+          ),
         ),
         Provider<ControllerSpeech>(
           create: (_) => ControllerSpeech(),
@@ -52,12 +52,28 @@ class _PagePointRecordDetailView extends StatefulWidget {
 }
 
 class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> {
+  late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ControllerPointRecord>().loadToday();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _speechService = context.read<ServiceSpeech>();
+  }
+
+  @override
   void dispose() {
-    context.read<ServiceSpeech>().stopListening();
+    _speechService.stopListening();
     _speechTextController.dispose();
     super.dispose();
   }

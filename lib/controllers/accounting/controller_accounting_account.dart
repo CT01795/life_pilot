@@ -6,7 +6,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/pages/page_accounting_detail.dart';
+import 'package:life_pilot/pages/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -241,6 +241,7 @@ class ControllerAccountingAccount extends ChangeNotifier {
                     tabs: [
                       Tab(text: loc.accountPersonal),
                       Tab(text: loc.accountProject),
+                      //Tab(text: loc.accountMaster),
                     ],
                   ),
                   Expanded(

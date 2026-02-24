@@ -30,7 +30,7 @@ class PageAccountingDetail extends StatelessWidget {
             accountController: context.read<ControllerAccountingAccount>(),
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
-          )..loadToday(),
+          ),
         ),
         Provider<ControllerSpeech>(
           create: (_) => ControllerSpeech(),
@@ -51,12 +51,28 @@ class _PageAccountingDetailView extends StatefulWidget {
 }
 
 class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
+  late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ControllerAccounting>().loadToday();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _speechService = context.read<ServiceSpeech>();
+  }
+
+  @override
   void dispose() {
-    context.read<ServiceSpeech>().stopListening();
+    _speechService.stopListening();
     _speechTextController.dispose();
     super.dispose();
   }
@@ -161,7 +177,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
     String currency = account.currency ?? '';
+    controller.currentCurrency = currency;
     int totalValue = controller.totalValue(account.id);
+    totalValue = totalValue == 0 ? account.balance : totalValue;
 
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -285,8 +303,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           FloatingActionButton(
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
-              final speechController =
-                  context.read<ControllerSpeech>();
+              final speechController = context.read<ControllerSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {
@@ -323,8 +340,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               final ctrlAA = context.read<ControllerAccountingAccount>();
               if (widget.account.category == 'personal') {
                 await ctrlAA.loadAccounts(force: true);
-              }else{
-                await ctrlAA.loadAccounts(force: true, inputCategory: 'project');
+              } else {
+                await ctrlAA.loadAccounts(
+                    force: true, inputCategory: 'project');
               }
 
               // 清空輸入框

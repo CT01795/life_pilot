@@ -7,7 +7,7 @@ import 'package:life_pilot/controllers/point_record/controller_point_record_acco
 import 'package:life_pilot/core/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/pages/page_point_record_detail.dart';
+import 'package:life_pilot/pages/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/services/service_point_record.dart';
 import 'package:provider/provider.dart';
 
@@ -26,10 +26,12 @@ class _PagePointRecordState extends State<PagePointRecord>
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.index = 0;
     final controller = context.read<ControllerPointRecordAccount>();
-    controller.setCategory(AccountCategory.personal.name);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.setCategory(AccountCategory.personal.name);
+    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
 

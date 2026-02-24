@@ -15,8 +15,8 @@ Widget widgetsEventTrailing({
   required BuildContext context,
   required ControllerAuth auth,
   required ServiceEvent serviceEvent,
-  required ControllerCalendar controllerCalendar,
   required ControllerEvent controllerEvent,
+  required ControllerCalendar? controllerCalendar,
   required ModelEventCalendar modelEventCalendar,
   required EventItem event,
   required String tableName,
@@ -56,12 +56,18 @@ Widget widgetsEventTrailing({
                         loc: loc,
                         isAlreadyAdded: isAlreadyAdded);
                     if (shouldTransfer ?? false) {
-                      await controllerEvent.handleEventCheckboxTransfer(
+                      final targetEvent = await controllerEvent.handleEventCheckboxTransfer(
                         tmpValue,
                         isAlreadyAdded,
                         event,
-                        controllerCalendar,
                         toTableName,
+                      );
+                      await controllerCalendar?.handleEventCheckboxTransfer(
+                        tmpValue,
+                        isAlreadyAdded,
+                        event,
+                        toTableName,
+                        targetEvent
                       );
                       AppNavigator.showSnackBar(loc.eventAddOk);
                     } else {
@@ -84,7 +90,7 @@ Widget widgetsEventTrailing({
                       auth: auth,
                       serviceEvent: serviceEvent,
                       controllerEvent:
-                          controllerEvent, // ✅ 傳遞目前這個 ControllerEvent 實例
+                          controllerEvent,
                       tableName: tableName,
                       existingEvent: event,
                     ),
@@ -95,7 +101,6 @@ Widget widgetsEventTrailing({
                   await controllerEvent.onEditEvent(
                     event: event,
                     updatedEvent: updatedEvent,
-                    controllerCalendar: controllerCalendar,
                   );
                 }
                 // ✅ 只在確定有更新時再關閉外層對話框
