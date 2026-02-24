@@ -15,18 +15,20 @@ class ControllerAccounting extends ChangeNotifier {
   final String currentType = 'balance';
   num? currentExchangeRate;
   String? _currentCurrency;
+  int? _totalValue;
 
-  String? get currentCurrency {
-    if (_currentCurrency != null) {
-      return _currentCurrency;
-    }
-    final account = getAccount(accountId);
-    return account.currency;
-  }
-
-  int totalValue(String? inputAccountId) {
+  int calTotalValue(String? inputAccountId) {
     final account = getAccount(inputAccountId ?? accountId);
     return account.balance;
+  }
+
+  int? get totalValue {
+    return _totalValue;
+  }
+
+  set totalValue(int? value) {
+    _totalValue = value;
+    notifyListeners();
   }
 
   ModelAccountingAccount getAccount(String? inputAccountId) {
@@ -40,6 +42,14 @@ class ControllerAccounting extends ChangeNotifier {
       eventId: eventId,
       user: auth?.currentAccount ?? constEmpty,
     );
+  }
+
+  String? get currentCurrency {
+    if (_currentCurrency != null) {
+      return _currentCurrency;
+    }
+    final account = getAccount(accountId);
+    return account.currency;
   }
 
   set currentCurrency(String? value) {
@@ -67,18 +77,19 @@ class ControllerAccounting extends ChangeNotifier {
     final account = getAccount(inputAccountId ?? accountId);
     if (todayRecords.isNotEmpty &&
         todayRecords.last.currency == account.currency) {
-      currentCurrency = todayRecords.last.currency;
+      _currentCurrency = todayRecords.last.currency;
       currentExchangeRate = todayRecords.last.exchangeRate;
     } else {
-      currentCurrency = account.currency;
+      _currentCurrency = account.currency;
     }
 
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     todayTotal = todayRecords
         .where((r) =>
-            r.currency == currentCurrency && r.localTime.isAfter(todayStart))
+            r.currency == _currentCurrency && r.localTime.isAfter(todayStart))
         .fold(0, (s, r) => s + r.value);
+    _totalValue = account.balance;
     notifyListeners();
   }
 
@@ -126,6 +137,7 @@ class ControllerAccounting extends ChangeNotifier {
       newCurrency: newCurrency,
       newDescription: newDescription,
     );
+    await loadToday();
   }
 }
 
