@@ -60,7 +60,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ControllerAccounting>().loadToday();
+      final controller = context.read<ControllerAccounting>();
+      controller.currentCurrency = widget.account.currency ?? '';
+      controller.loadToday();
     });
   }
 
@@ -176,8 +178,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   Widget _buildSummary(
       ModelAccountingAccount account, ControllerAccounting controller) {
-    String currency = account.currency ?? '';
-    controller.currentCurrency = currency;
+    String currency = controller.currentCurrency ?? (account.currency ?? '');
     int totalValue = controller.totalValue(account.id);
     totalValue = totalValue == 0 ? account.balance : totalValue;
 
@@ -284,7 +285,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 await controller.loadToday();
                 final ctrlAA = context.read<ControllerAccountingAccount>();
                 await ctrlAA.loadAccounts(force: true);
-                setState(() {});
+                //setState(() {});
               }
             },
           );
