@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_speech.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
+import 'package:life_pilot/controllers/point_record/controller_point_record.dart';
+import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/controllers/point_record/controller_point_record_speech.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/models/point_record/model_point_record_account.dart';
+import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/services/event/service_speech.dart';
-import 'package:life_pilot/services/service_accounting.dart';
+import 'package:life_pilot/services/service_point_record.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecordDetail extends StatelessWidget {
-  final ModelAccountingAccount account;
-  final String currentType;
-  final ServiceAccounting service;
+  final ModelPointRecordAccount account;
+  final ServicePointRecord service;
 
   const PagePointRecordDetail({
     super.key,
     required this.service,
     required this.account,
-    required this.currentType,
   });
 
   @override
@@ -28,33 +26,32 @@ class PagePointRecordDetail extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => ControllerAccounting(
+          create: (_) => ControllerPointRecord(
             service: service,
-            accountController: context.read<ControllerAccountingAccount>(),
+            accountController: context.read<ControllerPointRecordAccount>(),
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
-            currentType: currentType
           )..loadToday(),
         ),
-        Provider<ControllerAccountingSpeech>(
-          create: (_) => ControllerAccountingSpeech(),
+        Provider<ControllerPointRecordSpeech>(
+          create: (_) => ControllerPointRecordSpeech(),
         ),
       ],
-      child: _PageAccountingDetailView(account),
+      child: _PagePointRecordDetailView(account),
     );
   }
 }
 
-class _PageAccountingDetailView extends StatefulWidget {
-  final ModelAccountingAccount account;
-  const _PageAccountingDetailView(this.account);
+class _PagePointRecordDetailView extends StatefulWidget {
+  final ModelPointRecordAccount account;
+  const _PagePointRecordDetailView(this.account);
 
   @override
-  State<_PageAccountingDetailView> createState() =>
-      _PageAccountingDetailViewState();
+  State<_PagePointRecordDetailView> createState() =>
+      _PagePointRecordDetailViewState();
 }
 
-class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
+class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> {
   final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
 
@@ -67,7 +64,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   Future<bool?> showVoiceConfirmDialog(
     BuildContext context,
-    List<AccountingPreview> previews,
+    List<PointRecordPreview> previews,
   ) {
     return showDialog<bool>(
       context: context,
@@ -161,7 +158,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ControllerAccounting>();
+    final controller = context.watch<ControllerPointRecord>();
     final account = controller.getAccount(widget.account.id);
     return Scaffold(
       appBar: AppBar(
@@ -188,8 +185,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildSummary(
-      ModelAccountingAccount account, ControllerAccounting controller) {
-    String currency = account.currency ?? '';
+      ModelPointRecordAccount account, ControllerPointRecord controller) {
     int totalValue = controller.totalValue(widget.account.id);
 
     return Table(
@@ -203,15 +199,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         TableRow(
           children: [
             Text(' Total ', style: const TextStyle(fontSize: 20)),
-            controller.currentType == 'balance' && account.currency != null
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child:
-                        Text(currency, style: const TextStyle(fontSize: 20)),
-                  )
-                : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(totalValue)} ${controller.currentType == 'balance' ? '元':'分'}',
+              '${NumberFormat('#,###').format(totalValue)} ${'分'}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -224,15 +213,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         TableRow(
           children: [
             Text(' Today ', style: const TextStyle(fontSize: 20)),
-            controller.currentType == 'balance' && account.currency != null
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child:
-                        Text(currency, style: const TextStyle(fontSize: 20)),
-                  )
-                : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(controller.todayTotal)} ${controller.currentType == 'balance' ? '元':'分'}',
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${'分'}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -246,7 +228,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     );
   }
 
-  Widget _buildTodayList(ControllerAccounting controller) {
+  Widget _buildTodayList(ControllerPointRecord controller) {
     return Expanded(
       child: ListView.builder(
         itemCount: controller.todayRecords.length,
@@ -283,7 +265,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerAccounting controller) {
+      BuildContext context, ControllerPointRecord controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -293,7 +275,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
               final speechController =
-                  context.read<ControllerAccountingSpeech>();
+                  context.read<ControllerPointRecordSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {
@@ -324,17 +306,15 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
 
-              await controller.commitRecords(previews, null);
+              await controller.commitRecords(previews);
               // ❶ 取這次變動的總值
               final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
               // ❷ 更新主頁帳戶
               final ctrlAA =
-                  context.read<ControllerAccountingAccount>();
+                  context.read<ControllerPointRecordAccount>();
               ctrlAA.updateAccountTotals(
                 accountId: controller.accountId,
                 deltaPoints: delta,
-                deltaBalance: 0,
-                currency: null,
               );
 
               // 清空輸入框

@@ -13,13 +13,11 @@ import 'package:provider/provider.dart';
 
 class PageAccountingDetail extends StatelessWidget {
   final ModelAccountingAccount account;
-  final String currentType;
   final ServiceAccounting service;
   const PageAccountingDetail({
     super.key,
     required this.service,
     required this.account,
-    required this.currentType,
   });
 
   @override
@@ -32,7 +30,6 @@ class PageAccountingDetail extends StatelessWidget {
             accountController: context.read<ControllerAccountingAccount>(),
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
-            currentType: currentType,
           )..loadToday(),
         ),
         Provider<ControllerAccountingSpeech>(
@@ -177,14 +174,14 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         TableRow(
           children: [
             Text(' Total ', style: const TextStyle(fontSize: 20)),
-            controller.currentType == 'balance' && account.currency != null
+            account.currency != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(currency, style: const TextStyle(fontSize: 20)),
                   )
                 : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(totalValue)} ${controller.currentType == 'balance' ? '元' : '分'}',
+              '${NumberFormat('#,###').format(totalValue)} ${'元'}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -197,14 +194,14 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         TableRow(
           children: [
             Text(' Today ', style: const TextStyle(fontSize: 20)),
-            controller.currentType == 'balance' && account.currency != null
+            account.currency != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(currency, style: const TextStyle(fontSize: 20)),
                   )
                 : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(controller.todayTotal)} ${controller.currentType == 'balance' ? '元' : '分'}',
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${'元'}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,

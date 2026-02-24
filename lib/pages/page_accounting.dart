@@ -28,10 +28,10 @@ class _PageAccountingState extends State<PageAccounting>
 
     _tabController = TabController(length: 3, vsync: this);
     _tabController.index = 0;
+    final controller = context.read<ControllerAccountingAccount>();
+    controller.setCategory(AccountCategory.personal.name);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
-
-      final controller = context.read<ControllerAccountingAccount>();
       switch (_tabController.index) {
         case 0:
           controller.setCategory(AccountCategory.personal.name);
@@ -62,8 +62,6 @@ class _PageAccountingState extends State<PageAccounting>
           controller.category != AccountCategory.personal.name) {
         await controller.setCategory(AccountCategory.personal.name);
       }
-      await controller.setCurrentType(
-          type: 'balance');
       await controller.askMainCurrency(
           context: context);
     });
@@ -183,8 +181,7 @@ class _AccountCard extends StatelessWidget {
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
-        return prev.points != next.points ||
-          prev.balance != next.balance ||
+        return prev.balance != next.balance ||
           prev.masterGraphUrl != next.masterGraphUrl;
       },
       builder: (context, account, _) {
@@ -208,7 +205,6 @@ class _AccountCard extends StatelessWidget {
                   builder: (_) => PageAccountingDetail(
                     service: context.read<ServiceAccounting>(),
                     account: account,
-                    currentType: controller.currentType,
                   ),
                 ),
               );
@@ -300,30 +296,6 @@ class _AccountCard extends StatelessWidget {
                                 style: TextStyle(
                                     color: account.balance >= 0
                                         ? Color(0xFF388E3C) // 綠色
-                                        : Color(0xFFD32F2F), // 紅色
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Gaps.h4,
-                        // Balance
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Points ',
-                                style: TextStyle(
-                                    color: Color(0xFF757575),
-                                    fontSize: 20), // 中灰
-                              ),
-                              TextSpan(
-                                text:
-                                    '${formatter.format(account.points)} 分', // 資料還沒來先顯示 '-'
-                                style: TextStyle(
-                                    color: account.points >= 0
-                                        ? Color(0xFF757575)
                                         : Color(0xFFD32F2F), // 紅色
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20),

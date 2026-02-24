@@ -8,6 +8,7 @@ import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
+import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
 import 'package:life_pilot/core/const.dart' as globals;
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
@@ -23,6 +24,7 @@ import 'package:life_pilot/services/export/service_export_platform.dart';
 import 'package:life_pilot/services/service_accounting.dart';
 import 'package:life_pilot/services/service_business_plan.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
+import 'package:life_pilot/services/service_point_record.dart';
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:life_pilot/services/service_weather.dart';
 import 'package:provider/provider.dart';
@@ -86,6 +88,9 @@ void main() async {
         Provider<ServiceAccounting>(
           create: (_) => ServiceAccounting(Dio()),
         ),
+        Provider<ServicePointRecord>(
+          create: (_) => ServicePointRecord(Dio()),
+        ),
         Provider<ServiceSpeech>(
           create: (_) => ServiceSpeech(),
         ),
@@ -116,6 +121,21 @@ void main() async {
           ),
           update: (_, service, auth, controller) {
             controller ??= ControllerAccountingAccount(
+              service: service,
+              auth: auth,
+            );
+            controller.auth = auth;
+            return controller;
+          },
+        ),
+        ChangeNotifierProxyProvider2<ServicePointRecord, ControllerAuth,
+            ControllerPointRecordAccount>(
+          create: (context) => ControllerPointRecordAccount(
+            service: context.read<ServicePointRecord>(),
+            auth: context.read<ControllerAuth>(),
+          ),
+          update: (_, service, auth, controller) {
+            controller ??= ControllerPointRecordAccount(
               service: service,
               auth: auth,
             );
