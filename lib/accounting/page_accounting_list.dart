@@ -3,22 +3,23 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/core/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/pages/accounting/page_accounting_detail.dart';
-import 'package:life_pilot/services/service_accounting.dart';
+import 'package:life_pilot/accounting/model_accounting_account.dart';
+import 'package:life_pilot/accounting/page_accounting_detail.dart';
+import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
 
-class PageAccounting extends StatefulWidget {
-  const PageAccounting({super.key});
+class PageAccountingList extends StatefulWidget {
+  const PageAccountingList({super.key});
 
   @override
-  State<PageAccounting> createState() => _PageAccountingState();
+  State<PageAccountingList> createState() => _PageAccountingListState();
 }
 
-class _PageAccountingState extends State<PageAccounting>
+class _PageAccountingListState extends State<PageAccountingList>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -28,7 +29,7 @@ class _PageAccountingState extends State<PageAccounting>
 
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = 0;
-    final controller = context.read<ControllerAccountingAccount>();
+    final controller = context.read<ControllerAccountingList>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setCategory(AccountCategory.personal.name);
     });
@@ -57,7 +58,7 @@ class _PageAccountingState extends State<PageAccounting>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final controller = context.read<ControllerAccountingAccount>();
+    final controller = context.read<ControllerAccountingList>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_tabController.index == 0 &&
@@ -100,14 +101,14 @@ class _PageAccountingState extends State<PageAccounting>
   }
 
   Widget _buildBody() {
-    return Selector<ControllerAccountingAccount, bool>(
+    return Selector<ControllerAccountingList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
         if (isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<ControllerAccountingAccount,
+        return Selector<ControllerAccountingList,
                 List<ModelAccountingAccount>>(
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
@@ -132,7 +133,7 @@ class _PageAccountingState extends State<PageAccounting>
   }
 
   void _showAddDialog(BuildContext context) {
-    final controller = context.read<ControllerAccountingAccount>();
+    final controller = context.read<ControllerAccountingList>();
     final textController = TextEditingController();
 
     showDialog(
@@ -177,8 +178,8 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<ControllerAccountingAccount>();
-    return Selector<ControllerAccountingAccount, ModelAccountingAccount?>(
+    final controller = context.read<ControllerAccountingList>();
+    return Selector<ControllerAccountingList, ModelAccountingAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
@@ -211,8 +212,7 @@ class _AccountCard extends StatelessWidget {
                 ),
               );
               if (needReload == true) {
-                await controller.loadAccounts(
-                    force: true);
+                await controller.loadAccounts();
               }
             },
             child: Padding(
@@ -232,7 +232,7 @@ class _AccountCard extends StatelessWidget {
                       );
                       if (pickedFile != null) {
                         await context
-                            .read<ControllerAccountingAccount>()
+                            .read<ControllerAccountingList>()
                             .updateAccountImage(account.id, pickedFile);
                       }
                     },

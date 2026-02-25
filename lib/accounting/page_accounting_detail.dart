@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting.dart';
+import 'package:life_pilot/accounting/controller_accounting_detail.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_speech.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/accounting/model_accounting_account.dart';
+import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/services/event/service_speech.dart';
-import 'package:life_pilot/services/service_accounting.dart';
+import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
 
 class PageAccountingDetail extends StatelessWidget {
@@ -25,9 +24,8 @@ class PageAccountingDetail extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => ControllerAccounting(
+          create: (_) => ControllerAccountingDetail(
             service: service,
-            accountController: context.read<ControllerAccountingAccount>(),
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
           ),
@@ -60,9 +58,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = context.read<ControllerAccounting>();
+      final controller = context.read<ControllerAccountingDetail>();
       controller.currentCurrency = widget.account.currency;
-      controller.loadToday();
+      controller.loadToday(inputAccountId: widget.account.id);
     });
   }
 
@@ -150,7 +148,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ControllerAccounting>();
+    final controller = context.watch<ControllerAccountingDetail>();
     final account = widget.account;
     return Scaffold(
       appBar: AppBar(
@@ -177,10 +175,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildSummary(
-      ModelAccountingAccount account, ControllerAccounting controller) {
+      ModelAccountingAccount account, ControllerAccountingDetail controller) {
     String currency = controller.currentCurrency ?? (account.currency ?? '');
-    int totalValue = controller.totalValue == null || controller.totalValue == 0 ? account.balance : controller.totalValue!;
-    //totalValue = totalValue == 0 ? account.balance : totalValue;
+    int totalValue = controller.total ?? 0;
 
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -234,7 +231,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     );
   }
 
-  Widget _buildTodayList(ControllerAccounting controller) {
+  Widget _buildTodayList(ControllerAccountingDetail controller) {
     return Expanded(
       child: ListView.builder(
         itemCount: controller.todayRecords.length,
@@ -276,12 +273,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 ),
               );
               if (updated != null) {
-                await controller.updateAccountingDetail(
-                  recordId: updated.id,
-                  newValue: updated.value,
-                  newCurrency: updated.currency,
-                  newDescription: updated.description,
-                );
+                await controller.updateAccountingDetail(updated);
                 //setState(() {});
               }
             },
@@ -292,7 +284,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerAccounting controller) {
+      BuildContext context, ControllerAccountingDetail controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -326,22 +318,14 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           ElevatedButton(
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
-              final previews = await controller.parseFromSpeech(
+              final previews = controller.parseFromSpeech(
                   _speechTextController.text,
                   controller.currentCurrency ?? widget.account.currency,
                   controller.currentExchangeRate);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
-              await controller.commitRecords(
-                  previews, controller.currentCurrency ?? widget.account.currency);
-              final ctrlAA = context.read<ControllerAccountingAccount>();
-              if (widget.account.category == 'personal') {
-                await ctrlAA.loadAccounts(force: true);
-              } else {
-                await ctrlAA.loadAccounts(
-                    force: true, inputCategory: 'project');
-              }
+              await controller.commitRecords(previews);
 
               // 清空輸入框
               setState(() {

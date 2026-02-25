@@ -4,22 +4,36 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/core/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/pages/point_record/page_point_record_detail.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/accounting/model_accounting_account.dart';
+import 'package:life_pilot/accounting/page_accounting_detail.dart';
+import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
-enum AccountCategory {
-  personal,
-  project,
-  master,
-}
-
-class ControllerPointRecordAccount extends ChangeNotifier {
-  final ServicePointRecord service;
+class ControllerAccountingList extends ChangeNotifier {
+  final ServiceAccounting service;
   ControllerAuth? auth;
+
+  ControllerAccountingList({
+    required this.service,
+    required this.auth,
+  });
+
+  bool isLoading = false;
+  List<ModelAccountingAccount> accounts = [];
+
+  Future<void> loadAccounts({String? inputCategory}) async {
+    if (isLoading) return;
+    isLoading = true;
+    notifyListeners();
+    accounts = await service.fetchAccounts(
+        user: auth?.currentAccount ?? constEmpty,
+        category: inputCategory ?? category);
+    isLoading = false;
+    notifyListeners();
+  }
+
   String? mainCurrency;
 
   String? _currentCategory;
@@ -30,78 +44,93 @@ class ControllerPointRecordAccount extends ChangeNotifier {
   Future<void> setCategory(String category) async {
     if (_currentCategory == category) return;
     _currentCategory = category;
-    await loadAccounts(force: true);
-    notifyListeners();
+    await loadAccounts();
   }
 
-  ControllerPointRecordAccount({
-    required this.service,
-    required this.auth,
-  });
+  Future<void> askMainCurrency({required BuildContext context}) async {
+    if (accounts.isNotEmpty) {
+      mainCurrency = accounts[0].currency;
+      return;
+    }
+    if (accounts.isEmpty || mainCurrency == null || mainCurrency!.isEmpty) {
+      mainCurrency = await service.fetchLatestAccount(
+          user: auth?.currentAccount ?? constEmpty, category: category);
+      notifyListeners();
+      return;
+    }
 
-  List<ModelPointRecordAccount> accounts = [];
-  bool isLoading = false;
-  bool isLoaded = false;
+    final textController = TextEditingController(text: mainCurrency);
 
-  Future<void> loadAccounts({bool force = false, String? inputCategory}) async {
-    if (isLoading) return;
-    if (!force && isLoaded) return;
-    isLoading = true;
-    notifyListeners();
-    accounts = await service.fetchAccounts(
-        user: auth?.currentAccount ?? constEmpty,
-        category: inputCategory ?? category);
-    isLoading = false;
-    isLoaded = true;
-    notifyListeners();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Set main currency'),
+        content: TextField(controller: textController),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context, textController.text),
+              child: Text('OK')),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      mainCurrency = result.toUpperCase();
+      notifyListeners();
+    } else {
+      mainCurrency ??= 'TWD'; // ✅ 如果使用者沒輸入，給預設
+      notifyListeners();
+    }
   }
 
-  Future<ModelPointRecordAccount> createAccount(
+  Future<ModelAccountingAccount> createAccount(
       {required String name, String? eventId}) async {
     if (mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await service.fetchLatestAccount(
-          user: auth?.currentAccount ?? constEmpty,
-          category: category);
+          user: auth?.currentAccount ?? constEmpty, category: category);
     }
-    final modelPointRecordAccount = await service.createAccount(
+    final modelAccountingAccount = await service.createAccount(
         name: name,
         user: auth?.currentAccount ?? constEmpty,
         currency: mainCurrency,
         category: category,
         eventId: eventId);
     // ⭐ 統一來源：重新拉一次
-    await loadAccounts(force: true);
-    return modelPointRecordAccount;
+    await loadAccounts();
+    return modelAccountingAccount;
   }
 
   Future<void> deleteAccount({required String accountId}) async {
     await service.deleteAccount(accountId: accountId);
-    await loadAccounts(force: true);
+    await loadAccounts();
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
 
     // 上傳圖片給後端，後端返回可訪問 URL
-    final newImage = await service.uploadAccountImageBytesDirect(
-        accountId, bytes);
+    final newImage =
+        await service.uploadAccountImageBytesDirect(accountId, bytes);
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
 
     accounts[index] = accounts[index].copyWith(
       masterGraphUrl: newImage,
+      currency: mainCurrency,
     );
 
     notifyListeners();
   }
 
-  ModelPointRecordAccount getAccountById(String id) {
-    final returnAccount = accounts.firstWhereOrNull((a) => a.id == id);
-    return returnAccount ?? ModelPointRecordAccount(id: Uuid().v4(), accountName: 'dummy', category: 'balance');
+  ModelAccountingAccount? getAccountById(String id) {
+    return accounts.firstWhereOrNull((a) => a.id == id);
   }
 
-  Future<ModelPointRecordAccount?> findAccountByEventId(
+  Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId}) async {
     // 或者直接從 Supabase 查詢
     return await service.findAccountByEventId(
@@ -112,43 +141,51 @@ class ControllerPointRecordAccount extends ChangeNotifier {
 
   void updateAccountTotals({
     required String accountId,
-    required int deltaPoints,
+    required int deltaBalance,
+    required String? currency,
   }) {
     final index = accounts.indexWhere((a) =>
-        a.id == accountId);
+        a.id == accountId && (currency == null || a.currency == currency));
     if (index == -1) return;
 
     final old = accounts[index];
     accounts[index] = old.copyWith(
-      points: old.points + deltaPoints,
+      balance: old.balance + deltaBalance,
+      currency: old.currency,
+      exchangeRate: old.exchangeRate,
     );
 
     notifyListeners();
   }
 
-  static final ModelPointRecordAccount dummyAccount = ModelPointRecordAccount(
-      id: '__dummy__',
-      accountName: '',
-      points: 0,
-      category: '');
+  Future<void> changeMainCurrency({
+    required String accountId,
+    required String currency,
+  }) async {
+    await service.switchMainCurrency(
+      accountId: accountId,
+      currency: currency,
+    );
+    await loadAccounts();
+  }
 
-  // 共用方法：點 PointRecord
-  Future<void> handlePointRecord({
+  // 共用方法：點 Accounting
+  Future<void> handleAccounting({
     required BuildContext context,
     required String eventId,
   }) async {
     // 1️⃣ 嘗試找對應 eventId 的帳戶
-    ModelPointRecordAccount? existingAccount = await findAccountByEventId(
+    ModelAccountingAccount? existingAccount = await findAccountByEventId(
       eventId: eventId,
     );
 
-    // 2️⃣ 如果存在帳戶 → 直接跳 PointRecord 頁
+    // 2️⃣ 如果存在帳戶 → 直接跳 Accounting 頁
     if (existingAccount != null) {
       await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (_) => PagePointRecordDetail(
-            service: context.read<ServicePointRecord>(),
+          builder: (_) => PageAccountingDetail(
+            service: context.read<ServiceAccounting>(),
             account: existingAccount,
           ),
         ),
@@ -163,8 +200,8 @@ class ControllerPointRecordAccount extends ChangeNotifier {
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => PagePointRecordDetail(
-          service: context.read<ServicePointRecord>(),
+        builder: (_) => PageAccountingDetail(
+          service: context.read<ServiceAccounting>(),
           account: selectedAccount,
         ),
       ),
@@ -172,10 +209,10 @@ class ControllerPointRecordAccount extends ChangeNotifier {
   }
 
   // 復用原本 Dialog
-  Future<ModelPointRecordAccount?> _showAccountPickerDialog(
+  Future<ModelAccountingAccount?> _showAccountPickerDialog(
       BuildContext context, String eventId) {
     final loc = AppLocalizations.of(context)!;
-    return showDialog<ModelPointRecordAccount>(
+    return showDialog<ModelAccountingAccount>(
       context: context,
       builder: (_) {
         return DefaultTabController(
@@ -226,18 +263,19 @@ class _AccountListView extends StatefulWidget {
 
 class _AccountListViewState extends State<_AccountListView> {
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final controller = context.read<ControllerPointRecordAccount>();
-    // 延後到 build 完成再呼叫
+  void initState() {
+    super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final controller = context.read<ControllerAccountingList>();
       await controller.setCategory(widget.category);
+      await controller.askMainCurrency(context: context);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ControllerPointRecordAccount>(
+    return Consumer<ControllerAccountingList>(
       builder: (_, controller, __) {
         final accounts = controller.accounts;
 
@@ -282,19 +320,19 @@ class _AccountListViewState extends State<_AccountListView> {
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          final modelPointRecordAccount =
+                          final modelAccountingAccount =
                               await controller.createAccount(
                             name: textController.text,
                             eventId: widget.eventId,
                           );
                           Navigator.pop(context, true);
                           // 如果新增的帳戶 category 與目前 Tab 不符
-                          if (modelPointRecordAccount.category !=
+                          if (modelAccountingAccount.category !=
                               widget.category) {
                             // 切換到正確 Tab
                             final parentTabController =
                                 DefaultTabController.of(context);
-                            int tabIndex = modelPointRecordAccount.category ==
+                            int tabIndex = modelAccountingAccount.category ==
                                     AccountCategory.personal.name
                                 ? 0
                                 : 1;
@@ -302,10 +340,7 @@ class _AccountListViewState extends State<_AccountListView> {
 
                             // 同時更新帳戶列表
                             await controller
-                                .setCategory(modelPointRecordAccount.category);
-                          } else {
-                            // 如果同 Tab，直接刷新
-                            //await controller.setCategory(widget.category);
+                                .setCategory(modelAccountingAccount.category);
                           }
                         },
                         child: const Text('Create'),

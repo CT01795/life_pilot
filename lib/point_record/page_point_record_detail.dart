@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/controller_speech.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/point_record/controller_point_record_detail.dart';
 import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/point_record/model_point_record_account.dart';
+import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/services/event/service_speech.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecordDetail extends StatelessWidget {
@@ -26,9 +25,8 @@ class PagePointRecordDetail extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => ControllerPointRecord(
+          create: (_) => ControllerPointRecordDetail(
             service: service,
-            accountController: context.read<ControllerPointRecordAccount>(),
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
           ),
@@ -61,7 +59,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ControllerPointRecord>().loadToday();
+      context.read<ControllerPointRecordDetail>().loadToday(inputAccountId: widget.account.id);
     });
   }
 
@@ -174,8 +172,8 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ControllerPointRecord>();
-    final account = controller.getAccount(widget.account.id);
+    final controller = context.watch<ControllerPointRecordDetail>();
+    final account = widget.account;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -201,9 +199,8 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
   }
 
   Widget _buildSummary(
-      ModelPointRecordAccount account, ControllerPointRecord controller) {
-    int totalValue = controller.totalValue(widget.account.id);
-
+      ModelPointRecordAccount account, ControllerPointRecordDetail controller) {
+    int totalValue = controller.total ?? 0;
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       columnWidths: const {
@@ -244,7 +241,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
     );
   }
 
-  Widget _buildTodayList(ControllerPointRecord controller) {
+  Widget _buildTodayList(ControllerPointRecordDetail controller) {
     return Expanded(
       child: ListView.builder(
         itemCount: controller.todayRecords.length,
@@ -281,7 +278,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerPointRecord controller) {
+      BuildContext context, ControllerPointRecordDetail controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -316,22 +313,13 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
           ElevatedButton(
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
-              final previews = await controller.parseFromSpeech(
-                  _speechTextController.text, null, null);
+              final previews = controller.parseFromSpeech(
+                  _speechTextController.text);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
 
               await controller.commitRecords(previews);
-              // ❶ 取這次變動的總值
-              final delta = previews.fold<int>(0, (sum, p) => sum + p.value);
-              // ❷ 更新主頁帳戶
-              final ctrlAA =
-                  context.read<ControllerPointRecordAccount>();
-              ctrlAA.updateAccountTotals(
-                accountId: controller.accountId,
-                deltaPoints: delta,
-              );
 
               // 清空輸入框
               setState(() {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
@@ -178,7 +178,7 @@ Future<bool> showCalendarEventsDialog({
                                     Navigator.pop(
                                         context, true); // ✅ 回傳 true 給外層
                                   },
-                            onAccounting: () => context.read<ControllerAccountingAccount>().handleAccounting(
+                            onAccounting: () => context.read<ControllerAccountingList>().handleAccounting(
                               context: context,
                               eventId: event.id,
                             ),

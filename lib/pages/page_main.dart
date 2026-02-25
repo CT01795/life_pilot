@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
 import 'package:life_pilot/pages/business_plan/page_business_plan.dart';
-import 'package:life_pilot/pages/accounting/page_accounting.dart';
+import 'package:life_pilot/accounting/page_accounting_list.dart';
 import 'package:life_pilot/pages/page_ai.dart';
 import 'package:life_pilot/pages/calendar/page_calendar.dart';
 import 'package:life_pilot/pages/memory_trace/page_memory_trace.dart';
@@ -9,7 +9,7 @@ import 'package:life_pilot/pages/event/page_recommended_attractions.dart';
 import 'package:life_pilot/pages/event/page_recommended_event.dart';
 import 'package:life_pilot/pages/game/page_game_list.dart';
 import 'package:life_pilot/pages/page_feedback_admin.dart';
-import 'package:life_pilot/pages/point_record/page_point_record.dart';
+import 'package:life_pilot/point_record/page_point_record.dart';
 import 'package:life_pilot/pages/page_settings.dart';
 import 'package:life_pilot/pages/page_type.dart';
 import 'package:provider/provider.dart';
@@ -45,7 +45,7 @@ class _PageMainState extends State<PageMain> {
       case PageType.memoryTrace:
         return const PageMemoryTrace();
       case PageType.accountRecords:
-        return const PageAccounting();
+        return const PageAccountingList();
       case PageType.pointsRecord:
         return const PagePointRecord();
       case PageType.game:

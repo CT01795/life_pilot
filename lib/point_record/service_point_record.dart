@@ -2,16 +2,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/core/graph.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/models/point_record/model_point_record.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/models/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/point_record/model_point_record_detail.dart';
+import 'package:life_pilot/point_record/model_point_record_account.dart';
+import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide MultipartFile;
-import 'package:dio/dio.dart';
 
 class ServicePointRecord {
-  final Dio dio;
   String currentTable = 'point_record_account';
-  ServicePointRecord(this.dio);
+  ServicePointRecord();
 
   final supabase = Supabase.instance.client;
 
@@ -189,7 +187,7 @@ class ServicePointRecord {
   }
 
   // ===== 明細 =====
-  Future<List<ModelPointRecord>> fetchTodayRecords(
+  Future<List<ModelPointRecordDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
     String currentFunc = 'fetch_today_point_records';
     final res = await supabase.rpc(
@@ -200,13 +198,14 @@ class ServicePointRecord {
       },
     );
     return (res as List)
-        .map((e) => ModelPointRecord(
-              id: e['id'],
-              accountId: e['account_id'],
-              createdAt: DateTime.parse(e['created_at']),
-              description: e['description'],
-              type: e['type'],
-              value: (e['value'] ?? 0).toInt(),
+        .map((e) => ModelPointRecordDetail(
+              id: e['detail']['id'],
+              accountId: e['detail']['account_id'],
+              createdAt: DateTime.parse(e['detail']['created_at']),
+              description: e['detail']['description'],
+              type: e['detail']['type'],
+              value: (e['detail']['value'] ?? 0).toInt(),
+              points: e['points'] ?? 0
             ))
         .toList();
   }
