@@ -3,12 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/core/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/point_record/model_point_record_account.dart';
-import 'package:life_pilot/pages/point_record/page_point_record_detail.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/point_record/model_point_record_account.dart';
+import 'package:life_pilot/point_record/page_point_record_detail.dart';
+import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecord extends StatefulWidget {
@@ -28,7 +29,7 @@ class _PagePointRecordState extends State<PagePointRecord>
 
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = 0;
-    final controller = context.read<ControllerPointRecordAccount>();
+    final controller = context.read<ControllerPointRecordList>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setCategory(AccountCategory.personal.name);
     });
@@ -58,7 +59,7 @@ class _PagePointRecordState extends State<PagePointRecord>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final controller = context.read<ControllerPointRecordAccount>();
+    final controller = context.read<ControllerPointRecordList>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_tabController.index == 0 &&
@@ -99,14 +100,14 @@ class _PagePointRecordState extends State<PagePointRecord>
   }
 
   Widget _buildBody() {
-    return Selector<ControllerPointRecordAccount, bool>(
+    return Selector<ControllerPointRecordList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
         if (isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<ControllerPointRecordAccount,
+        return Selector<ControllerPointRecordList,
                 List<ModelPointRecordAccount>>(
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
@@ -131,7 +132,7 @@ class _PagePointRecordState extends State<PagePointRecord>
   }
 
   void _showAddDialog(BuildContext context) {
-    final controller = context.read<ControllerPointRecordAccount>();
+    final controller = context.read<ControllerPointRecordList>();
     final textController = TextEditingController();
 
     showDialog(
@@ -175,8 +176,8 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.read<ControllerPointRecordAccount>();
-    return Selector<ControllerPointRecordAccount, ModelPointRecordAccount?>(
+    final controller = context.read<ControllerPointRecordList>();
+    return Selector<ControllerPointRecordList, ModelPointRecordAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
@@ -227,7 +228,7 @@ class _AccountCard extends StatelessWidget {
                       );
                       if (pickedFile != null) {
                         await context
-                            .read<ControllerPointRecordAccount>()
+                            .read<ControllerPointRecordList>()
                             .updateAccountImage(account.id, pickedFile);
                       }
                     },

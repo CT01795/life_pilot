@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
@@ -28,7 +28,7 @@ class PageMemoryTrace extends StatefulWidget {
 class _PageMemoryTraceState extends State<PageMemoryTrace> {
   late final ControllerEvent _controllerEvent;
   late final ModelEventCalendar _modelEventCalendar;
-  late final ControllerAccountingAccount _accountController;
+  late final ControllerAccountingList _accountController;
   bool _accountsLoaded = false;
 
   @override
@@ -37,7 +37,7 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     final context = this.context; // ✅ 避免多次 lookup
     final auth = context.read<ControllerAuth>();
     final serviceEvent = context.read<ServiceEvent>();
-    _accountController = context.read<ControllerAccountingAccount>();
+    _accountController = context.read<ControllerAccountingList>();
 
     _modelEventCalendar = ModelEventCalendar();
 
@@ -63,7 +63,7 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
       });
     }
     else if (!_accountsLoaded) {
-      await _accountController.loadAccounts(force: true, inputCategory: 'project');
+      await _accountController.loadAccounts(inputCategory: 'project');
       setState(() {
         _accountsLoaded = true;
       });

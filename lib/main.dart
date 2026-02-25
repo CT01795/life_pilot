@@ -1,14 +1,13 @@
-import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
 import 'package:life_pilot/config/config_app.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
 import 'package:life_pilot/controllers/calendar/controller_notification.dart';
-import 'package:life_pilot/controllers/point_record/controller_point_record_account.dart';
+import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/core/const.dart' as globals;
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/controller_page_main.dart';
@@ -21,11 +20,11 @@ import 'package:life_pilot/services/event/service_event.dart';
 import 'package:life_pilot/services/event/service_speech.dart';
 import 'package:life_pilot/services/export/service_export_excel.dart';
 import 'package:life_pilot/services/export/service_export_platform.dart';
-import 'package:life_pilot/services/service_accounting.dart';
+import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/services/service_business_plan.dart';
 import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
 import 'package:life_pilot/services/service_permission.dart';
-import 'package:life_pilot/services/service_point_record.dart';
+import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/services/service_timezone.dart';
 import 'package:life_pilot/services/service_weather.dart';
 import 'package:provider/provider.dart';
@@ -87,10 +86,10 @@ void main() async {
           create: (_) => ControllerAuth(),
         ),
         Provider<ServiceAccounting>(
-          create: (_) => ServiceAccounting(Dio()),
+          create: (_) => ServiceAccounting(),
         ),
         Provider<ServicePointRecord>(
-          create: (_) => ServicePointRecord(Dio()),
+          create: (_) => ServicePointRecord(),
         ),
         Provider<ServiceSpeech>(
           create: (_) => ServiceSpeech(),
@@ -115,13 +114,13 @@ void main() async {
           },
         ),
         ChangeNotifierProxyProvider2<ServiceAccounting, ControllerAuth,
-            ControllerAccountingAccount>(
-          create: (context) => ControllerAccountingAccount(
+            ControllerAccountingList>(
+          create: (context) => ControllerAccountingList(
             service: context.read<ServiceAccounting>(),
             auth: context.read<ControllerAuth>(),
           ),
           update: (_, service, auth, controller) {
-            controller ??= ControllerAccountingAccount(
+            controller ??= ControllerAccountingList(
               service: service,
               auth: auth,
             );
@@ -130,13 +129,13 @@ void main() async {
           },
         ),
         ChangeNotifierProxyProvider2<ServicePointRecord, ControllerAuth,
-            ControllerPointRecordAccount>(
-          create: (context) => ControllerPointRecordAccount(
+            ControllerPointRecordList>(
+          create: (context) => ControllerPointRecordList(
             service: context.read<ServicePointRecord>(),
             auth: context.read<ControllerAuth>(),
           ),
           update: (_, service, auth, controller) {
-            controller ??= ControllerPointRecordAccount(
+            controller ??= ControllerPointRecordList(
               service: service,
               auth: auth,
             );

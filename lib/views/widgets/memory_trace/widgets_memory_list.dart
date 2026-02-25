@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/controllers/accounting/controller_accounting_account.dart';
+import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/controllers/auth/controller_auth.dart';
 import 'package:life_pilot/models/event/model_event_calendar.dart';
 import 'package:life_pilot/controllers/event/controller_event.dart';
@@ -84,7 +84,7 @@ class WidgetsMemoryList extends StatelessWidget {
                       }
                     }
                   : null,
-              onAccounting: () => context.read<ControllerAccountingAccount>().handleAccounting(
+              onAccounting: () => context.read<ControllerAccountingList>().handleAccounting(
                 context: context,
                 eventId: event.id,
               ),

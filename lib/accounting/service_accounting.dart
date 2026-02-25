@@ -2,16 +2,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/core/graph.dart';
 import 'package:life_pilot/core/logger.dart';
-import 'package:life_pilot/models/accounting/model_accounting.dart';
-import 'package:life_pilot/models/accounting/model_accounting_account.dart';
-import 'package:life_pilot/models/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/accounting/model_accounting_detail.dart';
+import 'package:life_pilot/accounting/model_accounting_account.dart';
+import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide MultipartFile;
-import 'package:dio/dio.dart';
 
 class ServiceAccounting {
-  final Dio dio;
   String currentTable = 'accounting_account';
-  ServiceAccounting(this.dio);
+  ServiceAccounting();
 
   final supabase = Supabase.instance.client;
 
@@ -198,7 +196,7 @@ class ServiceAccounting {
   }
 
   // ===== 明細 =====
-  Future<List<ModelAccounting>> fetchTodayRecords(
+  Future<List<ModelAccountingDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
     String currentFunc = 'fetch_today_accountings';
     final res = await supabase.rpc(
@@ -209,16 +207,17 @@ class ServiceAccounting {
       },
     );
     return (res as List)
-        .map((e) => ModelAccounting(
-              id: e['id'],
-              accountId: e['account_id'],
-              createdAt: DateTime.parse(e['created_at']),
-              description: e['description'],
-              type: e['type'],
-              value: (e['value'] ?? 0).toInt(),
-              currency: e.containsKey('currency') ? e['currency'] : '',
+        .map((e) => ModelAccountingDetail(
+              id: e['detail']['id'],
+              accountId: e['detail']['account_id'],
+              createdAt: DateTime.parse(e['detail']['created_at']),
+              description: e['detail']['description'],
+              type: e['detail']['type'],
+              value: (e['detail']['value'] ?? 0).toInt(),
+              currency: e['detail'].containsKey('currency') ? e['detail']['currency'] : '',
               exchangeRate:
-                  e.containsKey('exchange_rate') ? e['exchange_rate'] : null,
+                  e['detail'].containsKey('exchange_rate') ? e['detail']['exchange_rate'] : null,
+              balance:e['balance'] ?? 0
             ))
         .toList();
   }
