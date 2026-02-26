@@ -1,0 +1,104 @@
+import 'package:flutter/material.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/page_base_event.dart';
+import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/event/service_event_public.dart';
+import 'package:life_pilot/utils/service/export/service_export_excel.dart';
+import 'package:life_pilot/utils/service/export/service_export_platform.dart';
+import 'package:life_pilot/utils/widgets/widgets_search_panel.dart';
+import 'package:provider/provider.dart';
+
+import 'widgets_event_list.dart';
+
+class PageRecommendedEvent extends StatefulWidget {
+  const PageRecommendedEvent({super.key});
+
+  static const String _tableName = TableNames.recommendedEvents;
+  static const String _toTableName = TableNames.calendarEvents;
+
+  @override
+  State<PageRecommendedEvent> createState() => _PageRecommendedEventState();
+}
+
+class _PageRecommendedEventState extends State<PageRecommendedEvent> {
+  late final ControllerEvent _controllerEvent;
+  late final ModelEventCalendar _modelEventCalendar;
+
+  @override
+  void initState() {
+    super.initState();
+    final context = this.context; // ✅ 避免多次 lookup
+    final auth = context.read<ControllerAuth>();
+    final serviceEvent = context.read<ServiceEvent>();
+
+    _modelEventCalendar = ModelEventCalendar();
+
+    _controllerEvent = ControllerEvent(
+      auth: auth,
+      serviceEvent: serviceEvent,
+      tableName: PageRecommendedEvent._tableName,
+      toTableName: PageRecommendedEvent._toTableName,
+      modelEventCalendar: _modelEventCalendar,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshEvents();
+    });
+  }
+
+  Future<void> _refreshEvents() async {
+    await ServiceEventPublic().fetchAndSaveAllEvents();
+
+    if (!mounted) return;
+    _controllerEvent.loadEvents(); // notifyListeners()
+  }
+
+  @override
+  void dispose() {
+    _controllerEvent.dispose(); // ✅ 確保釋放資源
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final auth = context.read<ControllerAuth>();
+    final serviceEvent = context.read<ServiceEvent>();
+    final exportService = context.read<ServiceExportPlatform>();
+    final excelService = context.read<ServiceExportExcel>();
+    // ✅ 回傳 Provider Scope，包住整個頁面
+    return ChangeNotifierProvider.value(
+      value: _controllerEvent,
+      child: GenericEventPage(
+          auth: auth,
+          serviceEvent: serviceEvent,
+          controllerEvent: _controllerEvent,
+          modelEventCalendar: _modelEventCalendar,
+          exportService: exportService,
+          excelService: excelService,
+          title: loc.recommendedEvent,
+          tableName: PageRecommendedEvent._tableName,
+          toTableName: PageRecommendedEvent._toTableName,
+          emptyText: loc.recommendedEventZero,
+          searchPanelBuilder: widgetsSearchPanel,
+          listBuilder: ({
+            required List<EventItem> filteredEvents,
+            required ScrollController scrollController,
+          }) {
+            return WidgetsEventList(
+                serviceEvent: serviceEvent,
+                tableName: PageRecommendedEvent._tableName,
+                toTableName: PageRecommendedEvent._toTableName,
+                filteredEvents: filteredEvents,
+                scrollController: scrollController,
+                controllerEvent: _controllerEvent,
+                modelEventCalendar: _modelEventCalendar,
+                auth: auth);
+          },
+        ));
+  }
+}

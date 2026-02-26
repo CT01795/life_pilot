@@ -1,35 +1,36 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/app_view.dart';
-import 'package:life_pilot/config/config_app.dart';
+import 'package:life_pilot/app/config_app.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
-import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/business_plan/controller_business_plan.dart';
-import 'package:life_pilot/controllers/calendar/controller_calendar.dart';
-import 'package:life_pilot/controllers/calendar/controller_notification.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/business_plan/controller_business_plan.dart';
+import 'package:life_pilot/calendar/controller_calendar.dart';
+import 'package:life_pilot/calendar/controller_notification.dart';
+import 'package:life_pilot/calendar/model_calendar.dart';
+import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
-import 'package:life_pilot/core/const.dart' as globals;
-import 'package:life_pilot/models/event/model_event_calendar.dart';
-import 'package:life_pilot/controllers/controller_page_main.dart';
-import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/core/provider_locale.dart';
+import 'package:life_pilot/utils/const.dart' as globals;
+import 'package:life_pilot/app/controller_page_main.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/firebase_options.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/models/auth/model_auth_view.dart';
-import 'package:life_pilot/services/event/service_event.dart';
-import 'package:life_pilot/services/event/service_speech.dart';
-import 'package:life_pilot/services/export/service_export_excel.dart';
-import 'package:life_pilot/services/export/service_export_platform.dart';
+import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/utils/service/service_speech.dart';
+import 'package:life_pilot/utils/service/export/service_export_excel.dart';
+import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
-import 'package:life_pilot/services/service_business_plan.dart';
-import 'package:life_pilot/services/service_notification/service_notification_factory.dart';
-import 'package:life_pilot/services/service_permission.dart';
+import 'package:life_pilot/business_plan/service_business_plan.dart';
+import 'package:life_pilot/utils/service/service_notification/service_notification_factory.dart';
+import 'package:life_pilot/utils/service/service_permission.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
-import 'package:life_pilot/services/service_timezone.dart';
-import 'package:life_pilot/services/service_weather.dart';
+import 'package:life_pilot/utils/service/service_timezone.dart';
+import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'services/export/service_export.dart';
+import 'utils/service/export/service_export.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +70,9 @@ void main() async {
         ),
         Provider<ServiceEvent>(
           create: (_) => ServiceEvent(),
+        ),
+        Provider<ModelCalendar>(
+          create: (_) => ModelCalendar(),
         ),
         Provider<ModelEventCalendar>(
           create: (_) => ModelEventCalendar(),
@@ -155,7 +159,7 @@ void main() async {
 
         //-------------- ControllerCalendar (ModelCalendar, ControllerAuth, ServiceStorage, ProviderLocale)--------------
         ChangeNotifierProxyProvider5<
-            ModelEventCalendar,
+            ModelCalendar,
             ControllerAuth,
             ServiceEvent,
             ControllerNotification,
@@ -165,7 +169,7 @@ void main() async {
             final locale = context.read<ProviderLocale>().locale;
             final loc = lookupAppLocalizations(locale);
             return ControllerCalendar(
-              modelEventCalendar: context.read<ModelEventCalendar>(),
+              modelCalendar: context.read<ModelCalendar>(),
               auth: context.read<ControllerAuth>(),
               serviceEvent: context.read<ServiceEvent>(),
               controllerNotification: context.read<ControllerNotification>(),

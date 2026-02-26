@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/controller_speech.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/point_record/controller_point_record_detail.dart';
-import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
-import 'package:life_pilot/services/event/service_speech.dart';
+import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 

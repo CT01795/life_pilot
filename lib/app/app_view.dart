@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/config/config_app.dart';
-import 'package:life_pilot/core/app_navigator.dart' as app_navigator;
-import 'package:life_pilot/core/theme.dart';
-import 'package:life_pilot/pages/auth/page_auth_check.dart';
-import 'package:life_pilot/core/provider_locale.dart';
+import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
+import 'package:life_pilot/utils/theme.dart';
+import 'package:life_pilot/auth/page_auth_check.dart';
+import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:provider/provider.dart';
 
 class AppView extends StatefulWidget {
