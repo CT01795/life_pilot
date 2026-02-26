@@ -82,7 +82,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    if (modelCalendar.isInitialized) return;
+    //if (modelCalendar.isInitialized) return;
     modelCalendar.isInitialized = true; // 提前鎖
     await goToMonth(month: currentMonth, notify: false);
     await checkAndGenerateNextEvents();
