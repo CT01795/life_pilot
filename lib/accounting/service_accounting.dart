@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:life_pilot/core/graph.dart';
-import 'package:life_pilot/core/logger.dart';
+import 'package:life_pilot/utils/graph.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';

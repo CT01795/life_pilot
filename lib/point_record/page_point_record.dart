@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
-import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/core/enum.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/page_point_record_detail.dart';
@@ -201,7 +201,7 @@ class _AccountCard extends StatelessWidget {
           elevation: 2,
           child: InkWell(
             onTap: () async {
-              await Navigator.push(
+              final needReload = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => PagePointRecordDetail(
@@ -210,6 +210,9 @@ class _AccountCard extends StatelessWidget {
                   ),
                 ),
               );
+              if (needReload == true) {
+                await controller.loadAccounts();
+              }
             },
             child: Padding(
               padding: const EdgeInsets.all(8.0),

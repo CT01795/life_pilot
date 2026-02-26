@@ -1,4 +1,4 @@
-import 'package:life_pilot/core/date_time.dart';
+import 'package:life_pilot/utils/date_time.dart';
 
 class ModelPointRecordDetail {
   final String id;

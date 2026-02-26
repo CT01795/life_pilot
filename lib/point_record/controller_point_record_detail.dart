@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/core/enum.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
+import 'package:life_pilot/utils/nlp.dart';
 
 class ControllerPointRecordDetail extends ChangeNotifier {
   final ServicePointRecord service;
@@ -55,12 +54,12 @@ class ControllerPointRecordDetail extends ChangeNotifier {
     // 或者直接從 Supabase 查詢
     return await service.findAccountByEventId(
       eventId: eventId,
-      user: auth?.currentAccount ?? constEmpty,
+      user: auth?.currentAccount ?? '',
     );
   }
 
   List<PointRecordPreview> parseFromSpeech(String text) {
-    final results = NLPService.parseMulti(text);
+    final results = NLP.parseMulti(text);
 
     return results
         .map(

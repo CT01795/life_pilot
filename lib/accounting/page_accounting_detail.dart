@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_detail.dart';
-import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/controllers/controller_speech.dart';
-import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/controller_speech.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
-import 'package:life_pilot/services/event/service_speech.dart';
+import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
 

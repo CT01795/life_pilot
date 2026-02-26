@@ -2,9 +2,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/core/const.dart';
-import 'package:life_pilot/core/enum.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/page_accounting_detail.dart';
@@ -28,7 +27,7 @@ class ControllerAccountingList extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     accounts = await service.fetchAccounts(
-        user: auth?.currentAccount ?? constEmpty,
+        user: auth?.currentAccount ?? '',
         category: inputCategory ?? category);
     isLoading = false;
     notifyListeners();
@@ -54,7 +53,7 @@ class ControllerAccountingList extends ChangeNotifier {
     }
     if (accounts.isEmpty || mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await service.fetchLatestAccount(
-          user: auth?.currentAccount ?? constEmpty, category: category);
+          user: auth?.currentAccount ?? '', category: category);
       notifyListeners();
       return;
     }
@@ -90,11 +89,11 @@ class ControllerAccountingList extends ChangeNotifier {
       {required String name, String? eventId}) async {
     if (mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await service.fetchLatestAccount(
-          user: auth?.currentAccount ?? constEmpty, category: category);
+          user: auth?.currentAccount ?? '', category: category);
     }
     final modelAccountingAccount = await service.createAccount(
         name: name,
-        user: auth?.currentAccount ?? constEmpty,
+        user: auth?.currentAccount ?? '',
         currency: mainCurrency,
         category: category,
         eventId: eventId);
@@ -135,7 +134,7 @@ class ControllerAccountingList extends ChangeNotifier {
     // 或者直接從 Supabase 查詢
     return await service.findAccountByEventId(
       eventId: eventId,
-      user: auth?.currentAccount ?? constEmpty,
+      user: auth?.currentAccount ?? '',
     );
   }
 

@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:life_pilot/controllers/auth/controller_auth.dart';
-import 'package:life_pilot/core/const.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
-import 'package:life_pilot/core/enum.dart';
+import 'package:life_pilot/utils/nlp.dart';
 
 class ControllerAccountingDetail extends ChangeNotifier {
   final ServiceAccounting service;
@@ -63,7 +62,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
     // 或者直接從 Supabase 查詢
     return await service.findAccountByEventId(
       eventId: eventId,
-      user: auth?.currentAccount ?? constEmpty,
+      user: auth?.currentAccount ?? '',
     );
   }
 
@@ -78,7 +77,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
 
   List<AccountingPreview> parseFromSpeech(
       String text, String? currency, num? exchangeRate) {
-    final results = NLPService.parseMulti(text);
+    final results = NLP.parseMulti(text);
 
     return results
         .map(
