@@ -6,7 +6,7 @@ import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/calendar/page_calendar_add.dart';
+import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/calendar/widgets_calendar_card.dart';
 import 'package:life_pilot/calendar/widgets_calendar_trailing.dart';
