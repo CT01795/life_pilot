@@ -276,9 +276,7 @@ class WeekRow extends StatelessWidget {
         ),
       );
 
-      if (result != null && result.startDate != null && result is EventItem &&
-          result.startDate!.month ==  controllerCalendar.currentMonth.month &&
-          result.startDate!.year == controllerCalendar.currentMonth.year) {
+      if (result != null && result.startDate != null && result is EventItem) {
         await controllerCalendar.loadCalendarEvents(
           month: controllerCalendar.currentMonth);
       }

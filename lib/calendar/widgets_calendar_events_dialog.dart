@@ -98,9 +98,7 @@ class CalendarEventsDialog extends StatelessWidget {
                                   displayedMonth:
                                       controllerCalendar.currentMonth,
                                 );
-                                Navigator.pop(context,  
-                                  newEvent.startDate!.month !=  controllerCalendar.currentMonth.month ||
-                                  newEvent.startDate!.year != controllerCalendar.currentMonth.year ?  false : true); // ✅ 回傳 true 給外層
+                                Navigator.pop(context, true); // ✅ 回傳 true 給外層
                               }
                             },
                           ),
