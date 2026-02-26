@@ -4,7 +4,7 @@ import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
-import 'package:life_pilot/calendar/service_calendar.dart';
+import 'package:life_pilot/calendar/service_calendar_ok.dart';
 
 import '../utils/logger.dart';
 

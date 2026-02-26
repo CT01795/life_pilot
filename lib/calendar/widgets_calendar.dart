@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
-import 'package:life_pilot/calendar/page_calendar_add.dart';
+import 'package:life_pilot/calendar/controller_calendar_event_card_ok.dart';
+import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
 import 'package:life_pilot/calendar/widgets_calendar_events_dialog.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';

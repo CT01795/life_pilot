@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
+import 'package:life_pilot/calendar/controller_calendar_event_card_ok.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';

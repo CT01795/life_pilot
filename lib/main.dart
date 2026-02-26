@@ -6,7 +6,7 @@ import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_notification.dart';
+import 'package:life_pilot/calendar/controller_notification_ok.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
