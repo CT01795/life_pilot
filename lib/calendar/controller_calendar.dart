@@ -12,6 +12,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -483,15 +484,33 @@ class ControllerCalendar extends ChangeNotifier {
     await controllerNotification.scheduleEventReminders(event: newEvent);
   }
 
-  Future<bool> updateAlarmSettings({
-    required EventItem oldEvent,
-    required EventItem newEvent,
+  Future<Map<String, String>> updateAlarmSettings({
+    required EventItem event,
+    required CalendarRepeatRule repeat,
+    required List<CalendarReminderOption> reminders,
+    required AppLocalizations loc,
   }) async {
-    // Show dialog 交由 View 呼叫，這裡只處理邏輯
-    // 例如取消舊通知、重新安排通知
-    await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
-    notifyListeners();
-    return true;
+    try {
+      await saveSettings(
+        auth: auth!,
+        event: event,
+        repeat: repeat,
+        reminders: reminders,
+      );
+
+      if (reminders.isNotEmpty) {
+        return {
+          "msg":
+              '${loc.setAlarm} ${reminders.map((r) => r.label(loc)).join(", ")}'
+        };
+      } else {
+        return {
+          "msg":loc.cancelAlarm };
+      }
+    } catch (e, st) {
+      logger.e('❌ saveSettings error: $e', stackTrace: st);
+      return {"error": '❌ error: ${e.toString()}'};
+    }
   }
 
   static bool canDelete(
@@ -547,5 +566,17 @@ class ControllerCalendar extends ChangeNotifier {
       column: 'page_views',
       account: auth?.currentAccount ?? AuthConstants.guest,
     );
+  }
+
+  Future<void> handleCrossMonthTap({
+    required DateTime tappedDate,
+  }) async {
+    if (tappedDate.month != currentMonth.month ||
+        tappedDate.year != currentMonth.year) {
+      // 預載其他月份事件，但不改 displayedMonth
+      await loadCalendarEvents(
+          month: DateTime(tappedDate.year, tappedDate.month), notify: false);
+      await goToMonth(month: currentMonth, notify: true);
+    }
   }
 }

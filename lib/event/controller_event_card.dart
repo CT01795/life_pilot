@@ -5,8 +5,10 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ControllerEventCard extends ChangeNotifier {
   final ServiceWeather serviceWeather;
@@ -57,6 +59,22 @@ class ControllerEventCard extends ChangeNotifier {
   }
 
   Future<void> onOpenMap(EventViewModel event) async {
+    final query =
+        Uri.encodeComponent(event.locationDisplay);
+
+    // Google Maps 網頁導航 URL
+    final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$query');
+
+    try {
+      // LaunchMode.externalApplication 確保在手機會跳出 App 或瀏覽器
+      await launchUrl(
+        googleMapsUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      logger.e('Can\'t open map：$e');
+    }
     await serviceEvent.incrementEventCounter(
       eventId: event.id,
       eventName: event.name,

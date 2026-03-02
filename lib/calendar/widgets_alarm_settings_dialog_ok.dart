@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
-import 'package:life_pilot/utils/logger.dart';
 
-Future<bool> showAlarmSettingsDialog(
+Future<Map<String, dynamic>?> showAlarmSettingsDialog(
     BuildContext context,
     ControllerAuth auth,
     ControllerCalendar controllerCalendar,
@@ -23,7 +21,7 @@ Future<bool> showAlarmSettingsDialog(
   CalendarRepeatRule selectedRepeat = event.repeatOptions;
   Set<CalendarReminderOption> selectedReminders = {...event.reminderOptions};
 
-  final result = await showDialog<bool>(
+  final result = await showDialog<Map<String, dynamic>?>(
     context: context,
     barrierDismissible: true,
     builder: (_) {
@@ -97,37 +95,20 @@ Future<bool> showAlarmSettingsDialog(
         actions: [
           TextButton(
             onPressed: () async {
-              List<CalendarReminderOption> reminders = selectedReminders.toList();
-              try{
-                await controllerCalendar.saveSettings(
-                  auth: auth,
-                  event: event,
-                  repeat: selectedRepeat,
-                  reminders: reminders,
-                );
-              
-                if (reminders.isNotEmpty) {
-                  AppNavigator.showSnackBar(
-                      '${loc.setAlarm} ${reminders.map((r) => r.label(loc)).join(", ")}');
-                } else {
-                  AppNavigator.showSnackBar(loc.cancelAlarm);
-                }
-                logger.i('✅ Alarm settings saved successfully.'); 
-                Navigator.pop(context, true);
-              } catch (e, st) {
-                logger.e('❌ saveSettings error: $e', stackTrace: st);
-                AppNavigator.showErrorBar('❌ error: ${e.toString()}');
-              }
+              Navigator.pop(context, {
+                  "repeat": selectedRepeat,
+                  "reminders": selectedReminders.toList(),
+                });
             },
             child: Text(loc.confirm, style: TextStyle(color: Colors.red)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(context, null),
             child: Text(loc.cancel, style: TextStyle(color: Colors.black)),
           ),
         ],
       );
     },
   );
-  return result ?? false;
+  return result;
 }

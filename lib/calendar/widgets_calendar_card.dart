@@ -9,7 +9,6 @@ import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/calendar/widgets_calendar_sub_card.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class WidgetsCalendarCard extends StatelessWidget {
   final EventViewModel eventViewModel;
@@ -33,19 +32,6 @@ class WidgetsCalendarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = context.read<ControllerCalendarEventCard>();
-
-    // 只要有 location 就 load
-    if (eventViewModel.hasLocation) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ctrl.loadWeather(
-          locationDisplay: eventViewModel.locationDisplay,
-          startDate: eventViewModel.startDate,
-          endDate: eventViewModel.endDate,
-          tableName: tableName,
-        );
-      });
-    }
     return _WidgetsCalendarCardBody(
       eventViewModel: eventViewModel,
       tableName: tableName,
@@ -64,13 +50,11 @@ class WidgetsCalendarCard extends StatelessWidget {
       required EventViewModel eventViewModel}) {
     return InkWell(
       onTap: () async {
-        final uri = Uri.parse(url);
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        AppNavigator.showSnackBar(
-            '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
         // 🔹 呼叫 function 更新資料庫
         final controllerCalendarEventCard = context.read<ControllerCalendarEventCard>();
-        await controllerCalendarEventCard.onOpenLink(eventViewModel);
+        await controllerCalendarEventCard.onOpenLink(eventViewModel, url);
+        AppNavigator.showSnackBar(
+            '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
       },
       child: Text(
         loc.clickHereToSeeMore,
@@ -107,7 +91,7 @@ class WidgetsCalendarCard extends StatelessWidget {
   }
 }
 
-class _WidgetsCalendarCardBody extends StatelessWidget {
+class _WidgetsCalendarCardBody extends StatefulWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -127,16 +111,35 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
   });
 
   @override
+  State<_WidgetsCalendarCardBody> createState() =>
+      _WidgetsCalendarCardBodyState();
+}
+
+class _WidgetsCalendarCardBodyState
+    extends State<_WidgetsCalendarCardBody> {
+  
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final ctrl = context.read<ControllerCalendarEventCard>();
+      ctrl.loadWeather(widget.eventViewModel);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControllerCalendarEventCard>();
-    final now = DateTime.now();
-    final tmpDate = DateTimeFormatter.formatDateRange(now, eventViewModel.dateRange);
-    final eventDate =
-        DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
+    final now = DateTimeFormatter.dateOnly(DateTime.now());
+    final eventDate = widget.eventViewModel.firstEventDate;
 
-    final showWeatherIcon = ctrl.forecast.isNotEmpty && eventDate.isAfter(now);
+    final forecast = ctrl.getForecast(widget.eventViewModel.id);
+    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather = ctrl.forecast.isNotEmpty ? ctrl.forecast.first : null;
+    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -193,7 +196,7 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: ctrl.forecast.map((w) {
+                          children: forecast.map((w) {
                             String tmp =
                                 '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
@@ -265,17 +268,17 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
           Gaps.w8,
           Expanded(
               child: Text(
-            eventViewModel.name,
+            widget.eventViewModel.name,
             style: const TextStyle(fontWeight: FontWeight.bold),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
             //overflow: TextOverflow.ellipsis, // 防止文字過長
           )),
-          if (trailing != null)
+          if (widget.trailing != null)
             Builder(
               builder: (context) {
                 // 這裡的 context 已經在 widget 樹內，可以安全使用 Provider
-                return trailing!;
+                return widget.trailing!;
               },
             ),
         ],
@@ -288,54 +291,35 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          if (eventViewModel.dateRange.isNotEmpty)
-            Text(eventViewModel.dateRange),
-          if (eventViewModel.tags.isNotEmpty)
-            WidgetsCalendarCard.tags(typeList: eventViewModel.tags),
-          if (eventViewModel.hasLocation)
+          if (widget.eventViewModel.dateRange.isNotEmpty)
+            Text(widget.eventViewModel.dateRange),
+          if (widget.eventViewModel.tags.isNotEmpty)
+            WidgetsCalendarCard.tags(typeList: widget.eventViewModel.tags),
+          if (widget.eventViewModel.hasLocation)
             InkWell(
               onTap: () async {
                 if (!context.mounted) return;
-                final query =
-                    Uri.encodeComponent(eventViewModel.locationDisplay);
-
-                // Google Maps 網頁導航 URL
-                final googleMapsUrl = Uri.parse(
-                    'https://www.google.com/maps/dir/?api=1&destination=$query');
-
-                try {
-                  // LaunchMode.externalApplication 確保在手機會跳出 App 或瀏覽器
-                  await launchUrl(
-                    googleMapsUrl,
-                    mode: LaunchMode.externalApplication,
-                  );
-                } catch (e) {
-                  // 若有錯誤顯示提示
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Can\'t open map：$e')),
-                  );
-                }
                 // 🔹 呼叫 function 更新資料庫
-                await ctrl.onOpenMap(eventViewModel);
+                await ctrl.onOpenMap(widget.eventViewModel);
               },
               child: Text(
-                eventViewModel.locationDisplay,
+                widget.eventViewModel.locationDisplay,
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
-          if (eventViewModel.masterUrl?.isNotEmpty == true)
+          if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsCalendarCard.link(
                 context: context,
                 loc: loc,
-                url: eventViewModel.masterUrl!,
-                eventViewModel: eventViewModel),
-          if (eventViewModel.description.isNotEmpty)
-            Text(eventViewModel.description),
-          if (showSubEvents)
-            ...eventViewModel.subEvents
+                url: widget.eventViewModel.masterUrl!,
+                eventViewModel: widget.eventViewModel),
+          if (widget.eventViewModel.description.isNotEmpty)
+            Text(widget.eventViewModel.description),
+          if (widget.showSubEvents)
+            ...widget.eventViewModel.subEvents
                 .map((sub) => WidgetsCalendarSubCard(event: sub)),
         ],
       ),
@@ -347,7 +331,7 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
           );
 
     return GestureDetector(
-      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
+      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
       child: Stack(
         children: [
           container,
@@ -357,18 +341,18 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (onAccounting != null)
+                if (widget.onAccounting != null)
                   IconButton(
                     icon: Icon(Icons.currency_exchange),
                     tooltip: loc.accountRecords,
-                    onPressed: onAccounting,
+                    onPressed: widget.onAccounting,
                   ),
                 // 🗑 Delete（只有 canDelete）
-                if (eventViewModel.canDelete && onDelete != null)
+                if (widget.eventViewModel.canDelete && widget.onDelete != null)
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                     tooltip: loc.delete,
-                    onPressed: onDelete,
+                    onPressed: widget.onDelete,
                   ),
               ],
             ),
@@ -376,5 +360,5 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
         ],
       ),
     );
-  }  
+  }
 }

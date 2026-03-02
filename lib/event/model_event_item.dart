@@ -434,6 +434,13 @@ class EventViewModel {
     this.dislikeCounts,
   });
 
+  DateTime get firstEventDate {
+    final now = DateTimeFormatter.dateOnly(DateTime.now());
+    final tmpDate = DateTimeFormatter.formatDateRange(now, dateRange);
+    return DateTime.tryParse(tmpDate ?? '') ??
+          now.add(const Duration(days: 1));
+  }
+
   // ---------------------------------------------------------------------------
   // 🧩 UI 資料封裝
   // ---------------------------------------------------------------------------
