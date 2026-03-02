@@ -83,7 +83,7 @@ Widget widgetsEventTrailing({
                       controllerEvent:
                           controllerEvent,
                       tableName: tableName,
-                      existingEvent: event,
+                      existingEvent: event.copyWith(),
                     ),
                   ),
                 );
