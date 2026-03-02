@@ -7,7 +7,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
 import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/calendar/widgets_alarm_settings_dialog.dart';
+import 'package:life_pilot/calendar/widgets_alarm_settings_dialog_ok.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 
 Widget widgetsCalendarTrailing({
@@ -84,13 +84,15 @@ Widget widgetsCalendarTrailing({
             ),
             tooltip: loc.setAlarm,
             onPressed: () async {
-              final updated = await showAlarmSettingsDialog(
+              final result  = await showAlarmSettingsDialog(
                   context, auth, controllerCalendar, serviceEvent, event, loc);
-              if (updated) {
-                await controllerCalendar.updateAlarmSettings(
-                    oldEvent: event, newEvent: event); // ✅ 先更新資料
-                await controllerCalendar.loadCalendarEvents(
-                    month: event.startDate!, notify: true);
+              if (result != null) {
+                final msg = await controllerCalendar.updateAlarmSettings(
+                  event: event,
+                  repeat: result["repeat"],
+                  reminders: result["reminders"],
+                  loc: loc); // ✅ 先更新資料
+                AppNavigator.showSnackBar(msg["msg"] ?? msg["error"]!);
                 Navigator.pop(context); // ✅ 最後關閉 dialog
               }
             },

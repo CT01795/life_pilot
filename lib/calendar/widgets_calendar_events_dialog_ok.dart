@@ -9,10 +9,9 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/calendar/widgets_calendar_card.dart';
-import 'package:life_pilot/calendar/widgets_calendar_trailing.dart';
+import 'package:life_pilot/calendar/widgets_calendar_trailing_ok.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
-import 'package:life_pilot/calendar/widgets_calendar.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:provider/provider.dart';
@@ -92,11 +91,8 @@ class CalendarEventsDialog extends StatelessWidget {
                                         )),
                               );
                               if (newEvent != null) {
-                                await handleCrossMonthTap(
-                                  controllerCalendar: controllerCalendar,
+                                await controllerCalendar.handleCrossMonthTap(
                                   tappedDate: newEvent.startDate!,
-                                  displayedMonth:
-                                      controllerCalendar.currentMonth,
                                 );
                                 Navigator.pop(context, true); // ✅ 回傳 true 給外層
                               }

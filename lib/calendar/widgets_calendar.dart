@@ -4,7 +4,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_event_card_ok.dart';
 import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
-import 'package:life_pilot/calendar/widgets_calendar_events_dialog.dart';
+import 'package:life_pilot/calendar/widgets_calendar_events_dialog_ok.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -342,10 +342,8 @@ class WeekRow extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () async {
                       // ✅ 若點到的是不同月份，就先載入該月份資料
-                      await handleCrossMonthTap(
-                        controllerCalendar: controllerCalendar,
+                      await controllerCalendar.handleCrossMonthTap(
                         tappedDate: date,
-                        displayedMonth: displayedMonth,
                       );
 
                       await _openDayDialog(context, date);
@@ -436,10 +434,8 @@ class WeekRow extends StatelessWidget {
                         week.first.add(Duration(days: tappedIndex));
 
                     // ✅ 若點到的是不同月份，就先載入那個月份的資料
-                    await handleCrossMonthTap(
-                      controllerCalendar: controllerCalendar,
+                    await controllerCalendar.handleCrossMonthTap(
                       tappedDate: tappedDate,
-                      displayedMonth: displayedMonth,
                     );
 
                     // 4. 呼叫 dialog，並傳入正確的日期
@@ -489,16 +485,4 @@ class WeekRow extends StatelessWidget {
   }
 }
 
-Future<void> handleCrossMonthTap({
-  required ControllerCalendar controllerCalendar,
-  required DateTime tappedDate,
-  required DateTime displayedMonth,
-}) async {
-  if (tappedDate.month != displayedMonth.month ||
-      tappedDate.year != displayedMonth.year) {
-    // 預載其他月份事件，但不改 displayedMonth
-    await controllerCalendar.loadCalendarEvents(
-        month: DateTime(tappedDate.year, tappedDate.month), notify: false);
-    await controllerCalendar.goToMonth(month: displayedMonth, notify: true);
-  }
-}
+

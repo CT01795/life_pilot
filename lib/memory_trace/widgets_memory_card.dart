@@ -134,12 +134,10 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControllerEventCard>();
-    final now = DateTime.now();
-    final tmpDate = DateTimeFormatter.formatDateRange(now, eventViewModel.dateRange);
-    final eventDate =
-        DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
+    final now = DateTimeFormatter.dateOnly(DateTime.now());
+    final eventDate = eventViewModel.firstEventDate;
 
-    final showWeatherIcon = ctrl.forecast.isNotEmpty && eventDate.isAfter(now);
+    final showWeatherIcon = ctrl.forecast.isNotEmpty && !eventDate.isBefore(now);
 
     final todayWeather = ctrl.forecast.isNotEmpty ? ctrl.forecast.first : null;
 
@@ -301,25 +299,6 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
             InkWell(
               onTap: () async {
                 if (!context.mounted) return;
-                final query =
-                    Uri.encodeComponent(eventViewModel.locationDisplay);
-
-                // Google Maps 網頁導航 URL
-                final googleMapsUrl = Uri.parse(
-                    'https://www.google.com/maps/dir/?api=1&destination=$query');
-
-                try {
-                  // LaunchMode.externalApplication 確保在手機會跳出 App 或瀏覽器
-                  await launchUrl(
-                    googleMapsUrl,
-                    mode: LaunchMode.externalApplication,
-                  );
-                } catch (e) {
-                  // 若有錯誤顯示提示
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Can\'t open map：$e')),
-                  );
-                }
                 // 🔹 呼叫 function 更新資料庫
                 await ctrl.onOpenMap(eventViewModel);
               },
@@ -347,14 +326,14 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
     );
 
     final container = Card(
-            margin: Insets.h8v16,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            color: Colors.grey.shade100,
-            elevation: 4,
-            child: content,
-          );
+      margin: Insets.h8v16,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: Colors.grey.shade100,
+      elevation: 4,
+      child: content,
+    );
 
     return GestureDetector(
       onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
