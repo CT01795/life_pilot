@@ -108,7 +108,7 @@ Widget widgetsCalendarTrailing({
                       serviceEvent: serviceEvent,
                       controllerCalendar: controllerCalendar,
                       tableName: tableName,
-                      existingEvent: event,
+                      existingEvent: event.copyWith(),
                     ),
                   ),
                 );
