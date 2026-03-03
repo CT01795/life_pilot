@@ -8,13 +8,15 @@ import 'package:life_pilot/calendar/widgets_calendar_card.dart';
 class WidgetsCalendarSubCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final VoidCallback onOpenLink;
   final EventViewModel event;
 
   const WidgetsCalendarSubCard(
       {super.key,
       required this.event,
       this.onTap,
-      this.onDelete,});
+      this.onDelete,
+      required this.onOpenLink});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,7 @@ class WidgetsCalendarSubCard extends StatelessWidget {
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsCalendarCard.link(context:context, loc: loc, url: event.masterUrl!, eventViewModel: event),
+            WidgetsCalendarCard.link(text: loc.clickHereToSeeMore, onTap: onOpenLink,),
         ],
       ),
     );

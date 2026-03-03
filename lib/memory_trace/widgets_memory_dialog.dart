@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/controller_event_card.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
+import 'package:provider/provider.dart';
 
 class WidgetsMemoryDialog extends StatelessWidget {
   final EventViewModel eventViewModel;
@@ -26,6 +28,8 @@ class WidgetsMemoryDialog extends StatelessWidget {
               eventViewModel: eventViewModel,
               tableName: tableName,
               onTap: () => Navigator.pop(context),
+              onOpenLink: () => context.read<ControllerEventCard>().onOpenLink(eventViewModel),
+              onOpenMap: () => context.read<ControllerEventCard>().onOpenMap(eventViewModel),
             ),
           ),
           PositionedDirectional(

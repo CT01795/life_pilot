@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/calendar/controller_notification_ok.dart';
-import 'package:life_pilot/calendar/controller_page_calendar_add_ok.dart';
+import 'package:life_pilot/calendar/controller_notification.dart';
+import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/service_event_transfer_ok.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -33,24 +33,35 @@ class ControllerCalendar extends ChangeNotifier {
   String closeText;
   Locale? _lastLocale;
 
+  // ------------------------
+  // 狀態
+  // ------------------------
+  int _reloadToken = 0;
+  bool _isChangingMonth = false;
+
+  late final ServiceEventTransfer serviceEventTransfer;
+
+  // ------------------------
+  // Getter / Setter
+  // ------------------------
   bool get isInitialized => modelCalendar.isInitialized;
 
   // 給 PageView 初始用的基準年月
-  static final DateTime baseDate = DateTime(1911, 1);
   DateTime get currentMonth => modelCalendar.currentMonth;
   set currentMonth(DateTime value) {
     modelCalendar.currentMonth = value;
   }
 
   List<EventItem> get events => modelCalendar.events;
+
+  static final DateTime baseDate = DateTime(1911, 1);
   int get pageIndex =>
       (currentMonth.year - baseDate.year) * 12 +
       (currentMonth.month - baseDate.month);
 
-  int _reloadToken = 0;
-  bool _isChangingMonth = false;
-
-  late final ServiceEventTransfer serviceEventTransfer;
+  // ------------------------
+  // 建構子
+  // ------------------------
   ControllerCalendar(
       {required this.modelCalendar,
       required this.serviceEvent,
@@ -124,6 +135,9 @@ class ControllerCalendar extends ChangeNotifier {
     await reloadEvents(notify: notify, month: month);
   }
 
+  // ------------------------
+  // 月份操作
+  // ------------------------
   // 跳轉月並同步資料（若有快取則不重新拉）
   Future<void> goToMonth({required DateTime month, bool notify = true}) async {
     if (_isChangingMonth) return;
@@ -144,12 +158,24 @@ class ControllerCalendar extends ChangeNotifier {
     }
   }
 
-  // 月份操作
   Future<void> goToOffsetMonth({required int offset}) async {
     final current = modelCalendar.currentMonth;
     await goToMonth(
       month: DateTime(current.year, current.month + offset),
     );
+  }
+
+  // 移動到今天
+  Future<void> goToToday() async =>
+      await goToMonth(month: DateTimeFormatter.dateOnly(DateTime.now()));
+
+  // 點擊某個日期
+  Future<void> tapDate(DateTime date) async {
+    final dateOnly = DateTimeFormatter.dateOnly(date);
+    // 處理跨月
+    if (date.month != currentMonth.month || date.year != currentMonth.year) {
+      await goToMonth(month: dateOnly);
+    }
   }
 
   DateTime pageIndexToMonth({required int index}) {
@@ -214,8 +240,129 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // ------------------------
-  // 由 View 主動呼叫顯示通知
+  // 事件操作
   // ------------------------
+  Future<void> addEvent(EventItem newEvent,
+      {bool stayOnCurrentMonth = true}) async {
+    modelCalendar.updateCachedEvent(event: newEvent);
+    if (!stayOnCurrentMonth) {
+      await goToMonth(month: DateTimeFormatter.monthOnly(newEvent.startDate!));
+    }
+    await goToMonth(
+        month: DateTimeFormatter.monthOnly(modelCalendar.currentMonth));
+  }
+
+  Future<void> onEditEvent({
+    required EventItem event,
+    required EventItem? updatedEvent,
+  }) async {
+    if (updatedEvent == null) return;
+    // 移除快取
+    modelCalendar.updateCachedEvent(event: event);
+    if (updatedEvent.startDate?.year != event.startDate!.year ||
+        updatedEvent.startDate?.month != event.startDate!.month) {
+      await loadCalendarEvents(month: updatedEvent.startDate!, notify: false);
+    }
+    await loadCalendarEvents(month: event.startDate!, notify: true);
+  }
+
+  // ✅ 刪除事件，並更新列表與通知 UI
+  Future<void> deleteEvent(EventItem event) async {
+    await Future.wait([
+      controllerNotification.cancelEventReminders(
+          eventId: event.id, reminderOptions: event.reminderOptions), // 取消通知
+      serviceEvent.deleteEvent(
+          currentAccount: auth!.currentAccount ?? '',
+          event: event,
+          tableName: tableName)
+    ]);
+
+    // 移除事件並更新快取
+    modelCalendar
+      ..removeEvent(event)
+      ..markRemoved(event.id);
+    notifyListeners();
+  }
+
+  Future<void> saveEventWithNotification({
+    EventItem? oldEvent,
+    required EventItem newEvent,
+    bool isNew = true,
+  }) async {
+    await serviceEvent.saveEvent(
+        currentAccount: auth!.currentAccount ?? '',
+        event: newEvent,
+        isNew: isNew,
+        tableName: tableName);
+    if (isNew) {
+      await servicePermission.checkExactAlarmPermission();
+      await controllerNotification.scheduleEventReminders(event: newEvent);
+    } else if (oldEvent != null) {
+      await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
+    }
+  }
+
+  Future<void> saveSettings({
+    required ControllerAuth auth,
+    required EventItem event,
+    required CalendarRepeatRule repeat,
+    required List<CalendarReminderOption> reminders,
+  }) async {
+    // 更新事件資料
+    final updatedEvent = event.copyWith(
+      newReminderOptions: reminders,
+      newRepeatOptions: repeat,
+    );
+
+    await saveEventWithNotification(
+      oldEvent: event,
+      newEvent: updatedEvent,
+      isNew: false,
+    );
+
+    // 重新載入事件
+    await loadCalendarEvents(month: updatedEvent.startDate!);
+
+    // 若為重複事件，自動生成下一次
+    if (updatedEvent.repeatOptions.key.startsWith('every')) {
+      await checkAndGenerateNextEvents();
+    }
+  }
+
+  // ✅ 建立單筆事件控制器
+  ControllerPageCalendarAdd createAddController({
+    EventItem? existingEvent,
+    DateTime? initialDate,
+  }) {
+    return ControllerPageCalendarAdd(
+      auth: auth!,
+      serviceEvent: serviceEvent,
+      tableName: tableName,
+      existingEvent: existingEvent,
+      initialDate: initialDate,
+    );
+  }
+
+  List<EventItem> getEventsOfDay(DateTime date) {
+    return modelCalendar.getEventsOfDay(date);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🔔 通知管理
+  // ---------------------------------------------------------------------------
+  Future<void> refreshNotification({
+    EventItem? oldEvent,
+    required EventItem newEvent,
+  }) async {
+    if (tableName != TableNames.calendarEvents) return;
+    if (oldEvent != null) {
+      await controllerNotification.cancelEventReminders(
+          eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
+    }
+    await servicePermission.checkExactAlarmPermission();
+    await controllerNotification.scheduleEventReminders(event: newEvent);
+  }
+
   Future<void> showTodayNotifications() async {
     if (tableName != TableNames.calendarEvents) {
       return;
@@ -320,137 +467,16 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   // ------------------------
-  // 事件操作
+  // 搜尋 / 篩選 / 選擇
   // ------------------------
-  Future<void> addEvent(EventItem newEvent,
-      {bool stayOnCurrentMonth = true}) async {
-    modelCalendar.updateCachedEvent(event: newEvent);
-    if (!stayOnCurrentMonth) {
-      await goToMonth(month: DateTimeFormatter.monthOnly(newEvent.startDate!));
-    }
-    await goToMonth(
-        month: DateTimeFormatter.monthOnly(modelCalendar.currentMonth));
-  }
-
-  List<EventItem> getEventsOfDay(DateTime date) {
-    return modelCalendar.getEventsOfDay(date);
-  }
-
-  // 移動到上一個月份
-  Future<void> previousMonth() async => await goToOffsetMonth(offset: -1);
-
-  // 移動到下一個月份
-  Future<void> nextMonth() async => await goToOffsetMonth(offset: 1);
-
-  // 移動到今天
-  Future<void> goToToday() async =>
-      await goToMonth(month: DateTimeFormatter.dateOnly(DateTime.now()));
-
-  // 點擊某個日期
-  Future<void> tapDate(DateTime date) async {
-    final dateOnly = DateTimeFormatter.dateOnly(date);
-    // 處理跨月
-    if (date.month != currentMonth.month || date.year != currentMonth.year) {
-      await goToMonth(month: dateOnly);
-    }
-  }
-
-  void clearAll() => modelCalendar.clearAll();
-
-  // ---------------------------------------------------------------------------
-  // 📦 CRUD 操作
-  // ---------------------------------------------------------------------------
-  Future<void> saveSettings({
-    required ControllerAuth auth,
-    required EventItem event,
-    required CalendarRepeatRule repeat,
-    required List<CalendarReminderOption> reminders,
-  }) async {
-    // 更新事件資料
-    final updatedEvent = event.copyWith(
-      newReminderOptions: reminders,
-      newRepeatOptions: repeat,
-    );
-
-    await saveEventWithNotification(
-      oldEvent: event,
-      newEvent: updatedEvent,
-      isNew: false,
-    );
-
-    // 重新載入事件
-    await loadCalendarEvents(month: updatedEvent.startDate!);
-
-    // 若為重複事件，自動生成下一次
-    if (updatedEvent.repeatOptions.key.startsWith('every')) {
-      await checkAndGenerateNextEvents();
-    }
-  }
-
-  Future<void> saveEventWithNotification({
-    EventItem? oldEvent,
-    required EventItem newEvent,
-    bool isNew = true,
-  }) async {
-    await serviceEvent.saveEvent(
-        currentAccount: auth!.currentAccount ?? '',
-        event: newEvent,
-        isNew: isNew,
-        tableName: tableName);
-    if (isNew) {
-      await servicePermission.checkExactAlarmPermission();
-      await controllerNotification.scheduleEventReminders(event: newEvent);
-    } else if (oldEvent != null) {
-      await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
-    }
-  }
-
-  // ✅ 刪除事件，並更新列表與通知 UI
-  Future<void> deleteEvent(EventItem event) async {
-    await Future.wait([
-      controllerNotification.cancelEventReminders(
-          eventId: event.id, reminderOptions: event.reminderOptions), // 取消通知
-      serviceEvent.deleteEvent(
-          currentAccount: auth!.currentAccount ?? '',
-          event: event,
-          tableName: tableName)
-    ]);
-
-    // 移除事件並更新快取
-    modelCalendar
-      ..removeEvent(event)
-      ..markRemoved(event.id);
+  void toggleEventSelection(String eventId, bool isSelected) {
+    modelCalendar.toggleEventSelection(eventId, isSelected);
     notifyListeners();
   }
 
-  // ✅ 建立單筆事件控制器
-  ControllerPageCalendarAdd createAddController({
-    EventItem? existingEvent,
-    DateTime? initialDate,
-  }) {
-    return ControllerPageCalendarAdd(
-      auth: auth!,
-      serviceEvent: serviceEvent,
-      tableName: tableName,
-      existingEvent: existingEvent,
-      initialDate: initialDate,
-    );
-  }
-
-  Future<void> onEditEvent({
-    required EventItem event,
-    required EventItem? updatedEvent,
-  }) async {
-    if (updatedEvent == null) return;
-    // 移除快取
-    modelCalendar.updateCachedEvent(event: event);
-    if (updatedEvent.startDate?.year != event.startDate!.year ||
-        updatedEvent.startDate?.month != event.startDate!.month) {
-      await loadCalendarEvents(month: updatedEvent.startDate!, notify: false);
-    }
-    await loadCalendarEvents(month: event.startDate!, notify: true);
-  }
-
+  // ------------------------
+  // 跨 Table 操作
+  // ------------------------
   Future<EventItem?> handleEventCheckboxTransfer(
     bool isChecked,
     bool isAlreadyAdded,
@@ -468,72 +494,6 @@ class ControllerCalendar extends ChangeNotifier {
     return targetEvent;
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔔 通知管理
-  // ---------------------------------------------------------------------------
-  Future<void> refreshNotification({
-    EventItem? oldEvent,
-    required EventItem newEvent,
-  }) async {
-    if (tableName != TableNames.calendarEvents) return;
-    if (oldEvent != null) {
-      await controllerNotification.cancelEventReminders(
-          eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
-    }
-    await servicePermission.checkExactAlarmPermission();
-    await controllerNotification.scheduleEventReminders(event: newEvent);
-  }
-
-  Future<Map<String, String>> updateAlarmSettings({
-    required EventItem event,
-    required CalendarRepeatRule repeat,
-    required List<CalendarReminderOption> reminders,
-    required AppLocalizations loc,
-  }) async {
-    try {
-      await saveSettings(
-        auth: auth!,
-        event: event,
-        repeat: repeat,
-        reminders: reminders,
-      );
-
-      if (reminders.isNotEmpty) {
-        return {
-          "msg":
-              '${loc.setAlarm} ${reminders.map((r) => r.label(loc)).join(", ")}'
-        };
-      } else {
-        return {
-          "msg":loc.cancelAlarm };
-      }
-    } catch (e, st) {
-      logger.e('❌ saveSettings error: $e', stackTrace: st);
-      return {"error": '❌ error: ${e.toString()}'};
-    }
-  }
-
-  static bool canDelete(
-      {required String account,
-      required ControllerAuth auth,
-      required tableName}) {
-    return auth.currentAccount == account ||
-        (auth.currentAccount == AuthConstants.sysAdminEmail &&
-            tableName != TableNames.memoryTrace);
-  }
-
-  // ---------------------------------------------------------------------------
-  // 🔍 搜尋與篩選控制
-  // ---------------------------------------------------------------------------
-  void toggleEventSelection(String eventId, bool isSelected) {
-    modelCalendar.toggleEventSelection(eventId, isSelected);
-    notifyListeners();
-  }
-
-  // ---------------------------------------------------------------------------
-  // 🔄 資料轉移（跨 Table）
-  // ---------------------------------------------------------------------------
-  // ✅ Checkbox 點擊事件處理
   Future<bool> handleEventCheckboxIsAlreadyAdd(
     EventItem event,
     bool isChecked,
@@ -577,6 +537,54 @@ class ControllerCalendar extends ChangeNotifier {
       await loadCalendarEvents(
           month: DateTime(tappedDate.year, tappedDate.month), notify: false);
       await goToMonth(month: currentMonth, notify: true);
+    }
+  }
+
+  // ------------------------
+  // 工具
+  // ------------------------
+  void clearAll() => modelCalendar.clearAll();
+
+  static bool canDelete(
+      {required String account,
+      required ControllerAuth auth,
+      required tableName}) {
+    return auth.currentAccount == account ||
+        (auth.currentAccount == AuthConstants.sysAdminEmail &&
+            tableName != TableNames.memoryTrace);
+  }
+
+  // 移動到上一個月份
+  Future<void> previousMonth() async => await goToOffsetMonth(offset: -1);
+
+  // 移動到下一個月份
+  Future<void> nextMonth() async => await goToOffsetMonth(offset: 1);
+
+  Future<Map<String, String>> updateAlarmSettings({
+    required EventItem event,
+    required CalendarRepeatRule repeat,
+    required List<CalendarReminderOption> reminders,
+    required AppLocalizations loc,
+  }) async {
+    try {
+      await saveSettings(
+        auth: auth!,
+        event: event,
+        repeat: repeat,
+        reminders: reminders,
+      );
+
+      if (reminders.isNotEmpty) {
+        return {
+          "msg":
+              '${loc.setAlarm} ${reminders.map((r) => r.label(loc)).join(", ")}'
+        };
+      } else {
+        return {"msg": loc.cancelAlarm};
+      }
+    } catch (e, st) {
+      logger.e('❌ saveSettings error: $e', stackTrace: st);
+      return {"error": '❌ error: ${e.toString()}'};
     }
   }
 }

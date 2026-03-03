@@ -3,15 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
+import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
+import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/calendar/widgets_calendar_card.dart';
-import 'package:life_pilot/calendar/widgets_calendar_trailing_ok.dart';
-import 'package:life_pilot/utils/app_navigator.dart';
-import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
+import 'package:life_pilot/calendar/widgets_calendar_trailing.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:provider/provider.dart';
@@ -59,46 +58,22 @@ class CalendarEventsDialog extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            DateFormat(DateFormats.mmdd).format(date),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text(
+                        DateFormat(DateFormats.mmdd).format(date),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.add,
-                                size: IconTheme.of(context).size!),
-                            tooltip: loc.add,
-                            onPressed: () async {
-                              final newEvent = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => PageCalendarAdd(
-                                          auth: auth,
-                                          serviceEvent: serviceEvent,
-                                          controllerCalendar:
-                                              controllerCalendar,
-                                          existingEvent: null,
-                                          tableName:
-                                              controllerCalendar.tableName,
-                                          initialDate: date,
-                                        )),
-                              );
-                              if (newEvent != null) {
-                                await controllerCalendar.handleCrossMonthTap(
-                                  tappedDate: newEvent.startDate!,
-                                );
-                                Navigator.pop(context, true); // ✅ 回傳 true 給外層
-                              }
-                            },
-                          ),
-                        ]),
+                      ),
+                      IconButton(
+                        icon:
+                            Icon(Icons.add, size: IconTheme.of(context).size!),
+                        tooltip: loc.add,
+                        onPressed: () => onAddEventPressed(
+                          context: context, controller: controllerCalendar, date: date, serviceEvent: serviceEvent), 
+                      ),
+                    ]),
                     if (updatedEventsOfDay.isNotEmpty)
                       // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
                       ...updatedEventsOfDay.map((event) {
@@ -123,27 +98,12 @@ class CalendarEventsDialog extends StatelessWidget {
                           onDelete: event.isHoliday
                               ? null
                               : () async {
-                                  final shouldDelete =
-                                      await showConfirmationDialog(
-                                    content:
-                                        '${loc.eventDelete}「${event.name}」？',
-                                    confirmText: loc.delete,
-                                    cancelText: loc.cancel,
+                                  await onDeletePressed(
+                                    context: context,
+                                    controller: controllerCalendar,
+                                    event: event,
+                                    loc: loc,
                                   );
-
-                                  if (shouldDelete == true) {
-                                    try {
-                                      await controllerCalendar
-                                          .deleteEvent(event);
-                                      AppNavigator.showSnackBar(
-                                          loc.deleteOk);
-                                    } catch (e) {
-                                      AppNavigator.showErrorBar(
-                                          '${loc.deleteError}: $e');
-                                    }
-                                  }
-                                  Navigator.pop(
-                                      context, true); // ✅ 回傳 true 給外層
                                 },
                           onAccounting: () => context
                               .read<ControllerAccountingList>()
@@ -151,6 +111,12 @@ class CalendarEventsDialog extends StatelessWidget {
                                 context: context,
                                 eventId: event.id,
                               ),
+                          onOpenMap: () => context
+                              .read<ControllerCalendarEventCard>()
+                              .onOpenMap(eventViewModel),
+                          onOpenLink: () => context
+                              .read<ControllerCalendarEventCard>()
+                              .onOpenLink(eventViewModel),
                           trailing: widgetsCalendarTrailing(
                             context: context,
                             auth: auth,
@@ -159,8 +125,8 @@ class CalendarEventsDialog extends StatelessWidget {
                             modelCalendar: modelCalendar,
                             event: event,
                             tableName: controllerCalendar.tableName,
-                            toTableName: TableNames
-                                .memoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
+                            toTableName:
+                                TableNames.memoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
                           ),
                         );
                       }),

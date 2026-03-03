@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card_ok.dart';
-import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
-import 'package:life_pilot/calendar/widgets_calendar_events_dialog_ok.dart';
+import 'package:life_pilot/calendar/page_calendar_add.dart';
+import 'package:life_pilot/calendar/widgets_calendar_events_dialog.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -285,20 +284,15 @@ class WeekRow extends StatelessWidget {
     }
 
     /// ✅ ② 有事件 → 才 showDialog
-    final eventCardCtrl = context.read<ControllerCalendarEventCard>();
-
     final shouldReload = await showDialog<bool>(
       context: context,
-      builder: (_) => ChangeNotifierProvider.value(
-        value: eventCardCtrl,
-        child: CalendarEventsDialog(
-          auth: auth,
-          controllerCalendar: controllerCalendar,
-          serviceEvent: serviceEvent,
-          modelCalendar: controllerCalendar.modelCalendar,
-          date: date,
-          loc: loc,
-        ),
+      builder: (_) => CalendarEventsDialog(
+        auth: auth,
+        controllerCalendar: controllerCalendar,
+        serviceEvent: serviceEvent,
+        modelCalendar: controllerCalendar.modelCalendar,
+        date: date,
+        loc: loc,
       ),
     );
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/controller_event_card.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -86,6 +87,8 @@ class WidgetsMemoryList extends StatelessWidget {
                 context: context,
                 eventId: event.id,
               ),
+              onOpenLink: () => context.read<ControllerEventCard>().onOpenLink(eventViewModel),
+              onOpenMap: () => context.read<ControllerEventCard>().onOpenMap(eventViewModel),
               trailing: widgetsMemoryTrailing(
                 context: context,
                 auth: auth,
