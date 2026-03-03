@@ -4,14 +4,12 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerPageEventAdd extends ChangeNotifier {
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final ServiceSpeech _serviceSpeech = ServiceSpeech();
 
   final String tableName;
@@ -51,7 +49,9 @@ class ControllerPageEventAdd extends ChangeNotifier {
   String? masterUrl;
   String? account = '';
   CalendarRepeatRule repeatOptions = CalendarRepeatRule.once;
-  List<CalendarReminderOption> reminderOptions = const [CalendarReminderOption.dayBefore8am];
+  List<CalendarReminderOption> reminderOptions = const [
+    CalendarReminderOption.dayBefore8am
+  ];
   DateTime? reminderTime;
 
   // --- 語音辨識 ---
@@ -66,7 +66,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
 
   ControllerPageEventAdd({
     required this.auth,
-    required this.serviceEvent,
     required this.tableName,
     this.existingEvent,
     this.initialDate,
@@ -107,7 +106,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
     unit = e?.unit ?? '';
     subEvents = e != null ? List.from(e.subEvents) : [];
     account = e?.account ?? auth.currentAccount;
-    reminderOptions = e?.reminderOptions ?? const [CalendarReminderOption.dayBefore8am];
+    reminderOptions =
+        e?.reminderOptions ?? const [CalendarReminderOption.dayBefore8am];
     repeatOptions = e?.repeatOptions ?? CalendarRepeatRule.once;
     ageMin = e?.ageMin;
     ageMax = e?.ageMax;
@@ -200,8 +200,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   }
 
   TextEditingController getController({required String key}) {
-    return controllerMap[key] ??
-        initController(key: key, initialValue: '');
+    return controllerMap[key] ?? initController(key: key, initialValue: '');
   }
 
   // Debounce 更新（減少 rebuild 次數）

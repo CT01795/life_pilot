@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/controller_event_card.dart';
+import 'package:life_pilot/event/controller_event_ui.dart' show onDeletePressed;
 import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_dialog.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_trailing.dart';
@@ -16,7 +13,6 @@ import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final List<EventItem> filteredEvents;
   final ScrollController scrollController;
   final String tableName;
@@ -27,7 +23,6 @@ class WidgetsMemoryList extends StatelessWidget {
   const WidgetsMemoryList({
     super.key,
     required this.auth,
-    required this.serviceEvent,
     required this.filteredEvents,
     required this.scrollController,
     required this.tableName,
@@ -48,14 +43,11 @@ class WidgetsMemoryList extends StatelessWidget {
           itemCount: filteredEvents.length,
           itemBuilder: (context, index) {
             final event = filteredEvents[index];
-            EventViewModel eventViewModel = EventViewModel.buildEventViewModel(
-                event: event,
-                parentLocation: '',
-                canDelete: ControllerEvent.canDelete(
-                    account: event.account ?? '', auth: auth, tableName: tableName),
-                showSubEvents: true,
-                loc: loc, 
-                tableName: tableName);
+            EventViewModel eventViewModel = controllerEvent.buildViewModel(
+                  event: event,
+                  tableName: tableName,
+                  loc: loc,
+                );
 
             return WidgetsMemoryCard(
               eventViewModel: eventViewModel,
@@ -64,35 +56,25 @@ class WidgetsMemoryList extends StatelessWidget {
                   context: context,
                   eventViewModel: eventViewModel,
                   tableName: tableName),
-              onDelete: ControllerEvent.canDelete(
-                      account: event.account ?? '', auth: auth, tableName: tableName)
+              onDelete: eventViewModel.canDelete
                   ? () async {
-                      final confirmed = await showConfirmationDialog(
-                        content: '${loc.eventDelete}「${event.name}」？',
-                        confirmText: loc.delete,
-                        cancelText: loc.cancel,
+                      await onDeletePressed(
+                        context: context,
+                        controller: controllerEvent,
+                        event: event,
+                        loc: loc,
                       );
-
-                      if (confirmed == true) {
-                        try {
-                          await controllerEvent.deleteEvent(event);
-                          AppNavigator.showSnackBar(loc.deleteOk);
-                        } catch (e) {
-                          AppNavigator.showErrorBar('${loc.deleteError}: $e');
-                        }
-                      }
                     }
                   : null,
               onAccounting: () => context.read<ControllerAccountingList>().handleAccounting(
                 context: context,
                 eventId: event.id,
               ),
-              onOpenLink: () => context.read<ControllerEventCard>().onOpenLink(eventViewModel),
-              onOpenMap: () => context.read<ControllerEventCard>().onOpenMap(eventViewModel),
+              onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
+              onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
               trailing: widgetsMemoryTrailing(
                 context: context,
                 auth: auth,
-                serviceEvent: serviceEvent,
                 controllerEvent: controllerEvent,
                 modelEventCalendar: modelEventCalendar,
                 event: event,
@@ -116,6 +98,7 @@ class WidgetsMemoryList extends StatelessWidget {
       barrierDismissible: true,
       barrierColor: const Color.fromARGB(200, 128, 128, 128),
       builder: (_) => WidgetsMemoryDialog(
+        controllerEvent: controllerEvent,
         eventViewModel: eventViewModel,
         tableName: tableName,
       ),

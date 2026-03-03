@@ -5,7 +5,6 @@ import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
 import 'package:life_pilot/calendar/widgets_calendar_events_dialog.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart'
@@ -82,14 +81,12 @@ class CalendarBody extends StatelessWidget {
   final PageController pageController;
   final ControllerCalendar controllerCalendar;
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
 
   const CalendarBody({
     super.key,
     required this.auth,
     required this.controllerCalendar,
     required this.pageController,
-    required this.serviceEvent,
   });
 
   @override
@@ -122,7 +119,6 @@ class CalendarBody extends StatelessWidget {
                   return CalendarMonthView(
                     key: ValueKey(monthToShow.toMonthKey()), // ✅ 用顯示月份決定 key
                     auth: auth,
-                    serviceEvent: serviceEvent,
                     controllerCalendar: controllerCalendar,
                     displayedMonth: monthToShow,
                   );
@@ -195,13 +191,11 @@ class WeekDayHeader extends StatelessWidget {
 class CalendarMonthView extends StatelessWidget {
   final ControllerCalendar controllerCalendar;
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final DateTime displayedMonth;
 
   const CalendarMonthView({
     super.key,
     required this.auth,
-    required this.serviceEvent,
     required this.controllerCalendar,
     required this.displayedMonth,
   });
@@ -221,7 +215,6 @@ class CalendarMonthView extends StatelessWidget {
         return Expanded(
           child: WeekRow(
             auth: auth,
-            serviceEvent: serviceEvent,
             controllerCalendar: controllerCalendar,
             week: week,
             displayedMonth: displayedMonth,
@@ -237,7 +230,6 @@ class CalendarMonthView extends StatelessWidget {
 class WeekRow extends StatelessWidget {
   final ControllerCalendar controllerCalendar;
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final List<DateTime> week;
   final DateTime displayedMonth;
   final GlobalKey weekRowKey; // ✅ 提升為屬性
@@ -245,7 +237,6 @@ class WeekRow extends StatelessWidget {
     super.key,
     required this.controllerCalendar,
     required this.auth,
-    required this.serviceEvent,
     required this.week,
     required this.displayedMonth,
     required this.weekRowKey,
@@ -266,7 +257,6 @@ class WeekRow extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => PageCalendarAdd(
             auth: auth,
-            serviceEvent: serviceEvent,
             controllerCalendar: controllerCalendar,
             existingEvent: null,
             tableName: controllerCalendar.tableName,
@@ -289,7 +279,6 @@ class WeekRow extends StatelessWidget {
       builder: (_) => CalendarEventsDialog(
         auth: auth,
         controllerCalendar: controllerCalendar,
-        serviceEvent: serviceEvent,
         modelCalendar: controllerCalendar.modelCalendar,
         date: date,
         loc: loc,

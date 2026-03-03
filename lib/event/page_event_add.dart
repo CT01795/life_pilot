@@ -8,14 +8,12 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class PageEventAdd extends StatefulWidget {
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final ControllerEvent controllerEvent;
   final String tableName;
   final EventItem? existingEvent;
@@ -24,7 +22,6 @@ class PageEventAdd extends StatefulWidget {
   const PageEventAdd({
     super.key,
     required this.auth,
-    required this.serviceEvent,
     required this.controllerEvent,
     required this.tableName,
     this.existingEvent,
@@ -161,6 +158,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                           ctl.subEvents.add(newSub);
                           // ✅ 初始化該子事件的控制器
                           final subFields = {
+                            EventFields.city: newSub.city,
                             EventFields.location: newSub.location,
                             EventFields.name: newSub.name,
                             EventFields.type: newSub.type,

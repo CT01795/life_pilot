@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/controller_event_card.dart';
+import 'package:life_pilot/event/controller_event_ui.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/utils/app_navigator.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:life_pilot/event/widgets_event_card.dart';
 import 'package:life_pilot/event/widgets_event_dialog.dart';
 import 'package:life_pilot/event/widgets_event_trailing.dart';
@@ -16,7 +12,6 @@ import 'package:provider/provider.dart';
 
 class WidgetsEventList extends StatelessWidget {
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final List<EventItem> filteredEvents;
   final ScrollController scrollController;
   final String tableName;
@@ -27,7 +22,6 @@ class WidgetsEventList extends StatelessWidget {
   const WidgetsEventList({
     super.key,
     required this.auth,
-    required this.serviceEvent,
     required this.filteredEvents,
     required this.scrollController,
     required this.tableName,
@@ -48,14 +42,11 @@ class WidgetsEventList extends StatelessWidget {
           itemCount: filteredEvents.length,
           itemBuilder: (context, index) {
             final event = filteredEvents[index];
-            EventViewModel eventViewModel = EventViewModel.buildEventViewModel(
-                event: event,
-                parentLocation: '',
-                canDelete: ControllerEvent.canDelete(
-                    account: event.account ?? '', auth: auth, tableName: tableName),
-                showSubEvents: true,
-                loc: loc,
-                tableName: tableName);
+            EventViewModel eventViewModel = controllerEvent.buildViewModel(
+                  event: event,
+                  tableName: tableName,
+                  loc: loc,
+                );
 
             return WidgetsEventCard(
               eventViewModel: eventViewModel,
@@ -64,42 +55,29 @@ class WidgetsEventList extends StatelessWidget {
                   context: context,
                   eventViewModel: eventViewModel,
                   tableName: tableName),
-              onDelete: ControllerEvent.canDelete(
-                      account: event.account ?? '', auth: auth, tableName: tableName)
+              onDelete: eventViewModel.canDelete
                   ? () async {
-                      final confirmed = await showConfirmationDialog(
-                        content: '${loc.eventDelete}「${event.name}」？',
-                        confirmText: loc.delete,
-                        cancelText: loc.cancel,
+                      await onDeletePressed(
+                        context: context,
+                        controller: controllerEvent,
+                        event: event,
+                        loc: loc,
                       );
-
-                      if (confirmed == true) {
-                        try {
-                          await controllerEvent.deleteEvent(event);
-                          AppNavigator.showSnackBar(loc.deleteOk);
-                        } catch (e) {
-                          AppNavigator.showErrorBar('${loc.deleteError}: $e');
-                        }
-                      }
                     }
                   : null,
               onLike: () async {
-                await controllerEvent.likeEvent(
-                    event: event,
-                    account: auth.currentAccount ?? AuthConstants.guest);
+                await controllerEvent.likeEvent(event);
               },
               onDislike: () async {
-                await controllerEvent.dislikeEvent(
-                    event: event,
-                    account: auth.currentAccount ?? AuthConstants.guest);
+                await controllerEvent.dislikeEvent(event);
               },
               onAccounting: null,
-              onOpenLink: () => context.read<ControllerEventCard>().onOpenLink(eventViewModel),
-              onOpenMap: () => context.read<ControllerEventCard>().onOpenMap(eventViewModel),
+              onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
+              onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
               trailing: widgetsEventTrailing(
                 context: context,
                 auth: auth,
-                serviceEvent: serviceEvent,
+                serviceEvent: controllerEvent.serviceEvent,
                 controllerEvent: controllerEvent,
                 modelEventCalendar: modelEventCalendar,
                 event: event,
@@ -123,6 +101,7 @@ class WidgetsEventList extends StatelessWidget {
       barrierDismissible: true,
       barrierColor: const Color.fromARGB(200, 128, 128, 128),
       builder: (_) => WidgetsEventDialog(
+        controllerEvent: controllerEvent,
         eventViewModel: eventViewModel,
         tableName: tableName,
       ),

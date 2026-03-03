@@ -7,9 +7,9 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_event_add.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
+import 'package:provider/provider.dart';
 
 import '../utils/widgets/widgets_appbar.dart';
 
@@ -32,9 +32,6 @@ class GenericEventPage extends StatefulWidget {
   final String title;
   final String emptyText;
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
-  final ServiceExportPlatform exportService; // ✅ 新增
-  final ServiceExportExcel excelService; // ✅ 新增
   final String tableName;
   final String? toTableName;
   final EventListBuilder listBuilder;
@@ -47,9 +44,6 @@ class GenericEventPage extends StatefulWidget {
     required this.title,
     required this.emptyText,
     required this.auth,
-    required this.serviceEvent,
-    required this.exportService, // ✅ 新增
-    required this.excelService, // ✅ 新增
     required this.tableName,
     this.toTableName,
     required this.listBuilder,
@@ -74,10 +68,9 @@ class _GenericEventPageState extends State<GenericEventPage> {
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
       modelEventCalendar: widget.modelEventCalendar, // 使用頁面同一個 model
-      serviceEvent: widget.serviceEvent,
       controllerEvent: widget.controllerEvent,       // 使用頁面同一個 controller
-      exportService: widget.exportService,
-      excelService: widget.excelService,
+      exportService: context.read<ServiceExportPlatform>(),
+      excelService: context.read<ServiceExportExcel>(),
       tableName: widget.tableName,
     );
 
@@ -108,7 +101,6 @@ class _GenericEventPageState extends State<GenericEventPage> {
       MaterialPageRoute(
         builder: (_) => PageEventAdd(
           auth: widget.auth,
-          serviceEvent: widget.serviceEvent,
           controllerEvent: _controller,
           tableName: widget.tableName,
         ),

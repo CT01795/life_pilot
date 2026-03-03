@@ -4,10 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/app/config_app.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/calendar/widgets_calendar.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +22,6 @@ class PageCalendar extends StatefulWidget {
 class _PageCalendarState extends State<PageCalendar> {
   late final ControllerCalendar controller;
   late final PageController pageController;
-  late final ControllerCalendarEventCard eventCardController;
   bool _isInitialized = false;
 
   @override
@@ -34,9 +31,6 @@ class _PageCalendarState extends State<PageCalendar> {
     controller = context.read<ControllerCalendar>();
 
     pageController = PageController(initialPage: controller.pageIndex);
-
-    // 🔹 在 Page 層建立整個月共用的 EventCard Controller
-    eventCardController = context.read<ControllerCalendarEventCard>();
 
     _isInitialized = true;
 
@@ -56,10 +50,9 @@ class _PageCalendarState extends State<PageCalendar> {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<ControllerAuth>();
-    final serviceEvent = context.read<ServiceEvent>();
     final locale = Localizations.localeOf(context);
     return ChangeNotifierProvider.value(
-      value: eventCardController, // 🔹 共用 Controller
+      value: controller, // 🔹 共用 Controller
       child: Scaffold(
         body: AnimatedBuilder(
           animation: controller,
@@ -99,7 +92,6 @@ class _PageCalendarState extends State<PageCalendar> {
                       MaterialPageRoute(
                         builder: (_) => PageCalendarAdd(
                           auth: auth,
-                          serviceEvent: serviceEvent,
                           controllerCalendar: controller,
                           existingEvent: null,
                           tableName: tableName,
@@ -124,7 +116,6 @@ class _PageCalendarState extends State<PageCalendar> {
                 child: CalendarBody(
                   auth: auth,
                   controllerCalendar: controller,
-                  serviceEvent: serviceEvent,
                   pageController: pageController,
                 ),
               ),

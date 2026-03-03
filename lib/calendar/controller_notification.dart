@@ -5,12 +5,14 @@ import 'package:life_pilot/utils/service/platforms/notification_util.dart';
 import 'package:life_pilot/utils/service/service_notification/service_notification_platform.dart';
 
 class ControllerNotification {
-  final ServiceNotificationPlatform service;
-
-  ControllerNotification({required this.service});
+  final ServiceNotificationPlatform _service;
+  ServiceNotificationPlatform get service => _service;
+  
+  ControllerNotification({required ServiceNotificationPlatform service})
+      : _service = service;
 
   Future<void> initialize() async {
-    await service.initialize();
+    await _service.initialize();
   }
 
   Future<void> scheduleEventReminders({required EventItem event}) async {
@@ -21,13 +23,17 @@ class ControllerNotification {
   Future<void> scheduleMultipleReminders({
     required List<EventItem> events,
   }) async {
-    final futures = events.map((e) => service.scheduleEventReminders(event: e)).toList();
+    final futures =
+        events.map((e) => _service.scheduleEventReminders(event: e)).toList();
     await Future.wait(futures);
   }
 
   // 取消事件提醒
-  Future<void> cancelEventReminders({required String eventId, required List<CalendarReminderOption> reminderOptions}) async {
-    await service.cancelEventReminders(eventId: eventId, reminderOptions: reminderOptions);
+  Future<void> cancelEventReminders(
+      {required String eventId,
+      required List<CalendarReminderOption> reminderOptions}) async {
+    await _service.cancelEventReminders(
+        eventId: eventId, reminderOptions: reminderOptions);
   }
 
   // 顯示今日事件通知，先在 Controller 過濾，提高效能
@@ -36,7 +42,9 @@ class ControllerNotification {
     required String closeText,
   }) async {
     final newEvents = getTodayEventNotificationsList(events: events);
-    return newEvents.isNotEmpty ? await service.getTodayEventNotifications(
-        events: newEvents, close: closeText) : [];
+    return newEvents.isNotEmpty
+        ? await _service.getTodayEventNotifications(
+            events: newEvents, close: closeText)
+        : [];
   }
 }

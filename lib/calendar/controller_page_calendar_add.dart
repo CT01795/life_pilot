@@ -13,7 +13,6 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
   final Uuid uuid = const Uuid();
 
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   late EventItem event;
   final DateTime? initialDate;
 
@@ -27,7 +26,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
   final String tableName;
   ControllerPageCalendarAdd({
     required this.auth,
-    required this.serviceEvent,
+    required ServiceEvent serviceEvent,
     required this.tableName,
     EventItem? existingEvent,
     this.initialDate,

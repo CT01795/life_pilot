@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
+import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -126,7 +126,7 @@ class _WidgetsCalendarCardBodyState
     super.didChangeDependencies();
 
     if (!_weatherLoaded) {
-      final ctrl = context.read<ControllerCalendarEventCard>();
+      final ctrl = context.read<ControllerCalendar>();
       ctrl.loadWeather(widget.eventViewModel);
       _weatherLoaded = true;
     }
@@ -134,7 +134,7 @@ class _WidgetsCalendarCardBodyState
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = context.watch<ControllerCalendarEventCard>();
+    final ctrl = context.watch<ControllerCalendar>();
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.firstEventDate;
 

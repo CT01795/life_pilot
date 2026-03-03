@@ -5,12 +5,10 @@ import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 
 Widget widgetsCalendarTrailing({
   required BuildContext context,
   required ControllerAuth auth,
-  required ServiceEvent serviceEvent,
   required ControllerCalendar controllerCalendar,
   required ModelCalendar modelCalendar,
   required EventItem event,
@@ -57,7 +55,6 @@ Widget widgetsCalendarTrailing({
                 context: context,
                 controller: controllerCalendar,
                 event: event,
-                serviceEvent: serviceEvent,
                 loc: loc,
               );
               //Navigator.pop(context); // ✅ 最後關閉 dialog
@@ -68,7 +65,7 @@ Widget widgetsCalendarTrailing({
               icon: const Icon(Icons.edit),
               tooltip: loc.edit,
               onPressed: () => onEditPressed(
-                context: context, controller: controllerCalendar, event: event, serviceEvent: serviceEvent),
+                context: context, controller: controllerCalendar, event: event,),
               ),
       ],
     ),

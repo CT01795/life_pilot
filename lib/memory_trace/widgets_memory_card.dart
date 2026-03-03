@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/controller_event_card.dart';
+import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:provider/provider.dart';
 
@@ -38,37 +35,22 @@ class WidgetsMemoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final serviceWeather = context.read<ServiceWeather>();
-    final serviceEvent = context.read<ServiceEvent>();
-    final controllerAuth = context.read<ControllerAuth>();
-    return ChangeNotifierProvider(
-      create: (_) => ControllerEventCard(
-        serviceWeather: serviceWeather,
-        serviceEvent: serviceEvent,
-        controllerAuth: controllerAuth,
-      )..loadWeather(
-          locationDisplay: eventViewModel.locationDisplay,
-          startDate: eventViewModel.startDate,
-          endDate: eventViewModel.endDate,
-          tableName: tableName,
-        ),
-      child: _WidgetsMemoryCardBody(
-        eventViewModel: eventViewModel,
-        tableName: tableName,
-        onTap: onTap,
-        onDelete: onDelete,
-        onAccounting: onAccounting,
-        onOpenLink: onOpenLink,
-        onOpenMap: onOpenMap,
-        trailing: trailing,
-        showSubEvents: showSubEvents,
-      ),
+    return _WidgetsMemoryCardBody(
+      eventViewModel: eventViewModel,
+      tableName: tableName,
+      onTap: onTap,
+      onDelete: onDelete,
+      onAccounting: onAccounting,
+      onOpenLink: onOpenLink,
+      onOpenMap: onOpenMap,
+      trailing: trailing,
+      showSubEvents: showSubEvents,
     );
   }
 
   static Widget link(
       {required String text,
-        required VoidCallback? onTap,}) {
+        required VoidCallback onTap,}) {
     return InkWell(
       onTap: onTap,
       child: Text(
@@ -106,7 +88,7 @@ class WidgetsMemoryCard extends StatelessWidget {
   }
 }
 
-class _WidgetsMemoryCardBody extends StatelessWidget {
+class _WidgetsMemoryCardBody extends StatefulWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -130,14 +112,35 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
   });
 
   @override
+  State<_WidgetsMemoryCardBody> createState() =>
+      _WidgetsMemoryCardBodyState();
+}
+
+class _WidgetsMemoryCardBodyState
+    extends State<_WidgetsMemoryCardBody> {
+  
+  bool _weatherLoaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_weatherLoaded) {
+      final ctrl = context.read<ControllerEvent>();
+      ctrl.loadWeather(widget.eventViewModel, widget.tableName);
+      _weatherLoaded = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ctrl = context.watch<ControllerEventCard>();
+    final ctrl = context.watch<ControllerEvent>();
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate = eventViewModel.firstEventDate;
+    final eventDate = widget.eventViewModel.firstEventDate;
+    final forecast = ctrl.getForecast(widget.eventViewModel.id);
+    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final showWeatherIcon = ctrl.forecast.isNotEmpty && !eventDate.isBefore(now);
-
-    final todayWeather = ctrl.forecast.isNotEmpty ? ctrl.forecast.first : null;
+    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -194,7 +197,7 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: ctrl.forecast.map((w) {
+                          children: forecast.map((w) {
                             String tmp =
                                 '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
@@ -266,17 +269,17 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
           Gaps.w8,
           Expanded(
               child: Text(
-            eventViewModel.name,
+            widget.eventViewModel.name,
             style: const TextStyle(fontWeight: FontWeight.bold),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
             //overflow: TextOverflow.ellipsis, // 防止文字過長
           )),
-          if (trailing != null)
+          if (widget.trailing != null)
             Builder(
               builder: (context) {
                 // 這裡的 context 已經在 widget 樹內，可以安全使用 Provider
-                return trailing!;
+                return widget.trailing!;
               },
             ),
         ],
@@ -289,30 +292,30 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          if (eventViewModel.dateRange.isNotEmpty)
-            Text(eventViewModel.dateRange),
-          if (eventViewModel.tags.isNotEmpty)
-            WidgetsMemoryCard.tags(typeList: eventViewModel.tags),
-          if (eventViewModel.hasLocation)
+          if (widget.eventViewModel.dateRange.isNotEmpty)
+            Text(widget.eventViewModel.dateRange),
+          if (widget.eventViewModel.tags.isNotEmpty)
+            WidgetsMemoryCard.tags(typeList: widget.eventViewModel.tags),
+          if (widget.eventViewModel.hasLocation)
             InkWell(
-              onTap: onOpenMap,
+              onTap: widget.onOpenMap,
               child: Text(
-                eventViewModel.locationDisplay,
+                widget.eventViewModel.locationDisplay,
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
-          if (eventViewModel.masterUrl?.isNotEmpty == true)
+          if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsMemoryCard.link(
                 text: loc.clickHereToSeeMore,
-                onTap: onOpenLink),
-          if (eventViewModel.description.isNotEmpty)
-            Text(eventViewModel.description),
-          if (showSubEvents)
-            ...eventViewModel.subEvents
-                .map((sub) => WidgetsMemorySubCard(event: sub, onOpenLink: onOpenLink,)),
+                onTap: widget.onOpenLink),
+          if (widget.eventViewModel.description.isNotEmpty)
+            Text(widget.eventViewModel.description),
+          if (widget.showSubEvents)
+            ...widget.eventViewModel.subEvents
+                .map((sub) => WidgetsMemorySubCard(event: sub, onOpenLink: widget.onOpenLink,)),
         ],
       ),
     );
@@ -328,7 +331,7 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
+      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
       child: Stack(
         children: [
           container,
@@ -338,18 +341,18 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (onAccounting != null)
+                if (widget.onAccounting != null)
                   IconButton(
                     icon: Icon(Icons.currency_exchange),
                     tooltip: loc.accountRecords,
-                    onPressed: onAccounting,
+                    onPressed: widget.onAccounting,
                   ),
                 // 🗑 Delete（只有 canDelete）
-                if (eventViewModel.canDelete && onDelete != null)
+                if (widget.eventViewModel.canDelete && widget.onDelete != null)
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                     tooltip: loc.delete,
-                    onPressed: onDelete,
+                    onPressed: widget.onDelete,
                   ),
               ],
             ),
