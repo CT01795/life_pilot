@@ -4,14 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/app/config_app.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card_ok.dart';
+import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/calendar/page_calendar_add_ok.dart';
+import 'package:life_pilot/calendar/page_calendar_add.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/calendar/widgets_calendar.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
-import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:provider/provider.dart';
 
 class PageCalendar extends StatefulWidget {
@@ -38,12 +36,7 @@ class _PageCalendarState extends State<PageCalendar> {
     pageController = PageController(initialPage: controller.pageIndex);
 
     // 🔹 在 Page 層建立整個月共用的 EventCard Controller
-    eventCardController = ControllerCalendarEventCard(
-      serviceWeather: context.read<ServiceWeather>(),
-      serviceEvent: context.read<ServiceEvent>(),
-      currentAccount:
-          context.read<ControllerAuth>().currentAccount ?? AuthConstants.guest,
-    );
+    eventCardController = context.read<ControllerCalendarEventCard>();
 
     _isInitialized = true;
 

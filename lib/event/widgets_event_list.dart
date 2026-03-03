@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/controller_event_card.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -93,6 +94,8 @@ class WidgetsEventList extends StatelessWidget {
                     account: auth.currentAccount ?? AuthConstants.guest);
               },
               onAccounting: null,
+              onOpenLink: () => context.read<ControllerEventCard>().onOpenLink(eventViewModel),
+              onOpenMap: () => context.read<ControllerEventCard>().onOpenMap(eventViewModel),
               trailing: widgetsEventTrailing(
                 context: context,
                 auth: auth,

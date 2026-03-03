@@ -50,6 +50,8 @@ class ControllerEventCard extends ChangeNotifier {
   }
 
   Future<void> onOpenLink(EventViewModel event) async {
+    final uri = Uri.parse(event.masterUrl!);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
     await serviceEvent.incrementEventCounter(
       eventId: event.id,
       eventName: event.name,

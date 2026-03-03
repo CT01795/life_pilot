@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card_ok.dart';
+import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/graph.dart';
@@ -15,6 +14,8 @@ class WidgetsCalendarCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback onOpenMap;
+  final VoidCallback onOpenLink;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -26,6 +27,8 @@ class WidgetsCalendarCard extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    required this.onOpenMap,
+    required this.onOpenLink,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -38,26 +41,20 @@ class WidgetsCalendarCard extends StatelessWidget {
       onTap: onTap,
       onDelete: onDelete,
       onAccounting: onAccounting,
+      onOpenMap: onOpenMap,
+      onOpenLink: onOpenLink,
       trailing: trailing,
       showSubEvents: showSubEvents,
     );
   }
 
   static Widget link(
-      {required BuildContext context,
-      required AppLocalizations loc,
-      required String url,
-      required EventViewModel eventViewModel}) {
+      {required String text,
+        required VoidCallback? onTap,}) {
     return InkWell(
-      onTap: () async {
-        // 🔹 呼叫 function 更新資料庫
-        final controllerCalendarEventCard = context.read<ControllerCalendarEventCard>();
-        await controllerCalendarEventCard.onOpenLink(eventViewModel, url);
-        AppNavigator.showSnackBar(
-            '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
-      },
+      onTap: onTap,
       child: Text(
-        loc.clickHereToSeeMore,
+        text,
         style: const TextStyle(
           color: Colors.blue,
           decoration: TextDecoration.underline,
@@ -96,6 +93,8 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback onOpenMap;
+  final VoidCallback onOpenLink;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -106,6 +105,8 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    required this.onOpenMap,
+    required this.onOpenLink,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -118,16 +119,17 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
 class _WidgetsCalendarCardBodyState
     extends State<_WidgetsCalendarCardBody> {
   
+  bool _weatherLoaded = false;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
+    if (!_weatherLoaded) {
       final ctrl = context.read<ControllerCalendarEventCard>();
       ctrl.loadWeather(widget.eventViewModel);
-    });
+      _weatherLoaded = true;
+    }
   }
 
   @override
@@ -297,11 +299,7 @@ class _WidgetsCalendarCardBodyState
             WidgetsCalendarCard.tags(typeList: widget.eventViewModel.tags),
           if (widget.eventViewModel.hasLocation)
             InkWell(
-              onTap: () async {
-                if (!context.mounted) return;
-                // 🔹 呼叫 function 更新資料庫
-                await ctrl.onOpenMap(widget.eventViewModel);
-              },
+              onTap: widget.onOpenMap,
               child: Text(
                 widget.eventViewModel.locationDisplay,
                 style: const TextStyle(
@@ -312,15 +310,13 @@ class _WidgetsCalendarCardBodyState
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsCalendarCard.link(
-                context: context,
-                loc: loc,
-                url: widget.eventViewModel.masterUrl!,
-                eventViewModel: widget.eventViewModel),
+                text: loc.clickHereToSeeMore,
+                onTap: widget.onOpenLink,),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
           if (widget.showSubEvents)
             ...widget.eventViewModel.subEvents
-                .map((sub) => WidgetsCalendarSubCard(event: sub)),
+                .map((sub) => WidgetsCalendarSubCard(event: sub, onOpenLink: widget.onOpenLink,)),
         ],
       ),
     );

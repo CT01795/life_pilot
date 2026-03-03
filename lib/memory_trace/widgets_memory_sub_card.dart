@@ -7,13 +7,15 @@ import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
 class WidgetsMemorySubCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final VoidCallback onOpenLink;
   final EventViewModel event;
 
   const WidgetsMemorySubCard(
       {super.key,
       required this.event,
       this.onTap,
-      this.onDelete,});
+      this.onDelete,
+      required this.onOpenLink});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class WidgetsMemorySubCard extends StatelessWidget {
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsMemoryCard.link(context:context, loc: loc, url: event.masterUrl!, eventViewModel: event),
+            WidgetsMemoryCard.link(text: loc.clickHereToSeeMore, onTap: onOpenLink),
         ],
       ),
     );

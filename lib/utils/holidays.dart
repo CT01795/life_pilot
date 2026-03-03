@@ -1,7 +1,5 @@
 // -------------------- Calendar --------------------
 // 🏮 節日工具類（用於連假判定與 Calendar ID）
-import 'dart:ui';
-
 import 'package:life_pilot/app/config_app.dart';
 
 class Holidays {
@@ -43,8 +41,7 @@ class Holidays {
   }
 
   // ✅ 組合 Google Calendar ID
-  static String getCalendarIdByLocale(String tzName, Locale locale) {
-    final languageCode = locale.languageCode.toLowerCase();
+  static String getCalendarIdByLocale(String tzName, String languageCode) {
     final countryCode = getRegionFromTimezone(tzName);
         //getRegionFromLanguageCode(languageCode);  //getRegionFromTimezone(tzName);
     return '$languageCode.$countryCode%23holiday%40group.v.calendar.google.com';

@@ -22,12 +22,16 @@ class ControllerCalendarEventCard extends ChangeNotifier {
     required this.currentAccount,
   });
 
+  final Set<String> _loadingIds  = {};
+  final Map<String, List<EventWeather>> _forecastCache = {};
+
+  // ------------------ Public ------------------
+
   List<EventWeather>? getForecast(String eventId) {
     return _forecastCache[eventId];
   }
 
-  final Set<String> _loadingIds  = {};
-  final Map<String, List<EventWeather>> _forecastCache = {};
+  // 取得天氣預報（緩存）
   Future<void> loadWeather(EventViewModel event) async {
     if (!event.hasLocation) return;
     if (_forecastCache.containsKey(event.id)) return;
@@ -43,48 +47,71 @@ class ControllerCalendarEventCard extends ChangeNotifier {
 
     _loadingIds .add(event.id);
 
-    final data = await serviceWeather.getWeather(
+    try {
+      final data = await serviceWeather.getWeather(
         locationDisplay: event.locationDisplay, startDate: event.startDate);
 
-    _forecastCache[event.id] = data;
-    _loadingIds .remove(event.id);
-    if (!disposed) notifyListeners();
+      _forecastCache[event.id] = data;
+    } catch (e, st) {
+      logger.e('loadWeather failed for ${event.id}: $e\n$st');
+      _forecastCache[event.id] = [];
+    } finally {
+      _loadingIds.remove(event.id);
+      if (!disposed) notifyListeners();
+    }
   }
 
-  Future<void> onOpenLink(EventViewModel event, String url) async {
-    final uri = Uri.parse(url);
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-    await serviceEvent.incrementEventCounter(
-      eventId: event.id,
-      eventName: event.name,
+  // 開啟活動連結
+  Future<void> onOpenLink(EventViewModel event) async {
+    if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
+    await _launchUrl(
+      Uri.parse(event.masterUrl!),
+      event,
       column: 'page_views',
-      account: currentAccount,
     );
   }
 
+  // 開啟地圖導航
   Future<void> onOpenMap(EventViewModel event) async {
+    if (event.locationDisplay.isEmpty) return;
     final query =
         Uri.encodeComponent(event.locationDisplay);
 
     // Google Maps 網頁導航 URL
     final googleMapsUrl = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&destination=$query');
+    await _launchUrl(
+      googleMapsUrl,
+      event,
+      column: 'card_clicks',
+    );
+  }
 
+  // ------------------ Private ------------------
+
+  /// 統一處理 URL 開啟與事件計數
+  Future<void> _launchUrl(Uri uri, EventViewModel event,
+      {required String column}) async {
     try {
-      // LaunchMode.externalApplication 確保在手機會跳出 App 或瀏覽器
-      await launchUrl(
-        googleMapsUrl,
-        mode: LaunchMode.externalApplication,
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await _incrementCounter(event, column);
+    } catch (e) {
+      logger.e('Failed to launch URL for ${event.id}: $e');
+    }
+  }
+
+  /// 統一事件計數
+  Future<void> _incrementCounter(EventViewModel event, String column) async {
+    try {
+      await serviceEvent.incrementEventCounter(
+        eventId: event.id,
+        eventName: event.name,
+        column: column,
+        account: currentAccount,
       );
     } catch (e) {
-      logger.e('Can\'t open map：$e');
+      logger.e('Failed to increment counter for ${event.id} ($column): $e');
     }
-    await serviceEvent.incrementEventCounter(
-      eventId: event.id,
-      eventName: event.name,
-      column: 'card_clicks',
-      account: currentAccount,
-    );
   }
   
   @override

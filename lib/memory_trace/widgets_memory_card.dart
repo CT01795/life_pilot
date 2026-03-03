@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event_card.dart';
-import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/graph.dart';
@@ -12,13 +11,14 @@ import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback onOpenLink;
+  final VoidCallback onOpenMap;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -30,6 +30,8 @@ class WidgetsMemoryCard extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    required this.onOpenLink,
+    required this.onOpenMap,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -56,6 +58,8 @@ class WidgetsMemoryCard extends StatelessWidget {
         onTap: onTap,
         onDelete: onDelete,
         onAccounting: onAccounting,
+        onOpenLink: onOpenLink,
+        onOpenMap: onOpenMap,
         trailing: trailing,
         showSubEvents: showSubEvents,
       ),
@@ -63,22 +67,12 @@ class WidgetsMemoryCard extends StatelessWidget {
   }
 
   static Widget link(
-      {required BuildContext context,
-      required AppLocalizations loc,
-      required String url,
-      required EventViewModel eventViewModel}) {
+      {required String text,
+        required VoidCallback? onTap,}) {
     return InkWell(
-      onTap: () async {
-        final uri = Uri.parse(url);
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        AppNavigator.showSnackBar(
-            '${loc.url}: ${url.substring(0, url.length > 10 ? 10 : url.length)}');
-        // 🔹 呼叫 function 更新資料庫
-        final controllerEventCard = context.read<ControllerEventCard>();
-        await controllerEventCard.onOpenLink(eventViewModel);
-      },
+      onTap: onTap,
       child: Text(
-        loc.clickHereToSeeMore,
+        text,
         style: const TextStyle(
           color: Colors.blue,
           decoration: TextDecoration.underline,
@@ -117,6 +111,8 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback onOpenLink;
+  final VoidCallback onOpenMap;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
@@ -127,6 +123,8 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    required this.onOpenLink,
+    required this.onOpenMap,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -297,11 +295,7 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
             WidgetsMemoryCard.tags(typeList: eventViewModel.tags),
           if (eventViewModel.hasLocation)
             InkWell(
-              onTap: () async {
-                if (!context.mounted) return;
-                // 🔹 呼叫 function 更新資料庫
-                await ctrl.onOpenMap(eventViewModel);
-              },
+              onTap: onOpenMap,
               child: Text(
                 eventViewModel.locationDisplay,
                 style: const TextStyle(
@@ -312,15 +306,13 @@ class _WidgetsMemoryCardBody extends StatelessWidget {
             ),
           if (eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsMemoryCard.link(
-                context: context,
-                loc: loc,
-                url: eventViewModel.masterUrl!,
-                eventViewModel: eventViewModel),
+                text: loc.clickHereToSeeMore,
+                onTap: onOpenLink),
           if (eventViewModel.description.isNotEmpty)
             Text(eventViewModel.description),
           if (showSubEvents)
             ...eventViewModel.subEvents
-                .map((sub) => WidgetsMemorySubCard(event: sub)),
+                .map((sub) => WidgetsMemorySubCard(event: sub, onOpenLink: onOpenLink,)),
         ],
       ),
     );

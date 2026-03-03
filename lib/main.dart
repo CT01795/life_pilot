@@ -6,7 +6,8 @@ import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_notification_ok.dart';
+import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
+import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
@@ -157,6 +158,26 @@ void main() async {
           update: (_, auth, model) => model ?? ModelAuthView(auth),
         ),
 
+        //-------------- ControllerCalendarEventCard--------------
+        ChangeNotifierProxyProvider3<
+            ServiceWeather,
+            ServiceEvent,
+            ControllerAuth,
+            ControllerCalendarEventCard>(
+          create: (context) => ControllerCalendarEventCard(
+            serviceWeather: context.read<ServiceWeather>(),
+            serviceEvent: context.read<ServiceEvent>(),
+            currentAccount: context.read<ControllerAuth>().currentAccount ?? AuthConstants.guest,
+          ),
+          update: (context, serviceWeather, serviceEvent, auth, previous) {
+            return ControllerCalendarEventCard(
+              serviceWeather: serviceWeather,
+              serviceEvent: serviceEvent,
+              currentAccount:
+                  auth.currentAccount ?? AuthConstants.guest,
+            );
+          },
+        ),
         //-------------- ControllerCalendar (ModelCalendar, ControllerAuth, ServiceStorage, ProviderLocale)--------------
         ChangeNotifierProxyProvider5<
             ModelCalendar,

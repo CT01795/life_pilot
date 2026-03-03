@@ -14,7 +14,7 @@ class ServiceCalendar {
       DateTime start, DateTime end, Locale locale, String googleApiKey, {http.Client? client}) async {
     final httpClient = client ?? http.Client();
     final List<EventItem> holidays = [];
-    final String calendarId = Holidays.getCalendarIdByLocale(CalendarConfig.tzLocation, locale);
+    final String calendarId = Holidays.getCalendarIdByLocale(CalendarConfig.tzLocation, locale.languageCode.toLowerCase());
     final url = Uri.parse(
       'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events?'
       'key=$googleApiKey&'
