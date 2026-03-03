@@ -6,7 +6,6 @@ import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
@@ -157,32 +156,12 @@ void main() async {
           create: (context) => ModelAuthView(context.read<ControllerAuth>()),
           update: (_, auth, model) => model ?? ModelAuthView(auth),
         ),
-
-        //-------------- ControllerCalendarEventCard--------------
-        ChangeNotifierProxyProvider3<
-            ServiceWeather,
-            ServiceEvent,
-            ControllerAuth,
-            ControllerCalendarEventCard>(
-          create: (context) => ControllerCalendarEventCard(
-            serviceWeather: context.read<ServiceWeather>(),
-            serviceEvent: context.read<ServiceEvent>(),
-            currentAccount: context.read<ControllerAuth>().currentAccount ?? AuthConstants.guest,
-          ),
-          update: (context, serviceWeather, serviceEvent, auth, previous) {
-            return ControllerCalendarEventCard(
-              serviceWeather: serviceWeather,
-              serviceEvent: serviceEvent,
-              currentAccount:
-                  auth.currentAccount ?? AuthConstants.guest,
-            );
-          },
-        ),
         //-------------- ControllerCalendar (ModelCalendar, ControllerAuth, ServiceStorage, ProviderLocale)--------------
-        ChangeNotifierProxyProvider5<
+        ChangeNotifierProxyProvider6<
             ModelCalendar,
             ControllerAuth,
             ServiceEvent,
+            ServiceWeather,
             ControllerNotification,
             ProviderLocale,
             ControllerCalendar>(
@@ -193,6 +172,7 @@ void main() async {
               modelCalendar: context.read<ModelCalendar>(),
               auth: context.read<ControllerAuth>(),
               serviceEvent: context.read<ServiceEvent>(),
+              serviceWeather: context.read<ServiceWeather>(),
               controllerNotification: context.read<ControllerNotification>(),
               servicePermission: ServicePermission(),
               localeProvider: context.read<ProviderLocale>(),
@@ -201,13 +181,12 @@ void main() async {
               closeText: loc.close, // ✅ 使用當前語系
             );
           },
-          update: (context, modelEventCalendar, auth, serviceEvent,
+          update: (context, modelEventCalendar, auth, serviceEvent, serviceWeather, 
               notification, locale, controller) {
             controller ??= context.read<ControllerCalendar>();
             // ✅ 更新 controller 裡的依賴，而不是 new 一個
             controller
               ..auth = auth
-              ..serviceEvent = serviceEvent
               ..controllerNotification = notification
               ..localeProvider = locale;
             // ✅ 更新 closeText

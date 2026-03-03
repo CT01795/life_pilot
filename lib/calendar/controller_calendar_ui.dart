@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -14,14 +13,12 @@ Future<void> onAddEventPressed({
   required BuildContext context,
   required ControllerCalendar controller,
   required DateTime date,
-  required ServiceEvent serviceEvent,
 }) async {
   final newEvent = await Navigator.push<EventItem?>(
     context,
     MaterialPageRoute(
       builder: (_) => PageCalendarAdd(
         auth: controller.auth!,
-        serviceEvent: serviceEvent,
         controllerCalendar: controller,
         existingEvent: null,
         tableName: controller.tableName,
@@ -40,14 +37,12 @@ Future<void> onEditPressed({
   required BuildContext context,
   required ControllerCalendar controller,
   required EventItem event,
-  required ServiceEvent serviceEvent,
 }) async {
   final updatedEvent = await Navigator.push<EventItem?>(
     context,
     MaterialPageRoute(
       builder: (_) => PageCalendarAdd(
         auth: controller.auth!,
-        serviceEvent: serviceEvent,
         controllerCalendar: controller,
         tableName: controller.tableName,
         existingEvent: event.copyWith(),
@@ -132,13 +127,11 @@ Future<void> onAlarmPressed({
   required BuildContext context,
   required ControllerCalendar controller,
   required EventItem event,
-  required ServiceEvent serviceEvent,
   required AppLocalizations loc,
 }) async {
   final result = await showAlarmSettingsDialog(
     context,
     controller,
-    serviceEvent,
     event,
     loc,
   );
@@ -160,7 +153,6 @@ Future<void> onAlarmPressed({
 Future<Map<String, dynamic>?> showAlarmSettingsDialog(
       BuildContext context,
       ControllerCalendar controllerCalendar,
-      ServiceEvent serviceEvent,
       EventItem event,
       AppLocalizations loc) async {
     final repeatOptions = CalendarRepeatRule.values;

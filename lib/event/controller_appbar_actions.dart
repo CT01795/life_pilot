@@ -9,7 +9,6 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:file_picker/file_picker.dart';
@@ -19,22 +18,21 @@ import 'package:excel/excel.dart';
 
 class ControllerAppBarActions extends ChangeNotifier {
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final ControllerEvent controllerEvent;
   final ModelEventCalendar modelEventCalendar;
-  final ServiceExportPlatform exportService;
-  final ServiceExportExcel excelService;
+  final ServiceExportPlatform _exportService;
+  final ServiceExportExcel _excelService;
   final String tableName;
 
   ControllerAppBarActions({
     required this.auth,
-    required this.serviceEvent,
     required this.controllerEvent,
     required this.modelEventCalendar,
-    required this.exportService,
-    required this.excelService,
+    required ServiceExportPlatform exportService,
+    required ServiceExportExcel excelService,
     required this.tableName,
-  });
+  }): _excelService = excelService,
+      _exportService = exportService;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -110,11 +108,11 @@ class ControllerAppBarActions extends ChangeNotifier {
           logger.e('❌ utf8 decode error: $e', stackTrace: s);
           csv = Charset.getByName('big5')!.decode(bytes);
         }
-        events = excelService.parseCsv(csv, loc);
+        events = _excelService.parseCsv(csv, loc);
       }else if (filename.endsWith('.xlsx')) {
         final excel = Excel.decodeBytes(bytes);
         final sheet = excel.tables.values.first;
-        events = excelService.parseExcel(sheet, loc);
+        events = _excelService.parseExcel(sheet, loc);
       }
 
       if (events.isEmpty) {
@@ -127,9 +125,9 @@ class ControllerAppBarActions extends ChangeNotifier {
       for (final event in events) {
         if (!event.name.startsWith("  └")) {
           tmpMaster = event;
-          eventList = await serviceEvent.getEvents(
+          eventList = await controllerEvent.serviceEvent.getEvents(
               tableName: tableName, id: event.id.isNotEmpty ? event.id : null);
-          await serviceEvent.saveEvent(
+          await controllerEvent.serviceEvent.saveEvent(
               currentAccount: auth.currentAccount ?? '',
               event: event,
               isNew: eventList == null || eventList.isEmpty,
@@ -138,7 +136,7 @@ class ControllerAppBarActions extends ChangeNotifier {
           event.name = event.name.replaceAll("  └ ", "");
           event.id = event.id.isNotEmpty ? event.id : Uuid().v4();
           tmpMaster!.subEvents.add(event);
-          await serviceEvent.saveEvent(
+          await controllerEvent.serviceEvent.saveEvent(
               currentAccount: auth.currentAccount ?? '',
               event: tmpMaster,
               isNew: false,
@@ -160,14 +158,14 @@ class ControllerAppBarActions extends ChangeNotifier {
     if (_isExporting) return loc.exportInProgress;
     _setExporting(true);
     try {
-      final events = await serviceEvent.getEvents(
+      final events = await controllerEvent.serviceEvent.getEvents(
           tableName: tableName, inputUser: auth.currentAccount);
       if (events == null || events.isEmpty) {
         return loc.noEventsToExport;
       }
-      final bytes = excelService.buildExcelBytes(events, loc);
+      final bytes = _excelService.buildExcelBytes(events, loc);
       final filename = 'events_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final filePath = await exportService.exportFile(filename, bytes);
+      final filePath = await _exportService.exportFile(filename, bytes);
       // 5️⃣ 根據結果回傳 enum 給 UI 層
       return '${loc.exportSuccess}: $filePath';
     } catch (e, s) {

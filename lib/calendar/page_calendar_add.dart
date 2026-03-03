@@ -7,14 +7,12 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class PageCalendarAdd extends StatefulWidget {
   final ControllerAuth auth;
-  final ServiceEvent serviceEvent;
   final ControllerCalendar controllerCalendar;
   final String tableName;
   final EventItem? existingEvent;
@@ -23,7 +21,6 @@ class PageCalendarAdd extends StatefulWidget {
   const PageCalendarAdd({
     super.key,
     required this.auth,
-    required this.serviceEvent,
     required this.controllerCalendar,
     required this.tableName,
     this.existingEvent,

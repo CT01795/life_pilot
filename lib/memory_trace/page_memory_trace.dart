@@ -8,8 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/page_memory_base_event.dart';
 import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/utils/service/export/service_export_excel.dart';
-import 'package:life_pilot/utils/service/export/service_export_platform.dart';
+import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:provider/provider.dart';
 
 import 'widgets_memory_list.dart';
@@ -35,15 +34,14 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
   void initState() {
     super.initState();
     final context = this.context; // ✅ 避免多次 lookup
-    final auth = context.read<ControllerAuth>();
-    final serviceEvent = context.read<ServiceEvent>();
     _accountController = context.read<ControllerAccountingList>();
 
     _modelEventCalendar = ModelEventCalendar();
 
     _controllerEvent = ControllerEvent(
-      auth: auth,
-      serviceEvent: serviceEvent,
+      auth: context.read<ControllerAuth>(),
+      serviceEvent: context.read<ServiceEvent>(),
+      serviceWeather: context.read<ServiceWeather>(),
       tableName: PageMemoryTrace._tableName,
       toTableName: PageMemoryTrace._toTableName,
       modelEventCalendar: _modelEventCalendar,
@@ -80,9 +78,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
-    final serviceEvent = context.read<ServiceEvent>();
-    final exportService = context.read<ServiceExportPlatform>();
-    final excelService = context.read<ServiceExportExcel>();
     // 如果帳戶還沒載入，先顯示 loading
     if (!_accountsLoaded) {
       return const Center(child: CircularProgressIndicator());
@@ -94,11 +89,8 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
       value: _controllerEvent,
       child: MemoryGenericEventPage(
         auth: auth,
-        serviceEvent: serviceEvent,
         controllerEvent: _controllerEvent,
         modelEventCalendar: _modelEventCalendar,
-        exportService: exportService,
-        excelService: excelService,
         title: loc.memoryTrace,
         tableName: PageMemoryTrace._tableName,
         toTableName: PageMemoryTrace._toTableName,
@@ -109,7 +101,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
           required ScrollController scrollController,
         }) {
           return WidgetsMemoryList(
-              serviceEvent: serviceEvent,
               tableName: PageMemoryTrace._tableName,
               toTableName: PageMemoryTrace._toTableName,
               filteredEvents: filteredEvents,

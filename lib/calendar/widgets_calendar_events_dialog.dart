@@ -3,12 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/controller_calendar_event_card.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/calendar/widgets_calendar_card.dart';
 import 'package:life_pilot/calendar/widgets_calendar_trailing.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -18,7 +16,6 @@ import 'package:provider/provider.dart';
 class CalendarEventsDialog extends StatelessWidget {
   final ControllerAuth auth;
   final ControllerCalendar controllerCalendar;
-  final ServiceEvent serviceEvent;
   final ModelCalendar modelCalendar;
   final DateTime date;
   final AppLocalizations loc;
@@ -27,7 +24,6 @@ class CalendarEventsDialog extends StatelessWidget {
     super.key,
     required this.auth,
     required this.controllerCalendar,
-    required this.serviceEvent,
     required this.modelCalendar,
     required this.date,
     required this.loc,
@@ -71,7 +67,7 @@ class CalendarEventsDialog extends StatelessWidget {
                             Icon(Icons.add, size: IconTheme.of(context).size!),
                         tooltip: loc.add,
                         onPressed: () => onAddEventPressed(
-                          context: context, controller: controllerCalendar, date: date, serviceEvent: serviceEvent), 
+                          context: context, controller: controllerCalendar, date: date), 
                       ),
                     ]),
                     if (updatedEventsOfDay.isNotEmpty)
@@ -81,10 +77,8 @@ class CalendarEventsDialog extends StatelessWidget {
                             EventViewModel.buildEventViewModel(
                           event: event,
                           parentLocation: '',
-                          canDelete: ControllerCalendar.canDelete(
+                          canDelete: controllerCalendar.canDelete(
                             account: event.account ?? '',
-                            auth: auth,
-                            tableName: tableName,
                           ),
                           showSubEvents: true,
                           loc: loc,
@@ -111,16 +105,11 @@ class CalendarEventsDialog extends StatelessWidget {
                                 context: context,
                                 eventId: event.id,
                               ),
-                          onOpenMap: () => context
-                              .read<ControllerCalendarEventCard>()
-                              .onOpenMap(eventViewModel),
-                          onOpenLink: () => context
-                              .read<ControllerCalendarEventCard>()
-                              .onOpenLink(eventViewModel),
+                          onOpenMap: () => controllerCalendar.onOpenMap(eventViewModel),
+                          onOpenLink: () => controllerCalendar.onOpenLink(eventViewModel),
                           trailing: widgetsCalendarTrailing(
                             context: context,
                             auth: auth,
-                            serviceEvent: serviceEvent,
                             controllerCalendar: controllerCalendar,
                             modelCalendar: modelCalendar,
                             event: event,

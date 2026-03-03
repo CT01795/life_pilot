@@ -4,13 +4,11 @@ import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/memory_trace/page_memory_add.dart';
-import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/event/controller_event_ui.dart';
 
 Widget widgetsMemoryTrailing({
   required BuildContext context,
   required ControllerAuth auth,
-  required ServiceEvent serviceEvent,
   required ControllerEvent controllerEvent,
   required ModelEventCalendar modelEventCalendar,
   required EventItem event,
@@ -26,32 +24,8 @@ Widget widgetsMemoryTrailing({
         IconButton(
           icon: const Icon(Icons.edit),
           tooltip: loc.edit,
-          onPressed: () async {
-            final updatedEvent =
-                await Navigator.of(context).push<EventItem?>(
-              MaterialPageRoute(
-                builder: (_) => PageMemoryAdd(
-                  auth: auth,
-                  serviceEvent: serviceEvent,
-                  controllerEvent:
-                      controllerEvent,
-                  tableName: tableName,
-                  existingEvent: event,
-                ),
-              ),
-            );
-
-            if (updatedEvent != null) {
-              await controllerEvent.onEditEvent(
-                event: event,
-                updatedEvent: updatedEvent,
-              );
-            }
-            // ✅ 只在確定有更新時再關閉外層對話框
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-          }
+          onPressed: () => onEditPressed(
+                context: context, controller: controllerEvent, event: event),
         ),
       ],
     ),

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/event/controller_event_card.dart';
+import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/widgets_event_card.dart';
-import 'package:provider/provider.dart';
 
 class WidgetsEventDialog extends StatelessWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final String tableName;
   const WidgetsEventDialog({
     super.key,
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
   });
@@ -28,8 +29,8 @@ class WidgetsEventDialog extends StatelessWidget {
               eventViewModel: eventViewModel,
               tableName: tableName,
               onTap: () => Navigator.pop(context),
-              onOpenLink: () => context.read<ControllerEventCard>().onOpenLink(eventViewModel),
-              onOpenMap: () => context.read<ControllerEventCard>().onOpenMap(eventViewModel),
+              onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
+              onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
             ),
           ),
           PositionedDirectional(

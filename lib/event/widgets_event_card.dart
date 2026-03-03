@@ -2,15 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/controller_event_card.dart';
+import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/event/widgets_event_sub_card.dart';
 import 'package:provider/provider.dart';
 
@@ -44,33 +41,18 @@ class WidgetsEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final serviceWeather = context.read<ServiceWeather>();
-    final serviceEvent = context.read<ServiceEvent>();
-    final controllerAuth = context.read<ControllerAuth>();
-    return ChangeNotifierProvider(
-      create: (_) => ControllerEventCard(
-        serviceWeather: serviceWeather,
-        serviceEvent: serviceEvent,
-        controllerAuth: controllerAuth,
-      )..loadWeather(
-          locationDisplay: eventViewModel.locationDisplay,
-          startDate: eventViewModel.startDate,
-          endDate: eventViewModel.endDate,
-          tableName: tableName,
-        ),
-      child: _WidgetsEventCardBody(
-        eventViewModel: eventViewModel,
-        tableName: tableName,
-        onTap: onTap,
-        onDelete: onDelete,
-        onLike: onLike,
-        onDislike: onDislike,
-        onAccounting: onAccounting,
-        onOpenLink: onOpenLink,
-        onOpenMap: onOpenMap,
-        trailing: trailing,
-        showSubEvents: showSubEvents,
-      ),
+    return _WidgetsEventCardBody(
+      eventViewModel: eventViewModel,
+      tableName: tableName,
+      onTap: onTap,
+      onDelete: onDelete,
+      onLike: onLike,
+      onDislike: onDislike,
+      onAccounting: onAccounting,
+      onOpenLink: onOpenLink,
+      onOpenMap: onOpenMap,
+      trailing: trailing,
+      showSubEvents: showSubEvents,
     );
   }
 
@@ -114,7 +96,7 @@ class WidgetsEventCard extends StatelessWidget {
   }
 }
 
-class _WidgetsEventCardBody extends StatelessWidget {
+class _WidgetsEventCardBody extends StatefulWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -142,13 +124,35 @@ class _WidgetsEventCardBody extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final ctrl = context.watch<ControllerEventCard>();
-    final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate =  eventViewModel.firstEventDate;
-    final showWeatherIcon = ctrl.forecast.isNotEmpty && !eventDate.isBefore(now);
+  State<_WidgetsEventCardBody> createState() =>
+      _WidgetsEventCardBodyState();
+}
 
-    final todayWeather = ctrl.forecast.isNotEmpty ? ctrl.forecast.first : null;
+class _WidgetsEventCardBodyState
+    extends State<_WidgetsEventCardBody> {
+  
+  bool _weatherLoaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_weatherLoaded) {
+      final ctrl = context.read<ControllerEvent>();
+      ctrl.loadWeather(widget.eventViewModel, widget.tableName);
+      _weatherLoaded = true;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = context.watch<ControllerEvent>();
+    final now = DateTimeFormatter.dateOnly(DateTime.now());
+    final eventDate = widget.eventViewModel.firstEventDate;
+    final forecast = ctrl.getForecast(widget.eventViewModel.id);
+    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
+
+    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -205,7 +209,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: ctrl.forecast.map((w) {
+                          children: forecast.map((w) {
                             String tmp =
                                 '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
@@ -277,17 +281,17 @@ class _WidgetsEventCardBody extends StatelessWidget {
           Gaps.w8,
           Expanded(
               child: Text(
-            eventViewModel.name,
+            widget.eventViewModel.name,
             style: const TextStyle(fontWeight: FontWeight.bold),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
             //overflow: TextOverflow.ellipsis, // 防止文字過長
           )),
-          if (trailing != null)
+          if (widget.trailing != null)
             Builder(
               builder: (context) {
                 // 這裡的 context 已經在 widget 樹內，可以安全使用 Provider
-                return trailing!;
+                return widget.trailing!;
               },
             ),
         ],
@@ -300,30 +304,30 @@ class _WidgetsEventCardBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          if (eventViewModel.dateRange.isNotEmpty)
-            Text(eventViewModel.dateRange),
-          if (eventViewModel.tags.isNotEmpty)
-            WidgetsEventCard.tags(typeList: eventViewModel.tags),
-          if (eventViewModel.hasLocation)
+          if (widget.eventViewModel.dateRange.isNotEmpty)
+            Text(widget.eventViewModel.dateRange),
+          if (widget.eventViewModel.tags.isNotEmpty)
+            WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
+          if (widget.eventViewModel.hasLocation)
             InkWell(
-              onTap: onOpenMap,
+              onTap: widget.onOpenMap,
               child: Text(
-                eventViewModel.locationDisplay,
+                widget.eventViewModel.locationDisplay,
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
-          if (eventViewModel.masterUrl?.isNotEmpty == true)
+          if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsEventCard.link(
                 text: loc.clickHereToSeeMore,
-                onTap: onOpenLink),
-          if (eventViewModel.description.isNotEmpty)
-            Text(eventViewModel.description),
-          if (showSubEvents)
-            ...eventViewModel.subEvents
-                .map((sub) => WidgetsEventSubCard(event: sub, onOpenLink: onOpenLink,)),
+                onTap: widget.onOpenLink),
+          if (widget.eventViewModel.description.isNotEmpty)
+            Text(widget.eventViewModel.description),
+          if (widget.showSubEvents)
+            ...widget.eventViewModel.subEvents
+                .map((sub) => WidgetsEventSubCard(event: sub, onOpenLink: widget.onOpenLink,)),
         ],
       ),
     );
@@ -339,7 +343,7 @@ class _WidgetsEventCardBody extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
+      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
       child: Stack(
         children: [
           container,
@@ -350,42 +354,42 @@ class _WidgetsEventCardBody extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 👍 Favor（登入即可）
-                if (onLike != null)
+                if (widget.onLike != null)
                   IconButton(
                     icon: Icon(
-                      eventViewModel.isLike == true
+                      widget.eventViewModel.isLike == true
                           ? Icons.favorite_outlined
                           : Icons.favorite_outline,
                       color: Colors.pinkAccent,
                     ),
                     tooltip: loc.like,
-                    onPressed: onLike,
+                    onPressed: widget.onLike,
                   ),
 
                 // 🚫 Not Favor（登入即可）
-                if (onDislike != null)
+                if (widget.onDislike != null)
                   IconButton(
                     icon: Icon(
-                      eventViewModel.isDislike == true
+                      widget.eventViewModel.isDislike == true
                           ? Icons.sentiment_neutral_sharp
                           : Icons.sentiment_dissatisfied_outlined,
                       color: Colors.grey,
                     ),
                     tooltip: loc.dislike,
-                    onPressed: onDislike,
+                    onPressed: widget.onDislike,
                   ),
-                if (onAccounting != null)
+                if (widget.onAccounting != null)
                   IconButton(
                     icon: Icon(Icons.currency_exchange),
                     tooltip: loc.accountRecords,
-                    onPressed: onAccounting,
+                    onPressed: widget.onAccounting,
                   ),
                 // 🗑 Delete（只有 canDelete）
-                if (eventViewModel.canDelete && onDelete != null)
+                if (widget.eventViewModel.canDelete && widget.onDelete != null)
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                     tooltip: loc.delete,
-                    onPressed: onDelete,
+                    onPressed: widget.onDelete,
                   ),
               ],
             ),

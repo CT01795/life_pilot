@@ -128,7 +128,7 @@ class EventItem implements EventBase {
 
   @override
   List<EventItem> get subEvents => _subEvents;
- set subEvents(List<EventItem> itemList) => _subEvents = itemList;
+  set subEvents(List<EventItem> itemList) => _subEvents = itemList;
 
   EventItem({
     String? id,
@@ -146,8 +146,7 @@ class EventItem implements EventBase {
     this.unit = '',
     this.account,
     this.repeatOptions = CalendarRepeatRule.once,
-    this.reminderOptions =
-        const [CalendarReminderOption.dayBefore8am],
+    this.reminderOptions = const [CalendarReminderOption.dayBefore8am],
     this.isHoliday = false,
     this.isTaiwanHoliday = false,
     this.isApproved = false,
@@ -166,7 +165,7 @@ class EventItem implements EventBase {
     this.likeCounts,
     this.dislikeCounts,
     List<EventItem>? subEvents,
-  }) : id = id ?? _uuid.v4(),
+  })  : id = id ?? _uuid.v4(),
         _subEvents = List<EventItem>.from(subEvents ?? []);
 
   // -------------------- JSON --------------------
@@ -213,8 +212,7 @@ class EventItem implements EventBase {
     };
   }
 
-  factory EventItem.fromJson(
-      {required Map<String, dynamic> json}) {
+  factory EventItem.fromJson({required Map<String, dynamic> json}) {
     final subEventsJson = json[EventFields.subEvents];
 
     return EventItem(
@@ -233,9 +231,9 @@ class EventItem implements EventBase {
       unit: json[EventFields.unit] ?? '',
       account: json[EventFields.account],
       repeatOptions:
-        CalendarRepeatRuleExtension.fromKey(json[EventFields.repeatOptions]),
+          CalendarRepeatRuleExtension.fromKey(json[EventFields.repeatOptions]),
       reminderOptions: EventItem.parseReminderOptions(
-        jsonValue: json[EventFields.reminderOptions]),
+          jsonValue: json[EventFields.reminderOptions]),
       isHoliday: json[EventFields.isHoliday] == true,
       isTaiwanHoliday: json[EventFields.isTaiwanHoliday] == true,
       isApproved: json[EventFields.isApproved] == true,
@@ -338,7 +336,7 @@ class EventItem implements EventBase {
       dislikeCounts: newDislikeCounts ?? dislikeCounts,
     );
   }
-  
+
   static List<CalendarReminderOption> parseReminderOptions(
       {dynamic jsonValue}) {
     const defaultOption = [CalendarReminderOption.dayBefore8am];
@@ -437,8 +435,7 @@ class EventViewModel {
   DateTime get firstEventDate {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final tmpDate = DateTimeFormatter.formatDateRange(now, dateRange);
-    return DateTime.tryParse(tmpDate ?? '') ??
-          now.add(const Duration(days: 1));
+    return DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
   }
 
   // ---------------------------------------------------------------------------
@@ -456,9 +453,8 @@ class EventViewModel {
         ? '${event.city}．${event.location}'
         : '';
 
-    String isFree = event.isFree == null
-        ? ''
-        : (event.isFree! ? loc.free : loc.pay);
+    String isFree =
+        event.isFree == null ? '' : (event.isFree! ? loc.free : loc.pay);
     String isOutdoor = event.isOutdoor == null
         ? ''
         : (event.isOutdoor! ? loc.outdoor : loc.indoor);

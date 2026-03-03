@@ -13,19 +13,23 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
 import 'package:life_pilot/utils/service/service_permission.dart';
+import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:uuid/uuid.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ControllerCalendar extends ChangeNotifier {
   ModelCalendar modelCalendar;
-  ServiceEvent serviceEvent;
+  late ServiceEvent _serviceEvent;
   ControllerNotification controllerNotification;
-  ServicePermission servicePermission;
+  late ServiceWeather _serviceWeather;
+  late ServicePermission _servicePermission;
   ControllerAuth? auth;
   ProviderLocale localeProvider;
   String tableName;
@@ -64,14 +68,18 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------------
   ControllerCalendar(
       {required this.modelCalendar,
-      required this.serviceEvent,
+      required ServiceEvent serviceEvent,
       required this.auth,
       required this.controllerNotification,
-      required this.servicePermission,
+      required ServiceWeather serviceWeather,
+      required ServicePermission servicePermission,
       required this.localeProvider,
       required this.tableName,
       required this.toTableName,
       required this.closeText}) {
+    _serviceEvent = serviceEvent;
+    _serviceWeather = serviceWeather;
+    _servicePermission = servicePermission;
     _lastLocale = localeProvider.locale;
 
     localeProvider.addListener(() async {
@@ -108,7 +116,7 @@ class ControllerCalendar extends ChangeNotifier {
     final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now
     final int myToken = ++_reloadToken; // 每次呼叫都生成新的 token
     List<EventItem> result = await modelCalendar.loadEventsFromService(
-      serviceEvent: serviceEvent,
+      serviceEvent: _serviceEvent,
       month: targetMonth,
       auth: auth,
       localeProvider: localeProvider,
@@ -212,7 +220,7 @@ class ControllerCalendar extends ChangeNotifier {
       );
 
       // 儲存新事件 & 安排提醒
-      futures.add(serviceEvent.saveEvent(
+      futures.add(_serviceEvent.saveEvent(
           currentAccount: auth?.currentAccount ?? '',
           event: newEvent,
           isNew: true,
@@ -221,7 +229,7 @@ class ControllerCalendar extends ChangeNotifier {
           .add(controllerNotification.scheduleEventReminders(event: newEvent));
 
       // 更新舊事件的 repeatOption 為 'once'
-      futures.add(serviceEvent.saveEvent(
+      futures.add(_serviceEvent.saveEvent(
         currentAccount: auth?.currentAccount ?? '',
         event: event.copyWith(newRepeatOptions: CalendarRepeatRule.once),
         isNew: false,
@@ -271,7 +279,7 @@ class ControllerCalendar extends ChangeNotifier {
     await Future.wait([
       controllerNotification.cancelEventReminders(
           eventId: event.id, reminderOptions: event.reminderOptions), // 取消通知
-      serviceEvent.deleteEvent(
+      _serviceEvent.deleteEvent(
           currentAccount: auth!.currentAccount ?? '',
           event: event,
           tableName: tableName)
@@ -289,13 +297,13 @@ class ControllerCalendar extends ChangeNotifier {
     required EventItem newEvent,
     bool isNew = true,
   }) async {
-    await serviceEvent.saveEvent(
+    await _serviceEvent.saveEvent(
         currentAccount: auth!.currentAccount ?? '',
         event: newEvent,
         isNew: isNew,
         tableName: tableName);
     if (isNew) {
-      await servicePermission.checkExactAlarmPermission();
+      await _servicePermission.checkExactAlarmPermission();
       await controllerNotification.scheduleEventReminders(event: newEvent);
     } else if (oldEvent != null) {
       await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
@@ -336,7 +344,7 @@ class ControllerCalendar extends ChangeNotifier {
   }) {
     return ControllerPageCalendarAdd(
       auth: auth!,
-      serviceEvent: serviceEvent,
+      serviceEvent: _serviceEvent,
       tableName: tableName,
       existingEvent: existingEvent,
       initialDate: initialDate,
@@ -359,7 +367,7 @@ class ControllerCalendar extends ChangeNotifier {
       await controllerNotification.cancelEventReminders(
           eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
     }
-    await servicePermission.checkExactAlarmPermission();
+    await _servicePermission.checkExactAlarmPermission();
     await controllerNotification.scheduleEventReminders(event: newEvent);
   }
 
@@ -519,15 +527,6 @@ class ControllerCalendar extends ChangeNotifier {
     }
   }
 
-  Future<void> onOpenLink(EventViewModel event) async {
-    await serviceEvent.incrementEventCounter(
-      eventId: event.id,
-      eventName: event.name,
-      column: 'page_views',
-      account: auth?.currentAccount ?? AuthConstants.guest,
-    );
-  }
-
   Future<void> handleCrossMonthTap({
     required DateTime tappedDate,
   }) async {
@@ -545,12 +544,14 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------------
   void clearAll() => modelCalendar.clearAll();
 
-  static bool canDelete(
-      {required String account,
-      required ControllerAuth auth,
-      required tableName}) {
-    return auth.currentAccount == account ||
-        (auth.currentAccount == AuthConstants.sysAdminEmail &&
+  bool canDelete({
+    required String account,
+  }) {
+    if (auth == null) {
+      return false;
+    }
+    return auth!.currentAccount == account ||
+        (auth!.currentAccount == AuthConstants.sysAdminEmail &&
             tableName != TableNames.memoryTrace);
   }
 
@@ -586,5 +587,105 @@ class ControllerCalendar extends ChangeNotifier {
       logger.e('❌ saveSettings error: $e', stackTrace: st);
       return {"error": '❌ error: ${e.toString()}'};
     }
+  }
+
+  // ------------------ controller event card ------------------
+  bool disposed = false;
+
+  final Set<String> _loadingIds = {};
+  final Map<String, List<EventWeather>> _forecastCache = {};
+
+  // ------------------ Public ------------------
+
+  List<EventWeather>? getForecast(String eventId) {
+    return _forecastCache[eventId];
+  }
+
+  // 取得天氣預報（緩存）
+  Future<void> loadWeather(EventViewModel event) async {
+    if (!event.hasLocation) return;
+    if (_forecastCache.containsKey(event.id)) return;
+    if (_loadingIds.contains(event.id)) return;
+
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    if (event.locationDisplay.isEmpty ||
+        (event.startDate != null &&
+            ((today.add(Duration(days: 7))).isBefore(event.startDate!) ||
+                today.isAfter(event.startDate!)))) {
+      return;
+    }
+
+    _loadingIds.add(event.id);
+
+    try {
+      final data = await _serviceWeather.getWeather(
+          locationDisplay: event.locationDisplay, startDate: event.startDate);
+
+      _forecastCache[event.id] = data;
+    } catch (e, st) {
+      logger.e('loadWeather failed for ${event.id}: $e\n$st');
+      _forecastCache[event.id] = [];
+    } finally {
+      _loadingIds.remove(event.id);
+      if (!disposed) notifyListeners();
+    }
+  }
+
+  // 開啟活動連結
+  Future<void> onOpenLink(EventViewModel event) async {
+    if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
+    await _launchUrl(
+      Uri.parse(event.masterUrl!),
+      event,
+      column: 'page_views',
+    );
+  }
+
+  // 開啟地圖導航
+  Future<void> onOpenMap(EventViewModel event) async {
+    if (event.locationDisplay.isEmpty) return;
+    final query = Uri.encodeComponent(event.locationDisplay);
+
+    // Google Maps 網頁導航 URL
+    final googleMapsUrl =
+        Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$query');
+    await _launchUrl(
+      googleMapsUrl,
+      event,
+      column: 'card_clicks',
+    );
+  }
+
+  // ------------------ Private ------------------
+
+  /// 統一處理 URL 開啟與事件計數
+  Future<void> _launchUrl(Uri uri, EventViewModel event,
+      {required String column}) async {
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await _incrementCounter(event, column);
+    } catch (e) {
+      logger.e('Failed to launch URL for ${event.id}: $e');
+    }
+  }
+
+  /// 統一事件計數
+  Future<void> _incrementCounter(EventViewModel event, String column) async {
+    try {
+      await _serviceEvent.incrementEventCounter(
+        eventId: event.id,
+        eventName: event.name,
+        column: column,
+        account: auth!.currentAccount!,
+      );
+    } catch (e) {
+      logger.e('Failed to increment counter for ${event.id} ($column): $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    disposed = true;
+    super.dispose();
   }
 }
