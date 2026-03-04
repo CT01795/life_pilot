@@ -70,16 +70,16 @@ class _PageCalendarState extends State<PageCalendar> {
                   monthColor: isCurrentMonth ? Colors.blueAccent : Colors.black,
                   buttonSize: MediaQuery.of(context).size.shortestSide * 0.1,
                   onPrevious: () async {
+                    await controller.previousMonth();
                     _updatePageController(controller.pageIndex);
-                    Future.microtask(() => controller.previousMonth());
                   },
                   onNext: () async {
+                    await controller.nextMonth();
                     _updatePageController(controller.pageIndex);
-                    Future.microtask(() => controller.nextMonth());
                   },
                   onToday: () async {
+                    await controller.goToToday();
                     _updatePageController(controller.pageIndex);
-                    Future.microtask(() => controller.goToToday());
                   },
                   onAdd: () async {
                     final currentMonth = controller.currentMonth;
@@ -103,8 +103,8 @@ class _PageCalendarState extends State<PageCalendar> {
                     );
 
                     if (newEvent != null) {
+                      await controller.addEvent(newEvent);
                       _updatePageController(controller.pageIndex);
-                      Future.microtask(() => controller.addEvent(newEvent));
                       // 把業務邏輯交給 Controller
                     }
                   },
@@ -132,8 +132,8 @@ class _PageCalendarState extends State<PageCalendar> {
       initialDate: controller.currentMonth,
       onChanged: (newDate) async {
         // 1. 更新 controller 的 currentMonth 並載入該月事件
+        await controller.goToMonth(month: newDate);
         _updatePageController(controller.pageIndex);
-        Future.microtask(() => controller.goToMonth(month: newDate));
       },
     );
   }
