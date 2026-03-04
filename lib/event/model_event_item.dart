@@ -372,6 +372,7 @@ class EventWithRow {
 }
 
 class EventViewModel {
+  final EventItem event;
   final String id;
   final String name;
   final bool showDate;
@@ -402,6 +403,7 @@ class EventViewModel {
   final int? dislikeCounts;
 
   EventViewModel({
+    required this.event,
     required this.id,
     required this.name,
     required this.showDate,
@@ -442,7 +444,7 @@ class EventViewModel {
   // 🧩 UI 資料封裝
   // ---------------------------------------------------------------------------
   static EventViewModel buildEventViewModel({
-    required EventBase event,
+    required EventItem event,
     required String parentLocation,
     required bool canDelete,
     bool showSubEvents = true,
@@ -481,6 +483,7 @@ class EventViewModel {
         .toList();
 
     return EventViewModel(
+      event: event,
       id: event.id,
       name: event.name,
       showDate: tableName != TableNames.recommendedAttractions,

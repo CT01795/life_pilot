@@ -282,6 +282,25 @@ class ControllerEvent extends ChangeNotifier {
     return _tableName != TableNames.recommendedAttractions;
   }
 
+  List<EventViewModel>? _cachedViewModels;
+  List<EventItem>? _lastEvents;
+
+  List<EventViewModel> buildViewModels({
+    required List<EventItem> events,
+    required AppLocalizations loc,
+  }) {
+    if (_cachedViewModels != null && _lastEvents == events) {
+      return _cachedViewModels!;
+    }
+
+    _lastEvents = events;
+
+    _cachedViewModels = events
+        .map((event) => buildViewModel(event: event, loc: loc))
+        .toList();
+    return _cachedViewModels!;
+  }
+
   EventViewModel buildViewModel({
     required EventItem event,
     required AppLocalizations loc,
