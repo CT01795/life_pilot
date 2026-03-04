@@ -19,10 +19,10 @@ class ControllerEvent extends ChangeNotifier {
   final ControllerAuth auth;
   final ServiceEvent _serviceEvent;
   final ServiceWeather _serviceWeather;
-  late final ModelEventCalendar _modelEventCalendar;
-  final String tableName;
-  final String? toTableName;
-  late final ServiceEventTransfer serviceEventTransfer;
+  final ModelEventCalendar _modelEventCalendar;
+  final String _tableName;
+  final String? _toTableName;
+  final ServiceEventTransfer _serviceEventTransfer;
   final Future<void> Function()? onCalendarReload;
 
   ControllerEvent(
@@ -30,18 +30,21 @@ class ControllerEvent extends ChangeNotifier {
       required ServiceEvent serviceEvent,
       required ServiceWeather serviceWeather,
       required ModelEventCalendar modelEventCalendar,
-      required this.tableName,
-      this.toTableName,
-      this.onCalendarReload}):
-      _modelEventCalendar = modelEventCalendar,
-      _serviceEvent = serviceEvent,
-      _serviceWeather = serviceWeather,
-      serviceEventTransfer = ServiceEventTransfer(
-      currentAccount: auth.currentAccount ?? '',
-      serviceEvent: serviceEvent);
-  
+      required String tableName,
+      String? toTableName,
+      this.onCalendarReload})
+      : _tableName = tableName,
+        _toTableName = toTableName,
+        _modelEventCalendar = modelEventCalendar,
+        _serviceEvent = serviceEvent,
+        _serviceWeather = serviceWeather,
+        _serviceEventTransfer = ServiceEventTransfer(
+            currentAccount: auth.currentAccount ?? '',
+            serviceEvent: serviceEvent);
+
   ServiceEvent get serviceEvent => _serviceEvent;
   ServiceWeather get serviceWeather => _serviceWeather;
+  String get fromTableName => _tableName;
 
   bool isEventSelected(String eventId) {
     return _modelEventCalendar.selectedEventIds.contains(eventId);
@@ -52,7 +55,7 @@ class ControllerEvent extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   Future<void> loadEvents() async {
     final list = await _serviceEvent.getEvents(
-      tableName: tableName,
+      tableName: _tableName,
       inputUser: auth.currentAccount,
     );
     _modelEventCalendar.setEvents(list ?? []);
@@ -68,7 +71,7 @@ class ControllerEvent extends ChangeNotifier {
         currentAccount: auth.currentAccount ?? '',
         event: newEvent,
         isNew: isNew,
-        tableName: tableName);
+        tableName: _tableName);
   }
 
   // ✅ 刪除事件，並更新列表與通知 UI
@@ -77,7 +80,7 @@ class ControllerEvent extends ChangeNotifier {
       _serviceEvent.deleteEvent(
           currentAccount: auth.currentAccount ?? '',
           event: event,
-          tableName: tableName)
+          tableName: _tableName)
     ]);
 
     // 移除事件並更新快取
@@ -89,14 +92,14 @@ class ControllerEvent extends ChangeNotifier {
 
   Future<void> approveEvent({required EventItem event}) async {
     event.isApproved = true;
-    await _serviceEvent.approvalEvent(event: event, tableName: tableName);
+    await _serviceEvent.approvalEvent(event: event, tableName: _tableName);
     await loadEvents();
   }
 
   bool canDelete({required String account}) {
     return auth.currentAccount == account ||
         (auth.currentAccount == AuthConstants.sysAdminEmail &&
-            tableName != TableNames.memoryTrace);
+            _tableName != TableNames.memoryTrace);
   }
 
   Future<void> likeEvent(EventItem event) async {
@@ -104,9 +107,9 @@ class ControllerEvent extends ChangeNotifier {
     event.isDislike = event.isLike == true ? false : event.isDislike;
     await _serviceEvent.updateLikeEvent(
         event: event, account: auth.currentAccount!);
-    if (tableName == TableNames.recommendedEvents ||
-        tableName == TableNames.calendarEvents ||
-        tableName == TableNames.memoryTrace) {
+    if (_tableName == TableNames.recommendedEvents ||
+        _tableName == TableNames.calendarEvents ||
+        _tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
       await _serviceEvent.incrementEventCounter(
           eventId: event.id,
@@ -122,9 +125,9 @@ class ControllerEvent extends ChangeNotifier {
     event.isLike = event.isDislike == true ? false : event.isLike;
     await _serviceEvent.updateLikeEvent(
         event: event, account: auth.currentAccount!);
-    if (tableName == TableNames.recommendedEvents ||
-        tableName == TableNames.calendarEvents ||
-        tableName == TableNames.memoryTrace) {
+    if (_tableName == TableNames.recommendedEvents ||
+        _tableName == TableNames.calendarEvents ||
+        _tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
       await _serviceEvent.incrementEventCounter(
           eventId: event.id,
@@ -142,7 +145,7 @@ class ControllerEvent extends ChangeNotifier {
   }) {
     return ControllerPageEventAdd(
       auth: auth,
-      tableName: tableName,
+      tableName: _tableName,
       existingEvent: existingEvent,
       initialDate: initialDate,
     );
@@ -156,7 +159,7 @@ class ControllerEvent extends ChangeNotifier {
     required EventItem? updatedEvent,
   }) async {
     if (updatedEvent == null) return;
-    if (tableName != TableNames.calendarEvents) {
+    if (_tableName != TableNames.calendarEvents) {
       await loadEvents(); // 自動刷新列表
     }
   }
@@ -168,30 +171,28 @@ class ControllerEvent extends ChangeNotifier {
   Future<bool> handleEventCheckboxIsAlreadyAdd(
     EventItem event,
     bool isChecked,
-    String toTableName,
   ) async {
     // 先更新 UI
     toggleEventSelection(event.id, isChecked);
 
-    return await serviceEventTransfer.toggleEventTransferIsAlreadyAdd(
-        event: event, toTableName: toTableName, isChecked: isChecked);
+    return await _serviceEventTransfer.toggleEventTransferIsAlreadyAdd(
+        event: event, toTableName: _toTableName!, isChecked: isChecked);
   }
 
   Future<EventItem?> handleEventCheckboxTransfer(
     bool isChecked,
     bool isAlreadyAdded,
     EventItem event,
-    String toTableName,
   ) async {
-    final targetEvent = await serviceEventTransfer.toggleEventTransfer(
+    final targetEvent = await _serviceEventTransfer.toggleEventTransfer(
       isChecked: isChecked,
       isAlreadyAdded: isAlreadyAdded,
       event: event,
-      fromTableName: tableName,
-      toTableName: toTableName,
+      fromTableName: _tableName,
+      toTableName: _toTableName!,
     );
     _modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
-    if (targetEvent != null && toTableName == TableNames.calendarEvents) {
+    if (targetEvent != null && _toTableName == TableNames.calendarEvents) {
       // 🔹 呼叫 function 更新資料庫
       await _serviceEvent.incrementEventCounter(
           eventId: event.id,
@@ -207,16 +208,15 @@ class ControllerEvent extends ChangeNotifier {
 
   String buildTransferMessage({
     required bool isAlreadyAdded,
-    required String fromTableName,
     required EventItem event,
     required AppLocalizations loc,
   }) {
     if (isAlreadyAdded) {
-      return fromTableName == TableNames.calendarEvents
+      return _tableName == TableNames.calendarEvents
           ? loc.memoryAddError
           : loc.eventAddError;
     } else {
-      return '${fromTableName == TableNames.calendarEvents ? loc.memoryAdd : loc.eventAdd}「${event.name}」？';
+      return '${_tableName == TableNames.calendarEvents ? loc.memoryAdd : loc.eventAdd}「${event.name}」？';
     }
   }
 
@@ -279,12 +279,11 @@ class ControllerEvent extends ChangeNotifier {
 
   // 判斷日期是否要顯示
   bool showDate() {
-    return tableName != TableNames.recommendedAttractions;
+    return _tableName != TableNames.recommendedAttractions;
   }
 
   EventViewModel buildViewModel({
     required EventItem event,
-    required String tableName,
     required AppLocalizations loc,
   }) {
     EventViewModel tmp = EventViewModel.buildEventViewModel(
@@ -295,7 +294,7 @@ class ControllerEvent extends ChangeNotifier {
       ),
       showSubEvents: true,
       loc: loc,
-      tableName: tableName,
+      tableName: _tableName,
     );
 
     return tmp;

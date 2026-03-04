@@ -19,19 +19,21 @@ import 'package:excel/excel.dart';
 class ControllerAppBarActions extends ChangeNotifier {
   final ControllerAuth auth;
   final ServiceEvent _serviceEvent;
-  final ModelEventCalendar modelEventCalendar;
+  final ModelEventCalendar _modelEventCalendar;
   final ServiceExportPlatform _exportService;
   final ServiceExportExcel _excelService;
-  final String tableName;
+  final String _tableName;
 
   ControllerAppBarActions({
     required this.auth,
     required ServiceEvent serviceEvent,
-    required this.modelEventCalendar,
+    required ModelEventCalendar modelEventCalendar,
     required ServiceExportPlatform exportService,
     required ServiceExportExcel excelService,
-    required this.tableName,
-  })  : _serviceEvent = serviceEvent,
+    required String tableName,
+  })  : _tableName = tableName,
+        _serviceEvent = serviceEvent,
+        _modelEventCalendar = modelEventCalendar,
         _excelService = excelService,
         _exportService = exportService;
 
@@ -57,7 +59,7 @@ class ControllerAppBarActions extends ChangeNotifier {
 
   // ✅ 切換搜尋面板顯示/隱藏
   void toggleSearchPanel() {
-    modelEventCalendar.toggleSearchPanel(!modelEventCalendar.showSearchPanel);
+    _modelEventCalendar.toggleSearchPanel(!_modelEventCalendar.showSearchPanel);
     _notifyDebounced();
   }
 
@@ -68,10 +70,10 @@ class ControllerAppBarActions extends ChangeNotifier {
 
     try {
       final list = await _serviceEvent.getEvents(
-        tableName: tableName,
+        tableName: _tableName,
         inputUser: auth.currentAccount,
       );
-      modelEventCalendar.setEvents(list ?? []);
+      _modelEventCalendar.setEvents(list ?? []);
 
       logger.i('✅ Events refreshed successfully');
       return true;
@@ -133,12 +135,12 @@ class ControllerAppBarActions extends ChangeNotifier {
         if (!event.name.startsWith("  └")) {
           tmpMaster = event;
           eventList = await _serviceEvent.getEvents(
-              tableName: tableName, id: event.id.isNotEmpty ? event.id : null);
+              tableName: _tableName, id: event.id.isNotEmpty ? event.id : null);
           await _serviceEvent.saveEvent(
               currentAccount: auth.currentAccount ?? '',
               event: event,
               isNew: eventList == null || eventList.isEmpty,
-              tableName: tableName);
+              tableName: _tableName);
         } else {
           event.name = event.name.replaceAll("  └ ", "");
           event.id = event.id.isNotEmpty ? event.id : Uuid().v4();
@@ -147,7 +149,7 @@ class ControllerAppBarActions extends ChangeNotifier {
               currentAccount: auth.currentAccount ?? '',
               event: tmpMaster,
               isNew: false,
-              tableName: tableName);
+              tableName: _tableName);
         }
       }
       await refreshEvents();
@@ -166,7 +168,7 @@ class ControllerAppBarActions extends ChangeNotifier {
     _setState(exporting: true);
     try {
       final events = await _serviceEvent
-          .getEvents(tableName: tableName, inputUser: auth.currentAccount);
+          .getEvents(tableName: _tableName, inputUser: auth.currentAccount);
       if (events == null || events.isEmpty) {
         return loc.noEventsToExport;
       }

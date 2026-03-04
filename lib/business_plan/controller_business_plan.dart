@@ -8,15 +8,15 @@ import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerBusinessPlan extends ChangeNotifier {
-  final ServiceBusinessPlan service;
+  final ServiceBusinessPlan _service;
   ControllerAuth? auth;
   bool hasLoadedOnce = false;
   final Map<String, ModelBusinessPlan> _planCache = {};
 
   ControllerBusinessPlan({
-    required this.service,
+    required ServiceBusinessPlan service,
     required this.auth,
-  });
+  }): _service = service;
 
   String? currentPlanId;
   ModelBusinessPlan? currentPlan;
@@ -124,7 +124,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
   Future<void> loadTemplates() async {
     isTemplateLoading = true;
     notifyListeners();
-    templates = await service.fetchTemplates();
+    templates = await _service.fetchTemplates();
     isTemplateLoading = false;
     notifyListeners();
   }
@@ -133,7 +133,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     isPlansLoading = true;
     notifyListeners();
     try {
-      plans = await service.fetchPlans(
+      plans = await _service.fetchPlans(
           user: auth?.currentAccount ?? AuthConstants.guest);
     } catch (e, stack) {
       debugPrint('loadPlans error: $e');
@@ -171,12 +171,12 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
       // 2️⃣ 先抓第一個 section
       final firstSections =
-          await service.fetchSectionsWithQuestions(planId, limit: 1);
+          await _service.fetchSectionsWithQuestions(planId, limit: 1);
       currentPlan = currentPlan!.copyWith(sections: firstSections);
       notifyListeners();
 
       // 3️⃣ 背景抓剩下的 sections
-      await service.fetchSectionsWithQuestions(planId, limit: null)
+      await _service.fetchSectionsWithQuestions(planId, limit: null)
         .then((restSections) {
         final allSections = [...restSections];
         currentPlan = currentPlan!.copyWith(sections: allSections);
@@ -204,7 +204,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
   }) async {
     final planId = const Uuid().v4();
     // 1️⃣ 先建立 plan + section + question
-    await service.createPlanFromTemplate(
+    await _service.createPlanFromTemplate(
       user: auth?.currentAccount ?? AuthConstants.guest,
       planId: planId,
       title: title,
@@ -212,7 +212,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     );
 
     // 2️⃣ 拉剛建立的 sections（帶題目）
-    final sections = await service.fetchSectionsWithQuestions(planId, limit: null);
+    final sections = await _service.fetchSectionsWithQuestions(planId, limit: null);
 
     currentPlan = ModelBusinessPlan(
       id: planId, // 使用剛建立的 planId
@@ -247,7 +247,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
 
     // 2️⃣ 再存 DB
     try {
-      await service.updatePlanTitle(
+      await _service.updatePlanTitle(
         planId: oldPlan.id,
         title: newTitle,
       );
@@ -282,7 +282,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
     _planCache[currentPlan!.id] = currentPlan!;
 
     try {
-      await service.upsertAnswer(
+      await _service.upsertAnswer(
         planId: currentPlan!.id,
         sectionId: section.id,
         questionId: question.id,

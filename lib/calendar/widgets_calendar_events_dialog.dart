@@ -111,12 +111,8 @@ class CalendarEventsDialog extends StatelessWidget {
                         controllerCalendar.onOpenLink(eventViewModel),
                     trailing: widgetsCalendarTrailing(
                       context: context,
-                      auth: auth,
                       controllerCalendar: controllerCalendar,
                       event: event,
-                      tableName: controllerCalendar.tableName,
-                      toTableName:
-                          TableNames.memoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
                     ),
                   );
                 }),

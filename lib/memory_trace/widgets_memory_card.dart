@@ -7,9 +7,9 @@ import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
-import 'package:provider/provider.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -22,6 +22,7 @@ class WidgetsMemoryCard extends StatelessWidget {
 
   const WidgetsMemoryCard({
     super.key,
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -36,6 +37,7 @@ class WidgetsMemoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WidgetsMemoryCardBody(
+      controllerEvent: controllerEvent,
       eventViewModel: eventViewModel,
       tableName: tableName,
       onTap: onTap,
@@ -89,6 +91,7 @@ class WidgetsMemoryCard extends StatelessWidget {
 }
 
 class _WidgetsMemoryCardBody extends StatefulWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -100,6 +103,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
   final bool showSubEvents;
 
   const _WidgetsMemoryCardBody({
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -126,18 +130,16 @@ class _WidgetsMemoryCardBodyState
     super.didChangeDependencies();
 
     if (!_weatherLoaded) {
-      final ctrl = context.read<ControllerEvent>();
-      ctrl.loadWeather(widget.eventViewModel, widget.tableName);
+      widget.controllerEvent.loadWeather(widget.eventViewModel, widget.tableName);
       _weatherLoaded = true;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = context.watch<ControllerEvent>();
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.firstEventDate;
-    final forecast = ctrl.getForecast(widget.eventViewModel.id);
+    final forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id);
     final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
     final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;

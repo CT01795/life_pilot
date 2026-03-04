@@ -15,9 +15,7 @@ Future<void> onEditPressed({
     context,
     MaterialPageRoute(
       builder: (_) => PageEventAdd(
-        auth: controller.auth,
         controllerEvent: controller,
-        tableName: controller.tableName,
         existingEvent: event.copyWith(),
       ),
     ),
@@ -65,7 +63,6 @@ Future<void> onMemoryCheckboxChanged({
   required ControllerEvent controller,
   required bool? value,
   required EventItem event,
-  required String toTableName,
   required AppLocalizations loc,
 }) async {
   final tmpValue = value ?? false;
@@ -78,22 +75,20 @@ Future<void> onMemoryCheckboxChanged({
 
   // 判斷是否已經存在
   final isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
-      event, tmpValue, toTableName);
+      event, tmpValue);
 
   // 顯示確認對話框
   final shouldTransfer = await confirmEventTransfer(
     context: context,
     event: event,
     controller: controller,
-    fromTableName: controller.tableName,
-    toTableName: toTableName,
     loc: loc,
     isAlreadyAdded: isAlreadyAdded,
   );
 
   if (shouldTransfer ?? false) {
     await controller.handleEventCheckboxTransfer(
-        tmpValue, isAlreadyAdded, event, toTableName);
+        tmpValue, isAlreadyAdded, event);
     AppNavigator.showSnackBar(loc.eventAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);

@@ -16,9 +16,6 @@ import 'widgets_event_list.dart';
 class PageRecommendedAttractions extends StatefulWidget {
   const PageRecommendedAttractions({super.key});
 
-  static const String _tableName = TableNames.recommendedAttractions;
-  static const String _toTableName = TableNames.calendarEvents;
-
   @override
   State<PageRecommendedAttractions> createState() =>
       _PageRecommendedAttractionsState();
@@ -38,8 +35,8 @@ class _PageRecommendedAttractionsState
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
       serviceWeather: context.read<ServiceWeather>(),
-      tableName: PageRecommendedAttractions._tableName,
-      toTableName: PageRecommendedAttractions._toTableName,
+      tableName: TableNames.recommendedAttractions,
+      toTableName: TableNames.calendarEvents,
       modelEventCalendar: _modelEventCalendar,
     );
   }
@@ -62,8 +59,6 @@ class _PageRecommendedAttractionsState
           controllerEvent: _controllerEvent,
           modelEventCalendar: _modelEventCalendar,
           title: loc.recommendedAttractions,
-          tableName: PageRecommendedAttractions._tableName,
-          toTableName: PageRecommendedAttractions._toTableName,
           emptyText: loc.recommendedAttractionsZero,
           searchPanelBuilder: widgetsSearchPanel,
           listBuilder: ({
@@ -71,12 +66,9 @@ class _PageRecommendedAttractionsState
             required ScrollController scrollController,
           }) {
             return WidgetsEventList(
-                tableName: PageRecommendedAttractions._tableName,
-                toTableName: PageRecommendedAttractions._toTableName,
                 filteredEvents: filteredEvents,
                 scrollController: scrollController,
                 controllerEvent: _controllerEvent,
-                modelEventCalendar: _modelEventCalendar,
                 auth: auth);
           },
         ));

@@ -83,7 +83,6 @@ class _PageCalendarState extends State<PageCalendar> {
                   },
                   onAdd: () async {
                     final currentMonth = controller.currentMonth;
-                    final tableName = controller.tableName;
                     final now = DateTime.now();
 
                     // Navigator 與 UI 都在 View 處理
@@ -91,10 +90,8 @@ class _PageCalendarState extends State<PageCalendar> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => PageCalendarAdd(
-                          auth: auth,
                           controllerCalendar: controller,
                           existingEvent: null,
-                          tableName: tableName,
                           initialDate: currentMonth.month == now.month
                               ? now
                               : currentMonth,

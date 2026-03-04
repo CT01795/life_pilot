@@ -21,34 +21,29 @@ typedef EventListBuilder = Widget Function({
 typedef SearchPanelBuilder = Widget Function({
   required ModelEventCalendar modelEventCalendar,
   required ControllerEvent controllerEvent,
-  required String tableName,
   required AppLocalizations loc,
   required BuildContext context,
 });
 
 class GenericEventPage extends StatefulWidget {
   final ControllerEvent controllerEvent;
-  final ModelEventCalendar modelEventCalendar;
+  final ModelEventCalendar _modelEventCalendar;
   final String title;
   final String emptyText;
   final ControllerAuth auth;
-  final String tableName;
-  final String? toTableName;
   final EventListBuilder listBuilder;
   final SearchPanelBuilder? searchPanelBuilder;
 
   const GenericEventPage({
     super.key,
     required this.controllerEvent,
-    required this.modelEventCalendar,
+    required ModelEventCalendar modelEventCalendar,
     required this.title,
     required this.emptyText,
     required this.auth,
-    required this.tableName,
-    this.toTableName,
     required this.listBuilder,
     this.searchPanelBuilder,
-  });
+  }): _modelEventCalendar = modelEventCalendar;
 
   @override
   State<GenericEventPage> createState() => _GenericEventPageState();
@@ -58,7 +53,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
 
   ControllerEvent get _controller => widget.controllerEvent;
-  ModelEventCalendar get _model => widget.modelEventCalendar;
+  ModelEventCalendar get _model => widget._modelEventCalendar;
 
   late final ControllerAppBarActions _appBarHandler;
 
@@ -67,11 +62,11 @@ class _GenericEventPageState extends State<GenericEventPage> {
     super.initState();
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
-      modelEventCalendar: widget.modelEventCalendar, // 使用頁面同一個 model
+      modelEventCalendar: widget._modelEventCalendar, // 使用頁面同一個 model
       serviceEvent: widget.controllerEvent.serviceEvent,       // 使用頁面同一個 controller
       exportService: context.read<ServiceExportPlatform>(),
       excelService: context.read<ServiceExportExcel>(),
-      tableName: widget.tableName,
+      tableName: widget.controllerEvent.fromTableName,
     );
 
     // ✅ 只在第一次建立時執行
@@ -100,9 +95,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
     final newEvent = await Navigator.of(context).push<EventItem?>(
       MaterialPageRoute(
         builder: (_) => PageEventAdd(
-          auth: widget.auth,
           controllerEvent: _controller,
-          tableName: widget.tableName,
         ),
       ),
     );
@@ -120,7 +113,6 @@ class _GenericEventPageState extends State<GenericEventPage> {
     return widget.searchPanelBuilder!(
       modelEventCalendar: _model,
       controllerEvent: _controller,
-      tableName: widget.tableName,
       loc: loc,
       context: context,
     );
@@ -151,7 +143,6 @@ class _GenericEventPageState extends State<GenericEventPage> {
           enableUpload: widget.auth.currentAccount == AuthConstants.sysAdminEmail,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
-          tableName: widget.tableName,
           loc: loc),
       body: AnimatedBuilder(
         animation: Listenable.merge([_controller, _appBarHandler]),

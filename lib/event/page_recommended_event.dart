@@ -16,9 +16,6 @@ import 'widgets_event_list.dart';
 class PageRecommendedEvent extends StatefulWidget {
   const PageRecommendedEvent({super.key});
 
-  static const String _tableName = TableNames.recommendedEvents;
-  static const String _toTableName = TableNames.calendarEvents;
-
   @override
   State<PageRecommendedEvent> createState() => _PageRecommendedEventState();
 }
@@ -37,8 +34,8 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
       serviceWeather: context.read<ServiceWeather>(),
-      tableName: PageRecommendedEvent._tableName,
-      toTableName: PageRecommendedEvent._toTableName,
+      tableName: TableNames.recommendedEvents,
+      toTableName: TableNames.calendarEvents,
       modelEventCalendar: _modelEventCalendar,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -65,8 +62,6 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
           controllerEvent: _controllerEvent,
           modelEventCalendar: _modelEventCalendar,
           title: loc.recommendedEvent,
-          tableName: PageRecommendedEvent._tableName,
-          toTableName: PageRecommendedEvent._toTableName,
           emptyText: loc.recommendedEventZero,
           searchPanelBuilder: widgetsSearchPanel,
           listBuilder: ({
@@ -74,12 +69,9 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
             required ScrollController scrollController,
           }) {
             return WidgetsEventList(
-                tableName: PageRecommendedEvent._tableName,
-                toTableName: PageRecommendedEvent._toTableName,
                 filteredEvents: filteredEvents,
                 scrollController: scrollController,
                 controllerEvent: _controllerEvent,
-                modelEventCalendar: _modelEventCalendar,
                 auth: auth);
           },
         ));

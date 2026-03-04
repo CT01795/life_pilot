@@ -185,13 +185,9 @@ void main() async {
               notification, locale, controller) {
             controller ??= context.read<ControllerCalendar>();
             // ✅ 更新 controller 裡的依賴，而不是 new 一個
-            controller
-              ..auth = auth
-              ..controllerNotification = notification
-              ..localeProvider = locale;
+            controller.auth = auth;
             // ✅ 更新 closeText
-            controller
-                .updateLocalization(lookupAppLocalizations(locale.locale));
+            controller.updateLocalization(lookupAppLocalizations(locale.locale));
 
             return controller;
           },
