@@ -42,11 +42,6 @@ class ControllerAccountingDetail extends ChangeNotifier {
   }
 
   Future<void> _calculateTotals({String? inputAccountId}) async {
-    if (todayRecords.isNotEmpty) {
-      _currentCurrency = todayRecords.last.currency;
-      currentExchangeRate = todayRecords.last.exchangeRate;
-    }
-
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
