@@ -315,9 +315,19 @@ class _WidgetsMemoryCardBodyState
                 onTap: widget.onOpenLink),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
-          if (widget.showSubEvents)
-            ...widget.eventViewModel.subEvents
-                .map((sub) => WidgetsMemorySubCard(event: sub, onOpenLink: widget.onOpenLink,)),
+          if (widget.showSubEvents && widget.eventViewModel.subEvents.isNotEmpty)
+            ListView.builder(
+              shrinkWrap: true,          // 讓 ListView 自動高度
+              physics: const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
+              itemCount: widget.eventViewModel.subEvents.length,
+              itemBuilder: (context, index) {
+                final sub = widget.eventViewModel.subEvents[index];
+                return WidgetsMemorySubCard(
+                  event: sub,
+                  onOpenLink: widget.onOpenLink,
+                );
+              },
+            ),
         ],
       ),
     );

@@ -27,20 +27,18 @@ class WidgetsMemoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final viewModels =
+        controllerEvent.buildViewModels(events: filteredEvents, loc: loc);
 
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
-      itemCount: filteredEvents.length,
+      itemCount: viewModels.length,
       itemBuilder: (context, index) {
-        final event = filteredEvents[index];
-        EventViewModel eventViewModel = controllerEvent.buildViewModel(
-          event: event,
-          loc: loc,
-        );
+        EventViewModel eventViewModel = viewModels[index];
 
         return WidgetsMemoryCard(
-          key: ValueKey(event.id),
+          key: ValueKey(eventViewModel.id),
           controllerEvent: controllerEvent,
           eventViewModel: eventViewModel,
           tableName: controllerEvent.fromTableName,
@@ -53,7 +51,7 @@ class WidgetsMemoryList extends StatelessWidget {
                   await onDeletePressed(
                     context: context,
                     controller: controllerEvent,
-                    event: event,
+                    event: eventViewModel.event,
                     loc: loc,
                   );
                 }
@@ -61,7 +59,7 @@ class WidgetsMemoryList extends StatelessWidget {
           onAccounting: () =>
               context.read<ControllerAccountingList>().handleAccounting(
                     context: context,
-                    eventId: event.id,
+                    eventId: eventViewModel.id,
                   ),
           onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
           onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
@@ -69,7 +67,7 @@ class WidgetsMemoryList extends StatelessWidget {
             context: context,
             auth: auth,
             controllerEvent: controllerEvent,
-            event: event,
+            event: eventViewModel.event,
           ),
           showSubEvents: false,
         );
