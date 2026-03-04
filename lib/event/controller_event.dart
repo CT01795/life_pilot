@@ -19,7 +19,7 @@ class ControllerEvent extends ChangeNotifier {
   final ControllerAuth auth;
   final ServiceEvent _serviceEvent;
   final ServiceWeather _serviceWeather;
-  final ModelEventCalendar modelEventCalendar;
+  late final ModelEventCalendar _modelEventCalendar;
   final String tableName;
   final String? toTableName;
   late final ServiceEventTransfer serviceEventTransfer;
@@ -29,10 +29,11 @@ class ControllerEvent extends ChangeNotifier {
       {required this.auth,
       required ServiceEvent serviceEvent,
       required ServiceWeather serviceWeather,
-      required this.modelEventCalendar,
+      required ModelEventCalendar modelEventCalendar,
       required this.tableName,
       this.toTableName,
       this.onCalendarReload}):
+      _modelEventCalendar = modelEventCalendar,
       _serviceEvent = serviceEvent,
       _serviceWeather = serviceWeather,
       serviceEventTransfer = ServiceEventTransfer(
@@ -42,6 +43,10 @@ class ControllerEvent extends ChangeNotifier {
   ServiceEvent get serviceEvent => _serviceEvent;
   ServiceWeather get serviceWeather => _serviceWeather;
 
+  bool isEventSelected(String eventId) {
+    return _modelEventCalendar.selectedEventIds.contains(eventId);
+  }
+
   // ---------------------------------------------------------------------------
   // 📦 CRUD 操作
   // ---------------------------------------------------------------------------
@@ -50,7 +55,7 @@ class ControllerEvent extends ChangeNotifier {
       tableName: tableName,
       inputUser: auth.currentAccount,
     );
-    modelEventCalendar.setEvents(list ?? []);
+    _modelEventCalendar.setEvents(list ?? []);
     notifyListeners();
   }
 
@@ -76,7 +81,7 @@ class ControllerEvent extends ChangeNotifier {
     ]);
 
     // 移除事件並更新快取
-    modelEventCalendar
+    _modelEventCalendar
       ..removeEvent(event)
       ..markRemoved(event.id);
     notifyListeners();
@@ -185,7 +190,7 @@ class ControllerEvent extends ChangeNotifier {
       fromTableName: tableName,
       toTableName: toTableName,
     );
-    modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
+    _modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
     if (targetEvent != null && toTableName == TableNames.calendarEvents) {
       // 🔹 呼叫 function 更新資料庫
       await _serviceEvent.incrementEventCounter(
@@ -219,22 +224,22 @@ class ControllerEvent extends ChangeNotifier {
   // 🔍 搜尋與篩選控制
   // ---------------------------------------------------------------------------
   void toggleEventSelection(String eventId, bool isSelected) {
-    modelEventCalendar.toggleEventSelection(eventId, isSelected);
+    _modelEventCalendar.toggleEventSelection(eventId, isSelected);
     notifyListeners();
   }
 
   void toggleSearchPanel(bool value) {
-    modelEventCalendar.toggleSearchPanel(value);
+    _modelEventCalendar.toggleSearchPanel(value);
     notifyListeners();
   }
 
   void updateKeywords(
     String? keywords,
   ) {
-    modelEventCalendar.updateSearchKeywords(keywords);
+    _modelEventCalendar.updateSearchKeywords(keywords);
 
-    final controller = modelEventCalendar.searchController;
-    final filter = modelEventCalendar.searchFilter;
+    final controller = _modelEventCalendar.searchController;
+    final filter = _modelEventCalendar.searchFilter;
 
     if (keywords == null || keywords.isEmpty) {
       filter.tags.clear();
@@ -261,14 +266,14 @@ class ControllerEvent extends ChangeNotifier {
   void updateStartDate(
     DateTime? startDate,
   ) {
-    modelEventCalendar.updateStartDate(startDate);
+    _modelEventCalendar.updateStartDate(startDate);
     notifyListeners();
   }
 
   void updateEndDate(
     DateTime? endDate,
   ) {
-    modelEventCalendar.updateEndDate(endDate);
+    _modelEventCalendar.updateEndDate(endDate);
     notifyListeners();
   }
 
