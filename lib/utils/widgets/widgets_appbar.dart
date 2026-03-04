@@ -7,7 +7,6 @@ AppBar widgetsWhiteAppBar({
   required String title,
   required ControllerAppBarActions handler,
   required AppLocalizations loc,
-  required String tableName,
   VoidCallback? onAdd,
   bool enableSearchAndExport = false,
   required bool enableUpload,

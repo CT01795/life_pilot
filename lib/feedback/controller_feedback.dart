@@ -10,10 +10,10 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 
 class ControllerFeedback extends ChangeNotifier {
-  final ServiceFeedback service;
+  final ServiceFeedback _service;
   final ControllerAuth auth;
 
-  ControllerFeedback(this.service, this.auth);
+  ControllerFeedback(ServiceFeedback service, this.auth): _service = service;
 
   String subject = '';
   String content = '';
@@ -55,7 +55,7 @@ class ControllerFeedback extends ChangeNotifier {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
-      await service.sendFeedback(
+      await _service.sendFeedback(
         account: auth.currentAccount ?? AuthConstants.guest,
         subject: subject,
         content: content,

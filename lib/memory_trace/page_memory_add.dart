@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -12,17 +11,13 @@ import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class PageMemoryAdd extends StatefulWidget {
-  final ControllerAuth auth;
   final ControllerEvent controllerEvent;
-  final String tableName;
   final EventItem? existingEvent;
   final DateTime? initialDate;
 
   const PageMemoryAdd({
     super.key,
-    required this.auth,
     required this.controllerEvent,
-    required this.tableName,
     this.existingEvent,
     this.initialDate,
   });

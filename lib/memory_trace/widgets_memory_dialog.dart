@@ -26,6 +26,7 @@ class WidgetsMemoryDialog extends StatelessWidget {
         children: [
           SingleChildScrollView(
             child: WidgetsMemoryCard(
+              controllerEvent: controllerEvent,
               eventViewModel: eventViewModel,
               tableName: tableName,
               onTap: () => Navigator.pop(context),

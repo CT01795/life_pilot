@@ -11,13 +11,13 @@ import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
 
 class ControllerAccountingList extends ChangeNotifier {
-  final ServiceAccounting service;
+  final ServiceAccounting _service;
   ControllerAuth? auth;
 
   ControllerAccountingList({
-    required this.service,
+    required ServiceAccounting service,
     required this.auth,
-  });
+  }): _service = service;
 
   bool isLoading = false;
   List<ModelAccountingAccount> accounts = [];
@@ -26,7 +26,7 @@ class ControllerAccountingList extends ChangeNotifier {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
-    accounts = await service.fetchAccounts(
+    accounts = await _service.fetchAccounts(
         user: auth?.currentAccount ?? '',
         category: inputCategory ?? category);
     isLoading = false;
@@ -52,7 +52,7 @@ class ControllerAccountingList extends ChangeNotifier {
       return;
     }
     if (accounts.isEmpty || mainCurrency == null || mainCurrency!.isEmpty) {
-      mainCurrency = await service.fetchLatestAccount(
+      mainCurrency = await _service.fetchLatestAccount(
           user: auth?.currentAccount ?? '', category: category);
       notifyListeners();
       return;
@@ -88,10 +88,10 @@ class ControllerAccountingList extends ChangeNotifier {
   Future<ModelAccountingAccount> createAccount(
       {required String name, String? eventId}) async {
     if (mainCurrency == null || mainCurrency!.isEmpty) {
-      mainCurrency = await service.fetchLatestAccount(
+      mainCurrency = await _service.fetchLatestAccount(
           user: auth?.currentAccount ?? '', category: category);
     }
-    final modelAccountingAccount = await service.createAccount(
+    final modelAccountingAccount = await _service.createAccount(
         name: name,
         user: auth?.currentAccount ?? '',
         currency: mainCurrency,
@@ -103,7 +103,7 @@ class ControllerAccountingList extends ChangeNotifier {
   }
 
   Future<void> deleteAccount({required String accountId}) async {
-    await service.deleteAccount(accountId: accountId);
+    await _service.deleteAccount(accountId: accountId);
     await loadAccounts();
   }
 
@@ -112,7 +112,7 @@ class ControllerAccountingList extends ChangeNotifier {
 
     // 上傳圖片給後端，後端返回可訪問 URL
     final newImage =
-        await service.uploadAccountImageBytesDirect(accountId, bytes);
+        await _service.uploadAccountImageBytesDirect(accountId, bytes);
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
@@ -132,7 +132,7 @@ class ControllerAccountingList extends ChangeNotifier {
   Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId}) async {
     // 或者直接從 Supabase 查詢
-    return await service.findAccountByEventId(
+    return await _service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',
     );
@@ -161,7 +161,7 @@ class ControllerAccountingList extends ChangeNotifier {
     required String accountId,
     required String currency,
   }) async {
-    await service.switchMainCurrency(
+    await _service.switchMainCurrency(
       accountId: accountId,
       currency: currency,
     );

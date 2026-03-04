@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -8,11 +7,8 @@ import 'package:provider/provider.dart';
 
 Widget widgetsCalendarTrailing({
   required BuildContext context,
-  required ControllerAuth auth,
   required ControllerCalendar controllerCalendar,
   required EventItem event,
-  required String tableName,
-  required String toTableName,
 }) {
   AppLocalizations loc = AppLocalizations.of(context)!;
   return Transform.scale(
@@ -20,14 +16,14 @@ Widget widgetsCalendarTrailing({
     child: Row(
       mainAxisSize: MainAxisSize.min, // 避免 unbounded 爆錯
       children: [
-        if (!auth.isAnonymous)
+        if (controllerCalendar.auth !=  null && !controllerCalendar.auth!.isAnonymous)
           Selector<ControllerCalendar, bool>(
             selector: (_, controller) => controller.isEventSelected(event.id),
             builder: (_, isSelected, __) {
               return Checkbox(
                 value: isSelected,
                 onChanged: (value) => onMemoryCheckboxChanged(
-                  context: context, controller: controllerCalendar, value: value, event: event, toTableName: toTableName, loc: loc),
+                  context: context, controller: controllerCalendar, value: value, event: event, loc: loc),
               );
             },
           ),
@@ -55,7 +51,7 @@ Widget widgetsCalendarTrailing({
               //Navigator.pop(context); // ✅ 最後關閉 dialog
             },
           ),
-        if (auth.currentAccount == event.account)
+        if (controllerCalendar.auth !=  null && controllerCalendar.auth!.currentAccount == event.account)
           IconButton(
               icon: const Icon(Icons.edit),
               tooltip: loc.edit,

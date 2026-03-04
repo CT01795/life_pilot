@@ -17,9 +17,6 @@ import '../utils/widgets/widgets_search_panel.dart';
 class PageMemoryTrace extends StatefulWidget {
   const PageMemoryTrace({super.key});
 
-  static const String _tableName = TableNames.memoryTrace;
-  static const String _toTableName = '';
-
  @override
   State<PageMemoryTrace> createState() => _PageMemoryTraceState();
 }
@@ -42,8 +39,8 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
       serviceWeather: context.read<ServiceWeather>(),
-      tableName: PageMemoryTrace._tableName,
-      toTableName: PageMemoryTrace._toTableName,
+      tableName: TableNames.memoryTrace,
+      toTableName: '',
       modelEventCalendar: _modelEventCalendar,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -92,8 +89,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
         controllerEvent: _controllerEvent,
         modelEventCalendar: _modelEventCalendar,
         title: loc.memoryTrace,
-        tableName: PageMemoryTrace._tableName,
-        toTableName: PageMemoryTrace._toTableName,
         emptyText: loc.memoryTraceZero,
         searchPanelBuilder: widgetsSearchPanel,
         listBuilder: ({
@@ -101,12 +96,9 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
           required ScrollController scrollController,
         }) {
           return WidgetsMemoryList(
-              tableName: PageMemoryTrace._tableName,
-              toTableName: PageMemoryTrace._toTableName,
               filteredEvents: filteredEvents,
               scrollController: scrollController,
               controllerEvent: _controllerEvent,
-              modelEventCalendar: _modelEventCalendar,
               auth: auth);
         },
       ),

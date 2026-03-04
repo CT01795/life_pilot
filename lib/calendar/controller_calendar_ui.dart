@@ -20,10 +20,8 @@ Future<void> onAddEventPressed({
     context,
     MaterialPageRoute(
       builder: (_) => PageCalendarAdd(
-        auth: controller.auth!,
         controllerCalendar: controller,
         existingEvent: null,
-        tableName: controller.tableName,
         initialDate: date,
       ),
     ),
@@ -44,9 +42,7 @@ Future<void> onEditPressed({
     context,
     MaterialPageRoute(
       builder: (_) => PageCalendarAdd(
-        auth: controller.auth!,
         controllerCalendar: controller,
-        tableName: controller.tableName,
         existingEvent: event.copyWith(),
       ),
     ),
@@ -90,7 +86,6 @@ Future<void> onMemoryCheckboxChanged({
   required ControllerCalendar controller,
   required bool? value,
   required EventItem event,
-  required String toTableName,
   required AppLocalizations loc,
 }) async {
   final tmpValue = value ?? false;
@@ -103,22 +98,20 @@ Future<void> onMemoryCheckboxChanged({
 
   // 判斷是否已經存在
   final isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
-      event, tmpValue, toTableName);
+      event, tmpValue);
 
   // 顯示確認對話框
-  final shouldTransfer = await confirmEventTransfer(
+  final shouldTransfer = await confirmCalenderEventTransfer(
     context: context,
     event: event,
     controller: controller,
-    fromTableName: controller.tableName,
-    toTableName: toTableName,
     loc: loc,
     isAlreadyAdded: isAlreadyAdded,
   );
 
   if (shouldTransfer ?? false) {
     await controller.handleEventCheckboxTransfer(
-        tmpValue, isAlreadyAdded, event, toTableName);
+        tmpValue, isAlreadyAdded, event);
     AppNavigator.showSnackBar(loc.memoryAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);
@@ -277,10 +270,8 @@ Future<void> openDayDialog(
       context,
       MaterialPageRoute(
         builder: (_) => PageCalendarAdd(
-          auth: controller.auth!,
           controllerCalendar: controller,
           existingEvent: null,
-          tableName: controller.tableName,
           initialDate: date,
         ),
       ),

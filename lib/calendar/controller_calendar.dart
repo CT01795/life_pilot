@@ -27,13 +27,13 @@ import 'package:url_launcher/url_launcher.dart';
 class ControllerCalendar extends ChangeNotifier {
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
-  ControllerNotification controllerNotification;
+  late ControllerNotification _controllerNotification;
   late ServiceWeather _serviceWeather;
   late ServicePermission _servicePermission;
   ControllerAuth? auth;
-  ProviderLocale localeProvider;
-  String tableName;
-  String toTableName;
+  late ProviderLocale _localeProvider;
+  late String _tableName;
+  late String _toTableName;
   String closeText;
   Locale? _lastLocale;
 
@@ -43,7 +43,7 @@ class ControllerCalendar extends ChangeNotifier {
   int _reloadToken = 0;
   bool _isChangingMonth = false;
 
-  late final ServiceEventTransfer serviceEventTransfer;
+  late ServiceEventTransfer _serviceEventTransfer;
 
   // ------------------------
   // Getter / Setter
@@ -74,18 +74,22 @@ class ControllerCalendar extends ChangeNotifier {
       {required ModelCalendar modelCalendar,
       required ServiceEvent serviceEvent,
       required this.auth,
-      required this.controllerNotification,
+      required ControllerNotification controllerNotification,
       required ServiceWeather serviceWeather,
       required ServicePermission servicePermission,
-      required this.localeProvider,
-      required this.tableName,
-      required this.toTableName,
+      required ProviderLocale localeProvider,
+      required String tableName,
+      required String toTableName,
       required this.closeText}) {
     _modelCalendar = modelCalendar;
     _serviceEvent = serviceEvent;
+    _controllerNotification = controllerNotification;
     _serviceWeather = serviceWeather;
     _servicePermission = servicePermission;
+    _localeProvider = localeProvider;
     _lastLocale = localeProvider.locale;
+    _tableName = tableName;
+    _toTableName = toTableName;
 
     localeProvider.addListener(() async {
       if (_lastLocale != localeProvider.locale) {
@@ -95,7 +99,7 @@ class ControllerCalendar extends ChangeNotifier {
       }
     });
 
-    serviceEventTransfer = ServiceEventTransfer(
+    _serviceEventTransfer = ServiceEventTransfer(
       currentAccount: auth?.currentAccount ?? '',
       serviceEvent: serviceEvent,
     );
@@ -107,7 +111,6 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    //if (modelCalendar.isInitialized) return;
     _modelCalendar.isInitialized = true; // 提前鎖
     await goToMonth(month: currentMonth, notify: false);
     await checkAndGenerateNextEvents();
@@ -124,8 +127,8 @@ class ControllerCalendar extends ChangeNotifier {
       serviceEvent: _serviceEvent,
       month: targetMonth,
       auth: auth,
-      localeProvider: localeProvider,
-      tableName: tableName,
+      localeProvider: _localeProvider,
+      tableName: _tableName,
     );
 
     // ❗只允許最新請求寫入 model
@@ -229,16 +232,16 @@ class ControllerCalendar extends ChangeNotifier {
           currentAccount: auth?.currentAccount ?? '',
           event: newEvent,
           isNew: true,
-          tableName: tableName));
+          tableName: _tableName));
       futures
-          .add(controllerNotification.scheduleEventReminders(event: newEvent));
+          .add(_controllerNotification.scheduleEventReminders(event: newEvent));
 
       // 更新舊事件的 repeatOption 為 'once'
       futures.add(_serviceEvent.saveEvent(
         currentAccount: auth?.currentAccount ?? '',
         event: event.copyWith(newRepeatOptions: CalendarRepeatRule.once),
         isNew: false,
-        tableName: tableName,
+        tableName: _tableName,
       ));
 
       dirtyMonths
@@ -272,22 +275,26 @@ class ControllerCalendar extends ChangeNotifier {
     if (updatedEvent == null) return;
     // 移除快取
     _modelCalendar.updateCachedEvent(event: event);
-    if (updatedEvent.startDate?.year != event.startDate!.year ||
-        updatedEvent.startDate?.month != event.startDate!.month) {
-      await loadCalendarEvents(month: updatedEvent.startDate!, notify: false);
+    _modelCalendar.updateCachedEvent(event: updatedEvent);
+    final newMonth = DateTimeFormatter.monthOnly(updatedEvent.startDate!);
+    final oldMonth = DateTimeFormatter.monthOnly(event.startDate!);
+    final now = DateTimeFormatter.monthOnly(currentMonth);
+    await loadCalendarEvents(month: now, notify: true);
+    if (newMonth != oldMonth) {
+      loadCalendarEvents(month: newMonth, notify: newMonth == now);
+      loadCalendarEvents(month: oldMonth, notify: oldMonth == now);
     }
-    await loadCalendarEvents(month: event.startDate!, notify: true);
   }
 
   // ✅ 刪除事件，並更新列表與通知 UI
   Future<void> deleteEvent(EventItem event) async {
     await Future.wait([
-      controllerNotification.cancelEventReminders(
+      _controllerNotification.cancelEventReminders(
           eventId: event.id, reminderOptions: event.reminderOptions), // 取消通知
       _serviceEvent.deleteEvent(
           currentAccount: auth!.currentAccount ?? '',
           event: event,
-          tableName: tableName)
+          tableName: _tableName)
     ]);
 
     // 移除事件並更新快取
@@ -306,17 +313,16 @@ class ControllerCalendar extends ChangeNotifier {
         currentAccount: auth!.currentAccount ?? '',
         event: newEvent,
         isNew: isNew,
-        tableName: tableName);
+        tableName: _tableName);
     if (isNew) {
       await _servicePermission.checkExactAlarmPermission();
-      await controllerNotification.scheduleEventReminders(event: newEvent);
+      await _controllerNotification.scheduleEventReminders(event: newEvent);
     } else if (oldEvent != null) {
       await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
     }
   }
 
   Future<void> saveSettings({
-    required ControllerAuth auth,
     required EventItem event,
     required CalendarRepeatRule repeat,
     required List<CalendarReminderOption> reminders,
@@ -350,7 +356,7 @@ class ControllerCalendar extends ChangeNotifier {
     return ControllerPageCalendarAdd(
       auth: auth!,
       serviceEvent: _serviceEvent,
-      tableName: tableName,
+      tableName: _tableName,
       existingEvent: existingEvent,
       initialDate: initialDate,
     );
@@ -367,21 +373,21 @@ class ControllerCalendar extends ChangeNotifier {
     EventItem? oldEvent,
     required EventItem newEvent,
   }) async {
-    if (tableName != TableNames.calendarEvents) return;
+    if (_tableName != TableNames.calendarEvents) return;
     if (oldEvent != null) {
-      await controllerNotification.cancelEventReminders(
+      await _controllerNotification.cancelEventReminders(
           eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
     }
     await _servicePermission.checkExactAlarmPermission();
-    await controllerNotification.scheduleEventReminders(event: newEvent);
+    await _controllerNotification.scheduleEventReminders(event: newEvent);
   }
 
   Future<void> showTodayNotifications() async {
-    if (tableName != TableNames.calendarEvents) {
+    if (_tableName != TableNames.calendarEvents) {
       return;
     }
     //行事曆的事件就通知
-    final todayEvents = await controllerNotification.showTodayEvents(
+    final todayEvents = await _controllerNotification.showTodayEvents(
       events: _modelCalendar.events,
       closeText: closeText,
     );
@@ -401,7 +407,7 @@ class ControllerCalendar extends ChangeNotifier {
     } else {
       // 非阻塞顯示多個事件
       for (final event in todayEvents) {
-        controllerNotification.service.plugin?.show(
+        _controllerNotification.service.plugin?.show(
           //拿掉await
           event.id ?? Random().nextInt(1000) + 1,
           event.title,
@@ -494,14 +500,13 @@ class ControllerCalendar extends ChangeNotifier {
     bool isChecked,
     bool isAlreadyAdded,
     EventItem event,
-    String toTableName,
   ) async {
-    final targetEvent = await serviceEventTransfer.toggleEventTransfer(
+    final targetEvent = await _serviceEventTransfer.toggleEventTransfer(
       isChecked: isChecked,
       isAlreadyAdded: isAlreadyAdded,
       event: event,
-      fromTableName: tableName,
-      toTableName: toTableName,
+      fromTableName: _tableName,
+      toTableName: _toTableName,
     );
     _modelCalendar.toggleEventSelection(event.id, targetEvent != null);
     return targetEvent;
@@ -510,18 +515,16 @@ class ControllerCalendar extends ChangeNotifier {
   Future<bool> handleEventCheckboxIsAlreadyAdd(
     EventItem event,
     bool isChecked,
-    String toTableName,
   ) async {
     // 先更新 UI
     toggleEventSelection(event.id, isChecked);
 
-    return await serviceEventTransfer.toggleEventTransferIsAlreadyAdd(
-        event: event, toTableName: toTableName, isChecked: isChecked);
+    return await _serviceEventTransfer.toggleEventTransferIsAlreadyAdd(
+        event: event, toTableName: _toTableName, isChecked: isChecked);
   }
 
   String buildTransferMessage({
     required bool isAlreadyAdded,
-    required String fromTableName,
     required EventItem event,
     required AppLocalizations loc,
   }) {
@@ -557,7 +560,7 @@ class ControllerCalendar extends ChangeNotifier {
     }
     return auth!.currentAccount == account ||
         (auth!.currentAccount == AuthConstants.sysAdminEmail &&
-            tableName != TableNames.memoryTrace);
+            _tableName != TableNames.memoryTrace);
   }
 
   // 移動到上一個月份
@@ -574,7 +577,6 @@ class ControllerCalendar extends ChangeNotifier {
   }) async {
     try {
       await saveSettings(
-        auth: auth!,
         event: event,
         repeat: repeat,
         reminders: reminders,

@@ -8,7 +8,6 @@ import 'package:life_pilot/utils/widgets/widgets_date_button.dart';
 Widget widgetsSearchPanel({
   required ModelEventCalendar modelEventCalendar,
   required ControllerEvent controllerEvent,
-  required String tableName,
   required AppLocalizations loc,
   required BuildContext context,
 }) {

@@ -7,16 +7,16 @@ import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/nlp.dart';
 
 class ControllerAccountingDetail extends ChangeNotifier {
-  final ServiceAccounting service;
+  final ServiceAccounting _service;
   ControllerAuth? auth;
   final String accountId;
   num? currentExchangeRate;
 
   ControllerAccountingDetail(
-      {required this.service,
+      {required ServiceAccounting service,
       required this.auth,
       required this.accountId,
-      this.currentExchangeRate});
+      this.currentExchangeRate}): _service = service;
 
   final String currentType = 'balance';
 
@@ -30,7 +30,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
-    todayRecords = await service.fetchTodayRecords(
+    todayRecords = await _service.fetchTodayRecords(
       accountId: inputAccountId ?? accountId,
       type: currentType,
     );
@@ -60,7 +60,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
   Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId}) async {
     // 或者直接從 Supabase 查詢
-    return await service.findAccountByEventId(
+    return await _service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',
     );
@@ -92,7 +92,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
 
   Future<void> commitRecords(List<AccountingPreview> previews,
       {String? inputAccountId}) async {
-    await service.insertRecordsBatch(
+    await _service.insertRecordsBatch(
       accountId: inputAccountId ?? accountId,
       type: currentType,
       records: previews,
@@ -108,7 +108,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
       return;
     }
     // 呼叫後端 RPC
-    await service.updateAccountingDetail(
+    await _service.updateAccountingDetail(
       detailId: preview.id!,
       newValue: preview.value,
       newCurrency: preview.currency!,

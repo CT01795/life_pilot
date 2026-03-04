@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -12,17 +11,13 @@ import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class PageCalendarAdd extends StatefulWidget {
-  final ControllerAuth auth;
   final ControllerCalendar controllerCalendar;
-  final String tableName;
   final EventItem? existingEvent;
   final DateTime? initialDate;
 
   const PageCalendarAdd({
     super.key,
-    required this.auth,
     required this.controllerCalendar,
-    required this.tableName,
     this.existingEvent,
     this.initialDate,
   });
