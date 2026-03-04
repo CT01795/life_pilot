@@ -85,9 +85,9 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
 
     // ✅ 這裡不會因為語言切換而重建 ControllerEvent
     // ✅ 但 build() 會重跑，因此 loc 會更新、文字立即刷新
-    return ChangeNotifierProvider.value(
-      value: _controllerEvent,
-      child: MemoryGenericEventPage(
+    return ChangeNotifierProvider<ControllerEvent>(
+      create: (_) => _controllerEvent,
+      child:MemoryGenericEventPage(
         auth: auth,
         controllerEvent: _controllerEvent,
         modelEventCalendar: _modelEventCalendar,

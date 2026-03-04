@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
+import 'package:life_pilot/calendar/widgets_calendar_events_dialog.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
@@ -151,106 +153,160 @@ Future<void> onAlarmPressed({
 }
 
 Future<Map<String, dynamic>?> showAlarmSettingsDialog(
-      BuildContext context,
-      ControllerCalendar controllerCalendar,
-      EventItem event,
-      AppLocalizations loc) async {
-    final repeatOptions = CalendarRepeatRule.values;
-    final reminderOptions = CalendarReminderOption.values;
+    BuildContext context,
+    ControllerCalendar controllerCalendar,
+    EventItem event,
+    AppLocalizations loc) async {
+  final repeatOptions = CalendarRepeatRule.values;
+  final reminderOptions = CalendarReminderOption.values;
 
-    CalendarRepeatRule selectedRepeat = event.repeatOptions;
-    Set<CalendarReminderOption> selectedReminders = {...event.reminderOptions};
+  CalendarRepeatRule selectedRepeat = event.repeatOptions;
+  Set<CalendarReminderOption> selectedReminders = {...event.reminderOptions};
 
-    final result = await showDialog<Map<String, dynamic>?>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) {
-        return AlertDialog(
-          //title: Text(loc.set_alarm),
-          backgroundColor: Colors.white,
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start, // ⬅️ 靠左對齊
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(// 重複頻率單選
-                          children: [
-                        Text(loc.repeatOptions,
-                            style:
-                                TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
-                        Gaps.w16,
-                        Expanded(
-                          child: DropdownButton<CalendarRepeatRule>(
-                            value: selectedRepeat,
-                            isExpanded: true,
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  selectedRepeat = value;
-                                });
-                              }
-                            },
-                            items: repeatOptions
-                                .map((r) => DropdownMenuItem(
-                                      value: r,
-                                      child: Text(r.label(loc)),
-                                    ))
-                                .toList(),
-                          ),
+  final result = await showDialog<Map<String, dynamic>?>(
+    context: context,
+    barrierDismissible: true,
+    builder: (_) {
+      return AlertDialog(
+        //title: Text(loc.set_alarm),
+        backgroundColor: Colors.white,
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, // ⬅️ 靠左對齊
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(// 重複頻率單選
+                        children: [
+                      Text(loc.repeatOptions,
+                          style:
+                              TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
+                      Gaps.w16,
+                      Expanded(
+                        child: DropdownButton<CalendarRepeatRule>(
+                          value: selectedRepeat,
+                          isExpanded: true,
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                selectedRepeat = value;
+                              });
+                            }
+                          },
+                          items: repeatOptions
+                              .map((r) => DropdownMenuItem(
+                                    value: r,
+                                    child: Text(r.label(loc)),
+                                  ))
+                              .toList(),
                         ),
-                      ]),
-                      Gaps.h4,
-                      // 提醒時間多選
-                      Text(loc.reminderOptions,
-                          style: TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
-                      ...reminderOptions.map((option) {
-                        final checked = selectedReminders.contains(option);
-                        return Row(
-                          children: [
-                            Checkbox(
-                              value: checked,
-                              onChanged: (checked) {
-                                setState(() {
-                                  if (checked == true) {
-                                    selectedReminders.add(option);
-                                  } else {
-                                    selectedReminders.remove(option);
-                                  }
-                                });
-                              },
-                            ),
-                            Expanded(
-                                child: Text(option.label(loc))), // ⬅️ 保證文字不擠
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
+                      ),
+                    ]),
+                    Gaps.h4,
+                    // 提醒時間多選
+                    Text(loc.reminderOptions,
+                        style: TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
+                    ...reminderOptions.map((option) {
+                      final checked = selectedReminders.contains(option);
+                      return Row(
+                        children: [
+                          Checkbox(
+                            value: checked,
+                            onChanged: (checked) {
+                              setState(() {
+                                if (checked == true) {
+                                  selectedReminders.add(option);
+                                } else {
+                                  selectedReminders.remove(option);
+                                }
+                              });
+                            },
+                          ),
+                          Expanded(
+                              child: Text(option.label(loc))), // ⬅️ 保證文字不擠
+                        ],
+                      );
+                    }),
+                  ],
                 ),
-              );
+              ),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context, {
+                "repeat": selectedRepeat,
+                "reminders": selectedReminders.toList(),
+              });
             },
+            child: Text(loc.confirm, style: TextStyle(color: Colors.red)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context, {
-                  "repeat": selectedRepeat,
-                  "reminders": selectedReminders.toList(),
-                });
-              },
-              child: Text(loc.confirm, style: TextStyle(color: Colors.red)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: Text(loc.cancel, style: TextStyle(color: Colors.black)),
-            ),
-          ],
-        );
-      },
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: Text(loc.cancel, style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      );
+    },
+  );
+  return result;
+}
+
+Future<void> openDayDialog(
+  BuildContext context,
+  ControllerCalendar controller,
+  DateTime date,
+) async {
+  final loc = AppLocalizations.of(context)!;
+  final dateOnly = DateTimeFormatter.dateOnly(date);
+  final eventsOfDay = controller.getEventsOfDay(dateOnly);
+
+  // ✅ 若點到的是不同月份，就先載入那個月份的資料
+  await controller.handleCrossMonthTap(
+    tappedDate: date,
+  );
+
+  /// ✅ ① 如果沒有事件 → 直接跳新增頁
+  if (eventsOfDay.isEmpty) {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PageCalendarAdd(
+          auth: controller.auth!,
+          controllerCalendar: controller,
+          existingEvent: null,
+          tableName: controller.tableName,
+          initialDate: date,
+        ),
+      ),
     );
-    return result;
+
+    if (result != null && result.startDate != null && result is EventItem) {
+      await controller.loadCalendarEvents(
+        month: controller.currentMonth);
+    }
+
+    return; // 🔥 直接結束，不開 Dialog
   }
+
+  /// ✅ ② 有事件 → 才 showDialog
+  final shouldReload = await showDialog<bool>(
+    context: context,
+    builder: (_) => CalendarEventsDialog(
+      auth: controller.auth!,
+      controllerCalendar: controller,
+      date: date,
+      loc: loc,
+    ),
+  );
+
+  if (shouldReload == true) {
+    await controller.loadCalendarEvents(
+        month: controller.currentMonth);
+  }
+}

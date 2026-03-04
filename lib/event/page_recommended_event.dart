@@ -42,6 +42,7 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       modelEventCalendar: _modelEventCalendar,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _controllerEvent.refreshEvents();
     });
   }
@@ -57,8 +58,8 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
-    return ChangeNotifierProvider.value(
-      value: _controllerEvent,
+    return ChangeNotifierProvider<ControllerEvent>(
+      create: (_) => _controllerEvent,
       child: GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,

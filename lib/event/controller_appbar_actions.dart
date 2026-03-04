@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event_calendar.dart';
-import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -18,7 +18,7 @@ import 'package:excel/excel.dart';
 
 class ControllerAppBarActions extends ChangeNotifier {
   final ControllerAuth auth;
-  final ControllerEvent controllerEvent;
+  final ServiceEvent _serviceEvent;
   final ModelEventCalendar modelEventCalendar;
   final ServiceExportPlatform _exportService;
   final ServiceExportExcel _excelService;
@@ -26,13 +26,14 @@ class ControllerAppBarActions extends ChangeNotifier {
 
   ControllerAppBarActions({
     required this.auth,
-    required this.controllerEvent,
+    required ServiceEvent serviceEvent,
     required this.modelEventCalendar,
     required ServiceExportPlatform exportService,
     required ServiceExportExcel excelService,
     required this.tableName,
-  }): _excelService = excelService,
-      _exportService = exportService;
+  })  : _serviceEvent = serviceEvent,
+        _excelService = excelService,
+        _exportService = exportService;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -47,9 +48,10 @@ class ControllerAppBarActions extends ChangeNotifier {
 
   /// ✅ Debounce 用，減少頻繁通知（例如快速開關搜尋面板）
   void _notifyDebounced() {
+    if (_disposed) return;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 180), () {
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     });
   }
 
@@ -61,25 +63,30 @@ class ControllerAppBarActions extends ChangeNotifier {
 
   // ✅ 重新整理事件資料
   Future<bool> refreshEvents() async {
-    if (_isLoading) return false;
-    _setLoading(true);
+    if (_isLoading || _disposed) return false;
+    _setState(loading: true);
 
     try {
-      await controllerEvent.loadEvents();
+      final list = await _serviceEvent.getEvents(
+        tableName: tableName,
+        inputUser: auth.currentAccount,
+      );
+      modelEventCalendar.setEvents(list ?? []);
+
       logger.i('✅ Events refreshed successfully');
       return true;
     } catch (e, s) {
       logger.e('❌ refreshEvents error: $e', stackTrace: s);
       return false;
     } finally {
-      _setLoading(false);
+      if (!_disposed) _setState(loading: false);
     }
   }
 
   // ✅ 使用Excel 上傳事件
   Future<String> uploadEvents(AppLocalizations loc) async {
     if (_isUploading) return loc.exportInProgress;
-    _setUploading(true);
+    _setState(uploading: true);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -109,7 +116,7 @@ class ControllerAppBarActions extends ChangeNotifier {
           csv = Charset.getByName('big5')!.decode(bytes);
         }
         events = _excelService.parseCsv(csv, loc);
-      }else if (filename.endsWith('.xlsx')) {
+      } else if (filename.endsWith('.xlsx')) {
         final excel = Excel.decodeBytes(bytes);
         final sheet = excel.tables.values.first;
         events = _excelService.parseExcel(sheet, loc);
@@ -125,9 +132,9 @@ class ControllerAppBarActions extends ChangeNotifier {
       for (final event in events) {
         if (!event.name.startsWith("  └")) {
           tmpMaster = event;
-          eventList = await controllerEvent.serviceEvent.getEvents(
+          eventList = await _serviceEvent.getEvents(
               tableName: tableName, id: event.id.isNotEmpty ? event.id : null);
-          await controllerEvent.serviceEvent.saveEvent(
+          await _serviceEvent.saveEvent(
               currentAccount: auth.currentAccount ?? '',
               event: event,
               isNew: eventList == null || eventList.isEmpty,
@@ -136,7 +143,7 @@ class ControllerAppBarActions extends ChangeNotifier {
           event.name = event.name.replaceAll("  └ ", "");
           event.id = event.id.isNotEmpty ? event.id : Uuid().v4();
           tmpMaster!.subEvents.add(event);
-          await controllerEvent.serviceEvent.saveEvent(
+          await _serviceEvent.saveEvent(
               currentAccount: auth.currentAccount ?? '',
               event: tmpMaster,
               isNew: false,
@@ -149,17 +156,17 @@ class ControllerAppBarActions extends ChangeNotifier {
       logger.e('❌ uploadEventsFromExcel error: $e', stackTrace: s);
       return '${loc.uploadFailed}: $e';
     } finally {
-      _setUploading(false);
+      _setState(uploading: false);
     }
   }
 
   // ✅ 匯出事件為 Excel
   Future<String> exportEvents(AppLocalizations loc) async {
     if (_isExporting) return loc.exportInProgress;
-    _setExporting(true);
+    _setState(exporting: true);
     try {
-      final events = await controllerEvent.serviceEvent.getEvents(
-          tableName: tableName, inputUser: auth.currentAccount);
+      final events = await _serviceEvent
+          .getEvents(tableName: tableName, inputUser: auth.currentAccount);
       if (events == null || events.isEmpty) {
         return loc.noEventsToExport;
       }
@@ -172,31 +179,36 @@ class ControllerAppBarActions extends ChangeNotifier {
       logger.e('❌ exportEvents error: $e', stackTrace: s);
       return '${loc.exportFailed}: $e';
     } finally {
-      _setExporting(false);
+      _setState(exporting: false);
     }
   }
 
   // --- 狀態管理 ---
-  void _setLoading(bool value) {
-    if (_isLoading == value) return;
-    _isLoading = value;
-    notifyListeners();
+  void _setState({bool? loading, bool? exporting, bool? uploading}) {
+    if (_disposed) return;
+    bool changed = false;
+
+    if (loading != null && loading != _isLoading) {
+      _isLoading = loading;
+      changed = true;
+    }
+    if (exporting != null && exporting != _isExporting) {
+      _isExporting = exporting;
+      changed = true;
+    }
+    if (uploading != null && uploading != _isUploading) {
+      _isUploading = uploading;
+      changed = true;
+    }
+
+    if (changed) notifyListeners();
   }
 
-  void _setExporting(bool value) {
-    if (_isExporting == value) return;
-    _isExporting = value;
-    notifyListeners();
-  }
-
-  void _setUploading(bool value) {
-    if (_isUploading == value) return;
-    _isUploading = value;
-    notifyListeners();
-  }
+  bool _disposed = false;
 
   @override
   void dispose() {
+    _disposed = true;
     _debounce?.cancel();
     super.dispose();
   }

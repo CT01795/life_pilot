@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/calendar/widgets_calendar_sub_card.dart';
+import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsCalendarCard extends StatelessWidget {
@@ -120,6 +121,7 @@ class _WidgetsCalendarCardBodyState
     extends State<_WidgetsCalendarCardBody> {
   
   bool _weatherLoaded = false;
+   final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
 
   @override
   void didChangeDependencies() {
@@ -132,13 +134,23 @@ class _WidgetsCalendarCardBodyState
     }
   }
 
+  Future<bool> _cachedAssetExists(String path) async {
+    if (_assetCache.containsKey(path)) return _assetCache[path]!;
+    final exists = await assetExists(path);
+    _assetCache[path] = exists;
+    return exists;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ctrl = context.watch<ControllerCalendar>();
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.firstEventDate;
 
-    final forecast = ctrl.getForecast(widget.eventViewModel.id);
+    // 使用 Selector 只監聽對應 event 的天氣
+    final forecast = context.select<ControllerCalendar, List<EventWeather>?>(
+      (c) => c.getForecast(widget.eventViewModel.id),
+    );
+
     final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
     final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
@@ -162,7 +174,7 @@ class _WidgetsCalendarCardBodyState
                         : null,
                 padding: const EdgeInsets.all(1),
                 child: FutureBuilder<bool>(
-                  future: assetExists(
+                  future: _cachedAssetExists(
                       'assets/weather_icons/${todayWeather.icon}.png'),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
@@ -225,7 +237,7 @@ class _WidgetsCalendarCardBodyState
                                         : null,
                                 padding: const EdgeInsets.all(1),
                                 child: FutureBuilder<bool>(
-                                  future: assetExists(
+                                  future: _cachedAssetExists(
                                       'assets/weather_icons/${w.icon}.png'),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState !=
@@ -315,8 +327,15 @@ class _WidgetsCalendarCardBodyState
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
           if (widget.showSubEvents)
-            ...widget.eventViewModel.subEvents
-                .map((sub) => WidgetsCalendarSubCard(event: sub, onOpenLink: widget.onOpenLink,)),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.eventViewModel.subEvents.length,
+              itemBuilder: (context, index) {
+                final sub = widget.eventViewModel.subEvents[index];
+                return WidgetsCalendarSubCard(event: sub, onOpenLink: widget.onOpenLink,);
+              },
+            )
         ],
       ),
     );
