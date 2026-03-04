@@ -399,4 +399,9 @@ class ControllerEvent extends ChangeNotifier {
     disposed = true;
     super.dispose();
   }
+
+  @override
+  void notifyListeners() {
+    if (!disposed) super.notifyListeners();
+  }
 }

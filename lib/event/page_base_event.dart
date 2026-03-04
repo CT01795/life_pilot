@@ -68,7 +68,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
       modelEventCalendar: widget.modelEventCalendar, // 使用頁面同一個 model
-      controllerEvent: widget.controllerEvent,       // 使用頁面同一個 controller
+      serviceEvent: widget.controllerEvent.serviceEvent,       // 使用頁面同一個 controller
       exportService: context.read<ServiceExportPlatform>(),
       excelService: context.read<ServiceExportExcel>(),
       tableName: widget.tableName,

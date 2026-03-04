@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -16,7 +15,6 @@ import 'package:provider/provider.dart';
 class CalendarEventsDialog extends StatelessWidget {
   final ControllerAuth auth;
   final ControllerCalendar controllerCalendar;
-  final ModelCalendar modelCalendar;
   final DateTime date;
   final AppLocalizations loc;
 
@@ -24,7 +22,6 @@ class CalendarEventsDialog extends StatelessWidget {
     super.key,
     required this.auth,
     required this.controllerCalendar,
-    required this.modelCalendar,
     required this.date,
     required this.loc,
   });
@@ -33,123 +30,123 @@ class CalendarEventsDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final tableName = TableNames.calendarEvents;
     final dateOnly = DateTimeFormatter.dateOnly(date);
-
-    return StatefulBuilder(builder: (context, setState) {
-      // 每次build時都重新抓當天事件，確保資料最新
-      final updatedEventsOfDay = controllerCalendar.getEventsOfDay(dateOnly);
-
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: Insets.h6,
-        child: Stack(
-          children: [
-            // 內容區塊
-            SingleChildScrollView(
-              child: Container(
-                padding: Insets.e0,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(
-                        DateFormat(DateFormats.mmdd).format(date),
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
+    // 每次build時都重新抓當天事件，確保資料最新
+    final updatedEventsOfDay = controllerCalendar.getEventsOfDay(dateOnly);
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: Insets.h6,
+      child: Stack(
+        children: [
+          // 內容區塊
+          Container(
+            padding: Insets.e0,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: 1 + updatedEventsOfDay.length, // 1 是標題列
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    // 標題列
+                    return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat(DateFormats.mmdd).format(date),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
-                      ),
-                      IconButton(
-                        icon:
-                            Icon(Icons.add, size: IconTheme.of(context).size!),
-                        tooltip: loc.add,
-                        onPressed: () => onAddEventPressed(
-                          context: context, controller: controllerCalendar, date: date), 
-                      ),
-                    ]),
-                    if (updatedEventsOfDay.isNotEmpty)
-                      // 如果當日有事件，顯示事件列表，沒有的話顯示提示文字
-                      ...updatedEventsOfDay.map((event) {
-                        final eventViewModel =
-                            EventViewModel.buildEventViewModel(
-                          event: event,
-                          parentLocation: '',
-                          canDelete: controllerCalendar.canDelete(
-                            account: event.account ?? '',
                           ),
-                          showSubEvents: true,
-                          loc: loc,
-                          tableName: tableName,
-                        );
-
-                        return WidgetsCalendarCard(
-                          eventViewModel: eventViewModel,
-                          tableName: tableName,
-                          onTap: () => Navigator.pop(context),
-                          onDelete: event.isHoliday
-                              ? null
-                              : () async {
-                                  await onDeletePressed(
-                                    context: context,
-                                    controller: controllerCalendar,
-                                    event: event,
-                                    loc: loc,
-                                  );
-                                },
-                          onAccounting: () => context
-                              .read<ControllerAccountingList>()
-                              .handleAccounting(
+                          IconButton(
+                            icon: Icon(Icons.add,
+                                size: IconTheme.of(context).size ?? 24.0),
+                            tooltip: loc.add,
+                            onPressed: () => onAddEventPressed(
                                 context: context,
-                                eventId: event.id,
-                              ),
-                          onOpenMap: () => controllerCalendar.onOpenMap(eventViewModel),
-                          onOpenLink: () => controllerCalendar.onOpenLink(eventViewModel),
-                          trailing: widgetsCalendarTrailing(
-                            context: context,
-                            auth: auth,
-                            controllerCalendar: controllerCalendar,
-                            modelCalendar: modelCalendar,
-                            event: event,
-                            tableName: controllerCalendar.tableName,
-                            toTableName:
-                                TableNames.memoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
+                                controller: controllerCalendar,
+                                date: date),
                           ),
-                        );
-                      }),
-                  ],
-                ),
-              ),
-            ),
-
-            // 右上角關閉按鈕
-            PositionedDirectional(
-              end: Insets.all2.right,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                      color: Colors.black26,
+                        ]);
+                  }
+                  final event = updatedEventsOfDay[index - 1];
+                  final eventViewModel = EventViewModel.buildEventViewModel(
+                    event: event,
+                    parentLocation: '',
+                    canDelete: controllerCalendar.canDelete(
+                      account: event.account ?? '',
                     ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.close, size: IconTheme.of(context).size!),
-                  tooltip: controllerCalendar.closeText,
-                  onPressed: () =>
-                      Navigator.pop(context, false), // ✅ 明確回傳 false
-                ),
+                    showSubEvents: true,
+                    loc: loc,
+                    tableName: tableName,
+                  );
+
+                  return WidgetsCalendarCard(
+                    eventViewModel: eventViewModel,
+                    tableName: tableName,
+                    onTap: () => Navigator.pop(context),
+                    onDelete: event.isHoliday
+                        ? null
+                        : () async {
+                            await onDeletePressed(
+                              context: context,
+                              controller: controllerCalendar,
+                              event: event,
+                              loc: loc,
+                            );
+                          },
+                    onAccounting: () => context
+                        .read<ControllerAccountingList>()
+                        .handleAccounting(
+                          context: context,
+                          eventId: event.id,
+                        ),
+                    onOpenMap: () =>
+                        controllerCalendar.onOpenMap(eventViewModel),
+                    onOpenLink: () =>
+                        controllerCalendar.onOpenLink(eventViewModel),
+                    trailing: widgetsCalendarTrailing(
+                      context: context,
+                      auth: auth,
+                      controllerCalendar: controllerCalendar,
+                      event: event,
+                      tableName: controllerCalendar.tableName,
+                      toTableName:
+                          TableNames.memoryTrace, // ✅ 如果有其他目標 table，這裡替換掉
+                    ),
+                  );
+                }),
+          ),
+
+          // 右上角關閉按鈕
+          PositionedDirectional(
+            end: Insets.all2.right,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                    color: Colors.black26,
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon:
+                    Icon(Icons.close, size: IconTheme.of(context).size ?? 24.0),
+                tooltip: controllerCalendar.closeText,
+                onPressed: () => Navigator.pop(context, false), // ✅ 明確回傳 false
               ),
             ),
-          ],
-        ),
-      );
-    });
+          ),
+        ],
+      ),
+    );
   }
 }

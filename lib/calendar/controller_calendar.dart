@@ -25,7 +25,7 @@ import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ControllerCalendar extends ChangeNotifier {
-  ModelCalendar modelCalendar;
+  late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
   ControllerNotification controllerNotification;
   late ServiceWeather _serviceWeather;
@@ -48,15 +48,19 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------------
   // Getter / Setter
   // ------------------------
-  bool get isInitialized => modelCalendar.isInitialized;
+  bool get isInitialized => _modelCalendar.isInitialized;
 
-  // 給 PageView 初始用的基準年月
-  DateTime get currentMonth => modelCalendar.currentMonth;
-  set currentMonth(DateTime value) {
-    modelCalendar.currentMonth = value;
+  bool isEventSelected(String eventId) {
+    return _modelCalendar.selectedEventIds.contains(eventId);
   }
 
-  List<EventItem> get events => modelCalendar.events;
+  // 給 PageView 初始用的基準年月
+  DateTime get currentMonth => _modelCalendar.currentMonth;
+  set currentMonth(DateTime value) {
+    _modelCalendar.currentMonth = value;
+  }
+
+  List<EventItem> get events => _modelCalendar.events;
 
   static final DateTime baseDate = DateTime(1911, 1);
   int get pageIndex =>
@@ -67,7 +71,7 @@ class ControllerCalendar extends ChangeNotifier {
   // 建構子
   // ------------------------
   ControllerCalendar(
-      {required this.modelCalendar,
+      {required ModelCalendar modelCalendar,
       required ServiceEvent serviceEvent,
       required this.auth,
       required this.controllerNotification,
@@ -77,6 +81,7 @@ class ControllerCalendar extends ChangeNotifier {
       required this.tableName,
       required this.toTableName,
       required this.closeText}) {
+    _modelCalendar = modelCalendar;
     _serviceEvent = serviceEvent;
     _serviceWeather = serviceWeather;
     _servicePermission = servicePermission;
@@ -103,7 +108,7 @@ class ControllerCalendar extends ChangeNotifier {
 
   Future<void> init() async {
     //if (modelCalendar.isInitialized) return;
-    modelCalendar.isInitialized = true; // 提前鎖
+    _modelCalendar.isInitialized = true; // 提前鎖
     await goToMonth(month: currentMonth, notify: false);
     await checkAndGenerateNextEvents();
     notifyListeners();
@@ -115,7 +120,7 @@ class ControllerCalendar extends ChangeNotifier {
   Future<void> reloadEvents({bool notify = true, DateTime? month}) async {
     final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now
     final int myToken = ++_reloadToken; // 每次呼叫都生成新的 token
-    List<EventItem> result = await modelCalendar.loadEventsFromService(
+    List<EventItem> result = await _modelCalendar.loadEventsFromService(
       serviceEvent: _serviceEvent,
       month: targetMonth,
       auth: auth,
@@ -130,8 +135,8 @@ class ControllerCalendar extends ChangeNotifier {
     if (result.isEmpty) {
       result = [];
     }
-    modelCalendar.cacheMonthEvents(targetMonth, result);
-    modelCalendar.setEvents(result);
+    _modelCalendar.cacheMonthEvents(targetMonth, result);
+    _modelCalendar.setEvents(result);
     if (notify) {
       notifyListeners();
     }
@@ -154,9 +159,9 @@ class ControllerCalendar extends ChangeNotifier {
       final targetMonth = DateTimeFormatter.dateOnly(month);
       final key = targetMonth.toMonthKey();
       currentMonth = targetMonth;
-      if (modelCalendar.cachedEvents.containsKey(key)) {
+      if (_modelCalendar.cachedEvents.containsKey(key)) {
         // ✅ 同步更新 events
-        modelCalendar.setMonthFromCache(key);
+        _modelCalendar.setMonthFromCache(key);
         if (notify) notifyListeners();
       } else {
         await reloadEvents(month: targetMonth, notify: notify);
@@ -167,7 +172,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> goToOffsetMonth({required int offset}) async {
-    final current = modelCalendar.currentMonth;
+    final current = _modelCalendar.currentMonth;
     await goToMonth(
       month: DateTime(current.year, current.month + offset),
     );
@@ -244,7 +249,7 @@ class ControllerCalendar extends ChangeNotifier {
     await Future.wait(futures);
 
     clearAll();
-    await goToMonth(month: modelCalendar.currentMonth, notify: true);
+    await goToMonth(month: _modelCalendar.currentMonth, notify: true);
   }
 
   // ------------------------
@@ -252,12 +257,12 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------------
   Future<void> addEvent(EventItem newEvent,
       {bool stayOnCurrentMonth = true}) async {
-    modelCalendar.updateCachedEvent(event: newEvent);
+    _modelCalendar.updateCachedEvent(event: newEvent);
     if (!stayOnCurrentMonth) {
       await goToMonth(month: DateTimeFormatter.monthOnly(newEvent.startDate!));
     }
     await goToMonth(
-        month: DateTimeFormatter.monthOnly(modelCalendar.currentMonth));
+        month: DateTimeFormatter.monthOnly(_modelCalendar.currentMonth));
   }
 
   Future<void> onEditEvent({
@@ -266,7 +271,7 @@ class ControllerCalendar extends ChangeNotifier {
   }) async {
     if (updatedEvent == null) return;
     // 移除快取
-    modelCalendar.updateCachedEvent(event: event);
+    _modelCalendar.updateCachedEvent(event: event);
     if (updatedEvent.startDate?.year != event.startDate!.year ||
         updatedEvent.startDate?.month != event.startDate!.month) {
       await loadCalendarEvents(month: updatedEvent.startDate!, notify: false);
@@ -286,7 +291,7 @@ class ControllerCalendar extends ChangeNotifier {
     ]);
 
     // 移除事件並更新快取
-    modelCalendar
+    _modelCalendar
       ..removeEvent(event)
       ..markRemoved(event.id);
     notifyListeners();
@@ -352,7 +357,7 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   List<EventItem> getEventsOfDay(DateTime date) {
-    return modelCalendar.getEventsOfDay(date);
+    return _modelCalendar.getEventsOfDay(date);
   }
 
   // ---------------------------------------------------------------------------
@@ -377,7 +382,7 @@ class ControllerCalendar extends ChangeNotifier {
     }
     //行事曆的事件就通知
     final todayEvents = await controllerNotification.showTodayEvents(
-      events: modelCalendar.events,
+      events: _modelCalendar.events,
       closeText: closeText,
     );
 
@@ -412,12 +417,12 @@ class ControllerCalendar extends ChangeNotifier {
   // 日曆查詢
   // ------------------------
   List<List<DateTime>> getWeeks({required DateTime month}) {
-    return modelCalendar.getWeeks(month);
+    return _modelCalendar.getWeeks(month);
   }
 
   // 拿到該月每週對應的事件層級（含排版 rowIndex）
   Map<int, List<EventWithRow>> getWeekEventRows({required DateTime month}) {
-    final calendarWeeks = modelCalendar.getWeeks(month);
+    final calendarWeeks = _modelCalendar.getWeeks(month);
     final weekEventRows = <int, List<EventWithRow>>{};
 
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
@@ -478,7 +483,7 @@ class ControllerCalendar extends ChangeNotifier {
   // 搜尋 / 篩選 / 選擇
   // ------------------------
   void toggleEventSelection(String eventId, bool isSelected) {
-    modelCalendar.toggleEventSelection(eventId, isSelected);
+    _modelCalendar.toggleEventSelection(eventId, isSelected);
     notifyListeners();
   }
 
@@ -498,7 +503,7 @@ class ControllerCalendar extends ChangeNotifier {
       fromTableName: tableName,
       toTableName: toTableName,
     );
-    modelCalendar.toggleEventSelection(event.id, targetEvent != null);
+    _modelCalendar.toggleEventSelection(event.id, targetEvent != null);
     return targetEvent;
   }
 
@@ -542,7 +547,7 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------------
   // 工具
   // ------------------------
-  void clearAll() => modelCalendar.clearAll();
+  void clearAll() => _modelCalendar.clearAll();
 
   bool canDelete({
     required String account,

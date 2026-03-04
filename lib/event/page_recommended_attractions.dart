@@ -55,9 +55,9 @@ class _PageRecommendedAttractionsState
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
-    return ChangeNotifierProvider.value(
-        value: _controllerEvent,
-        child: GenericEventPage(
+    return ChangeNotifierProvider<ControllerEvent>(
+      create: (_) => _controllerEvent,
+      child:GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,
           modelEventCalendar: _modelEventCalendar,

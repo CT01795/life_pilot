@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:provider/provider.dart';
 
 Widget widgetsCalendarTrailing({
   required BuildContext context,
   required ControllerAuth auth,
   required ControllerCalendar controllerCalendar,
-  required ModelCalendar modelCalendar,
   required EventItem event,
   required String tableName,
   required String toTableName,
@@ -22,19 +21,15 @@ Widget widgetsCalendarTrailing({
       mainAxisSize: MainAxisSize.min, // 避免 unbounded 爆錯
       children: [
         if (!auth.isAnonymous)
-          Flexible(
-            fit: FlexFit.loose,
-            child: Builder(
-              builder: (ctx) {
-                // 確保使用正確的 BuildContext 讀取 Provider
-                return Checkbox(
-                  value: controllerCalendar.modelCalendar.selectedEventIds
-                      .contains(event.id),
-                  onChanged: (value) => onMemoryCheckboxChanged(
-                    context: context, controller: controllerCalendar, value: value, event: event, toTableName: toTableName, loc: loc),
-                );
-              },
-            ),
+          Selector<ControllerCalendar, bool>(
+            selector: (_, controller) => controller.isEventSelected(event.id),
+            builder: (_, isSelected, __) {
+              return Checkbox(
+                value: isSelected,
+                onChanged: (value) => onMemoryCheckboxChanged(
+                  context: context, controller: controllerCalendar, value: value, event: event, toTableName: toTableName, loc: loc),
+              );
+            },
           ),
         if (!event.isHoliday)
           // ⏰ 鬧鐘
