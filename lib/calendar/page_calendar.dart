@@ -70,16 +70,16 @@ class _PageCalendarState extends State<PageCalendar> {
                   monthColor: isCurrentMonth ? Colors.blueAccent : Colors.black,
                   buttonSize: MediaQuery.of(context).size.shortestSide * 0.1,
                   onPrevious: () async {
-                    await controller.previousMonth();
                     _updatePageController(controller.pageIndex);
+                    Future.microtask(() => controller.previousMonth());
                   },
                   onNext: () async {
-                    await controller.nextMonth();
                     _updatePageController(controller.pageIndex);
+                    Future.microtask(() => controller.nextMonth());
                   },
                   onToday: () async {
-                    await controller.goToToday();
                     _updatePageController(controller.pageIndex);
+                    Future.microtask(() => controller.goToToday());
                   },
                   onAdd: () async {
                     final currentMonth = controller.currentMonth;
@@ -103,9 +103,9 @@ class _PageCalendarState extends State<PageCalendar> {
                     );
 
                     if (newEvent != null) {
-                      // 把業務邏輯交給 Controller
-                      await controller.addEvent(newEvent);
                       _updatePageController(controller.pageIndex);
+                      Future.microtask(() => controller.addEvent(newEvent));
+                      // 把業務邏輯交給 Controller
                     }
                   },
                   onMonthTap: () => _showMonthPicker(),
@@ -132,20 +132,23 @@ class _PageCalendarState extends State<PageCalendar> {
       initialDate: controller.currentMonth,
       onChanged: (newDate) async {
         // 1. 更新 controller 的 currentMonth 並載入該月事件
-        await controller.goToMonth(month: newDate);
         _updatePageController(controller.pageIndex);
+        Future.microtask(() => controller.goToMonth(month: newDate));
       },
     );
   }
 
-  void _updatePageController(int index) {
+  bool _isAnimatingPage = false;
+  Future<void> _updatePageController(int index) async {
+    if (_isAnimatingPage) return;
     if (pageController.hasClients && pageController.page?.round() != index) {
-      //pageController.jumpToPage(index);
-      pageController.animateToPage(
+      _isAnimatingPage = true;
+      await pageController.animateToPage(
         index,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
+      _isAnimatingPage = false;
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:provider/provider.dart';
 
 Widget widgetsEventTrailing({
   required BuildContext context,
@@ -25,19 +26,15 @@ Widget widgetsEventTrailing({
       mainAxisSize: MainAxisSize.min, // 避免 unbounded 爆錯
       children: [
         if (!auth.isAnonymous && tableName != TableNames.memoryTrace)
-          Flexible(
-            fit: FlexFit.loose,
-            child: Builder(
-              builder: (ctx) {
-                // 確保使用正確的 BuildContext 讀取 Provider
-                return Checkbox(
-                  value: controllerEvent.modelEventCalendar.selectedEventIds
-                      .contains(event.id),
-                  onChanged: (value) => onMemoryCheckboxChanged(
-                    context: context, controller: controllerEvent, value: value, event: event, toTableName: toTableName, loc: loc),
-                );
-              },
-            ),
+          Selector<ControllerEvent, bool>(
+            selector: (_, c) => c.isEventSelected(event.id),
+            builder: (_, isSelected, __) {
+              return Checkbox(
+                value: isSelected,
+                onChanged: (value) => onMemoryCheckboxChanged(
+                  context: context, controller: controllerEvent, value: value, event: event, toTableName: toTableName, loc: loc),
+              );
+            },
           ),
         if (auth.currentAccount == event.account)
           IconButton(
