@@ -23,7 +23,6 @@ class PageMemoryTrace extends StatefulWidget {
 
 class _PageMemoryTraceState extends State<PageMemoryTrace> {
   late final ControllerEvent _controllerEvent;
-  late final ModelEventCalendar _modelEventCalendar;
   late final ControllerAccountingList _accountController;
   bool _accountsLoaded = false;
 
@@ -33,15 +32,13 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     final context = this.context; // ✅ 避免多次 lookup
     _accountController = context.read<ControllerAccountingList>();
 
-    _modelEventCalendar = ModelEventCalendar();
-
     _controllerEvent = ControllerEvent(
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
       serviceWeather: context.read<ServiceWeather>(),
       tableName: TableNames.memoryTrace,
       toTableName: '',
-      modelEventCalendar: _modelEventCalendar,
+      modelEventCalendar: ModelEventCalendar(),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -82,12 +79,11 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
 
     // ✅ 這裡不會因為語言切換而重建 ControllerEvent
     // ✅ 但 build() 會重跑，因此 loc 會更新、文字立即刷新
-    return ChangeNotifierProvider<ControllerEvent>(
-      create: (_) => _controllerEvent,
+    return ChangeNotifierProvider.value(
+      value: _controllerEvent,
       child:MemoryGenericEventPage(
         auth: auth,
         controllerEvent: _controllerEvent,
-        modelEventCalendar: _modelEventCalendar,
         title: loc.memoryTrace,
         emptyText: loc.memoryTraceZero,
         searchPanelBuilder: widgetsSearchPanel,
