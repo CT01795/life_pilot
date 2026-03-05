@@ -37,10 +37,6 @@ class _PageRecommendedAttractionsState
       toTableName: TableNames.calendarEvents,
       modelEventCalendar: ModelEventCalendar(),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await _controllerEvent.loadEvents();
-    });
   }
 
   @override
