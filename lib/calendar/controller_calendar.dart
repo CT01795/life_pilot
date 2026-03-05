@@ -599,26 +599,38 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------ controller event card ------------------
 
   final Set<String> _loadingIds = {};
-  final Map<String, List<EventWeather>> _forecastCache = {};
+  final Map<String, WeatherCache> _forecastCache = {};
 
   // ------------------ Public ------------------
 
   List<EventWeather>? getForecast(String eventId) {
-    return _forecastCache[eventId];
+    return _forecastCache[eventId]?.data;
   }
 
   // 取得天氣預報（緩存）
   Future<void> loadWeather(EventViewModel event) async {
     if (!event.hasLocation) return;
-    if (_forecastCache.containsKey(event.id)) return;
+    //if (_forecastCache.containsKey(event.id)) return;
     if (_loadingIds.contains(event.id)) return;
-
-    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    final now = DateTime.now();
+    final today = DateTimeFormatter.dateOnly(now);
     if (event.locationDisplay.isEmpty ||
         (event.startDate != null &&
-            ((today.add(Duration(days: 7))).isBefore(event.startDate!) ||
-                today.isAfter(event.startDate!)))) {
+          ((today.add(Duration(days: 7))).isBefore(event.startDate!) ||
+              (event.endDate != null && today.isAfter(event.endDate!)) ||
+              (event.endDate == null && today.isAfter(event.startDate!))))) {
       return;
+    }
+
+    final cache = _forecastCache[event.id];
+
+    if (cache != null) {
+      final diff = now.difference(cache.created);
+
+      // 3小時內不重新抓
+      if (diff.inMinutes < 180) {
+        return;
+      }
     }
 
     _loadingIds.add(event.id);
@@ -627,13 +639,12 @@ class ControllerCalendar extends ChangeNotifier {
       final data = await _serviceWeather.getWeather(
           locationDisplay: event.locationDisplay, startDate: event.startDate);
 
-      _forecastCache[event.id] = data;
+      _forecastCache[event.id] = WeatherCache(data: data, created: now);
     } catch (e, st) {
       logger.e('loadWeather failed for ${event.id}: $e\n$st');
-      _forecastCache[event.id] = [];
+      _forecastCache[event.id] = WeatherCache(data: [], created: now);
     } finally {
       _loadingIds.remove(event.id);
-      notifyListeners();
     }
   }
 
@@ -688,4 +699,14 @@ class ControllerCalendar extends ChangeNotifier {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
     }
   }
+}
+
+class WeatherCache {
+  final DateTime created;
+  final List<EventWeather> data;
+
+  WeatherCache({
+    required this.created,
+    required this.data,
+  });
 }
