@@ -330,8 +330,6 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   // ------------------ controller event card ------------------
-  bool disposed = false;
-
   final Set<String> _loadingIds = {};
   final Map<String, List<EventWeather>> _forecastCache = {};
 
@@ -365,7 +363,7 @@ class ControllerEvent extends ChangeNotifier {
       _forecastCache[event.id] = [];
     } finally {
       _loadingIds.remove(event.id);
-      if (!disposed) notifyListeners();
+      notifyListeners();
     }
   }
 
@@ -419,16 +417,5 @@ class ControllerEvent extends ChangeNotifier {
     } catch (e) {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
     }
-  }
-
-  @override
-  void dispose() {
-    disposed = true;
-    super.dispose();
-  }
-
-  @override
-  void notifyListeners() {
-    if (!disposed) super.notifyListeners();
   }
 }

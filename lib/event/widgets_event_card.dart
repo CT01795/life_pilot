@@ -10,10 +10,9 @@ import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/widgets_event_sub_card.dart';
-import 'package:life_pilot/utils/model_event_weather.dart';
-import 'package:provider/provider.dart';
 
 class WidgetsEventCard extends StatelessWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -28,6 +27,7 @@ class WidgetsEventCard extends StatelessWidget {
 
   const WidgetsEventCard({
     super.key,
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -44,6 +44,7 @@ class WidgetsEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WidgetsEventCardBody(
+      controllerEvent: controllerEvent,
       eventViewModel: eventViewModel,
       tableName: tableName,
       onTap: onTap,
@@ -100,6 +101,7 @@ class WidgetsEventCard extends StatelessWidget {
 }
 
 class _WidgetsEventCardBody extends StatefulWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -113,6 +115,7 @@ class _WidgetsEventCardBody extends StatefulWidget {
   final bool showSubEvents;
 
   const _WidgetsEventCardBody({
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -137,12 +140,13 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    if (!_weatherLoaded) {
-      final ctrl = context.read<ControllerEvent>();
-      ctrl.loadWeather(widget.eventViewModel, widget.tableName);
-      _weatherLoaded = true;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_weatherLoaded) {
+        await widget.controllerEvent.loadWeather(widget.eventViewModel, widget.tableName);
+        if (mounted) setState(() {});
+        _weatherLoaded = true;
+      }
+    });
   }
 
   Future<bool> _cachedAssetExists(String path) async {
@@ -157,14 +161,13 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.firstEventDate;
 
-    // 使用 Selector 只監聽對應 event 的天氣
-    final forecast = context.select<ControllerEvent, List<EventWeather>?>(
-      (c) => c.getForecast(widget.eventViewModel.id),
-    );
+    final forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id);
 
-    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
+    final showWeatherIcon =
+        forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
+    final todayWeather =
+        forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -333,11 +336,13 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsEventCard.link(
-                text: loc.clickHereToSeeMore,
-                onTap: widget.onOpenLink,),
+              text: loc.clickHereToSeeMore,
+              onTap: widget.onOpenLink,
+            ),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
-          if (widget.showSubEvents && widget.eventViewModel.subEvents.isNotEmpty)
+          if (widget.showSubEvents &&
+              widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
               shrinkWrap: true, // 讓 ListView 自動高度
               physics:
@@ -345,7 +350,10 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
               itemCount: widget.eventViewModel.subEvents.length,
               itemBuilder: (context, index) {
                 final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsEventSubCard(event: sub, onOpenLink: widget.onOpenLink,);
+                return WidgetsEventSubCard(
+                  event: sub,
+                  onOpenLink: widget.onOpenLink,
+                );
               },
             )
         ],

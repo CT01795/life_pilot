@@ -40,9 +40,6 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       existingEvent: widget.existingEvent,
       initialDate: widget.initialDate,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).unfocus();
-    });
   }
 
   @override
@@ -102,6 +99,22 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    Map<String, String> fields = {
+      EventFields.city: loc.city,
+      EventFields.location: loc.location,
+      EventFields.name: loc.activityName,
+      EventFields.type: loc.keywords,
+      EventFields.masterUrl: loc.masterUrl,
+      EventFields.description: loc.description,
+      //EventFields.fee: loc.fee,
+      //EventFields.unit: loc.sponsor,
+      //EventFields.ageMin: loc.ageMin,
+      //EventFields.ageMax: loc.ageMax,
+      //EventFields.isFree: loc.isFree,
+      //EventFields.priceMin: loc.priceMin,
+      //EventFields.priceMax: loc.priceMax,
+      //EventFields.isOutdoor: loc.isOutdoor,
+    };
     return ChangeNotifierProvider.value(
         value: controllerAdd,
         child: Consumer<ControllerPageCalendarAdd>(builder: (context, _, __) {
@@ -126,7 +139,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
                   padding: Insets.directionalL4R4T4B8,
                   children: [
                     _buildDateTimeRow(loc: loc, ctl: controllerAdd),
-                    ..._buildTextFields(loc: loc, ctl: controllerAdd),
+                    ..._buildTextFields(loc: loc, ctl: controllerAdd, fields: fields),
                     Gaps.h16,
                     Text(loc.eventSub),
                     ...List.generate(
@@ -134,10 +147,21 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
                         (index) => _buildSubEventCard(
                             loc: loc,
                             sub: controllerAdd.event.subEvents[index],
-                            index: index)),
+                            index: index,
+                            fields: fields)),
                     ElevatedButton.icon(
                       onPressed: () {
                         controllerAdd.addSubEvent();
+                        // 自動滑到最下
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_scrollController.hasClients) {
+                            _scrollController.animateTo(
+                              _scrollController.position.maxScrollExtent,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          }
+                        });
                       },
                       icon: const Icon(Icons.add),
                       label: Text(loc.eventAddSub),
@@ -156,24 +180,10 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   List<Widget> _buildTextFields(
       {required AppLocalizations loc,
       required ControllerPageCalendarAdd ctl,
+      required Map<String, String> fields,
       EventItem? sub}) {
-    Map<String, String> fields = {
-      EventFields.city: loc.city,
-      EventFields.location: loc.location,
-      EventFields.name: loc.activityName,
-      EventFields.type: loc.keywords,
-      EventFields.masterUrl: loc.masterUrl,
-      EventFields.description: loc.description,
-      //EventFields.fee: loc.fee,
-      //EventFields.unit: loc.sponsor,
-      //EventFields.ageMin: loc.ageMin,
-      //EventFields.ageMax: loc.ageMax,
-      //EventFields.isFree: loc.isFree,
-      //EventFields.priceMin: loc.priceMin,
-      //EventFields.priceMax: loc.priceMax,
-      //EventFields.isOutdoor: loc.isOutdoor,
-    };
-    return fields.entries.map((e) {
+    final Map<String,String> currentFields = Map.from(fields);
+    return currentFields.entries.map((e) {
       final keyField = sub == null ? e.key : '${e.key}_sub_${sub.id}';
       final controller = getTextController(keyField,
           initial: sub != null
@@ -195,6 +205,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   Widget _buildSubEventCard(
       {required AppLocalizations loc,
       required EventItem sub,
+      required Map<String, String> fields,
       required int index}) {
     return Card(
       key: ValueKey(sub.id),
@@ -204,7 +215,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
         child: Column(
           children: [
             _buildDateTimeRow(loc: loc, ctl: controllerAdd, sub: sub),
-            ..._buildTextFields(loc: loc, ctl: controllerAdd, sub: sub),
+            ..._buildTextFields(loc: loc, ctl: controllerAdd, sub: sub, fields: fields),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

@@ -126,12 +126,14 @@ class _WidgetsCalendarCardBodyState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    if (!_weatherLoaded) {
-      final ctrl = context.read<ControllerCalendar>();
-      ctrl.loadWeather(widget.eventViewModel);
-      _weatherLoaded = true;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_weatherLoaded) {
+        final ctrl = context.read<ControllerCalendar>();
+        ctrl.loadWeather(widget.eventViewModel);
+        if (mounted) setState(() {});
+        _weatherLoaded = true;
+      }
+    });
   }
 
   Future<bool> _cachedAssetExists(String path) async {

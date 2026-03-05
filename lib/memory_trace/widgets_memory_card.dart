@@ -7,10 +7,9 @@ import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
-import 'package:life_pilot/utils/model_event_weather.dart';
-import 'package:provider/provider.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -23,6 +22,7 @@ class WidgetsMemoryCard extends StatelessWidget {
 
   const WidgetsMemoryCard({
     super.key,
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -37,6 +37,7 @@ class WidgetsMemoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WidgetsMemoryCardBody(
+      controllerEvent: controllerEvent,
       eventViewModel: eventViewModel,
       tableName: tableName,
       onTap: onTap,
@@ -49,9 +50,10 @@ class WidgetsMemoryCard extends StatelessWidget {
     );
   }
 
-  static Widget link(
-      {required String text,
-        required VoidCallback onTap,}) {
+  static Widget link({
+    required String text,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Text(
@@ -90,6 +92,7 @@ class WidgetsMemoryCard extends StatelessWidget {
 }
 
 class _WidgetsMemoryCardBody extends StatefulWidget {
+  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -101,6 +104,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
   final bool showSubEvents;
 
   const _WidgetsMemoryCardBody({
+    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -113,25 +117,23 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
   });
 
   @override
-  State<_WidgetsMemoryCardBody> createState() =>
-      _WidgetsMemoryCardBodyState();
+  State<_WidgetsMemoryCardBody> createState() => _WidgetsMemoryCardBodyState();
 }
 
-class _WidgetsMemoryCardBodyState
-    extends State<_WidgetsMemoryCardBody> {
-  
+class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
   bool _weatherLoaded = false;
   final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    if (!_weatherLoaded) {
-      final ctrl = context.read<ControllerEvent>();
-      ctrl.loadWeather(widget.eventViewModel, widget.tableName);
-      _weatherLoaded = true;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_weatherLoaded) {
+        await widget.controllerEvent.loadWeather(widget.eventViewModel, widget.tableName);
+        if (mounted) setState(() {});
+        _weatherLoaded = true;
+      }
+    });
   }
 
   Future<bool> _cachedAssetExists(String path) async {
@@ -145,14 +147,14 @@ class _WidgetsMemoryCardBodyState
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.firstEventDate;
-    
-    final forecast = context.select<ControllerEvent, List<EventWeather>?>(
-      (c) => c.getForecast(widget.eventViewModel.id),
-    );
 
-    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
+    final forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id);
 
-    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
+    final showWeatherIcon =
+        forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
+
+    final todayWeather =
+        forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -321,11 +323,13 @@ class _WidgetsMemoryCardBodyState
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsMemoryCard.link(
-                text: loc.clickHereToSeeMore,
-                onTap: widget.onOpenLink,),
+              text: loc.clickHereToSeeMore,
+              onTap: widget.onOpenLink,
+            ),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
-          if (widget.showSubEvents && widget.eventViewModel.subEvents.isNotEmpty)
+          if (widget.showSubEvents &&
+              widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
               shrinkWrap: true, // 讓 ListView 自動高度
               physics:
@@ -333,7 +337,10 @@ class _WidgetsMemoryCardBodyState
               itemCount: widget.eventViewModel.subEvents.length,
               itemBuilder: (context, index) {
                 final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsMemorySubCard(event: sub, onOpenLink: widget.onOpenLink,);
+                return WidgetsMemorySubCard(
+                  event: sub,
+                  onOpenLink: widget.onOpenLink,
+                );
               },
             )
         ],
