@@ -331,7 +331,7 @@ class ControllerEvent extends ChangeNotifier {
 
   // ------------------ controller event card ------------------
   final Set<String> _loadingIds = {};
-  final Map<String, WeatherCache> _forecastCache = {};
+  final Map<String, WeatherCache?> _forecastCache = {};
 
   // ------------------ Public ------------------
   List<EventWeather>? getForecast(String eventId) {
@@ -353,7 +353,7 @@ class ControllerEvent extends ChangeNotifier {
       return;
     }
 
-    final cache = _forecastCache[event.id];
+    WeatherCache? cache = _forecastCache[event.id];
 
     if (cache != null) {
       final diff = now.difference(cache.created);
