@@ -36,9 +36,6 @@ class _PageEventAddState extends State<PageEventAdd> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).unfocus();
-    });
     controllerAdd = widget.controllerEvent.createAddController(
       existingEvent: widget.existingEvent,
       initialDate: widget.initialDate,
@@ -56,17 +53,21 @@ class _PageEventAddState extends State<PageEventAdd> {
   }
 
   FocusNode getFocusNode(String key) {
-    if (!_focusNodes.containsKey(key)) {
-      _focusNodes[key] = FocusNode();
-      _focusNodes[key]!.addListener(() {
-        if (!_focusNodes[key]!.hasFocus) {
-          // 離焦時更新
+    return _focusNodes.putIfAbsent(key, () {
+      final node = FocusNode();
+
+      node.addListener(() {
+        if (!node.hasFocus) {
           controllerAdd.updateField(
-              key, controllerAdd.getController(key: key).text, true);
+            key,
+            controllerAdd.getController(key: key).text,
+            true,
+          );
         }
       });
-    }
-    return _focusNodes[key]!;
+
+      return node;
+    });
   }
 
   Future<void> _saveEvent(AppLocalizations loc) async {
@@ -94,110 +95,6 @@ class _PageEventAddState extends State<PageEventAdd> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return ChangeNotifierProvider.value(
-        value: controllerAdd,
-        child: Consumer<ControllerPageEventAdd>(builder: (context, ctl, _) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(loc.eventAddEdit),
-              actions: [
-                TextButton(
-                  onPressed: () => _saveEvent(loc),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text(loc.save),
-                ),
-              ],
-            ),
-            body: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  controller: _scrollController,
-                  padding: Insets.directionalL4R4T4B8,
-                  children: [
-                    _buildDateTimeRow(loc: loc, ctl: ctl),
-                    ..._buildTextFields(loc: loc, ctl: ctl),
-                    Gaps.h16,
-                    Text(loc.eventSub),
-                    ...List.generate(
-                        ctl.subEvents.length,
-                        (index) => _buildSubEventCard(
-                            loc: loc, ctl: ctl, index: index)),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        final newSub = EventItem(id: ctl.uuid.v4())
-                          ..startDate = ctl.startDate
-                          ..endDate = ctl.endDate
-                          ..startTime = ctl.startTime
-                          ..endTime = ctl.endTime
-                          ..city = ctl.city
-                          ..location = ctl.location
-                          ..ageMin = ctl.ageMin
-                          ..ageMax = ctl.ageMax
-                          ..isFree = ctl.isFree
-                          ..priceMin = ctl.priceMin
-                          ..priceMax = ctl.priceMax
-                          ..isOutdoor = ctl.isOutdoor
-                          ..isLike = ctl.isLike
-                          ..isDislike = ctl.isDislike
-                          ..pageViews = ctl.pageViews
-                          ..cardClicks = ctl.cardClicks
-                          ..saves = ctl.saves
-                          ..registrationClicks = ctl.registrationClicks
-                          ..likeCounts = ctl.likeCounts
-                          ..dislikeCounts = ctl.dislikeCounts;
-                        setState(() {
-                          final newIndex = newSub.id;
-                          ctl.subEvents.add(newSub);
-                          // ✅ 初始化該子事件的控制器
-                          final subFields = {
-                            EventFields.city: newSub.city,
-                            EventFields.location: newSub.location,
-                            EventFields.name: newSub.name,
-                            EventFields.type: newSub.type,
-                            EventFields.description: newSub.description,
-                            //EventFields.fee: newSub.fee,
-                            EventFields.unit: newSub.unit,
-                            EventFields.masterUrl:
-                                newSub.masterUrl ?? '',
-                          };
-                          subFields.forEach((key, value) {
-                            ctl.initController(
-                                key: '${key}_sub_$newIndex',
-                                initialValue: value);
-                          });
-                        });
-                        // 自動滑到最下
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (_scrollController.hasClients) {
-                            _scrollController.animateTo(
-                              _scrollController.position.maxScrollExtent,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            );
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.add),
-                      label: Text(loc.eventAddSub),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }));
-  }
-
-  // =====================================================
-  // 🧱 組件建構部分
-  // =====================================================
-  List<Widget> _buildTextFields(
-      {required AppLocalizations loc,
-      required ControllerPageEventAdd ctl,
-      String? index}) {
     Map<String, String> fields = {
       EventFields.city: loc.city,
       EventFields.location: loc.location,
@@ -214,16 +111,89 @@ class _PageEventAddState extends State<PageEventAdd> {
       //EventFields.priceMax: loc.priceMax,
       EventFields.isOutdoor: loc.isOutdoor,
     };
+    return ChangeNotifierProvider.value(
+        value: controllerAdd,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(loc.eventAddEdit),
+            actions: [
+              TextButton(
+                onPressed: () => _saveEvent(loc),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(loc.save),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                controller: _scrollController,
+                padding: Insets.directionalL4R4T4B8,
+                children: [
+                  _buildDateTimeRow(loc: loc, ctl: controllerAdd),
+                  ..._buildTextFields(loc: loc, ctl: controllerAdd, fields: fields),
+                  Gaps.h16,
+                  Text(loc.eventSub),
+                  Selector<ControllerPageEventAdd, int>(
+                    selector: (_, ctl) => ctl.subEvents.length,
+                    builder: (_, length, __) {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: length,
+                        itemBuilder: (_, index) {
+                          return _buildSubEventCard(
+                              loc: loc, ctl: controllerAdd, index: index, fields: fields);
+                        },
+                      );
+                    },
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      controllerAdd.addSubEvent();
+                      // 自動滑到最下
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (_scrollController.hasClients) {
+                          _scrollController.animateTo(
+                            _scrollController.position.maxScrollExtent,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                          );
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text(loc.eventAddSub),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ));
+  }
+
+  // =====================================================
+  // 🧱 組件建構部分
+  // =====================================================
+  List<Widget> _buildTextFields(
+      {required AppLocalizations loc,
+      required ControllerPageEventAdd ctl,
+      required Map<String, String> fields,
+      String? index}) {
+    final Map<String,String> currentFields = Map.from(fields);
     if (index != null) {
-      //fields.remove(EventFields.city);
-      fields.remove(EventFields.ageMin);
-      //fields.remove(EventFields.ageMax);
-      fields.remove(EventFields.isFree);
-      fields.remove(EventFields.priceMin);
-      //fields.remove(EventFields.priceMax);
-      fields.remove(EventFields.isOutdoor);
+      //currentFields.remove(EventFields.city);
+      currentFields.remove(EventFields.ageMin);
+      //currentFields.remove(EventFields.ageMax);
+      currentFields.remove(EventFields.isFree);
+      currentFields.remove(EventFields.priceMin);
+      //currentFields.remove(EventFields.priceMax);
+      currentFields.remove(EventFields.isOutdoor);
     }
-    return fields.entries.map((e) {
+    return currentFields.entries.map((e) {
       final keyField = index == null ? e.key : '${e.key}_sub_$index';
       // ✅ isFree 下拉選單
       if (e.key == EventFields.isFree) {
@@ -233,8 +203,7 @@ class _PageEventAddState extends State<PageEventAdd> {
               : ctl.isFree.toString().toLowerCase(), // 預設值
           decoration: InputDecoration(labelText: e.value),
           items: [
-            DropdownMenuItem(
-                value: '', child: Text(loc.toBeDetermined)),
+            DropdownMenuItem(value: '', child: Text(loc.toBeDetermined)),
             DropdownMenuItem(value: "true", child: Text(loc.free)),
             DropdownMenuItem(value: "false", child: Text(loc.pay)),
           ],
@@ -254,8 +223,7 @@ class _PageEventAddState extends State<PageEventAdd> {
               : ctl.isOutdoor.toString().toLowerCase(), // 預設值
           decoration: InputDecoration(labelText: e.value),
           items: [
-            DropdownMenuItem(
-                value: '', child: Text(loc.toBeDetermined)),
+            DropdownMenuItem(value: '', child: Text(loc.toBeDetermined)),
             DropdownMenuItem(value: "true", child: Text(loc.outdoor)),
             DropdownMenuItem(value: "false", child: Text(loc.indoor)),
           ],
@@ -355,19 +323,41 @@ class _PageEventAddState extends State<PageEventAdd> {
         Row(
           children: [
             Expanded(
-                child: _buildDateTile(
-                    loc: loc,
-                    date: dStart,
-                    onTap: () =>
-                        _pickDate(ctl: ctl, isStart: true, index: index),
-                    type: CalendarMisc.startToS)),
+              child: _buildDateTile(
+                loc: loc,
+                date: dStart,
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: dStart ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+
+                  if (picked != null) {
+                    ctl.setDate(picked, isStart: true, index: index);
+                  }
+                },
+                type: CalendarMisc.startToS,
+              ),
+            ),
             const Text(' ~ '),
             Expanded(
                 child: _buildDateTile(
                     loc: loc,
                     date: dEnd,
-                    onTap: () =>
-                        _pickDate(ctl: ctl, isStart: false, index: index),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dEnd ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (picked != null) {
+                        ctl.setDate(picked, isStart: false, index: index);
+                      }
+                    },
                     type: CalendarMisc.endToE)),
           ],
         ),
@@ -377,16 +367,32 @@ class _PageEventAddState extends State<PageEventAdd> {
                 child: _buildTimeTile(
                     loc: loc,
                     time: tStart,
-                    onTap: () =>
-                        _pickTime(ctl: ctl, isStart: true, index: index),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: tStart ?? TimeOfDay.now(),
+                      );
+
+                      if (picked != null) {
+                        ctl.setTime(picked, isStart: true, index: index);
+                      }
+                    },
                     type: CalendarMisc.startToS)),
             const Text(' ~ '),
             Expanded(
                 child: _buildTimeTile(
                     loc: loc,
                     time: tEnd,
-                    onTap: () =>
-                        _pickTime(ctl: ctl, isStart: false, index: index),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: tEnd ?? TimeOfDay.now(),
+                      );
+
+                      if (picked != null) {
+                        ctl.setTime(picked, isStart: false, index: index);
+                      }
+                    },
                     type: CalendarMisc.endToE)),
           ],
         ),
@@ -397,70 +403,6 @@ class _PageEventAddState extends State<PageEventAdd> {
   // =====================================================
   // 📅 時間與日期選擇
   // =====================================================
-  Future<void> _pickDate(
-      {required ControllerPageEventAdd ctl,
-      required bool isStart,
-      int? index}) async {
-    final now = DateTime.now();
-    final initial = isStart
-        ? (index == null ? ctl.startDate : ctl.subEvents[index].startDate) ??
-            now
-        : (index == null ? ctl.endDate : ctl.subEvents[index].endDate) ?? now;
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: now.subtract(const Duration(days: 1800)),
-      lastDate: now.add(const Duration(days: 1800)),
-    );
-    if (picked == null) return;
-
-    setState(() {
-      if (index == null) {
-        isStart ? ctl.startDate = picked : ctl.endDate = picked;
-        if (ctl.startDate != null &&
-            ctl.endDate != null &&
-            ctl.startDate!.isAfter(ctl.endDate!)) {
-          ctl.endDate = ctl.startDate;
-        }
-      } else {
-        isStart
-            ? ctl.subEvents[index].startDate = picked
-            : ctl.subEvents[index].endDate = picked;
-
-        if (ctl.subEvents[index].startDate != null &&
-            ctl.subEvents[index].endDate != null &&
-            ctl.subEvents[index].startDate!
-                .isAfter(ctl.subEvents[index].endDate!)) {
-          ctl.subEvents[index].endDate = ctl.subEvents[index].startDate;
-        }
-      }
-    });
-  }
-
-  Future<void> _pickTime(
-      {required ControllerPageEventAdd ctl,
-      required bool isStart,
-      int? index}) async {
-    final initial = isStart
-        ? (index == null ? ctl.startTime : ctl.subEvents[index].startTime) ??
-            TimeOfDay.now()
-        : (index == null ? ctl.endTime : ctl.subEvents[index].endTime) ??
-            TimeOfDay.now();
-
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked == null) return;
-    setState(() {
-      if (index == null) {
-        isStart ? ctl.startTime = picked : ctl.endTime = picked;
-      } else {
-        isStart
-            ? ctl.subEvents[index].startTime = picked
-            : ctl.subEvents[index].endTime = picked;
-      }
-    });
-  }
-
   Widget _buildDateTile(
       {required AppLocalizations loc,
       DateTime? date,
@@ -497,6 +439,7 @@ class _PageEventAddState extends State<PageEventAdd> {
   Widget _buildSubEventCard(
       {required AppLocalizations loc,
       required ControllerPageEventAdd ctl,
+      required Map<String, String> fields,
       required int index}) {
     final d = ctl.subEvents[index];
 
@@ -508,7 +451,7 @@ class _PageEventAddState extends State<PageEventAdd> {
         child: Column(
           children: [
             _buildDateTimeRow(loc: loc, ctl: ctl, index: index),
-            ..._buildTextFields(loc: loc, ctl: ctl, index: d.id),
+            ..._buildTextFields(loc: loc, ctl: ctl, index: d.id, fields: fields),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -519,26 +462,22 @@ class _PageEventAddState extends State<PageEventAdd> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.pinkAccent),
-                  tooltip: loc.delete,
-                  onPressed: () async {
-                    final event = ctl.subEvents[
-                        index]; // 假設你有 subEvents list 裡的 item 為 event
-                    final shouldDelete = await showConfirmationDialog(
-                      content: 'No. ${index + 1} ${event.name} ${loc.delete}？',
-                      confirmText: loc.delete,
-                      cancelText: loc.cancel,
-                    );
+                    icon: const Icon(Icons.delete, color: Colors.pinkAccent),
+                    tooltip: loc.delete,
+                    onPressed: () async {
+                      final event = ctl.subEvents[
+                          index]; // 假設你有 subEvents list 裡的 item 為 event
+                      final shouldDelete = await showConfirmationDialog(
+                        content:
+                            'No. ${index + 1} ${event.name} ${loc.delete}？',
+                        confirmText: loc.delete,
+                        cancelText: loc.cancel,
+                      );
 
-                    if (shouldDelete == true) {
-                      try {
-                        setState(() => ctl.subEvents.removeAt(index));
-                      } catch (e) {
-                        AppNavigator.showErrorBar('${loc.deleteError}: $e');
+                      if (shouldDelete == true) {
+                        controllerAdd.removeSubEvent(index);
                       }
-                    }
-                  },
-                ),
+                    }),
               ],
             ),
           ],
@@ -573,12 +512,17 @@ class SpeechTextField extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (ctrl.text.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.volume_up),
-            tooltip: loc.speakUp,
-            onPressed: () => controller.speakText(text: ctrl.text),
-          ),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: ctrl,
+          builder: (_, value, __) {
+            if (value.text.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.volume_up),
+              tooltip: loc.speakUp,
+              onPressed: () => controller.speakText(text: ctrl.text),
+            );
+          },
+        ),
         Expanded(
           child: TextFormField(
             controller: ctrl,
@@ -591,33 +535,35 @@ class SpeechTextField extends StatelessWidget {
             onChanged: onChanged,
           ),
         ),
-        IconButton(
-          icon: Icon(
-            Icons.mic,
-            color: controller.isListening &&
-                    controller.currentListeningKey == keyField
-                ? Colors.red
-                : null,
-          ),
-          tooltip: loc.speak,
-          onPressed: () async {
-            if (controller.isListening &&
-                controller.currentListeningKey == keyField) {
-              await controller.stopListening();
-            } else {
-              if (controller.isListening) {
-                await controller.stopListening();
-                await Future.delayed(const Duration(milliseconds: 200));
-              }
-              await controller.startListening(
-                  onResult: (text) {
-                    ctrl.text += ' $text'; // 加上追加模式
-                    onChanged(ctrl.text);
-                  },
-                  key: keyField);
-            }
-          },
-        ),
+        Selector<ControllerPageEventAdd, bool>(
+            selector: (_, ctl) =>
+                ctl.isListening && ctl.currentListeningKey == keyField,
+            builder: (_, isActive, __) {
+              return IconButton(
+                icon: Icon(
+                  Icons.mic,
+                  color: isActive ? Colors.red : null,
+                ),
+                tooltip: loc.speak,
+                onPressed: () async {
+                  if (controller.isListening &&
+                      controller.currentListeningKey == keyField) {
+                    await controller.stopListening();
+                  } else {
+                    if (controller.isListening) {
+                      await controller.stopListening();
+                      await Future.delayed(const Duration(milliseconds: 200));
+                    }
+                    await controller.startListening(
+                        onResult: (text) {
+                          ctrl.text += ' $text'; // 加上追加模式
+                          onChanged(ctrl.text);
+                        },
+                        key: keyField);
+                  }
+                },
+              );
+            }),
       ],
     );
   }

@@ -26,6 +26,7 @@ class WidgetsEventDialog extends StatelessWidget {
         children: [
           SingleChildScrollView(
             child: WidgetsEventCard(
+              controllerEvent: controllerEvent,
               eventViewModel: eventViewModel,
               tableName: tableName,
               onTap: () => Navigator.pop(context),

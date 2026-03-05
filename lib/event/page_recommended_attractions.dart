@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_base_event.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/utils/widgets/widgets_search_panel.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +37,10 @@ class _PageRecommendedAttractionsState
       toTableName: TableNames.calendarEvents,
       modelEventCalendar: ModelEventCalendar(),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _controllerEvent.loadEvents();
+    });
   }
 
   @override
@@ -51,8 +55,8 @@ class _PageRecommendedAttractionsState
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
     return ChangeNotifierProvider.value(
-      value: _controllerEvent,
-      child:GenericEventPage(
+        value: _controllerEvent,
+        child: GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,
           title: loc.recommendedAttractions,

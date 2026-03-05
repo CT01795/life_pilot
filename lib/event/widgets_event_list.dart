@@ -37,6 +37,7 @@ class WidgetsEventList extends StatelessWidget {
 
         return WidgetsEventCard(
           key: ValueKey(eventViewModel.id),
+          controllerEvent: controllerEvent,
           eventViewModel: eventViewModel,
           tableName: controllerEvent.fromTableName,
           onTap: () => _showEventDialog(

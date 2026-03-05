@@ -61,9 +61,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // --- 控制器管理 ---
   final Map<String, TextEditingController> controllerMap = {};
 
-  // --- Debounce 用 ---
-  Timer? _debounce;
-
   ControllerPageEventAdd({
     required this.auth,
     required this.tableName,
@@ -203,14 +200,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
     return controllerMap[key] ?? initController(key: key, initialValue: '');
   }
 
-  // Debounce 更新（減少 rebuild 次數）
-  void _notifyDebounced() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 200), () {
-      notifyListeners();
-    });
-  }
-
   // 更新欄位（主事件 / 子事件）
   void updateField(String key, String value, bool check) {
     // ✅ 判斷是否是 subEvent 欄位
@@ -222,12 +211,10 @@ class ControllerPageEventAdd extends ChangeNotifier {
         final sub = subEvents.firstWhere((e) => e.id == nowId,
             orElse: () => EventItem(id: nowId));
         _updateSubEvent(key, sub, field, value, check);
-        _notifyDebounced();
         return;
       }
     }
     _updateMainField(key, value, check);
-    _notifyDebounced();
   }
 
   void _updateMainField(String key, String value, bool check) {
@@ -401,9 +388,11 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // 將目前表單內容轉換為 EventItem
   EventItem toEventItem() {
     // ✅ 先更新 subEvents 的內容
-    subEvents.sort(_compareEvents);
+    final sortedSubs = List<EventItem>.from(subEvents)
+      ..sort(_compareEvents);
+    //subEvents.sort(_compareEvents);
 
-    final updatedSubs = subEvents.map((sub) {
+    final updatedSubs = sortedSubs.map((sub) {
       String getText(String field) {
         String? tmpValue = controllerMap['${field}_sub_${sub.id}']?.text;
         return tmpValue == null || tmpValue.isEmpty ? '' : tmpValue;
@@ -517,7 +506,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
     final available = await _serviceSpeech.startListening(
       onResult: (text) {
         onResult(text);
-        _notifyDebounced();
+        notifyListeners();
       },
     );
     if (!available) return;
@@ -537,9 +526,113 @@ class ControllerPageEventAdd extends ChangeNotifier {
     await _serviceSpeech.speakText(text: text);
   }
 
+  void addSubEvent() {
+    final newSub = EventItem(id: uuid.v4())
+      ..startDate = startDate
+      ..endDate = endDate
+      ..startTime = startTime
+      ..endTime = endTime
+      ..city = city
+      ..location = location
+      ..ageMin = ageMin
+      ..ageMax = ageMax
+      ..isFree = isFree
+      ..priceMin = priceMin
+      ..priceMax = priceMax
+      ..isOutdoor = isOutdoor
+      ..isLike = isLike
+      ..isDislike = isDislike
+      ..pageViews = pageViews
+      ..cardClicks = cardClicks
+      ..saves = saves
+      ..registrationClicks = registrationClicks
+      ..likeCounts = likeCounts
+      ..dislikeCounts = dislikeCounts;
+
+    subEvents.add(newSub);
+
+    _initSubControllers(newSub);
+
+    notifyListeners();
+  }
+
+  void _initSubControllers(EventItem newSub) {
+    // ✅ 初始化該子事件的控制器
+    final subFields = {
+      EventFields.city: newSub.city,
+      EventFields.location: newSub.location,
+      EventFields.name: newSub.name,
+      EventFields.type: newSub.type,
+      EventFields.description: newSub.description,
+      //EventFields.fee: newSub.fee,
+      EventFields.unit: newSub.unit,
+      EventFields.masterUrl: newSub.masterUrl ?? '',
+    };
+    subFields.forEach((key, value) {
+      initController(key: '${key}_sub_${newSub.id}', initialValue: value);
+    });
+  }
+
+  Future<void> removeSubEvent(int index) async {
+    final removed = subEvents.removeAt(index);
+
+    // 🔥 清掉該 sub 的 controller
+    controllerMap.removeWhere((key, controller) {
+      final shouldRemove = key.contains('_sub_${removed.id}');
+      if (shouldRemove) controller.dispose();
+      return shouldRemove;
+    });
+    notifyListeners();
+  }
+
+  void setDate(DateTime picked, {required bool isStart, int? index}) {
+    if (index == null) {
+      isStart ? startDate = picked : endDate = picked;
+      if (startDate != null &&
+          endDate != null &&
+          startDate!.isAfter(endDate!)) {
+        endDate = startDate;
+      }
+    } else {
+      isStart
+          ? subEvents[index].startDate = picked
+          : subEvents[index].endDate = picked;
+
+      if (subEvents[index].startDate != null &&
+          subEvents[index].endDate != null &&
+          subEvents[index].startDate!.isAfter(subEvents[index].endDate!)) {
+        subEvents[index].endDate = subEvents[index].startDate;
+      }
+    }
+    notifyListeners();
+  }
+
+  void setTime(TimeOfDay picked, {required bool isStart, int? index}) {
+    if (index == null) {
+      isStart ? startTime = picked : endTime = picked;
+      if (startDate == endDate &&
+          startTime != null &&
+          endTime != null &&
+          startTime!.isAfter(endTime!)) {
+        endTime = startTime;
+      }
+    } else {
+      isStart
+          ? subEvents[index].startTime = picked
+          : subEvents[index].endTime = picked;
+
+      if (subEvents[index].startDate == subEvents[index].endDate &&
+          subEvents[index].startTime != null &&
+          subEvents[index].endTime != null &&
+          subEvents[index].startTime!.isAfter(subEvents[index].endTime!)) {
+        subEvents[index].endTime = subEvents[index].startTime;
+      }
+    }
+    notifyListeners();
+  }
+
   @override
   void dispose() {
-    _debounce?.cancel();
     for (var c in controllerMap.values) {
       c.dispose();
     }
