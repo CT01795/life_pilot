@@ -24,20 +24,18 @@ class PageRecommendedAttractions extends StatefulWidget {
 class _PageRecommendedAttractionsState
     extends State<PageRecommendedAttractions> {
   late final ControllerEvent _controllerEvent;
-  late final ModelEventCalendar _modelEventCalendar;
 
   @override
   void initState() {
     super.initState();
     final context = this.context; // ✅ 避免多次 lookup
-    _modelEventCalendar = ModelEventCalendar();
     _controllerEvent = ControllerEvent(
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
       serviceWeather: context.read<ServiceWeather>(),
       tableName: TableNames.recommendedAttractions,
       toTableName: TableNames.calendarEvents,
-      modelEventCalendar: _modelEventCalendar,
+      modelEventCalendar: ModelEventCalendar(),
     );
   }
 
@@ -52,12 +50,11 @@ class _PageRecommendedAttractionsState
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
-    return ChangeNotifierProvider<ControllerEvent>(
-      create: (_) => _controllerEvent,
+    return ChangeNotifierProvider.value(
+      value: _controllerEvent,
       child:GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,
-          modelEventCalendar: _modelEventCalendar,
           title: loc.recommendedAttractions,
           emptyText: loc.recommendedAttractionsZero,
           searchPanelBuilder: widgetsSearchPanel,

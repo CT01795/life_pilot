@@ -45,10 +45,15 @@ class ControllerEvent extends ChangeNotifier {
   ServiceEvent get serviceEvent => _serviceEvent;
   ServiceWeather get serviceWeather => _serviceWeather;
   String get fromTableName => _tableName;
-
+  ModelEventCalendar get modelEventCalendar => _modelEventCalendar;
+  List<EventItem> getFilteredEvents(AppLocalizations loc) =>
+      _modelEventCalendar.getFilteredEvents(loc);
   bool isEventSelected(String eventId) {
     return _modelEventCalendar.selectedEventIds.contains(eventId);
   }
+
+  bool get showSearchPanel => _modelEventCalendar.showSearchPanel;
+  ScrollController get scrollController => _modelEventCalendar.scrollController;
 
   // ---------------------------------------------------------------------------
   // 📦 CRUD 操作
@@ -295,9 +300,8 @@ class ControllerEvent extends ChangeNotifier {
 
     _lastEvents = events;
 
-    _cachedViewModels = events
-        .map((event) => buildViewModel(event: event, loc: loc))
-        .toList();
+    _cachedViewModels =
+        events.map((event) => buildViewModel(event: event, loc: loc)).toList();
     return _cachedViewModels!;
   }
 

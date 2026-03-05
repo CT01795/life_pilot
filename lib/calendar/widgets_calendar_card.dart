@@ -121,7 +121,7 @@ class _WidgetsCalendarCardBodyState
     extends State<_WidgetsCalendarCardBody> {
   
   bool _weatherLoaded = false;
-   final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
+  final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
 
   @override
   void didChangeDependencies() {
@@ -160,7 +160,7 @@ class _WidgetsCalendarCardBodyState
       return Row(
         children: [
           // 天氣 Icon
-          if (showWeatherIcon && todayWeather != null && context.mounted)
+          if (showWeatherIcon && todayWeather != null)
             IconButton(
               icon: Container(
                 width: 42,
@@ -326,10 +326,11 @@ class _WidgetsCalendarCardBodyState
                 onTap: widget.onOpenLink,),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
-          if (widget.showSubEvents)
+          if (widget.showSubEvents && widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true, // 讓 ListView 自動高度
+              physics:
+                  const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
               itemCount: widget.eventViewModel.subEvents.length,
               itemBuilder: (context, index) {
                 final sub = widget.eventViewModel.subEvents[index];

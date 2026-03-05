@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_date_button.dart';
 
 Widget widgetsSearchPanel({
-  required ModelEventCalendar modelEventCalendar,
   required ControllerEvent controllerEvent,
   required AppLocalizations loc,
   required BuildContext context,
 }) {
-  final filter = modelEventCalendar.searchFilter;
+  final filter = controllerEvent.modelEventCalendar.searchFilter;
   return Padding(
     padding: Insets.all12,
     child: Column(
       children: [
         TextField(
-          controller: modelEventCalendar.searchController,
+          controller: controllerEvent.modelEventCalendar.searchController,
           decoration: InputDecoration(
             hintText: loc.searchKeywords,
             prefixIcon: const Icon(Icons.search),

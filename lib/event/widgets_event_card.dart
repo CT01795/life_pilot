@@ -11,9 +11,9 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/widgets_event_sub_card.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
+import 'package:provider/provider.dart';
 
 class WidgetsEventCard extends StatelessWidget {
-  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -28,7 +28,6 @@ class WidgetsEventCard extends StatelessWidget {
 
   const WidgetsEventCard({
     super.key,
-    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -36,8 +35,8 @@ class WidgetsEventCard extends StatelessWidget {
     this.onLike,
     this.onDislike,
     this.onAccounting,
-    required this.onOpenLink,
     required this.onOpenMap,
+    required this.onOpenLink,
     this.trailing,
     this.showSubEvents = true,
   });
@@ -45,7 +44,6 @@ class WidgetsEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WidgetsEventCardBody(
-      controllerEvent: controllerEvent,
       eventViewModel: eventViewModel,
       tableName: tableName,
       onTap: onTap,
@@ -53,16 +51,17 @@ class WidgetsEventCard extends StatelessWidget {
       onLike: onLike,
       onDislike: onDislike,
       onAccounting: onAccounting,
-      onOpenLink: onOpenLink,
       onOpenMap: onOpenMap,
+      onOpenLink: onOpenLink,
       trailing: trailing,
       showSubEvents: showSubEvents,
     );
   }
 
-  static Widget link(
-      {required String text,
-        required VoidCallback onTap,}) {
+  static Widget link({
+    required String text,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Text(
@@ -101,21 +100,19 @@ class WidgetsEventCard extends StatelessWidget {
 }
 
 class _WidgetsEventCardBody extends StatefulWidget {
-  final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final Future<void> Function()? onLike;
   final Future<void> Function()? onDislike;
   final VoidCallback? onAccounting;
-  final VoidCallback onOpenLink;
   final VoidCallback onOpenMap;
+  final VoidCallback onOpenLink;
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
 
   const _WidgetsEventCardBody({
-    required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
     this.onTap,
@@ -123,54 +120,58 @@ class _WidgetsEventCardBody extends StatefulWidget {
     this.onLike,
     this.onDislike,
     this.onAccounting,
-    required this.onOpenLink,
     required this.onOpenMap,
+    required this.onOpenLink,
     this.trailing,
     this.showSubEvents = true,
   });
 
   @override
-  State<_WidgetsEventCardBody> createState() =>
-      _WidgetsEventCardBodyState();
+  State<_WidgetsEventCardBody> createState() => _WidgetsEventCardBodyState();
 }
 
-class _WidgetsEventCardBodyState
-    extends State<_WidgetsEventCardBody> {
-  
+class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
   bool _weatherLoaded = false;
+  final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
 
-  List<EventWeather> forecast = [];
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     if (!_weatherLoaded) {
-      widget.controllerEvent.loadWeather(widget.eventViewModel, widget.tableName).then((_) {
-        if (mounted) {
-          setState(() {
-            forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id) ?? [];
-          });
-        }
-      });
+      final ctrl = context.read<ControllerEvent>();
+      ctrl.loadWeather(widget.eventViewModel, widget.tableName);
       _weatherLoaded = true;
     }
+  }
+
+  Future<bool> _cachedAssetExists(String path) async {
+    if (_assetCache.containsKey(path)) return _assetCache[path]!;
+    final exists = await assetExists(path);
+    _assetCache[path] = exists;
+    return exists;
   }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.firstEventDate;
-    //final forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id);
-    final showWeatherIcon = forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather = forecast.isNotEmpty ? forecast.first : null;
+    // 使用 Selector 只監聽對應 event 的天氣
+    final forecast = context.select<ControllerEvent, List<EventWeather>?>(
+      (c) => c.getForecast(widget.eventViewModel.id),
+    );
+
+    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
+
+    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
       return Row(
         children: [
           // 天氣 Icon
-          if (showWeatherIcon && todayWeather != null && context.mounted)
+          if (showWeatherIcon && todayWeather != null)
             IconButton(
               icon: Container(
                 width: 42,
@@ -184,7 +185,7 @@ class _WidgetsEventCardBodyState
                         : null,
                 padding: const EdgeInsets.all(1),
                 child: FutureBuilder<bool>(
-                  future: assetExists(
+                  future: _cachedAssetExists(
                       'assets/weather_icons/${todayWeather.icon}.png'),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
@@ -247,7 +248,7 @@ class _WidgetsEventCardBodyState
                                         : null,
                                 padding: const EdgeInsets.all(1),
                                 child: FutureBuilder<bool>(
-                                  future: assetExists(
+                                  future: _cachedAssetExists(
                                       'assets/weather_icons/${w.icon}.png'),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState !=
@@ -333,22 +334,20 @@ class _WidgetsEventCardBodyState
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsEventCard.link(
                 text: loc.clickHereToSeeMore,
-                onTap: widget.onOpenLink),
+                onTap: widget.onOpenLink,),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
           if (widget.showSubEvents && widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
-              shrinkWrap: true,          // 讓 ListView 自動高度
-              physics: const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
+              shrinkWrap: true, // 讓 ListView 自動高度
+              physics:
+                  const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
               itemCount: widget.eventViewModel.subEvents.length,
               itemBuilder: (context, index) {
                 final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsEventSubCard(
-                  event: sub,
-                  onOpenLink: widget.onOpenLink,
-                );
+                return WidgetsEventSubCard(event: sub, onOpenLink: widget.onOpenLink,);
               },
-            ),
+            )
         ],
       ),
     );
@@ -376,10 +375,24 @@ class _WidgetsEventCardBodyState
               children: [
                 // 👍 Favor（登入即可）
                 if (widget.onLike != null)
-                  PressButton(isPress: widget.eventViewModel.isLike, color:Colors.pinkAccent, onPressed: widget.onLike, pressedIcon: Icons.favorite_outlined, unPressedIcon: Icons.favorite_outline,tooltip: loc.like,),
+                  PressButton(
+                    isPress: widget.eventViewModel.isLike,
+                    color: Colors.pinkAccent,
+                    onPressed: widget.onLike,
+                    pressedIcon: Icons.favorite_outlined,
+                    unPressedIcon: Icons.favorite_outline,
+                    tooltip: loc.like,
+                  ),
                 // 🚫 Not Favor（登入即可）
                 if (widget.onDislike != null)
-                  PressButton(isPress: widget.eventViewModel.isDislike, color:Colors.grey, onPressed: widget.onDislike, pressedIcon: Icons.sentiment_neutral_sharp, unPressedIcon: Icons.sentiment_dissatisfied_outlined,tooltip: loc.dislike,),
+                  PressButton(
+                    isPress: widget.eventViewModel.isDislike,
+                    color: Colors.grey,
+                    onPressed: widget.onDislike,
+                    pressedIcon: Icons.sentiment_neutral_sharp,
+                    unPressedIcon: Icons.sentiment_dissatisfied_outlined,
+                    tooltip: loc.dislike,
+                  ),
                 if (widget.onAccounting != null)
                   IconButton(
                     icon: Icon(Icons.currency_exchange),
