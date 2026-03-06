@@ -25,6 +25,7 @@ import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ControllerCalendar extends ChangeNotifier {
+  late String _googleApiKey;
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
   late ControllerNotification _controllerNotification;
@@ -104,13 +105,15 @@ class ControllerCalendar extends ChangeNotifier {
       serviceEvent: serviceEvent,
     );
   }
-
   void updateLocalization(AppLocalizations loc) {
     closeText = loc.close;
     notifyListeners();
   }
 
   Future<void> init() async {
+    _googleApiKey = await _serviceEvent.getKey(
+      keyName: "GOOGLE_API_KEY",
+    );
     _modelCalendar.isInitialized = true; // 提前鎖
     await goToMonth(month: currentMonth, notify: false);
     await checkAndGenerateNextEvents();
@@ -129,6 +132,7 @@ class ControllerCalendar extends ChangeNotifier {
       auth: auth,
       localeProvider: _localeProvider,
       tableName: _tableName,
+      googleApiKey: _googleApiKey,
     );
 
     // ❗只允許最新請求寫入 model
@@ -169,6 +173,14 @@ class ControllerCalendar extends ChangeNotifier {
       } else {
         await reloadEvents(month: targetMonth, notify: notify);
       }
+      unawaited(reloadEvents(
+        month: DateTime(targetMonth.year, targetMonth.month + 1),
+        notify: false,
+      ));
+      unawaited(reloadEvents(
+        month: DateTime(targetMonth.year, targetMonth.month - 1),
+        notify: false,
+      ));
     } finally {
       _isChangingMonth = false;
     }
@@ -598,54 +610,21 @@ class ControllerCalendar extends ChangeNotifier {
 
   // ------------------ controller event card ------------------
 
-  final Set<String> _loadingIds = {};
-  final Map<String, WeatherCache?> _forecastCache = {};
-
   // ------------------ Public ------------------
-
   List<EventWeather>? getForecast(String eventId) {
-    return _forecastCache[eventId]?.data;
+    return _serviceWeather.getForecast(eventId);
   }
 
   // 取得天氣預報（緩存）
-  Future<void> loadWeather(EventViewModel event) async {
-    if (!event.hasLocation) return;
-    //if (_forecastCache.containsKey(event.id)) return;
-    if (_loadingIds.contains(event.id)) return;
-    final now = DateTime.now();
-    final today = DateTimeFormatter.dateOnly(now);
-    if (event.locationDisplay.isEmpty ||
-        (event.startDate != null &&
-          ((today.add(Duration(days: 7))).isBefore(event.startDate!) ||
-              (event.endDate != null && today.isAfter(event.endDate!)) ||
-              (event.endDate == null && today.isAfter(event.startDate!))))) {
-      return;
-    }
-
-    WeatherCache? cache = _forecastCache[event.id];
-
-    if (cache != null) {
-      final diff = now.difference(cache.created);
-
-      // 3小時內不重新抓
-      if (diff.inMinutes < 180) {
-        return;
-      }
-    }
-
-    _loadingIds.add(event.id);
-
-    try {
-      final data = await _serviceWeather.getWeather(
-          locationDisplay: event.locationDisplay, startDate: event.startDate);
-
-      _forecastCache[event.id] = WeatherCache(data: data, created: now);
-    } catch (e, st) {
-      logger.e('loadWeather failed for ${event.id}: $e\n$st');
-      _forecastCache[event.id] = WeatherCache(data: [], created: now);
-    } finally {
-      _loadingIds.remove(event.id);
-    }
+  Future<List<EventWeather>?> loadWeather(EventViewModel event) async {
+    return await _serviceWeather.loadWeather(
+      eventId: event.id,
+      hasLocation: event.hasLocation,
+      locationDisplay: event.locationDisplay,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      tableName: _tableName,
+    );
   }
 
   // 開啟活動連結
@@ -699,14 +678,4 @@ class ControllerCalendar extends ChangeNotifier {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
     }
   }
-}
-
-class WeatherCache {
-  final DateTime created;
-  final List<EventWeather> data;
-
-  WeatherCache({
-    required this.created,
-    required this.data,
-  });
 }

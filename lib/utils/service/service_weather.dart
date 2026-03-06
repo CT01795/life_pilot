@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/date_time.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,14 +12,69 @@ class ServiceWeather {
   final String? apiKey;
   ServiceWeather({required this.apiKey});
 
+  final Set<String> _loadingIds = {};
+  final Map<String, WeatherCache?> _forecastCache = {};
+
+  List<EventWeather>? getForecast(String eventId) {
+    return _forecastCache[eventId]?.data;
+  }
+
+  Future<List<EventWeather>?> loadWeather({
+    required String eventId,
+    required bool hasLocation,
+    required String locationDisplay,
+    required DateTime? startDate,
+    required DateTime? endDate,
+    required String tableName,
+  }) async {
+    if (!hasLocation) return null;
+    //if (_forecastCache.containsKey(event.id)) return;
+    if (_loadingIds.contains(eventId)) return null;
+    final now = DateTime.now();
+    final today = DateTimeFormatter.dateOnly(now);
+    if (tableName == TableNames.recommendedAttractions) {
+    } else if (locationDisplay.isEmpty ||
+        (startDate != null &&
+            ((today.add(Duration(days: 7))).isBefore(startDate) ||
+                (endDate != null && today.isAfter(endDate)) ||
+                (endDate == null && today.isAfter(startDate))))) {
+      return null;
+    }
+
+    WeatherCache? cache = _forecastCache[eventId];
+
+    if (cache != null) {
+      final diff = now.difference(cache.created);
+
+      // 3小時內不重新抓
+      if (diff.inMinutes < 180) {
+        return cache.data;
+      }
+    }
+
+    _loadingIds.add(eventId);
+
+    try {
+      final data = await getWeather(
+          locationDisplay: locationDisplay, startDate: startDate);
+
+      _forecastCache[eventId] = WeatherCache(data: data, created: now);
+      return data;
+    } catch (e, st) {
+      logger.e('loadWeather failed for $eventId: $e\n$st');
+      _forecastCache[eventId] = WeatherCache(data: [], created: now);
+      return null;
+    } finally {
+      _loadingIds.remove(eventId);
+    }
+  }
+
   Future<List<EventWeather>> getWeather(
       {required String locationDisplay, required DateTime? startDate}) async {
     String tmpLocation = locationDisplay.split("．")[0];
     final today = DateTime.now();
     final resultStartDate =
-        startDate == null || startDate.isBefore(today)
-            ? today
-            : startDate;
+        startDate == null || startDate.isBefore(today) ? today : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
 
     /// 1️⃣ 查 DB
@@ -96,10 +154,11 @@ class ServiceWeather {
             .from('weather_forecast')
             .select()
             .eq('location', tmpLocation)
-            .gte('date', resultStartDate.add(Duration(hours: -3)).toIso8601String())
+            .gte('date',
+                resultStartDate.add(Duration(hours: -3)).toIso8601String())
             .gte('created_at', todayDate.toIso8601String())
             .order('date', ascending: true);
-        
+
         if (dbRes.isNotEmpty) {
           return dbRes
               .map<EventWeather>((e) => EventWeather.fromJson(e['weather']))

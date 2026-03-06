@@ -129,7 +129,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     super.didChangeDependencies();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!_weatherLoaded) {
-        await widget.controllerEvent.loadWeather(widget.eventViewModel, widget.tableName);
+        await widget.controllerEvent.loadWeather(widget.eventViewModel);
         if (mounted) setState(() {});
         _weatherLoaded = true;
       }
