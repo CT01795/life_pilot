@@ -1,28 +1,37 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_search_filter.dart';
 
-class ModelEventCalendar {
-  List<EventItem> events = [];
+class ModelEvent {
+  List<EventItem> _events = [];
   bool isInitialized = false;
   bool _disposed = false;
   //--------------------------- event ---------------------------
   final searchFilter = SearchFilter();
-  final TextEditingController searchController = TextEditingController();
-  final ScrollController scrollController = ScrollController();
 
   bool showSearchPanel = false;
   final Set<String> selectedEventIds = {};
   final Set<String> removedEventIds = {};
 
+  static final RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
+  static final RegExp ageRange = RegExp(r'^(\d+)y~(\d+)y$'); // 例如 "18y~25y"
+  static final RegExp priceReg = RegExp(r'^\$?(\d+)(?:~\$?(\d+))?$');
+
   List<EventItem> getFilteredEvents(AppLocalizations loc) => _filterEvents(
-      events: events,
+      events: _events,
       filter: searchFilter,
       removedEventIds: removedEventIds,
       loc: loc);
   
+  void updateEvent(EventItem updatedEvent) {
+    final index = _events.indexWhere((e) => e.id == updatedEvent.id);
+
+    if (index != -1) {
+      _events[index] = updatedEvent;
+    }
+  }
+
   void toggleSearchPanel(bool value) {
     showSearchPanel = value;
     if (!value) clearSearchAll();
@@ -30,12 +39,10 @@ class ModelEventCalendar {
 
   void clearSearchAll() {
     searchFilter.clear();
-    searchController.clear();
   }
 
   void updateSearchKeywords(String? keywords) {
     searchFilter.keywords = keywords ?? '';
-    if (keywords == null) searchController.clear();
   }
 
   void updateStartDate(DateTime? date) {
@@ -74,23 +81,21 @@ class ModelEventCalendar {
   // 標記 disposed
   void dispose() {
     _disposed = true;
-    searchController.dispose();
-    scrollController.dispose();
   }
 
   bool get isDisposed => _disposed;
 
   //--------------------------- 核心方法 ---------------------------
   void removeEvent(EventItem event) {
-    events.removeWhere((e) => e.id == event.id);
+    _events.removeWhere((e) => e.id == event.id);
   }
 
   void clearAll() {
-    events.clear();
+    _events.clear();
   }
 
   void setEvents(List<EventItem> list) {
-    events = list;
+    _events = list;
   }
 }
 
@@ -112,9 +117,6 @@ List<EventItem> _filterEvents({
     // ✅ 若沒有過濾條件，直接回傳原列表（避免無謂運算）
     return List<EventItem>.from(events);
   }
-  RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
-  RegExp ageRange = RegExp(r'^(\d+)y~(\d+)y$'); // 例如 "18y~25y"
-  RegExp priceReg = RegExp(r'^\$?(\d+)(?:~\$?(\d+))?$');
   return events.where((e) {
     if (removedEventIds.contains(e.id)) return false;
     String isFree =
@@ -136,9 +138,9 @@ List<EventItem> _filterEvents({
         return matchedText;
       }
       // 🔹 年齡判斷
-      final ageSingleMatch = ageSingle.firstMatch(word);
-      final ageRangeMatch = ageRange.firstMatch(word);
-      final priceMatch = priceReg.firstMatch(word);
+      final ageSingleMatch = ModelEvent.ageSingle.firstMatch(word);
+      final ageRangeMatch = ModelEvent.ageRange.firstMatch(word);
+      final priceMatch = ModelEvent.priceReg.firstMatch(word);
 
       if (ageRangeMatch != null) {
         final num kwStart = num.parse(ageRangeMatch.group(1)!);

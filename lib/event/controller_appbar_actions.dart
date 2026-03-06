@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -19,7 +19,7 @@ import 'package:excel/excel.dart';
 class ControllerAppBarActions extends ChangeNotifier {
   final ControllerAuth auth;
   final ServiceEvent _serviceEvent;
-  final ModelEventCalendar _modelEventCalendar;
+  final ModelEvent _modelEvent;
   final ServiceExportPlatform _exportService;
   final ServiceExportExcel _excelService;
   final String _tableName;
@@ -27,13 +27,13 @@ class ControllerAppBarActions extends ChangeNotifier {
   ControllerAppBarActions({
     required this.auth,
     required ServiceEvent serviceEvent,
-    required ModelEventCalendar modelEventCalendar,
+    required ModelEvent modelEvent,
     required ServiceExportPlatform exportService,
     required ServiceExportExcel excelService,
     required String tableName,
   })  : _tableName = tableName,
         _serviceEvent = serviceEvent,
-        _modelEventCalendar = modelEventCalendar,
+        _modelEvent = modelEvent,
         _excelService = excelService,
         _exportService = exportService;
 
@@ -59,7 +59,7 @@ class ControllerAppBarActions extends ChangeNotifier {
 
   // ✅ 切換搜尋面板顯示/隱藏
   void toggleSearchPanel() {
-    _modelEventCalendar.toggleSearchPanel(!_modelEventCalendar.showSearchPanel);
+    _modelEvent.toggleSearchPanel(!_modelEvent.showSearchPanel);
     _notifyDebounced();
   }
 
@@ -73,7 +73,7 @@ class ControllerAppBarActions extends ChangeNotifier {
         tableName: _tableName,
         inputUser: auth.currentAccount,
       );
-      _modelEventCalendar.setEvents(list ?? []);
+      _modelEvent.setEvents(list ?? []);
 
       logger.i('✅ Events refreshed successfully');
       return true;

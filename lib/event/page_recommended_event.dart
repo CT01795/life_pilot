@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -34,11 +34,11 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       serviceWeather: context.read<ServiceWeather>(),
       tableName: TableNames.recommendedEvents,
       toTableName: TableNames.calendarEvents,
-      modelEventCalendar: ModelEventCalendar(),
+      modelEvent: ModelEvent(),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _controllerEvent.refreshEvents();
+      _controllerEvent.loadEvents(isGetPublicEvents: true);
     });
   }
 

@@ -9,13 +9,13 @@ Widget widgetsSearchPanel({
   required AppLocalizations loc,
   required BuildContext context,
 }) {
-  final filter = controllerEvent.modelEventCalendar.searchFilter;
+  final filter = controllerEvent.modelEvent.searchFilter;
   return Padding(
     padding: Insets.all12,
     child: Column(
       children: [
         TextField(
-          controller: controllerEvent.modelEventCalendar.searchController,
+          controller: controllerEvent.searchController,
           decoration: InputDecoration(
             hintText: loc.searchKeywords,
             prefixIcon: const Icon(Icons.search),

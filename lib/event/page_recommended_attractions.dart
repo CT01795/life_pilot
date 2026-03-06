@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_base_event.dart';
 import 'package:life_pilot/event/service_event.dart';
@@ -35,7 +35,7 @@ class _PageRecommendedAttractionsState
       serviceWeather: context.read<ServiceWeather>(),
       tableName: TableNames.recommendedAttractions,
       toTableName: TableNames.calendarEvents,
-      modelEventCalendar: ModelEventCalendar(),
+      modelEvent: ModelEvent(),
     );
   }
 

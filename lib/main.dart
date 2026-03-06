@@ -8,7 +8,7 @@ import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/utils/const.dart' as globals;
 import 'package:life_pilot/app/controller_page_main.dart';
@@ -74,8 +74,8 @@ void main() async {
         Provider<ModelCalendar>(
           create: (_) => ModelCalendar(),
         ),
-        Provider<ModelEventCalendar>(
-          create: (_) => ModelEventCalendar(),
+        Provider<ModelEvent>(
+          create: (_) => ModelEvent(),
         ),
         Provider<ServiceExportPlatform>(
           create: (_) => ServiceExportPlatformImpl(),
@@ -181,7 +181,7 @@ void main() async {
               closeText: loc.close, // ✅ 使用當前語系
             );
           },
-          update: (context, modelEventCalendar, auth, serviceEvent, serviceWeather, 
+          update: (context, modelCalendar, auth, serviceEvent, serviceWeather, 
               notification, locale, controller) {
             controller ??= context.read<ControllerCalendar>();
             // ✅ 更新 controller 裡的依賴，而不是 new 一個
