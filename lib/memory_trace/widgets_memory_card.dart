@@ -146,7 +146,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate = widget.eventViewModel.firstEventDate;
+    final eventDate = widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
     final forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id);
 

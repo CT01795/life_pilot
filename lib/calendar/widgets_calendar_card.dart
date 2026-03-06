@@ -146,8 +146,8 @@ class _WidgetsCalendarCardBodyState
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate = widget.eventViewModel.firstEventDate;
-
+    final eventDate = widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
+    
     // 使用 Selector 只監聽對應 event 的天氣
     final forecast = context.select<ControllerCalendar, List<EventWeather>?>(
       (c) => c.getForecast(widget.eventViewModel.id),

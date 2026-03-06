@@ -174,8 +174,7 @@ class ServiceEventPublic {
 
       final endDate = DateTimeParser.parseDate(endDateStr);
       if (endDate == null || endDate.isBefore(today)) continue;
-      DateTime? startDate =
-          DateTimeParser.parseDate((item['startDate'] ?? ''));
+      DateTime? startDate = DateTimeParser.parseDate((item['startDate'] ?? ''));
 
       // 2️⃣ 判斷是否「免費」
       final showInfoList = item['showInfo'] as List<dynamic>? ?? [];
@@ -295,7 +294,10 @@ class ServiceEventPublic {
               final location = cells[3].text.trim();
               final aTag = cells[2].querySelector('a');
               final eventName = aTag?.text.trim() ?? '';
-              final eventHref = aTag?.attributes['href'] ?? '';
+              String eventHref = aTag?.attributes['href'] ?? '';
+              if (eventHref.startsWith("/events/")) {
+                eventHref = inUrl.replaceAll("/weekend.json", '') + eventHref;
+              }
               if (!tmpSet.contains(eventName)) {
                 tmpList.add(EventItem(
                   id: uuid.v4(),
@@ -349,7 +351,6 @@ class EventRule {
             containFree(item['discountInfo'] ?? '') ||
             containFree(item['descriptionFilterHtml'] ?? '') ||
             containFree(item['comment'] ?? '') ||
-            showInfoList
-                .any((s) => containFree(s['locationName'] ?? '')));
+            showInfoList.any((s) => containFree(s['locationName'] ?? '')));
   }
 }
