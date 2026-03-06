@@ -34,6 +34,9 @@ class WidgetsMemoryList extends StatelessWidget {
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
       itemCount: viewModels.length,
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
+      addSemanticIndexes: false,
       itemBuilder: (context, index) {
         EventViewModel eventViewModel = viewModels[index];
 

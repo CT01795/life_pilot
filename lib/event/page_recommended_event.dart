@@ -36,10 +36,10 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
       toTableName: TableNames.calendarEvents,
       modelEvent: ModelEvent(),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    /*WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _controllerEvent.loadEvents(isGetPublicEvents: true);
-    });
+    });*/
   }
 
   @override

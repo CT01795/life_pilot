@@ -84,7 +84,7 @@ class ControllerEvent extends ChangeNotifier {
       ..removeEvent(event)
       ..markRemoved(event.id);
     _invalidateViewModelCache();
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   Future<void> approveEvent({required EventItem event}) async {
@@ -92,7 +92,7 @@ class ControllerEvent extends ChangeNotifier {
     event.account = AuthConstants.sysAdminEmail;
     await _serviceEvent.approvalEvent(event: event, tableName: _tableName);
     _invalidateViewModelCache();
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   void _invalidateViewModelCache() {
@@ -122,7 +122,7 @@ class ControllerEvent extends ChangeNotifier {
           account: auth.currentAccount ?? AuthConstants.guest);
     }
     _invalidateViewModelCache();
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   Future<void> dislikeEvent(EventItem event) async {
@@ -141,7 +141,7 @@ class ControllerEvent extends ChangeNotifier {
           account: auth.currentAccount ?? AuthConstants.guest);
     }
     _invalidateViewModelCache();
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   // ✅ 建立單筆事件控制器
@@ -167,7 +167,7 @@ class ControllerEvent extends ChangeNotifier {
     if (updatedEvent == null) return;
     _modelEvent.updateEvent(updatedEvent);
     _invalidateViewModelCache();
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   // ---------------------------------------------------------------------------
@@ -207,7 +207,7 @@ class ControllerEvent extends ChangeNotifier {
           account: auth.currentAccount ?? AuthConstants.guest);
       _invalidateViewModelCache();
     }
-    notifyListeners();
+    if(!_disposed) notifyListeners();
     return targetEvent;
   }
 
@@ -230,12 +230,12 @@ class ControllerEvent extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   void toggleEventSelection(String eventId, bool isSelected) {
     _modelEvent.toggleEventSelection(eventId, isSelected);
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   void toggleSearchPanel(bool value) {
     _modelEvent.toggleSearchPanel(value);
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   void updateKeywords(
@@ -248,7 +248,7 @@ class ControllerEvent extends ChangeNotifier {
     if (keywords == null || keywords.isEmpty) {
       filter.tags.clear();
       _searchController.clear();
-      notifyListeners();
+      if(!_disposed) notifyListeners();
       return;
     }
 
@@ -263,7 +263,7 @@ class ControllerEvent extends ChangeNotifier {
     if (keywordList.isNotEmpty) {
       filter.tags = keywordList;
     }
-    notifyListeners();
+    if(!_disposed) notifyListeners();
     return;
   }
 
@@ -271,14 +271,14 @@ class ControllerEvent extends ChangeNotifier {
     DateTime? startDate,
   ) {
     _modelEvent.updateStartDate(startDate);
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   void updateEndDate(
     DateTime? endDate,
   ) {
     _modelEvent.updateEndDate(endDate);
-    notifyListeners();
+    if(!_disposed) notifyListeners();
   }
 
   // 判斷日期是否要顯示
@@ -323,15 +323,25 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   Future<void> loadEvents({required bool isGetPublicEvents}) async {
-    if(isGetPublicEvents) await ServiceEventPublic().fetchAndSaveAllEvents();
-
     final list = await _serviceEvent.getEvents(
       tableName: _tableName,
       inputUser: auth.currentAccount,
     );
     _modelEvent.setEvents(list ?? []);
     _invalidateViewModelCache();
-    notifyListeners();
+    if(!_disposed) notifyListeners();
+
+    if (isGetPublicEvents) {
+      await ServiceEventPublic().fetchAndSaveAllEvents();
+
+      final newList = await _serviceEvent.getEvents(
+        tableName: _tableName,
+        inputUser: auth.currentAccount,
+      );
+
+      _modelEvent.setEvents(newList ?? []);
+      if(!_disposed) notifyListeners();
+    }
   }
 
   // ------------------ controller event card ------------------
@@ -404,8 +414,10 @@ class ControllerEvent extends ChangeNotifier {
     }
   }
 
+  bool _disposed = false;
   @override
   void dispose() {
+    _disposed = true;
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
