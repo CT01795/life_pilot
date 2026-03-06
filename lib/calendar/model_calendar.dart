@@ -10,7 +10,9 @@ import '../utils/logger.dart';
 
 class ModelCalendar {
 
-  List<EventItem> events = [];
+  List<EventItem> _events = [];
+  List<EventItem> get events => _events;
+
   bool isInitialized = false;
   bool _disposed = false;
   // ⭐ 新增：每個月的 flat events cache（避免重複展平）
@@ -45,7 +47,7 @@ class ModelCalendar {
   }
 
   void setEvents(List<EventItem> list) {
-    events = list;
+    _events = list;
   }
 
   //--------------------------- 核心方法 ---------------------------
@@ -64,7 +66,7 @@ class ModelCalendar {
 
       for (DateTime current = start;
           !current.isAfter(end);
-          current = current.add(Duration(days: 1))) {
+          current = current.add(const Duration(days: 1))) {
         currentWeek.add(current);
         if (currentWeek.length == 7) {
           weeks.add(currentWeek);
@@ -106,8 +108,6 @@ class ModelCalendar {
       return [...?serverEvents, ...holidays]
         ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
 
-      //cacheMonthEvents(tmpMonth, events);
-      //currentMonth = tmpMonth;
     } catch (e, st) {
       if (!isDisposed) {
         logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
@@ -116,17 +116,17 @@ class ModelCalendar {
     }
   }
 
-  void cacheMonthEvents(DateTime month, List<EventItem> events) {
+  void cacheMonthEvents(DateTime month, List<EventItem> inEvents) {
     final key = month.toMonthKey();
     final weeks = getWeeks(month);
-    final tmp = groupEventsByWeekAndDay(weeks: weeks, events: events);
+    final tmp = groupEventsByWeekAndDay(weeks: weeks, inEvents: inEvents);
     cachedEvents[key] = tmp;
-    flatMonthEventsCache[key] = events.toSet().toList();
+    flatMonthEventsCache[key] = {for (var e in inEvents) e.id: e}.values.toList();
   }
 
   // 依照週、日將事件分組
   Map<int, Map<int, List<EventItem>>> groupEventsByWeekAndDay(
-      {required List<List<DateTime>> weeks, required List<EventItem> events}) {
+      {required List<List<DateTime>> weeks, required List<EventItem> inEvents}) {
     final Map<int, Map<int, List<EventItem>>> result = {};
 
     for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
@@ -135,7 +135,7 @@ class ModelCalendar {
       for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
         final day = week[dayIndex];
         result[weekIndex] ??= {};
-        result[weekIndex]![dayIndex] = events.where((event) {
+        result[weekIndex]![dayIndex] = inEvents.where((event) {
           final start = DateTimeFormatter.dateOnly(event.startDate!);
           final end = DateTimeFormatter.dateOnly(event.endDate ?? start);
           return !day.isBefore(start) && !day.isAfter(end);
@@ -165,7 +165,7 @@ class ModelCalendar {
     if (weeks.isEmpty) return [];
 
     // 計算該日期在月曆中是第幾週第幾天
-    final calendarWeeks = getWeeks(date);
+    final calendarWeeks = weeksCache[key] ?? getWeeks(date);
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
       for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
         final day = calendarWeeks[weekIndex][dayIndex];
@@ -180,7 +180,7 @@ class ModelCalendar {
   }
 
   void removeEvent(EventItem event) {
-    events.removeWhere((e) => e.id == event.id);
+    _events.removeWhere((e) => e.id == event.id);
     updateCachedEvent(event: event); // 清快取
   }
 
@@ -217,13 +217,13 @@ class ModelCalendar {
   }
 
   void clearAll() {
-    events.clear();
+    _events.clear();
     cachedEvents.clear();
     flatMonthEventsCache.clear();
     weeksCache.clear();
   }
 
   void setMonthFromCache(String key) {
-    events = flatMonthEventsCache[key] ?? [];
+    _events = flatMonthEventsCache[key] ?? [];
   }
 }
