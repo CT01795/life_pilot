@@ -51,86 +51,63 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
   // 🔹 資料操作方法
   // ==========================
   void updateField(String key, String value,
-      {bool check = true, EventItem? sub}) {
-    _updateField(sub ?? event, key, value, check);
+      {EventItem? sub}) {
+    _updateField(sub ?? event, key, value);
     _notifyDebounced();
   }
 
-  void _updateField(EventItem item, String key, String value, bool check) {
-    switch (key) {
-      case EventFields.city:
-        item.city = value;
-        break;
-      case EventFields.location:
-        item.location = value;
-        break;
-      case EventFields.name:
-        item.name = value;
-        break;
-      case EventFields.type:
-        item.type = value;
-        break;
-      case EventFields.description:
-        item.description = value;
-        break;
-      /*case EventFields.fee:
-        item.fee = value;
-        break;*/
-      case EventFields.unit:
-        item.unit = value;
-        break;
-      case EventFields.masterUrl:
-        item.masterUrl = value;
-        break;
-      case EventFields.ageMin:
-        item.ageMin = value.isEmpty ? null : num.parse(value);
-        if (check &&
-            item.ageMin != null &&
-            item.ageMax != null &&
-            item.ageMin!.compareTo(item.ageMax!) > 0) {
-          item.ageMax = item.ageMin;
-        }
-        break;
-      case EventFields.ageMax:
-        item.ageMax = value.isEmpty ? null : num.parse(value);
-        if (check &&
-            item.ageMin != null &&
-            item.ageMax != null &&
-            item.ageMin!.compareTo(item.ageMax!) > 0) {
-          item.ageMin = item.ageMax;
-        }
-        break;
-      case EventFields.isFree:
-        item.isFree = value.isEmpty ? null : bool.parse(value);
-        break;
-      case EventFields.priceMin:
-        item.priceMin = value.isEmpty ? null : num.parse(value);
-        if (check &&
-            item.priceMin != null &&
-            item.priceMax != null &&
-            item.priceMin!.compareTo(item.priceMax!) > 0) {
-          item.priceMax = item.priceMin;
-        }
-        break;
-      case EventFields.priceMax:
-        item.priceMax = value.isEmpty ? null : num.parse(value);
-        if (check &&
-            item.priceMin != null &&
-            item.priceMax != null &&
-            item.priceMin!.compareTo(item.priceMax!) > 0) {
-          item.priceMin = item.priceMax;
-        }
-        break;
-      case EventFields.isOutdoor:
-        item.isOutdoor = value.isEmpty ? null : bool.parse(value);
-        break;
-      case EventFields.isLike:
-        item.isLike = value.isEmpty ? null : bool.parse(value);
-        break;
-      case EventFields.isDislike:
-        item.isDislike = value.isEmpty ? null : bool.parse(value);
-        break;
-    }
+  final Map<String, void Function(EventItem, String)> fieldUpdaters = {
+    EventFields.city: (item, value) => item.city = value,
+    EventFields.name: (item, value) => item.name = value,
+    EventFields.location: (item, value) => item.location = value,
+    EventFields.type: (item, value) => item.type = value,
+    EventFields.description: (item, value) => item.description = value,
+    EventFields.unit: (item, value) => item.unit = value,
+    EventFields.masterUrl: (item, value) => item.masterUrl = value,
+    EventFields.ageMin: (item, value) {
+      item.ageMin = value.isEmpty ? null : num.parse(value);
+      if (item.ageMin != null &&
+          item.ageMax != null &&
+          item.ageMin! > item.ageMax!) {
+        item.ageMax = item.ageMin;
+      }
+    },
+    EventFields.ageMax: (item, value) {
+      item.ageMax = value.isEmpty ? null : num.parse(value);
+      if (item.ageMin != null &&
+          item.ageMax != null &&
+          item.ageMin! > item.ageMax!) {
+        item.ageMin = item.ageMax;
+      }
+    },
+    EventFields.isFree: (item, value) =>
+        item.isFree = value.isEmpty ? null : bool.parse(value),
+    EventFields.priceMin: (item, value) {
+      item.priceMin = value.isEmpty ? null : num.parse(value);
+      if (item.priceMin != null &&
+          item.priceMax != null &&
+          item.priceMin! > item.priceMax!) {
+        item.priceMax = item.priceMin;
+      }
+    },
+    EventFields.priceMax: (item, value) {
+      item.priceMax = value.isEmpty ? null : num.parse(value);
+      if (item.priceMin != null &&
+          item.priceMax != null &&
+          item.priceMin! > item.priceMax!) {
+        item.priceMin = item.priceMax;
+      }
+    },
+    EventFields.isOutdoor: (item, value) =>
+        item.isOutdoor = value.isEmpty ? null : bool.parse(value),
+    EventFields.isLike: (item, value) =>
+        item.isLike = value.isEmpty ? null : bool.parse(value),
+    EventFields.isDislike: (item, value) =>
+        item.isDislike = value.isEmpty ? null : bool.parse(value),
+  };
+
+  void _updateField(EventItem item, String key, String value) {
+    fieldUpdaters[key]?.call(item, value);
   }
 
   // Debounce 更新（減少 rebuild 次數）

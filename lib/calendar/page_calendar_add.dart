@@ -68,7 +68,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
           // 離焦時更新
           final value = getTextController(key).text;
           final realKey = key.split('_').first;
-          controllerAdd.updateField(realKey, value, check: true, sub: sub);
+          controllerAdd.updateField(realKey, value, sub: sub);
         }
       });
     }
@@ -197,7 +197,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
         focusNode: focusNode,
         controller: ctl,
         loc: loc,
-        onChanged: (v) => ctl.updateField(e.key, v, sub: sub, check: false),
+        onChanged: (v) => ctl.updateField(e.key, v, sub: sub),
       );
     }).toList();
   }
