@@ -39,7 +39,7 @@ List<Widget> _buildActions({
       IconButton(
         icon: const Icon(Icons.search),
         tooltip: loc.search,
-        onPressed: handler.toggleSearchPanel,
+        onPressed: () => handler.toggleSearchPanel(loc),
       ),
       IconButton(
           icon: const Icon(Icons.download),

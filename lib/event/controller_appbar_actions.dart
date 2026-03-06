@@ -58,8 +58,8 @@ class ControllerAppBarActions extends ChangeNotifier {
   }
 
   // ✅ 切換搜尋面板顯示/隱藏
-  void toggleSearchPanel() {
-    _modelEvent.toggleSearchPanel(!_modelEvent.showSearchPanel);
+  void toggleSearchPanel(AppLocalizations loc) {
+    _modelEvent.toggleSearchPanel(!_modelEvent.showSearchPanel, loc);
     _notifyDebounced();
   }
 

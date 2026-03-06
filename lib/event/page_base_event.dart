@@ -117,7 +117,10 @@ class _GenericEventPageState extends State<GenericEventPage> {
       body: Column(
         children: [
           AnimatedBuilder(
-            animation: _appBarHandler,
+            animation: Listenable.merge([
+              _controller,
+              _appBarHandler,
+            ]),
             builder: (_, __) => _buildSearchPanel(loc, context),
           ),
           Expanded( // ✅ 讓 ListView 可以使用剩餘高度
