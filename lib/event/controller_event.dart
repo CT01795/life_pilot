@@ -233,8 +233,8 @@ class ControllerEvent extends ChangeNotifier {
     if(!_disposed) notifyListeners();
   }
 
-  void toggleSearchPanel(bool value) {
-    _modelEvent.toggleSearchPanel(value);
+  void toggleSearchPanel(bool value, AppLocalizations loc) {
+    _modelEvent.toggleSearchPanel(value, loc);
     if(!_disposed) notifyListeners();
   }
 

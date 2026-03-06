@@ -8,8 +8,8 @@ class ModelEvent {
   bool isInitialized = false;
   bool _disposed = false;
   //--------------------------- event ---------------------------
-  final searchFilter = SearchFilter();
-
+  final _searchFilter = SearchFilter();
+  SearchFilter get searchFilter => _searchFilter;
   bool showSearchPanel = false;
   final Set<String> selectedEventIds = {};
   final Set<String> removedEventIds = {};
@@ -18,12 +18,15 @@ class ModelEvent {
   static final RegExp ageRange = RegExp(r'^(\d+)y~(\d+)y$'); // 例如 "18y~25y"
   static final RegExp priceReg = RegExp(r'^\$?(\d+)(?:~\$?(\d+))?$');
 
-  List<EventItem> getFilteredEvents(AppLocalizations loc) => _filterEvents(
+  List<EventItem> getFilteredEvents(AppLocalizations loc) {
+    return _filterEvents(
       events: _events,
-      filter: searchFilter,
+      inFilter: _searchFilter,
       removedEventIds: removedEventIds,
-      loc: loc);
-  
+      loc: loc,
+    );
+  }
+
   void updateEvent(EventItem updatedEvent) {
     final index = _events.indexWhere((e) => e.id == updatedEvent.id);
 
@@ -32,35 +35,38 @@ class ModelEvent {
     }
   }
 
-  void toggleSearchPanel(bool value) {
+  void toggleSearchPanel(bool value, AppLocalizations loc) {
     showSearchPanel = value;
-    if (!value) clearSearchAll();
+    /*if (!value) {
+      clearSearchAll();
+      getFilteredEvents(loc);
+    }*/
   }
 
   void clearSearchAll() {
-    searchFilter.clear();
+    _searchFilter.clear();
   }
 
   void updateSearchKeywords(String? keywords) {
-    searchFilter.keywords = keywords ?? '';
+    _searchFilter.keywords = keywords ?? '';
   }
 
   void updateStartDate(DateTime? date) {
-    if (searchFilter.endDate != null &&
+    if (_searchFilter.endDate != null &&
         date != null &&
-        date.isAfter(searchFilter.endDate!)) {
-      searchFilter.endDate = date;
+        date.isAfter(_searchFilter.endDate!)) {
+      _searchFilter.endDate = date;
     }
-    searchFilter.startDate = date;
+    _searchFilter.startDate = date;
   }
 
   void updateEndDate(DateTime? date) {
-    if (searchFilter.startDate != null &&
+    if (_searchFilter.startDate != null &&
         date != null &&
-        searchFilter.startDate!.isAfter(date)) {
-      searchFilter.startDate = date;
+        _searchFilter.startDate!.isAfter(date)) {
+      _searchFilter.startDate = date;
     }
-    searchFilter.endDate = date;
+    _searchFilter.endDate = date;
   }
 
   void toggleEventSelection(String eventId, bool isSelected) {
@@ -95,179 +101,180 @@ class ModelEvent {
   }
 
   void setEvents(List<EventItem> list) {
+    if (identical(_events, list)) {
+      return;
+    }
     _events = list;
   }
-}
 
-List<EventItem> _filterEvents({
-  required List<EventItem> events,
-  required SearchFilter filter,
-  required Set<String> removedEventIds,
-  required AppLocalizations loc,
-}) {
-  // 🧠 預先處理關鍵字（全部轉小寫）
-  final List<String> keywords = filter.keywords
-      .toLowerCase()
-      .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔 //.split(RegExp(r'\s+'))
-      .map((s) => s.trim()) // 只修剪每個 tag 前後空白
-      .where((word) => word.isNotEmpty)
-      .toList();
+  List<EventItem> _filterEvents({
+    required List<EventItem> events,
+    required SearchFilter inFilter,
+    required Set<String> removedEventIds,
+    required AppLocalizations loc,
+  }) {
+    // 🧠 預先處理關鍵字（全部轉小寫）
+    final List<String> keywords = inFilter.keywords
+        .toLowerCase()
+        .split(
+            RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔 //.split(RegExp(r'\s+'))
+        .map((s) => s.trim()) // 只修剪每個 tag 前後空白
+        .where((word) => word.isNotEmpty)
+        .toList();
 
-  if (keywords.isEmpty && filter.startDate == null && removedEventIds.isEmpty) {
-    // ✅ 若沒有過濾條件，直接回傳原列表（避免無謂運算）
-    return List<EventItem>.from(events);
-  }
-  return events.where((e) {
-    if (removedEventIds.contains(e.id)) return false;
-    String isFree =
-        e.isFree == null ? '' : (e.isFree! ? loc.free : loc.pay);
-    String isOutdoor = e.isOutdoor == null
-        ? ''
-        : (e.isOutdoor! ? loc.outdoor : loc.indoor);
-    bool matchesKeywords = keywords.every((word) {
-      bool matchedText = e.city.toLowerCase().contains(word) ||
-          e.location.toLowerCase().contains(word) ||
-          e.name.toLowerCase().contains(word) ||
-          e.type.toLowerCase().contains(word) ||
-          e.description.toLowerCase().contains(word) ||
-          //e.fee.toLowerCase().contains(word) ||
-          e.unit.toLowerCase().contains(word) ||
-          isFree.toLowerCase().contains(word) ||
-          isOutdoor.toLowerCase().contains(word);
-      if (matchedText) {
-        return matchedText;
-      }
-      // 🔹 年齡判斷
-      final ageSingleMatch = ModelEvent.ageSingle.firstMatch(word);
-      final ageRangeMatch = ModelEvent.ageRange.firstMatch(word);
-      final priceMatch = ModelEvent.priceReg.firstMatch(word);
-
-      if (ageRangeMatch != null) {
-        final num kwStart = num.parse(ageRangeMatch.group(1)!);
-        final num kwEnd = num.parse(ageRangeMatch.group(2)!);
-        final num eStart = e.ageMin ?? 0;
-        final num eEnd = e.ageMax ?? 999;
-        // 🔹 區間有交集即可
-        if (!(kwEnd < eStart || kwStart > eEnd)) {
-          return true;
+    if (keywords.isEmpty &&
+        inFilter.startDate == null &&
+        inFilter.endDate == null &&
+        removedEventIds.isEmpty) {
+      // ✅ 若沒有過濾條件，直接回傳原列表（避免無謂運算）
+      return List<EventItem>.from(events);
+    }
+    return events.where((e) {
+      if (removedEventIds.contains(e.id)) return false;
+      String isFree = e.isFree == null ? '' : (e.isFree! ? loc.free : loc.pay);
+      String isOutdoor =
+          e.isOutdoor == null ? '' : (e.isOutdoor! ? loc.outdoor : loc.indoor);
+      bool matchesKeywords = keywords.every((word) {
+        bool matchedText = e.city.toLowerCase().contains(word) ||
+            e.location.toLowerCase().contains(word) ||
+            e.name.toLowerCase().contains(word) ||
+            e.type.toLowerCase().contains(word) ||
+            e.description.toLowerCase().contains(word) ||
+            //e.fee.toLowerCase().contains(word) ||
+            e.unit.toLowerCase().contains(word) ||
+            isFree.toLowerCase().contains(word) ||
+            isOutdoor.toLowerCase().contains(word);
+        if (matchedText) {
+          return matchedText;
         }
-      } else if (ageSingleMatch != null) {
-        final num kwAge = num.parse(ageSingleMatch.group(1)!);
-        if ((e.ageMin ?? 0) <= kwAge && (e.ageMax ?? 999) >= kwAge) {
-          return true;
-        }
-      }
+        // 🔹 年齡判斷
+        final ageSingleMatch = ModelEvent.ageSingle.firstMatch(word);
+        final ageRangeMatch = ModelEvent.ageRange.firstMatch(word);
+        final priceMatch = ModelEvent.priceReg.firstMatch(word);
 
-      // 🔹 價格判斷（主事件）
-      if (priceMatch != null) {
-        final num kwMin = num.parse(priceMatch.group(1)!);
-        final num? kwMax =
-            priceMatch.group(2) != null ? num.parse(priceMatch.group(2)!) : null;
-
-        if (_matchPrice(
-          kwMin: kwMin,
-          kwMax: kwMax,
-          priceMin: e.priceMin,
-          priceMax: e.priceMax,
-        )) {
-          return true;
-        }
-      }
-
-      bool matchedSubEvents = e.subEvents.any((se) {
-        String sIsFree =
-            se.isFree == null ? '' : (se.isFree! ? loc.free : loc.pay);
-        String sIsOutdoor = se.isOutdoor == null
-            ? ''
-            : (se.isOutdoor! ? loc.outdoor : loc.indoor);
-        bool matchedSEText = se.city.toLowerCase().contains(word) ||
-            se.location.toLowerCase().contains(word) ||
-            se.name.toLowerCase().contains(word) ||
-            se.type.toLowerCase().contains(word) ||
-            se.description.toLowerCase().contains(word) ||
-            //se.fee.toLowerCase().contains(word) ||
-            se.unit.toLowerCase().contains(word) ||
-            sIsFree.toLowerCase().contains(word) ||
-            sIsOutdoor.toLowerCase().contains(word);
-        if (matchedSEText) {
-          return matchedSEText;
-        }
-        // 子事件年齡判斷
         if (ageRangeMatch != null) {
           final num kwStart = num.parse(ageRangeMatch.group(1)!);
           final num kwEnd = num.parse(ageRangeMatch.group(2)!);
-          final num seStart = se.ageMin ?? 0;
-          final num seEnd = se.ageMax ?? 999;
-          if (!(kwEnd < seStart || kwStart > seEnd)) {
+          final num eStart = e.ageMin ?? 0;
+          final num eEnd = e.ageMax ?? 999;
+          // 🔹 區間有交集即可
+          if (!(kwEnd < eStart || kwStart > eEnd)) {
             return true;
           }
         } else if (ageSingleMatch != null) {
           final num kwAge = num.parse(ageSingleMatch.group(1)!);
-          if ((se.ageMin ?? 0) <= kwAge && (se.ageMax ?? 999) >= kwAge) {
+          if ((e.ageMin ?? 0) <= kwAge && (e.ageMax ?? 999) >= kwAge) {
             return true;
           }
         }
 
-        // 🔹 子事件價格判斷
+        // 🔹 價格判斷（主事件）
         if (priceMatch != null) {
           final num kwMin = num.parse(priceMatch.group(1)!);
-          final num? kwMax =
-              priceMatch.group(2) != null ? num.parse(priceMatch.group(2)!) : null;
+          final num? kwMax = priceMatch.group(2) != null
+              ? num.parse(priceMatch.group(2)!)
+              : null;
 
           if (_matchPrice(
             kwMin: kwMin,
             kwMax: kwMax,
-            priceMin: se.priceMin,
-            priceMax: se.priceMax,
+            priceMin: e.priceMin,
+            priceMax: e.priceMax,
           )) {
             return true;
           }
         }
-        return false;
+
+        bool matchedSubEvents = e.subEvents.any((se) {
+          String sIsFree =
+              se.isFree == null ? '' : (se.isFree! ? loc.free : loc.pay);
+          String sIsOutdoor = se.isOutdoor == null
+              ? ''
+              : (se.isOutdoor! ? loc.outdoor : loc.indoor);
+          bool matchedSEText = se.city.toLowerCase().contains(word) ||
+              se.location.toLowerCase().contains(word) ||
+              se.name.toLowerCase().contains(word) ||
+              se.type.toLowerCase().contains(word) ||
+              se.description.toLowerCase().contains(word) ||
+              //se.fee.toLowerCase().contains(word) ||
+              se.unit.toLowerCase().contains(word) ||
+              sIsFree.toLowerCase().contains(word) ||
+              sIsOutdoor.toLowerCase().contains(word);
+          if (matchedSEText) {
+            return matchedSEText;
+          }
+          // 子事件年齡判斷
+          if (ageRangeMatch != null) {
+            final num kwStart = num.parse(ageRangeMatch.group(1)!);
+            final num kwEnd = num.parse(ageRangeMatch.group(2)!);
+            final num seStart = se.ageMin ?? 0;
+            final num seEnd = se.ageMax ?? 999;
+            if (!(kwEnd < seStart || kwStart > seEnd)) {
+              return true;
+            }
+          } else if (ageSingleMatch != null) {
+            final num kwAge = num.parse(ageSingleMatch.group(1)!);
+            if ((se.ageMin ?? 0) <= kwAge && (se.ageMax ?? 999) >= kwAge) {
+              return true;
+            }
+          }
+
+          // 🔹 子事件價格判斷
+          if (priceMatch != null) {
+            final num kwMin = num.parse(priceMatch.group(1)!);
+            final num? kwMax = priceMatch.group(2) != null
+                ? num.parse(priceMatch.group(2)!)
+                : null;
+
+            if (_matchPrice(
+              kwMin: kwMin,
+              kwMax: kwMax,
+              priceMin: se.priceMin,
+              priceMax: se.priceMax,
+            )) {
+              return true;
+            }
+          }
+          return false;
+        });
+        return matchedSubEvents;
       });
-      return matchedSubEvents;
-    });
 
-    final endDate = e.endDate ?? e.startDate;
-    bool matchesDate = true;
-    filter.startDate = filter.startDate?.add(Duration(seconds: -1)).day ==
-            filter.startDate?.day
-        ? filter.startDate
-        : filter.startDate?.add(Duration(days: 1)).add(Duration(seconds: -1));
-    if (filter.startDate != null &&
-        endDate != null &&
-        !endDate.isAfter(filter.startDate!)) {
-      matchesDate = false;
+      final endDate = e.endDate ?? e.startDate;
+      bool matchesDate = true;
+      final startDateFilter = inFilter.startDate;
+      final endDateFilter = inFilter.endDate;
+      if (startDateFilter != null &&
+          endDate != null &&
+          !endDate.isAfter(startDateFilter)) {
+        matchesDate = false;
+      }
+      final startDate = e.startDate;
+      if (endDateFilter != null &&
+          startDate != null &&
+          !startDate.isBefore(endDateFilter)) {
+        matchesDate = false;
+      }
+
+      return matchesKeywords && matchesDate;
+    }).toList();
+  }
+
+  bool _matchPrice({
+    required num kwMin,
+    num? kwMax,
+    required num? priceMin,
+    required num? priceMax,
+  }) {
+    final num eMin = (priceMin ?? 0);
+    final num eMax = (priceMax ?? 999999);
+
+    if (kwMax == null) {
+      // 單一價格：100
+      return eMin <= kwMin && eMax >= kwMin;
+    } else {
+      // 區間：100~200（有交集即可）
+      return !(kwMax < eMin || kwMin > eMax);
     }
-    filter.endDate =
-        filter.endDate?.add(Duration(seconds: -1)).day == filter.endDate?.day
-            ? filter.endDate
-            : filter.endDate?.add(Duration(days: 1)).add(Duration(seconds: -1));
-    final startDate = e.startDate;
-    if (filter.endDate != null &&
-        startDate != null &&
-        !startDate.isBefore(filter.endDate!)) {
-      matchesDate = false;
-    }
-
-    return matchesKeywords && matchesDate;
-  }).toList();
-}
-
-bool _matchPrice({
-  required num kwMin,
-  num? kwMax,
-  required num? priceMin,
-  required num? priceMax,
-}) {
-  final num eMin = (priceMin ?? 0);
-  final num eMax = (priceMax ?? 999999);
-
-  if (kwMax == null) {
-    // 單一價格：100
-    return eMin <= kwMin && eMax >= kwMin;
-  } else {
-    // 區間：100~200（有交集即可）
-    return !(kwMax < eMin || kwMin > eMax);
   }
 }
