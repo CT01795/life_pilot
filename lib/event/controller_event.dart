@@ -8,7 +8,6 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_transfer_ok.dart';
-import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'dart:async';
@@ -330,54 +329,23 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   // ------------------ controller event card ------------------
-  final Set<String> _loadingIds = {};
-  final Map<String, WeatherCache?> _forecastCache = {};
-
   // ------------------ Public ------------------
   List<EventWeather>? getForecast(String eventId) {
-    return _forecastCache[eventId]?.data;
+    return _serviceWeather.getForecast(eventId);
+  }
+  
+  // 取得天氣預報（緩存）
+  Future<List<EventWeather>?> loadWeather(EventViewModel event) async {
+    return await _serviceWeather.loadWeather(
+      eventId: event.id,
+      hasLocation: event.hasLocation,
+      locationDisplay: event.locationDisplay,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      tableName: _tableName,
+    );
   }
 
-  Future<void> loadWeather(EventViewModel event, String tableName) async {
-    if (!event.hasLocation) return;
-    //if (_forecastCache.containsKey(event.id)) return;
-    if (_loadingIds.contains(event.id)) return;
-    final now = DateTime.now();
-    final today = DateTimeFormatter.dateOnly(now);
-    if (tableName == TableNames.recommendedAttractions) {
-    } else if (event.locationDisplay.isEmpty ||
-        (event.startDate != null &&
-          ((today.add(Duration(days: 7))).isBefore(event.startDate!) ||
-              (event.endDate != null && today.isAfter(event.endDate!)) ||
-              (event.endDate == null && today.isAfter(event.startDate!))))) {
-      return;
-    }
-
-    WeatherCache? cache = _forecastCache[event.id];
-
-    if (cache != null) {
-      final diff = now.difference(cache.created);
-
-      // 3小時內不重新抓
-      if (diff.inMinutes < 180) {
-        return;
-      }
-    }
-
-    _loadingIds.add(event.id);
-
-    try {
-      final data = await _serviceWeather.getWeather(
-          locationDisplay: event.locationDisplay, startDate: event.startDate);
-
-      _forecastCache[event.id] = WeatherCache(data: data, created: now);
-    } catch (e, st) {
-      logger.e('loadWeather failed for ${event.id}: $e\n$st');
-      _forecastCache[event.id] = WeatherCache(data: [], created: now);
-    } finally {
-      _loadingIds.remove(event.id);
-    }
-  }
 
   Future<void> onOpenLink(EventViewModel event) async {
     if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
@@ -430,14 +398,4 @@ class ControllerEvent extends ChangeNotifier {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
     }
   }
-}
-
-class WeatherCache {
-  final DateTime created;
-  final List<EventWeather> data;
-
-  WeatherCache({
-    required this.created,
-    required this.data,
-  });
 }

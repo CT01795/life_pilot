@@ -55,3 +55,13 @@ class EventWeather {
         'grnd_level': grndLevel,
       };
 }
+
+class WeatherCache {
+  final DateTime created;
+  final List<EventWeather> data;
+
+  WeatherCache({
+    required this.created,
+    required this.data,
+  });
+}

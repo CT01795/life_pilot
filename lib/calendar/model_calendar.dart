@@ -81,6 +81,7 @@ class ModelCalendar {
     required ControllerAuth? auth,
     required ProviderLocale localeProvider,
     required String tableName,
+    required String googleApiKey,
   }) async {
     if (isDisposed) return [];
     try {
@@ -98,7 +99,7 @@ class ModelCalendar {
           start.subtract(Duration(days: 2)),
           end.add(Duration(days: 2)),
           locale,
-          await serviceEvent.getKey(keyName: "GOOGLE_API_KEY"));
+          googleApiKey);
 
       if (isDisposed) return [];
 
