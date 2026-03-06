@@ -134,18 +134,9 @@ class ServiceEvent{
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
     try {
-      String? realAccount = event.account;
-      if (event.account == AuthConstants.guest) {
-        event.account = AuthConstants.sysAdminEmail;
-      }
       final Map<String, dynamic> data = event.toJson();
       var query =
           client.from(tableName).update(data).eq(EventFields.id, event.id);
-      if (realAccount != null &&
-          realAccount.isNotEmpty &&
-          realAccount != AuthConstants.guest) {
-        query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
-      }
       await query;
     } catch (ex, stacktrace) {
       logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);

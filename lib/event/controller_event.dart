@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/event/service_event_transfer_ok.dart';
+import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'dart:async';
@@ -15,10 +15,12 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ControllerEvent extends ChangeNotifier {
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final ControllerAuth auth;
   final ServiceEvent _serviceEvent;
   final ServiceWeather _serviceWeather;
-  final ModelEventCalendar _modelEventCalendar;
+  final ModelEvent _modelEvent;
   final String _tableName;
   final String? _toTableName;
   final ServiceEventTransfer _serviceEventTransfer;
@@ -28,13 +30,13 @@ class ControllerEvent extends ChangeNotifier {
       {required this.auth,
       required ServiceEvent serviceEvent,
       required ServiceWeather serviceWeather,
-      required ModelEventCalendar modelEventCalendar,
+      required ModelEvent modelEvent,
       required String tableName,
       String? toTableName,
       this.onCalendarReload})
       : _tableName = tableName,
         _toTableName = toTableName,
-        _modelEventCalendar = modelEventCalendar,
+        _modelEvent = modelEvent,
         _serviceEvent = serviceEvent,
         _serviceWeather = serviceWeather,
         _serviceEventTransfer = ServiceEventTransfer(
@@ -44,28 +46,20 @@ class ControllerEvent extends ChangeNotifier {
   ServiceEvent get serviceEvent => _serviceEvent;
   ServiceWeather get serviceWeather => _serviceWeather;
   String get fromTableName => _tableName;
-  ModelEventCalendar get modelEventCalendar => _modelEventCalendar;
+  ModelEvent get modelEvent => _modelEvent;
   List<EventItem> getFilteredEvents(AppLocalizations loc) =>
-      _modelEventCalendar.getFilteredEvents(loc);
+      _modelEvent.getFilteredEvents(loc);
   bool isEventSelected(String eventId) {
-    return _modelEventCalendar.selectedEventIds.contains(eventId);
+    return _modelEvent.selectedEventIds.contains(eventId);
   }
 
-  bool get showSearchPanel => _modelEventCalendar.showSearchPanel;
-  ScrollController get scrollController => _modelEventCalendar.scrollController;
+  bool get showSearchPanel => _modelEvent.showSearchPanel;
+  ScrollController get scrollController => _scrollController;
+  TextEditingController get searchController => _searchController;
 
   // ---------------------------------------------------------------------------
   // 📦 CRUD 操作
   // ---------------------------------------------------------------------------
-  Future<void> loadEvents() async {
-    final list = await _serviceEvent.getEvents(
-      tableName: _tableName,
-      inputUser: auth.currentAccount,
-    );
-    _modelEventCalendar.setEvents(list ?? []);
-    notifyListeners();
-  }
-
   Future<void> saveEvent({
     EventItem? oldEvent,
     required EventItem newEvent,
@@ -80,24 +74,30 @@ class ControllerEvent extends ChangeNotifier {
 
   // ✅ 刪除事件，並更新列表與通知 UI
   Future<void> deleteEvent(EventItem event) async {
-    await Future.wait([
-      _serviceEvent.deleteEvent(
-          currentAccount: auth.currentAccount ?? '',
-          event: event,
-          tableName: _tableName)
-    ]);
+    await _serviceEvent.deleteEvent(
+        currentAccount: auth.currentAccount ?? '',
+        event: event,
+        tableName: _tableName);
 
     // 移除事件並更新快取
-    _modelEventCalendar
+    _modelEvent
       ..removeEvent(event)
       ..markRemoved(event.id);
+    _invalidateViewModelCache();
     notifyListeners();
   }
 
   Future<void> approveEvent({required EventItem event}) async {
     event.isApproved = true;
+    event.account = AuthConstants.sysAdminEmail;
     await _serviceEvent.approvalEvent(event: event, tableName: _tableName);
-    await loadEvents();
+    _invalidateViewModelCache();
+    notifyListeners();
+  }
+
+  void _invalidateViewModelCache() {
+    _cachedViewModels = null;
+    _lastEvents = null;
   }
 
   bool canDelete({required String account}) {
@@ -121,7 +121,8 @@ class ControllerEvent extends ChangeNotifier {
           column: event.isLike == true ? 'like_counts' : 'card_clicks',
           account: auth.currentAccount ?? AuthConstants.guest);
     }
-    await loadEvents();
+    _invalidateViewModelCache();
+    notifyListeners();
   }
 
   Future<void> dislikeEvent(EventItem event) async {
@@ -139,7 +140,8 @@ class ControllerEvent extends ChangeNotifier {
           column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
           account: auth.currentAccount ?? AuthConstants.guest);
     }
-    await loadEvents();
+    _invalidateViewModelCache();
+    notifyListeners();
   }
 
   // ✅ 建立單筆事件控制器
@@ -163,9 +165,9 @@ class ControllerEvent extends ChangeNotifier {
     required EventItem? updatedEvent,
   }) async {
     if (updatedEvent == null) return;
-    if (_tableName != TableNames.calendarEvents) {
-      await loadEvents(); // 自動刷新列表
-    }
+    _modelEvent.updateEvent(updatedEvent);
+    _invalidateViewModelCache();
+    notifyListeners();
   }
 
   // ---------------------------------------------------------------------------
@@ -195,7 +197,7 @@ class ControllerEvent extends ChangeNotifier {
       fromTableName: _tableName,
       toTableName: _toTableName!,
     );
-    _modelEventCalendar.toggleEventSelection(event.id, targetEvent != null);
+    _modelEvent.toggleEventSelection(event.id, targetEvent != null);
     if (targetEvent != null && _toTableName == TableNames.calendarEvents) {
       // 🔹 呼叫 function 更新資料庫
       await _serviceEvent.incrementEventCounter(
@@ -203,10 +205,9 @@ class ControllerEvent extends ChangeNotifier {
           eventName: event.name, // 或者用 eventViewModel.name
           column: 'saves', //收藏到行事曆
           account: auth.currentAccount ?? AuthConstants.guest);
-      await loadEvents();
-    } else {
-      notifyListeners();
+      _invalidateViewModelCache();
     }
+    notifyListeners();
     return targetEvent;
   }
 
@@ -228,26 +229,25 @@ class ControllerEvent extends ChangeNotifier {
   // 🔍 搜尋與篩選控制
   // ---------------------------------------------------------------------------
   void toggleEventSelection(String eventId, bool isSelected) {
-    _modelEventCalendar.toggleEventSelection(eventId, isSelected);
+    _modelEvent.toggleEventSelection(eventId, isSelected);
     notifyListeners();
   }
 
   void toggleSearchPanel(bool value) {
-    _modelEventCalendar.toggleSearchPanel(value);
+    _modelEvent.toggleSearchPanel(value);
     notifyListeners();
   }
 
   void updateKeywords(
     String? keywords,
   ) {
-    _modelEventCalendar.updateSearchKeywords(keywords);
+    _modelEvent.updateSearchKeywords(keywords);
 
-    final controller = _modelEventCalendar.searchController;
-    final filter = _modelEventCalendar.searchFilter;
+    final filter = _modelEvent.searchFilter;
 
     if (keywords == null || keywords.isEmpty) {
       filter.tags.clear();
-      controller.clear();
+      _searchController.clear();
       notifyListeners();
       return;
     }
@@ -270,14 +270,14 @@ class ControllerEvent extends ChangeNotifier {
   void updateStartDate(
     DateTime? startDate,
   ) {
-    _modelEventCalendar.updateStartDate(startDate);
+    _modelEvent.updateStartDate(startDate);
     notifyListeners();
   }
 
   void updateEndDate(
     DateTime? endDate,
   ) {
-    _modelEventCalendar.updateEndDate(endDate);
+    _modelEvent.updateEndDate(endDate);
     notifyListeners();
   }
 
@@ -293,7 +293,7 @@ class ControllerEvent extends ChangeNotifier {
     required List<EventItem> events,
     required AppLocalizations loc,
   }) {
-    if (_cachedViewModels != null && _lastEvents == events) {
+    if (_cachedViewModels != null && identical(_lastEvents, events)) {
       return _cachedViewModels!;
     }
 
@@ -322,10 +322,16 @@ class ControllerEvent extends ChangeNotifier {
     return tmp;
   }
 
-  Future<void> refreshEvents() async {
-    await ServiceEventPublic().fetchAndSaveAllEvents();
+  Future<void> loadEvents({required bool isGetPublicEvents}) async {
+    if(isGetPublicEvents) await ServiceEventPublic().fetchAndSaveAllEvents();
 
-    loadEvents(); // notifyListeners()
+    final list = await _serviceEvent.getEvents(
+      tableName: _tableName,
+      inputUser: auth.currentAccount,
+    );
+    _modelEvent.setEvents(list ?? []);
+    _invalidateViewModelCache();
+    notifyListeners();
   }
 
   // ------------------ controller event card ------------------
@@ -333,7 +339,7 @@ class ControllerEvent extends ChangeNotifier {
   List<EventWeather>? getForecast(String eventId) {
     return _serviceWeather.getForecast(eventId);
   }
-  
+
   // 取得天氣預報（緩存）
   Future<List<EventWeather>?> loadWeather(EventViewModel event) async {
     return await _serviceWeather.loadWeather(
@@ -345,7 +351,6 @@ class ControllerEvent extends ChangeNotifier {
       tableName: _tableName,
     );
   }
-
 
   Future<void> onOpenLink(EventViewModel event) async {
     if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
@@ -397,5 +402,12 @@ class ControllerEvent extends ChangeNotifier {
     } catch (e) {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 }

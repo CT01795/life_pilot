@@ -234,9 +234,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
       case EventFields.description:
         description = value;
         break;
-      /*case EventFields.fee:
-        fee = value;
-        break;*/
       case EventFields.unit:
         unit = value;
         break;

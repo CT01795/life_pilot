@@ -57,7 +57,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
     super.initState();
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
-      modelEventCalendar: widget.controllerEvent.modelEventCalendar, // 使用頁面同一個 model
+      modelEvent: widget.controllerEvent.modelEvent, // 使用頁面同一個 model
       serviceEvent: widget.controllerEvent.serviceEvent,       // 使用頁面同一個 controller
       exportService: context.read<ServiceExportPlatform>(),
       excelService: context.read<ServiceExportExcel>(),
@@ -73,7 +73,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
     _hasLoaded = true; 
-    await _controller.loadEvents();
+    await _controller.loadEvents(isGetPublicEvents: true);
   }
 
   Future<void> _onAddPressed(BuildContext context) async {
@@ -86,7 +86,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
     );
 
     if (newEvent != null) {
-      await _controller.loadEvents();
+      await _controller.loadEvents(isGetPublicEvents: true);
     }
   }
 

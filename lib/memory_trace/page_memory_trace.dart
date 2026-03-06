@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/model_event_calendar.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -38,7 +38,7 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
       serviceWeather: context.read<ServiceWeather>(),
       tableName: TableNames.memoryTrace,
       toTableName: '',
-      modelEventCalendar: ModelEventCalendar(),
+      modelEvent: ModelEvent(),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
