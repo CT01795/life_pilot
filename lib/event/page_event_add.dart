@@ -134,7 +134,8 @@ class _PageEventAddState extends State<PageEventAdd> {
                 padding: Insets.directionalL4R4T4B8,
                 children: [
                   _buildDateTimeRow(loc: loc, ctl: controllerAdd),
-                  ..._buildTextFields(loc: loc, ctl: controllerAdd, fields: fields),
+                  ..._buildTextFields(
+                      loc: loc, ctl: controllerAdd, fields: fields),
                   Gaps.h16,
                   Text(loc.eventSub),
                   Selector<ControllerPageEventAdd, int>(
@@ -146,7 +147,10 @@ class _PageEventAddState extends State<PageEventAdd> {
                         itemCount: length,
                         itemBuilder: (_, index) {
                           return _buildSubEventCard(
-                              loc: loc, ctl: controllerAdd, index: index, fields: fields);
+                              loc: loc,
+                              ctl: controllerAdd,
+                              index: index,
+                              fields: fields);
                         },
                       );
                     },
@@ -183,7 +187,7 @@ class _PageEventAddState extends State<PageEventAdd> {
       required ControllerPageEventAdd ctl,
       required Map<String, String> fields,
       String? index}) {
-    final Map<String,String> currentFields = Map.from(fields);
+    final Map<String, String> currentFields = Map.from(fields);
     if (index != null) {
       //currentFields.remove(EventFields.city);
       currentFields.remove(EventFields.ageMin);
@@ -311,93 +315,95 @@ class _PageEventAddState extends State<PageEventAdd> {
       {required AppLocalizations loc,
       required ControllerPageEventAdd ctl,
       int? index}) {
-    final dStart =
-        index == null ? ctl.startDate : ctl.subEvents[index].startDate;
-    final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
-    final tStart =
-        index == null ? ctl.startTime : ctl.subEvents[index].startTime;
-    final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
+    return Consumer<ControllerPageEventAdd>(builder: (_, ctl, __) {
+      final dStart =
+          index == null ? ctl.startDate : ctl.subEvents[index].startDate;
+      final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
+      final tStart =
+          index == null ? ctl.startTime : ctl.subEvents[index].startTime;
+      final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildDateTile(
-                loc: loc,
-                date: dStart,
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: dStart ?? DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                  );
-
-                  if (picked != null) {
-                    ctl.setDate(picked, isStart: true, index: index);
-                  }
-                },
-                type: CalendarMisc.startToS,
-              ),
-            ),
-            const Text(' ~ '),
-            Expanded(
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
                 child: _buildDateTile(
-                    loc: loc,
-                    date: dEnd,
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: dEnd ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
+                  loc: loc,
+                  date: dStart,
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: dStart ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
 
-                      if (picked != null) {
-                        ctl.setDate(picked, isStart: false, index: index);
-                      }
-                    },
-                    type: CalendarMisc.endToE)),
-          ],
-        ),
-        Row(
-          children: [
-            Expanded(
-                child: _buildTimeTile(
-                    loc: loc,
-                    time: tStart,
-                    onTap: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: tStart ?? TimeOfDay.now(),
-                      );
+                    if (picked != null) {
+                      ctl.setDate(picked, isStart: true, index: index);
+                    }
+                  },
+                  type: CalendarMisc.startToS,
+                ),
+              ),
+              const Text(' ~ '),
+              Expanded(
+                  child: _buildDateTile(
+                      loc: loc,
+                      date: dEnd,
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: dEnd ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
 
-                      if (picked != null) {
-                        ctl.setTime(picked, isStart: true, index: index);
-                      }
-                    },
-                    type: CalendarMisc.startToS)),
-            const Text(' ~ '),
-            Expanded(
-                child: _buildTimeTile(
-                    loc: loc,
-                    time: tEnd,
-                    onTap: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: tEnd ?? TimeOfDay.now(),
-                      );
+                        if (picked != null) {
+                          ctl.setDate(picked, isStart: false, index: index);
+                        }
+                      },
+                      type: CalendarMisc.endToE)),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                  child: _buildTimeTile(
+                      loc: loc,
+                      time: tStart,
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: tStart ?? TimeOfDay.now(),
+                        );
 
-                      if (picked != null) {
-                        ctl.setTime(picked, isStart: false, index: index);
-                      }
-                    },
-                    type: CalendarMisc.endToE)),
-          ],
-        ),
-      ],
-    );
+                        if (picked != null) {
+                          ctl.setTime(picked, isStart: true, index: index);
+                        }
+                      },
+                      type: CalendarMisc.startToS)),
+              const Text(' ~ '),
+              Expanded(
+                  child: _buildTimeTile(
+                      loc: loc,
+                      time: tEnd,
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: tEnd ?? TimeOfDay.now(),
+                        );
+
+                        if (picked != null) {
+                          ctl.setTime(picked, isStart: false, index: index);
+                        }
+                      },
+                      type: CalendarMisc.endToE)),
+            ],
+          ),
+        ],
+      );
+    });
   }
 
   // =====================================================
@@ -451,7 +457,8 @@ class _PageEventAddState extends State<PageEventAdd> {
         child: Column(
           children: [
             _buildDateTimeRow(loc: loc, ctl: ctl, index: index),
-            ..._buildTextFields(loc: loc, ctl: ctl, index: d.id, fields: fields),
+            ..._buildTextFields(
+                loc: loc, ctl: ctl, index: d.id, fields: fields),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
