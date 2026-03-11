@@ -1,6 +1,8 @@
 // lib/services/event_service.dart
 import 'dart:convert';
 
+import 'package:charset/charset.dart';
+import 'package:csv/csv.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
@@ -86,13 +88,14 @@ class ServiceEventPublic {
         historyList.map((e) => e.id).where((id) => id.isNotEmpty).toSet());
 
     DateTime today = DateUtils.dateOnly(DateTime.now());
-    //==================================== 取得外部資源事件 strolltimesUrl ====================================
-    final strolltimesUrl =
+    //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
+    String strolltimesWeekendUrl =
         "https://strolltimes.com/weekend.json"; //https://news.strolltimes.com/events/weekend/"; //'https://strolltimes.com/weekend-events/';
-    if (await checkEventsUrl(strolltimesUrl, today)) {
+    if (await checkEventsUrl(strolltimesWeekendUrl, today)) {
       try {
         List<EventItem> strolltimesList =
-            await fetchPageEventsStrolltimes(strolltimesUrl, today) ?? [];
+            await fetchPageEventsStrolltimes(strolltimesWeekendUrl, today) ??
+                [];
 
         //==================================== strolltimesList事件寫入 ====================================
         dbNameSet = await _insertIfNotExists(strolltimesList, dbNameSet);
@@ -100,7 +103,31 @@ class ServiceEventPublic {
         logger.e(ex);
       }
     }
-    //==================================== 取得外部資源事件 Accupass ====================================
+    //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
+    String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
+    if (await checkEventsUrl(strolltimesEventsUrl, today)) {
+      try {
+        final url = Uri.parse(strolltimesEventsUrl);
+
+        final response = await http.get(url);
+
+        if (response.statusCode == 200) {
+          String csv;
+          try {
+            csv = utf8.decode(response.bodyBytes);
+          } catch (e, s) {
+            logger.e('❌ utf8 decode error: $e', stackTrace: s);
+            csv = Charset.getByName('big5')!.decode(response.bodyBytes);
+          }
+          List<EventItem> strolltimesList = parseStrolltimesCsv(csv, today);
+          //==================================== strolltimesList事件寫入 ====================================
+          dbNameSet = await _insertIfNotExists(strolltimesList, dbNameSet);
+        }
+      } on Exception catch (ex) {
+        logger.e(ex);
+      }
+    }
+    //==================================== 取得外部資源事件 cloud.culture.tw ====================================
     Map<int, String> tmpMap = {
       1: "音樂",
       2: "戲劇",
@@ -134,6 +161,88 @@ class ServiceEventPublic {
         }
       }
     }
+  }
+
+  List<EventItem> parseStrolltimesCsv(String csvText, DateTime today) {
+    final rows = const CsvToListConverter(
+      eol: '\n',
+      shouldParseNumbers: false,
+    ).convert(csvText);
+    if (rows.length <= 1) return [];
+
+    List<EventItem> events = [];
+    final headerRow = rows[0];
+    Map<String, int> colsToDetail = {};
+    final uuid = const Uuid();
+    for (int i = 0; i < headerRow.length; i++) {
+      final tmp = headerRow[i].toString();
+      if (tmp.contains("活動名稱")) {
+        colsToDetail["name"] = i;
+      } else if (tmp.contains("關鍵字詞")) {
+        colsToDetail["type"] = i;
+      } else if (tmp.contains("所在縣市")) {
+        colsToDetail["city"] = i;
+      } else if (tmp.contains("活動地點")) {
+        colsToDetail["location"] = i;
+      } else if (tmp.contains("開始時間")) {
+        colsToDetail["startDate"] = i;
+      } else if (tmp.contains("結束時間")) {
+        colsToDetail["endDate"] = i;
+      } else if (tmp.contains("活動摘要")) {
+        colsToDetail["description"] = i;
+      } else if (tmp.contains("文章網址")) {
+        colsToDetail["masterUrl2"] = i;
+      } else if (tmp.contains("資料來源")) {
+        colsToDetail["masterUrl"] = i;
+      }
+    }
+    // 假設第 1 列是 header
+    for (int i = 1; i < rows.length; i++) {
+      final row = rows[i];
+      if (row.isEmpty) continue;
+      String strS =
+          row[colsToDetail["startDate"] ?? 99]?.toString().trim() ?? '';
+      DateTime? startDate =
+          strS.length >= 8 ? DateFormat('yyyy-M-d').parse(strS) : null;
+
+      String strE = row[colsToDetail["endDate"] ?? 99]?.toString().trim() ?? '';
+      DateTime? endDate =
+          strE.length >= 8 ? DateFormat('yyyy-M-d').parse(strE) : null;
+      if (startDate == null || endDate == null || endDate.isBefore(today)) {
+        continue;
+      }
+
+      String? tmpUrl = row[colsToDetail["masterUrl"] ?? 99]?.toString();
+      String? replaceUrl = row[colsToDetail["masterUrl2"] ?? 99]?.toString();
+      if (replaceUrl != null && replaceUrl.startsWith("/events")) {
+        replaceUrl = "https://strolltimes.com$replaceUrl";
+      } else {
+        replaceUrl = "";
+      }
+      if (tmpUrl == null || tmpUrl.isEmpty) {
+        row[colsToDetail["masterUrl"] ?? 99] = replaceUrl;
+      }
+      events.add(EventItem(
+          id: uuid.v4(),
+          name: row[colsToDetail["name"] ?? 99]?.toString() ?? '',
+          type: row[colsToDetail["type"] ?? 99]?.toString() ?? '',
+          city: row[colsToDetail["city"] ?? 99]?.toString() ?? '',
+          location: row[colsToDetail["location"] ?? 99]?.toString() ?? '',
+          //fee: row[?]?.toString(),
+          startDate: startDate,
+          //startTime: DateTimeParser.parseTime(
+          //    row[colsToDetail["startTime"] ?? 99]?.toString() ?? ''),
+          endDate: endDate,
+          //endTime: DateTimeParser.parseTime(
+          //    row[colsToDetail["endTime"] ?? 99]?.toString() ?? ''),
+          description:
+              "$replaceUrl\n${row[colsToDetail["description"] ?? 99] ?? ''}",
+          //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
+          masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
+          account: AuthConstants.sysAdminEmail,
+          subEvents: []));
+    }
+    return events;
   }
 
   //==================================== 取得外部資源事件 cloud.Culture ====================================
