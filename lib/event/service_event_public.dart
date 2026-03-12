@@ -243,7 +243,7 @@ class ServiceEventPublic {
           //endTime: DateTimeParser.parseTime(
           //    row[colsToDetail["endTime"] ?? 99]?.toString() ?? ''),
           description:
-              "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}",
+              "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}\n",
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
           account: AuthConstants.sysAdminEmail,
