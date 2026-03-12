@@ -219,8 +219,15 @@ class ServiceEventPublic {
       } else {
         replaceUrl = "";
       }
-      if (tmpUrl == null || tmpUrl.isEmpty) {
+      String otherUrl = "";
+      if (tmpUrl == null || tmpUrl.isEmpty || tmpUrl.endsWith("/permalink.php")) {
         row[colsToDetail["masterUrl"] ?? 99] = replaceUrl;
+      } else {
+        final urls = tmpUrl.split("|");
+        row[colsToDetail["masterUrl"] ?? 99] = urls[0];
+        for (int i = 1; i < urls.length; i++){
+          otherUrl += "${urls[i]}\n";
+        }
       }
       events.add(EventItem(
           id: uuid.v4(),
@@ -236,7 +243,7 @@ class ServiceEventPublic {
           //endTime: DateTimeParser.parseTime(
           //    row[colsToDetail["endTime"] ?? 99]?.toString() ?? ''),
           description:
-              "$replaceUrl\n${row[colsToDetail["description"] ?? 99] ?? ''}",
+              "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}",
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
           account: AuthConstants.sysAdminEmail,
