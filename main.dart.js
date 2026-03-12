@@ -146920,7 +146920,7 @@ a8=p.h(0,b5)
 a8=j[a8==null?99:a8]
 a8=a8==null?b0:J.aL(a8)
 a9=A.c([],s)
-r.push(new A.cI(i,b0,a8,g,e,b0,b0,a3,a4,d,a2,a5+a6+a7,"","minavi@alumni.nccu.edu.tw",B.bU,B.cx,!1,!1,!1,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,A.cZ(a9,!0,m)))}return r},
+r.push(new A.cI(i,b0,a8,g,e,b0,b0,a3,a4,d,a2,a5+a6+a7+"\n","","minavi@alumni.nccu.edu.tw",B.bU,B.cx,!1,!1,!1,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,b0,A.cZ(a9,!0,m)))}return r},
 Ob(a,b){return this.b0i(a,b)},
 b0i(b6,b7){var s=0,r=A.n(t.IG),q,p=this,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5
 var $async$Ob=A.o(function(b8,b9){if(b8===1)return A.k(b9,r)
