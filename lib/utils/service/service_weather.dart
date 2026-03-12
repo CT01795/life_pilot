@@ -71,7 +71,7 @@ class ServiceWeather {
 
   Future<List<EventWeather>> getWeather(
       {required String locationDisplay, required DateTime? startDate}) async {
-    String tmpLocation = locationDisplay.split("．")[0];
+    String tmpLocation = locationDisplay.split("．")[0].split(" ")[0];
     final today = DateTime.now();
     final resultStartDate =
         startDate == null || startDate.isBefore(today) ? today : startDate;
