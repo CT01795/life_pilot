@@ -161,6 +161,116 @@ class ServiceEventPublic {
         }
       }
     }
+
+    //==================================== 取得 ACCUPASS 活動 ====================================
+    String accupassUrl =
+        "https://www.accupass.com/search?p=free&q=活動&s=latest&t=none";
+
+    if (await checkEventsUrl(accupassUrl, today)) {
+      try {
+        List<EventItem> accupassList =
+            await fetchPageEventsAccupass(accupassUrl, today) ?? [];
+
+        dbNameSet = await _insertIfNotExists(accupassList, dbNameSet);
+      } catch (ex) {
+        logger.e(ex);
+      }
+    }
+  }
+
+  //==================================== 取得外部資源事件 strolltimesUrl ====================================
+  Future<List<EventItem>?> fetchPageEventsAccupass(
+      String inUrl, DateTime today) async {
+    final url = Uri.parse(inUrl);
+    final res = await http.get(
+      url,
+      headers: {"User-Agent": "Mozilla/5.0"},
+    );
+    if (res.statusCode != 200) return [];
+
+    final html = res.body;
+
+    // 1️⃣ 抓所有 <script> 標籤
+    final scriptRegex = RegExp(r'<script.*?>(.*?)<\/script>', dotAll: true);
+    final scripts =
+        scriptRegex.allMatches(html).map((m) => m.group(1)!).toList();
+
+    String? targetScript;
+    List<EventItem> events = [];
+    for (int i = 60; i < scripts.length; i++) {
+      if (events.isNotEmpty) {
+        break;
+      }
+      if (scripts[i].contains('self.__next_f.push')) {
+        targetScript = scripts[i];
+        int start = targetScript.indexOf('searchedRankingEvents');
+        if (start == -1) {
+          continue;
+        }
+        start = targetScript.indexOf('[', start);
+        int depth = 0;
+        int end = start;
+
+        for (; end < targetScript.length; end++) {
+          if (targetScript[end] == '[') depth++;
+          if (targetScript[end] == ']') depth--;
+
+          if (depth == 0) break;
+        }
+
+        final jsonStr = targetScript
+            .substring(start, end + 1)
+            .replaceAll(r'\"', '"')
+            .replaceAll(r'\n', '');
+
+        final tmpEvents = jsonDecode(jsonStr);
+        for (var map in tmpEvents) {
+          final sdt = DateTime.parse("${map["startDateTime"]}Z").toLocal();
+          final edt = DateTime.parse("${map["endDateTime"]}Z").toLocal();
+          if (edt.isBefore(today)) {
+            continue;
+          }
+          final detailUrl =
+              "https://www.accupass.com/event/${map["eventIdNumber"]}";
+          String city = map["location"];
+          String location = "";
+          /*final res2 = await http.get(
+            Uri.parse(detailUrl),
+            headers: {"User-Agent": "Mozilla/5.0"},
+          );
+
+          if (res2.statusCode == 200) {
+            final html2 = res2.body;
+            // 先找 "location":" 的起始位置
+            int locKeyIndex = html2.indexOf('"location":');
+
+            if (locKeyIndex != -1) {
+              // 地址的實際開始位置
+              final tmpString = html2.substring(locKeyIndex, locKeyIndex + 200);
+              int start = tmpString.indexOf(":", tmpString.indexOf("address"));
+              // 找結尾的引號
+              int end = tmpString.indexOf(',', start);
+
+              // 截取地址
+              city = tmpString.substring(start+2, start + 7);
+              location = tmpString.substring(start + 7, end-1);
+            }
+          }*/
+
+          events.add(EventItem(
+            id: map["eventIdNumber"],
+            masterUrl: detailUrl,
+            startDate: sdt,
+            endDate: edt,
+            city: city,
+            location: location,
+            name: map["name"],
+            account: AuthConstants.sysAdminEmail,
+          ));
+        }
+      }
+    }
+    return events;
   }
 
   List<EventItem> parseStrolltimesCsv(String csvText, DateTime today) {
@@ -220,12 +330,14 @@ class ServiceEventPublic {
         replaceUrl = "";
       }
       String otherUrl = "";
-      if (tmpUrl == null || tmpUrl.isEmpty || tmpUrl.contains("/permalink.php")) {
+      if (tmpUrl == null ||
+          tmpUrl.isEmpty ||
+          tmpUrl.contains("/permalink.php")) {
         row[colsToDetail["masterUrl"] ?? 99] = replaceUrl;
       } else {
         final urls = tmpUrl.split("|");
         row[colsToDetail["masterUrl"] ?? 99] = urls[0];
-        for (int i = 1; i < urls.length; i++){
+        for (int i = 1; i < urls.length; i++) {
           otherUrl += "${urls[i]}\n";
         }
       }
