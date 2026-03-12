@@ -220,7 +220,7 @@ class ServiceEventPublic {
         replaceUrl = "";
       }
       String otherUrl = "";
-      if (tmpUrl == null || tmpUrl.isEmpty || tmpUrl.endsWith("/permalink.php")) {
+      if (tmpUrl == null || tmpUrl.isEmpty || tmpUrl.contains("/permalink.php")) {
         row[colsToDetail["masterUrl"] ?? 99] = replaceUrl;
       } else {
         final urls = tmpUrl.split("|");
