@@ -101,14 +101,6 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
       EventFields.type: loc.keywords,
       EventFields.masterUrl: loc.masterUrl,
       EventFields.description: loc.description,
-      //EventFields.fee: loc.fee,
-      //EventFields.unit: loc.sponsor,
-      //EventFields.ageMin: loc.ageMin,
-      //EventFields.ageMax: loc.ageMax,
-      //EventFields.isFree: loc.isFree,
-      //EventFields.priceMin: loc.priceMin,
-      //EventFields.priceMax: loc.priceMax,
-      //EventFields.isOutdoor: loc.isOutdoor,
     };
     return ChangeNotifierProvider.value(
         value: controllerAdd,
