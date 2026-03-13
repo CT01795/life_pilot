@@ -367,7 +367,6 @@ class ControllerCalendar extends ChangeNotifier {
   }) {
     return ControllerPageCalendarAdd(
       auth: auth!,
-      serviceEvent: _serviceEvent,
       tableName: _tableName,
       existingEvent: existingEvent,
       initialDate: initialDate,

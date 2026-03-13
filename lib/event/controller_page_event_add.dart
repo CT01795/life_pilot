@@ -26,7 +26,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
   String name = '';
   String type = '';
   String description = '';
-  //String fee = '';
   String unit = '';
   List<EventItem> subEvents = [];
 
@@ -87,6 +86,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // 初始化欄位與控制器
   void _init() {
     final now = DateTime.now();
+    
     final e = existingEvent;
     masterGraphUrl = e?.masterGraphUrl;
     masterUrl = e?.masterUrl;
@@ -99,7 +99,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
     name = e?.name ?? '';
     type = e?.type ?? '';
     description = e?.description ?? '';
-    //fee = e?.fee ?? '';
     unit = e?.unit ?? '';
     subEvents = e != null ? List.from(e.subEvents) : [];
     account = e?.account ?? auth.currentAccount;
@@ -126,7 +125,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.name: name,
       EventFields.type: type,
       EventFields.description: description,
-      //EventFields.fee: fee,
       EventFields.unit: unit,
       EventFields.masterUrl: masterUrl ?? '',
       EventFields.ageMin: ageMin,
@@ -154,11 +152,11 @@ class ControllerPageEventAdd extends ChangeNotifier {
     for (int i = 0; i < subEvents.length; i++) {
       final sub = subEvents[i];
       final subFields = {
+        EventFields.city: sub.city,
         EventFields.location: sub.location,
         EventFields.name: sub.name,
         EventFields.type: sub.type,
         EventFields.description: sub.description,
-        //EventFields.fee: sub.fee,
         EventFields.unit: sub.unit,
         EventFields.masterUrl: sub.masterUrl ?? '',
         EventFields.ageMin: sub.ageMin,
@@ -298,6 +296,9 @@ class ControllerPageEventAdd extends ChangeNotifier {
   void _updateSubEvent(
       String mapKey, EventItem sub, String key, String value, bool check) {
     switch (key) {
+      case EventFields.city:
+        sub.city = value;
+        break;
       case EventFields.location:
         sub.location = value;
         break;
@@ -310,9 +311,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
       case EventFields.description:
         sub.description = value;
         break;
-      /*case EventFields.fee:
-        sub.fee = value;
-        break;*/
       case EventFields.unit:
         sub.unit = value;
         break;
@@ -398,12 +396,11 @@ class ControllerPageEventAdd extends ChangeNotifier {
       return sub.copyWith(
         newSubEvents: [],
         newMasterUrl: getText(EventFields.masterUrl),
-        newCity: sub.city,
+        newCity: getText(EventFields.city),
         newLocation: getText(EventFields.location),
         newName: getText(EventFields.name),
         newType: getText(EventFields.type),
         newDescription: getText(EventFields.description),
-        //newFee: getText(EventFields.fee),
         newUnit: getText(EventFields.unit),
         newAgeMin: getText(EventFields.ageMin).isEmpty
             ? null
@@ -458,7 +455,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
       ..name = name
       ..type = type
       ..description = description
-      //..fee = fee
       ..unit = unit
       ..account = auth.currentAccount
       ..repeatOptions = existingEvent?.repeatOptions ?? repeatOptions
@@ -561,7 +557,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.name: newSub.name,
       EventFields.type: newSub.type,
       EventFields.description: newSub.description,
-      //EventFields.fee: newSub.fee,
       EventFields.unit: newSub.unit,
       EventFields.masterUrl: newSub.masterUrl ?? '',
     };
