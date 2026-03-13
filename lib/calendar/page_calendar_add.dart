@@ -381,7 +381,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
 class SpeechTextField extends StatelessWidget {
   final String keyField;
   final String label;
-  final int maxLines;
+  final int minLines;
   final ControllerPageCalendarAdd controller;
   final AppLocalizations loc;
   final ValueChanged<String> onChanged;
@@ -397,7 +397,7 @@ class SpeechTextField extends StatelessWidget {
     required this.loc,
     required this.textController,
     required this.focusNode,
-    this.maxLines = 1,
+    this.minLines = 1,
   });
 
   @override
@@ -420,7 +420,9 @@ class SpeechTextField extends StatelessWidget {
               isDense: true,
               contentPadding: Insets.all3,
             ),
-            maxLines: maxLines,
+            maxLines: 3,
+            minLines: minLines,
+            keyboardType: TextInputType.multiline,
             onChanged: onChanged,
           ),
         ),

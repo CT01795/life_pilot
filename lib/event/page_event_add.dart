@@ -220,7 +220,7 @@ class _PageEventAddState extends State<PageEventAdd> {
       }
 
       // ✅ isOutdoor 下拉選單
-      if (e.key == EventFields.isOutdoor) {
+      else if (e.key == EventFields.isOutdoor) {
         return DropdownButtonFormField<String>(
           initialValue: ctl.isOutdoor == null
               ? ''
@@ -238,7 +238,7 @@ class _PageEventAddState extends State<PageEventAdd> {
           },
         );
       }
-      if (e.key == EventFields.ageMin || e.key == EventFields.priceMin) {
+      else if (e.key == EventFields.ageMin || e.key == EventFields.priceMin) {
         final isAge = e.key == EventFields.ageMin;
         final minKey = index == null ? e.key : '${e.key}_sub_$index';
         final maxKey = index == null
@@ -497,7 +497,7 @@ class _PageEventAddState extends State<PageEventAdd> {
 class SpeechTextField extends StatelessWidget {
   final String keyField;
   final String label;
-  final int maxLines;
+  final int minLines;
   final ControllerPageEventAdd controller;
   final AppLocalizations loc;
   final ValueChanged<String> onChanged;
@@ -509,7 +509,7 @@ class SpeechTextField extends StatelessWidget {
     required this.onChanged,
     required this.controller,
     required this.loc,
-    this.maxLines = 1,
+    this.minLines = 1,
   });
 
   @override
@@ -538,7 +538,9 @@ class SpeechTextField extends StatelessWidget {
               isDense: true,
               contentPadding: Insets.all3,
             ),
-            maxLines: maxLines,
+            maxLines: 3,
+            minLines: minLines,
+            keyboardType: TextInputType.multiline,
             onChanged: onChanged,
           ),
         ),
