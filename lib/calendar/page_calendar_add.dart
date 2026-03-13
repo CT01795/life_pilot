@@ -175,8 +175,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
               ),
             ),
           ),
-        )
-      );
+        ));
   }
 
   // =====================================================

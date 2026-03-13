@@ -102,7 +102,6 @@ class _PageEventAddState extends State<PageEventAdd> {
       EventFields.type: loc.keywords,
       EventFields.masterUrl: loc.masterUrl,
       EventFields.description: loc.description,
-      //EventFields.fee: loc.fee,
       EventFields.unit: loc.sponsor,
       EventFields.ageMin: loc.ageMin,
       //EventFields.ageMax: loc.ageMax,
@@ -189,8 +188,8 @@ class _PageEventAddState extends State<PageEventAdd> {
       required Map<String, String> fields,
       String? index}) {
     final Map<String, String> currentFields = Map.from(fields);
-    if (index != null) {
-      //currentFields.remove(EventFields.city);
+    if (index != null || controllerAdd.tableName == TableNames.memoryTrace) {
+      currentFields.remove(EventFields.unit);
       currentFields.remove(EventFields.ageMin);
       //currentFields.remove(EventFields.ageMax);
       currentFields.remove(EventFields.isFree);
@@ -238,8 +237,7 @@ class _PageEventAddState extends State<PageEventAdd> {
             }
           },
         );
-      }
-      else if (e.key == EventFields.ageMin || e.key == EventFields.priceMin) {
+      } else if (e.key == EventFields.ageMin || e.key == EventFields.priceMin) {
         final isAge = e.key == EventFields.ageMin;
         final minKey = index == null ? e.key : '${e.key}_sub_$index';
         final maxKey = index == null

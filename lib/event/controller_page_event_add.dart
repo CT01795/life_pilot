@@ -86,7 +86,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // 初始化欄位與控制器
   void _init() {
     final now = DateTime.now();
-    
+
     final e = existingEvent;
     masterGraphUrl = e?.masterGraphUrl;
     masterUrl = e?.masterUrl;
@@ -142,7 +142,6 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.likeCounts: likeCounts,
       EventFields.dislikeCounts: dislikeCounts,
     };
-
     for (final entry in fields.entries) {
       initController(
           key: entry.key, initialValue: entry.value?.toString() ?? '');
@@ -383,8 +382,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   // 將目前表單內容轉換為 EventItem
   EventItem toEventItem() {
     // ✅ 先更新 subEvents 的內容
-    final sortedSubs = List<EventItem>.from(subEvents)
-      ..sort(_compareEvents);
+    final sortedSubs = List<EventItem>.from(subEvents)..sort(_compareEvents);
     //subEvents.sort(_compareEvents);
 
     final updatedSubs = sortedSubs.map((sub) {
