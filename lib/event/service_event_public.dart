@@ -68,8 +68,8 @@ class ServiceEventPublic {
     if (events.isEmpty) return dbNameDateSet;
 
     final newEvents = events.where((e) {
-      final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") + e.startDate!.toIso8601String();
-      final tmpId = e.id + e.startDate!.toIso8601String();
+      final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") + DateFormat('yyyy-MM-dd').format(e.startDate!);
+      final tmpId = e.id + DateFormat('yyyy-MM-dd').format(e.startDate!);
       if (dbNameDateSet.contains(tmpName) ||
           dbNameDateSet.contains(tmpId)) {
         return false;
@@ -95,11 +95,11 @@ class ServiceEventPublic {
         ) ??
         []);
     Set<String> dbNameDateSet = historyList
-        .map((e) => e.name.replaceAll(" ", "").replaceAll("_", "") + e.startDate!.toIso8601String())
+        .map((e) => e.name.replaceAll(" ", "").replaceAll("_", "") + DateFormat('yyyy-MM-dd').format(e.startDate!))
         .where((name) => name.isNotEmpty)
         .toSet();
     dbNameDateSet.addAll(
-        historyList.map((e) => e.id + e.startDate!.toIso8601String()).where((id) => id.isNotEmpty).toSet());
+        historyList.map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!)).where((id) => id.isNotEmpty).toSet());
 
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
