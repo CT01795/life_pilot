@@ -30,7 +30,6 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   late final ControllerPageCalendarAdd controllerAdd;
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
-  final Map<String, TextEditingController> _textControllers = {};
   final Map<String, FocusNode> _focusNodes = {};
 
   @override
@@ -49,30 +48,25 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     for (var node in _focusNodes.values) {
       node.dispose();
     }
-    for (var ctrl in _textControllers.values) {
-      ctrl.dispose();
-    }
     super.dispose();
   }
 
-  TextEditingController getTextController(String key, {String? initial}) {
-    return _textControllers.putIfAbsent(
-        key, () => TextEditingController(text: initial ?? ''));
-  }
+  FocusNode getFocusNode(String key) {
+    return _focusNodes.putIfAbsent(key, () {
+      final node = FocusNode();
 
-  FocusNode getFocusNode(String key, {EventItem? sub}) {
-    if (!_focusNodes.containsKey(key)) {
-      _focusNodes[key] = FocusNode();
-      _focusNodes[key]!.addListener(() {
-        if (!_focusNodes[key]!.hasFocus) {
-          // 離焦時更新
-          final value = getTextController(key).text;
-          final realKey = key.split('_').first;
-          controllerAdd.updateField(realKey, value, sub: sub);
+      node.addListener(() {
+        if (!node.hasFocus) {
+          controllerAdd.updateField(
+            key,
+            controllerAdd.getController(key: key).text,
+            true,
+          );
         }
       });
-    }
-    return _focusNodes[key]!;
+
+      return node;
+    });
   }
 
   Future<void> _saveEvent(AppLocalizations loc) async {
@@ -117,61 +111,72 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     };
     return ChangeNotifierProvider.value(
         value: controllerAdd,
-        child: Consumer<ControllerPageCalendarAdd>(builder: (context, _, __) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(loc.eventAddEdit),
-              actions: [
-                TextButton(
-                  onPressed: () => _saveEvent(loc),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(loc.eventAddEdit),
+            actions: [
+              TextButton(
+                onPressed: () => _saveEvent(loc),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(loc.save),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                controller: _scrollController,
+                padding: Insets.directionalL4R4T4B8,
+                children: [
+                  _buildDateTimeRow(loc: loc, ctl: controllerAdd),
+                  ..._buildTextFields(
+                      loc: loc, ctl: controllerAdd, fields: fields),
+                  Gaps.h16,
+                  Text(loc.eventSub),
+                  Selector<ControllerPageCalendarAdd, int>(
+                    selector: (_, ctl) => ctl.subEvents.length,
+                    builder: (_, length, __) {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: length,
+                        itemBuilder: (_, index) {
+                          return _buildSubEventCard(
+                              loc: loc,
+                              ctl: controllerAdd,
+                              index: index,
+                              fields: fields);
+                        },
+                      );
+                    },
                   ),
-                  child: Text(loc.save),
-                ),
-              ],
-            ),
-            body: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  controller: _scrollController,
-                  padding: Insets.directionalL4R4T4B8,
-                  children: [
-                    _buildDateTimeRow(loc: loc, ctl: controllerAdd),
-                    ..._buildTextFields(loc: loc, ctl: controllerAdd, fields: fields),
-                    Gaps.h16,
-                    Text(loc.eventSub),
-                    ...List.generate(
-                        controllerAdd.event.subEvents.length,
-                        (index) => _buildSubEventCard(
-                            loc: loc,
-                            sub: controllerAdd.event.subEvents[index],
-                            index: index,
-                            fields: fields)),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        controllerAdd.addSubEvent();
-                        // 自動滑到最下
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (_scrollController.hasClients) {
-                            _scrollController.animateTo(
-                              _scrollController.position.maxScrollExtent,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            );
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.add),
-                      label: Text(loc.eventAddSub),
-                    ),
-                  ],
-                ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      controllerAdd.addSubEvent();
+                      // 自動滑到最下
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        if (_scrollController.hasClients) {
+                          _scrollController.animateTo(
+                            _scrollController.position.maxScrollExtent,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                          );
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.add),
+                    label: Text(loc.eventAddSub),
+                  ),
+                ],
               ),
             ),
-          );
-        }));
+          ),
+        )
+      );
   }
 
   // =====================================================
@@ -181,169 +186,118 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       {required AppLocalizations loc,
       required ControllerPageCalendarAdd ctl,
       required Map<String, String> fields,
-      EventItem? sub}) {
-    final Map<String,String> currentFields = Map.from(fields);
+      String? index}) {
+    final Map<String, String> currentFields = Map.from(fields);
     return currentFields.entries.map((e) {
-      final keyField = sub == null ? e.key : '${e.key}_sub_${sub.id}';
-      final controller = getTextController(keyField,
-          initial: sub != null
-              ? sub.toJson()[e.key]?.toString() ?? ''
-              : ctl.event.toJson()[e.key]?.toString() ?? '');
-      final focusNode = getFocusNode(keyField, sub: sub);
+      final keyField = index == null ? e.key : '${e.key}_sub_$index';
       return SpeechTextField(
         keyField: keyField,
         label: e.value,
-        textController: controller,
-        focusNode: focusNode,
         controller: ctl,
         loc: loc,
-        onChanged: (v) => ctl.updateField(e.key, v, sub: sub),
+        onChanged: (v) => ctl.updateField(keyField, v, false),
       );
     }).toList();
-  }
-
-  Widget _buildSubEventCard(
-      {required AppLocalizations loc,
-      required EventItem sub,
-      required Map<String, String> fields,
-      required int index}) {
-    return Card(
-      key: ValueKey(sub.id),
-      color: index % 2 == 0 ? Colors.blueGrey[50] : Colors.grey[300],
-      child: Padding(
-        padding: Insets.all4,
-        child: Column(
-          children: [
-            _buildDateTimeRow(loc: loc, ctl: controllerAdd, sub: sub),
-            ..._buildTextFields(loc: loc, ctl: controllerAdd, sub: sub, fields: fields),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '#${index + 1} ${DateFormat('MM/dd').format(sub.startDate!)} ${sub.startTime!.format(context)} ${sub.name.substring(0, sub.name.length > 5 ? 5 : sub.name.length)}${sub.name.length > 5 ? '...' : ''}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.pinkAccent),
-                  tooltip: loc.delete,
-                  onPressed: () async {
-                    final event = controllerAdd.event.subEvents[
-                        index]; // 假設你有 subEvents list 裡的 item 為 event
-                    final shouldDelete = await showConfirmationDialog(
-                      content: 'No. ${index + 1} ${event.name} ${loc.delete}？',
-                      confirmText: loc.delete,
-                      cancelText: loc.cancel,
-                    );
-
-                    if (shouldDelete == true) {
-                      try {
-                        controllerAdd.removeSubEvent(sub.id);
-                      } catch (e) {
-                        AppNavigator.showErrorBar('${loc.deleteError}: $e');
-                      }
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildDateTimeRow(
       {required AppLocalizations loc,
       required ControllerPageCalendarAdd ctl,
-      EventItem? sub}) {
-    final dStart = sub?.startDate ?? ctl.event.startDate;
-    final dEnd = sub?.endDate ?? ctl.event.endDate;
-    final tStart = sub?.startTime ?? ctl.event.startTime;
-    final tEnd = sub?.endTime ?? ctl.event.endTime;
+      int? index}) {
+    return Consumer<ControllerPageCalendarAdd>(builder: (_, ctl, __) {
+      final dStart =
+          index == null ? ctl.startDate : ctl.subEvents[index].startDate;
+      final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
+      final tStart =
+          index == null ? ctl.startTime : ctl.subEvents[index].startTime;
+      final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
                 child: _buildDateTile(
-                    loc: loc,
-                    date: dStart,
-                    onTap: () =>
-                        _pickDate(item: sub ?? ctl.event, isStart: true),
-                    type: CalendarMisc.startToS)),
-            const Text(' ~ '),
-            Expanded(
-                child: _buildDateTile(
-                    loc: loc,
-                    date: dEnd,
-                    onTap: () =>
-                        _pickDate(item: sub ?? ctl.event, isStart: false),
-                    type: CalendarMisc.endToE)),
-          ],
-        ),
-        Row(
-          children: [
-            Expanded(
-                child: _buildTimeTile(
-                    loc: loc,
-                    time: tStart,
-                    onTap: () =>
-                        _pickTime(item: sub ?? ctl.event, isStart: true),
-                    type: CalendarMisc.startToS)),
-            const Text(' ~ '),
-            Expanded(
-                child: _buildTimeTile(
-                    loc: loc,
-                    time: tEnd,
-                    onTap: () =>
-                        _pickTime(item: sub ?? ctl.event, isStart: false),
-                    type: CalendarMisc.endToE)),
-          ],
-        ),
-      ],
-    );
+                  loc: loc,
+                  date: dStart,
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: dStart ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+
+                    if (picked != null) {
+                      ctl.setDate(picked, isStart: true, index: index);
+                    }
+                  },
+                  type: CalendarMisc.startToS,
+                ),
+              ),
+              const Text(' ~ '),
+              Expanded(
+                  child: _buildDateTile(
+                      loc: loc,
+                      date: dEnd,
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: dEnd ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+
+                        if (picked != null) {
+                          ctl.setDate(picked, isStart: false, index: index);
+                        }
+                      },
+                      type: CalendarMisc.endToE)),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                  child: _buildTimeTile(
+                      loc: loc,
+                      time: tStart,
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: tStart ?? TimeOfDay.now(),
+                        );
+
+                        if (picked != null) {
+                          ctl.setTime(picked, isStart: true, index: index);
+                        }
+                      },
+                      type: CalendarMisc.startToS)),
+              const Text(' ~ '),
+              Expanded(
+                  child: _buildTimeTile(
+                      loc: loc,
+                      time: tEnd,
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: tEnd ?? TimeOfDay.now(),
+                        );
+
+                        if (picked != null) {
+                          ctl.setTime(picked, isStart: false, index: index);
+                        }
+                      },
+                      type: CalendarMisc.endToE)),
+            ],
+          ),
+        ],
+      );
+    });
   }
 
-  // ==========================
-  // 📅 日期 / 時間選擇
-  // ==========================
-  Future<void> _pickDate(
-      {required EventItem item, required bool isStart}) async {
-    final now = DateTime.now();
-    final initial = isStart ? item.startDate ?? now : item.endDate ?? now;
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: now.subtract(const Duration(days: 1800)),
-      lastDate: now.add(const Duration(days: 1800)),
-    );
-    if (picked == null) return;
-    controllerAdd.updateDate(
-      item: item,
-      date: picked,
-      isStart: isStart,
-    );
-  }
-
-  Future<void> _pickTime(
-      {required EventItem item, required bool isStart}) async {
-    final initial = isStart
-        ? item.startTime ?? TimeOfDay.now()
-        : item.endTime ?? TimeOfDay.now();
-
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked == null) return;
-    controllerAdd.updateTime(
-      item: item,
-      time: picked,
-      isStart: isStart,
-    );
-  }
-
+  // =====================================================
+  // 📅 時間與日期選擇
+  // =====================================================
   Widget _buildDateTile(
       {required AppLocalizations loc,
       DateTime? date,
@@ -376,6 +330,57 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       onTap: onTap,
     );
   }
+
+  Widget _buildSubEventCard(
+      {required AppLocalizations loc,
+      required ControllerPageCalendarAdd ctl,
+      required Map<String, String> fields,
+      required int index}) {
+    final d = ctl.subEvents[index];
+
+    return Card(
+      key: ValueKey(d.id),
+      color: index % 2 == 0 ? Colors.blueGrey[50] : Colors.grey[300],
+      child: Padding(
+        padding: Insets.all4,
+        child: Column(
+          children: [
+            _buildDateTimeRow(loc: loc, ctl: ctl, index: index),
+            ..._buildTextFields(
+                loc: loc, ctl: ctl, index: d.id, fields: fields),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '#${index + 1} ${DateFormat('MM/dd').format(d.startDate!)} ${d.startTime!.format(context)} ${d.name.substring(0, d.name.length > 5 ? 5 : d.name.length)}${d.name.length > 5 ? '...' : ''}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.pinkAccent),
+                    tooltip: loc.delete,
+                    onPressed: () async {
+                      final event = ctl.subEvents[
+                          index]; // 假設你有 subEvents list 裡的 item 為 event
+                      final shouldDelete = await showConfirmationDialog(
+                        content:
+                            'No. ${index + 1} ${event.name} ${loc.delete}？',
+                        confirmText: loc.delete,
+                        cancelText: loc.cancel,
+                      );
+
+                      if (shouldDelete == true) {
+                        controllerAdd.removeSubEvent(index);
+                      }
+                    }),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class SpeechTextField extends StatelessWidget {
@@ -385,8 +390,6 @@ class SpeechTextField extends StatelessWidget {
   final ControllerPageCalendarAdd controller;
   final AppLocalizations loc;
   final ValueChanged<String> onChanged;
-  final TextEditingController textController;
-  final FocusNode focusNode;
 
   const SpeechTextField({
     super.key,
@@ -395,26 +398,30 @@ class SpeechTextField extends StatelessWidget {
     required this.onChanged,
     required this.controller,
     required this.loc,
-    required this.textController,
-    required this.focusNode,
     this.minLines = 1,
   });
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = controller.getController(key: keyField);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (textController.text.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.volume_up),
-            tooltip: loc.speakUp,
-            onPressed: () => controller.speakText(text: textController.text),
-          ),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: ctrl,
+          builder: (_, value, __) {
+            if (value.text.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.volume_up),
+              tooltip: loc.speakUp,
+              onPressed: () => controller.speakText(text: ctrl.text),
+            );
+          },
+        ),
         Expanded(
           child: TextFormField(
-            controller: textController,
-            focusNode: focusNode,
+            controller: ctrl,
             decoration: InputDecoration(
               labelText: label,
               isDense: true,
@@ -426,33 +433,38 @@ class SpeechTextField extends StatelessWidget {
             onChanged: onChanged,
           ),
         ),
-        IconButton(
-          icon: Icon(
-            Icons.mic,
-            color: controller.isListening &&
-                    controller.currentListeningKey == keyField
-                ? Colors.red
-                : null,
-          ),
-          tooltip: loc.speak,
-          onPressed: () async {
-            if (controller.isListening &&
-                controller.currentListeningKey == keyField) {
-              await controller.stopListening();
-            } else {
-              if (controller.isListening) {
-                await controller.stopListening();
-                await Future.delayed(const Duration(milliseconds: 200));
-              }
-              await controller.startListening(
-                  onResult: (text) {
-                    textController.text += ' $text'; // 加上追加模式
-                    onChanged(textController.text);
-                  },
-                  key: keyField);
-            }
-          },
-        ),
+        Selector<ControllerPageCalendarAdd, bool>(
+            selector: (_, ctl) =>
+                ctl.isListening && ctl.currentListeningKey == keyField,
+            builder: (_, isActive, __) {
+              return IconButton(
+                icon: Icon(
+                  Icons.mic,
+                  color: isActive ? Colors.red : null,
+                ),
+                tooltip: loc.speak,
+                onPressed: () async {
+                  if (controller.isListening &&
+                      controller.currentListeningKey == keyField) {
+                    await controller.stopListening();
+                  } else {
+                    if (controller.isListening) {
+                      await controller.stopListening();
+                      await Future.delayed(const Duration(milliseconds: 200));
+                    }
+                    await controller.startListening(
+                        onResult: (text) {
+                          ctrl.text += ' $text'; // 加上追加模式
+                          ctrl.selection = TextSelection.fromPosition(
+                            TextPosition(offset: ctrl.text.length),
+                          );
+                          onChanged(ctrl.text);
+                        },
+                        key: keyField);
+                  }
+                },
+              );
+            }),
       ],
     );
   }

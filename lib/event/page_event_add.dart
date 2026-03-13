@@ -77,7 +77,7 @@ class _PageEventAddState extends State<PageEventAdd> {
 
       final event = controllerAdd.toEventItem();
       await widget.controllerEvent.saveEvent(
-        oldEvent: widget.existingEvent == null ? event : widget.existingEvent!,
+        oldEvent: widget.existingEvent ?? event,
         newEvent: event,
         isNew: widget.existingEvent == null,
       );
@@ -160,6 +160,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                       controllerAdd.addSubEvent();
                       // 自動滑到最下
                       WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
                         if (_scrollController.hasClients) {
                           _scrollController.animateTo(
                             _scrollController.position.maxScrollExtent,
@@ -566,6 +567,9 @@ class SpeechTextField extends StatelessWidget {
                     await controller.startListening(
                         onResult: (text) {
                           ctrl.text += ' $text'; // 加上追加模式
+                          ctrl.selection = TextSelection.fromPosition(
+                            TextPosition(offset: ctrl.text.length),
+                          );
                           onChanged(ctrl.text);
                         },
                         key: keyField);

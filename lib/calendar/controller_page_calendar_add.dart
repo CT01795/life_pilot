@@ -4,195 +4,225 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerPageCalendarAdd extends ChangeNotifier {
+  final ControllerAuth auth;
+  final ServiceSpeech _serviceSpeech = ServiceSpeech();
+  final String tableName;
   final Uuid uuid = const Uuid();
 
-  final ControllerAuth auth;
-  late EventItem event;
+  EventItem? existingEvent;
   final DateTime? initialDate;
+  DateTime? startDate;
+  DateTime? endDate;
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
+  String city = '';
+  String location = '';
+  String name = '';
+  String type = '';
+  String description = '';
+  List<EventItem> subEvents = [];
+  String? masterUrl;
+  String? account = '';
+  CalendarRepeatRule repeatOptions = CalendarRepeatRule.once;
+  List<CalendarReminderOption> reminderOptions = const [
+    CalendarReminderOption.dayBefore8am
+  ];
+  DateTime? reminderTime;
 
   // --- 語音辨識 ---
   bool isListening = false;
   String? currentListeningKey;
 
-  // --- Debounce 用 ---
-  Timer? _debounce;
+  // --- 控制器管理 ---
+  final Map<String, TextEditingController> controllerMap = {};
 
-  final String tableName;
   ControllerPageCalendarAdd({
     required this.auth,
-    required ServiceEvent serviceEvent,
     required this.tableName,
-    EventItem? existingEvent,
+    this.existingEvent,
     this.initialDate,
   }) {
+    _init();
+  }
+
+  // 初始化欄位與控制器
+  void _init() {
     final now = DateTime.now();
-    event = existingEvent ??
-        EventItem(
-          id: uuid.v4(),
-          startDate: initialDate ?? now,
-          endDate: initialDate ?? now,
-          startTime: TimeOfDay.fromDateTime(now),
-          endTime: TimeOfDay.fromDateTime(now),
-          subEvents: [],
-          account: auth.currentAccount,
-          reminderOptions: const [CalendarReminderOption.dayBefore8am],
-          repeatOptions: CalendarRepeatRule.once,
+    final e = existingEvent;
+    masterUrl = e?.masterUrl;
+    startDate = e?.startDate ?? initialDate ?? now;
+    endDate = e?.endDate ?? startDate;
+    startTime = e?.startTime ?? TimeOfDay.fromDateTime(now);
+    endTime = e?.endTime;
+    city = e?.city ?? '';
+    location = e?.location ?? '';
+    name = e?.name ?? '';
+    type = e?.type ?? '';
+    description = e?.description ?? '';
+    subEvents = e != null ? List.from(e.subEvents) : [];
+    account = e?.account ?? auth.currentAccount;
+    reminderOptions =
+        e?.reminderOptions ?? const [CalendarReminderOption.dayBefore8am];
+    repeatOptions = e?.repeatOptions ?? CalendarRepeatRule.once;
+    final fields = {
+      EventFields.city: city,
+      EventFields.location: location,
+      EventFields.name: name,
+      EventFields.type: type,
+      EventFields.description: description,
+      EventFields.masterUrl: masterUrl ?? '',
+    };
+
+    for (final entry in fields.entries) {
+      initController(key: entry.key, initialValue: entry.value.toString());
+    }
+
+    // ✅ 初始化子事件控制器
+    for (int i = 0; i < subEvents.length; i++) {
+      final sub = subEvents[i];
+      final subFields = {
+        EventFields.city: sub.city,
+        EventFields.location: sub.location,
+        EventFields.name: sub.name,
+        EventFields.type: sub.type,
+        EventFields.description: sub.description,
+        EventFields.masterUrl: sub.masterUrl ?? '',
+      };
+
+      for (final entry in subFields.entries) {
+        initController(
+          key: '${entry.key}_sub_${sub.id}',
+          initialValue:
+              entry.value.toString().isEmpty ? '' : entry.value.toString(),
         );
-  }
-  final ServiceSpeech _serviceSpeech = ServiceSpeech();
-
-  // ==========================
-  // 🔹 資料操作方法
-  // ==========================
-  void updateField(String key, String value,
-      {EventItem? sub}) {
-    _updateField(sub ?? event, key, value);
-    _notifyDebounced();
-  }
-
-  final Map<String, void Function(EventItem, String)> fieldUpdaters = {
-    EventFields.city: (item, value) => item.city = value,
-    EventFields.name: (item, value) => item.name = value,
-    EventFields.location: (item, value) => item.location = value,
-    EventFields.type: (item, value) => item.type = value,
-    EventFields.description: (item, value) => item.description = value,
-    EventFields.unit: (item, value) => item.unit = value,
-    EventFields.masterUrl: (item, value) => item.masterUrl = value,
-    EventFields.ageMin: (item, value) {
-      item.ageMin = value.isEmpty ? null : num.parse(value);
-      if (item.ageMin != null &&
-          item.ageMax != null &&
-          item.ageMin! > item.ageMax!) {
-        item.ageMax = item.ageMin;
-      }
-    },
-    EventFields.ageMax: (item, value) {
-      item.ageMax = value.isEmpty ? null : num.parse(value);
-      if (item.ageMin != null &&
-          item.ageMax != null &&
-          item.ageMin! > item.ageMax!) {
-        item.ageMin = item.ageMax;
-      }
-    },
-    EventFields.isFree: (item, value) =>
-        item.isFree = value.isEmpty ? null : bool.parse(value),
-    EventFields.priceMin: (item, value) {
-      item.priceMin = value.isEmpty ? null : num.parse(value);
-      if (item.priceMin != null &&
-          item.priceMax != null &&
-          item.priceMin! > item.priceMax!) {
-        item.priceMax = item.priceMin;
-      }
-    },
-    EventFields.priceMax: (item, value) {
-      item.priceMax = value.isEmpty ? null : num.parse(value);
-      if (item.priceMin != null &&
-          item.priceMax != null &&
-          item.priceMin! > item.priceMax!) {
-        item.priceMin = item.priceMax;
-      }
-    },
-    EventFields.isOutdoor: (item, value) =>
-        item.isOutdoor = value.isEmpty ? null : bool.parse(value),
-    EventFields.isLike: (item, value) =>
-        item.isLike = value.isEmpty ? null : bool.parse(value),
-    EventFields.isDislike: (item, value) =>
-        item.isDislike = value.isEmpty ? null : bool.parse(value),
-  };
-
-  void _updateField(EventItem item, String key, String value) {
-    fieldUpdaters[key]?.call(item, value);
-  }
-
-  // Debounce 更新（減少 rebuild 次數）
-  void _notifyDebounced() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 200), () {
-      notifyListeners();
-    });
-  }
-
-  void addSubEvent() {
-    final sub = EventItem(
-      id: uuid.v4(),
-      startDate: event.startDate,
-      endDate: event.endDate,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      city: event.city,
-      location: event.location,
-    );
-    event.subEvents.add(sub);
-    notifyListeners();
-  }
-
-  void removeSubEvent(String id) {
-    event.subEvents.removeWhere((e) => e.id == id);
-    notifyListeners();
-  }
-
-  void updateDate({
-    required EventItem item,
-    required DateTime date,
-    required bool isStart,
-  }) {
-    if (isStart) {
-      item.startDate = date;
-    } else {
-      item.endDate = date;
-    }
-
-    if (item.startDate != null &&
-        item.endDate != null &&
-        item.startDate!.isAfter(item.endDate!)) {
-      if (isStart) {
-        item.endDate = item.startDate;
-      } else {
-        item.startDate = item.endDate;
       }
     }
-
-    notifyListeners();
   }
 
-  void updateTime({
-    required EventItem item,
-    required TimeOfDay time,
-    required bool isStart,
-  }) {
-    if (isStart) {
-      item.startTime = time;
-    } else {
-      item.endTime = time;
-    }
+  // 建立或取得控制器
+  TextEditingController initController(
+      {required String key, required String initialValue}) {
+    return controllerMap.putIfAbsent(
+        key, () => TextEditingController(text: initialValue));
+  }
 
-    if (item.startDate != null &&
-        item.endDate != null &&
-        item.startTime != null &&
-        item.endTime != null &&
-        item.startDate!.compareTo(item.endDate!) == 0 &&
-        item.startTime!.isAfter(item.endTime!)) {
-      if (isStart) {
-        item.endTime = item.startTime;
-      } else {
-        item.startTime = item.endTime;
+  TextEditingController getController({required String key}) {
+    return controllerMap[key] ?? initController(key: key, initialValue: '');
+  }
+
+  // 更新欄位（主事件 / 子事件）
+  void updateField(String key, String value, bool check) {
+    // ✅ 判斷是否是 subEvent 欄位
+    if (key.contains('_sub_')) {
+      final parts = key.split('_sub_');
+      if (parts.length == 2) {
+        final field = parts[0];
+        final nowId = parts[1];
+        final sub = subEvents.firstWhere((e) => e.id == nowId,
+            orElse: () => EventItem(id: nowId));
+        _updateSubEvent(key, sub, field, value, check);
+        return;
       }
     }
+    _updateMainField(key, value, check);
+  }
 
-    notifyListeners();
+  void _updateMainField(String key, String value, bool check) {
+    switch (key) {
+      case EventFields.city:
+        city = value;
+        break;
+      case EventFields.location:
+        location = value;
+        break;
+      case EventFields.name:
+        name = value;
+        break;
+      case EventFields.type:
+        type = value;
+        break;
+      case EventFields.description:
+        description = value;
+        break;
+      case EventFields.masterUrl:
+        masterUrl = value;
+        break;
+    }
+  }
+
+  void _updateSubEvent(
+      String mapKey, EventItem sub, String key, String value, bool check) {
+    switch (key) {
+      case EventFields.city:
+        sub.city = value;
+        break;
+      case EventFields.location:
+        sub.location = value;
+        break;
+      case EventFields.name:
+        sub.name = value;
+        break;
+      case EventFields.type:
+        sub.type = value;
+        break;
+      case EventFields.description:
+        sub.description = value;
+        break;
+      case EventFields.masterUrl:
+        sub.masterUrl = value;
+        break;
+    }
   }
 
   // 將目前表單內容轉換為 EventItem
   EventItem toEventItem() {
     // ✅ 先更新 subEvents 的內容
-    event.subEvents.sort(_compareEvents);
-    return event;
+    final sortedSubs = List<EventItem>.from(subEvents)..sort(_compareEvents);
+    //subEvents.sort(_compareEvents);
+
+    final updatedSubs = sortedSubs.map((sub) {
+      String getText(String field) {
+        String? tmpValue = controllerMap['${field}_sub_${sub.id}']?.text;
+        return tmpValue == null || tmpValue.isEmpty ? '' : tmpValue;
+      }
+
+      return sub.copyWith(
+        newSubEvents: [],
+        newMasterUrl: getText(EventFields.masterUrl),
+        newCity: getText(EventFields.city),
+        newLocation: getText(EventFields.location),
+        newName: getText(EventFields.name),
+        newType: getText(EventFields.type),
+        newDescription: getText(EventFields.description),
+        newAccount: auth.currentAccount,
+        newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
+        newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
+      );
+    }).toList();
+
+    // ✅ 再組主事件
+    return EventItem(
+      id: existingEvent?.id ?? uuid.v4(),
+      subEvents: updatedSubs,
+    )
+      ..masterUrl = masterUrl
+      ..startDate = startDate
+      ..endDate = endDate
+      ..startTime = startTime
+      ..endTime = endTime
+      ..city = city
+      ..location = location
+      ..name = name
+      ..type = type
+      ..description = description
+      ..account = auth.currentAccount
+      ..repeatOptions = existingEvent?.repeatOptions ?? repeatOptions
+      ..reminderOptions = existingEvent?.reminderOptions ?? reminderOptions;
   }
 
   int _compareEvents(EventItem a, EventItem b) {
@@ -217,7 +247,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
     final available = await _serviceSpeech.startListening(
       onResult: (text) {
         onResult(text);
-        _notifyDebounced();
+        notifyListeners();
       },
     );
     if (!available) return;
@@ -237,9 +267,100 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
     await _serviceSpeech.speakText(text: text);
   }
 
+  void addSubEvent() {
+    final newSub = EventItem(id: uuid.v4())
+      ..startDate = startDate
+      ..endDate = endDate
+      ..startTime = startTime
+      ..endTime = endTime
+      ..city = city
+      ..location = location;
+
+    subEvents.add(newSub);
+
+    _initSubControllers(newSub);
+
+    notifyListeners();
+  }
+
+  void _initSubControllers(EventItem newSub) {
+    // ✅ 初始化該子事件的控制器
+    final subFields = {
+      EventFields.city: newSub.city,
+      EventFields.location: newSub.location,
+      EventFields.name: newSub.name,
+      EventFields.type: newSub.type,
+      EventFields.description: newSub.description,
+      EventFields.masterUrl: newSub.masterUrl ?? '',
+    };
+    subFields.forEach((key, value) {
+      initController(key: '${key}_sub_${newSub.id}', initialValue: value);
+    });
+  }
+
+  Future<void> removeSubEvent(int index) async {
+    final removed = subEvents.removeAt(index);
+
+    // 🔥 清掉該 sub 的 controller
+    controllerMap.removeWhere((key, controller) {
+      final shouldRemove = key.contains('_sub_${removed.id}');
+      if (shouldRemove) controller.dispose();
+      return shouldRemove;
+    });
+    notifyListeners();
+  }
+
+  void setDate(DateTime picked, {required bool isStart, int? index}) {
+    if (index == null) {
+      isStart ? startDate = picked : endDate = picked;
+      if (startDate != null &&
+          endDate != null &&
+          startDate!.isAfter(endDate!)) {
+        endDate = startDate;
+      }
+    } else {
+      isStart
+          ? subEvents[index].startDate = picked
+          : subEvents[index].endDate = picked;
+
+      if (subEvents[index].startDate != null &&
+          subEvents[index].endDate != null &&
+          subEvents[index].startDate!.isAfter(subEvents[index].endDate!)) {
+        subEvents[index].endDate = subEvents[index].startDate;
+      }
+    }
+    notifyListeners();
+  }
+
+  void setTime(TimeOfDay picked, {required bool isStart, int? index}) {
+    if (index == null) {
+      isStart ? startTime = picked : endTime = picked;
+      if (startDate == endDate &&
+          startTime != null &&
+          endTime != null &&
+          startTime!.isAfter(endTime!)) {
+        endTime = startTime;
+      }
+    } else {
+      isStart
+          ? subEvents[index].startTime = picked
+          : subEvents[index].endTime = picked;
+
+      if (subEvents[index].startDate == subEvents[index].endDate &&
+          subEvents[index].startTime != null &&
+          subEvents[index].endTime != null &&
+          subEvents[index].startTime!.isAfter(subEvents[index].endTime!)) {
+        subEvents[index].endTime = subEvents[index].startTime;
+      }
+    }
+    notifyListeners();
+  }
+
   @override
   void dispose() {
-    _debounce?.cancel();
+    for (var c in controllerMap.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 }
