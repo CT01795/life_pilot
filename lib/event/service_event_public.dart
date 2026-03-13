@@ -1,4 +1,3 @@
-// lib/services/event_service.dart
 import 'dart:convert';
 
 import 'package:charset/charset.dart';
@@ -22,8 +21,16 @@ class ServiceEventPublic {
   String safeCity(String location) =>
       location.length >= 3 ? location.substring(0, 3) : location;
 
+  String safeCity2(String location) => location.length >= 3
+      ? location.substring(0, location.substring(2, 3) == "縣" ? 3 : 2)
+      : location;
+
   String safeAddress(String location) =>
       location.length > 3 ? location.substring(3) : '';
+
+  String safeAddress2(String location) => location.length > 3
+      ? location.substring(location.substring(2, 3) == "縣" ? 3 : 2)
+      : '';
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
     final result = await client
@@ -61,7 +68,11 @@ class ServiceEventPublic {
     if (events.isEmpty) return dbNameSet;
 
     final newEvents = events.where((e) {
-      if (dbNameSet.contains(e.name) || dbNameSet.contains(e.id) || dbNameSet.contains(e.name.replaceAll(" ", "").replaceAll("_", ""))) return false;
+      if (dbNameSet.contains(e.name) ||
+          dbNameSet.contains(e.id) ||
+          dbNameSet.contains(e.name.replaceAll(" ", "").replaceAll("_", ""))) {
+        return false;
+      }
       dbNameSet.add(e.name);
       dbNameSet.add(e.id);
       return true;
@@ -103,7 +114,7 @@ class ServiceEventPublic {
         logger.e(ex);
       }
     }
-    //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
+    //==================================== 取得外部資源事件 strolltimes.com/events-data ====================================
     String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
     if (await checkEventsUrl(strolltimesEventsUrl, today)) {
       try {
@@ -176,6 +187,100 @@ class ServiceEventPublic {
         logger.e(ex);
       }
     }
+
+    //==================================== 取得紙風車活動 ====================================
+    String paperWindmillUrl = "https://www.paperwindmill.com.tw/paper/";
+
+    if (await checkEventsUrl(paperWindmillUrl, today)) {
+      try {
+        List<EventItem> paperWindmillList =
+            await fetchPageEventsPaperWindmill(paperWindmillUrl, today) ?? [];
+
+        dbNameSet = await _insertIfNotExists(paperWindmillList, dbNameSet);
+      } catch (ex) {
+        logger.e(ex);
+      }
+    }
+  }
+
+  //==================================== 取得外部資源事件 PaperWindmill ====================================
+  Future<List<EventItem>?> fetchPageEventsPaperWindmill(
+      String url, DateTime today) async {
+    final res =
+        await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
+
+    if (res.statusCode != 200) return [];
+
+    final document = parse(res.body);
+
+    final items = document.querySelectorAll("li");
+
+    List<EventItem> events = [];
+    final uuid = const Uuid();
+
+    for (var li in items) {
+      final dataDiv = li.querySelector(".DATA");
+      if (dataDiv == null) continue;
+
+      final h6 = dataDiv.querySelectorAll("h6");
+      if (h6.length < 2) continue;
+
+      int month = int.tryParse(h6[0].text.trim()) ?? 0;
+      int day = int.tryParse(h6[1].text.trim()) ?? 0;
+
+      if (month == 0 || day == 0) continue;
+
+      final text = li.text.replaceAll("\n", "").trim();
+
+      // 取得時間
+      final timeMatch = RegExp(r'(下午|晚上)?\s*(\d{1,2}:\d{2})').firstMatch(text);
+
+      TimeOfDay? startTime;
+
+      if (timeMatch != null) {
+        int hour = int.parse(timeMatch.group(2)!.split(":")[0]);
+        int minute = int.parse(timeMatch.group(2)!.split(":")[1]);
+
+        if (timeMatch.group(1) == "下午" || timeMatch.group(1) == "晚上") {
+          if (hour < 12) hour += 12;
+        }
+
+        startTime = TimeOfDay(hour: hour, minute: minute);
+      }
+
+      // 抓活動名稱 《》
+      final nameMatch = RegExp(r'《([^》]+)》').firstMatch(text);
+      final eventName = "${(nameMatch?.group(1) ?? "紙風車演出")} $month/$day ${timeMatch?.group(0)}";
+
+      // 地點
+      String location = text
+          .replaceAll(RegExp(r'^\(\S+\)'), '')
+          .replaceAll(RegExp(r'(下午|晚上)?.*?\d{1,2}:\d{2}'), '')
+          .replaceAll(RegExp(r'《[^》]+》'), '')
+          .trim();
+
+      final startDate =
+          DateTime((month < today.month ? 1 : 0) + today.year, month, day);
+
+      if (startDate.isBefore(today)) continue;
+
+      events.add(
+        EventItem(
+          id: uuid.v4(),
+          masterUrl: url,
+          startDate: startDate,
+          startTime: startTime,
+          endDate: startDate,
+          city: safeCity2(location),
+          location: safeAddress2(location),
+          name: eventName,
+          type: "紙風車",
+          account: AuthConstants.sysAdminEmail,
+        ),
+      );
+    }
+
+    return events;
   }
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
