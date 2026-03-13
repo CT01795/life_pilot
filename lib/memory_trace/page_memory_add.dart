@@ -385,7 +385,7 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
 class SpeechTextField extends StatelessWidget {
   final String keyField;
   final String label;
-  final int maxLines;
+  final int minLines;
   final ControllerPageEventAdd controller;
   final AppLocalizations loc;
   final ValueChanged<String> onChanged;
@@ -397,7 +397,7 @@ class SpeechTextField extends StatelessWidget {
     required this.onChanged,
     required this.controller,
     required this.loc,
-    this.maxLines = 1,
+    this.minLines = 1,
   });
 
   @override
@@ -426,7 +426,9 @@ class SpeechTextField extends StatelessWidget {
               isDense: true,
               contentPadding: Insets.all3,
             ),
-            maxLines: maxLines,
+            maxLines: 3,
+            minLines: minLines,
+            keyboardType: TextInputType.multiline,
             onChanged: onChanged,
           ),
         ),

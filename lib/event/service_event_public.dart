@@ -61,7 +61,7 @@ class ServiceEventPublic {
     if (events.isEmpty) return dbNameSet;
 
     final newEvents = events.where((e) {
-      if (dbNameSet.contains(e.name) || dbNameSet.contains(e.id)) return false;
+      if (dbNameSet.contains(e.name) || dbNameSet.contains(e.id) || dbNameSet.contains(e.name.replaceAll(" ", "").replaceAll("_", ""))) return false;
       dbNameSet.add(e.name);
       dbNameSet.add(e.id);
       return true;
