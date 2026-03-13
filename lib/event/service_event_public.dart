@@ -63,18 +63,19 @@ class ServiceEventPublic {
 
   Future<Set<String>> _insertIfNotExists(
     List<EventItem> events,
-    Set<String> dbNameSet,
+    Set<String> dbNameDateSet,
   ) async {
-    if (events.isEmpty) return dbNameSet;
+    if (events.isEmpty) return dbNameDateSet;
 
     final newEvents = events.where((e) {
-      if (dbNameSet.contains(e.name) ||
-          dbNameSet.contains(e.id) ||
-          dbNameSet.contains(e.name.replaceAll(" ", "").replaceAll("_", ""))) {
+      final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") + e.startDate!.toIso8601String();
+      final tmpId = e.id + e.startDate!.toIso8601String();
+      if (dbNameDateSet.contains(tmpName) ||
+          dbNameDateSet.contains(tmpId)) {
         return false;
       }
-      dbNameSet.add(e.name);
-      dbNameSet.add(e.id);
+      dbNameDateSet.add(tmpName);
+      dbNameDateSet.add(tmpId);
       return true;
     }).toList();
 
@@ -83,7 +84,7 @@ class ServiceEventPublic {
           .from(TableNames.recommendedEvents)
           .insert(newEvents.map((e) => e.toJson()).toList());
     }
-    return dbNameSet;
+    return dbNameDateSet;
   }
 
   Future<void> fetchAndSaveAllEvents() async {
@@ -93,10 +94,12 @@ class ServiceEventPublic {
           inputUser: AuthConstants.sysAdminEmail,
         ) ??
         []);
-    Set<String> dbNameSet =
-        historyList.map((e) => e.name).where((name) => name.isNotEmpty).toSet();
-    dbNameSet.addAll(
-        historyList.map((e) => e.id).where((id) => id.isNotEmpty).toSet());
+    Set<String> dbNameDateSet = historyList
+        .map((e) => e.name.replaceAll(" ", "").replaceAll("_", "") + e.startDate!.toIso8601String())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    dbNameDateSet.addAll(
+        historyList.map((e) => e.id + e.startDate!.toIso8601String()).where((id) => id.isNotEmpty).toSet());
 
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
@@ -109,7 +112,8 @@ class ServiceEventPublic {
                 [];
 
         //==================================== strolltimesList事件寫入 ====================================
-        dbNameSet = await _insertIfNotExists(strolltimesList, dbNameSet);
+        dbNameDateSet =
+            await _insertIfNotExists(strolltimesList, dbNameDateSet);
       } on Exception catch (ex) {
         logger.e(ex);
       }
@@ -132,7 +136,7 @@ class ServiceEventPublic {
           }
           List<EventItem> strolltimesList = parseStrolltimesCsv(csv, today);
           //==================================== strolltimesList事件寫入 ====================================
-          dbNameSet = await _insertIfNotExists(strolltimesList, dbNameSet);
+          dbNameDateSet = await _insertIfNotExists(strolltimesList, dbNameDateSet);
         }
       } on Exception catch (ex) {
         logger.e(ex);
@@ -166,7 +170,7 @@ class ServiceEventPublic {
               await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
 
           //==================================== strolltimesList事件寫入 ====================================
-          dbNameSet = await _insertIfNotExists(cloudCultureList, dbNameSet);
+          dbNameDateSet = await _insertIfNotExists(cloudCultureList, dbNameDateSet);
         } on Exception catch (ex) {
           logger.e(ex);
         }
@@ -182,7 +186,7 @@ class ServiceEventPublic {
         List<EventItem> accupassList =
             await fetchPageEventsAccupass(accupassUrl, today) ?? [];
 
-        dbNameSet = await _insertIfNotExists(accupassList, dbNameSet);
+        dbNameDateSet = await _insertIfNotExists(accupassList, dbNameDateSet);
       } catch (ex) {
         logger.e(ex);
       }
@@ -196,7 +200,7 @@ class ServiceEventPublic {
         List<EventItem> paperWindmillList =
             await fetchPageEventsPaperWindmill(paperWindmillUrl, today) ?? [];
 
-        dbNameSet = await _insertIfNotExists(paperWindmillList, dbNameSet);
+        dbNameDateSet = await _insertIfNotExists(paperWindmillList, dbNameDateSet);
       } catch (ex) {
         logger.e(ex);
       }
@@ -250,7 +254,8 @@ class ServiceEventPublic {
 
       // 抓活動名稱 《》
       final nameMatch = RegExp(r'《([^》]+)》').firstMatch(text);
-      final eventName = "${(nameMatch?.group(1) ?? "紙風車演出")} $month/$day ${timeMatch?.group(0)}";
+      final eventName =
+          "${(nameMatch?.group(1) ?? "紙風車演出")} ${timeMatch?.group(0)}";
 
       // 地點
       String location = text
