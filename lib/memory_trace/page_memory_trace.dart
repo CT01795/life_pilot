@@ -17,7 +17,7 @@ import '../utils/widgets/widgets_search_panel.dart';
 class PageMemoryTrace extends StatefulWidget {
   const PageMemoryTrace({super.key});
 
- @override
+  @override
   State<PageMemoryTrace> createState() => _PageMemoryTraceState();
 }
 

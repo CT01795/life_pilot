@@ -23,15 +23,27 @@ class PageAccountingDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => ControllerAccountingDetail(
+        ChangeNotifierProxyProvider<ControllerAuth, ControllerAccountingDetail>(
+          create: (context) => ControllerAccountingDetail(
             service: service,
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
           ),
+          update: (_, auth, controller) {
+            controller ??= ControllerAccountingDetail(
+              service: service,
+              auth: auth,
+              accountId: account.id,
+            );
+            controller.auth = auth;
+            return controller;
+          },
         ),
         Provider<ControllerSpeech>(
           create: (_) => ControllerSpeech(),
+        ),
+        Provider<ServiceSpeech>(
+          create: (_) => ServiceSpeech(),
         ),
       ],
       child: _PageAccountingDetailView(account),
