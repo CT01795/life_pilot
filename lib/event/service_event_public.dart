@@ -68,10 +68,10 @@ class ServiceEventPublic {
     if (events.isEmpty) return dbNameDateSet;
 
     final newEvents = events.where((e) {
-      final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") + DateFormat('yyyy-MM-dd').format(e.startDate!);
+      final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") +
+          DateFormat('yyyy-MM-dd').format(e.startDate!);
       final tmpId = e.id + DateFormat('yyyy-MM-dd').format(e.startDate!);
-      if (dbNameDateSet.contains(tmpName) ||
-          dbNameDateSet.contains(tmpId)) {
+      if (dbNameDateSet.contains(tmpName) || dbNameDateSet.contains(tmpId)) {
         return false;
       }
       dbNameDateSet.add(tmpName);
@@ -95,11 +95,15 @@ class ServiceEventPublic {
         ) ??
         []);
     Set<String> dbNameDateSet = historyList
-        .map((e) => e.name.replaceAll(" ", "").replaceAll("_", "") + DateFormat('yyyy-MM-dd').format(e.startDate!))
+        .map((e) =>
+            e.name.replaceAll(" ", "").replaceAll("_", "") +
+            DateFormat('yyyy-MM-dd').format(e.startDate!))
         .where((name) => name.isNotEmpty)
         .toSet();
-    dbNameDateSet.addAll(
-        historyList.map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!)).where((id) => id.isNotEmpty).toSet());
+    dbNameDateSet.addAll(historyList
+        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!))
+        .where((id) => id.isNotEmpty)
+        .toSet());
 
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
@@ -136,7 +140,8 @@ class ServiceEventPublic {
           }
           List<EventItem> strolltimesList = parseStrolltimesCsv(csv, today);
           //==================================== strolltimesList事件寫入 ====================================
-          dbNameDateSet = await _insertIfNotExists(strolltimesList, dbNameDateSet);
+          dbNameDateSet =
+              await _insertIfNotExists(strolltimesList, dbNameDateSet);
         }
       } on Exception catch (ex) {
         logger.e(ex);
@@ -170,7 +175,8 @@ class ServiceEventPublic {
               await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
 
           //==================================== strolltimesList事件寫入 ====================================
-          dbNameDateSet = await _insertIfNotExists(cloudCultureList, dbNameDateSet);
+          dbNameDateSet =
+              await _insertIfNotExists(cloudCultureList, dbNameDateSet);
         } on Exception catch (ex) {
           logger.e(ex);
         }
@@ -200,11 +206,165 @@ class ServiceEventPublic {
         List<EventItem> paperWindmillList =
             await fetchPageEventsPaperWindmill(paperWindmillUrl, today) ?? [];
 
-        dbNameDateSet = await _insertIfNotExists(paperWindmillList, dbNameDateSet);
+        dbNameDateSet =
+            await _insertIfNotExists(paperWindmillList, dbNameDateSet);
       } catch (ex) {
         logger.e(ex);
       }
     }
+
+    //==================================== 取得交通部觀光署-觀光資訊網活動 ====================================
+    bool isBreakTime = false;
+    int pageIndex = 1;
+    while (!isBreakTime) {
+      String taiwanNetUrl =
+          "https://www.taiwan.net.tw/m1.aspx?sNo=0001019&page=$pageIndex";
+
+      if (await checkEventsUrl(taiwanNetUrl, today)) {
+        try {
+          List<EventItem> taiwanNetList =
+              await fetchPageEventsTaiwanNet(taiwanNetUrl, today) ?? [];
+
+          dbNameDateSet =
+              await _insertIfNotExists(taiwanNetList, dbNameDateSet);
+          pageIndex = pageIndex + 1;
+          isBreakTime = taiwanNetList.isEmpty && pageIndex >= 15;
+        } catch (ex) {
+          logger.e(ex);
+          isBreakTime = true;
+        }
+      }
+    }
+  }
+
+  //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
+  Future<List<EventItem>?> fetchPageEventsTaiwanNet(
+      String url, DateTime today) async {
+    final res =
+        await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
+    if (res.statusCode != 200) return [];
+
+    final document = parse(res.body);
+    final events = <EventItem>[];
+    final uuid = const Uuid();
+
+    // 取得所有 li 活動項目
+    final items = document.querySelectorAll("li");
+    for (var li in items) {
+      final infoDiv = li.querySelector(".columnBlock-info");
+      if (infoDiv == null) continue;
+
+      // 活動名稱
+      final titleEl = infoDiv.querySelector(".columnBlock-title");
+      final title = titleEl?.attributes['title']?.trim() ?? "台灣活動";
+      String masterUrl = titleEl?.attributes['href']?.trim() ?? "";
+      if (masterUrl.isNotEmpty) {
+        masterUrl = "https://www.taiwan.net.tw/$masterUrl";
+      }
+
+      // 日期文字
+      String dateText = infoDiv.querySelector(".date")?.text.trim() ?? "";
+
+      // 簡單解析日期（範例: "每年3、12月" 或 "3/28–3/29"）
+      DateTime? startDate;
+      final dateMatch = RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(dateText);
+      if (dateMatch != null) {
+        int month = int.parse(dateMatch.group(1)!);
+        int day = int.parse(dateMatch.group(2)!);
+        startDate = DateTime(today.year, month, day);
+      } else {
+        final dateMatch2 =
+            RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(dateText);
+        if (dateMatch2 != null) {
+          int year = int.parse(dateMatch2.group(1)!);
+          int month = int.parse(dateMatch2.group(2)!);
+          int day = int.parse(dateMatch2.group(3)!);
+          startDate = DateTime(year, month, day);
+        } else {
+          continue; // 無法解析時
+        }
+      }
+      final leftDateText = dateText.split("~");
+      DateTime? endDate;
+      if (leftDateText.length > 1) {
+        final endDateMatch =
+            RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(leftDateText[1]);
+        if (endDateMatch != null) {
+          int month = int.parse(endDateMatch.group(1)!);
+          int day = int.parse(endDateMatch.group(2)!);
+          endDate = DateTime(today.year, month, day);
+        } else {
+          final endDateMatch2 = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})')
+              .firstMatch(leftDateText[1]);
+          if (endDateMatch2 != null) {
+            int year = int.parse(endDateMatch2.group(1)!);
+            int month = int.parse(endDateMatch2.group(2)!);
+            int day = int.parse(endDateMatch2.group(3)!);
+            endDate = DateTime(year, month, day);
+          }
+        }
+      }
+      endDate = endDate ?? startDate;
+      if (endDate.isBefore(today)) continue;
+
+      // 活動簡介
+      final description = "${infoDiv.querySelector("p")?.text.trim() ?? ""}\n";
+
+      // ⚡ 抓詳細頁資訊
+      String city = "";
+      String location = "";
+      String? organizer;
+      try {
+        if (masterUrl.isNotEmpty) {
+          final detailRes = await http.get(Uri.parse(masterUrl),
+              headers: {'User-Agent': 'Mozilla/5.0'});
+          if (detailRes.statusCode == 200) {
+            final detailDoc = parse(detailRes.body);
+            final infoTable = detailDoc.querySelector("dl.info-table");
+            if (infoTable != null) {
+              // 取所有 dt 元素
+              final dtList = infoTable.querySelectorAll("dt");
+              for (var dt in dtList) {
+                final dtText = dt.text.trim();
+                final dd = dt.nextElementSibling; // dt + dd
+                if (dd == null) continue;
+
+                if (dtText.contains("主辦單位")) {
+                  organizer = dd.text.trim();
+                } else if (dtText.contains("地址")) {
+                  final addr = dd.querySelector("a span")?.text.trim();
+                  if (addr != null) {
+                    city = safeCity(addr);
+                    location = safeAddress(addr);
+                  }
+                } else if (dtText.contains("網站連結")) {
+                  final webUrl =
+                      dd.querySelector("a")?.attributes['href']?.trim();
+                  if (webUrl != null && webUrl.isNotEmpty) masterUrl = webUrl;
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        logger.e("抓取詳細頁錯誤: $e");
+      }
+
+      events.add(EventItem(
+        id: uuid.v4(),
+        masterUrl: masterUrl,
+        startDate: startDate,
+        endDate: endDate,
+        city: city,
+        location: location,
+        name: title,
+        account: AuthConstants.sysAdminEmail,
+        description: description,
+        unit: organizer ?? '',
+      ));
+    }
+
+    return events;
   }
 
   //==================================== 取得外部資源事件 PaperWindmill ====================================
