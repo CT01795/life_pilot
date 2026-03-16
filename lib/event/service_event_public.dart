@@ -233,6 +233,9 @@ class ServiceEventPublic {
           logger.e(ex);
           isBreakTime = true;
         }
+      } else {
+        pageIndex = pageIndex + 1;
+        isBreakTime = pageIndex >= 15;
       }
     }
   }
@@ -267,41 +270,55 @@ class ServiceEventPublic {
 
       // 簡單解析日期（範例: "每年3、12月" 或 "3/28–3/29"）
       DateTime? startDate;
-      final dateMatch = RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(dateText);
-      if (dateMatch != null) {
-        int month = int.parse(dateMatch.group(1)!);
-        int day = int.parse(dateMatch.group(2)!);
+      final dateMatch0 =
+          RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})').firstMatch(dateText);
+      if (dateMatch0 != null) {
+        int year = int.parse(dateMatch0.group(1)!);
+        int month = int.parse(dateMatch0.group(2)!);
+        int day = int.parse(dateMatch0.group(3)!);
+        startDate = DateTime(year, month, day);
+      }
+      final dateMatch1 = RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(dateText);
+      if (startDate == null && dateMatch1 != null) {
+        int month = int.parse(dateMatch1.group(1)!);
+        int day = int.parse(dateMatch1.group(2)!);
         startDate = DateTime(today.year, month, day);
+      }
+      final dateMatch2 =
+          RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(dateText);
+      if (startDate == null && dateMatch2 != null) {
+        int year = int.parse(dateMatch2.group(1)!);
+        int month = int.parse(dateMatch2.group(2)!);
+        int day = int.parse(dateMatch2.group(3)!);
+        startDate = DateTime(year, month, day);
       } else {
-        final dateMatch2 =
-            RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(dateText);
-        if (dateMatch2 != null) {
-          int year = int.parse(dateMatch2.group(1)!);
-          int month = int.parse(dateMatch2.group(2)!);
-          int day = int.parse(dateMatch2.group(3)!);
-          startDate = DateTime(year, month, day);
-        } else {
-          continue; // 無法解析時
-        }
+        continue; // 無法解析時
       }
       final leftDateText = dateText.split("~");
       DateTime? endDate;
       if (leftDateText.length > 1) {
-        final endDateMatch =
+        final endDateMatch0 =
+            RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})').firstMatch(leftDateText[1]);
+        if (endDateMatch0 != null) {
+          int year = int.parse(endDateMatch0.group(1)!);
+          int month = int.parse(endDateMatch0.group(2)!);
+          int day = int.parse(endDateMatch0.group(3)!);
+          endDate = DateTime(year, month, day);
+        }
+        final endDateMatch1 =
             RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(leftDateText[1]);
-        if (endDateMatch != null) {
-          int month = int.parse(endDateMatch.group(1)!);
-          int day = int.parse(endDateMatch.group(2)!);
+        if (endDate == null && endDateMatch1 != null) {
+          int month = int.parse(endDateMatch1.group(1)!);
+          int day = int.parse(endDateMatch1.group(2)!);
           endDate = DateTime(today.year, month, day);
-        } else {
-          final endDateMatch2 = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})')
+        }        
+        final endDateMatch2 = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})')
               .firstMatch(leftDateText[1]);
-          if (endDateMatch2 != null) {
-            int year = int.parse(endDateMatch2.group(1)!);
-            int month = int.parse(endDateMatch2.group(2)!);
-            int day = int.parse(endDateMatch2.group(3)!);
-            endDate = DateTime(year, month, day);
-          }
+        if (endDate != null && endDateMatch2 != null) {
+          int year = int.parse(endDateMatch2.group(1)!);
+          int month = int.parse(endDateMatch2.group(2)!);
+          int day = int.parse(endDateMatch2.group(3)!);
+          endDate = DateTime(year, month, day);
         }
       }
       endDate = endDate ?? startDate;
