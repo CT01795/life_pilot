@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/app_initializer.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/controller_feedback.dart';
 import 'package:life_pilot/app/controller_page_main.dart';
@@ -29,7 +30,9 @@ class _PageAuthCheckState extends State<PageAuthCheck> {
     super.initState();
     // ✅ 延後檢查登入狀態，避免在 build 階段觸發 notifyListeners()
     // 避免在 build() 或 didChangeDependencies() 內做 setState() 或 notifyListeners()。
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await AppInitializer.init(); 
       if (!mounted) return;
       context.read<ModelAuthView>().checkLoginStatus();
     });

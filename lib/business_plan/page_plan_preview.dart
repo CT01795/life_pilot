@@ -85,7 +85,10 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
                   c.jumpToQuestion(sectionIndex: 0, questionIndex: 0);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const PagePlanEditor()),
+                    MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                      value: context.read<ControllerBusinessPlan>(),
+                      child: const PagePlanEditor(),
+                    ),),
                   );
                 },
               ),
@@ -190,7 +193,10 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
             );
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PagePlanEditor()),
+              MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                value: context.read<ControllerBusinessPlan>(),
+                child: const PagePlanEditor(),
+              ),),
             );
             return;
           }
@@ -207,7 +213,10 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
           );
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const PagePlanEditor()),
+            MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+              value: context.read<ControllerBusinessPlan>(),
+              child: const PagePlanEditor(),
+            ),),
           );
         },
         child: Padding(

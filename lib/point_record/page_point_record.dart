@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -12,14 +13,45 @@ import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
-class PagePointRecord extends StatefulWidget {
+class PagePointRecord extends StatelessWidget {
   const PagePointRecord({super.key});
 
   @override
-  State<PagePointRecord> createState() => _PagePointRecordState();
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider.value(
+          value: ServicePointRecord(),
+        ),
+        ChangeNotifierProxyProvider2<ServicePointRecord, ControllerAuth,
+            ControllerPointRecordList>(
+          create: (context) => ControllerPointRecordList(
+            service: context.read<ServicePointRecord>(),
+            auth: context.read<ControllerAuth>(),
+          ),
+          update: (_, service, auth, controller) {
+            controller ??= ControllerPointRecordList(
+              service: service,
+              auth: auth,
+            );
+            controller.auth = auth;
+            return controller;
+          },
+        ),
+      ],
+      child: const _PagePointRecordBody(),
+    );
+  }
 }
 
-class _PagePointRecordState extends State<PagePointRecord>
+class _PagePointRecordBody extends StatefulWidget {
+  const _PagePointRecordBody();
+
+  @override
+  State<_PagePointRecordBody> createState() => _PagePointRecordState();
+}
+
+class _PagePointRecordState extends State<_PagePointRecordBody>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 

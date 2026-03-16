@@ -1,17 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/page_plan_preview.dart';
 import 'package:life_pilot/business_plan/page_plan_select_template.dart';
+import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:provider/provider.dart';
 
-class PageBusinessPlan extends StatefulWidget {
+class PageBusinessPlan extends StatelessWidget {
   const PageBusinessPlan({super.key});
 
   @override
-  State<PageBusinessPlan> createState() => _PageBusinessPlanState();
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider.value(
+          value: ServiceBusinessPlan(),
+        ),
+        ChangeNotifierProxyProvider<ControllerAuth, ControllerBusinessPlan>(
+          create: (context) => ControllerBusinessPlan(
+            service: context.read<ServiceBusinessPlan>(),
+            auth: context.read<ControllerAuth>(),
+          ),
+          update: (_, auth, controller) {
+            controller!.auth = auth;
+
+            if (!controller.hasLoadedOnce) {
+              controller.hasLoadedOnce = true;
+              Future.microtask(() {
+                controller.loadPlans();
+              });
+            }
+
+            return controller;
+          },
+        ),
+      ],
+      child: const _PageBusinessPlanBody(),
+    );
+  }
 }
 
-class _PageBusinessPlanState extends State<PageBusinessPlan> {
+class _PageBusinessPlanBody extends StatefulWidget {
+  const _PageBusinessPlanBody();
+
+  @override
+  State<_PageBusinessPlanBody> createState() => _PageBusinessPlanState();
+}
+
+class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
   bool isEditingTitle = false;
   @override
   Widget build(BuildContext context) {
@@ -44,7 +80,10 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
               context.read<ControllerBusinessPlan>().loadPlanDetailIfNeeded(plan.id);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const PagePlanPreview()),
+                MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                  value: context.read<ControllerBusinessPlan>(),
+                  child: const PagePlanPreview(),
+                ),),
               );
             },
           );
@@ -55,7 +94,10 @@ class _PageBusinessPlanState extends State<PageBusinessPlan> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const PagePlanSelectTemplate(),
+              builder: (_) => ChangeNotifierProvider.value(
+                value: context.read<ControllerBusinessPlan>(),
+                child: const PagePlanSelectTemplate(),
+              ),
             ),
           );
         },

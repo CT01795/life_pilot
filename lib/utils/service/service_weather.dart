@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -9,11 +10,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceWeather {
   final supabase = Supabase.instance.client;
-  final String? apiKey;
-  ServiceWeather({required this.apiKey});
+  String? _apiKey;
 
   final Set<String> _loadingIds = {};
   final Map<String, WeatherCache?> _forecastCache = {};
+  Future<String> _getKey() async {
+    _apiKey ??= await ServiceEvent().getKey(keyName: "OPEN_WEATHER_API_KEY");
+    return _apiKey!;
+  }
 
   List<EventWeather>? getForecast(String eventId) {
     return _forecastCache[eventId]?.data;
@@ -71,7 +75,7 @@ class ServiceWeather {
 
   Future<List<EventWeather>> getWeather(
       {required String locationDisplay, required DateTime? startDate}) async {
-    String tmpLocation = locationDisplay.split("．")[0].split(" ")[0];
+    String tmpLocation = locationDisplay.split("．")[0]; //.split(" ")[0];
     final today = DateTime.now();
     final resultStartDate =
         startDate == null || startDate.isBefore(today) ? today : startDate;
@@ -95,8 +99,9 @@ class ServiceWeather {
     // 1️⃣ 用 OpenWeather Geocoding API 取得經緯度
     String currentCountry = detectCountryHint(tmpLocation);
     final address = Uri.encodeComponent(tmpLocation);
+    await _getKey();
     final geoUrl = Uri.parse(
-      'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$apiKey',
+      'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey',
     );
 
     final geoRes = await http.get(geoUrl);
@@ -111,7 +116,7 @@ class ServiceWeather {
 
         // 2️⃣ 再呼叫 OpenWeather Weather API
         final url =
-            'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$apiKey&units=metric';
+            'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$_apiKey&units=metric';
 
         final res = await http.get(Uri.parse(url));
         final data = json.decode(res.body);

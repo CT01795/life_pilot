@@ -79,7 +79,10 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const PagePlanEditor()),
+      MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+        value: context.read<ControllerBusinessPlan>(),
+        child: const PagePlanEditor(),
+      ),),
     );
   }
 }
