@@ -6,10 +6,10 @@ import 'package:flutter/material.dart' hide Element;
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -85,6 +85,269 @@ class ServiceEventPublic {
           .insert(newEvents.map((e) => e.toJson()).toList());
     }
     return dbNameDateSet;
+  }
+
+  static EventItem parseFacebookText(String text1) {
+    final uuid = const Uuid();
+
+    // ========= 活動名稱（強化） =========
+    String name = _extractEventName(text1);
+
+    // ========= 日期（支援民國年） =========
+    DateTime? startDate;
+    DateTime? endDate;
+    final normalized = normalizeText(text1);
+    final dateMatches = RegExp(r'(?:(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2}))|(?:(\d{1,2})[\/\.\-](\d{1,2}))')
+        .allMatches(normalized)
+        .toList();
+
+    if (dateMatches.isNotEmpty) {
+      final m = dateMatches[0];
+
+      int y, m1, d1;
+      if (m.group(1) != null) {
+        // yyyy.mm.dd
+        y = int.parse(m.group(1)!);
+        if (y < 1911) y += 1911;
+        m1 = int.parse(m.group(2)!);
+        d1 = int.parse(m.group(3)!);
+      } else {
+        // mm.dd，年份 fallback 當前年份
+        y = DateTime.now().year;
+        m1 = int.parse(m.group(4)!);
+        d1 = int.parse(m.group(5)!);
+      }
+
+      startDate = DateTime(y, m1, d1);
+
+      // 如果有第二個 match，就解析 endDate
+      if (dateMatches.length > 1) {
+        final m2 = dateMatches[1];
+        int y2, m2v, d2;
+        if (m2.group(1) != null) {
+          y2 = int.parse(m2.group(1)!);
+          if (y2 < 1911) y2 += 1911;
+          m2v = int.parse(m2.group(2)!);
+          d2 = int.parse(m2.group(3)!);
+        } else {
+          y2 = y;
+          m2v = int.parse(m2.group(4)!);
+          d2 = int.parse(m2.group(5)!);
+        }
+        endDate = DateTime(y2, m2v, d2);
+      } else {
+        endDate = startDate;
+      }
+    }
+
+    // ========= 時間 =========
+    final timeMatches =
+        RegExp(r'(\d{1,2}):(\d{2})').allMatches(normalized).toList();
+
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+
+    if (timeMatches.isNotEmpty) {
+      startTime = TimeOfDay(
+        hour: int.parse(timeMatches[0].group(1)!),
+        minute: int.parse(timeMatches[0].group(2)!),
+      );
+
+      if (timeMatches.length > 1) {
+        endTime = TimeOfDay(
+          hour: int.parse(timeMatches[1].group(1)!),
+          minute: int.parse(timeMatches[1].group(2)!),
+        );
+      }
+    }
+
+    // ========= 地點（強化） =========
+    String location = "";
+    final locMatch =
+        RegExp(r'(?:地點|活動地點)\s*[：:\s*]?\s*(.+)').firstMatch(normalized);
+    if (locMatch != null) {
+      location = locMatch.group(1)!.trim();
+    }
+
+    // ========= 城市 =========
+    String city = detectCity(normalized);
+
+    // ========= URL =========
+    String masterUrl = "";
+    final urlMatch = RegExp(r'https?:\/\/[^\s]+').firstMatch(normalized);
+    if (urlMatch != null) {
+      masterUrl = urlMatch.group(0)!;
+    }
+
+    // ========= 主辦 =========
+    String unit = "";
+    final unitMatch =
+        RegExp(r'(?:主辦單位|主辦)[：:\s]*([^\n]+)').firstMatch(normalized);
+    if (unitMatch != null) {
+      unit = unitMatch.group(1)!.trim();
+    }
+
+    // ========= 類型 =========
+    String type = detectType(normalized);
+
+    return EventItem(
+      id: uuid.v4(),
+      name: name,
+      startDate: startDate,
+      endDate: endDate,
+      startTime: startTime,
+      endTime: endTime,
+      city: city,
+      location: location,
+      masterUrl: masterUrl,
+      unit: unit,
+      description: normalized,
+      type: type,
+    );
+  }
+
+  static String _extractEventName(String text) {
+    // 1️⃣ 《活動名稱》
+    final match1 = RegExp(r'《([^》]+)》').firstMatch(text);
+    if (match1 != null) return match1.group(1)!.trim();
+
+    // 2️⃣ hashtag（過濾垃圾tag）
+    final matches = RegExp(r'#([\u4e00-\u9fa5A-Za-z0-9]+)')
+        .allMatches(text)
+        .map((e) => e.group(1)!)
+        .toList();
+
+    for (var tag in matches) {
+      if (tag.contains("節")) {
+        return tag;
+      }
+    }
+
+    // 3️⃣ fallback：第一行清洗
+    return text
+        .split('\n')
+        .first
+        .replaceAll(RegExp(r'[^\u4e00-\u9fa5A-Za-z0-9 ]'), '')
+        .trim();
+  }
+
+  static String normalizeText(String input) {
+    // 2️⃣ 常見符號 → 半形
+    input = input.replaceAll(RegExp(r'[．。∙·]'), '.'); // 點
+    input = input.replaceAll(RegExp(r'[：﹕]'), ':'); // 冒號
+    input = input.replaceAll(RegExp(r'[－–—]'), '-'); // dash
+
+    // 3️⃣ 刪掉零寬字元
+    input = input.replaceAll(RegExp(r'[\u200B-\u200D\uFEFF]'), '');
+
+    // 4️⃣ 將 Mathematical Bold / Italic 拉丁字母轉回 ASCII
+    input = input.split('').map((c) {
+      int code = c.runes.first;
+
+      // A-Z
+      if (code >= 0x1D400 && code <= 0x1D419) {
+        return String.fromCharCode(code - 0x1D400 + 0x41);
+      }
+      // a-z
+      if (code >= 0x1D41A && code <= 0x1D433) {
+        return String.fromCharCode(code - 0x1D41A + 0x61);
+      }
+      // 0-9 (補充平面)
+      if (code >= 0x1D7CE && code <= 0x1D7D7) {
+        return String.fromCharCode(code - 0x1D7CE + 0x30);
+      }
+      // 其他粗體/斜體數字或符號可繼續補充
+      return c;
+    }).join();
+
+    // 1️⃣ 數字 normalize
+    input = normalizeNumbers(input);
+    return input;
+  }
+
+  static String normalizeNumbers(String input) {
+    const halfWidth = '0123456789';
+    const targetWidth = [
+      "𝟬",
+      "𝟭",
+      "2",
+      "𝟯",
+      "𝟰",
+      "𝟱",
+      "𝟲",
+      "𝟳",
+      "8",
+      "9"
+    ];
+    for (int i = 0; i < halfWidth.length; i++) {
+      input = input.replaceAll(targetWidth[i], halfWidth[i]);
+    }
+    // 映射兩種全形數字（U+FF10~FF19 + U+1D7CE~U+1D7D7）
+    final Map<int, String> map = {};
+
+    // 全形 ０-９
+    for (int i = 0; i < 10; i++) {
+      map[0xFF10 + i] = halfWidth[i];
+    }
+
+    // Mathematical digits 𝟬–𝟿 (U+1D7CE–U+1D7D7)
+    for (int i = 0; i < 10; i++) {
+      map[0x1D7CE + i] = halfWidth[i];
+    }
+
+    // Mathematical double-struck digits 𝟘–𝟡 (U+1D7D8–1D7E1)
+    for (int i = 0; i < 10; i++) {
+      map[0x1D7D8 + i] = halfWidth[i];
+    }
+
+    // Mathematical sans-serif digits 𝟢–𝟩 (U+1D7E2–U+1D7EB)
+    for (int i = 0; i < 10; i++) {
+      map[0x1D7E2 + i] = halfWidth[i];
+    }
+
+    // Mathematical bold digits 𝟬–𝟿 (U+1D7F6–U+1D7FF)
+    for (int i = 0; i < 10; i++) {
+      map[0x1D7F6 + i] = halfWidth[i];
+    }
+
+    final buffer = StringBuffer();
+    for (var rune in input.runes) {
+      buffer.write(map[rune] ?? String.fromCharCode(rune));
+    }
+
+    return buffer.toString();
+  }
+
+  static String detectCity(String text) {
+    if (text.contains("台北") || text.contains("臺北")) return "臺北市";
+    if (text.contains("新北")) return "新北市";
+    if (text.contains("基隆")) return "基隆";
+    if (text.contains("桃園")) return "桃園市";
+    if (text.contains("新竹")) return "新竹";
+    if (text.contains("苗栗")) return "苗栗";
+    if (text.contains("台中") || text.contains("臺中")) return "臺中";
+    if (text.contains("彰化")) return "彰化";
+    if (text.contains("南投")) return "南投";
+    if (text.contains("雲林")) return "雲林";
+    if (text.contains("嘉義")) return "嘉義";
+    if (text.contains("台南") || text.contains("臺南")) return "臺南";
+    if (text.contains("高雄")) return "高雄";
+    if (text.contains("屏東")) return "屏東";
+    if (text.contains("宜蘭")) return "宜蘭";
+    if (text.contains("花蓮")) return "花蓮";
+    if (text.contains("台東") || text.contains("臺東")) return "臺東";
+    if (text.contains("澎湖")) return "澎湖";
+    if (text.contains("金門")) return "金門";
+    if (text.contains("連江")) return "連江";
+    if (text.contains("馬祖")) return "馬祖";
+    return text;
+  }
+
+  static String detectType(String text) {
+    if (text.contains("戲劇")) return "戲劇";
+    if (text.contains("表演")) return "表演";
+    if (text.contains("市集")) return "市集";
+    return "";
   }
 
   Future<void> fetchAndSaveAllEvents() async {
@@ -213,6 +476,24 @@ class ServiceEventPublic {
       }
     }
 
+    //==================================== 取得文化部活動 ====================================
+    final types = ["B2", "I7", "I8"];
+    final formatToday = DateFormat("yyyy-MM-dd").format(today);
+    for (String tmpType in types) {
+      String moclUrl =
+          "https://event.moc.gov.tw/sp.asp?xdurl=ccEvent2016/eventSearchList.asp&ev_char1=$tmpType&ev_start=$formatToday&action=query&ctNode=676&mp=1&pageSize=100";
+      if (await checkEventsUrl(moclUrl, today)) {
+        try {
+          List<EventItem> moclUrlList =
+              await fetchPageEventsMoc(moclUrl, today) ?? [];
+
+          dbNameDateSet = await _insertIfNotExists(moclUrlList, dbNameDateSet);
+        } catch (ex) {
+          logger.e(ex);
+        }
+      }
+    }
+
     //==================================== 取得交通部觀光署-觀光資訊網活動 ====================================
     bool isBreakTime = false;
     int pageIndex = 1;
@@ -238,6 +519,99 @@ class ServiceEventPublic {
         isBreakTime = pageIndex >= 15;
       }
     }
+  }
+
+  //==================================== 取得外部資源事件 文化局 ====================================
+  Future<List<EventItem>?> fetchPageEventsMoc(
+      String url, DateTime today) async {
+    final res =
+        await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
+    if (res.statusCode != 200) return [];
+
+    final document = parse(res.body);
+    final events = <EventItem>[];
+    final uuid = const Uuid();
+
+    // 選擇 table 的 tr，跳過第一行表頭
+    final rows = document.querySelectorAll("table tr");
+    for (var i = 1; i < rows.length; i++) {
+      final row = rows[i];
+      final cells = row.querySelectorAll("td");
+      if (cells.length < 6) continue;
+
+      try {
+        // 日期
+        String dateText =
+            cells[1].text.trim(); // ex: "2026/03/18 19:30 ~ 2026/03/18 21:30"
+        DateTime? startDate;
+        DateTime? endDate;
+        TimeOfDay? startTime;
+        TimeOfDay? endTime;
+
+        final dateMatch =
+            RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})\s*(\d{1,2}):(\d{2})')
+                .allMatches(dateText)
+                .toList();
+        if (dateMatch.isNotEmpty) {
+          int y = int.parse(dateMatch[0].group(1)!);
+          int m = int.parse(dateMatch[0].group(2)!);
+          int d = int.parse(dateMatch[0].group(3)!);
+          int h1 = int.parse(dateMatch[0].group(4)!);
+          int min1 = int.parse(dateMatch[0].group(5)!);
+
+          startDate = DateTime(y, m, d);
+          startTime = TimeOfDay(hour: h1, minute: min1);
+
+          if (dateMatch.length > 1) {
+            int y2 = int.parse(dateMatch[1].group(1)!);
+            int m2 = int.parse(dateMatch[1].group(2)!);
+            int d2 = int.parse(dateMatch[1].group(3)!);
+            int h2 = int.parse(dateMatch[1].group(4)!);
+            int min2 = int.parse(dateMatch[1].group(5)!);
+            endDate = DateTime(y2, m2, d2);
+            endTime = TimeOfDay(hour: h2, minute: min2);
+          } else {
+            endDate = startDate;
+          }
+        }
+        if (endDate == null || endDate.isBefore(today)) continue;
+
+        // 活動名稱 & 詳細頁
+        final titleEl = cells[2].querySelector("a");
+        String title = titleEl?.text.trim() ?? "文化部活動";
+        String masterUrl = titleEl?.attributes['href'] ?? "";
+        if (masterUrl.isNotEmpty && !masterUrl.startsWith("http")) {
+          masterUrl =
+              "https://event.moc.gov.tw/${masterUrl.replaceAll('../', '')}";
+        }
+
+        // 縣市 & 地點
+        String city = cells[3].text.trim();
+        String location = cells[4].text.trim();
+
+        // 活動類別
+        String type = cells[5].text.trim();
+
+        events.add(EventItem(
+          id: uuid.v4(),
+          masterUrl: masterUrl,
+          startDate: startDate,
+          startTime: startTime,
+          endDate: endDate,
+          endTime: endTime,
+          city: city,
+          location: location,
+          name: title,
+          account: AuthConstants.sysAdminEmail,
+          type: type,
+          description: "",
+        ));
+      } catch (e) {
+        logger.e("解析 Moc 活動列錯誤: $e");
+      }
+    }
+
+    return events;
   }
 
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
@@ -312,8 +686,8 @@ class ServiceEventPublic {
           int day = int.parse(endDateMatch1.group(2)!);
           endDate = DateTime(today.year, month, day);
         }
-        final endDateMatch2 = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})')
-              .firstMatch(leftDateText[1]);
+        final endDateMatch2 =
+            RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(leftDateText[1]);
         if (endDate == null && endDateMatch2 != null) {
           int year = int.parse(endDateMatch2.group(1)!);
           int month = int.parse(endDateMatch2.group(2)!);

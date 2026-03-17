@@ -456,6 +456,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get nextMonth => '다음 달';
 
   @override
+  String get postText => '전문을 게시하세요';
+
+  @override
+  String get parsing => '분석하다';
+
+  @override
   String get clear => '초기화';
 
   @override
