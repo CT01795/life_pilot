@@ -340,7 +340,7 @@ class ServiceEventPublic {
     if (text.contains("金門")) return "金門";
     if (text.contains("連江")) return "連江";
     if (text.contains("馬祖")) return "馬祖";
-    return text;
+    return "";
   }
 
   static String detectType(String text) {
