@@ -993,6 +993,18 @@ abstract class AppLocalizations {
   /// **'Next month'**
   String get nextMonth;
 
+  /// Label for postText
+  ///
+  /// In en, this message translates to:
+  /// **'Post the full text'**
+  String get postText;
+
+  /// Label for parsing
+  ///
+  /// In en, this message translates to:
+  /// **'Parsing'**
+  String get parsing;
+
   /// Label for clear
   ///
   /// In en, this message translates to:

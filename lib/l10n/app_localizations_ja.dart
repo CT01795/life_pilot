@@ -456,6 +456,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nextMonth => '来月';
 
   @override
+  String get postText => '全文を掲載してください';
+
+  @override
+  String get parsing => '解析する';
+
+  @override
   String get clear => 'クリア';
 
   @override

@@ -28,6 +28,7 @@ class PageEventAdd extends StatefulWidget {
 }
 
 class _PageEventAddState extends State<PageEventAdd> {
+  final TextEditingController fbTextController = TextEditingController();
   late final ControllerPageEventAdd controllerAdd;
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
@@ -46,6 +47,7 @@ class _PageEventAddState extends State<PageEventAdd> {
   void dispose() {
     _scrollController.dispose();
     controllerAdd.dispose();
+    fbTextController.dispose();
     for (var node in _focusNodes.values) {
       node.dispose();
     }
@@ -132,6 +134,44 @@ class _PageEventAddState extends State<PageEventAdd> {
                 controller: _scrollController,
                 padding: Insets.directionalL4R4T4B8,
                 children: [
+                  Card(
+                    color: Colors.yellow[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: fbTextController,
+                            maxLines: 5,
+                            decoration: InputDecoration(
+                              hintText: loc.postText,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          Gaps.h8,
+                          Row(
+                            children: [
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.auto_fix_high),
+                                label: Text(loc.parsing),
+                                onPressed: () {
+                                  controllerAdd.parseFacebookText(fbTextController.text);
+                                },
+                              ),
+                              Gaps.w8,
+                              TextButton(
+                                onPressed: () {
+                                  fbTextController.clear();
+                                },
+                                child: Text(loc.clear),
+                              )
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
                   _buildDateTimeRow(loc: loc, ctl: controllerAdd),
                   ..._buildTextFields(
                       loc: loc, ctl: controllerAdd, fields: fields),

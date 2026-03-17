@@ -456,6 +456,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nextMonth => '下一個月';
 
   @override
+  String get postText => '貼上活動全文...';
+
+  @override
+  String get parsing => '解析';
+
+  @override
   String get clear => '清除';
 
   @override

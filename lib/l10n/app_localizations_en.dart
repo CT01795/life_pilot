@@ -456,6 +456,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nextMonth => 'Next month';
 
   @override
+  String get postText => 'Post the full text';
+
+  @override
+  String get parsing => 'Parsing';
+
+  @override
   String get clear => 'Clear';
 
   @override

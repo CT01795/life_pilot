@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -197,6 +198,32 @@ class ControllerPageEventAdd extends ChangeNotifier {
     return controllerMap[key] ?? initController(key: key, initialValue: '');
   }
 
+  void parseFacebookText(String text) {
+    final parsed = ServiceEventPublic.parseFacebookText(text);
+    updateField(EventFields.name, parsed.name, true);
+    updateField(EventFields.location, parsed.location, true);
+    updateField(EventFields.city, parsed.city, true);
+    updateField(EventFields.masterUrl, parsed.masterUrl ?? "", true);
+    updateField(EventFields.unit, parsed.unit, true);
+    updateField(EventFields.description, parsed.description, true);
+    updateField(EventFields.type, parsed.type, true);
+
+    if (parsed.startDate != null) {
+      setDate(parsed.startDate!, isStart: true);
+    }
+    if (parsed.endDate != null) {
+      setDate(parsed.endDate!, isStart: false);
+    }
+
+    if (parsed.startTime != null) {
+      setTime(parsed.startTime!, isStart: true);
+    }
+    if (parsed.endTime != null) {
+      setTime(parsed.endTime!, isStart: false);
+    }
+    notifyListeners(); 
+  }
+
   // 更新欄位（主事件 / 子事件）
   void updateField(String key, String value, bool check) {
     // ✅ 判斷是否是 subEvent 欄位
@@ -290,6 +317,9 @@ class ControllerPageEventAdd extends ChangeNotifier {
         isDislike = value.isEmpty ? null : bool.parse(value);
         break;
     }
+    if (controllerMap[key]?.text != value) {
+      controllerMap[key]?.text = value;
+    }
   }
 
   void _updateSubEvent(
@@ -376,6 +406,9 @@ class ControllerPageEventAdd extends ChangeNotifier {
       case EventFields.isDislike:
         sub.isDislike = value.isEmpty ? null : bool.parse(value);
         break;
+    }
+    if (controllerMap[mapKey]?.text != value) {
+      controllerMap[mapKey]?.text = value;
     }
   }
 
