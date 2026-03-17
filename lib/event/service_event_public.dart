@@ -311,10 +311,10 @@ class ServiceEventPublic {
           int month = int.parse(endDateMatch1.group(1)!);
           int day = int.parse(endDateMatch1.group(2)!);
           endDate = DateTime(today.year, month, day);
-        }        
+        }
         final endDateMatch2 = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})')
               .firstMatch(leftDateText[1]);
-        if (endDate != null && endDateMatch2 != null) {
+        if (endDate == null && endDateMatch2 != null) {
           int year = int.parse(endDateMatch2.group(1)!);
           int month = int.parse(endDateMatch2.group(2)!);
           int day = int.parse(endDateMatch2.group(3)!);
