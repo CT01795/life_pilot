@@ -66,7 +66,7 @@ class ServiceStock {
             continue;
           }
           batch.add(stock.toJson());
-          if (batch.length >= 400) {
+          if (batch.length >= 500) {
             await client.from(TableNames.stockDailyPrice).insert(batch);
             batch.clear();
           }
@@ -98,7 +98,8 @@ class ServiceStock {
     final result = await client
         .from(TableNames.stockDailyPrice)
         .select('*')
-        .eq('date', date);
+        .eq('date', date)
+        .gte('traded_number', 100000);
 
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
   }
