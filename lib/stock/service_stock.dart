@@ -99,7 +99,8 @@ class ServiceStock {
         .from(TableNames.stockDailyPrice)
         .select('*')
         .eq('date', date)
-        .gte('traded_number', 100000);
+        .gte('traded_number', 400000)
+        .lt('closing_price', 1000);
 
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
   }
@@ -124,12 +125,13 @@ class ServiceStock {
     }
 
     // 2️⃣ 抓該日全部股票
-    List<ModelStock> allStocks = await getByDate(latestDate);
+    List<ModelStock> allStocks 
+    = await getByDate(latestDate);
 
     // 👉 下一步：量化排序
     stocks = _rankStocks(allStocks);
 
-    return stocks.take(30).toList();
+    return stocks.take(50).toList();
   }
 
   List<ModelStock> _rankStocks(List<ModelStock> list) {
