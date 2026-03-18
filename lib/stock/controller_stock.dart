@@ -16,7 +16,7 @@ class ControllerStock extends ChangeNotifier {
 
     DateTime today = DateUtils.dateOnly(DateTime.now());
 
-    for (int i = 60; i > 0; i--) {
+    for (int i = 190; i <= 365; i++) {
       await service.loadRawDataDailyPrices(
         today.subtract(Duration(days: i)),
       );
