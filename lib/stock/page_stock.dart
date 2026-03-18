@@ -1,5 +1,6 @@
 // lib/pages/home_page.dart
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:life_pilot/stock/controller_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +26,7 @@ class PageStock extends StatelessWidget {
                 leading: Text("${index + 1}"),
                 title: Text("(${stock.securityCode}) ${stock.securityName}"),
                 trailing:
-                    Text(stock.closingPrice.toStringAsFixed(2)),
+                    Text(NumberFormat('#,##0.00').format(stock.closingPrice)),
               );
             },
           );
