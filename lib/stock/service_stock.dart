@@ -99,7 +99,7 @@ class ServiceStock {
         .from(TableNames.stockDailyPrice)
         .select('*')
         .eq('date', date)
-        .gte('traded_number', 400000)
+        .gte('traded_number', 900000)
         .lt('closing_price', 1000);
 
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
@@ -150,19 +150,19 @@ class SimpleStrategy {
 
     //綜合考量：漲幅 成交量 本益比 動能
     // 1️⃣ 漲幅（最重要）
-    score += (s.priceDifference ?? 0) * 5;
+    score += ((s.priceDifference  ?? 0)/s.closingPrice) * 200;
+
+    // 4️⃣ 價格動能（收盤接近最高）
+    if (s.highestPrice != null && s.closingPrice > 0) {
+      score += (s.closingPrice / s.highestPrice!) * 10;
+    }
 
     // 2️⃣ 成交量（熱門股）
-    score += (s.tradedNumber ?? 0) / 1000000;
+    score += (s.tradedNumber ?? 0) / 10000000; //10,000,000
 
     // 3️⃣ 本益比（越低越好）
     if (s.peRatio != null && s.peRatio! > 0) {
       score += (20 - s.peRatio!) * 0.5;
-    }
-
-    // 4️⃣ 價格動能（收盤接近最高）
-    if (s.highestPrice != null && s.closingPrice > 0) {
-      score += (s.closingPrice / s.highestPrice!) * 2;
     }
     return score;
   }
