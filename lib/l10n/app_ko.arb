@@ -59,6 +59,8 @@
   "@settings": {"description": "Label for Settings"},
   "personalEvent": "개인 일정",
   "@personalEvent": {"description": "Label for personalEvent"},
+  "stock": "재고",
+  "@stock": {"description": "Label for stock"},
   "recommendedEvent": "추천 이벤트",
   "@recommendedEvent": {"description": "Label for recommendedEvent"},
   "recommendedEventZero": "현재 추천 이벤트가 없습니다",

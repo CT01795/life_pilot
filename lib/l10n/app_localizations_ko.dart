@@ -93,6 +93,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get personalEvent => '개인 일정';
 
   @override
+  String get stock => '재고';
+
+  @override
   String get recommendedEvent => '추천 이벤트';
 
   @override

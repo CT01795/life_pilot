@@ -93,6 +93,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalEvent => '個人のイベント';
 
   @override
+  String get stock => 'ストック';
+
+  @override
   String get recommendedEvent => 'おすすめイベント';
 
   @override

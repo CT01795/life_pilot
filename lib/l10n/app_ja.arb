@@ -59,6 +59,8 @@
   "@settings": {"description": "Label for Settings"},
   "personalEvent": "個人のイベント",
   "@personalEvent": {"description": "Label for personalEvent"},
+  "stock": "ストック",
+  "@stock": {"description": "Label for stock"},
   "recommendedEvent": "おすすめイベント",
   "@recommendedEvent": {"description": "Label for recommendedEvent"},
   "recommendedEventZero": "現在おすすめイベントはありません",

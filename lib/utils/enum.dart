@@ -2,6 +2,7 @@ enum AuthPage { login, register, pageMain }
 
 enum PageType {
   personalEvent,
+  stock,
   settings,
   recommendedEvent,
   recommendedAttractions,
