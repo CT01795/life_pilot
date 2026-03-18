@@ -201,7 +201,7 @@ class ServiceEventPublic {
       location: location,
       masterUrl: masterUrl,
       unit: unit,
-      description: normalized,
+      description: '$normalized\n',
       type: type,
     );
   }
