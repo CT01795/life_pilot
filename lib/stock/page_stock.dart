@@ -24,9 +24,8 @@ class PageStock extends StatelessWidget {
               final stock = controller.stocks[index];
               return ListTile(
                 leading: Text("${index + 1}"),
-                title: Text("(${stock.securityCode}) ${stock.securityName}"),
-                trailing:
-                    Text(NumberFormat('#,##0.00').format(stock.closingPrice)),
+                title: Text(
+                    "(${stock.securityCode}) ${stock.securityName}\n收盤價: ${NumberFormat('#,##0.00').format(stock.closingPrice)}\n漲跌幅:  ${NumberFormat('#,##0.00').format((stock.priceDifference ?? 0) / stock.closingPrice * 100)}%\n成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}\n${stock.peRatio != 0 ? "P/E: ${stock.peRatio}": ''}\n"),
               );
             },
           );
