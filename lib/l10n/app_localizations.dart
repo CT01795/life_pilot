@@ -267,6 +267,12 @@ abstract class AppLocalizations {
   /// **'Personal'**
   String get personalEvent;
 
+  /// Label for stock
+  ///
+  /// In en, this message translates to:
+  /// **'Stock'**
+  String get stock;
+
   /// Label for recommendedEvent
   ///
   /// In en, this message translates to:

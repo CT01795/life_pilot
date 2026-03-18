@@ -93,6 +93,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get personalEvent => '行事曆';
 
   @override
+  String get stock => '股票';
+
+  @override
   String get recommendedEvent => '推薦活動';
 
   @override

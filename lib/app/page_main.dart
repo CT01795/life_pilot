@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/app/controller_page_main.dart';
 import 'package:life_pilot/business_plan/page_business_plan.dart';
 import 'package:life_pilot/accounting/page_accounting_list.dart';
+import 'package:life_pilot/stock/page_stock.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/app/page_ai.dart';
 import 'package:life_pilot/calendar/page_calendar.dart';
@@ -36,6 +37,8 @@ class _PageMainState extends State<PageMain> {
     switch (type) {
       case PageType.personalEvent:
         return const PageCalendar();
+      case PageType.stock:
+        return const PageStock();
       case PageType.settings:
         return const PageSettings();
       case PageType.recommendedEvent:

@@ -59,6 +59,8 @@
   "@settings": {"description": "Label for Settings"},
   "personalEvent": "Personal",
   "@personalEvent": {"description": "Label for personalEvent"},
+  "stock": "Stock",
+  "@stock": {"description": "Label for stock"},
   "recommendedEvent": "Event",
   "@recommendedEvent": {"description": "Label for recommendedEvent"},
   "recommendedEventZero": "No event",

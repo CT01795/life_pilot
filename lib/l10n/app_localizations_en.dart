@@ -93,6 +93,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get personalEvent => 'Personal';
 
   @override
+  String get stock => 'Stock';
+
+  @override
   String get recommendedEvent => 'Event';
 
   @override

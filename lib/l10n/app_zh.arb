@@ -59,6 +59,8 @@
   "@settings": {"description": "Label for Settings"},
   "personalEvent": "行事曆",
   "@personalEvent": {"description": "Label for personalEvent"},
+  "stock": "股票",
+  "@stock": {"description": "Label for stock"},
   "recommendedEvent": "推薦活動",
   "@recommendedEvent": {"description": "Label for recommendedEvent"},
   "recommendedEventZero": "目前沒有推薦活動",

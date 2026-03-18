@@ -66,13 +66,20 @@ class ControllerPageMain extends ChangeNotifier {
       "pointsRecord": PageType.pointsRecord,
     };
 
+    pages.remove(PageType.recommendedEvent);
+    pages.remove(PageType.recommendedAttractions);
+    pages.remove(PageType.game);
+    pages.remove(PageType.ai);
+    if (auth.currentAccount == AuthConstants.sysAdminEmail) {
+      pages.add(PageType.stock);
+    }
+    pages.add(PageType.recommendedEvent);
+    pages.add(PageType.recommendedAttractions);
     for (final key in dbPages) {
       if (optionalMap.containsKey(key)) {
         pages.add(optionalMap[key]!);
       }
     }
-    pages.remove(PageType.game);
-    pages.remove(PageType.ai);
     // 最後加遊戲頁
     pages.add(PageType.game);
     pages.add(PageType.ai);
