@@ -1,6 +1,5 @@
 // lib/services/stock_service.dart
 import 'dart:convert';
-import 'package:csv/csv.dart';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -10,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceStock {
   final client = Supabase.instance.client;
   List<ModelStock> stocks = [];
-  Future<void> loadRawDataDailyPrices(DateTime date) async {
+  Future<void> loadRawDataTWSE(DateTime date) async {
     String type = Source.twse;
     if (await isDataExist(date, type)) {
       return;
@@ -86,32 +85,30 @@ class ServiceStock {
     }
   }
 
-  Future<void> fetchOtcCsv(DateTime date) async {
+  Future<void> loadRawDataOTC(DateTime date) async {
     String type = Source.tpex;
     if (await isDataExist(date, type)) {
       return;
     }
     final dateStr =
-        "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
+        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
     final url =
-        "https://www.tpex.org.tw/web/stock/aftertrading/DAILY_CLOSE_quotes/stk_quote_result.php"
-        "?l=zh-tw&o=data&d=$dateStr";
+        "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=$dateStr&type=AL&id=&response=json";
 
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode != 200) {
       return;
     }
-
     try {
-      final csvString = utf8.decode(response.bodyBytes);
-      final data = const CsvToListConverter().convert(csvString);
+      final rawData = jsonDecode(response.body);
+      final tables = rawData['tables'];
 
-      if (data.isEmpty || data.length <= 1) {
+      if (tables == null) {
         return;
       }
 
-      List<dynamic> fields = data[0];
+      List<dynamic> fields = tables[0]["fields"];
       Map<String, String> chtToEn = {
         "代號": "security_code", //
         "名稱": "security_name", //
@@ -120,21 +117,23 @@ class ServiceStock {
         "最高": "highest_price", //
         "最低": "lowest_price", //
         "成交股數": "traded_number", //
-        "成交金額": "transaction_amount", //
+        "成交金額(元)": "transaction_amount", //
         "成交筆數": "transactions_number", //
         "最後買價": "final_reveal_buying_price", //
+        "最後買量": "final_reveal_buying_volume", //
         "最後賣價": "final_reveal_selling_price", //
+        "最後賣量": "final_reveal_selling_volume", //
         "漲跌(+/-)": "change",
         "漲跌": "price_difference", //
       };
       Map<String, int> enToIndex = {};
       for (int i = 0; i < fields.length; i++) {
-        final key = chtToEn[fields[i]];
+        final key = chtToEn[fields[i].toString().trim().split("<")[0]];
         if (key != null) enToIndex[key] = i;
       }
-
+      List<dynamic> data = tables[0]["data"];
       List<Map<String, dynamic>> batch = [];
-      for (int j = 1; j < data.length; j++) {
+      for (int j = 0; j < data.length; j++) {
         final stock = StockParser.parse(data[j], enToIndex, date, true, type);
         if (stock == null) {
           continue;
@@ -150,8 +149,8 @@ class ServiceStock {
         batch.clear();
       }
       await client
-            .from(TableNames.stockDate)
-            .insert({"date": date.toIso8601String(), "type": type});
+          .from(TableNames.stockDate)
+          .insert({"date": date.toIso8601String(), "type": type});
     } on Exception catch (ex) {
       logger.e(ex);
     }
@@ -207,7 +206,7 @@ class ServiceStock {
     // 👉 下一步：量化排序
     stocks = _rankStocks(allStocks);
 
-    return stocks.take(50).toList();
+    return stocks.take(200).toList();
   }
 
   List<ModelStock> _rankStocks(List<ModelStock> list) {
@@ -286,9 +285,9 @@ class StockParser {
           change: isOTC ? (priceDifference > 0 ? "+" : "-") : (row[enToIndex["change"] ?? -1].toString().contains("+") ? "+" : "-"),
           priceDifference: priceDifference > 0 ? priceDifference : priceDifference * (-1),
           finalRevealBuyingPrice: double.tryParse(row[enToIndex["final_reveal_buying_price"] ?? -1].toString().replaceAll(',', '')),
-          finalRevealBuyingVolume: isOTC ? null : double.tryParse(row[enToIndex["final_reveal_buying_volume"] ?? -1].toString().replaceAll(',', '')),
+          finalRevealBuyingVolume: double.tryParse(row[enToIndex["final_reveal_buying_volume"] ?? -1].toString().replaceAll(',', '')),
           finalRevealSellingPrice: double.tryParse(row[enToIndex["final_reveal_selling_price"] ?? -1].toString().replaceAll(',', '')),
-          finalRevealSellingVolume: isOTC ? null : double.tryParse(row[enToIndex["final_reveal_selling_volume"] ?? -1].toString().replaceAll(',', '')),
+          finalRevealSellingVolume: double.tryParse(row[enToIndex["final_reveal_selling_volume"] ?? -1].toString().replaceAll(',', '')),
           peRatio: isOTC ? null : double.tryParse(row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', '')),
           source: source);
     } catch (e) {
