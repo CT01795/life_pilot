@@ -1,5 +1,6 @@
 // lib/services/stock_service.dart
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -9,6 +10,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceStock {
   final client = Supabase.instance.client;
   List<ModelStock> stocks = [];
+
+  Future<void> loadRawData() async {
+    DateTime today = DateUtils.dateOnly(DateTime.now());
+
+    for (int i = 1; i <= 15; i++) {
+      await loadRawDataTWSE(
+        today.subtract(Duration(days: i)),
+      );
+      await loadRawDataOTC(
+        today.subtract(Duration(days: i)),
+      );
+    }
+    await quantitativeCalculation(today.subtract(Duration(days: 1)));
+  }
+  
   Future<void> loadRawDataTWSE(DateTime date) async {
     String type = Source.twse;
     if (await isDataExist(date, type)) {
