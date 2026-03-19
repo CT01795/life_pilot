@@ -61,7 +61,11 @@ class PageStock extends StatelessWidget {
                             Gaps.w8,
                             Expanded(
                               child: Text(
-                                "${stock.securityName} ${stock.isRising == true ? "Rising!!" : ""}",
+                                "${stock.securityName} ${stock.isRising == true ? "***" : ""}",
+                                style: TextStyle(
+                                  color: stock.isRising == true ? Colors.red : Colors.black,
+                                  fontWeight: stock.isRising == true ? FontWeight.bold : FontWeight.normal,
+                                ),
                               ),
                             ),
                           ],
