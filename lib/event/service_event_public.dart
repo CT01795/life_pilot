@@ -375,7 +375,7 @@ class ServiceEventPublic {
     if (await checkEventsUrl(strolltimesWeekendUrl, today)) {
       try {
         List<EventItem> strolltimesList =
-            await fetchPageEventsStrolltimes(strolltimesWeekendUrl, today) ??
+            await fetchPageEventsStrolltimes(strolltimesWeekendUrl, today, Source.strolltimesWeekend) ??
                 [];
 
         //==================================== strolltimesList事件寫入 ====================================
@@ -401,7 +401,7 @@ class ServiceEventPublic {
             logger.e('❌ utf8 decode error: $e', stackTrace: s);
             csv = Charset.getByName('big5')!.decode(response.bodyBytes);
           }
-          List<EventItem> strolltimesList = parseStrolltimesCsv(csv, today);
+          List<EventItem> strolltimesList = parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
           //==================================== strolltimesList事件寫入 ====================================
           dbNameDateSet =
               await _insertIfNotExists(strolltimesList, dbNameDateSet);
@@ -435,9 +435,9 @@ class ServiceEventPublic {
       if (await checkEventsUrl(cloudCultureUrl, today)) {
         try {
           List<EventItem> cloudCultureList =
-              await fetchPageEventsCloudCulture(cloudCultureUrl, today) ?? [];
+              await fetchPageEventsCloudCulture(cloudCultureUrl, today, Source.cloudCulture) ?? [];
 
-          //==================================== strolltimesList事件寫入 ====================================
+          //==================================== cloud.culture.tw事件寫入 ====================================
           dbNameDateSet =
               await _insertIfNotExists(cloudCultureList, dbNameDateSet);
         } on Exception catch (ex) {
@@ -453,7 +453,7 @@ class ServiceEventPublic {
     if (await checkEventsUrl(accupassUrl, today)) {
       try {
         List<EventItem> accupassList =
-            await fetchPageEventsAccupass(accupassUrl, today) ?? [];
+            await fetchPageEventsAccupass(accupassUrl, today, Source.accupass) ?? [];
 
         dbNameDateSet = await _insertIfNotExists(accupassList, dbNameDateSet);
       } catch (ex) {
@@ -467,7 +467,7 @@ class ServiceEventPublic {
     if (await checkEventsUrl(paperWindmillUrl, today)) {
       try {
         List<EventItem> paperWindmillList =
-            await fetchPageEventsPaperWindmill(paperWindmillUrl, today) ?? [];
+            await fetchPageEventsPaperWindmill(paperWindmillUrl, today, Source.paperwindmill) ?? [];
 
         dbNameDateSet =
             await _insertIfNotExists(paperWindmillList, dbNameDateSet);
@@ -485,7 +485,7 @@ class ServiceEventPublic {
       if (await checkEventsUrl(moclUrl, today)) {
         try {
           List<EventItem> moclUrlList =
-              await fetchPageEventsMoc(moclUrl, today) ?? [];
+              await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];
 
           dbNameDateSet = await _insertIfNotExists(moclUrlList, dbNameDateSet);
         } catch (ex) {
@@ -504,7 +504,7 @@ class ServiceEventPublic {
       if (await checkEventsUrl(taiwanNetUrl, today)) {
         try {
           List<EventItem> taiwanNetList =
-              await fetchPageEventsTaiwanNet(taiwanNetUrl, today) ?? [];
+              await fetchPageEventsTaiwanNet(taiwanNetUrl, today, Source.taiwanNet) ?? [];
 
           dbNameDateSet =
               await _insertIfNotExists(taiwanNetList, dbNameDateSet);
@@ -523,7 +523,7 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 文化局 ====================================
   Future<List<EventItem>?> fetchPageEventsMoc(
-      String url, DateTime today) async {
+      String url, DateTime today, String source) async {
     final res =
         await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
     if (res.statusCode != 200) return [];
@@ -605,6 +605,7 @@ class ServiceEventPublic {
           account: AuthConstants.sysAdminEmail,
           type: type,
           description: "",
+          source: source,
         ));
       } catch (e) {
         logger.e("解析 Moc 活動列錯誤: $e");
@@ -616,7 +617,7 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
-      String url, DateTime today) async {
+      String url, DateTime today, String source) async {
     final res =
         await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
     if (res.statusCode != 200) return [];
@@ -752,6 +753,7 @@ class ServiceEventPublic {
         account: AuthConstants.sysAdminEmail,
         description: description,
         unit: organizer ?? '',
+        source: source,
       ));
     }
 
@@ -760,7 +762,7 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 PaperWindmill ====================================
   Future<List<EventItem>?> fetchPageEventsPaperWindmill(
-      String url, DateTime today) async {
+      String url, DateTime today, String source) async {
     final res =
         await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
 
@@ -832,6 +834,7 @@ class ServiceEventPublic {
           name: eventName,
           type: "紙風車",
           account: AuthConstants.sysAdminEmail,
+          source: source,
         ),
       );
     }
@@ -841,7 +844,7 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsAccupass(
-      String inUrl, DateTime today) async {
+      String inUrl, DateTime today, String source) async {
     final url = Uri.parse(inUrl);
     final res = await http.get(
       url,
@@ -927,6 +930,7 @@ class ServiceEventPublic {
             location: location,
             name: map["name"],
             account: AuthConstants.sysAdminEmail,
+            source: source,
           ));
         }
       }
@@ -934,7 +938,7 @@ class ServiceEventPublic {
     return events;
   }
 
-  List<EventItem> parseStrolltimesCsv(String csvText, DateTime today) {
+  List<EventItem> parseStrolltimesCsv(String csvText, DateTime today, String source) {
     final rows = const CsvToListConverter(
       eol: '\n',
       shouldParseNumbers: false,
@@ -1020,6 +1024,7 @@ class ServiceEventPublic {
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
           account: AuthConstants.sysAdminEmail,
+          source: source,
           subEvents: []));
     }
     return events;
@@ -1027,7 +1032,7 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 cloud.Culture ====================================
   Future<List<EventItem>?> fetchPageEventsCloudCulture(
-      String url, DateTime today) async {
+      String url, DateTime today, String source) async {
     final res = await http.get(
       Uri.parse(url),
       headers: {
@@ -1097,6 +1102,7 @@ class ServiceEventPublic {
           name: eventName,
           subEvents: subEvents.length <= 1 ? [] : subEvents,
           account: AuthConstants.sysAdminEmail,
+          source: source,
         ));
         tmpSet.add(eventName);
       }
@@ -1138,7 +1144,7 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
-      String inUrl, DateTime today) async {
+      String inUrl, DateTime today, String source) async {
     final url = Uri.parse(inUrl);
     final res = await http.get(url);
     if (res.statusCode != 200) return [];
@@ -1197,6 +1203,7 @@ class ServiceEventPublic {
                   location: location,
                   name: eventName,
                   account: AuthConstants.sysAdminEmail,
+                  source: source,
                 ));
                 tmpSet.add(eventName);
               }

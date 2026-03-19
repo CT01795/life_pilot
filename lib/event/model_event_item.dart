@@ -48,6 +48,7 @@ abstract class EventBase {
   int? get registrationClicks;
   int? get likeCounts;
   int? get dislikeCounts;
+  String? get source;
   List<EventItem> get subEvents;
 
   Map<String, dynamic> toJson();
@@ -123,6 +124,8 @@ class EventItem implements EventBase {
   int? likeCounts;
   @override
   int? dislikeCounts;
+  @override
+  String? source;
 
   List<EventItem> _subEvents;
 
@@ -164,6 +167,7 @@ class EventItem implements EventBase {
     this.registrationClicks,
     this.likeCounts,
     this.dislikeCounts,
+    this.source,
     List<EventItem>? subEvents,
   })  : id = id ?? _uuid.v4(),
         _subEvents = List<EventItem>.from(subEvents ?? []);
@@ -208,6 +212,7 @@ class EventItem implements EventBase {
       EventFields.registrationClicks: registrationClicks,
       EventFields.likeCounts: likeCounts,
       EventFields.dislikeCounts: dislikeCounts,
+      EventFields.source: source,
       EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
     };
   }
@@ -251,6 +256,7 @@ class EventItem implements EventBase {
       registrationClicks: json[EventFields.registrationClicks],
       likeCounts: json[EventFields.likeCounts],
       dislikeCounts: json[EventFields.dislikeCounts],
+      source: json[EventFields.source],
       subEvents: subEventsJson is List
           ? subEventsJson
               .whereType<Map<String, dynamic>>()
@@ -296,6 +302,7 @@ class EventItem implements EventBase {
     int? newRegistrationClicks,
     int? newLikeCounts,
     int? newDislikeCounts,
+    String? newSource,
     List<EventItem>? newSubEvents,
   }) {
     return EventItem(
@@ -334,6 +341,7 @@ class EventItem implements EventBase {
       registrationClicks: newRegistrationClicks ?? registrationClicks,
       likeCounts: newLikeCounts ?? likeCounts,
       dislikeCounts: newDislikeCounts ?? dislikeCounts,
+      source: newSource ?? source,
     );
   }
 
@@ -401,38 +409,39 @@ class EventViewModel {
   final int? registrationClicks;
   final int? likeCounts;
   final int? dislikeCounts;
+  final String? source;
 
-  EventViewModel({
-    required this.event,
-    required this.id,
-    required this.name,
-    required this.showDate,
-    required this.startDate,
-    required this.endDate,
-    required this.dateRange,
-    required this.tags,
-    required this.hasLocation,
-    required this.locationDisplay,
-    this.masterUrl,
-    this.description = '',
-    this.subEvents = const [],
-    this.canDelete = false,
-    this.showSubEvents = true,
-    this.ageMin,
-    this.ageMax,
-    this.isFree,
-    this.priceMin,
-    this.priceMax,
-    this.isOutdoor,
-    this.isLike,
-    this.isDislike,
-    this.pageViews,
-    this.cardClicks,
-    this.saves,
-    this.registrationClicks,
-    this.likeCounts,
-    this.dislikeCounts,
-  });
+  EventViewModel(
+      {required this.event,
+      required this.id,
+      required this.name,
+      required this.showDate,
+      required this.startDate,
+      required this.endDate,
+      required this.dateRange,
+      required this.tags,
+      required this.hasLocation,
+      required this.locationDisplay,
+      this.masterUrl,
+      this.description = '',
+      this.subEvents = const [],
+      this.canDelete = false,
+      this.showSubEvents = true,
+      this.ageMin,
+      this.ageMax,
+      this.isFree,
+      this.priceMin,
+      this.priceMax,
+      this.isOutdoor,
+      this.isLike,
+      this.isDislike,
+      this.pageViews,
+      this.cardClicks,
+      this.saves,
+      this.registrationClicks,
+      this.likeCounts,
+      this.dislikeCounts,
+      this.source});
 
   DateTime get firstEventDate {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
@@ -526,6 +535,7 @@ class EventViewModel {
       registrationClicks: event.registrationClicks,
       likeCounts: event.likeCounts,
       dislikeCounts: event.dislikeCounts,
+      source: event.source,
     );
   }
 }

@@ -29,6 +29,19 @@ class AuthConstants {
   static const password = 'password';
 }
 
+// -------------------- Source --------------------
+class Source {
+  static const twse = "twse";
+  static const tpex = "tpex";
+  static const strolltimesWeekend = "strolltimes.com/weekend";
+  static const strolltimesEventsData  = "strolltimes.com/events-data";
+  static const cloudCulture = "cloud.culture.tw";
+  static const accupass = "www.accupass.com";
+  static const paperwindmill = "www.paperwindmill.com.tw";
+  static const mocGov = "event.moc.gov.tw";
+  static const taiwanNet = "www.taiwan.net.tw";
+}
+
 // -------------------- Tables --------------------
 class TableNames {
   static const calendarEvents = "calendar_events";
@@ -96,6 +109,7 @@ class EventFields {
   static const String registrationClicks = "registration_clicks";
   static const String likeCounts = "like_counts";
   static const String dislikeCounts = "dislike_counts";
+  static const String source = "source";
 }
 
 // -------------------- Gap --------------------

@@ -17,6 +17,7 @@ class ModelStock {
   double? finalRevealSellingPrice;
   double? finalRevealSellingVolume;
   double? peRatio;
+  String? source;
 
   ModelStock(
       {required this.date,
@@ -35,7 +36,8 @@ class ModelStock {
       this.finalRevealBuyingVolume,
       this.finalRevealSellingPrice,
       this.finalRevealSellingVolume,
-      this.peRatio});
+      this.peRatio,
+      this.source});
 
   Map<String, dynamic> toJson() {
     return {
@@ -56,9 +58,10 @@ class ModelStock {
       'final_reveal_selling_price': finalRevealSellingPrice,
       'final_reveal_selling_volume': finalRevealSellingVolume,
       'pe_ratio': peRatio,
+      'source': source,
     };
   }
-  
+
   factory ModelStock.fromJson(Map<String, dynamic> json) {
     return ModelStock(
       date: DateTime.parse(json['date']),
@@ -73,11 +76,16 @@ class ModelStock {
       closingPrice: (json['closing_price'] as num?)?.toDouble() ?? 0,
       change: json['change']?.toString(),
       priceDifference: (json['price_difference'] as num?)?.toDouble(),
-      finalRevealBuyingPrice: (json['final_reveal_buying_price'] as num?)?.toDouble(),
-      finalRevealBuyingVolume: (json['final_reveal_buying_volume'] as num?)?.toDouble(),
-      finalRevealSellingPrice: (json['final_reveal_selling_price'] as num?)?.toDouble(),
-      finalRevealSellingVolume: (json['final_reveal_selling_volume'] as num?)?.toDouble(),
+      finalRevealBuyingPrice:
+          (json['final_reveal_buying_price'] as num?)?.toDouble(),
+      finalRevealBuyingVolume:
+          (json['final_reveal_buying_volume'] as num?)?.toDouble(),
+      finalRevealSellingPrice:
+          (json['final_reveal_selling_price'] as num?)?.toDouble(),
+      finalRevealSellingVolume:
+          (json['final_reveal_selling_volume'] as num?)?.toDouble(),
       peRatio: (json['pe_ratio'] as num?)?.toDouble(),
+      source: json['source']?.toString(),
     );
   }
 }
