@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/stock/controller_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PageStock extends StatelessWidget {
   const PageStock({super.key});
@@ -19,13 +21,89 @@ class PageStock extends StatelessWidget {
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.all(8),
             itemCount: controller.stocks.length,
             itemBuilder: (context, index) {
               final stock = controller.stocks[index];
-              return ListTile(
-                leading: Text("${index + 1}"),
-                title: Text(
-                    "(${stock.securityCode}) ${stock.securityName}\n收盤價: ${NumberFormat('#,##0.00').format(stock.closingPrice)}\n漲跌幅:  ${NumberFormat('#,##0.00').format((stock.priceDifference ?? 0) / stock.closingPrice * 100)}%\n成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}\n${stock.peRatio != 0 ? "P/E: ${stock.peRatio}": ''}\n"),
+              final changePercent =
+                  (stock.priceDifference ?? 0) / stock.closingPrice * 100;
+
+              bool isUp = stock.change != null && stock.change!.contains("+");
+              return Card(
+                elevation: 2,
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// 🔹 第一行：股號 + 名稱（可點擊）
+                      GestureDetector(
+                        onTap: () async {
+                          final url = Uri.parse(
+                              "https://tw.stock.yahoo.com/quote/${stock.securityCode}");
+
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url,
+                                mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              stock.securityCode,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                            Gaps.w8,
+                            Expanded(
+                              child: Text(
+                                stock.securityName,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Gaps.h8,
+
+                      /// 🔹 第二行：收盤價 + 漲跌
+                      Row(
+                        children: [
+                          Text(
+                            NumberFormat('#,##0.00')
+                                .format(stock.closingPrice),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Gaps.w8,
+                          Text(
+                            "${changePercent.toStringAsFixed(2)}%",
+                            style: TextStyle(
+                              color: isUp ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Gaps.h8,
+                      /// 🔹 第三行：其他資訊
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}",
+                          ),
+                          if (stock.peRatio != null && stock.peRatio != 0)
+                            Text("P/E: ${stock.peRatio}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );
@@ -34,3 +112,4 @@ class PageStock extends StatelessWidget {
     );
   }
 }
+

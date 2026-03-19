@@ -16,16 +16,14 @@ class ControllerStock extends ChangeNotifier {
 
     DateTime today = DateUtils.dateOnly(DateTime.now());
 
-    for (int i = 1; i <= 20; i++) {
-      service.loadRawDataDailyPrices(
+    for (int i = 1; i <= 15; i++) {
+      service.loadRawDataTWSE(
+        today.subtract(Duration(days: i)),
+      );
+      service.loadRawDataOTC(
         today.subtract(Duration(days: i)),
       );
     }
-    /*for (int i = 1; i <= 400; i++) {
-      await service.fetchOtcCsv(
-        today.subtract(Duration(days: i)),
-      );
-    }*/
 
     stocks = await service.getStatData();
 
