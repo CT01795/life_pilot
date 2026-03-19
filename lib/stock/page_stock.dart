@@ -51,7 +51,11 @@ class PageStock extends StatelessWidget {
                         child: Row(
                           children: [
                             Text(
-                              "$index. ${stock.securityCode}",
+                              "${index + 1}.  ",
+                            ),
+                            Gaps.w8,
+                            Text(
+                              stock.securityCode,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blue,
