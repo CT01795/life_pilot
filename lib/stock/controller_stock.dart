@@ -17,15 +17,16 @@ class ControllerStock extends ChangeNotifier {
     DateTime today = DateUtils.dateOnly(DateTime.now());
 
     for (int i = 1; i <= 15; i++) {
-      service.loadRawDataTWSE(
+      await service.loadRawDataTWSE(
         today.subtract(Duration(days: i)),
       );
-      service.loadRawDataOTC(
+      await service.loadRawDataOTC(
         today.subtract(Duration(days: i)),
       );
     }
+    await service.quantitativeCalculation(today.subtract(Duration(days: 1)));
 
-    stocks = await service.getStatData();
+    stocks = await service.getSimpleStrategy();
 
     loading = false;
     notifyListeners();

@@ -62,7 +62,8 @@ class ServiceStock {
         List<dynamic> data = table["data"];
         List<Map<String, dynamic>> batch = [];
         for (int j = 0; j < data.length; j++) {
-          final stock = StockParser.parse(data[j], enToIndex, date, false, type);
+          final stock =
+              StockParser.parse(data[j], enToIndex, date, false, type);
           if (stock == null) {
             continue;
           }
@@ -193,7 +194,7 @@ class ServiceStock {
     return DateTime.parse(result.first['date']);
   }
 
-  Future<List<ModelStock>> getStatData() async {
+  Future<List<ModelStock>> getSimpleStrategy() async {
     // 1️⃣ 找最新日期
     final latestDate = await getLatestDate();
     if (latestDate == null) {
@@ -203,10 +204,26 @@ class ServiceStock {
     // 2️⃣ 抓該日全部股票
     List<ModelStock> allStocks = await getByDate(latestDate);
 
-    // 👉 下一步：量化排序
-    stocks = _rankStocks(allStocks);
+    /*close > high20	今日收盤突破過去 20 日高點 → 剛起漲
+      volume > vol5*1.5	成交量放大 → 市場有力道
+      pct_change > 2	當日漲幅 >2% → 明顯起漲
+      ma5 > ma20	均線多頭排列 → 趨勢向上*/
+    List<ModelStock> risingStocks = filterRisingStocks(allStocks);
 
-    return stocks.take(200).toList();
+    // 👉 下一步：量化排序
+    List<ModelStock> ranked = _rankStocks(allStocks);
+    
+    // 4️⃣ 合併（避免重複）
+    final map = {
+      for (var s in risingStocks) s.securityCode: s,
+    };
+
+    for (var s in ranked.take(200)) {
+      map.putIfAbsent(s.securityCode, () => s);
+    }
+
+    stocks = map.values.toList();
+    return stocks;
   }
 
   List<ModelStock> _rankStocks(List<ModelStock> list) {
@@ -216,6 +233,44 @@ class ServiceStock {
       return scoreB.compareTo(scoreA); // 高分排前面
     });
     return list;
+  }
+
+  List<ModelStock> filterRisingStocks(List<ModelStock> stocks) {
+    return stocks.where((s) {
+      final close = s.closingPrice;
+      final high20 = s.high20 ?? 0;
+      final vol5 = s.vol5 ?? 0;
+      final volume = s.tradedNumber ?? 0;
+      final pct = s.pctChange ?? 0;
+      final ma5 = s.ma5 ?? 0;
+      final ma20 = s.ma20 ?? 0;
+
+      final isRising =
+        close >= high20 && // 1️⃣ 突破20日高點
+        volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
+        pct > 2 && // 3️⃣ 漲幅 > 2%
+        ma5 > ma20; // 4️⃣ 均線多頭
+
+      if (isRising) {
+        s.isRising = true; // 👈 標記
+      }
+      return isRising;
+    }).toList()
+      ..sort((a, b) => (b.pctChange ?? 0).compareTo(a.pctChange ?? 0));
+  }
+
+  Future<void> quantitativeCalculation(DateTime date) async {
+    /*ma5           → 5日均線
+      ma20          → 20日均線
+      high20        → 過去20日最高收盤價
+      pctChange     → 當日漲幅 %
+      vol5        → 最近5日平均成交量*/
+    await client.rpc(
+      'update_stock_technical_for_date',
+      params: {
+        'p_date': date.toIso8601String().substring(0, 10),
+      },
+    );
   }
 }
 
@@ -247,8 +302,8 @@ class SimpleStrategy {
 }
 
 class StockParser {
-  static ModelStock? parse(
-      List row, Map<String, int> enToIndex, DateTime date, bool isOTC, String source) {
+  static ModelStock? parse(List row, Map<String, int> enToIndex, DateTime date,
+      bool isOTC, String source) {
     try {
       final securityCode = row[enToIndex["security_code"] ?? -1].toString();
       final closingPrice = double.tryParse(
@@ -257,7 +312,8 @@ class StockParser {
       if (securityCode.length != 4 || closingPrice == null) return null;
       final priceDifference = double.tryParse(
               row[enToIndex["price_difference"] ?? -1]
-                  .toString().trim()
+                  .toString()
+                  .trim()
                   .replaceAll(',', '')) ??
           0;
       return ModelStock(
