@@ -18,6 +18,12 @@ class ModelStock {
   double? finalRevealSellingVolume;
   double? peRatio;
   String? source;
+  double? ma5;
+  double? ma20;
+  double? high20;
+  double? pctChange;
+  double? vol5;
+  bool? isRising;
 
   ModelStock(
       {required this.date,
@@ -37,7 +43,13 @@ class ModelStock {
       this.finalRevealSellingPrice,
       this.finalRevealSellingVolume,
       this.peRatio,
-      this.source});
+      this.source,
+      this.ma5,
+      this.ma20,
+      this.high20,
+      this.pctChange,
+      this.vol5,
+      this.isRising});
 
   Map<String, dynamic> toJson() {
     return {
@@ -59,6 +71,11 @@ class ModelStock {
       'final_reveal_selling_volume': finalRevealSellingVolume,
       'pe_ratio': peRatio,
       'source': source,
+      'ma5': ma5,
+      'ma20': ma20,
+      'high20': high20,
+      'pctChange': pctChange,
+      'vol5': vol5,
     };
   }
 
@@ -86,6 +103,11 @@ class ModelStock {
           (json['final_reveal_selling_volume'] as num?)?.toDouble(),
       peRatio: (json['pe_ratio'] as num?)?.toDouble(),
       source: json['source']?.toString(),
+      ma5: (json['ma5'] as num?)?.toDouble(),
+      ma20: (json['ma20'] as num?)?.toDouble(),
+      high20: (json['high20'] as num?)?.toDouble(),
+      pctChange: (json['pctChange'] as num?)?.toDouble(),
+      vol5: (json['vol5'] as num?)?.toDouble(),
     );
   }
 }
