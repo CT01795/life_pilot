@@ -51,7 +51,7 @@ class PageStock extends StatelessWidget {
                         child: Row(
                           children: [
                             Text(
-                              stock.securityCode,
+                              "$index. ${stock.securityCode}",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blue,
@@ -63,8 +63,12 @@ class PageStock extends StatelessWidget {
                               child: Text(
                                 "${stock.securityName} ${stock.isRising == true ? "***" : ""}",
                                 style: TextStyle(
-                                  color: stock.isRising == true ? Colors.red : Colors.black,
-                                  fontWeight: stock.isRising == true ? FontWeight.bold : FontWeight.normal,
+                                  color: stock.isRising == true
+                                      ? Colors.red
+                                      : Colors.black,
+                                  fontWeight: stock.isRising == true
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -77,8 +81,7 @@ class PageStock extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            NumberFormat('#,##0.00')
-                                .format(stock.closingPrice),
+                            NumberFormat('#,##0.00').format(stock.closingPrice),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -94,6 +97,7 @@ class PageStock extends StatelessWidget {
                         ],
                       ),
                       Gaps.h8,
+
                       /// 🔹 第三行：其他資訊
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -116,4 +120,3 @@ class PageStock extends StatelessWidget {
     );
   }
 }
-
