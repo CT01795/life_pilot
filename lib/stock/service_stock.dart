@@ -24,7 +24,7 @@ class ServiceStock {
     }
     await quantitativeCalculation(today.subtract(Duration(days: 1)));
   }
-  
+
   Future<void> loadRawDataTWSE(DateTime date) async {
     String type = Source.twse;
     if (await isDataExist(date, type)) {
@@ -228,7 +228,7 @@ class ServiceStock {
 
     // 👉 下一步：量化排序
     List<ModelStock> ranked = _rankStocks(allStocks);
-    
+
     // 4️⃣ 合併（避免重複）
     final map = {
       for (var s in risingStocks) s.securityCode: s,
@@ -260,12 +260,14 @@ class ServiceStock {
       final pct = s.pctChange ?? 0;
       final ma5 = s.ma5 ?? 0;
       final ma20 = s.ma20 ?? 0;
+      final rsi = s.rsi ?? 0;
 
-      final isRising =
-        close >= high20 && // 1️⃣ 突破20日高點
-        volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
-        pct > 2 && // 3️⃣ 漲幅 > 2%
-        ma5 > ma20; // 4️⃣ 均線多頭
+      final isRising = close >= high20 && // 1️⃣ 突破20日高點
+          volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
+          pct > 2 && // 3️⃣ 漲幅 > 2%
+          ma5 > ma20 && // 4️⃣ 均線多頭
+          rsi > 50 &&
+          rsi < 80; //排除假突破與過熱
 
       if (isRising) {
         s.isRising = true; // 👈 標記
