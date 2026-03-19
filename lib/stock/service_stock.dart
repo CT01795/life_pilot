@@ -11,7 +11,7 @@ class ServiceStock {
   final client = Supabase.instance.client;
   List<ModelStock> stocks = [];
   Future<void> loadRawDataDailyPrices(DateTime date) async {
-    String type = "twse";
+    String type = Source.twse;
     if (await isDataExist(date, type)) {
       return;
     }
@@ -63,7 +63,7 @@ class ServiceStock {
         List<dynamic> data = table["data"];
         List<Map<String, dynamic>> batch = [];
         for (int j = 0; j < data.length; j++) {
-          final stock = StockParser.parse(data[j], enToIndex, date, false);
+          final stock = StockParser.parse(data[j], enToIndex, date, false, type);
           if (stock == null) {
             continue;
           }
@@ -87,7 +87,7 @@ class ServiceStock {
   }
 
   Future<void> fetchOtcCsv(DateTime date) async {
-    String type = "tpex";
+    String type = Source.tpex;
     if (await isDataExist(date, type)) {
       return;
     }
@@ -135,7 +135,7 @@ class ServiceStock {
 
       List<Map<String, dynamic>> batch = [];
       for (int j = 1; j < data.length; j++) {
-        final stock = StockParser.parse(data[j], enToIndex, date, true);
+        final stock = StockParser.parse(data[j], enToIndex, date, true, type);
         if (stock == null) {
           continue;
         }
@@ -249,7 +249,7 @@ class SimpleStrategy {
 
 class StockParser {
   static ModelStock? parse(
-      List row, Map<String, int> enToIndex, DateTime date, bool isOTC) {
+      List row, Map<String, int> enToIndex, DateTime date, bool isOTC, String source) {
     try {
       final securityCode = row[enToIndex["security_code"] ?? -1].toString();
       final closingPrice = double.tryParse(
@@ -289,7 +289,8 @@ class StockParser {
           finalRevealBuyingVolume: isOTC ? null : double.tryParse(row[enToIndex["final_reveal_buying_volume"] ?? -1].toString().replaceAll(',', '')),
           finalRevealSellingPrice: double.tryParse(row[enToIndex["final_reveal_selling_price"] ?? -1].toString().replaceAll(',', '')),
           finalRevealSellingVolume: isOTC ? null : double.tryParse(row[enToIndex["final_reveal_selling_volume"] ?? -1].toString().replaceAll(',', '')),
-          peRatio: isOTC ? null : double.tryParse(row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', '')));
+          peRatio: isOTC ? null : double.tryParse(row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', '')),
+          source: source);
     } catch (e) {
       return null;
     }

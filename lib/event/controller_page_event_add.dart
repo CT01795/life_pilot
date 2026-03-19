@@ -44,6 +44,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
   int? registrationClicks;
   int? likeCounts;
   int? dislikeCounts;
+  String? source;
 
   String? masterGraphUrl;
   String? masterUrl;
@@ -80,6 +81,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
     this.registrationClicks,
     this.likeCounts,
     this.dislikeCounts,
+    this.source,
   }) {
     _init();
   }
@@ -120,6 +122,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
     registrationClicks = e?.registrationClicks;
     likeCounts = e?.likeCounts;
     dislikeCounts = e?.dislikeCounts;
+    source = e?.source;
     final fields = {
       EventFields.city: city,
       EventFields.location: location,
@@ -142,6 +145,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
       EventFields.registrationClicks: registrationClicks,
       EventFields.likeCounts: likeCounts,
       EventFields.dislikeCounts: dislikeCounts,
+      EventFields.source: source,
     };
     for (final entry in fields.entries) {
       initController(
@@ -173,6 +177,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
         EventFields.registrationClicks: sub.registrationClicks,
         EventFields.likeCounts: sub.likeCounts,
         EventFields.dislikeCounts: sub.dislikeCounts,
+        EventFields.source: sub.source,
       };
 
       for (final entry in subFields.entries) {
@@ -221,7 +226,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
     if (parsed.endTime != null) {
       setTime(parsed.endTime!, isStart: false);
     }
-    notifyListeners(); 
+    notifyListeners();
   }
 
   // 更新欄位（主事件 / 子事件）
@@ -468,6 +473,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
         newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
         newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
         newMasterGraphUrl: sub.masterGraphUrl,
+        newSource: existingEvent?.source ?? source,
       );
     }).toList();
 
@@ -505,7 +511,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
       ..registrationClicks =
           existingEvent?.registrationClicks ?? registrationClicks
       ..likeCounts = existingEvent?.likeCounts ?? likeCounts
-      ..dislikeCounts = existingEvent?.dislikeCounts ?? dislikeCounts;
+      ..dislikeCounts = existingEvent?.dislikeCounts ?? dislikeCounts
+      ..source = existingEvent?.source ?? source;
   }
 
   int _compareEvents(EventItem a, EventItem b) {
@@ -571,7 +578,8 @@ class ControllerPageEventAdd extends ChangeNotifier {
       ..saves = saves
       ..registrationClicks = registrationClicks
       ..likeCounts = likeCounts
-      ..dislikeCounts = dislikeCounts;
+      ..dislikeCounts = dislikeCounts
+      ..source = source;
 
     subEvents.add(newSub);
 
