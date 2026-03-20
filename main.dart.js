@@ -155437,7 +155437,7 @@ if(i==null)i=0
 s=j.y
 r=j.z
 q=r!=null&&B.c.n(r,"+")
-r=A.H(""+(b+1)+".  ",k,k,k,k,k,k,k,k)
+r=A.H(""+(b+1)+". ",k,k,k,k,k,k,k,k)
 p=A.H(j.b,k,k,k,k,B.ew8,k,k,k)
 o=j.fx===!0
 n=o?"***":""
@@ -155679,12 +155679,17 @@ s=A.P(s,s.$ti.i("z.E"))
 B.b.hl(s,new A.aYS())
 return s},
 Re(a){return this.b8h(a)},
-b8h(a){var s=0,r=A.n(t.H),q=this,p
+b8h(a){var s=0,r=A.n(t.H),q=this,p,o,n,m,l
 var $async$Re=A.o(function(b,c){if(b===1)return A.k(c,r)
-while(true)switch(s){case 0:p=t.z
+while(true)switch(s){case 0:p=q.a,o=t.N,n=t.z,m=0
+case 2:if(!(m<5)){s=4
+break}l=m+1
+s=5
+return A.e(p.l9("update_stock_technical_for_date",A.F(["p_date",B.c.V(a.fQ(),0,10),"p_start",m*500,"p_end",l*500],o,n),n),$async$Re)
+case 5:case 3:m=l
 s=2
-return A.e(q.a.l9("update_stock_technical_for_date",A.F(["p_date",B.c.V(a.fQ(),0,10)],t.N,p),p),$async$Re)
-case 2:return A.l(null,r)}})
+break
+case 4:return A.l(null,r)}})
 return A.m($async$Re,r)}}
 A.aYT.prototype={
 $1(a6){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0=null,a1=J.a2(a6),a2=A.kb(a1.h(a6,"date")),a3=a1.h(a6,"security_code"),a4=a1.h(a6,"security_name"),a5=A.id(a1.h(a6,"traded_number"))
