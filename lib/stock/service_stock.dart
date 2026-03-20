@@ -13,8 +13,11 @@ class ServiceStock {
   int? stocksLength;
   Future<void> loadRawData() async {
     DateTime today = DateUtils.dateOnly(DateTime.now());
-
-    for (int i = 1; i <= 15; i++) {
+    int checkDates = 10;
+    if (today.month < 3) {
+      checkDates = 15;
+    }
+    for (int i = 1; i <= checkDates; i++) {
       await loadRawDataTWSE(
         today.subtract(Duration(days: i)),
       );
@@ -22,6 +25,9 @@ class ServiceStock {
         today.subtract(Duration(days: i)),
       );
     }
+    /*for (int i = 100; i <= 300; i++) {
+      await quantitativeCalculation(today.subtract(Duration(days: i)));
+    }*/
     await quantitativeCalculation(today.subtract(Duration(days: 1)));
   }
 
@@ -289,7 +295,8 @@ class ServiceStock {
         .eq('date', date)
         .filter('ma5', 'is', 'null')
         .count(); // ✅ 只返回 count，不取資料
-    stocksLength = (result.count / 300).ceil();
+    int batch = 150; //不可動batch數量!!!
+    stocksLength = (result.count / batch).ceil();
     if (result.count == 0) {
       return;
     }
@@ -299,7 +306,7 @@ class ServiceStock {
         params: {
           'p_date': date.toIso8601String().substring(0, 10),
           'p_start': 1,
-          'p_end': i < stocksLength! - 1 ? 300 : result.count - 300 * i,
+          'p_end': i < stocksLength! - 1 ? batch : result.count - batch * i,
         },
       );
     }
