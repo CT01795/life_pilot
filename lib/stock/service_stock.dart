@@ -25,10 +25,10 @@ class ServiceStock {
         today.subtract(Duration(days: i)),
       );
     }
-    /*for (int i = 100; i <= 300; i++) {
+    for (int i = 100; i <= 300; i++) {
       await quantitativeCalculation(today.subtract(Duration(days: i)));
-    }*/
-    await quantitativeCalculation(today.subtract(Duration(days: 1)));
+    }
+   // await quantitativeCalculation(today.subtract(Duration(days: 1)));
   }
 
   Future<void> loadRawDataTWSE(DateTime date) async {
