@@ -25,7 +25,7 @@ class ServiceStock {
         today.subtract(Duration(days: i)),
       );
     }
-    for (int i = 100; i <= 300; i++) {
+    for (int i = 1; i <= 300; i++) {
       await quantitativeCalculation(today.subtract(Duration(days: i)));
     }
    // await quantitativeCalculation(today.subtract(Duration(days: 1)));
@@ -294,6 +294,7 @@ class ServiceStock {
         .select('*')
         .eq('date', date)
         .filter('ma5', 'is', 'null')
+        .filter('vol5', 'is', 'null')
         .count(); // ✅ 只返回 count，不取資料
     int batch = 150; //不可動batch數量!!!
     stocksLength = (result.count / batch).ceil();
