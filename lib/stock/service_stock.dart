@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceStock {
   final client = Supabase.instance.client;
   List<ModelStock> stocks = [];
-
+  int? stocksLength;
   Future<void> loadRawData() async {
     DateTime today = DateUtils.dateOnly(DateTime.now());
 
@@ -283,17 +283,30 @@ class ServiceStock {
       high20        → 過去20日最高收盤價
       pctChange     → 當日漲幅 %
       vol5        → 最近5日平均成交量*/
-    final j = stocks.isEmpty ? 5 : (stocks.length / 400).ceil();
-    for(int i = 0; i < j; i++){
+    final result = await client
+        .from('stock_daily_price')
+        .select('*')
+        .eq('date', date)
+        .filter('ma5', 'is', 'null')
+        .count(); // ✅ 只返回 count，不取資料
+    stocksLength = (result.count / 300).ceil();
+    if (result.count == 0) {
+      return;
+    }
+    for (int i = 0; i < stocksLength!; i++) {
       await client.rpc(
         'update_stock_technical_for_date',
         params: {
           'p_date': date.toIso8601String().substring(0, 10),
-          'p_start': i*500,
-          'p_end': (i+1)*500,
+          'p_start': 1,
+          'p_end': i < stocksLength! - 1 ? 300 : result.count - 300 * i,
         },
       );
     }
+    await client.from(TableNames.stockDate).insert({
+      "type": 'update_stock_technical_for_date',
+      "date": date.toIso8601String().substring(0, 10)
+    });
   }
 }
 
