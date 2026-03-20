@@ -283,13 +283,16 @@ class ServiceStock {
       high20        → 過去20日最高收盤價
       pctChange     → 當日漲幅 %
       vol5        → 最近5日平均成交量*/
-    await 
-    client.rpc(
-      'update_stock_technical_for_date',
-      params: {
-        'p_date': date.toIso8601String().substring(0, 10),
-      },
-    );
+    for(int i = 0; i < 5; i++){
+      await client.rpc(
+        'update_stock_technical_for_date',
+        params: {
+          'p_date': date.toIso8601String().substring(0, 10),
+          'p_start': i*500,
+          'p_end': (i+1)*500,
+        },
+      );
+    }
   }
 }
 
