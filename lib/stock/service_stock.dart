@@ -283,7 +283,8 @@ class ServiceStock {
       high20        → 過去20日最高收盤價
       pctChange     → 當日漲幅 %
       vol5        → 最近5日平均成交量*/
-    for(int i = 0; i < 5; i++){
+    final j = stocks.isEmpty ? 5 : (stocks.length / 400).ceil();
+    for(int i = 0; i < j; i++){
       await client.rpc(
         'update_stock_technical_for_date',
         params: {
