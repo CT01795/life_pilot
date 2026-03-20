@@ -293,8 +293,7 @@ class ServiceStock {
         .from('stock_daily_price')
         .select('*')
         .eq('date', date)
-        .filter('ma5', 'is', 'null')
-        .filter('vol5', 'is', 'null')
+        .or('ma5.is.null,vol5.is.null')
         .count(); // ✅ 只返回 count，不取資料
     int batch = 150; //不可動batch數量!!!
     stocksLength = (result.count / batch).ceil();
