@@ -51,7 +51,7 @@ class PageStock extends StatelessWidget {
                         child: Row(
                           children: [
                             Text(
-                              "${index + 1}.  ",
+                              "${index + 1}. ",
                             ),
                             Gaps.w8,
                             Text(
