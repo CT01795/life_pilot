@@ -25,28 +25,29 @@ class ServiceStock {
         today.subtract(Duration(days: i)),
       );
     }
-    /*for (int i = 100; i <= 300; i++) {
+    for (int i = 1; i <= 7; i++) {
       await quantitativeCalculation(today.subtract(Duration(days: i)));
-    }*/
-    await quantitativeCalculation(today.subtract(Duration(days: 1)));
+    }
+    //await quantitativeCalculation(today.subtract(Duration(days: 1)));
   }
 
   Future<void> loadRawDataTWSE(DateTime date) async {
-    String type = Source.twse;
-    if (await isDataExist(date, type)) {
-      return;
-    }
-    final dateStr =
-        "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
-    final url =
-        "https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=$dateStr&type=ALL";
-
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode != 200) {
-      return;
-    }
     try {
+      String type = Source.twse;
+      if (await isDataExist(date, type)) {
+        return;
+      }
+      final dateStr =
+          "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
+      final url =
+          "https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=$dateStr&type=ALL";
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        return;
+      }
+
       final data = jsonDecode(response.body);
       final tables = data['tables'];
 
@@ -109,21 +110,22 @@ class ServiceStock {
   }
 
   Future<void> loadRawDataOTC(DateTime date) async {
-    String type = Source.tpex;
-    if (await isDataExist(date, type)) {
-      return;
-    }
-    final dateStr =
-        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
-    final url =
-        "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=$dateStr&type=AL&id=&response=json";
-
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode != 200) {
-      return;
-    }
     try {
+      String type = Source.tpex;
+      if (await isDataExist(date, type)) {
+        return;
+      }
+      final dateStr =
+          "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+      final url =
+          "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=$dateStr&type=AL&id=&response=json";
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        return;
+      }
+
       final rawData = jsonDecode(response.body);
       final tables = rawData['tables'];
 
@@ -289,31 +291,39 @@ class ServiceStock {
       high20        → 過去20日最高收盤價
       pctChange     → 當日漲幅 %
       vol5        → 最近5日平均成交量*/
-    final result = await client
-        .from('stock_daily_price')
-        .select('*')
-        .eq('date', date)
-        .filter('ma5', 'is', 'null')
-        .count(); // ✅ 只返回 count，不取資料
-    int batch = 150; //不可動batch數量!!!
-    stocksLength = (result.count / batch).ceil();
-    if (result.count == 0) {
-      return;
+    try {
+      final result = await client
+          .from('stock_daily_price')
+          .select('*')
+          .eq('date', date)
+          .or('ma5.is.null,ma20.is.null,high20.is.null,vol5.is.null,rsi.is.null')
+          .count(); // ✅ 只返回 count，不取資料
+      int batch = 50; //不可動batch數量!!!
+      stocksLength = (result.count / batch).ceil();
+      if (result.count == 0) {
+        await client.from(TableNames.stockDate).insert({
+          "type": 'update_stock_technical_for_date',
+          "date": date.toIso8601String().substring(0, 10)
+        });
+        return;
+      }
+      for (int i = 0; i < stocksLength!; i++) {
+        await client.rpc(
+          'update_stock_technical_for_date',
+          params: {
+            'p_date': date.toIso8601String().substring(0, 10),
+            'p_start': 1,
+            'p_end': batch,
+          },
+        );
+      }
+      await client.from(TableNames.stockDate).insert({
+        "type": 'update_stock_technical_for_date',
+        "date": date.toIso8601String().substring(0, 10)
+      });
+    } on Exception catch (ex) {
+      logger.e(ex);
     }
-    for (int i = 0; i < stocksLength!; i++) {
-      await client.rpc(
-        'update_stock_technical_for_date',
-        params: {
-          'p_date': date.toIso8601String().substring(0, 10),
-          'p_start': 1,
-          'p_end': i < stocksLength! - 1 ? batch : result.count - batch * i,
-        },
-      );
-    }
-    await client.from(TableNames.stockDate).insert({
-      "type": 'update_stock_technical_for_date',
-      "date": date.toIso8601String().substring(0, 10)
-    });
   }
 }
 
