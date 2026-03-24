@@ -81,9 +81,10 @@ class PageStock extends StatelessWidget {
 
                       /// 🔹 第二行：收盤價 + 漲跌
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            NumberFormat('#,##0.00').format(stock.closingPrice),
+                            "收盤價: ${NumberFormat('#,##0.00').format(stock.closingPrice)}",
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -96,6 +97,9 @@ class PageStock extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          Gaps.w8,
+                          if (stock.peRatio != null && stock.peRatio != 0)
+                              Text("P/E: ${stock.peRatio}"),
                         ],
                       ),
                       Gaps.h8,
@@ -105,9 +109,11 @@ class PageStock extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "${stock.rsi?.toStringAsFixed(2)}",
+                            "RSI: ${stock.rsi?.toStringAsFixed(2)}",
                             style: TextStyle(
-                              color: stock.rsi == null || stock.rsi! < 50 ? Colors.green : Colors.red,
+                              color: stock.rsi == null || stock.rsi! < 50
+                                  ? Colors.green
+                                  : Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -115,8 +121,6 @@ class PageStock extends StatelessWidget {
                           Text(
                             "成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}",
                           ),
-                          if (stock.peRatio != null && stock.peRatio != 0)
-                            Text("P/E: ${stock.peRatio}"),
                         ],
                       ),
                     ],
