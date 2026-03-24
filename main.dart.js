@@ -155492,21 +155492,21 @@ var $async$Bo=A.o(function(a,b){if(a===1)return A.k(b,r)
 while(true)switch(s){case 0:o=new A.aJ(Date.now(),0,!1)
 n=A.aN(A.am(o),A.ap(o),A.bn(o),0,0,0,0)
 m=A.ap(n)<3?15:7
-p=1
-case 2:if(!(p<=m)){s=4
+p=m
+case 2:if(!(p>=1)){s=4
 break}o=0-864e8*p
 s=5
 return A.e(q.uQ(n.hm(o)),$async$Bo)
 case 5:s=6
 return A.e(q.uP(n.hm(o)),$async$Bo)
-case 6:case 3:++p
+case 6:case 3:--p
 s=2
 break
-case 4:p=1
-case 7:if(!(p<=7)){s=9
+case 4:p=m
+case 7:if(!(p>=1)){s=9
 break}s=10
 return A.e(q.xP(n.hm(0-864e8*p)),$async$Bo)
-case 10:case 8:++p
+case 10:case 8:--p
 s=7
 break
 case 9:return A.l(null,r)}})
