@@ -155490,7 +155490,7 @@ Bo(){var s=0,r=A.n(t.H),q=this,p,o,n,m
 var $async$Bo=A.o(function(a,b){if(a===1)return A.k(b,r)
 while(true)switch(s){case 0:o=new A.aJ(Date.now(),0,!1)
 n=A.aN(A.am(o),A.ap(o),A.bn(o),0,0,0,0)
-m=A.ap(n)<3?15:10
+m=A.ap(n)<3?15:7
 p=1
 case 2:if(!(p<=m)){s=4
 break}o=0-864e8*p
@@ -155707,8 +155707,8 @@ s=A.P(s,s.$ti.i("z.E"))
 B.b.hl(s,new A.aYV())
 return s},
 xP(a){return this.b8j(a)},
-b8j(a){var s=0,r=A.n(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c
-var $async$xP=A.o(function(b,a0){if(b===1){o.push(a0)
+b8j(a){var s=0,r=A.n(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c,b
+var $async$xP=A.o(function(a0,a1){if(a0===1){o.push(a1)
 s=p}while(true)switch(s){case 0:p=4
 i=n.a
 h=i.cS("stock_daily_price").jo(0,"*").dj("date",a).alF("ma5.is.null,ma20.is.null,high20.is.null,vol5.is.null,rsi.is.null")
@@ -155717,8 +155717,8 @@ f=g.c
 f=h.aC_(B.bTu,g.i("Gv<1>"),f,f)
 s=7
 return A.e(new A.Rl(f.a,f.b,f.c,f.d,f.e,f.f,f.r,f.w,f.x,f.y,A.it("supabase.postgrest"),g.i("Rl<Gv<1>,1,1>")),$async$xP)
-case 7:m=a0
-l=50
+case 7:m=a1
+l=200
 n.c=B.e.jH(m.b/l)
 s=m.b===0?8:9
 break
@@ -155735,8 +155735,12 @@ break}f=k
 e=n.c
 e.toString
 if(!(f<e)){s=12
-break}s=13
-return A.e(i.l9("update_stock_technical_for_date",A.F(["p_date",B.c.V(a.fv(),0,10),"p_start",1,"p_end",l],h,g),g),$async$xP)
+break}f=B.c.V(a.fv(),0,10)
+e=k
+d=n.c
+d.toString
+s=13
+return A.e(i.l9("update_stock_technical_for_date",A.F(["p_date",f,"p_start",1,"p_end",J.h(e,d-1)?m.b-k*l:l],h,g),g),$async$xP)
 case 13:++k
 s=11
 break
@@ -155746,10 +155750,10 @@ case 14:p=2
 s=6
 break
 case 4:p=3
-c=o.pop()
-i=A.a8(c)
+b=o.pop()
+i=A.a8(b)
 if(t.VI.b(i)){j=i
-$.ca().fc(0,j)}else throw c
+$.ca().fc(0,j)}else throw b
 s=6
 break
 case 3:s=2
@@ -155823,7 +155827,7 @@ o=a.cy
 if(o==null)o=0
 n=a.fr
 if(n==null)n=0
-m=a.y>=l&&r>=s*1.5&&q>2&&p>o&&n>50&&n<80
+m=a.y>=l&&r>=s*1.5&&q>2&&p>o&&n>50
 if(m)a.fx=!0
 return m},
 $S:1074}
