@@ -228,10 +228,10 @@ class ServiceStock {
     // 2️⃣ 抓該日全部股票
     List<ModelStock> allStocks = await getByDate(latestDate);
 
-    /*close > high20	今日收盤突破過去 20 日高點 → 剛起漲
-      volume > vol5*1.5	成交量放大 → 市場有力道
-      pct_change > 2	當日漲幅 >2% → 明顯起漲
-      ma5 > ma20	均線多頭排列 → 趨勢向上*/
+    /*close >= high20	今日收盤突破過去 20 日高點 → 剛起漲
+      volume >= vol5*1.5	成交量放大 → 市場有力道
+      pct_change >= 2	當日漲幅 >2% → 明顯起漲
+      ma5 >= ma20	均線多頭排列 → 趨勢向上*/
     List<ModelStock> risingStocks = filterRisingStocks(allStocks);
 
     // 👉 下一步：量化排序
@@ -332,23 +332,40 @@ class SimpleStrategy {
     double score = 0;
 
     //綜合考量：漲幅 成交量 本益比 動能
-    // 1️⃣ 漲幅（最重要）
-    score += ((s.priceDifference ?? 0) *
-            (s.change != null && s.change!.contains("+") ? 1 : -1) /
-            s.closingPrice) *
-        200;
+    // 1️⃣ 短中期動能（核心）
+    score += (s.pctChange ?? 0) * 2;
+    score += (s.ma5 ?? 0) / s.closingPrice * 2;
+    score += (s.ma20 ?? 0) / s.closingPrice * 1.5;
 
-    // 4️⃣ 價格動能（收盤接近最高）
-    if (s.highestPrice != null && s.closingPrice > 0) {
-      score += (s.closingPrice / s.highestPrice!) * 10;
+    // 2️⃣ 量能爆發
+    if (s.vol5 != null && s.vol5! > 0) {
+      score += (s.tradedNumber! / s.vol5!) * 5;
     }
 
-    // 2️⃣ 成交量（熱門股）
-    score += (s.tradedNumber ?? 0) / 10000000; //10,000,000
+    // 3️⃣ 突破強度
+    if (s.high20 != null && s.high20! > 0) {
+      score += (s.closingPrice / s.high20!) * 20;
+    }
 
-    // 3️⃣ 本益比（越低越好）
-    if (s.peRatio != null && s.peRatio! > 0) {
-      score += (20 - s.peRatio!) * 0.5;
+    // 4️⃣ RSI 動能
+    if (s.rsi != null) {
+      score += s.rsi! * 0.3;
+    }
+
+    // 5️⃣ K棒強度
+    if (s.highestPrice != null && s.lowestPrice != null) {
+      double range = s.highestPrice! - s.lowestPrice!;
+      if (range > 0) {
+        double strength = (s.closingPrice - s.lowestPrice!) / range;
+        score += strength * 10;
+      }
+    }
+
+    // 6️⃣ 均線結構
+    if (s.ma5 != null && s.ma20 != null) {
+      if (s.ma5! > s.ma20!) {
+        score += 10;
+      }
     }
     return score;
   }
