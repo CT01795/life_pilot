@@ -25,8 +25,6 @@ class PageStock extends StatelessWidget {
             itemCount: controller.stocks.length,
             itemBuilder: (context, index) {
               final stock = controller.stocks[index];
-              final changePercent =
-                  (stock.priceDifference ?? 0) / stock.closingPrice * 100;
 
               bool isUp = stock.change != null && stock.change!.contains("+");
               return Card(
@@ -92,7 +90,7 @@ class PageStock extends StatelessWidget {
                           ),
                           Gaps.w8,
                           Text(
-                            "${changePercent.toStringAsFixed(2)}%",
+                            "${stock.pctChange?.toStringAsFixed(2)}%",
                             style: TextStyle(
                               color: isUp ? Colors.red : Colors.green,
                               fontWeight: FontWeight.bold,
@@ -106,6 +104,14 @@ class PageStock extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          Text(
+                            "${stock.rsi?.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: stock.rsi == null || stock.rsi! < 50 ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Gaps.w8,
                           Text(
                             "成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}",
                           ),
