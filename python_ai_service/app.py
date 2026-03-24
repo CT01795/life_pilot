@@ -16,10 +16,10 @@ def root():
 @app.get("/stocks")
 def get_stocks():
     query = """
-    SELECT security_code, date, closing_price
+    SELECT *
     FROM stock_daily_price
     ORDER BY date DESC
-    LIMIT 10;
+    LIMIT 1;
     """
     
     df = pd.read_sql(query, engine)
