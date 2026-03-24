@@ -17,7 +17,7 @@ class ServiceStock {
     if (today.month < 3) {
       checkDates = 15;
     }
-    for (int i = 1; i <= checkDates; i++) {
+    for (int i = checkDates; i >= 1; i--) {
       await loadRawDataTWSE(
         today.subtract(Duration(days: i)),
       );
@@ -25,7 +25,7 @@ class ServiceStock {
         today.subtract(Duration(days: i)),
       );
     }
-    for (int i = 1; i <= 7; i++) {
+    for (int i = checkDates; i >= 1; i--) {
       await quantitativeCalculation(today.subtract(Duration(days: i)));
     }
     //await quantitativeCalculation(today.subtract(Duration(days: 1)));
