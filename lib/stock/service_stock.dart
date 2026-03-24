@@ -13,7 +13,7 @@ class ServiceStock {
   int? stocksLength;
   Future<void> loadRawData() async {
     DateTime today = DateUtils.dateOnly(DateTime.now());
-    int checkDates = 10;
+    int checkDates = 7;
     if (today.month < 3) {
       checkDates = 15;
     }
@@ -274,8 +274,8 @@ class ServiceStock {
           volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
           pct > 2 && // 3️⃣ 漲幅 > 2%
           ma5 > ma20 && // 4️⃣ 均線多頭
-          rsi > 50 &&
-          rsi < 80; //排除假突破與過熱
+          rsi > 50;
+          //&& rsi < 80; //排除假突破與過熱
 
       if (isRising) {
         s.isRising = true; // 👈 標記
@@ -298,7 +298,7 @@ class ServiceStock {
           .eq('date', date)
           .or('ma5.is.null,ma20.is.null,high20.is.null,vol5.is.null,rsi.is.null')
           .count(); // ✅ 只返回 count，不取資料
-      int batch = 50; //不可動batch數量!!!
+      int batch = 200; //不可動batch數量!!!
       stocksLength = (result.count / batch).ceil();
       if (result.count == 0) {
         await client.from(TableNames.stockDate).insert({
@@ -313,7 +313,7 @@ class ServiceStock {
           params: {
             'p_date': date.toIso8601String().substring(0, 10),
             'p_start': 1,
-            'p_end': batch,
+            'p_end': i == stocksLength!-1 ? result.count-i*batch:batch,
           },
         );
       }
