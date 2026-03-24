@@ -246,8 +246,29 @@ class ServiceStock {
       map.putIfAbsent(s.securityCode, () => s);
     }
 
+    final apiStocks = await fetchStocksFromApi();
+
+    for (var s in apiStocks) {
+      s.securityName = "FastAPI: ${s.securityName}";
+      map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+    }
+
     stocks = map.values.toList();
     return stocks;
+  }
+
+  Future<List<ModelStock>> fetchStocksFromApi() async {
+    final response =
+        await http.get(Uri.parse('https://life-pilot.onrender.com/stocks'));
+
+    if (response.statusCode == 200) {
+      // 成功取得 JSON，解析成 List<ModelStock>
+      final List<dynamic> jsonList = jsonDecode(response.body);
+
+      return jsonList.map((json) => ModelStock.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load stocks from API');
+    }
   }
 
   List<ModelStock> _rankStocks(List<ModelStock> list) {
@@ -275,7 +296,7 @@ class ServiceStock {
           pct >= 2 && // 3️⃣ 漲幅 > 2%
           ma5 >= ma20 && // 4️⃣ 均線多頭
           rsi >= 50;
-          //&& rsi < 80; //排除假突破與過熱
+      //&& rsi < 80; //排除假突破與過熱
 
       if (isRising) {
         s.isRising = true; // 👈 標記
@@ -313,7 +334,7 @@ class ServiceStock {
           params: {
             'p_date': date.toIso8601String().substring(0, 10),
             'p_start': 1,
-            'p_end': i == stocksLength!-1 ? result.count-i*batch:batch,
+            'p_end': i == stocksLength! - 1 ? result.count - i * batch : batch,
           },
         );
       }
