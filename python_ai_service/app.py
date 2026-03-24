@@ -35,7 +35,7 @@ def get_stocks():
     SELECT *
     FROM stock_daily_price
     ORDER BY date DESC
-    LIMIT 1;
+    LIMIT 1 ;
     """
     
     df = pd.read_sql(query, engine)
