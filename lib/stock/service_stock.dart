@@ -13,7 +13,7 @@ class ServiceStock {
   int? stocksLength;
   Future<void> loadRawData() async {
     DateTime today = DateUtils.dateOnly(DateTime.now());
-    int checkDates = 7;
+    int checkDates = 6;
     if (today.month < 3) {
       checkDates = 15;
     }
@@ -25,10 +25,22 @@ class ServiceStock {
         today.subtract(Duration(days: i)),
       );
     }
-    for (int i = checkDates; i >= 1; i--) {
-      await quantitativeCalculation(today.subtract(Duration(days: i)));
+    int loop = 0;
+    for (int i = 1; i <= checkDates; i++) { //345 - 410
+      try {
+        await quantitativeCalculation(
+            530 - loop * 100, today.subtract(Duration(days: i)));
+        loop = 0;
+      } on Exception catch (ex) {
+        logger.e(ex);
+        if (loop > 5) {
+          loop = 0;
+        } else {
+          i = i - 1;
+          loop = loop + 1;
+        }
+      }
     }
-    //await quantitativeCalculation(today.subtract(Duration(days: 1)));
   }
 
   Future<void> loadRawDataTWSE(DateTime date) async {
@@ -234,23 +246,23 @@ class ServiceStock {
       ma5 >= ma20	均線多頭排列 → 趨勢向上*/
     List<ModelStock> risingStocks = filterRisingStocks(allStocks);
 
-    // 👉 下一步：量化排序
-    List<ModelStock> ranked = _rankStocks(allStocks);
-
     // 4️⃣ 合併（避免重複）
     final map = {
       for (var s in risingStocks) s.securityCode: s,
     };
-
-    for (var s in ranked.take(200)) {
-      map.putIfAbsent(s.securityCode, () => s);
-    }
-
+    
     final apiStocks = await fetchStocksFromApi();
 
     for (var s in apiStocks) {
       s.securityName = "FastAPI: ${s.securityName}";
       map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+    }
+
+    // 👉 下一步：量化排序
+    List<ModelStock> ranked = _rankStocks(allStocks);
+
+    for (var s in ranked.take(200)) {
+      map.putIfAbsent(s.securityCode, () => s);
     }
 
     stocks = map.values.toList();
@@ -259,7 +271,7 @@ class ServiceStock {
 
   Future<List<ModelStock>> fetchStocksFromApi() async {
     final response =
-        await http.get(Uri.parse('https://life-pilot.onrender.com/stocks'));
+        await http.get(Uri.parse('https://life-pilot.onrender.com/predict'));
 
     if (response.statusCode == 200) {
       // 成功取得 JSON，解析成 List<ModelStock>
@@ -306,45 +318,37 @@ class ServiceStock {
       ..sort((a, b) => (b.pctChange ?? 0).compareTo(a.pctChange ?? 0));
   }
 
-  Future<void> quantitativeCalculation(DateTime date) async {
+  Future<void> quantitativeCalculation(int batch, DateTime date) async {
     /*ma5           → 5日均線
       ma20          → 20日均線
       high20        → 過去20日最高收盤價
       pctChange     → 當日漲幅 %
       vol5        → 最近5日平均成交量*/
-    try {
-      final result = await client
-          .from('stock_daily_price')
-          .select('*')
-          .eq('date', date)
-          .or('ma5.is.null,ma20.is.null,high20.is.null,vol5.is.null,rsi.is.null')
-          .count(); // ✅ 只返回 count，不取資料
-      int batch = 200; //不可動batch數量!!!
-      stocksLength = (result.count / batch).ceil();
-      if (result.count == 0) {
-        await client.from(TableNames.stockDate).insert({
-          "type": 'update_stock_technical_for_date',
-          "date": date.toIso8601String().substring(0, 10)
-        });
-        return;
-      }
-      for (int i = 0; i < stocksLength!; i++) {
-        await client.rpc(
-          'update_stock_technical_for_date',
-          params: {
-            'p_date': date.toIso8601String().substring(0, 10),
-            'p_start': 1,
-            'p_end': i == stocksLength! - 1 ? result.count - i * batch : batch,
-          },
-        );
-      }
-      await client.from(TableNames.stockDate).insert({
-        "type": 'update_stock_technical_for_date',
-        "date": date.toIso8601String().substring(0, 10)
-      });
-    } on Exception catch (ex) {
-      logger.e(ex);
+    final result = await client
+        .from('stock_daily_price')
+        .select('*')
+        .eq('date', date)
+        .or('ma5.is.null,ma20.is.null,high20.is.null,vol5.is.null,rsi.is.null')
+        .count(); // ✅ 只返回 count，不取資料
+    stocksLength = (result.count / batch).ceil();
+    if (result.count == 0) {
+      return;
     }
+
+    for (int i = 0; i < stocksLength!; i++) {
+      await client.rpc(
+        'update_stock_technical_for_date',
+        params: {
+          'p_date': date.toIso8601String().substring(0, 10),
+          'p_start': 1,
+          'p_end': i == stocksLength! - 1 ? result.count - i * batch : batch,
+        },
+      );
+    }
+    await client.from(TableNames.stockDate).insert({
+      "type": 'update_stock_technical_for_date',
+      "date": date.toIso8601String().substring(0, 10)
+    });
   }
 }
 
