@@ -76,7 +76,7 @@ class ModelStock {
       'ma5': ma5,
       'ma20': ma20,
       'high20': high20,
-      'pctChange': pctChange,
+      'pct_change': pctChange,
       'vol5': vol5,
       'rsi': rsi,
     };
@@ -109,7 +109,7 @@ class ModelStock {
       ma5: (json['ma5'] as num?)?.toDouble(),
       ma20: (json['ma20'] as num?)?.toDouble(),
       high20: (json['high20'] as num?)?.toDouble(),
-      pctChange: (json['pctChange'] as num?)?.toDouble(),
+      pctChange: (json['pct_change'] as num?)?.toDouble(),
       vol5: (json['vol5'] as num?)?.toDouble(),
       rsi: (json['rsi'] as num?)?.toDouble(),
     );

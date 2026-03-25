@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from sqlalchemy import create_engine
+import joblib
 
 app = FastAPI()
 
@@ -25,9 +26,13 @@ app.add_middleware(
 DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
+# 載入訓練好的模型
+model = joblib.load("stock_model.pkl")
+
 @app.get("/")
 def root():
     return {"message": "API is running"}
+
 
 @app.get("/stocks")
 def get_stocks():
@@ -41,3 +46,31 @@ def get_stocks():
     df = pd.read_sql(query, engine)
 
     return df.to_dict(orient="records")
+
+
+@app.get("/predict")
+def predict():
+    # 取得最新一天資料
+    query = """
+    SELECT *
+    FROM stock_daily_price
+    WHERE date = (SELECT MAX(date) FROM stock_date)
+    AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
+    AND vol5 IS NOT NULL AND rsi IS NOT NULL;
+    """
+    df = pd.read_sql(query, engine)
+    print(df.shape)
+    if df.empty:
+        return {"stocks": [], "message": "No data available"}
+
+    features = ['ma5','ma20','high20','vol5','rsi','pct_change']
+    X = df[features]
+
+    # 做預測
+    df['pred'] = model.predict(X)
+
+    # 過濾未來可能漲 >=10% 的股票
+    recommended = df[df['pred']==1][['security_code','security_name','closing_price','traded_number','pe_ratio','ma5','ma20','high20','vol5','rsi','pct_change']]
+
+    recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
+    return recommended.to_dict(orient="records")
