@@ -23,7 +23,8 @@ app.add_middleware(
 )
 
 # Supabase 資料庫連線字串
-DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
+DB_URL = "postgresql://postgres.ccktdpycnferbrjrdtkp:QN4uJPxHzWR64e2u@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres" 
+#DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
 # 載入訓練好的模型
@@ -70,7 +71,7 @@ def predict():
     df['pred'] = model.predict(X)
 
     # 過濾未來可能漲 >=10% 的股票
-    recommended = df[df['pred']==1][['security_code','security_name','closing_price','traded_number','pe_ratio','ma5','ma20','high20','vol5','rsi','pct_change']]
+    recommended = df[df['pred']==1][['date','security_code','security_name','closing_price','traded_number','pe_ratio','ma5','ma20','high20','vol5','rsi','pct_change']]
 
     recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
     return recommended.to_dict(orient="records")
