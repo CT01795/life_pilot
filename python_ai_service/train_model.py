@@ -33,7 +33,7 @@ y = df['target']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
 # 訓練 Random Forest
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced")
 model.fit(X_train, y_train)
 
 # 測試效果

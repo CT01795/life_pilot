@@ -51,6 +51,17 @@ def get_stocks():
 
 @app.get("/predict")
 def predict():
+    # 2️⃣ 看模型基本資訊
+    print(model)  # RandomForestClassifier(n_estimators=100, ...)
+
+    # 3️⃣ 查看每棵樹
+    print(f"Number of trees: {len(model.estimators_)}")
+    print(model.estimators_[0])  # 第一棵決策樹的細節
+
+    # 4️⃣ 查看特徵重要性
+    features = ['ma5','ma20','high20','vol5','rsi','pctChange']
+    importances = model.feature_importances_
+
     # 取得最新一天資料
     query = """
     SELECT *
@@ -61,17 +72,25 @@ def predict():
     """
     df = pd.read_sql(query, engine)
     print(df.shape)
+    # 4️⃣ 查看特徵重要性
+    df_imp = pd.DataFrame({"feature": features, "importance": importances})
+    df_imp = df_imp.sort_values(by="importance", ascending=False)
+    print(df_imp)
+    
     if df.empty:
         return {"stocks": [], "message": "No data available"}
 
     features = ['ma5','ma20','high20','vol5','rsi','pct_change']
     X = df[features]
 
-    # 做預測
-    df['pred'] = model.predict(X)
+    # 👉 預測「上漲機率」
+    df['prob'] = model.predict_proba(X)[:, 1]
 
-    # 過濾未來可能漲 >=10% 的股票
-    recommended = df[df['pred']==1][['date','security_code','security_name','closing_price','traded_number','pe_ratio','ma5','ma20','high20','vol5','rsi','pct_change']]
+    # 👉 過濾未來可能漲 >=10% 的股票，依機率排序，選前50名
+    recommended = df.sort_values(by="prob", ascending=False).head(50)[[
+        'date','security_code','security_name','closing_price','traded_number','pe_ratio'
+        ,'ma5','ma20','high20','vol5','rsi','pct_change','prob'
+    ]]
 
     recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
     return recommended.to_dict(orient="records")
