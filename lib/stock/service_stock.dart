@@ -220,7 +220,7 @@ class ServiceStock {
 
   Future<DateTime?> getLatestDate() async {
     final result = await client
-        .from(TableNames.stockDailyPrice)
+        .from(TableNames.stockDate)
         .select('date')
         .order('date', ascending: false)
         .limit(1);
@@ -250,7 +250,7 @@ class ServiceStock {
     final map = {
       for (var s in risingStocks) s.securityCode: s,
     };
-    
+
     final apiStocks = await fetchStocksFromApi();
 
     for (var s in apiStocks) {

@@ -84,7 +84,7 @@ class ModelStock {
 
   factory ModelStock.fromJson(Map<String, dynamic> json) {
     return ModelStock(
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date'].toString().substring(0,10)),
       securityCode: json['security_code'],
       securityName: json['security_name'],
       tradedNumber: (json['traded_number'] as num?)?.toDouble(),
