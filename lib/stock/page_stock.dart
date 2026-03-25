@@ -65,10 +65,10 @@ class PageStock extends StatelessWidget {
                               child: Text(
                                 "${stock.securityName} ${stock.isRising == true ? "***" : stock.prob ?? ""}",
                                 style: TextStyle(
-                                  color: stock.isRising == true || (stock.prob ?? 0) > 0.6
+                                  color: stock.isRising == true || (stock.prob ?? 0) > 0
                                       ? Colors.red
                                       : Colors.black,
-                                  fontWeight: stock.isRising == true || (stock.prob ?? 0) > 0.6
+                                  fontWeight: stock.isRising == true || (stock.prob ?? 0) > 0
                                       ? FontWeight.bold
                                       : FontWeight.normal,
                                 ),
