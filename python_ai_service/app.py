@@ -86,8 +86,11 @@ def predict():
     # 👉 預測「上漲機率」
     df['prob'] = model.predict_proba(X)[:, 1]
 
+    # 👉 先過濾機率 >= 0.5
+    filtered = df[df['prob'] >= 0.5]
+
     # 👉 過濾未來可能漲 >=10% 的股票，依機率排序，選前50名
-    recommended = df.sort_values(by="prob", ascending=False).head(50)[[
+    recommended = filtered.sort_values(by="prob", ascending=False).head(50)[[
         'date','security_code','security_name','closing_price','traded_number','pe_ratio'
         ,'ma5','ma20','high20','vol5','rsi','pct_change','prob'
     ]]
