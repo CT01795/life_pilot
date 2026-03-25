@@ -40548,7 +40548,7 @@ _.L$=0
 _.W$=c
 _.X$=_.aB$=0},
 bGo(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,a0,a1,a2,a3,a4){return new A.jp(c,r,s,a1,a3,a2,m,i,j,b,a,p,d,e,f,g,o,a0,l,k,h,n,a4,q)},
-bGp(a6){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0=null,a1=J.a2(a6),a2=A.kc(a1.h(a6,"date")),a3=a1.h(a6,"security_code"),a4=a1.h(a6,"security_name"),a5=A.id(a1.h(a6,"traded_number"))
+bGp(a6){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0=null,a1=J.a2(a6),a2=A.kc(B.c.V(J.aw(a1.h(a6,"date")),0,10)),a3=a1.h(a6,"security_code"),a4=a1.h(a6,"security_name"),a5=A.id(a1.h(a6,"traded_number"))
 if(a5==null)a5=a0
 s=A.eZ(a1.h(a6,"transactions_number"))
 r=A.id(a1.h(a6,"transaction_amount"))
@@ -155741,7 +155741,7 @@ return A.m($async$Ih,r)},
 In(){var s=0,r=A.n(t.Q0),q,p=this,o,n
 var $async$In=A.o(function(a,b){if(a===1)return A.k(b,r)
 while(true)switch(s){case 0:s=3
-return A.e(p.a.cX("stock_daily_price").jo(0,"date").mf(0,"date",!1).GK(1),$async$In)
+return A.e(p.a.cX("stock_date").jo(0,"date").mf(0,"date",!1).GK(1),$async$In)
 case 3:o=b
 n=J.a2(o)
 if(n.ga4(o)){q=null
