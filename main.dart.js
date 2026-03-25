@@ -155516,10 +155516,10 @@ else{q=k.fy
 if(q==null)q=""}q=A.p(q)
 p=k.fx!==!0
 if(p){o=k.fy
-o=(o==null?0:o)>0.6}else o=!0
+o=(o==null?0:o)>0}else o=!0
 o=o?B.bY:B.q
 if(p){p=k.fy
-p=(p==null?0:p)>0.6}else p=!0
+p=(p==null?0:p)>0}else p=!0
 n=t.p
 o=A.ez(l,A.bl(A.c([j,B.br,s,B.br,A.bC(A.H(r+" "+q,l,l,l,l,A.br(l,l,o,l,l,l,l,l,l,l,l,l,l,l,p?B.M:B.L,l,l,!0,l,l,l,l,l,l,l,l),l,l,l),1)],n),B.p,B.m,B.u,0,l,l),B.y,!1,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,new A.aRh(k),l,l,l,l,l,l,l,!1,B.aH)
 q=A.H("\u6536\u76e4\u50f9: "+A.nQ("#,##0.00",l).dL(k.y),l,l,l,l,B.dz,l,l,l)
