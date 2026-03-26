@@ -81,7 +81,7 @@ class ModelStock {
       'pct_change': pctChange,
       'vol5': vol5,
       'rsi': rsi,
-      'prob': prob,
+      //'prob': prob,
     };
   }
 

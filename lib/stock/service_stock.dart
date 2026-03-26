@@ -251,11 +251,15 @@ class ServiceStock {
       for (var s in risingStocks) s.securityCode: s,
     };
 
-    final apiStocks = await fetchStocksFromApi();
+    try{
+      final apiStocks = await fetchStocksFromApi();
 
-    for (var s in apiStocks) {
-      s.securityName = "FastAPI: ${s.securityName}";
-      map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+      for (var s in apiStocks) {
+        s.securityName = "FastAPI: ${s.securityName}";
+        map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+      }
+    } catch (ex) {
+      logger.e(ex);
     }
 
     // 👉 下一步：量化排序
