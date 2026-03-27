@@ -246,7 +246,7 @@ class ModelEvent {
       final endDateFilter = inFilter.endDate;
       if (startDateFilter != null &&
           endDate != null &&
-          !endDate.isAfter(startDateFilter)) {
+          endDate.isBefore(startDateFilter)) {
         matchesDate = false;
       }
       final startDate = e.startDate;
