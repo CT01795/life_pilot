@@ -239,20 +239,18 @@ class ModelEvent {
         });
         return matchedSubEvents;
       });
-
-      final endDate = e.endDate ?? e.startDate;
+      DateTime? startDate = DateTimeFormatter.dateOnly(e.startDate!);
+      DateTime? endDate = e.endDate ?? startDate;
+      endDate = DateTimeFormatter.dateOnly(endDate);
       bool matchesDate = true;
       final startDateFilter = inFilter.startDate;
       final endDateFilter = inFilter.endDate;
       if (startDateFilter != null &&
-          endDate != null &&
-          endDate.isBefore(startDateFilter)) {
+          endDate.isBefore(startDateFilter) && endDate != startDateFilter) {
         matchesDate = false;
       }
-      final startDate = e.startDate;
       if (endDateFilter != null &&
-          startDate != null &&
-          !startDate.isBefore(endDateFilter)) {
+          startDate.isAfter(endDateFilter) && startDate != endDateFilter ) {
         matchesDate = false;
       }
 
