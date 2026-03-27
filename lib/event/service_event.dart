@@ -7,7 +7,7 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ServiceEvent{
+class ServiceEvent {
   final client = Supabase.instance.client;
   ServiceEvent();
 
@@ -29,6 +29,14 @@ class ServiceEvent{
     String? inputUser,
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
+    final cutoffDate = today.subtract(Duration(days: 2));
+    if (tableName == TableNames.recommendedEvents) {
+      await client.from(tableName).delete().or(
+            '${EventFields.endDate}.lte.$cutoffDate,'
+            'and(${EventFields.endDate}.is.null,${EventFields.startDate}.lte.$cutoffDate)',
+          );
+      await client.from(TableNames.recommendedEventUrl).delete().lte('start_date',cutoffDate);
+    }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace
                 ? DateTime(today.year - 1, today.month, today.day)
@@ -51,10 +59,10 @@ class ServiceEvent{
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList()
         .map((e) {
-          e.startDate = e.startDate?.toLocal();
-          e.endDate = e.endDate?.toLocal();
-          return e;
-        }).toList();
+      e.startDate = e.startDate?.toLocal();
+      e.endDate = e.endDate?.toLocal();
+      return e;
+    }).toList();
     return events;
   }
 
@@ -147,10 +155,13 @@ class ServiceEvent{
   Future<void> updateLikeEvent(
       {required EventItem event, required String account}) async {
     try {
-      final Map<String, dynamic> data = {"id": event.id, "is_like": event.isLike, "is_dislike": event.isDislike, "account": account};
-      var query = client
-            .from(TableNames.recommendedEventsFavor)
-            .upsert(data);
+      final Map<String, dynamic> data = {
+        "id": event.id,
+        "is_like": event.isLike,
+        "is_dislike": event.isDislike,
+        "account": account
+      };
+      var query = client.from(TableNames.recommendedEventsFavor).upsert(data);
       await query;
     } catch (ex, stacktrace) {
       logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);
@@ -164,7 +175,6 @@ class ServiceEvent{
     required String column,
     required String account,
   }) async {
-
     try {
       await client.rpc(
         'increment_event_counter',
@@ -180,10 +190,8 @@ class ServiceEvent{
     }
   }
 
-
   // --- 私有方法 ---
-  void _validateEvent(
-      {required EventItem event}) {
+  void _validateEvent({required EventItem event}) {
     if (event.name.isEmpty) {
       throw Exception("event_save_error");
     }

@@ -13,6 +13,16 @@ class ServiceStock {
   int? stocksLength;
   Future<void> loadRawData() async {
     DateTime today = DateUtils.dateOnly(DateTime.now());
+    final cutoffDate = today.subtract(Duration(days: 370));
+    await client
+        .from(TableNames.stockDailyPrice)
+        .delete()
+        .lte('date', cutoffDate);
+    await client
+        .from(TableNames.stockDate)
+        .delete()
+        .lte('date', cutoffDate);
+
     int checkDates = 6;
     if (today.month < 3) {
       checkDates = 15;
@@ -26,7 +36,8 @@ class ServiceStock {
       );
     }
     int loop = 0;
-    for (int i = 1; i <= checkDates; i++) { //345 - 410
+    for (int i = 1; i <= checkDates; i++) {
+      //345 - 410
       try {
         await quantitativeCalculation(
             530 - loop * 100, today.subtract(Duration(days: i)));
@@ -251,7 +262,7 @@ class ServiceStock {
       for (var s in risingStocks) s.securityCode: s,
     };
 
-    try{
+    try {
       final apiStocks = await fetchStocksFromApi();
 
       for (var s in apiStocks) {
