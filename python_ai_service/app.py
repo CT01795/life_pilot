@@ -1,11 +1,10 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
-from sqlalchemy import create_engine
-from train_model import train_model
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 import json
+from train_model import train_model
 
 app = FastAPI()
 
@@ -28,9 +27,6 @@ app.add_middleware(
 DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
-# 載入訓練好的模型
-model = None
-
 @app.get("/")
 def root():
     return {"message": "API is running"}
@@ -46,80 +42,62 @@ def get_stocks():
     df = pd.read_sql(query, engine)
     return df.to_dict(orient="records")
 
-@app.get("/predict")
-def predict():
-    global model
-    model = train_model() #get_model()
-    # 2️⃣ 看模型基本資訊
-    print(model)  # RandomForestClassifier(n_estimators=100, ...)
-
+# 非同步訓練模型
+def train_and_save_model():
+    model = train_model()
     # 3️⃣ 查看每棵樹
     print(f"Number of trees: {len(model.estimators_)}")
     print(model.estimators_[0])  # 第一棵決策樹的細節
 
-    # 4️⃣ 查看特徵重要性
-    features = ['ma5','ma20','high20','vol5','rsi','pctChange']
-    importances = model.feature_importances_
-
-    # 取得最新一天資料
+    # 取得最新日期資料
     query = """
-    SELECT *
-    FROM stock_daily_price
-    WHERE date = (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date')
-    AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
-    AND vol5 IS NOT NULL AND rsi IS NOT NULL;
+        SELECT *
+        FROM stock_daily_price
+        WHERE date = (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date')
+        AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
+        AND vol5 IS NOT NULL AND rsi IS NOT NULL;
     """
     df = pd.read_sql(query, engine)
-    print(df.shape)
-    # 4️⃣ 查看特徵重要性
-    df_imp = pd.DataFrame({"feature": features, "importance": importances})
-    df_imp = df_imp.sort_values(by="importance", ascending=False)
-    print(df_imp)
-    
     if df.empty:
         return {"stocks": [], "message": "No data available"}
-
+    # 特徵
     features = ['ma5','ma20','high20','vol5','rsi','pct_change']
     X = df[features]
-
-    # 👉 預測「上漲機率」
     df['prob'] = model.predict_proba(X)[:, 1]
-
-    # 👉 先過濾機率 >= 0.5
-    filtered = df[df['prob'] >= 0.5]
-
-    # 👉 過濾未來可能漲 >=10% 的股票，依機率排序，選前50名
-    recommended = filtered.sort_values(by="prob", ascending=False).head(50)[[
+    recommended = df[df['prob'] >= 0.5].sort_values(by="prob", ascending=False).head(50)[[
         'date','security_code','security_name','closing_price','traded_number','pe_ratio'
         ,'ma5','ma20','high20','vol5','rsi','pct_change','prob'
     ]]
 
     recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
-    
-    # 👉 避免 Timestamp 錯誤
     recommended['date'] = recommended['date'].astype(str)
-
-    # 5️⃣ 轉 JSON
     data_json = recommended.to_dict(orient="records")
-
-    # 6️⃣ 取得日期
     latest_date = df['date'].max()
-
-    # 7️⃣ 寫入 DB（upsert）
     with engine.begin() as conn:
         conn.execute(
             text("""
                 INSERT INTO predicted_stocks (date, data)
                 VALUES (:date, :data)
-                ON CONFLICT (date)
-                DO UPDATE SET data = EXCLUDED.data
+                ON CONFLICT (date) DO UPDATE SET data = EXCLUDED.data
             """),
-            {
-                "date": str(latest_date),
-                "data": json.dumps(data_json)
-            }
+            {"date": str(latest_date), "data": json.dumps(data_json)}
         )
+        print(f"✅ Saved prediction for {latest_date}")
+        return data_json
 
-    print(f"✅ Saved prediction for {latest_date}")
+@app.post("/update_model")
+def update_model(background_tasks: BackgroundTasks):
+    background_tasks.add_task(train_and_save_model)
+    return {"message": "Model training started in background"}
 
+@app.get("/predict")
+def predict():
+    # 先查 DB cache
+    latest_date = pd.read_sql("SELECT MAX(date) as max_date FROM predicted_stocks", engine)['max_date'].values[0]
+    if latest_date is None:
+        return {"stocks": [], "message": "No predictions yet, trigger /update_model first"}
+    df_json = pd.read_sql(text("SELECT data FROM predicted_stocks WHERE date=:date"), engine, params={"date": latest_date})
+    if df_json.empty:
+        return {"stocks": [], "message": "No predictions found"}
+    data_json = json.loads(df_json.iloc[0]['data'])
     return data_json
