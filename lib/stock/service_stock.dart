@@ -301,11 +301,6 @@ class ServiceStock {
       if (response.statusCode == 200) {
         // 成功取得 JSON，解析成 List<ModelStock>
         tmp = jsonDecode(response.body);
-        // 插入新資料
-        await client.from('predicted_stocks').insert({
-          'date': date.toIso8601String().substring(0, 10),
-          'data': tmp, // 直接存 JSON
-        });
       }
     }
     if (tmp == null || tmp is! List) {

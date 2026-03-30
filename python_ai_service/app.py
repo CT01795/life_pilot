@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from sqlalchemy import create_engine
-#import joblib
 from train_model import train_model
-from fastapi import BackgroundTasks
+from sqlalchemy import text
+import json
 
 app = FastAPI()
 
@@ -30,18 +30,10 @@ engine = create_engine(DB_URL)
 
 # 載入訓練好的模型
 model = None
-#model = joblib.load("stock_model.pkl")
-
-#def get_model():
-#    global model
-#    if model is None:
-#        model = joblib.load("stock_model.pkl")
-#    return model
 
 @app.get("/")
 def root():
     return {"message": "API is running"}
-
 
 @app.get("/stocks")
 def get_stocks():
@@ -51,25 +43,13 @@ def get_stocks():
     ORDER BY date DESC
     LIMIT 1 ;
     """
-    
     df = pd.read_sql(query, engine)
-
     return df.to_dict(orient="records")
-
-def train_latest_model():
-    global model
-    model = train_model()  # 重新訓練
-    return model
-    
-@app.post("/update_model")
-def update_model(background_tasks: BackgroundTasks):
-    background_tasks.add_task(train_latest_model)
-    return {"message": "Model training started in background"}
 
 @app.get("/predict")
 def predict():
     global model
-    model = train_latest_model() #get_model()
+    model = train_model() #get_model()
     # 2️⃣ 看模型基本資訊
     print(model)  # RandomForestClassifier(n_estimators=100, ...)
 
@@ -115,4 +95,31 @@ def predict():
     ]]
 
     recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
-    return recommended.to_dict(orient="records")
+    
+    # 👉 避免 Timestamp 錯誤
+    recommended['date'] = recommended['date'].astype(str)
+
+    # 5️⃣ 轉 JSON
+    data_json = recommended.to_dict(orient="records")
+
+    # 6️⃣ 取得日期
+    latest_date = df['date'].max()
+
+    # 7️⃣ 寫入 DB（upsert）
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO predicted_stocks (date, data)
+                VALUES (:date, :data)
+                ON CONFLICT (date)
+                DO UPDATE SET data = EXCLUDED.data
+            """),
+            {
+                "date": str(latest_date),
+                "data": json.dumps(data_json)
+            }
+        )
+
+    print(f"✅ Saved prediction for {latest_date}")
+
+    return data_json
