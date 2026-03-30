@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from sqlalchemy import create_engine
 import joblib
+from train_model import train_model
 
 app = FastAPI()
 
@@ -50,6 +51,7 @@ def get_stocks():
 
 @app.get("/predict")
 def predict():
+    global model
     # 2️⃣ 看模型基本資訊
     print(model)  # RandomForestClassifier(n_estimators=100, ...)
 
@@ -96,3 +98,9 @@ def predict():
 
     recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
     return recommended.to_dict(orient="records")
+
+@app.post("/update_model")
+def update_model():
+    global model  # 修改全域變數
+    model = train_model()  # 重新訓練
+    return {"message": "Model updated successfully"}
