@@ -155822,7 +155822,7 @@ G1(a){return this.b0Q(a)},
 b0Q(a){var s=0,r=A.n(t.lo),q,p=this,o,n,m,l
 var $async$G1=A.o(function(b,c){if(b===1)return A.k(c,r)
 while(true)switch(s){case 0:s=3
-return A.e(p.a.cE("predicted_stocks").j6(0,"data").df("date",B.c.V(a.fj(),0,10)).H0(),$async$G1)
+return A.e(p.a.cE("stock_predicted").j6(0,"data").df("date",B.c.V(a.fj(),0,10)).H0(),$async$G1)
 case 3:l=c
 s=l!=null?4:6
 break
