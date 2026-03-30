@@ -52,48 +52,53 @@ def get_stocks():
 
 # 非同步訓練模型
 def train_and_save_model():
-    logging.info("train_and_save_model started")
-    model = train_model()
-    logging.info("train_and_save_model model get")
-    # 3️⃣ 查看每棵樹
-    logging.info(f"Number of trees: {len(model.estimators_)}")
-    logging.info(model.estimators_[0])  # 第一棵決策樹的細節
+    try:
+        logging.info("train_and_save_model started")
+        model = train_model()
+        logging.info("train_and_save_model model get")
+        # 3️⃣ 查看每棵樹
+        logging.info(f"Number of trees: {len(model.estimators_)}")
+        logging.info(model.estimators_[0])  # 第一棵決策樹的細節
 
-    # 取得最新日期資料
-    query = """
-        SELECT *
-        FROM stock_daily_price
-        WHERE date = (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date')
-        AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
-        AND vol5 IS NOT NULL AND rsi IS NOT NULL;
-    """
-    df = pd.read_sql(query, engine)
-    if df.empty:
-        return {"stocks": [], "message": "No data available"}
-    # 特徵
-    features = ['ma5','ma20','high20','vol5','rsi','pct_change']
-    X = df[features]
-    df['prob'] = model.predict_proba(X)[:, 1]
-    recommended = df[df['prob'] >= 0.5].sort_values(by="prob", ascending=False).head(50)[[
-        'date','security_code','security_name','closing_price','traded_number','pe_ratio'
-        ,'ma5','ma20','high20','vol5','rsi','pct_change','prob'
-    ]]
+        # 取得最新日期資料
+        query = """
+            SELECT *
+            FROM stock_daily_price
+            WHERE date = (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date')
+            AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
+            AND vol5 IS NOT NULL AND rsi IS NOT NULL;
+        """
+        df = pd.read_sql(query, engine)
+        if df.empty:
+            return {"stocks": [], "message": "No data available"}
+        # 特徵
+        features = ['ma5','ma20','high20','vol5','rsi','pct_change']
+        X = df[features]
+        df['prob'] = model.predict_proba(X)[:, 1]
+        recommended = df[df['prob'] >= 0.5].sort_values(by="prob", ascending=False).head(50)[[
+            'date','security_code','security_name','closing_price','traded_number','pe_ratio'
+            ,'ma5','ma20','high20','vol5','rsi','pct_change','prob'
+        ]]
 
-    recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
-    recommended['date'] = recommended['date'].astype(str)
-    data_json = recommended.to_dict(orient="records")
-    latest_date = df['date'].max()
-    with engine.begin() as conn:
-        conn.execute(
-            text("""
-                INSERT INTO predicted_stocks (date, data)
-                VALUES (:date, :data)
-                ON CONFLICT (date) DO UPDATE SET data = EXCLUDED.data
-            """),
-            {"date": str(latest_date), "data": json.dumps(data_json)}
-        )
-        logging.info(f"✅ Saved prediction for {latest_date}")
-        return data_json
+        recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
+        recommended['date'] = recommended['date'].astype(str)
+        data_json = recommended.to_dict(orient="records")
+        latest_date = df['date'].max()
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO predicted_stocks (date, data)
+                    VALUES (:date, :data)
+                    ON CONFLICT (date) DO UPDATE SET data = EXCLUDED.data
+                """),
+                {"date": str(latest_date), "data": json.dumps(data_json)}
+            )
+            logging.info(f"✅ Saved prediction for {latest_date}")
+            return data_json
+    except Exception as e:
+        logging.error(f"Error during training: {e}")
+    finally:
+        logging.info("train_and_save_model ended")
 
 @app.post("/update_model")
 def update_model(background_tasks: BackgroundTasks):
