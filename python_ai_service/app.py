@@ -28,7 +28,14 @@ DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
 # 載入訓練好的模型
-model = joblib.load("stock_model.pkl")
+model = None
+#model = joblib.load("stock_model.pkl")
+
+def get_model():
+    global model
+    if model is None:
+        model = joblib.load("stock_model.pkl")
+    return model
 
 @app.get("/")
 def root():
@@ -52,6 +59,7 @@ def get_stocks():
 @app.get("/predict")
 def predict():
     global model
+    model = get_model()
     # 2️⃣ 看模型基本資訊
     print(model)  # RandomForestClassifier(n_estimators=100, ...)
 
@@ -102,5 +110,8 @@ def predict():
 @app.post("/update_model")
 def update_model():
     global model  # 修改全域變數
-    model = train_model()  # 重新訓練
-    return {"message": "Model updated successfully"}
+    try:
+        model = train_model()  # 重新訓練
+        return {"message": "Model updated successfully"}
+    except Exception as e:
+        return {"message": "Model update failed", "error": str(e)}
