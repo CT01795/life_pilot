@@ -18,10 +18,7 @@ class ServiceStock {
         .from(TableNames.stockDailyPrice)
         .delete()
         .lte('date', cutoffDate);
-    await client
-        .from(TableNames.stockDate)
-        .delete()
-        .lte('date', cutoffDate);
+    await client.from(TableNames.stockDate).delete().lte('date', cutoffDate);
 
     int checkDates = 6;
     if (today.month < 3) {
@@ -290,7 +287,11 @@ class ServiceStock {
 
     if (response.statusCode == 200) {
       // 成功取得 JSON，解析成 List<ModelStock>
-      final List<dynamic> jsonList = jsonDecode(response.body);
+      final tmp = jsonDecode(response.body);
+      if (tmp["stocks"] != null) {
+        return [];
+      }
+      final List<dynamic> jsonList = tmp;
 
       return jsonList.map((json) => ModelStock.fromJson(json)).toList();
     } else {
