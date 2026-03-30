@@ -288,7 +288,7 @@ class ServiceStock {
     if (response.statusCode == 200) {
       // 成功取得 JSON，解析成 List<ModelStock>
       final tmp = jsonDecode(response.body);
-      if (tmp["stocks"] != null) {
+      if (tmp is! List) {
         return [];
       }
       final List<dynamic> jsonList = tmp;
