@@ -45,3 +45,5 @@ def train_model():
     print("模型已儲存: stock_model.pkl")
 
     return model
+
+model = train_model();
