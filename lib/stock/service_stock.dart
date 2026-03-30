@@ -366,6 +366,7 @@ class ServiceStock {
       "type": 'update_stock_technical_for_date',
       "date": date.toIso8601String().substring(0, 10)
     });
+    await http.post(Uri.parse('https://life-pilot.onrender.com/update_model'));
   }
 }
 
