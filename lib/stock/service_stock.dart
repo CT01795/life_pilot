@@ -261,7 +261,7 @@ class ServiceStock {
     };
 
     try {
-      final apiStocks = await fetchStocksFromApi();
+      final apiStocks = await fetchStocksFromApi(latestDate);
 
       for (var s in apiStocks) {
         s.securityName = "FastAPI: ${s.securityName}";
@@ -282,22 +282,36 @@ class ServiceStock {
     return stocks;
   }
 
-  Future<List<ModelStock>> fetchStocksFromApi() async {
-    final response =
-        await http.get(Uri.parse('https://life-pilot.onrender.com/predict'));
+  Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
+    // 檢查同一天是否已經有資料
+    final existing = await client
+        .from('predicted_stocks')
+        .select('data')
+        .eq('date', date.toIso8601String().substring(0, 10))
+        .maybeSingle();
 
-    if (response.statusCode == 200) {
-      // 成功取得 JSON，解析成 List<ModelStock>
-      final tmp = jsonDecode(response.body);
-      if (tmp is! List) {
-        return [];
-      }
-      final List<dynamic> jsonList = tmp;
-
-      return jsonList.map((json) => ModelStock.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load stocks from API');
+    dynamic tmp;
+    if (existing != null) {
+      tmp = existing["data"];
     }
+    else{
+      final response =
+          await http.get(Uri.parse('https://life-pilot.onrender.com/predict'));
+
+      if (response.statusCode == 200) {
+        // 成功取得 JSON，解析成 List<ModelStock>
+        tmp = jsonDecode(response.body);
+        // 插入新資料
+        await client.from('predicted_stocks').insert({
+          'date': date.toIso8601String().substring(0, 10),
+          'data': tmp, // 直接存 JSON
+        });
+      }
+    }
+    if (tmp == null || tmp is! List) {
+      return [];
+    }
+    return tmp.map((json) => ModelStock.fromJson(json)).toList();
   }
 
   List<ModelStock> _rankStocks(List<ModelStock> list) {
@@ -366,24 +380,6 @@ class ServiceStock {
       "type": 'update_stock_technical_for_date',
       "date": date.toIso8601String().substring(0, 10)
     });
-
-    try {
-      final response = await http.post(
-        Uri.parse('https://life-pilot.onrender.com/update_model'),
-        headers: {"Content-Type": "application/json"},
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data["message"] != null) {
-          logger.i(data["message"]); // ✅ 印出 "Model training started in background"
-        }
-      } else {
-        logger.e("Update model failed: ${response.statusCode}");
-      }
-    } catch (e) {
-      logger.e(e);
-    }
   }
 }
 
