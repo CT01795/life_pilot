@@ -285,7 +285,7 @@ class ServiceStock {
   Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
     // 檢查同一天是否已經有資料
     final existing = await client
-        .from('predicted_stocks')
+        .from('stock_predicted')
         .select('data')
         .eq('date', date.toIso8601String().substring(0, 10))
         .maybeSingle();
