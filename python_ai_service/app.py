@@ -5,6 +5,8 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 import json
 from train_model import train_model
+import logging
+import sys
 
 app = FastAPI()
 
@@ -21,6 +23,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],          # 允許 GET, POST, PUT, DELETE 等
     allow_headers=["*"],          # 允許自訂 Header
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 
 # Supabase 資料庫連線字串
@@ -44,10 +52,12 @@ def get_stocks():
 
 # 非同步訓練模型
 def train_and_save_model():
+    logging.info("train_and_save_model started")
     model = train_model()
+    logging.info("train_and_save_model model get")
     # 3️⃣ 查看每棵樹
-    print(f"Number of trees: {len(model.estimators_)}")
-    print(model.estimators_[0])  # 第一棵決策樹的細節
+    logging.info(f"Number of trees: {len(model.estimators_)}")
+    logging.info(model.estimators_[0])  # 第一棵決策樹的細節
 
     # 取得最新日期資料
     query = """
@@ -82,11 +92,12 @@ def train_and_save_model():
             """),
             {"date": str(latest_date), "data": json.dumps(data_json)}
         )
-        print(f"✅ Saved prediction for {latest_date}")
+        logging.info(f"✅ Saved prediction for {latest_date}")
         return data_json
 
 @app.post("/update_model")
 def update_model(background_tasks: BackgroundTasks):
+    logging.info("update_model started")
     background_tasks.add_task(train_and_save_model)
     return {"message": "Model training started in background"}
 

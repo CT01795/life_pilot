@@ -6,12 +6,21 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 #import joblib
 from utils import prepare_stock_data
+import logging
+import sys
 
 # Supabase / Postgres
 DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
 def train_model():
+    logging.info("train_model started")
     # 抓資料
     query = """
     SELECT security_code, date, ma5, ma20, high20, vol5, rsi, pct_change, closing_price
@@ -20,7 +29,7 @@ def train_model():
     ORDER BY security_code, date
     """
     df = pd.read_sql(query, engine)
-    print(df.shape)
+    logging.info(df.shape)
     # 計算 target
     df = prepare_stock_data(df)
 
@@ -38,10 +47,10 @@ def train_model():
 
     # 測試效果
     y_pred = model.predict(X_test)
-    print(classification_report(y_test, y_pred))
+    logging.info(classification_report(y_test, y_pred))
 
     # 儲存模型
     # joblib.dump(model, "stock_model.pkl")
-    # print("模型已儲存: stock_model.pkl")
-
+    # logging.info("模型已儲存: stock_model.pkl")
+    logging.info("train_model ended")
     return model
