@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
 
