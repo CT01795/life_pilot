@@ -366,8 +366,21 @@ class ServiceStock {
       "type": 'update_stock_technical_for_date',
       "date": date.toIso8601String().substring(0, 10)
     });
+
     try {
-      await http.post(Uri.parse('https://life-pilot.onrender.com/update_model'));
+      final response = await http.post(
+        Uri.parse('https://life-pilot.onrender.com/update_model'),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["message"] != null) {
+          logger.i(data["message"]); // ✅ 印出 "Model training started in background"
+        }
+      } else {
+        logger.e("Update model failed: ${response.statusCode}");
+      }
     } catch (e) {
       logger.e(e);
     }
