@@ -87,7 +87,7 @@ def train_and_save_model():
         with engine.begin() as conn:
             conn.execute(
                 text("""
-                    INSERT INTO predicted_stocks (date, data)
+                    INSERT INTO stock_predicted (date, data)
                     VALUES (:date, :data)
                     ON CONFLICT (date) DO UPDATE SET data = EXCLUDED.data
                 """),
@@ -96,7 +96,7 @@ def train_and_save_model():
             logging.info(f"✅ Saved prediction for {latest_date}")
             return data_json
     except Exception as e:
-        logging.error(f"Error during training: {e}")
+        logging.info(f"Error during training: {e}")
     finally:
         logging.info("train_and_save_model ended")
 
@@ -109,10 +109,10 @@ def update_model(background_tasks: BackgroundTasks):
 @app.get("/predict")
 def predict():
     # 先查 DB cache
-    latest_date = pd.read_sql("SELECT MAX(date) as max_date FROM predicted_stocks", engine)['max_date'].values[0]
+    latest_date = pd.read_sql("SELECT MAX(date) as max_date FROM stock_predicted", engine)['max_date'].values[0]
     if latest_date is None:
         return {"stocks": [], "message": "No predictions yet, trigger /update_model first"}
-    df_json = pd.read_sql(text("SELECT data FROM predicted_stocks WHERE date=:date"), engine, params={"date": latest_date})
+    df_json = pd.read_sql(text("SELECT data FROM stock_predicted WHERE date=:date"), engine, params={"date": latest_date})
     if df_json.empty:
         return {"stocks": [], "message": "No predictions found"}
     data_json = json.loads(df_json.iloc[0]['data'])
