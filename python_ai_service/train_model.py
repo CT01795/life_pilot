@@ -33,7 +33,7 @@ def train_model():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=False)
 
     # 訓練 Random Forest
-    model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced")
+    model = RandomForestClassifier(n_estimators=50, random_state=42, class_weight="balanced")
     model.fit(X_train, y_train)
 
     # 測試效果
@@ -41,8 +41,8 @@ def train_model():
     print(classification_report(y_test, y_pred))
 
     # 儲存模型
-    joblib.dump(model, "stock_model.pkl")
-    print("模型已儲存: stock_model.pkl")
+    # joblib.dump(model, "stock_model.pkl")
+    # print("模型已儲存: stock_model.pkl")
 
     return model
 
