@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
-import joblib
+#import joblib
 from utils import prepare_stock_data
 
 # Supabase / Postgres
@@ -45,5 +45,3 @@ def train_model():
     # print("模型已儲存: stock_model.pkl")
 
     return model
-
-model = train_model();
