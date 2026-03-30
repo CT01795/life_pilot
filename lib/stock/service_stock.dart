@@ -230,6 +230,7 @@ class ServiceStock {
     final result = await client
         .from(TableNames.stockDate)
         .select('date')
+        .eq('type', "update_stock_technical_for_date") 
         .order('date', ascending: false)
         .limit(1);
 
