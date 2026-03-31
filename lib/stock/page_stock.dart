@@ -63,12 +63,12 @@ class PageStock extends StatelessWidget {
                             Gaps.w8,
                             Expanded(
                               child: Text(
-                                "${stock.securityName} ${stock.isRising == true ? "***" : stock.prob ?? ""}",
+                                "${stock.securityName} ${stock.isRising == true ? "***" : stock.predPct?.toStringAsFixed(2) ?? ""}",
                                 style: TextStyle(
-                                  color: stock.isRising == true || (stock.prob ?? 0) > 0
+                                  color: stock.isRising == true || (stock.predPct ?? 0) > 0
                                       ? Colors.red
                                       : Colors.black,
-                                  fontWeight: stock.isRising == true || (stock.prob ?? 0) > 0
+                                  fontWeight: stock.isRising == true || (stock.predPct ?? 0) > 0
                                       ? FontWeight.bold
                                       : FontWeight.normal,
                                 ),
@@ -93,7 +93,7 @@ class PageStock extends StatelessWidget {
                           Text(
                             "${stock.pctChange?.toStringAsFixed(2)}%",
                             style: TextStyle(
-                              color: isUp ? Colors.red : Colors.green,
+                              color: isUp || (stock.pctChange ?? 0) > 0? Colors.red : Colors.green,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
