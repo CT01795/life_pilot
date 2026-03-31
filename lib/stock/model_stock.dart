@@ -25,7 +25,7 @@ class ModelStock {
   double? vol5;
   double? rsi;
   bool? isRising;
-  double? prob;
+  double? predPct;
 
   ModelStock(
       {required this.date,
@@ -53,7 +53,7 @@ class ModelStock {
       this.vol5,
       this.rsi,
       this.isRising,
-      this.prob});
+      this.predPct});
 
   Map<String, dynamic> toJson() {
     return {
@@ -81,7 +81,7 @@ class ModelStock {
       'pct_change': pctChange,
       'vol5': vol5,
       'rsi': rsi,
-      //'prob': prob,
+      //'pred_pct': predPct,
     };
   }
 
@@ -115,7 +115,7 @@ class ModelStock {
       pctChange: (json['pct_change'] as num?)?.toDouble(),
       vol5: (json['vol5'] as num?)?.toDouble(),
       rsi: (json['rsi'] as num?)?.toDouble(),
-      prob: (json['prob'] as num?)?.toDouble(),
+      predPct: (json['pred_pct'] as num?)?.toDouble(),
     );
   }
 }

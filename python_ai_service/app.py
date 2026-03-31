@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from sqlalchemy import create_engine, text
 import json
+from utils import prepare_stock_data
 from train_model import train_model
 import logging
 import sys
@@ -64,20 +65,33 @@ def train_and_save_model():
         query = """
             SELECT *
             FROM stock_daily_price
-            WHERE date = (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date')
+            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '22 days'
             AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
             AND vol5 IS NOT NULL AND rsi IS NOT NULL;
         """
         df = pd.read_sql(query, engine)
         if df.empty:
             return {"stocks": [], "message": "No data available"}
-        # 特徵
-        features = ['ma5','ma20','high20','vol5','rsi','pct_change']
+
+        df = prepare_stock_data(df, is_train=False)
+        # ✅ 先做風險過濾（放這裡！！）
+        df = df[df['pct_change'] > -5]   # 避免暴跌股
+        df = df[df['ma_diff'] > 0]       # 避免空頭趨勢
+        df = df[df['traded_number'] > 9000000]
+        latest_date = df['date'].max()
+        df = df[df['date'] == latest_date] # 取最新的一天
+
+        # 👉 特徵
+        features = [
+            'ma5','ma20','high20','vol5','rsi','pct_change',
+            'pct_change_3d','pct_change_5d','ma_diff'
+        ]
+
         X = df[features]
-        df['prob'] = model.predict_proba(X)[:, 1]
-        recommended = df[df['prob'] >= 0.5].sort_values(by="prob", ascending=False).head(50)[[
+        df['pred_pct'] = model.predict(X)
+        recommended = df[df['pred_pct'] >= 3].sort_values(by="pred_pct", ascending=False).head(50)[[
             'date','security_code','security_name','closing_price','traded_number','pe_ratio'
-            ,'ma5','ma20','high20','vol5','rsi','pct_change','prob'
+            ,'ma5','ma20','high20','vol5','rsi','pct_change','pred_pct'
         ]]
 
         recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
