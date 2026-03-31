@@ -220,7 +220,8 @@ class ServiceStock {
         .from(TableNames.stockDailyPrice)
         .select('*')
         .eq('date', date)
-        .gte('traded_number', 900000)
+        .gte('traded_number', 9000000)
+        .gte('closing_price', 10)
         .lt('closing_price', 1000);
 
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
@@ -230,7 +231,7 @@ class ServiceStock {
     final result = await client
         .from(TableNames.stockDate)
         .select('date')
-        .eq('type', "update_stock_technical_for_date") 
+        .eq('type', "update_stock_technical_for_date")
         .order('date', ascending: false)
         .limit(1);
 
@@ -293,8 +294,7 @@ class ServiceStock {
     dynamic tmp;
     if (existing != null) {
       tmp = existing["data"];
-    }
-    else{
+    } else {
       final response =
           await http.get(Uri.parse('https://life-pilot.onrender.com/predict'));
 
@@ -333,7 +333,10 @@ class ServiceStock {
           volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
           pct >= 2 && // 3️⃣ 漲幅 > 2%
           ma5 >= ma20 && // 4️⃣ 均線多頭
-          rsi >= 50;
+          rsi >= 50 &&
+          s.closingPrice >= 10 &&
+          s.tradedNumber != null && s.tradedNumber! >= 9000000;
+
       //&& rsi < 80; //排除假突破與過熱
 
       if (isRising) {

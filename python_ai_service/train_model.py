@@ -36,6 +36,7 @@ def train_model():
     df = df[df['pct_change'] > -5]
     df = df[df['ma_diff'] > 0]
     df = df[df['traded_number'] > 9000000]
+    df = df[df['closing_price'] > 10]
     # 訓練資料
     features = [
         'ma5','ma20','high20','vol5','rsi','pct_change',

@@ -78,6 +78,7 @@ def train_and_save_model():
         df = df[df['pct_change'] > -5]   # 避免暴跌股
         df = df[df['ma_diff'] > 0]       # 避免空頭趨勢
         df = df[df['traded_number'] > 9000000]
+        df = df[df['closing_price'] > 10]
         latest_date = df['date'].max()
         df = df[df['date'] == latest_date] # 取最新的一天
 
