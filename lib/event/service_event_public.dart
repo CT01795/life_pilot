@@ -97,7 +97,8 @@ class ServiceEventPublic {
     DateTime? startDate;
     DateTime? endDate;
     final normalized = normalizeText(text1);
-    final dateMatches = RegExp(r'(?:(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2}))|(?:(\d{1,2})[\/\.\-](\d{1,2}))')
+    final dateMatches = RegExp(
+            r'(?:(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2}))|(?:(\d{1,2})[\/\.\-](\d{1,2}))')
         .allMatches(normalized)
         .toList();
 
@@ -357,6 +358,17 @@ class ServiceEventPublic {
           inputUser: AuthConstants.sysAdminEmail,
         ) ??
         []);
+
+    final response = await client.from(TableNames.recommendedEventsDeleted).select();
+    final deletedList = (response as List)
+        .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
+        .toList()
+        .map((e) {
+      e.startDate = e.startDate?.toLocal();
+      e.endDate = e.endDate?.toLocal();
+      return e;
+    }).toList();
+
     Set<String> dbNameDateSet = historyList
         .map((e) =>
             e.name.replaceAll(" ", "").replaceAll("_", "") +
@@ -367,16 +379,25 @@ class ServiceEventPublic {
         .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!))
         .where((id) => id.isNotEmpty)
         .toSet());
-
+    dbNameDateSet.addAll(deletedList
+        .map((e) =>
+            e.name.replaceAll(" ", "").replaceAll("_", "") +
+            DateFormat('yyyy-MM-dd').format(e.startDate!))
+        .where((name) => name.isNotEmpty)
+        .toSet());
+    dbNameDateSet.addAll(deletedList
+        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!))
+        .where((id) => id.isNotEmpty)
+        .toSet());
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
     String strolltimesWeekendUrl =
         "https://strolltimes.com/weekend.json"; //https://news.strolltimes.com/events/weekend/"; //'https://strolltimes.com/weekend-events/';
     if (await checkEventsUrl(strolltimesWeekendUrl, today)) {
       try {
-        List<EventItem> strolltimesList =
-            await fetchPageEventsStrolltimes(strolltimesWeekendUrl, today, Source.strolltimesWeekend) ??
-                [];
+        List<EventItem> strolltimesList = await fetchPageEventsStrolltimes(
+                strolltimesWeekendUrl, today, Source.strolltimesWeekend) ??
+            [];
 
         //==================================== strolltimesList事件寫入 ====================================
         dbNameDateSet =
@@ -401,7 +422,8 @@ class ServiceEventPublic {
             logger.e('❌ utf8 decode error: $e', stackTrace: s);
             csv = Charset.getByName('big5')!.decode(response.bodyBytes);
           }
-          List<EventItem> strolltimesList = parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
+          List<EventItem> strolltimesList =
+              parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
           //==================================== strolltimesList事件寫入 ====================================
           dbNameDateSet =
               await _insertIfNotExists(strolltimesList, dbNameDateSet);
@@ -434,8 +456,9 @@ class ServiceEventPublic {
 
       if (await checkEventsUrl(cloudCultureUrl, today)) {
         try {
-          List<EventItem> cloudCultureList =
-              await fetchPageEventsCloudCulture(cloudCultureUrl, today, Source.cloudCulture) ?? [];
+          List<EventItem> cloudCultureList = await fetchPageEventsCloudCulture(
+                  cloudCultureUrl, today, Source.cloudCulture) ??
+              [];
 
           //==================================== cloud.culture.tw事件寫入 ====================================
           dbNameDateSet =
@@ -452,8 +475,9 @@ class ServiceEventPublic {
 
     if (await checkEventsUrl(accupassUrl, today)) {
       try {
-        List<EventItem> accupassList =
-            await fetchPageEventsAccupass(accupassUrl, today, Source.accupass) ?? [];
+        List<EventItem> accupassList = await fetchPageEventsAccupass(
+                accupassUrl, today, Source.accupass) ??
+            [];
 
         dbNameDateSet = await _insertIfNotExists(accupassList, dbNameDateSet);
       } catch (ex) {
@@ -466,8 +490,9 @@ class ServiceEventPublic {
 
     if (await checkEventsUrl(paperWindmillUrl, today)) {
       try {
-        List<EventItem> paperWindmillList =
-            await fetchPageEventsPaperWindmill(paperWindmillUrl, today, Source.paperwindmill) ?? [];
+        List<EventItem> paperWindmillList = await fetchPageEventsPaperWindmill(
+                paperWindmillUrl, today, Source.paperwindmill) ??
+            [];
 
         dbNameDateSet =
             await _insertIfNotExists(paperWindmillList, dbNameDateSet);
@@ -503,8 +528,9 @@ class ServiceEventPublic {
 
       if (await checkEventsUrl(taiwanNetUrl, today)) {
         try {
-          List<EventItem> taiwanNetList =
-              await fetchPageEventsTaiwanNet(taiwanNetUrl, today, Source.taiwanNet) ?? [];
+          List<EventItem> taiwanNetList = await fetchPageEventsTaiwanNet(
+                  taiwanNetUrl, today, Source.taiwanNet) ??
+              [];
 
           dbNameDateSet =
               await _insertIfNotExists(taiwanNetList, dbNameDateSet);
@@ -938,7 +964,8 @@ class ServiceEventPublic {
     return events;
   }
 
-  List<EventItem> parseStrolltimesCsv(String csvText, DateTime today, String source) {
+  List<EventItem> parseStrolltimesCsv(
+      String csvText, DateTime today, String source) {
     final rows = const CsvToListConverter(
       eol: '\n',
       shouldParseNumbers: false,

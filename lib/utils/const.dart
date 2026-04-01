@@ -48,6 +48,7 @@ class TableNames {
   static const stockDailyPrice = "stock_daily_price";
   static const stockDate = "stock_date";
   static const recommendedEvents = "recommended_events";
+  static const recommendedEventsDeleted = "recommended_events_deleted";
   static const recommendedEventsFavor = "recommended_events_favor";
   static const recommendedEventUrl = "recommended_event_url";
   static const recommendedAttractions = "recommended_attractions";
