@@ -35,6 +35,10 @@ class ServiceEvent {
             '${EventFields.endDate}.lte.$cutoffDate,'
             'and(${EventFields.endDate}.is.null,${EventFields.startDate}.lte.$cutoffDate)',
           );
+      await client.from(TableNames.recommendedEventsDeleted).delete().or(
+            '${EventFields.endDate}.lte.$cutoffDate,'
+            'and(${EventFields.endDate}.is.null,${EventFields.startDate}.lte.$cutoffDate)',
+          );
       await client.from(TableNames.recommendedEventUrl).delete().lte('start_date',cutoffDate);
     }
     final inputDateS = (dateS ??
@@ -125,6 +129,10 @@ class ServiceEvent {
       required EventItem event,
       required String tableName}) async {
     try {
+      if (tableName == TableNames.recommendedEvents){
+        final Map<String, dynamic> data = event.toJson();
+        await client.from(TableNames.recommendedEventsDeleted).upsert([data]);
+      }
       var query = client.from(tableName).delete().eq(EventFields.id, event.id);
       if (currentAccount != AuthConstants.sysAdminEmail &&
           event.account != null &&

@@ -36,12 +36,12 @@ logging.basicConfig(
 DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
-@app.get("/")
+@app.get("/", summary="根節點", description="根節點，相當於網址 http://127.0.0.1:8000/ 的畫面訊息")
 def root():
     return {"message": "API is running"}
 
-@app.get("/stocks")
-def get_stocks():
+@app.get("/samples", summary="取得範例資料", description="回傳最新一筆資料")
+def get_samples():
     query = """
     SELECT *
     FROM stock_daily_price
@@ -51,7 +51,7 @@ def get_stocks():
     df = pd.read_sql(query, engine)
     return df.to_dict(orient="records")
 
-# 非同步訓練模型
+@app.post("/train_and_save_model", summary="訓練模型", description="訓練模型相關參數")
 def train_and_save_model():
     try:
         logging.info("train_and_save_model started")
@@ -115,13 +115,13 @@ def train_and_save_model():
     finally:
         logging.info("train_and_save_model ended")
 
-@app.post("/update_model")
+@app.post("/update_model", summary="於背景訓練模型", description="於背景訓練模型相關參數")
 def update_model(background_tasks: BackgroundTasks):
     logging.info("update_model started")
     background_tasks.add_task(train_and_save_model)
     return {"message": "Model training started in background"}
 
-@app.get("/predict")
+@app.get("/predict", summary="取得預測資料", description="回傳預測資料")
 def predict():
     # 先查 DB cache
     latest_date = pd.read_sql("SELECT MAX(date) as max_date FROM stock_predicted", engine)['max_date'].values[0]
