@@ -34,12 +34,13 @@ class Source {
   static const twse = "twse";
   static const tpex = "tpex";
   static const strolltimesWeekend = "strolltimes.com/weekend";
-  static const strolltimesEventsData  = "strolltimes.com/events-data";
+  static const strolltimesEventsData = "strolltimes.com/events-data";
   static const cloudCulture = "cloud.culture.tw";
   static const accupass = "www.accupass.com";
   static const paperwindmill = "www.paperwindmill.com.tw";
   static const mocGov = "event.moc.gov.tw";
   static const taiwanNet = "www.taiwan.net.tw";
+  static const ntpc = "ntpc";
 }
 
 // -------------------- Tables --------------------
