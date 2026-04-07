@@ -69,8 +69,8 @@ class ServiceEventPublic {
 
     final newEvents = events.where((e) {
       final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") +
-          DateFormat('yyyy-MM-dd').format(e.startDate!);
-      final tmpId = e.id + DateFormat('yyyy-MM-dd').format(e.startDate!);
+          DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
+      final tmpId = e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
       if (dbNameDateSet.contains(tmpName) || dbNameDateSet.contains(tmpId)) {
         return false;
       }
@@ -359,7 +359,8 @@ class ServiceEventPublic {
         ) ??
         []);
 
-    final response = await client.from(TableNames.recommendedEventsDeleted).select();
+    final response =
+        await client.from(TableNames.recommendedEventsDeleted).select();
     final deletedList = (response as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList()
@@ -372,21 +373,21 @@ class ServiceEventPublic {
     Set<String> dbNameDateSet = historyList
         .map((e) =>
             e.name.replaceAll(" ", "").replaceAll("_", "") +
-            DateFormat('yyyy-MM-dd').format(e.startDate!))
+            DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
         .where((name) => name.isNotEmpty)
         .toSet();
     dbNameDateSet.addAll(historyList
-        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!))
+        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
         .where((id) => id.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList
         .map((e) =>
             e.name.replaceAll(" ", "").replaceAll("_", "") +
-            DateFormat('yyyy-MM-dd').format(e.startDate!))
+            DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
         .where((name) => name.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList
-        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!))
+        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
         .where((id) => id.isNotEmpty)
         .toSet());
     DateTime today = DateUtils.dateOnly(DateTime.now());
@@ -545,6 +546,149 @@ class ServiceEventPublic {
         isBreakTime = pageIndex >= 15;
       }
     }
+    //==================================== 取得新北市政府活動 ====================================
+    String ntpcUrl = "https://www.ntpc.gov.tw/ch/home.jsp";
+
+    if (await checkEventsUrl(ntpcUrl, today)) {
+      try {
+        List<EventItem> ntpcList =
+            await fetchPageEventsNtpc(ntpcUrl, today, Source.ntpc) ?? [];
+
+        dbNameDateSet = await _insertIfNotExists(ntpcList, dbNameDateSet);
+      } catch (ex) {
+        logger.e(ex);
+      }
+    }
+  }
+
+  Future<List<EventItem>?> fetchPageEventsNtpc(
+      String url, DateTime today, String source) async {
+    final uri = Uri.parse(url);
+
+    final res = await http.post(
+      uri,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://www.ntpc.gov.tw/"
+      },
+      body: {
+        "id": "2d113acd09f81b46", // 🔥 活動分類
+        "page": "1",
+        "intpage": "1",
+        "pagesize": "110" // 🔥 一次全抓
+      },
+    );
+
+    if (res.statusCode != 200) return [];
+
+    final document = parse(res.body);
+    final items = document.querySelectorAll(".article");
+
+    final uuid = const Uuid();
+    List<EventItem> events = [];
+
+    for (var item in items) {
+      final aTag = item.querySelector("a");
+      if (aTag == null) continue;
+
+      // 🔗 URL
+      String href = aTag.attributes['href'] ?? "";
+      if (href.isNotEmpty && !href.startsWith("http")) {
+        href = url.replaceAll("home.jsp", href);
+      }
+
+      // 📌 名稱
+      String name = aTag.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+      // 🏢 主辦
+      String unit = item.querySelector(".unit")?.text.trim() ?? "";
+
+      // 📅 活動日期
+      String dateText = item.querySelector(".ac_date")?.text.trim() ?? "";
+
+      DateTime? startDate;
+      DateTime? endDate;
+
+      // 抓所有 yyyy-mm-dd
+      final matches =
+          RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').allMatches(dateText).toList();
+
+      if (matches.isNotEmpty) {
+        // 👉 第一個 = startDate
+        final m1 = matches[0];
+        startDate = DateTime(
+          int.parse(m1.group(1)!),
+          int.parse(m1.group(2)!),
+          int.parse(m1.group(3)!),
+        );
+
+        // 👉 第二個（如果有）= endDate
+        if (matches.length > 1) {
+          final m2 = matches[1];
+          endDate = DateTime(
+            int.parse(m2.group(1)!),
+            int.parse(m2.group(2)!),
+            int.parse(m2.group(3)!),
+          );
+        } else {
+          // 沒有結束日 → 視為單日活動
+          endDate = startDate;
+        }
+      }
+
+      if (endDate == null || endDate.isBefore(today)) {
+        continue;
+      }
+      if (!(name.contains("表演") ||
+          name.contains("DIY") ||
+          name.contains("影友會") ||
+          name.contains("電影") ||
+          name.contains("系列活動"))) {
+        continue;
+      }
+      Map<String, String> tmp = extractLocation(name);
+      events.add(EventItem(
+        id: uuid.v4(),
+        name: tmp["name"]!,
+        masterUrl: href,
+        startDate: startDate,
+        endDate: endDate,
+        city: "新北市",
+        location: tmp["location"]!,
+        unit: unit,
+        account: AuthConstants.sysAdminEmail,
+        source: source,
+      ));
+    }
+
+    return events;
+  }
+
+  Map<String, String> extractLocation(String title) {
+    // 1. 嘗試用正則抓【】內文字
+    final bracketReg = RegExp(r'【([^】]+)】');
+    final bracketMatch = bracketReg.firstMatch(title);
+    if (bracketMatch != null) {
+      String location = bracketMatch.group(1)!;
+      location = location.contains(" ") ? location.split(" ")[1] : location;
+      final name = title.substring(bracketMatch.end).trim().split("活動起迄")[0];
+      return {'location': location, 'name': name.isEmpty ? title : name};
+    }
+
+    // 2. 沒有【】時，嘗試找「分館」「閱覽室」「圖書館」關鍵字前後文字，簡單抓到整個詞語
+    // 用一個比較寬鬆的正則，往前找連續中文字、英文、空白、標點，直到關鍵字結束
+    final keywordReg = RegExp(r'([\u4e00-\u9fff\w\s\-]+(?:分館|閱覽室|圖書館))');
+    final keywordMatch = keywordReg.firstMatch(title);
+
+    if (keywordMatch != null) {
+      String location = keywordMatch.group(1)!.trim();
+      location = location.contains(" ") ? location.split(" ")[1] : location;
+      final name = title.substring(keywordMatch.end).trim().split("活動起迄")[0];
+      return {'location': location, 'name': name.isEmpty ? title : name};
+    }
+
+    // 都沒有就回空字串
+    return {'location': '', 'name': title.trim().split("活動起迄")[0]};
   }
 
   //==================================== 取得外部資源事件 文化局 ====================================
