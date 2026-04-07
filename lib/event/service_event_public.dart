@@ -69,8 +69,10 @@ class ServiceEventPublic {
 
     final newEvents = events.where((e) {
       final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") +
-          DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
-      final tmpId = e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
+          DateFormat('yyyy-MM-dd').format(e.startDate!) +
+          e.location;
+      final tmpId =
+          e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
       if (dbNameDateSet.contains(tmpName) || dbNameDateSet.contains(tmpId)) {
         return false;
       }
@@ -373,21 +375,25 @@ class ServiceEventPublic {
     Set<String> dbNameDateSet = historyList
         .map((e) =>
             e.name.replaceAll(" ", "").replaceAll("_", "") +
-            DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
+            DateFormat('yyyy-MM-dd').format(e.startDate!) +
+            e.location)
         .where((name) => name.isNotEmpty)
         .toSet();
     dbNameDateSet.addAll(historyList
-        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
+        .map((e) =>
+            e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
         .where((id) => id.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList
         .map((e) =>
             e.name.replaceAll(" ", "").replaceAll("_", "") +
-            DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
+            DateFormat('yyyy-MM-dd').format(e.startDate!) +
+            e.location)
         .where((name) => name.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList
-        .map((e) => e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
+        .map((e) =>
+            e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
         .where((id) => id.isNotEmpty)
         .toSet());
     DateTime today = DateUtils.dateOnly(DateTime.now());
@@ -559,6 +565,84 @@ class ServiceEventPublic {
         logger.e(ex);
       }
     }
+
+    //==================================== 取得台北市文化快遞資訊 ====================================
+    String taipeiOpenDataUrl =
+        "https://cultureexpress.taipei/OpenData/Event/C000003";
+
+    if (await checkEventsUrl(taipeiOpenDataUrl, today)) {
+      try {
+        List<EventItem> taipeiOpenDataList =
+            await fetchPageEventsTaipeiOpenData(
+                    taipeiOpenDataUrl, today, Source.taipeiOpenData) ??
+                [];
+
+        dbNameDateSet =
+            await _insertIfNotExists(taipeiOpenDataList, dbNameDateSet);
+      } catch (ex) {
+        logger.e(ex);
+      }
+    }
+  }
+
+  Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
+      String url, DateTime today, String source) async {
+    final uri = Uri.parse(url);
+    final res = await http.get(uri);
+
+    if (res.statusCode != 200) return [];
+
+    final List data = json.decode(utf8.decode(res.bodyBytes));
+
+    final uuid = const Uuid();
+    List<EventItem> events = [];
+
+    for (var e in data) {
+      final category = e["Category"] ?? "";
+
+      // 🔥 只抓要的類型
+      if (!(category == "親子活動" || category == "表演藝術" || category == "城市生活圈")) {
+        continue;
+      }
+
+      DateTime? startDate = DateTime.tryParse(e["StartDate"] ?? "");
+      DateTime? endDate = DateTime.tryParse(e["EndDate"] ?? "") ?? startDate;
+
+      if (startDate == null) continue;
+      // 👉 過濾過期活動
+      if (endDate != null && endDate.isBefore(today)) {
+        continue;
+      }
+
+      final startTime =
+          TimeOfDay(hour: startDate.hour, minute: startDate.minute);
+      TimeOfDay? endTime;
+      if (endDate != null && startDate != endDate) {
+        endTime = TimeOfDay(hour: endDate.hour, minute: endDate.minute);
+      }
+
+      final city = e["City"] ?? "";
+      final location = (e["Address"] ?? "") + (e["Venue"] ?? "");
+
+      events.add(EventItem(
+        id: uuid.v4(),
+        name: e["Caption"] ?? "",
+        masterUrl: e["WebsiteLink"] ?? "",
+        startDate: startDate,
+        startTime: startTime,
+        endDate: endDate,
+        endTime: endTime,
+        city: city,
+        location: location,
+        unit: e["Company"] ?? "",
+        description: (e["Introduction"] ?? "") + "\n",
+        source: source,
+        account: AuthConstants.sysAdminEmail,
+        type: category, // 👉 直接用 Category
+      ));
+    }
+
+    return events;
   }
 
   Future<List<EventItem>?> fetchPageEventsNtpc(

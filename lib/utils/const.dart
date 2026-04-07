@@ -41,6 +41,7 @@ class Source {
   static const mocGov = "event.moc.gov.tw";
   static const taiwanNet = "www.taiwan.net.tw";
   static const ntpc = "ntpc";
+  static const taipeiOpenData = "cultureexpress.taipei/OpenData/Event/C000003";
 }
 
 // -------------------- Tables --------------------
