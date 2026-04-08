@@ -7,7 +7,7 @@ class WordItem extends PositionComponent with CollisionCallbacks {
   final String word;
   final Function(String) onCollect;
   final VoidCallback? onHitByBullet;
-  double y = 700;
+  double yy = 700;
 
   WordItem({
     required this.word,
@@ -61,8 +61,8 @@ class WordItem extends PositionComponent with CollisionCallbacks {
     position.y += 20 * dt;
 
     // ⭐ 碰到地板就停住
-    if (position.y >= y) {
-      position.y = y;
+    if (position.y >= yy) {
+      position.y = yy;
     }
   }
 

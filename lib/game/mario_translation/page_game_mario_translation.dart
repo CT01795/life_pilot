@@ -18,7 +18,7 @@ import 'package:life_pilot/utils/const.dart';
 class PageGameMarioTranslation extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {
   List<WordItem> optionItems = [];
-  double y = 700;
+  double yy = 700;
   late Player player;
   late ControllerGameMarioTranslation controller;
   final BuildContext context;
@@ -52,13 +52,13 @@ class PageGameMarioTranslation extends FlameGame
 
     // 地板
     add(RectangleComponent(
-      position: Vector2(0, y+50),
+      position: Vector2(0, yy+50),
       size: Vector2(worldWidth, 50),
       paint: Paint()..color = const Color(0xFF8B4513),
     ));
 
     // 玩家
-    player = Player(position: Vector2(100, y), size: Vector2(60, 60));
+    player = Player(position: Vector2(100, yy), size: Vector2(50, 50));
     add(player);
 
     // 題目 HUD
@@ -87,7 +87,7 @@ class PageGameMarioTranslation extends FlameGame
 
   void spawnEnemy() {
     add(Enemy(
-      position: Vector2(600, y),
+      position: Vector2(600, yy),
       size: Vector2(50, 50),
       onStomp: () {
         spawnOptions();
@@ -111,7 +111,7 @@ class PageGameMarioTranslation extends FlameGame
           optionItems.remove(item); // 刪除列表
           item.removeFromParent(); // 刪除畫面
         },
-        position: player.position + Vector2(60, -100 - i * 100),
+        position: player.position + Vector2(120, -100 - i * 100),
         onCollect: (word) async {
           controller.answer(word);
 
