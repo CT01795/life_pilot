@@ -2,10 +2,8 @@ import 'dart:convert';
 // ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'dart:ui_web';
-
 import 'package:flutter/material.dart';
 // ignore: deprecated_member_use
-import 'package:js/js_util.dart' as js_util;
 import 'package:life_pilot/game/steam_scratch_maze/controller_game_steam_scratch_maze.dart';
 import 'package:life_pilot/game/steam_scratch_maze/blockly_parser.dart';
 
@@ -68,9 +66,9 @@ class PageGameSteamScratchMazeBlocklyEditorState
         } else {
           // 使用 dart:js_util 安全取得 JS Object 的 key
           msg = {};
-          final keys = js_util.getProperty(data, 'keys') ?? (data as Map).keys;
+          final keys = (data as Map).keys;
           for (var key in keys) {
-            msg[key.toString()] = js_util.getProperty(data, key);
+            msg[key.toString()] = data[key];
           }
         }
 

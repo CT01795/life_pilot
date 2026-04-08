@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:charset/charset.dart';
@@ -144,7 +146,7 @@ class ServiceEventPublic {
     }
 
     // ========= 時間 =========
-    final timeMatches =
+    final timeMatches = // ignore: 
         RegExp(r'(\d{1,2}):(\d{2})').allMatches(normalized).toList();
 
     TimeOfDay? startTime;

@@ -266,6 +266,7 @@ class ControllerEvent extends ChangeNotifier {
 
     // 如果最後一個字元是空白 → 產生 tag
     final keywordList = keywords
+        // ignore: deprecated_member_use
         .split(RegExp(r'[,，\s]+'))
         .map((s) => s
             .trim()) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔

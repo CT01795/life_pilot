@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 class NLP {
   // ① 加 / 扣 + 數字（阿拉伯 or 中文）
   static final regex = RegExp(
