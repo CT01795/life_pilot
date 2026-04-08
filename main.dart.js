@@ -152505,7 +152505,7 @@ q.kj(B.bKT(null,null,null,null,o,null,j,null,null,p))
 j=new B.bh(new Float32Array(2))
 j.ek(100,700)
 p=new B.bh(new Float32Array(2))
-p.ek(60,60)
+p.ek(50,50)
 o=new Float32Array(2)
 n=A.fE.vx()
 l=B.rK()
@@ -152558,7 +152558,7 @@ i=a.dI
 i===$&&B.b()
 h=new Float32Array(2)
 h[1]=-100-l*100
-h[0]=60
+h[0]=120
 g=new Float32Array(2)
 f=new B.bh(g)
 e=i.ax.d.a
