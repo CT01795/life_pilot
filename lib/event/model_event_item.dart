@@ -485,6 +485,7 @@ class EventViewModel {
     ].where((t) => t.isNotEmpty).toList();
 
     final tags = tagsRawData
+        // ignore: deprecated_member_use
         .expand((t) => t.split(RegExp(r'[\s,，]')))
         .map((t) => t.trim())
         .where((t) => t.isNotEmpty)

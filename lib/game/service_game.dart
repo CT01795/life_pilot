@@ -1,4 +1,5 @@
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
+import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
@@ -178,6 +179,28 @@ class ServiceGame {
     final data = result[0];
 
     return ModelGameTranslation(
+        questionId: data['id'],
+        question: data['question'],
+        correctAnswer: data['correct_answer'],
+        options: [
+          data['correct_answer'],
+          data['wrong1'],
+          data['wrong2'],
+        ]..shuffle());
+  }
+
+  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(String userName) async {
+    final result = await client.rpc("get_translation_with_options", params: {
+      'user_name': userName,
+    });
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+
+    return ModelGameMarioTranslation(
         questionId: data['id'],
         question: data['question'],
         correctAnswer: data['correct_answer'],

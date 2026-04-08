@@ -4,27 +4,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:life_pilot/game/translation/model_game_translation.dart';
+import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 
-class ControllerGameTranslation extends ChangeNotifier {
+class ControllerGameMarioTranslation extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
 
-  ModelGameTranslation? currentQuestion;
+  ModelGameMarioTranslation? currentQuestion;
   int score = 0; // +1 / -1
   int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
-  Timer? _nextQuestionTimer; // Timer 控制自動下一題
   int answeredCount = 0;
   int maxQuestions = 10;
   final FlutterTts flutterTts = FlutterTts();
 
-  ControllerGameTranslation({
+  ControllerGameMarioTranslation({
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
@@ -50,8 +49,7 @@ class ControllerGameTranslation extends ChangeNotifier {
 
 
   Future<void> loadNextQuestion() async {
-    _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
-    if (score >= 100) {
+    if (score >= 100 || score < -20) {
       isFinished = true;
       await _saveScore();
       notifyListeners();
@@ -63,7 +61,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchTranslationQuestion(userName);
+    currentQuestion = await service.fetchMarioTranslationQuestion(userName);
 
     isLoading = false;
     notifyListeners();
@@ -83,22 +81,14 @@ class ControllerGameTranslation extends ChangeNotifier {
       || (currentQuestion!.question == "薯條" && (answer == "fries" || answer == "chips" || answer.replaceAll(" ", '').toLowerCase() == "frenchfries"))
       || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"))
       || (currentQuestion!.question == "miss" && (answer == "錯過或想念" || answer == "未婚的女人"));
-    int seconds = 1;
     if (isRightAnswer) {
       score += 4;
-      seconds = 1;
     } else {
       score -= 4;
       scoreMinus -= 4;
-      seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
     notifyListeners();
-
-    // 用 Timer 2 秒後跳下一題
-    _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
-      loadNextQuestion();
-    });
 
     if (answeredCount >= maxQuestions) {
       isFinished = true;
@@ -153,7 +143,6 @@ class ControllerGameTranslation extends ChangeNotifier {
 
   @override
   void dispose() {
-    _nextQuestionTimer?.cancel();
     flutterTts.stop();
     super.dispose();
   }

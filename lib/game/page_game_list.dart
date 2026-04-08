@@ -1,7 +1,9 @@
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
+import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/model_game_user.dart';
@@ -197,6 +199,79 @@ class _PageGameListState extends State<PageGameList> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => PageGameTranslation(gameId: game.id),
+                        ),
+                      );
+                      if (result == true) {
+                        await _loadUserProgress();
+                      }
+                    } else if (game.gameName.toLowerCase() == "mario translation".toLowerCase()) {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) {
+                            // 先建立遊戲實例
+                            final game1 = PageGameMarioTranslation(
+                              context: context,
+                              gameId: game.id,
+                              gameLevel: game.level,
+                            );
+
+                            return Scaffold(
+                              body: Stack(
+                                children: [
+                                  GameWidget(game: game1), // 先加入遊戲畫面
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 20,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center, // 水平置中
+                                      children: [
+                                        GestureDetector(
+                                          onTapDown: (_) => game1.player.moveLeft(true),
+                                          onTapUp: (_) => game1.player.moveLeft(false),
+                                          child: Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.blue.withOpacity(0.5),
+                                            child: Icon(Icons.arrow_left),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTapDown: (_) => game1.player.moveRight(true),
+                                          onTapUp: (_) => game1.player.moveRight(false),
+                                          child: Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.green.withOpacity(0.5),
+                                            child: Icon(Icons.arrow_right),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => game1.player.jump(),
+                                          child: Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.yellow.withOpacity(0.5),
+                                            child: Icon(Icons.arrow_upward),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => game1.player.shoot(),
+                                          child: Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.red.withOpacity(0.5),
+                                            child: Icon(Icons.circle),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       );
                       if (result == true) {
