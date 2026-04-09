@@ -6,7 +6,7 @@ import 'package:life_pilot/game/mario_translation/bullet.dart';
 // ignore: deprecated_member_use
 class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
   Vector2 velocity = Vector2.zero();
-  double yy = 700;
+  double yy = 600;
   final double speed = 200;
   final double jumpSpeed = -400;
   bool isOnGround = true;

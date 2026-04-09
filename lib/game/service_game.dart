@@ -62,9 +62,10 @@ class ServiceGame {
   }
 
   //------------------------- Grammar -------------------------
-  Future<ModelGameGrammarQuestion> fetchGrammarQuestion(String userName) async {
+  Future<ModelGameGrammarQuestion> fetchGrammarQuestion(String userName, int level) async {
     final result = await client.rpc("get_grammar_question", params: {
       'user_name': userName,
+      'p_level': level,
     });
 
     if (result == null || result.isEmpty) {
@@ -97,9 +98,10 @@ class ServiceGame {
   }
 
   //------------------------- Sentence -------------------------
-  Future<ModelGameSentence> fetchSentenceQuestion(String userName) async {
+  Future<ModelGameSentence> fetchSentenceQuestion(String userName, int level) async {
     final result = await client.rpc("get_sentence_question", params: {
       'user_name': userName,
+      'p_level': level
     });
 
     if (result == null || result.isEmpty) {
@@ -132,9 +134,10 @@ class ServiceGame {
   }
 
   //------------------------- Speaking -------------------------
-  Future<ModelGameSpeaking> fetchSpeakingQuestion(String userName) async {
+  Future<ModelGameSpeaking> fetchSpeakingQuestion(String userName, int level) async {
     final result = await client.rpc("get_speaking_question", params: {
       'user_name': userName,
+      'p_level': level
     });
 
     if (result == null || result.isEmpty) {
@@ -167,9 +170,10 @@ class ServiceGame {
   }
 
   //------------------------- Translation -------------------------
-  Future<ModelGameTranslation> fetchTranslationQuestion(String userName) async {
+  Future<ModelGameTranslation> fetchTranslationQuestion(String userName, int level) async {
     final result = await client.rpc("get_translation_with_options", params: {
       'user_name': userName,
+      'p_level': level
     });
 
     if (result == null || result.isEmpty) {
@@ -189,9 +193,10 @@ class ServiceGame {
         ]..shuffle());
   }
 
-  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(String userName) async {
+  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(String userName, int level) async {
     final result = await client.rpc("get_translation_with_options", params: {
       'user_name': userName,
+      'p_level': level
     });
 
     if (result == null || result.isEmpty) {
@@ -228,9 +233,10 @@ class ServiceGame {
   }
 
   //------------------------- Word Search -------------------------
-  Future<ModelGameWordSearch> fetchWordSearchQuestion(String userName) async {
+  Future<ModelGameWordSearch> fetchWordSearchQuestion(String userName, int level) async {
     final result = await client.rpc("get_next_word_question", params: {
       'user_name': userName,
+      'p_level': level
     });
 
     if (result == null || result.isEmpty) {

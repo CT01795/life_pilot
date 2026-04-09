@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
@@ -18,7 +16,7 @@ import 'package:life_pilot/utils/const.dart';
 class PageGameMarioTranslation extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {
   List<WordItem> optionItems = [];
-  double yy = 700;
+  double yy = 600;
   late Player player;
   late ControllerGameMarioTranslation controller;
   final BuildContext context;
@@ -44,9 +42,10 @@ class PageGameMarioTranslation extends FlameGame
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
+      gameLevel: gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
-      maxQuestions: min(gameLevel, 10),
+      maxQuestions: gameLevel == -1 ? 10 : 999,
     );
     await controller.loadNextQuestion();
 

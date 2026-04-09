@@ -11,6 +11,7 @@ class ControllerGameTranslation extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final int gameLevel;
 
   ModelGameTranslation? currentQuestion;
   int score = 0; // +1 / -1
@@ -28,6 +29,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.gameLevel, 
     required this.maxQuestions
   });
 
@@ -63,7 +65,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchTranslationQuestion(userName);
+    currentQuestion = await service.fetchTranslationQuestion(userName, gameLevel);
 
     isLoading = false;
     notifyListeners();

@@ -9,6 +9,7 @@ class ControllerGameSentence extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final int gameLevel;
 
   ModelGameSentence? currentQuestion;
   bool isFinished = false;
@@ -27,6 +28,7 @@ class ControllerGameSentence extends ChangeNotifier {
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.gameLevel,
   });
 
   Future<void> loadNextQuestion() async {
@@ -44,7 +46,7 @@ class ControllerGameSentence extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchSentenceQuestion(userName);
+    currentQuestion = await service.fetchSentenceQuestion(userName, gameLevel);
     // 🔹 初始化答案槽 & 選項
     if (currentQuestion != null) {
       answerSlots = List.filled(currentQuestion!.options.length, null);

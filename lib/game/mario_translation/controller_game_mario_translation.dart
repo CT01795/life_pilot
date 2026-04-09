@@ -11,6 +11,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final int gameLevel;
 
   ModelGameMarioTranslation? currentQuestion;
   int score = 0; // +1 / -1
@@ -27,6 +28,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.gameLevel,
     required this.maxQuestions
   });
 
@@ -61,7 +63,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchMarioTranslationQuestion(userName);
+    currentQuestion = await service.fetchMarioTranslationQuestion(userName, gameLevel);
 
     isLoading = false;
     notifyListeners();

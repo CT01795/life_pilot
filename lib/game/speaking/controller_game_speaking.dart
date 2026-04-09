@@ -8,6 +8,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final int gameLevel;
 
   ModelGameSpeaking? currentQuestion;
   int score = 0; // +1 / -1
@@ -24,6 +25,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.gameLevel,
   });
 
   Future<void> loadNextQuestion() async {
@@ -38,7 +40,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    currentQuestion = await service.fetchSpeakingQuestion(userName);
+    currentQuestion = await service.fetchSpeakingQuestion(userName, gameLevel);
 
     isLoading = false;
     notifyListeners();

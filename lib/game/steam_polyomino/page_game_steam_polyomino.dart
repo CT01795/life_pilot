@@ -118,7 +118,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                     MaterialPageRoute(
                       builder: (context) => PageGameGrammar(
                         gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
+                        gameLevel: -1, //widget.gameLevel,
                       ),
                     ),
                   )
@@ -128,7 +128,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                         MaterialPageRoute(
                           builder: (context) => PageGameSpeaking(
                             gameId: widget.gameId,
-                            gameLevel: widget.gameLevel,
+                            gameLevel: -1, //widget.gameLevel,
                           ),
                         ),
                       )
@@ -138,7 +138,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                             MaterialPageRoute(
                               builder: (context) => PageGameTranslation(
                                 gameId: widget.gameId,
-                                gameLevel: widget.gameLevel,
+                                gameLevel: -1, //widget.gameLevel,
                               ),
                             ),
                           )
@@ -148,7 +148,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                                 MaterialPageRoute(
                                   builder: (context) => PageGameSentence(
                                     gameId: widget.gameId,
-                                    gameLevel: widget.gameLevel,
+                                    gameLevel: -1, //widget.gameLevel,
                                   ),
                                 ),
                               )
@@ -157,7 +157,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                                 MaterialPageRoute(
                                   builder: (context) => PageGameWordSearch(
                                     gameId: widget.gameId,
-                                    gameLevel: widget.gameLevel,
+                                    gameLevel: -1, //widget.gameLevel,
                                   ),
                                 ),
                               );

@@ -15,8 +15,8 @@ import 'package:provider/provider.dart';
 // ignore: must_be_immutable
 class PageGameSentence extends StatefulWidget {
   final String gameId;
-  int? gameLevel;
-  PageGameSentence({super.key, required this.gameId, this.gameLevel});
+  int gameLevel;
+  PageGameSentence({super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGameSentence> createState() => _PageGameSentenceState();
@@ -35,9 +35,10 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     super.initState();
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 10;
+    maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameSentence(
       gameId: widget.gameId,
+      gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
     );
@@ -49,7 +50,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     controller.checkAnswer();
     answeredCount++;
 
-    if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
+    if (answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));

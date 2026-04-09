@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -198,7 +200,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameTranslation(gameId: game.id),
+                          builder: (_) => PageGameTranslation(gameId: game.id, gameLevel: game.level,),
                         ),
                       );
                       if (result == true) {
@@ -321,7 +323,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameSentence(gameId: game.id),
+                          builder: (_) => PageGameSentence(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {
@@ -331,7 +333,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameSpeaking(gameId: game.id),
+                          builder: (_) => PageGameSpeaking(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {
@@ -351,7 +353,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameGrammar(gameId: game.id),
+                          builder: (_) => PageGameGrammar(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {
@@ -361,7 +363,7 @@ class _PageGameListState extends State<PageGameList> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PageGameWordSearch(gameId: game.id),
+                          builder: (_) => PageGameWordSearch(gameId: game.id, gameLevel: game.level),
                         ),
                       );
                       if (result == true) {

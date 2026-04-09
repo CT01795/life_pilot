@@ -403,7 +403,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         MaterialPageRoute(
                           builder: (context) => PageGameGrammar(
                             gameId: widget.gameId,
-                            gameLevel: widget.gameLevel,
+                            gameLevel: -1, //widget.gameLevel,
                           ),
                         ),
                       )
@@ -413,7 +413,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                             MaterialPageRoute(
                               builder: (context) => PageGameSpeaking(
                                 gameId: widget.gameId,
-                                gameLevel: widget.gameLevel,
+                                gameLevel: -1, //widget.gameLevel,
                               ),
                             ),
                           )
@@ -423,7 +423,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                                 MaterialPageRoute(
                                   builder: (context) => PageGameTranslation(
                                     gameId: widget.gameId,
-                                    gameLevel: widget.gameLevel,
+                                    gameLevel: -1, //widget.gameLevel,
                                   ),
                                 ),
                               )
@@ -433,7 +433,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                                     MaterialPageRoute(
                                       builder: (context) => PageGameSentence(
                                         gameId: widget.gameId,
-                                        gameLevel: widget.gameLevel,
+                                        gameLevel: -1, //widget.gameLevel,
                                       ),
                                     ),
                                   )
@@ -442,7 +442,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                                     MaterialPageRoute(
                                       builder: (context) => PageGameWordSearch(
                                         gameId: widget.gameId,
-                                        gameLevel: widget.gameLevel,
+                                        gameLevel: -1, //widget.gameLevel,
                                       ),
                                     ),
                                   );
