@@ -49,7 +49,7 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     final textPaint = TextPaint(
       style: const TextStyle(
         color: Colors.black,
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: FontWeight.bold,
       ),
     );
