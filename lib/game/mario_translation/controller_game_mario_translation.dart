@@ -53,7 +53,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
   Future<void> loadNextQuestion() async {
     if (score >= 100 || score < -20) {
       isFinished = true;
-      await _saveScore();
+      await _saveScore(score >= 100);
       notifyListeners();
       return;
     }
@@ -103,11 +103,12 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
     );
   }
 
-  Future<void> _saveScore() async {
+  Future<void> _saveScore(bool isPass) async {
     await service.saveUserGameScore(
       newUserName: userName,
       newScore: (score + scoreMinus).toDouble(),
       newGameId: gameId, // 使用傳入的 gameId
+      newIsPass: isPass,
     );
   }
 
