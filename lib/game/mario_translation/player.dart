@@ -5,7 +5,7 @@ import 'package:life_pilot/game/mario_translation/bullet.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 
 // ignore: deprecated_member_use
-class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
+class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMarioTranslation> {
   Vector2 velocity = Vector2.zero();
   double yy = 600;
   final double speed = 200;
@@ -68,9 +68,7 @@ class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
       isOnGround = true;
     }
     // ⭐ 限制左右邊界
-    final game = gameRef as PageGameMarioTranslation;
-
-    position.x = position.x.clamp(0, game.worldWidth - size.x);
+    position.x = position.x.clamp(0, gameRef.worldWidth - size.x);
   }
 
   @override

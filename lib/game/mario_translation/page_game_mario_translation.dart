@@ -25,8 +25,8 @@ class PageGameMarioTranslation extends FlameGame
   late TextComponent questionText;
 
   // 世界大小
-  final double worldWidth = 2000;
-  final double worldHeight = 500;
+  double worldWidth = 2000;
+  double worldHeight = 500;
 
   PageGameMarioTranslation({
     required this.context,
@@ -39,6 +39,8 @@ class PageGameMarioTranslation extends FlameGame
 
   @override
   Future<void> onLoad() async {
+    worldWidth = camera.viewport.size.x; //2000;
+    worldHeight = camera.viewport.size.y;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
@@ -51,7 +53,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 地板
     add(RectangleComponent(
-      position: Vector2(0, yy+50),
+      position: Vector2(0, yy + 50),
       size: Vector2(worldWidth, 50),
       paint: Paint()..color = const Color(0xFF8B4513),
     ));
@@ -96,6 +98,10 @@ class PageGameMarioTranslation extends FlameGame
 
   bool isAnswering = false;
 
+  Future<void> shoot() async {
+    player.shoot();
+  }
+
   void spawnOptions() {
     if (isAnswering) return;
     final q = controller.currentQuestion;
@@ -106,11 +112,19 @@ class PageGameMarioTranslation extends FlameGame
       late final WordItem item;
       item = WordItem(
         word: q.options[i],
-        onHitByBullet: () {
+        onHitByBullet: () async {
           optionItems.remove(item); // 刪除列表
           item.removeFromParent(); // 刪除畫面
+          if (optionItems.isEmpty) {
+            isAnswering = false;
+            await controller.loadNextQuestion();
+            questionText.text =
+                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}";
+            spawnEnemy();
+          }
         },
-        position: Vector2(worldWidth/2, -100 - i * 100),
+        position: Vector2(
+            camera.viewport.size.x / 2, player.position.y - 100 - i * 120),
         onCollect: (word) async {
           controller.answer(word);
 
@@ -141,7 +155,7 @@ class PageGameMarioTranslation extends FlameGame
             }
             questionText.text = "翻譯：${q.question}\n分數：${controller.score}";
           }
-          if(controller.score >= 100 || controller.score < -20){
+          if (controller.score >= 100 || controller.score < -20) {
             Future.microtask(() => Navigator.pop(context, true));
           }
         },
