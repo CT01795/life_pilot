@@ -30,7 +30,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
       textRenderer: TextPaint(
         style: TextStyle(
           fontSize: 32,
-          color: text.contains("分數") ? Colors.red : Colors.blue,
+          color: text.contains("分數") ? Colors.red : Colors.black,
           fontWeight: FontWeight.bold,
         ),
       ),

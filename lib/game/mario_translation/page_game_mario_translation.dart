@@ -65,9 +65,9 @@ class PageGameMarioTranslation extends FlameGame
     player = Player(position: Vector2(100, yy), size: Vector2(50, 50));
     add(player);
 
-    // 題目 HUD
-    questionText = QuestionDisplay(
-      text: controller.currentQuestion?.question ?? "載入中...",
+    // 分數 HUD
+    scoreText = QuestionDisplay(
+      text: "分數：${controller.score}",
       controller: controller,
       positionX: 40,
       positionY: 100,
@@ -76,11 +76,11 @@ class PageGameMarioTranslation extends FlameGame
     )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
-    add(questionText);
+    add(scoreText);
 
     // 題目 HUD
-    scoreText = QuestionDisplay(
-      text: "分數：${controller.score}",
+    questionText = QuestionDisplay(
+      text: controller.currentQuestion?.question ?? "載入中...",
       controller: controller,
       positionX: 40,
       positionY: 200,
@@ -89,7 +89,7 @@ class PageGameMarioTranslation extends FlameGame
     )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
-    add(scoreText);
+    add(questionText);
 
     // 敵人
     spawnEnemy();
