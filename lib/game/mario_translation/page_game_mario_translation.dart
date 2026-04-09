@@ -1,8 +1,10 @@
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/mario_translation/question_display.dart';
 import 'package:life_pilot/game/mario_translation/word_item.dart';
 import 'package:provider/provider.dart';
 
@@ -14,7 +16,7 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/const.dart';
 
 class PageGameMarioTranslation extends FlameGame
-    with HasCollisionDetection, HasKeyboardHandlerComponents {
+    with HasCollisionDetection, HasKeyboardHandlerComponents, TapCallbacks {
   List<WordItem> optionItems = [];
   double yy = 600;
   late Player player;
@@ -22,7 +24,7 @@ class PageGameMarioTranslation extends FlameGame
   final BuildContext context;
   final String gameId;
   final int gameLevel;
-  late TextComponent questionText;
+  late QuestionDisplay questionText;
 
   // 世界大小
   double worldWidth = 2000;
@@ -63,21 +65,10 @@ class PageGameMarioTranslation extends FlameGame
     add(player);
 
     // 題目 HUD
-    questionText = TextComponent(
-      text: controller.currentQuestion != null
-          ? "翻譯：${controller.currentQuestion!.question}"
-          : "載入中...",
-      position: Vector2(40, 100),
-      anchor: Anchor.topLeft,
-      priority: 100,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          fontSize: 24,
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
+    questionText = QuestionDisplay(
+      text: controller.currentQuestion?.question ?? "載入中...",
+      controller: controller,
+    )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionText);
@@ -108,9 +99,11 @@ class PageGameMarioTranslation extends FlameGame
     if (q == null) return;
 
     isAnswering = true;
+
     for (int i = 0; i < q.options.length; i++) {
       late final WordItem item;
       item = WordItem(
+        controller: controller,
         word: q.options[i],
         onHitByBullet: () async {
           optionItems.remove(item); // 刪除列表
@@ -118,8 +111,8 @@ class PageGameMarioTranslation extends FlameGame
           if (optionItems.isEmpty) {
             isAnswering = false;
             await controller.loadNextQuestion();
-            questionText.text =
-                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}";
+            questionText.updateText(
+                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}");
             spawnEnemy();
           }
         },
@@ -135,8 +128,8 @@ class PageGameMarioTranslation extends FlameGame
 
             isAnswering = false;
             await controller.loadNextQuestion();
-            questionText.text =
-                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}";
+            questionText.updateText(
+                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}");
             spawnEnemy();
           } else {
             for (var o in optionItems) {
@@ -149,11 +142,11 @@ class PageGameMarioTranslation extends FlameGame
             if (optionItems.isEmpty) {
               isAnswering = false;
               await controller.loadNextQuestion();
-              questionText.text =
-                  "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}";
+              questionText.updateText(
+                  "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}");
               spawnEnemy();
             }
-            questionText.text = "翻譯：${q.question}\n分數：${controller.score}";
+            questionText.updateText("翻譯：${q.question}\n分數：${controller.score}");
           }
           if (controller.score >= 100 || controller.score < -20) {
             Future.microtask(() => Navigator.pop(context, true));

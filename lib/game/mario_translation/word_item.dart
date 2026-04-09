@@ -2,17 +2,21 @@
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/mario_translation/controller_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
 
-class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
+class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation>, TapCallbacks {
   final String word;
   final Function(String) onCollect;
   final VoidCallback? onHitByBullet;
+  final ControllerGameMarioTranslation controller;
   double yy = 600;
 
   WordItem({
+    required this.controller,
     required this.word,
     required this.onHitByBullet,
     required Vector2 position,
@@ -21,6 +25,12 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
           position: position,
           size: Vector2(100, 50), // ⭐ 一定要有
         );
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    controller.speak(word); // 點擊就播音
+    super.onTapDown(event);
+  }
 
   Future<void> hitByBullet() async {
     onHitByBullet?.call();

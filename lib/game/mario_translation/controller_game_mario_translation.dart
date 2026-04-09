@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
-
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 
@@ -22,33 +22,37 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   int answeredCount = 0;
   int maxQuestions = 10;
-  final FlutterTts flutterTts = FlutterTts();
 
-  ControllerGameMarioTranslation({
-    required this.userName,
-    required this.service,
-    required this.gameId, // 初始化
-    required this.gameLevel,
-    required this.maxQuestions
-  });
+  ControllerGameMarioTranslation(
+      {required this.userName,
+      required this.service,
+      required this.gameId, // 初始化
+      required this.gameLevel,
+      required this.maxQuestions});
+
+  final player = AudioPlayer();
 
   Future<void> speak(String text) async {
-    try {
-      flutterTts.stop();
-    } catch (_) {}
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    String url = "";
     if (containsChinese) {
-      await flutterTts.setLanguage("zh-TW");
-      await flutterTts.setSpeechRate(0.4);
-      await flutterTts.setVolume(1.0);
+      url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${text.split('/')[0]}";
     } else {
-      await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.6);
-      await flutterTts.setVolume(1.0);
+      url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${text.split('/')[0]}";
     }
-    flutterTts.speak(text.split('/')[0]);
-  }
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
 
+    if (response.statusCode == 200) {
+      await player.play(BytesSource(response.bodyBytes));
+    }
+  }
 
   Future<void> loadNextQuestion() async {
     if (score >= 100 || score < -20) {
@@ -63,7 +67,8 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchMarioTranslationQuestion(userName, gameLevel);
+    currentQuestion =
+        await service.fetchMarioTranslationQuestion(userName, gameLevel);
 
     isLoading = false;
     notifyListeners();
@@ -74,15 +79,30 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
 
     lastAnswer = answer;
     answeredCount++;
-    final isRightAnswer = answer == currentQuestion!.correctAnswer 
-      || (currentQuestion!.question == "爸爸" && (answer == "father" || answer.toLowerCase() == "daddy" || answer.toLowerCase() == "dad"))
-      || (currentQuestion!.question == "沙發" && (answer == "sofa" || answer == "couch"))
-      || (currentQuestion!.question == "媽媽" && (answer == "mom" || answer == "mother" || answer.toLowerCase() == "mummy" || answer.toLowerCase() == "mommy"))
-      || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"))
-      || (currentQuestion!.question == "摩托車" && (answer == "motorcycle" || answer == "motorbike"))
-      || (currentQuestion!.question == "薯條" && (answer == "fries" || answer == "chips" || answer.replaceAll(" ", '').toLowerCase() == "frenchfries"))
-      || (currentQuestion!.question == "腳踏車" && (answer == "bike" || answer == "bicycle"))
-      || (currentQuestion!.question == "miss" && (answer == "錯過或想念" || answer == "未婚的女人"));
+    final isRightAnswer = answer == currentQuestion!.correctAnswer ||
+        (currentQuestion!.question == "爸爸" &&
+            (answer == "father" ||
+                answer.toLowerCase() == "daddy" ||
+                answer.toLowerCase() == "dad")) ||
+        (currentQuestion!.question == "沙發" &&
+            (answer == "sofa" || answer == "couch")) ||
+        (currentQuestion!.question == "媽媽" &&
+            (answer == "mom" ||
+                answer == "mother" ||
+                answer.toLowerCase() == "mummy" ||
+                answer.toLowerCase() == "mommy")) ||
+        (currentQuestion!.question == "腳踏車" &&
+            (answer == "bike" || answer == "bicycle")) ||
+        (currentQuestion!.question == "摩托車" &&
+            (answer == "motorcycle" || answer == "motorbike")) ||
+        (currentQuestion!.question == "薯條" &&
+            (answer == "fries" ||
+                answer == "chips" ||
+                answer.replaceAll(" ", '').toLowerCase() == "frenchfries")) ||
+        (currentQuestion!.question == "腳踏車" &&
+            (answer == "bike" || answer == "bicycle")) ||
+        (currentQuestion!.question == "miss" &&
+            (answer == "錯過或想念" || answer == "未婚的女人"));
     if (isRightAnswer) {
       score += 4;
     } else {
@@ -115,7 +135,9 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
   Color getButtonColor(String option) {
     if (lastAnswer == null) return Color(0xFFE3F2FD);
     if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer ? Color(0xFFC8E6C9) : Color(0xFFFFCDD2);
+      return option == currentQuestion!.correctAnswer
+          ? Color(0xFFC8E6C9)
+          : Color(0xFFFFCDD2);
     } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
       return Color(0xFFC8E6C9);
     }
@@ -125,7 +147,9 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
   Color getBorderColor(String option) {
     if (lastAnswer == null) return Color(0xFF1976D2);
     if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer ? Color(0xFF388E3C) : Color(0xFFD32F2F);
+      return option == currentQuestion!.correctAnswer
+          ? Color(0xFF388E3C)
+          : Color(0xFFD32F2F);
     } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
       return Color(0xFF388E3C);
     }
@@ -142,11 +166,5 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
       return Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32);
     }
     return null;
-  }
-
-  @override
-  void dispose() {
-    flutterTts.stop();
-    super.dispose();
   }
 }

@@ -73,23 +73,42 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
             children: [
               // ⭐ 題目顯示
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                padding: Insets.all8,
+                child: SizedBox(
+                  width: double.infinity, // 寬度等於螢幕寬度
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFECEFF1), // blue grey 50
+                      padding:
+                          EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
                     ),
-                    children: [
-                      TextSpan(
-                        text: 'Find  ',
-                        style: const TextStyle(color: Colors.black), // 黑色
-                      ),
-                      TextSpan(
-                        text: controller.currentQuestion.question,
-                        style: const TextStyle(color: Colors.blue,fontSize:50), // 藍色
-                      ),
-                    ],
+                    onPressed: () => controller.speak(controller.currentQuestion.question),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Transform.scale(
+                          scale: 4, // 放大，可自行調整
+                          alignment: Alignment.centerLeft, // 左對齊
+                          child: InkWell(
+                            onTap: () => controller.speak(controller.currentQuestion.question),
+                            child:
+                                Icon(Icons.volume_up, color: Color(0xFF212121)),
+                          ),
+                        ),
+                        Gaps.w60,
+                        Expanded(
+                          child: Text(
+                            controller.currentQuestion.question,
+                            style: TextStyle(
+                                fontSize: size, color: Color(0xFF212121)),
+                            textAlign: TextAlign.start,
+                            softWrap: true, // 允許換行
+                            overflow: TextOverflow.visible,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

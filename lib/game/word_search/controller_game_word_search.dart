@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class ControllerGameWordSearch extends ChangeNotifier {
   final String userName;
@@ -42,6 +44,24 @@ class ControllerGameWordSearch extends ChangeNotifier {
     required this.board,
     required this.currentQuestion,
   });
+
+  final player = AudioPlayer();
+
+  Future<void> speak(String text) async {
+    String url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${text.split('/')[0]}";
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      await player.play(BytesSource(response.bodyBytes));
+    }
+  }
 
   Future<void> loadNextQuestion() async {
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
