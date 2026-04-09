@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/word_search/controller_game_word_search.dart';
@@ -11,8 +9,8 @@ import 'package:provider/provider.dart';
 // ignore: must_be_immutable
 class PageGameWordSearch extends StatefulWidget {
   final String gameId;
-  int? gameLevel;
-  PageGameWordSearch({super.key, required this.gameId, this.gameLevel});
+  int gameLevel;
+  PageGameWordSearch({super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGameWordSearch> createState() => _PageGameWordSearchState();
@@ -30,9 +28,10 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameWordSearch(
       gameId: widget.gameId,
+      gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
-      maxQuestions: widget.gameLevel != null ? min(widget.gameLevel!, 10) : 999,
+      maxQuestions: widget.gameLevel == -1 ? 10 : 999,
       board: WordSearchBoard(12), // ⭐ 12x12 Grid
       currentQuestion: ModelGameWordSearch(
         questionId: '',

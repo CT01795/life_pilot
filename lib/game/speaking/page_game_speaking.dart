@@ -15,8 +15,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 // ignore: must_be_immutable
 class PageGameSpeaking extends StatefulWidget {
   final String gameId;
-  int? gameLevel;
-  PageGameSpeaking({super.key, required this.gameId, this.gameLevel});
+  int gameLevel;
+  PageGameSpeaking({super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGameSpeaking> createState() => _PageGameSpeakingState();
@@ -53,9 +53,10 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     );
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel != null ? min(widget.gameLevel! * 2, 10) : 10;
+    maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameSpeaking(
       gameId: widget.gameId,
+      gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
     );
@@ -83,7 +84,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     if (controller.isRightAnswer == true || controller.repeatCounts == 2) {
       answeredCount++;
     }
-    if (widget.gameLevel != null && answeredCount >= maxQ && !_hasPopped) {
+    if (answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));

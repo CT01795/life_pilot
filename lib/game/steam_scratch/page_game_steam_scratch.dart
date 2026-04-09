@@ -233,7 +233,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
             MaterialPageRoute(
               builder: (context) => PageGameGrammar(
                 gameId: widget.gameId,
-                gameLevel: widget.gameLevel,
+                gameLevel: -1, //widget.gameLevel,
               ),
             ),
           )
@@ -243,7 +243,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                 MaterialPageRoute(
                   builder: (context) => PageGameSpeaking(
                     gameId: widget.gameId,
-                    gameLevel: widget.gameLevel,
+                    gameLevel: -1, //widget.gameLevel,
                   ),
                 ),
               )
@@ -253,7 +253,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                     MaterialPageRoute(
                       builder: (context) => PageGameTranslation(
                         gameId: widget.gameId,
-                        gameLevel: widget.gameLevel,
+                        gameLevel: -1, //widget.gameLevel,
                       ),
                     ),
                   )
@@ -263,7 +263,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                         MaterialPageRoute(
                           builder: (context) => PageGameSentence(
                             gameId: widget.gameId,
-                            gameLevel: widget.gameLevel,
+                            gameLevel: -1, //widget.gameLevel,
                           ),
                         ),
                       )
@@ -272,7 +272,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                         MaterialPageRoute(
                           builder: (context) => PageGameWordSearch(
                             gameId: widget.gameId,
-                            gameLevel: widget.gameLevel,
+                            gameLevel: -1, //widget.gameLevel,
                           ),
                         ),
                       );

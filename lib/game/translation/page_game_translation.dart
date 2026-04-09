@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/translation/controller_game_translation.dart';
@@ -10,8 +8,8 @@ import 'package:provider/provider.dart';
 // ignore: must_be_immutable
 class PageGameTranslation extends StatefulWidget {
   final String gameId;
-  int? gameLevel;
-  PageGameTranslation({super.key, required this.gameId, this.gameLevel});
+  int gameLevel;
+  PageGameTranslation({super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGameTranslation> createState() => _PageGameTranslationState();
@@ -29,9 +27,10 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameTranslation(
       gameId: widget.gameId,
+      gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
-      maxQuestions: widget.gameLevel != null ? min(widget.gameLevel!, 10) : 999,
+      maxQuestions: widget.gameLevel == -1 ? 10 : 999,
     );
     controller.loadNextQuestion();
   }

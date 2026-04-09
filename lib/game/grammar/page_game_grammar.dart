@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -12,8 +10,8 @@ import 'package:provider/provider.dart';
 // ignore: must_be_immutable
 class PageGameGrammar extends StatefulWidget {
   final String gameId;
-  int? gameLevel;
-  PageGameGrammar({super.key, required this.gameId, this.gameLevel});
+  int gameLevel;
+  PageGameGrammar({super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGameGrammar> createState() => _PageGameGrammarState();
@@ -36,14 +34,15 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     flutterTts.setLanguage("en-US");
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel != null ? min(widget.gameLevel!, 10) : 1000;
+    maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameGrammar(
         gameId: widget.gameId,
+        gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
         userName: auth.currentAccount ?? AuthConstants.guest,
         service: ServiceGame(),
         model: ModelGameGrammar());
 
-    controller.startBattle(widget.gameLevel ?? 1);
+    controller.startBattle(widget.gameLevel);
     playerMaxHp = controller.model.player.hp;
     monsterMaxHp = controller.model.monster!.hp;
   }
@@ -52,8 +51,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   void onAnswer(String userAnswer) {
     controller.answer(userAnswer);
 
-    if (widget.gameLevel != null &&
-        controller.answeredCount >= maxQ &&
+    if (controller.answeredCount >= maxQ &&
         !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回

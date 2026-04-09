@@ -9,6 +9,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final int gameLevel;
 
   final WordSearchBoard board;
   ModelGameWordSearch currentQuestion;
@@ -36,6 +37,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.gameLevel,
     required this.maxQuestions,
     required this.board,
     required this.currentQuestion,
@@ -55,7 +57,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchWordSearchQuestion(userName);
+    currentQuestion = await service.fetchWordSearchQuestion(userName, gameLevel);
     _generateBoardFromQuestion();
 
     isLoading = false;

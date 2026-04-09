@@ -7,7 +7,7 @@ class WordItem extends PositionComponent with CollisionCallbacks {
   final String word;
   final Function(String) onCollect;
   final VoidCallback? onHitByBullet;
-  double yy = 700;
+  double yy = 600;
 
   WordItem({
     required this.word,

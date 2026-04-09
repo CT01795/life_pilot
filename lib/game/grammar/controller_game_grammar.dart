@@ -8,6 +8,7 @@ class ControllerGameGrammar extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
+  final int gameLevel;
   final ModelGameGrammar model;
   bool? isRightAnswer;
   int answeredCount = 0; // 紀錄答了幾題
@@ -22,6 +23,7 @@ class ControllerGameGrammar extends ChangeNotifier {
     required this.userName,
     required this.service,
     required this.gameId, // 初始化
+    required this.gameLevel,
     required this.model,
   });
 
@@ -46,7 +48,7 @@ class ControllerGameGrammar extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchGrammarQuestion(userName);
+    currentQuestion = await service.fetchGrammarQuestion(userName, gameLevel);
     currentQuestion?.options.shuffle();
     model.currentQuestion = currentQuestion;
 
