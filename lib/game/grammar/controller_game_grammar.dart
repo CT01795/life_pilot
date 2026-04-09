@@ -40,7 +40,7 @@ class ControllerGameGrammar extends ChangeNotifier {
       //isBattleOver
       isFinished = true;
       notifyListeners();
-      await _saveScore();
+      await _saveScore(model.player.hp >= 100);
       return;
     }
 
@@ -82,11 +82,12 @@ class ControllerGameGrammar extends ChangeNotifier {
     });
   }
 
-  Future<void> _saveScore() async {
+  Future<void> _saveScore(bool isPass) async {
     await service.saveUserGameScore(
       newUserName: userName,
       newScore: model.player.hp.toDouble(),
       newGameId: gameId, // 使用傳入的 gameId
+      newIsPass: isPass,
     );
   }
 
