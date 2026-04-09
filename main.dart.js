@@ -154085,7 +154085,7 @@ s.KZ(0,r[1]+20*b)
 s.L()
 s.E8(0,A.e.e5(r[0],0,q.giZ().D-q.ay.a[0]))
 s.L()
-if(r[1]>=600){s.KZ(0,600)
+if(r[1]>=400){s.KZ(0,400)
 s.L()}},
 vD(a,b){var s=this
 s.VO(a,b)
