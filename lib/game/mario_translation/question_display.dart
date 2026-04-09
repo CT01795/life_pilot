@@ -8,9 +8,16 @@ import 'package:life_pilot/game/mario_translation/controller_game_mario_translat
 class QuestionDisplay extends PositionComponent with TapCallbacks {
   final ControllerGameMarioTranslation controller;
   String text;
+  double positionX;
+  double positionY;
+  double sizeX;
+  double sizeY;
 
-  QuestionDisplay({required this.text, required this.controller})
-      : super(position: Vector2(40, 100), size: Vector2(500, 50));
+
+  QuestionDisplay(
+      {required this.text, required this.controller, required this.positionX, required this.positionY,
+        required this.sizeX, required this.sizeY,})
+      : super(position: Vector2(positionX, positionY), size: Vector2(sizeX, sizeY));
 
   @override
   Future<void> onLoad() async {
@@ -21,9 +28,9 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
       text: text,
       anchor: Anchor.topLeft,
       textRenderer: TextPaint(
-        style: const TextStyle(
-          fontSize: 24,
-          color: Colors.black,
+        style: TextStyle(
+          fontSize: 32,
+          color: text.contains("分數") ? Colors.red : Colors.blue,
           fontWeight: FontWeight.bold,
         ),
       ),

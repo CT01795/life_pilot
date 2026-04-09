@@ -25,6 +25,7 @@ class PageGameMarioTranslation extends FlameGame
   final String gameId;
   final int gameLevel;
   late QuestionDisplay questionText;
+  late QuestionDisplay scoreText;
 
   // 世界大小
   double worldWidth = 2000;
@@ -68,10 +69,27 @@ class PageGameMarioTranslation extends FlameGame
     questionText = QuestionDisplay(
       text: controller.currentQuestion?.question ?? "載入中...",
       controller: controller,
+      positionX: 40,
+      positionY: 100,
+      sizeX: 500,
+      sizeY: 50
     )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionText);
+
+    // 題目 HUD
+    scoreText = QuestionDisplay(
+      text: "分數：${controller.score}",
+      controller: controller,
+      positionX: 40,
+      positionY: 200,
+      sizeX: 500,
+      sizeY: 50
+    )..priority = 100;
+
+    // ⭐ 設定為 HUD（固定在畫面上）
+    add(scoreText);
 
     // 敵人
     spawnEnemy();
@@ -112,7 +130,9 @@ class PageGameMarioTranslation extends FlameGame
             isAnswering = false;
             await controller.loadNextQuestion();
             questionText.updateText(
-                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}");
+              controller.currentQuestion?.question ?? '');
+            scoreText.updateText(
+              "分數：${controller.score}");
             spawnEnemy();
           }
         },
@@ -129,7 +149,9 @@ class PageGameMarioTranslation extends FlameGame
             isAnswering = false;
             await controller.loadNextQuestion();
             questionText.updateText(
-                "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}");
+                controller.currentQuestion?.question ?? '');
+            scoreText.updateText(
+              "分數：${controller.score}");
             spawnEnemy();
           } else {
             for (var o in optionItems) {
@@ -143,10 +165,14 @@ class PageGameMarioTranslation extends FlameGame
               isAnswering = false;
               await controller.loadNextQuestion();
               questionText.updateText(
-                  "翻譯：${controller.currentQuestion?.question ?? ''}\n分數：${controller.score}");
+                  controller.currentQuestion?.question ?? '');
+              scoreText.updateText(
+                "分數：${controller.score}");
               spawnEnemy();
             }
-            questionText.updateText("翻譯：${q.question}\n分數：${controller.score}");
+            questionText.updateText(q.question);
+            scoreText.updateText(
+              "分數：${controller.score}");
           }
           if (controller.score >= 100 || controller.score < -20) {
             Future.microtask(() => Navigator.pop(context, true));
