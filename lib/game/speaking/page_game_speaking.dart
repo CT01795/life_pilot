@@ -3,7 +3,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/speaking/controller_game_speaking.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -11,6 +11,7 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:audioplayers/audioplayers.dart';
 
 // ignore: must_be_immutable
 class PageGameSpeaking extends StatefulWidget {
@@ -25,7 +26,6 @@ class PageGameSpeaking extends StatefulWidget {
 class _PageGameSpeakingState extends State<PageGameSpeaking> {
   late final ControllerGameSpeaking controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
-  final FlutterTts flutterTts = FlutterTts(); // TTS 實例
   double size = 32.0;
   int answeredCount = 0; // 紀錄答了幾題
   late int maxQ;
@@ -66,7 +66,6 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
   @override
   void dispose() {
-    flutterTts.stop();
     answerController.dispose();
     super.dispose();
   }
@@ -77,8 +76,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     controller.answer(userAnswer);
     // 逐字顯示正確答案
     showCorrectAnswer(controller.currentQuestion!.correctAnswer);
-    await Future.delayed(
-        Duration(milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)));
+    await Future.delayed(Duration(
+        milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)));
     answerController.clear();
 
     if (controller.isRightAnswer == true || controller.repeatCounts == 2) {
@@ -165,24 +164,29 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     }
   }
 
+  final player = AudioPlayer();
+
   Future<void> speak(String text) async {
-    try {
-      // 不 await stop，避免阻塞
-      flutterTts.stop();
-    } catch (e, st) {
-      logger.e(e.toString() + st.toString());
-    }
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    String url = "";
     if (containsChinese) {
-      await flutterTts.setLanguage("zh-TW");
-      await flutterTts.setSpeechRate(0.4); // 🟢 中文語速（超重要）
-      await flutterTts.setVolume(1.0); // 中文預設會比較小聲 → 拉滿
-      flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${text.split('/')[0]}";
     } else {
-      await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.6); // 🟢 英文語速
-      await flutterTts.setVolume(1.0);
-      flutterTts.speak(text.split('/')[0]); // 🔹 不 await，直接播放
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${text.split('/')[0]}";
+    }
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      await player.play(BytesSource(response.bodyBytes));
     }
   }
 

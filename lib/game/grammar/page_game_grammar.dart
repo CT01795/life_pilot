@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/grammar/controller_game_grammar.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // ignore: must_be_immutable
 class PageGameGrammar extends StatefulWidget {
@@ -19,7 +20,6 @@ class PageGameGrammar extends StatefulWidget {
 
 class _PageGameGrammarState extends State<PageGameGrammar> {
   late final ControllerGameGrammar controller;
-  late final FlutterTts flutterTts; // TTS 實例
   late int maxQ;
   late int playerMaxHp;
   late int monsterMaxHp;
@@ -28,10 +28,6 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   @override
   void initState() {
     super.initState();
-    flutterTts = FlutterTts();
-    flutterTts.setVolume(1.0);
-    flutterTts.setSpeechRate(0.6); // 預設語速
-    flutterTts.setLanguage("en-US");
 
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel == -1 ? 10 : 999;
@@ -59,12 +55,25 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     }
   }
 
+  final player = AudioPlayer();
+
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
-    //final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    //await flutterTts.setLanguage(containsChinese ? "zh-TW" : "en-US");
-    //await flutterTts.setSpeechRate(containsChinese ? 0.4 : 0.6); // 🟢 語速
-    await flutterTts.speak(text.split('/')[0]);
+    final url =
+      "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${text.split('/')[0]}";
+
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      await player.play(BytesSource(response.bodyBytes));
+    }
   }
 
   @override
