@@ -34,7 +34,7 @@ class PageGameList extends StatefulWidget {
 }
 
 class _PageGameListState extends State<PageGameList> {
-  int unlockedMaxLevel = 1;  // 預設第 1 關
+  int unlockedMaxLevel = 1; // 預設第 1 關
   // 範例遊戲類別與遊戲名稱
   late final ControllerGameList controllerGameList;
   String? selectedCategory;
@@ -90,12 +90,17 @@ class _PageGameListState extends State<PageGameList> {
   }
 
   ModelGameItem? get selectedGameItem {
-    if (selectedCategory == null || selectedGameName == null || selectedLevel == null) return null;
+    if (selectedCategory == null ||
+        selectedGameName == null ||
+        selectedLevel == null) {
+      return null;
+    }
     final gameMap = controllerGameList.gamesByCategory[selectedCategory!];
     if (gameMap == null) return null;
     final levelList = gameMap[selectedGameName!];
     if (levelList == null) return null;
-    return levelList.firstWhere((g) => g.level == selectedLevel, orElse: () => levelList.first);
+    return levelList.firstWhere((g) => g.level == selectedLevel,
+        orElse: () => levelList.first);
   }
 
   @override
@@ -110,10 +115,9 @@ class _PageGameListState extends State<PageGameList> {
     final gameMap = selectedCategory != null
         ? controllerGameList.gamesByCategory[selectedCategory!]
         : null;
-    final levelList = selectedGameName != null
-        ? gameMap![selectedGameName!]
-        : null;
-        
+    final levelList =
+        selectedGameName != null ? gameMap![selectedGameName!] : null;
+
     return Scaffold(
       body: Padding(
         padding: Insets.all8,
@@ -128,7 +132,8 @@ class _PageGameListState extends State<PageGameList> {
                 if (value != null) {
                   setState(() {
                     selectedCategory = value;
-                    final gamesMap = controllerGameList.gamesByCategory[selectedCategory!]!;
+                    final gamesMap =
+                        controllerGameList.gamesByCategory[selectedCategory!]!;
                     selectedGameName = gamesMap.keys.first;
                     selectedLevel = gamesMap[selectedGameName!]!.first.level;
                   });
@@ -151,8 +156,8 @@ class _PageGameListState extends State<PageGameList> {
                 if (value != null && selectedCategory != null) {
                   setState(() {
                     selectedGameName = value;
-                    final levelList = controllerGameList
-                        .gamesByCategory[selectedCategory!]![selectedGameName!]!;
+                    final levelList = controllerGameList.gamesByCategory[
+                        selectedCategory!]![selectedGameName!]!;
                     selectedLevel = levelList.first.level;
                   });
                   await _loadUserProgress();
@@ -193,189 +198,226 @@ class _PageGameListState extends State<PageGameList> {
             ),
             Gaps.h16,
             ElevatedButton(
-              onPressed: (selectedGameItem != null && selectedLevel! <= unlockedMaxLevel)
-                ? () async {
-                    final game = selectedGameItem!;
-                    if (game.gameName.toLowerCase() == "translation".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameTranslation(gameId: game.id, gameLevel: game.level,),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      }
-                    } else if (game.gameName.toLowerCase() == "mario translation".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) {
-                            // 先建立遊戲實例
-                            final game1 = PageGameMarioTranslation(
-                              context: context,
+              onPressed: (selectedGameItem != null &&
+                      selectedLevel! <= unlockedMaxLevel)
+                  ? () async {
+                      final game = selectedGameItem!;
+                      if (game.gameName.toLowerCase() ==
+                          "translation".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameTranslation(
                               gameId: game.id,
                               gameLevel: game.level,
-                            );
+                            ),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "mario translation".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) {
+                              // 先建立遊戲實例
+                              final game1 = PageGameMarioTranslation(
+                                context: context,
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              );
 
-                            return Scaffold(
-                              body: Stack(
-                                children: [
-                                  GameWidget(game: game1), // 先加入遊戲畫面
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 20,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center, // 水平置中
-                                      children: [
-                                        GestureDetector(
-                                          onTapDown: (_) => game1.player.moveLeft(true),
-                                          onTapUp: (_) => game1.player.moveLeft(false),
-                                          child: Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: Colors.blue.withOpacity(0.5),
-                                            child: Icon(Icons.arrow_left),
+                              return Scaffold(
+                                body: Stack(
+                                  children: [
+                                    GameWidget(game: game1), // 先加入遊戲畫面
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 20,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center, // 水平置中
+                                        children: [
+                                          GestureDetector(
+                                            onTapDown: (_) =>
+                                                game1.player.moveLeft(true),
+                                            onTapUp: (_) =>
+                                                game1.player.moveLeft(false),
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              color:
+                                                  Colors.blue.withOpacity(0.5),
+                                              child: Icon(Icons.arrow_left),
+                                            ),
                                           ),
-                                        ),
-                                        GestureDetector(
-                                          onTapDown: (_) => game1.player.moveRight(true),
-                                          onTapUp: (_) => game1.player.moveRight(false),
-                                          child: Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: Colors.green.withOpacity(0.5),
-                                            child: Icon(Icons.arrow_right),
+                                          GestureDetector(
+                                            onTapDown: (_) =>
+                                                game1.player.moveRight(true),
+                                            onTapUp: (_) =>
+                                                game1.player.moveRight(false),
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              color:
+                                                  Colors.green.withOpacity(0.5),
+                                              child: Icon(Icons.arrow_right),
+                                            ),
                                           ),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () => game1.player.jump(),
-                                          child: Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: Colors.yellow.withOpacity(0.5),
-                                            child: Icon(Icons.arrow_upward),
+                                          GestureDetector(
+                                            onTap: () => game1.player.jump(),
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              color: Colors.yellow
+                                                  .withOpacity(0.5),
+                                              child: Icon(Icons.arrow_upward),
+                                            ),
                                           ),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () => game1.player.shoot(),
-                                          child: Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: Colors.red.withOpacity(0.5),
-                                            child: Icon(Icons.circle),
+                                          GestureDetector(
+                                            onTap: () async {
+                                              await game1.shoot();
+                                            },
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              color:
+                                                  Colors.red.withOpacity(0.5),
+                                              child: Icon(Icons.circle),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
+                                        ],
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "scratch".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSteamScratch(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "scratch (maze)".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSteamScratchMaze(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "monomino".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSteamMonomino(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "polyomino".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSteamPolyomino(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        } //Polyomino
+                      } else if (game.gameName.toLowerCase() ==
+                          "word and sentence builder".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSentence(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "speaking".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSpeaking(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "puzzle map".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGamePuzzleMap(
+                              gameId: game.id,
+                              gameLevel: game.level,
+                            ),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "english rpg adventure".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameGrammar(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
+                          "word searching".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameWordSearch(
+                                gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else {
+                        // 其他遊戲開啟方式
+                        logger.i("尚未實作此遊戲頁面");
                       }
-                    } else if (game.gameName.toLowerCase() == "scratch".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameSteamScratch(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      }
-                    } else if (game.gameName.toLowerCase() == "scratch (maze)".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameSteamScratchMaze(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      }
-                    } else if (game.gameName.toLowerCase() == "monomino".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameSteamMonomino(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } 
-                    } else if (game.gameName.toLowerCase() == "polyomino".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameSteamPolyomino(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } //Polyomino
-                    } else if (game.gameName.toLowerCase() == "word and sentence builder".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameSentence(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } 
-                    } else if (game.gameName.toLowerCase() == "speaking".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameSpeaking(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } 
-                    } else if (game.gameName.toLowerCase() == "puzzle map".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGamePuzzleMap(gameId: game.id, gameLevel: game.level,),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } 
-                    } else if (game.gameName.toLowerCase() == "english rpg adventure".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameGrammar(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } 
-                    } else if (game.gameName.toLowerCase() == "word searching".toLowerCase()) {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PageGameWordSearch(gameId: game.id, gameLevel: game.level),
-                        ),
-                      );
-                      if (result == true) {
-                        await _loadUserProgress();
-                      } 
-                    }  else { 
-                      // 其他遊戲開啟方式
-                      logger.i("尚未實作此遊戲頁面");
                     }
-                  }
-                : null,
-            child: const Text('Start'),
+                  : null,
+              child: const Text('Start'),
             ),
             const Divider(),
             Expanded(
@@ -386,16 +428,21 @@ class _PageGameListState extends State<PageGameList> {
                       itemBuilder: (context, index) {
                         final item = userProgress[index];
                         final formattedDate = item.createdAt != null
-                            ? DateFormat(item.createdAt?.year == now.year ? 'MM/dd HH:mm' : 'yyyy/MM/dd HH:mm')
-                                    .format(item.createdAt!)
+                            ? DateFormat(item.createdAt?.year == now.year
+                                    ? 'MM/dd HH:mm'
+                                    : 'yyyy/MM/dd HH:mm')
+                                .format(item.createdAt!)
                             : '';
                         // 判斷第一筆，設定文字顏色
-                        final textColor = index == 0 ? Colors.blue.shade700 : Colors.black;
-                        final textBold = index == 0 ? FontWeight.bold : FontWeight.normal;
+                        final textColor =
+                            index == 0 ? Colors.blue.shade700 : Colors.black;
+                        final textBold =
+                            index == 0 ? FontWeight.bold : FontWeight.normal;
                         return ListTile(
                           title: Text(
                             '$formattedDate Level ${item.level} => Score: ${item.score}',
-                            style: TextStyle(color: textColor, fontWeight: textBold),
+                            style: TextStyle(
+                                color: textColor, fontWeight: textBold),
                           ),
                         );
                       },

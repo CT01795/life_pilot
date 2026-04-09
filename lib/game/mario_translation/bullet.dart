@@ -31,13 +31,11 @@ class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGam
     super.update(dt);
     position += direction.normalized() * speed * dt;
 
-    final game = gameRef;
-
     // ⭐ 邊界刪除
     if (position.x < 0 ||
-        position.x > game.worldWidth ||
+        position.x > gameRef.worldWidth ||
         position.y < 0 ||
-        position.y > game.worldHeight) {
+        position.y > gameRef.worldHeight) {
       removeFromParent();
     }
   }
