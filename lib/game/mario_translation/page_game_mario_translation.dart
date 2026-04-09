@@ -141,6 +141,9 @@ class PageGameMarioTranslation extends FlameGame
             }
             questionText.text = "翻譯：${q.question}\n分數：${controller.score}";
           }
+          if(controller.score >= 100 || controller.score < -20){
+            Future.microtask(() => Navigator.pop(context, true));
+          }
         },
       )..priority = 10;
       optionItems.add(item);
