@@ -2,6 +2,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/services.dart';
 import 'package:life_pilot/game/mario_translation/bullet.dart';
+import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 
 // ignore: deprecated_member_use
 class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
@@ -10,15 +11,26 @@ class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
   final double speed = 200;
   final double jumpSpeed = -400;
   bool isOnGround = true;
+  int facing = 1; // 1 = 右, -1 = 左
 
   Player({required super.position, required super.size});
 
   void moveLeft(bool pressed) {
-    velocity.x = pressed ? -speed : 0;
+    if (pressed) {
+      velocity.x = -speed;
+      facing = -1;
+    } else {
+      velocity.x = 0;
+    }
   }
 
   void moveRight(bool pressed) {
-    velocity.x = pressed ? speed : 0;
+    if (pressed) {
+      velocity.x = speed;
+      facing = 1;
+    } else {
+      velocity.x = 0;
+    }
   }
 
   void jump() {
@@ -31,7 +43,7 @@ class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
   void shoot() {
     final bullet = Bullet(
       position: position + Vector2(size.x / 2, size.y / 2),
-      direction: Vector2(1, 0), // 向右射
+      direction: Vector2(facing.toDouble(), 0), // ⭐ 左右
     );
     gameRef.add(bullet);
   }
@@ -55,6 +67,10 @@ class Player extends SpriteComponent with HasGameRef, KeyboardHandler {
       velocity.y = 0;
       isOnGround = true;
     }
+    // ⭐ 限制左右邊界
+    final game = gameRef as PageGameMarioTranslation;
+
+    position.x = position.x.clamp(0, game.worldWidth - size.x);
   }
 
   @override

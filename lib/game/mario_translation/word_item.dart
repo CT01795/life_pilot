@@ -1,6 +1,7 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
 
 class WordItem extends PositionComponent with CollisionCallbacks {
@@ -60,7 +61,12 @@ class WordItem extends PositionComponent with CollisionCallbacks {
     super.update(dt);
     position.y += 20 * dt;
 
-    // ⭐ 碰到地板就停住
+    final game = parent as PageGameMarioTranslation;
+
+    // ⭐ 限制 X 不超出
+    position.x = position.x.clamp(0, game.worldWidth - size.x);
+
+    // ⭐ 掉到地板停止
     if (position.y >= yy) {
       position.y = yy;
     }
