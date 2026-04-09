@@ -154009,7 +154009,7 @@ r=p.ax.d
 r.jP(r.Y(0,s.ar(0,b)))
 r.L()
 q=r.a
-if(q[1]>=600){r.KZ(0,600)
+if(q[1]>=400){r.KZ(0,400)
 r.L()
 s.syU(0,0)
 p.dk=!0}r.E8(0,A.e.e5(q[0],0,p.giZ().D-p.ay.a[0]))
