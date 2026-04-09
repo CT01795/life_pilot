@@ -58,7 +58,8 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
       text: word,
       textRenderer: textPaint,
       boxConfig: TextBoxConfig(
-        maxWidth: size.x, // 限制寬度，文字自動換行/ 可選，最多 3 行
+        maxWidth: size.x,               // 限制文字寬度
+        margins: const EdgeInsets.only(left: 8), // ⭐ 左邊留 8 像素
       ),
       anchor: Anchor.center,
       position: size / 2,
