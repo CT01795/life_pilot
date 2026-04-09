@@ -110,7 +110,7 @@ class PageGameMarioTranslation extends FlameGame
           optionItems.remove(item); // 刪除列表
           item.removeFromParent(); // 刪除畫面
         },
-        position: player.position + Vector2(120, -100 - i * 100),
+        position: Vector2(worldWidth/2, -100 - i * 100),
         onCollect: (word) async {
           controller.answer(word);
 

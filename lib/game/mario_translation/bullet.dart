@@ -12,11 +12,12 @@ class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGam
   Bullet({
     required Vector2 position,
     required this.direction,
-    this.speed = 400,
+    this.speed = 300,
   }) : super(
           position: position,
-          radius: 5,
+          radius: 8,
           paint: Paint()..color = Colors.red,
+          priority: 20,
         );
 
   @override
@@ -30,8 +31,13 @@ class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGam
     super.update(dt);
     position += direction.normalized() * speed * dt;
 
-    // 超出世界邊界就刪除
-    if (position.x < 0 || position.x > 2000 || position.y < 0 || position.y > (yy + 100)) {
+    final game = gameRef;
+
+    // ⭐ 邊界刪除
+    if (position.x < 0 ||
+        position.x > game.worldWidth ||
+        position.y < 0 ||
+        position.y > game.worldHeight) {
       removeFromParent();
     }
   }
