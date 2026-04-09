@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
@@ -39,6 +40,10 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
       url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${text.split('/')[0]}";
     } else {
       url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${text.split('/')[0]}";
+    }
+    if (kIsWeb) {
+      await player.play(UrlSource(url));
+      return;
     }
     // 用 http.get 先取得 bytes，並加上 User-Agent
     final response = await http.get(

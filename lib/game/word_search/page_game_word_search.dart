@@ -101,7 +101,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                           child: Text(
                             controller.currentQuestion.question,
                             style: TextStyle(
-                                fontSize: size, color: Color(0xFF212121)),
+                                fontSize: 40, color: Color(0xFF212121)),
                             textAlign: TextAlign.start,
                             softWrap: true, // 允許換行
                             overflow: TextOverflow.visible,
@@ -119,7 +119,9 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                   onPressed: controller.board.currentSelection.isEmpty
                       ? null
                       : controller.submitSelection,
-                  child: const Text('Submit'),
+                  child: const Text('Submit',
+                            style:
+                                TextStyle(fontSize: 24, color: Colors.white)),
                 ),
               ),
               // ⭐ Word Search Grid
