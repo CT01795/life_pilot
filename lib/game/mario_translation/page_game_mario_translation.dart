@@ -1,4 +1,3 @@
-import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -43,8 +42,6 @@ class PageGameMarioTranslation extends FlameGame
 
   void layoutByScreen() {
     if (!isLoaded) return; // ⭐ 防止還沒 onLoad 就執行
-    final screenW = camera.viewport.size.x;
-    final screenH = camera.viewport.size.y;
 
     final groundY = screenH - 200;
 
@@ -57,12 +54,19 @@ class PageGameMarioTranslation extends FlameGame
 
     // ⭐ Enemy（如果存在）
     for (final e in children.whereType<Enemy>()) {
-      e.position.y = groundY - sizeX;
+      e.position.y = player.position.y;
+      e.position.x = screenW * 2 / 3;
     }
 
+    int i = 0;
+    for (final e in children.whereType<WordItem>()) {
+      e.position.y = player.position.y - (i + 1) * 120;
+      e.position.x = screenW / 2;
+      i = i + 1;
+    }
     // ⭐ HUD（固定畫面）
-    scoreText.position = Vector2(40, 100);
-    questionText.position = Vector2(40, 200);
+    scoreText.position = Vector2(40, 50);
+    questionText.position = Vector2(40, 100);
   }
 
   @override
@@ -86,12 +90,13 @@ class PageGameMarioTranslation extends FlameGame
       size: Vector2(screenW, sizeX),
       paint: Paint()..color = const Color(0xFF8B4513),
     );
-    
+
     add(ground);
 
     // 玩家
     player = Player(
-        position: Vector2(100, ground.position.y - sizeX), size: Vector2(sizeX, sizeX));
+        position: Vector2(100, ground.position.y - sizeX),
+        size: Vector2(sizeX, sizeX));
     add(player);
 
     // 分數 HUD
@@ -99,7 +104,7 @@ class PageGameMarioTranslation extends FlameGame
         text: "分數：${controller.score}",
         controller: controller,
         positionX: 40,
-        positionY: 100,
+        positionY: 50,
         sizeX: screenW,
         sizeY: sizeX)
       ..priority = 100;
@@ -112,7 +117,7 @@ class PageGameMarioTranslation extends FlameGame
         text: controller.currentQuestion?.question ?? "載入中...",
         controller: controller,
         positionX: 40,
-        positionY: 200,
+        positionY: 100,
         sizeX: screenW,
         sizeY: sizeX)
       ..priority = 100;
@@ -120,14 +125,19 @@ class PageGameMarioTranslation extends FlameGame
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionText);
 
-    // 敵人
-    spawnEnemy();
     layoutByScreen(); // ⭐ 初始化位置
   }
 
+  @override
+  void onMount() {
+    super.onMount();
+    spawnEnemy();
+  }
+
   void spawnEnemy() {
+    player.position.x = 100;
     add(Enemy(
-      position: Vector2(screenW - sizeX, player.position.y),
+      position: Vector2(screenW * 2 / 3, player.position.y),
       size: Vector2(sizeX, sizeX),
       onStomp: () {
         spawnOptions();
@@ -164,8 +174,7 @@ class PageGameMarioTranslation extends FlameGame
             spawnEnemy();
           }
         },
-        position: Vector2(
-            camera.viewport.size.x / 2, player.position.y - 100 - i * 120),
+        position: Vector2(screenW / 2, player.position.y - (i + 1) * 120),
         onCollect: (word) async {
           controller.answer(word);
 
@@ -208,7 +217,7 @@ class PageGameMarioTranslation extends FlameGame
     }
   }
 
-  @override
+  /*@override
   void update(double dt) {
     super.update(dt);
 
@@ -225,12 +234,17 @@ class PageGameMarioTranslation extends FlameGame
             .clamp(0, screenH - viewport.resolution.y),
       );
     }
-  }
+  }*/
 
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
 
-    layoutByScreen(); // ⭐ 旋轉時重算
+    screenW = size.x;
+    screenH = size.y;
+
+    if (isLoaded) {
+      layoutByScreen(); // ⭐ 用新的 screenW / screenH
+    }
   }
 }

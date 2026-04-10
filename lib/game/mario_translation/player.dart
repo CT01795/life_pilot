@@ -11,6 +11,10 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
   final double jumpSpeed = -400;
   bool isOnGround = true;
   int facing = 1; // 1 = 右, -1 = 左
+  bool isInvincible = false;
+  double blinkTimer = 0;
+  double blinkDuration = 1.5; // 閃爍總時間
+  double blinkInterval = 0.1; // 閃爍速度
 
   Player({required super.position, required super.size});
   double get playerFixedY => gameRef.ground.position.y - gameRef.sizeX;
@@ -55,6 +59,11 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
     super.onLoad();
   }
 
+  void hitEffect() {
+    isInvincible = true;
+    blinkTimer = 0;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -69,6 +78,23 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
     }
     // ⭐ 限制左右邊界
     position.x = position.x.clamp(0, gameRef.screenW - size.x);
+
+    // ⭐ 閃爍邏輯
+    if (isInvincible) {
+      blinkTimer += dt;
+
+      // 每 0.1 秒切換顯示/隱藏
+      if ((blinkTimer / blinkInterval).floor() % 2 == 0) {
+        opacity = 0.2;
+      } else {
+        opacity = 1.0;
+      }
+
+      if (blinkTimer >= blinkDuration) {
+        isInvincible = false;
+        opacity = 1.0; // 還原
+      }
+    }
   }
 
   @override
