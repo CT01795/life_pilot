@@ -250,9 +250,9 @@ class PageGameMarioTranslation extends FlameGame
     final noOption = optionItems.isEmpty;
     final noEnemy = children.whereType<Enemy>().isEmpty;
 
-    if (noOption && noEnemy) {
-      if (enemySpawnTimer >= 1.5) {
+    if (enemySpawnTimer >= 1.5) {
         enemySpawnTimer = 0;
+      if (noOption && noEnemy) {
         spawnEnemy();
       }
     }
