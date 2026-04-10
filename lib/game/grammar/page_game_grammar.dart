@@ -62,11 +62,17 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
 
   final player = AudioPlayer();
 
+  final Map<String, Uint8List> _audioCache = {};
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
-    
+
     if (kIsWeb) {
       await speakWeb(text);
+      return;
+    }
+
+    if (_audioCache.containsKey(text)) {
+      await player.play(BytesSource(_audioCache[text]!));
       return;
     }
 
@@ -82,7 +88,8 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     );
 
     if (response.statusCode == 200) {
-      await player.play(BytesSource(response.bodyBytes));
+      _audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 

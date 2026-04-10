@@ -170,6 +170,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
   final player = AudioPlayer();
 
+  final Map<String, Uint8List> _audioCache = {};
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
     
@@ -179,6 +180,10 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
       return;
     }
 
+    if (_audioCache.containsKey(text)) {
+      await player.play(BytesSource(_audioCache[text]!));
+      return;
+    }
     String url = "";
     if (containsChinese) {
       url =
@@ -198,7 +203,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     );
 
     if (response.statusCode == 200) {
-      await player.play(BytesSource(response.bodyBytes));
+      _audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 

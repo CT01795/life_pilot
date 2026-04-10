@@ -48,7 +48,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
 
   // 方便更新文字
   void updateText(String newText) {
-    text = newText;
-    children.whereType<TextComponent>().first.text = newText;
+    final textComp = children.whereType<TextComponent>().firstOrNull;
+    textComp?.text = newText;
   }
 }

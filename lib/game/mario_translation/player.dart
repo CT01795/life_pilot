@@ -64,9 +64,12 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
     blinkTimer = 0;
   }
 
+  double shootCooldown = 0;
+  
   @override
   void update(double dt) {
     super.update(dt);
+    shootCooldown -= dt;
     velocity.y += 800 * dt; // 重力
     position += velocity * dt;
 
@@ -111,8 +114,9 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
       velocity.y = jumpSpeed;
       isOnGround = false;
     }
-    if (keysPressed.contains(LogicalKeyboardKey.keyZ)) {
+    if (keysPressed.contains(LogicalKeyboardKey.keyZ) && shootCooldown <= 0) {
       shoot(); // 🔹 按 Z 射擊
+      shootCooldown = 0.3;
     }
     return true;
   }

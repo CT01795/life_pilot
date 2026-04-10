@@ -113,12 +113,12 @@ class ControllerGameSentence extends ChangeNotifier {
       loadNextQuestion();
     });
 
-    service.submitSentenceAnswer(
+    unawaited(service.submitSentenceAnswer(
       userName: userName,
       questionId: currentQuestion!.questionId,
       answer: userAnswer,
       isRightAnswer: isRightAnswer ?? false,
-    );
+    ));
   }
 
   Future<void> _saveScore(bool isPass) async {
