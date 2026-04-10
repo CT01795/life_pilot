@@ -43,7 +43,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
 
   @override
   void onTapDown(TapDownEvent event) {
-    controller.speak(text); // 點擊播放
+    controller.speak(controller.currentQuestion!.question); // 點擊播放
     super.onTapDown(event);
   }
 

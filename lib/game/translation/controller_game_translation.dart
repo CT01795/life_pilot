@@ -107,7 +107,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     lastAnswer = answer;
     answeredCount++;
     final q = currentQuestion!.question.toLowerCase();
-    final normalized = answer.replaceAll(" ", "").toLowerCase();
+    final normalized = answer.toLowerCase();
     final isRightAnswer =
         normalized == currentQuestion!.correctAnswer.toLowerCase() ||
             synonyms[q]?.contains(normalized) == true;
