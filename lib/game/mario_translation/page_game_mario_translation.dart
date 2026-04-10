@@ -187,8 +187,11 @@ class PageGameMarioTranslation extends FlameGame
         controller: controller,
         word: q.options[i],
         onHitByBullet: () async {
-          optionItems.remove(item); // 刪除列表
-          item.removeFromParent(); // 刪除畫面
+          if (optionItems.contains(item)) {
+            optionItems.remove(item);
+          }
+          //optionItems.remove(item); // 刪除列表
+          //item.removeFromParent(); // 刪除畫面
           if (optionItems.isEmpty) {
             nextRound();
           }
@@ -242,13 +245,14 @@ class PageGameMarioTranslation extends FlameGame
   void update(double dt) {
     super.update(dt);
     enemySpawnTimer += dt;
-    if (enemySpawnTimer >= 1.5) {
-      enemySpawnTimer = 0;
+    // 🧹 強制同步清理
+    optionItems.removeWhere((e) => !e.isMounted);
+    final noOption = optionItems.isEmpty;
+    final noEnemy = children.whereType<Enemy>().isEmpty;
 
-      final noOption = optionItems.isEmpty;
-      final noEnemy = children.whereType<Enemy>().isEmpty;
-
-      if (noOption && noEnemy) {
+    if (noOption && noEnemy) {
+      if (enemySpawnTimer >= 1.5) {
+        enemySpawnTimer = 0;
         spawnEnemy();
       }
     }

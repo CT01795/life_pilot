@@ -39,9 +39,7 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     if (isRemovedQ) return;
     isRemovedQ = true;
     onHitByBullet?.call();
-    if (isMounted) {
-      removeFromParent();
-    }
+    removeFromParent();
   }
 
   @override
