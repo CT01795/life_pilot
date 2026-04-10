@@ -14,7 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'tts_web.dart';
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 
 // ignore: must_be_immutable

@@ -13,7 +13,7 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'tts_web.dart';
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 // ignore: must_be_immutable
 class PageGameSentence extends StatefulWidget {
