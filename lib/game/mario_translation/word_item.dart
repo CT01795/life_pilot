@@ -86,7 +86,7 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
   @override
   void update(double dt) {
     super.update(dt);
-    position.y += 10 * dt;
+    position.y += 15 * dt;
 
     // ⭐ 限制 X 不超出
     position.x = position.x.clamp(0, gameRef.screenW - size.x);
