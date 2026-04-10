@@ -7,13 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/controller_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation>, TapCallbacks {
   final String word;
   final Function(String) onCollect;
   final VoidCallback? onHitByBullet;
   final ControllerGameMarioTranslation controller;
-  double yy = 600;
+  double get playerFixedY => gameRef.ground.position.y - gameRef.sizeX;
 
   WordItem({
     required this.controller,
@@ -59,7 +60,7 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
       textRenderer: textPaint,
       boxConfig: TextBoxConfig(
         maxWidth: size.x,               // 限制文字寬度
-        margins: const EdgeInsets.only(left: 8), // ⭐ 左邊留 8 像素
+        margins: Insets.l8, // ⭐ 左邊留 8 像素
       ),
       anchor: Anchor.center,
       position: size / 2,
@@ -75,11 +76,11 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     position.y += 20 * dt;
 
     // ⭐ 限制 X 不超出
-    position.x = position.x.clamp(0, gameRef.worldWidth - size.x);
+    position.x = position.x.clamp(0, gameRef.screenW - size.x);
 
     // ⭐ 掉到地板停止
-    if (position.y >= yy) {
-      position.y = yy;
+    if (position.y >= playerFixedY) {
+      position.y = playerFixedY;
     }
   }
 

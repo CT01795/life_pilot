@@ -33,8 +33,7 @@ logging.basicConfig(
 )
 
 # Supabase 資料庫連線字串
-DB_URL = "postgresql://postgres.ccktdpycnferbrjrdtkp:QN4uJPxHzWR64e2u@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres" #os.getenv("DB_URL")  # 從render環境變數取得
-#DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
+DB_URL = os.getenv("DB_URL")  # 從render環境變數取得
 engine = create_engine(DB_URL)
 
 @app.get("/", summary="根節點", description="根節點，相當於網址 http://127.0.0.1:8000/ 的畫面訊息")
