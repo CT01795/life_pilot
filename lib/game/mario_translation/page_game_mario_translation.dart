@@ -245,13 +245,13 @@ class PageGameMarioTranslation extends FlameGame
   void update(double dt) {
     super.update(dt);
     enemySpawnTimer += dt;
-    // 🧹 強制同步清理
-    optionItems.removeWhere((e) => !e.isMounted);
+
     final noOption = optionItems.isEmpty;
     final noEnemy = children.whereType<Enemy>().isEmpty;
 
     if (enemySpawnTimer >= 1.5) {
         enemySpawnTimer = 0;
+      optionItems.removeWhere((e) => !e.isMounted); // 🧹 強制同步清理
       if (noOption && noEnemy) {
         spawnEnemy();
       }
