@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +10,7 @@ import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:html' as html;
 
 // ignore: must_be_immutable
 class PageGameGrammar extends StatefulWidget {
@@ -60,13 +63,19 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
 
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
-    final url =
-      "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-
+    
+    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
-      await player.play(UrlSource(url));
+      final utterance = html.SpeechSynthesisUtterance(text);
+      utterance.lang =
+          containsChinese ? 'zh-TW' : 'en-US';
+
+      html.window.speechSynthesis?.speak(utterance);
       return;
     }
+
+    final url =
+      "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     // 用 http.get 先取得 bytes，並加上 User-Agent
     final response = await http.get(
       Uri.parse(url),

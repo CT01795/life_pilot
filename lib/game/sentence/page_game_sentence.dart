@@ -12,6 +12,7 @@ import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:html' as html;
 
 // ignore: must_be_immutable
 class PageGameSentence extends StatefulWidget {
@@ -60,7 +61,17 @@ class _PageGameSentenceState extends State<PageGameSentence> {
   final player = AudioPlayer();
 
   Future<void> speak(String text) async {
+    if (text.isEmpty) return;
+    
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    if (kIsWeb) {
+      final utterance = html.SpeechSynthesisUtterance(text);
+      utterance.lang =
+          containsChinese ? 'zh-TW' : 'en-US';
+
+      html.window.speechSynthesis?.speak(utterance);
+      return;
+    }
     String url = "";
     if (containsChinese) {
       url =
@@ -69,10 +80,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
-    if (kIsWeb) {
-      await player.play(UrlSource(url));
-      return;
-    }
+
     // 用 http.get 先取得 bytes，並加上 User-Agent
     final response = await http.get(
       Uri.parse(url),

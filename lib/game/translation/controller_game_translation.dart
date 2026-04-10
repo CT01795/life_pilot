@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:html' as html;
 
 class ControllerGameTranslation extends ChangeNotifier {
   final String userName;
@@ -36,7 +37,17 @@ class ControllerGameTranslation extends ChangeNotifier {
   final player = AudioPlayer();
 
   Future<void> speak(String text) async {
+    if (text.isEmpty) return;
+    
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    if (kIsWeb) {
+      final utterance = html.SpeechSynthesisUtterance(text);
+      utterance.lang =
+          containsChinese ? 'zh-TW' : 'en-US';
+
+      html.window.speechSynthesis?.speak(utterance);
+      return;
+    }
     String url = "";
     if (containsChinese) {
       url =
@@ -45,10 +56,7 @@ class ControllerGameTranslation extends ChangeNotifier {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
-    if (kIsWeb) {
-      await player.play(UrlSource(url));
-      return;
-    }
+
     // 用 http.get 先取得 bytes，並加上 User-Agent
     final response = await http.get(
       Uri.parse(url),
