@@ -85,6 +85,7 @@ class PageGameMarioTranslation extends FlameGame
       size: Vector2(screenW, sizeX),
       paint: Paint()..color = const Color(0xFF8B4513),
     );
+    
     add(ground);
 
     // 玩家
