@@ -42,6 +42,7 @@ class PageGameMarioTranslation extends FlameGame
   Color backgroundColor() => const Color(0xFF87CEEB); // 天空藍
 
   void layoutByScreen() {
+    if (!isLoaded) return; // ⭐ 防止還沒 onLoad 就執行
     final screenW = camera.viewport.size.x;
     final screenH = camera.viewport.size.y;
 
