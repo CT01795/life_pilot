@@ -2,6 +2,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/mario_translation/bullet.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
 
@@ -26,7 +27,18 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
     if (isDead) return;
-    if (other is Player) {
+    // ⭐ 被子彈打中
+    if (other is Bullet) {
+      isDead = true;
+
+      // 移除子彈
+      other.removeFromParent();
+      // ⭐ 效果：像被踩一樣
+      onStomp();
+      removeFromParent();
+    }
+
+    else if (other is Player) {
       if (other.velocity.y > 0) {
         // ✅ 踩到敵人
         isDead = true;
@@ -38,6 +50,7 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
           hitCooldown = 1.5; // 1.5秒內不再扣分
           // ❌ 被敵人撞到（不是從上面踩）
           gameRef.controller.score -= 4;
+          other.hitEffect(); // ⭐ 玩家閃爍
 
           // 更新畫面文字
           gameRef.questionText.updateText(
