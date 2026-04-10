@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 String? weatherApiKey;
 
@@ -56,6 +56,28 @@ class TableNames {
   static const recommendedAttractions = "recommended_attractions";
   static const memoryTrace = "memory_trace";
   static const gameTranslationSynonyms = "game_translation_synonyms";
+}
+
+// -------------------- GameColors --------------------
+class GameColors {
+  // 主色（金黃，但不要太亮）
+  static const primary = Color(0xFFE0B04B);
+  static const sky = Color(0xFF8EC5FF);
+  static const skyBottom = Color(0xFF5F86A6);
+  // 地板（不要用真實棕色 → 改遊戲色）
+  static const ground = Color(0xFF4B3A2A);
+  // 子彈（偏暖橘）
+  static const bullet = Color(0xFFE88A2A);
+  // 文字（白灰，不要黑）
+  static const textDark = Color(0xFF1F2937);
+  static const textItemDark = Color(0xFF1F2937);
+  // ⭐ 卡片
+  static const card = Color(0xFFEAF2FF);
+  // HUD底
+  static const hud = Color(0xAA000000);
+
+  static const buttonBase = Color(0xFF1F2A38);
+  static const buttonAccent = Color(0xFFE0B04B);
 }
 
 // -------------------- Date Formats --------------------

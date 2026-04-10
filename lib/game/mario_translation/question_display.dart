@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/controller_game_mario_translation.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class QuestionDisplay extends PositionComponent with TapCallbacks {
   final ControllerGameMarioTranslation controller;
@@ -30,7 +31,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
       textRenderer: TextPaint(
         style: TextStyle(
           fontSize: 32,
-          color: text.contains("分數") ? Colors.red : Colors.black,
+          color: text.contains("分數") ? GameColors.primary : GameColors.textDark,
           fontWeight: FontWeight.bold,
         ),
       ),

@@ -249,11 +249,15 @@ class _PageGameListState extends State<PageGameList> {
                                             child: Container(
                                               width: 60,
                                               height: 60,
-                                              color:
-                                                  Colors.blue.withOpacity(0.5),
-                                              child: Icon(Icons.arrow_left),
+                                              decoration: BoxDecoration(
+                                                color: GameColors.buttonBase,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.white12),
+                                              ),
+                                              child: Icon(Icons.arrow_back_rounded, color: Colors.white70, size: 60),
                                             ),
                                           ),
+                                          Gaps.w16,
                                           GestureDetector(
                                             onTapDown: (_) =>
                                                 game1.player.moveRight(true),
@@ -262,21 +266,29 @@ class _PageGameListState extends State<PageGameList> {
                                             child: Container(
                                               width: 60,
                                               height: 60,
-                                              color:
-                                                  Colors.green.withOpacity(0.5),
-                                              child: Icon(Icons.arrow_right),
+                                              decoration: BoxDecoration(
+                                                color: GameColors.buttonBase,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.white12),
+                                              ),
+                                              child: Icon(Icons.arrow_forward_rounded, color: Colors.white70, size: 60),
                                             ),
                                           ),
+                                          Gaps.w16,
                                           GestureDetector(
                                             onTap: () => game1.player.jump(),
                                             child: Container(
                                               width: 60,
                                               height: 60,
-                                              color: Colors.yellow
-                                                  .withOpacity(0.5),
-                                              child: Icon(Icons.arrow_upward),
+                                              decoration: BoxDecoration(
+                                                color: GameColors.buttonAccent,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.white12),
+                                              ),
+                                              child: Icon(Icons.arrow_upward_rounded, color: Colors.white70, size: 60,),
                                             ),
                                           ),
+                                          Gaps.w16,
                                           GestureDetector(
                                             onTap: () async {
                                               await game1.shoot();
@@ -284,9 +296,12 @@ class _PageGameListState extends State<PageGameList> {
                                             child: Container(
                                               width: 60,
                                               height: 60,
-                                              color:
-                                                  Colors.red.withOpacity(0.5),
-                                              child: Icon(Icons.circle),
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFFC94B4B),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.white12),
+                                              ),
+                                              child: Icon(Icons.circle, color: Colors.white70),
                                             ),
                                           ),
                                         ],

@@ -1,3 +1,7 @@
+// ignore_for_file: deprecated_member_use
+
+import 'dart:math';
+
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -25,6 +29,7 @@ class PageGameMarioTranslation extends FlameGame
   final BuildContext context;
   final String gameId;
   final int gameLevel;
+  late QuestionDisplay questionTitle;
   late QuestionDisplay questionText;
   late QuestionDisplay scoreText;
 
@@ -39,7 +44,7 @@ class PageGameMarioTranslation extends FlameGame
   });
 
   @override
-  Color backgroundColor() => const Color(0xFF87CEEB); // 天空藍
+  Color backgroundColor() => GameColors.sky; // 天空藍
 
   void layoutByScreen() {
     if (!isLoaded) return; // ⭐ 防止還沒 onLoad 就執行
@@ -65,9 +70,6 @@ class PageGameMarioTranslation extends FlameGame
       e.position.x = screenW / 2;
       i = i + 1;
     }
-    // ⭐ HUD（固定畫面）
-    scoreText.position = Vector2(40, sizeX);
-    questionText.position = Vector2(40, sizeX + 50);
   }
 
   @override
@@ -90,7 +92,7 @@ class PageGameMarioTranslation extends FlameGame
     ground = RectangleComponent(
       position: Vector2(0, screenH - sizeY),
       size: Vector2(screenW, sizeX),
-      paint: Paint()..color = const Color(0xFF8B4513),
+      paint: Paint()..color = GameColors.ground,
     );
 
     add(ground);
@@ -101,13 +103,18 @@ class PageGameMarioTranslation extends FlameGame
         size: Vector2(sizeX, sizeX));
     add(player);
 
+    add(RectangleComponent(
+      size: Vector2(max(screenW, screenH), 90),
+      paint: Paint()..color = GameColors.hud,
+    ));
+
     // 分數 HUD
     scoreText = QuestionDisplay(
-        text: "分數：${controller.score}",
+        text: "分數: ${controller.score}",
         controller: controller,
         positionX: 40,
         positionY: 50,
-        sizeX: screenW,
+        sizeX: max(screenW, screenH),
         sizeY: sizeX)
       ..priority = 100;
 
@@ -115,12 +122,25 @@ class PageGameMarioTranslation extends FlameGame
     add(scoreText);
 
     // 題目 HUD
-    questionText = QuestionDisplay(
-        text: controller.currentQuestion?.question ?? "載入中...",
+    questionTitle = QuestionDisplay(
+        text: "題目: ",
         controller: controller,
         positionX: 40,
         positionY: 100,
-        sizeX: screenW,
+        sizeX: 100,
+        sizeY: sizeX)
+      ..priority = 90;
+
+    // ⭐ 設定為 HUD（固定在畫面上）
+    add(questionTitle);
+
+    // 題目 HUD
+    questionText = QuestionDisplay(
+        text: controller.currentQuestion?.question ?? "載入中...",
+        controller: controller,
+        positionX: 120,
+        positionY: 100,
+        sizeX: max(screenW, screenH),
         sizeY: sizeX)
       ..priority = 100;
 
@@ -195,7 +215,7 @@ class PageGameMarioTranslation extends FlameGame
               nextRound();
             }
             questionText.updateText(q.question);
-            scoreText.updateText("分數：${controller.score}");
+            scoreText.updateText("分數: ${controller.score}");
           }
           if (controller.score >= 100 || controller.score < -20) {
             Future.microtask(() => Navigator.pop(context, true));
@@ -212,7 +232,7 @@ class PageGameMarioTranslation extends FlameGame
     await controller.loadNextQuestion();
 
     questionText.updateText(controller.currentQuestion?.question ?? '');
-    scoreText.updateText("分數：${controller.score}");
+    scoreText.updateText("分數: ${controller.score}");
 
     spawnEnemy();
   }
