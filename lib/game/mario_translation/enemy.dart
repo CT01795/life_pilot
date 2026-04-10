@@ -35,7 +35,9 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
       other.removeFromParent();
       // ⭐ 效果：像被踩一樣
       onStomp();
-      removeFromParent();
+      if (isMounted) {
+        removeFromParent();
+      }
     }
 
     else if (other is Player) {
@@ -44,7 +46,9 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
         isDead = true;
         other.velocity.y = -100; // 反彈
         onStomp();
-        removeFromParent();
+        if (isMounted) {
+          removeFromParent();
+        }
       } else {
         if (hitCooldown <= 0) {
           hitCooldown = 1.5; // 1.5秒內不再扣分
@@ -77,7 +81,7 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
     }
 
     if (position.x >= gameRef.screenW - size.x) {
-      position.x = gameRef.screenH - size.x;
+      position.x = gameRef.screenW - size.x;
       velocity.x = -velocity.x.abs();
     }
     // ⭐ 限制左右邊界

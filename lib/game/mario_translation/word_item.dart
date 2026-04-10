@@ -33,9 +33,15 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     super.onTapDown(event);
   }
 
+  bool isRemovedQ = false;
+
   Future<void> hitByBullet() async {
+    if (isRemovedQ) return;
+    isRemovedQ = true;
     onHitByBullet?.call();
-    removeFromParent();
+    if (isMounted) {
+      removeFromParent();
+    }
   }
 
   @override
@@ -89,12 +95,15 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
+    if (isRemovedQ) return;
     if (collected) return;
 
     if (other is Player) {
       collected = true;
       onCollect(word);
-      removeFromParent();
+      if (isMounted) {
+        removeFromParent();
+      }
     }
   }
 }

@@ -55,6 +55,7 @@ class TableNames {
   static const recommendedEventUrl = "recommended_event_url";
   static const recommendedAttractions = "recommended_attractions";
   static const memoryTrace = "memory_trace";
+  static const gameTranslationSynonyms = "game_translation_synonyms";
 }
 
 // -------------------- Date Formats --------------------

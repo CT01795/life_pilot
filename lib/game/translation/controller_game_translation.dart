@@ -37,12 +37,18 @@ class ControllerGameTranslation extends ChangeNotifier {
 
   final player = AudioPlayer();
 
+  final Map<String, Uint8List> _audioCache = {};
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
-    
+
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
       await speakWeb(text);
+      return;
+    }
+
+    if (_audioCache.containsKey(text)) {
+      await player.play(BytesSource(_audioCache[text]!));
       return;
     }
     String url = "";
@@ -64,7 +70,8 @@ class ControllerGameTranslation extends ChangeNotifier {
     );
 
     if (response.statusCode == 200) {
-      await player.play(BytesSource(response.bodyBytes));
+      _audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 
@@ -89,35 +96,22 @@ class ControllerGameTranslation extends ChangeNotifier {
     notifyListeners();
   }
 
-  void answer(String answer) {
+  Map<String, Set<String>> synonyms = {};
+  Future<void> answer(String answer) async {
     if (currentQuestion == null || lastAnswer != null) return;
+
+    if (synonyms.isEmpty) {
+      synonyms = await service.getSynonyms();
+    }
 
     lastAnswer = answer;
     answeredCount++;
-    final isRightAnswer = answer == currentQuestion!.correctAnswer ||
-        (currentQuestion!.question == "爸爸" &&
-            (answer == "father" ||
-                answer.toLowerCase() == "daddy" ||
-                answer.toLowerCase() == "dad")) ||
-        (currentQuestion!.question == "沙發" &&
-            (answer == "sofa" || answer == "couch")) ||
-        (currentQuestion!.question == "媽媽" &&
-            (answer == "mom" ||
-                answer == "mother" ||
-                answer.toLowerCase() == "mummy" ||
-                answer.toLowerCase() == "mommy")) ||
-        (currentQuestion!.question == "腳踏車" &&
-            (answer == "bike" || answer == "bicycle")) ||
-        (currentQuestion!.question == "摩托車" &&
-            (answer == "motorcycle" || answer == "motorbike")) ||
-        (currentQuestion!.question == "薯條" &&
-            (answer == "fries" ||
-                answer == "chips" ||
-                answer.replaceAll(" ", '').toLowerCase() == "frenchfries")) ||
-        (currentQuestion!.question == "腳踏車" &&
-            (answer == "bike" || answer == "bicycle")) ||
-        (currentQuestion!.question == "miss" &&
-            (answer == "錯過或想念" || answer == "未婚的女人"));
+    final q = currentQuestion!.question.toLowerCase();
+    final normalized = answer.replaceAll(" ", "").toLowerCase();
+    final isRightAnswer =
+        normalized == currentQuestion!.correctAnswer.toLowerCase() ||
+            synonyms[q]?.contains(normalized) == true;
+
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;
@@ -138,12 +132,12 @@ class ControllerGameTranslation extends ChangeNotifier {
     if (answeredCount >= maxQuestions) {
       isFinished = true;
     }
-    service.submitTranslationAnswer(
+    unawaited(service.submitTranslationAnswer(
       userName: userName,
       questionId: currentQuestion!.questionId,
       answer: answer,
       isRightAnswer: isRightAnswer,
-    );
+    ));
   }
 
   Future<void> _saveScore(bool isPass) async {

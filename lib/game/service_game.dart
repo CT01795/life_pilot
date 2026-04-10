@@ -6,6 +6,7 @@ import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/model_game_user.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceGame {
@@ -62,7 +63,8 @@ class ServiceGame {
   }
 
   //------------------------- Grammar -------------------------
-  Future<ModelGameGrammarQuestion> fetchGrammarQuestion(String userName, int level) async {
+  Future<ModelGameGrammarQuestion> fetchGrammarQuestion(
+      String userName, int level) async {
     final result = await client.rpc("get_grammar_question", params: {
       'user_name': userName,
       'p_level': level,
@@ -98,11 +100,10 @@ class ServiceGame {
   }
 
   //------------------------- Sentence -------------------------
-  Future<ModelGameSentence> fetchSentenceQuestion(String userName, int level) async {
-    final result = await client.rpc("get_sentence_question", params: {
-      'user_name': userName,
-      'p_level': level
-    });
+  Future<ModelGameSentence> fetchSentenceQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_sentence_question",
+        params: {'user_name': userName, 'p_level': level});
 
     if (result == null || result.isEmpty) {
       throw Exception("No data returned");
@@ -134,11 +135,10 @@ class ServiceGame {
   }
 
   //------------------------- Speaking -------------------------
-  Future<ModelGameSpeaking> fetchSpeakingQuestion(String userName, int level) async {
-    final result = await client.rpc("get_speaking_question", params: {
-      'user_name': userName,
-      'p_level': level
-    });
+  Future<ModelGameSpeaking> fetchSpeakingQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_speaking_question",
+        params: {'user_name': userName, 'p_level': level});
 
     if (result == null || result.isEmpty) {
       throw Exception("No data returned");
@@ -170,11 +170,10 @@ class ServiceGame {
   }
 
   //------------------------- Translation -------------------------
-  Future<ModelGameTranslation> fetchTranslationQuestion(String userName, int level) async {
-    final result = await client.rpc("get_translation_with_options", params: {
-      'user_name': userName,
-      'p_level': level
-    });
+  Future<ModelGameTranslation> fetchTranslationQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_translation_with_options",
+        params: {'user_name': userName, 'p_level': level});
 
     if (result == null || result.isEmpty) {
       throw Exception("No data returned");
@@ -193,11 +192,10 @@ class ServiceGame {
         ]..shuffle());
   }
 
-  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(String userName, int level) async {
-    final result = await client.rpc("get_translation_with_options", params: {
-      'user_name': userName,
-      'p_level': level
-    });
+  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_translation_with_options",
+        params: {'user_name': userName, 'p_level': level});
 
     if (result == null || result.isEmpty) {
       throw Exception("No data returned");
@@ -214,6 +212,21 @@ class ServiceGame {
           data['wrong1'],
           data['wrong2'],
         ]..shuffle());
+  }
+
+  Future<Map<String, Set<String>>> getSynonyms() async {
+    final response =
+        await client.from(TableNames.gameTranslationSynonyms).select();
+    final Map<String, Set<String>> synonyms = {};
+
+    for (final row in response) {
+      final String question = row['question'];
+      final String answer = row['answer'];
+
+      synonyms.putIfAbsent(question, () => <String>{});
+      synonyms[question]!.add(answer);
+    }
+    return synonyms;
   }
 
   // 寫入使用者答題紀錄
@@ -233,11 +246,10 @@ class ServiceGame {
   }
 
   //------------------------- Word Search -------------------------
-  Future<ModelGameWordSearch> fetchWordSearchQuestion(String userName, int level) async {
-    final result = await client.rpc("get_next_word_question", params: {
-      'user_name': userName,
-      'p_level': level
-    });
+  Future<ModelGameWordSearch> fetchWordSearchQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_next_word_question",
+        params: {'user_name': userName, 'p_level': level});
 
     if (result == null || result.isEmpty) {
       throw Exception("No data returned");

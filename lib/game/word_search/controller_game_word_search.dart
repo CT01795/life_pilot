@@ -51,6 +51,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
 
   final player = AudioPlayer();
 
+  final Map<String, Uint8List> _audioCache = {};
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
     
@@ -59,6 +60,10 @@ class ControllerGameWordSearch extends ChangeNotifier {
       return;
     }
     
+    if (_audioCache.containsKey(text)) {
+      await player.play(BytesSource(_audioCache[text]!));
+      return;
+    }
     String url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
 
     // 用 http.get 先取得 bytes，並加上 User-Agent
@@ -71,7 +76,8 @@ class ControllerGameWordSearch extends ChangeNotifier {
     );
 
     if (response.statusCode == 200) {
-      await player.play(BytesSource(response.bodyBytes));
+      _audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 
@@ -270,12 +276,12 @@ class ControllerGameWordSearch extends ChangeNotifier {
     if (answeredCount >= maxQuestions) {
       isFinished = true;
     }
-    service.submitWordSearchAnswer(
+    unawaited(service.submitWordSearchAnswer(
       userName: userName,
       questionId: currentQuestion.questionId,
       answer: currentQuestion.question,
       isRightAnswer: isRightAnswer,
-    );
+    ));
   }
 
   Future<void> _saveScore(bool isPass) async {

@@ -84,12 +84,12 @@ class ControllerGameSpeaking extends ChangeNotifier {
       loadNextQuestion();
     });
 
-    service.submitSpeakingAnswer(
+    unawaited(service.submitSpeakingAnswer(
       userName: userName,
       questionId: currentQuestion!.questionId,
       answer: currentQuestion!.correctAnswer,
       isRightAnswer: true,
-    );
+    ));
     notifyListeners();
   }
 

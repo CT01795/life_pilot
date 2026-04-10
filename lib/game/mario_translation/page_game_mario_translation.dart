@@ -137,6 +137,7 @@ class PageGameMarioTranslation extends FlameGame
   }
 
   void spawnEnemy() {
+    if (children.whereType<Enemy>().isNotEmpty) return;
     player.position.x = sizeX;
     add(Enemy(
       position: Vector2(screenW * 2 / 3, player.position.y),
@@ -169,11 +170,7 @@ class PageGameMarioTranslation extends FlameGame
           optionItems.remove(item); // 刪除列表
           item.removeFromParent(); // 刪除畫面
           if (optionItems.isEmpty) {
-            isAnswering = false;
-            await controller.loadNextQuestion();
-            questionText.updateText(controller.currentQuestion?.question ?? '');
-            scoreText.updateText("分數：${controller.score}");
-            spawnEnemy();
+            nextRound();
           }
         },
         position: Vector2(screenW / 2, player.position.y - (i + 1) * 120),
@@ -185,26 +182,17 @@ class PageGameMarioTranslation extends FlameGame
               o.removeFromParent();
             }
 
-            isAnswering = false;
-            await controller.loadNextQuestion();
-            questionText.updateText(controller.currentQuestion?.question ?? '');
-            scoreText.updateText("分數：${controller.score}");
-            spawnEnemy();
+            nextRound();
           } else {
-            for (var o in optionItems) {
+            optionItems.removeWhere((o) {
               if (o.word == word) {
                 o.removeFromParent();
-                optionItems.remove(o);
-                break;
+                return true;
               }
-            }
+              return false;
+            });
             if (optionItems.isEmpty) {
-              isAnswering = false;
-              await controller.loadNextQuestion();
-              questionText
-                  .updateText(controller.currentQuestion?.question ?? '');
-              scoreText.updateText("分數：${controller.score}");
-              spawnEnemy();
+              nextRound();
             }
             questionText.updateText(q.question);
             scoreText.updateText("分數：${controller.score}");
@@ -217,6 +205,16 @@ class PageGameMarioTranslation extends FlameGame
       optionItems.add(item);
       add(item);
     }
+  }
+
+  Future<void> nextRound() async {
+    isAnswering = false;
+    await controller.loadNextQuestion();
+
+    questionText.updateText(controller.currentQuestion?.question ?? '');
+    scoreText.updateText("分數：${controller.score}");
+
+    spawnEnemy();
   }
 
   /*@override

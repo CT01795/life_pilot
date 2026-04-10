@@ -61,12 +61,18 @@ class _PageGameSentenceState extends State<PageGameSentence> {
 
   final player = AudioPlayer();
 
+  final Map<String, Uint8List> _audioCache = {};
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
     
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
       await speakWeb(text);
+      return;
+    }
+
+    if (_audioCache.containsKey(text)) {
+      await player.play(BytesSource(_audioCache[text]!));
       return;
     }
 
@@ -89,7 +95,8 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     );
 
     if (response.statusCode == 200) {
-      await player.play(BytesSource(response.bodyBytes));
+      _audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 
