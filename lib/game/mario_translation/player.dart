@@ -7,13 +7,13 @@ import 'package:life_pilot/game/mario_translation/page_game_mario_translation.da
 // ignore: deprecated_member_use
 class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMarioTranslation> {
   Vector2 velocity = Vector2.zero();
-  double yy = 600;
   final double speed = 200;
   final double jumpSpeed = -400;
   bool isOnGround = true;
   int facing = 1; // 1 = 右, -1 = 左
 
   Player({required super.position, required super.size});
+  double get playerFixedY => gameRef.ground.position.y - gameRef.sizeX;
 
   void moveLeft(bool pressed) {
     if (pressed) {
@@ -61,14 +61,14 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
     velocity.y += 800 * dt; // 重力
     position += velocity * dt;
 
-    if (position.y >= yy) {
+    if (position.y >= playerFixedY) {
       // 地面
-      position.y = yy;
+      position.y = playerFixedY;
       velocity.y = 0;
       isOnGround = true;
     }
     // ⭐ 限制左右邊界
-    position.x = position.x.clamp(0, gameRef.worldWidth - size.x);
+    position.x = position.x.clamp(0, gameRef.screenW - size.x);
   }
 
   @override

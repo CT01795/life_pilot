@@ -142,7 +142,7 @@ class Insets {
   static const all4 = EdgeInsets.all(4);
   static const all8 = EdgeInsets.all(8);
   static const all12 = EdgeInsets.all(12);
-
+  static const l8 = EdgeInsets.only(left: 8);
   static const v4 = EdgeInsets.symmetric(vertical: 4);
   static const h6 = EdgeInsets.symmetric(horizontal: 6);
   static const h8v4 = EdgeInsets.symmetric(horizontal: 8, vertical: 4);

@@ -18,8 +18,9 @@ import 'package:life_pilot/utils/const.dart';
 class PageGameMarioTranslation extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents, TapCallbacks {
   List<WordItem> optionItems = [];
-  double yy = 600;
+  late double sizeX;
   late Player player;
+  late RectangleComponent ground;
   late ControllerGameMarioTranslation controller;
   final BuildContext context;
   final String gameId;
@@ -28,8 +29,8 @@ class PageGameMarioTranslation extends FlameGame
   late QuestionDisplay scoreText;
 
   // 世界大小
-  double worldWidth = 2000;
-  double worldHeight = 500;
+  double screenW = 2000;
+  double screenH = 500;
 
   PageGameMarioTranslation({
     required this.context,
@@ -40,10 +41,34 @@ class PageGameMarioTranslation extends FlameGame
   @override
   Color backgroundColor() => const Color(0xFF87CEEB); // 天空藍
 
+  void layoutByScreen() {
+    final screenW = camera.viewport.size.x;
+    final screenH = camera.viewport.size.y;
+
+    final groundY = screenH - 200;
+
+    // ⭐ 地板
+    ground.position = Vector2(0, groundY);
+    ground.size = Vector2(screenW, sizeX);
+
+    // ⭐ Player
+    player.position.y = groundY - sizeX;
+
+    // ⭐ Enemy（如果存在）
+    for (final e in children.whereType<Enemy>()) {
+      e.position.y = groundY - sizeX;
+    }
+
+    // ⭐ HUD（固定畫面）
+    scoreText.position = Vector2(40, 100);
+    questionText.position = Vector2(40, 200);
+  }
+
   @override
   Future<void> onLoad() async {
-    worldWidth = camera.viewport.size.x; //2000;
-    worldHeight = camera.viewport.size.y;
+    screenW = camera.viewport.size.x; //2000;
+    screenH = camera.viewport.size.y;
+    sizeX = 50;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
@@ -55,50 +80,53 @@ class PageGameMarioTranslation extends FlameGame
     await controller.loadNextQuestion();
 
     // 地板
-    add(RectangleComponent(
-      position: Vector2(0, yy + 50),
-      size: Vector2(worldWidth, 50),
+    ground = RectangleComponent(
+      position: Vector2(0, screenH - 200),
+      size: Vector2(screenW, sizeX),
       paint: Paint()..color = const Color(0xFF8B4513),
-    ));
+    );
+    add(ground);
 
     // 玩家
-    player = Player(position: Vector2(100, yy), size: Vector2(50, 50));
+    player = Player(
+        position: Vector2(100, ground.position.y - sizeX), size: Vector2(sizeX, sizeX));
     add(player);
 
     // 分數 HUD
     scoreText = QuestionDisplay(
-      text: "分數：${controller.score}",
-      controller: controller,
-      positionX: 40,
-      positionY: 100,
-      sizeX: 500,
-      sizeY: 50
-    )..priority = 100;
+        text: "分數：${controller.score}",
+        controller: controller,
+        positionX: 40,
+        positionY: 100,
+        sizeX: screenW,
+        sizeY: sizeX)
+      ..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(scoreText);
 
     // 題目 HUD
     questionText = QuestionDisplay(
-      text: controller.currentQuestion?.question ?? "載入中...",
-      controller: controller,
-      positionX: 40,
-      positionY: 200,
-      sizeX: 500,
-      sizeY: 50
-    )..priority = 100;
+        text: controller.currentQuestion?.question ?? "載入中...",
+        controller: controller,
+        positionX: 40,
+        positionY: 200,
+        sizeX: screenW,
+        sizeY: sizeX)
+      ..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionText);
 
     // 敵人
     spawnEnemy();
+    layoutByScreen(); // ⭐ 初始化位置
   }
 
   void spawnEnemy() {
     add(Enemy(
-      position: Vector2(600, yy),
-      size: Vector2(50, 50),
+      position: Vector2(screenW - sizeX, player.position.y),
+      size: Vector2(sizeX, sizeX),
       onStomp: () {
         spawnOptions();
       },
@@ -129,10 +157,8 @@ class PageGameMarioTranslation extends FlameGame
           if (optionItems.isEmpty) {
             isAnswering = false;
             await controller.loadNextQuestion();
-            questionText.updateText(
-              controller.currentQuestion?.question ?? '');
-            scoreText.updateText(
-              "分數：${controller.score}");
+            questionText.updateText(controller.currentQuestion?.question ?? '');
+            scoreText.updateText("分數：${controller.score}");
             spawnEnemy();
           }
         },
@@ -148,10 +174,8 @@ class PageGameMarioTranslation extends FlameGame
 
             isAnswering = false;
             await controller.loadNextQuestion();
-            questionText.updateText(
-                controller.currentQuestion?.question ?? '');
-            scoreText.updateText(
-              "分數：${controller.score}");
+            questionText.updateText(controller.currentQuestion?.question ?? '');
+            scoreText.updateText("分數：${controller.score}");
             spawnEnemy();
           } else {
             for (var o in optionItems) {
@@ -164,15 +188,13 @@ class PageGameMarioTranslation extends FlameGame
             if (optionItems.isEmpty) {
               isAnswering = false;
               await controller.loadNextQuestion();
-              questionText.updateText(
-                  controller.currentQuestion?.question ?? '');
-              scoreText.updateText(
-                "分數：${controller.score}");
+              questionText
+                  .updateText(controller.currentQuestion?.question ?? '');
+              scoreText.updateText("分數：${controller.score}");
               spawnEnemy();
             }
             questionText.updateText(q.question);
-            scoreText.updateText(
-              "分數：${controller.score}");
+            scoreText.updateText("分數：${controller.score}");
           }
           if (controller.score >= 100 || controller.score < -20) {
             Future.microtask(() => Navigator.pop(context, true));
@@ -196,10 +218,17 @@ class PageGameMarioTranslation extends FlameGame
 
       camera.viewfinder.position = Vector2(
         (player.position.x - halfWidth)
-            .clamp(0, worldWidth - viewport.resolution.x),
+            .clamp(0, screenW - viewport.resolution.x),
         (player.position.y - halfHeight)
-            .clamp(0, worldHeight - viewport.resolution.y),
+            .clamp(0, screenH - viewport.resolution.y),
       );
     }
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+
+    layoutByScreen(); // ⭐ 旋轉時重算
   }
 }

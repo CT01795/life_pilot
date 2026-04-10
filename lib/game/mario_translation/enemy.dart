@@ -63,8 +63,8 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
       velocity.x = velocity.x.abs();
     }
 
-    if (position.x >= gameRef.worldWidth - size.x) {
-      position.x = gameRef.worldWidth - size.x;
+    if (position.x >= gameRef.screenW - size.x) {
+      position.x = gameRef.screenH - size.x;
       velocity.x = -velocity.x.abs();
     }
   }

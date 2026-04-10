@@ -8,7 +8,6 @@ import 'package:life_pilot/game/mario_translation/word_item.dart';
 class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
   final Vector2 direction;
   final double speed;
-  double yy = 600;
   Bullet({
     required Vector2 position,
     required this.direction,
@@ -33,9 +32,9 @@ class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGam
 
     // ⭐ 邊界刪除
     if (position.x < 0 ||
-        position.x > gameRef.worldWidth ||
+        position.x > gameRef.screenW ||
         position.y < 0 ||
-        position.y > gameRef.worldHeight) {
+        position.y > gameRef.screenH) {
       removeFromParent();
     }
   }
