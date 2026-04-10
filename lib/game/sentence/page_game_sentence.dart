@@ -12,7 +12,8 @@ import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'dart:html' as html;
+import 'package:life_pilot/utils/tts/tts_stub.dart'
+    if (dart.library.html) 'tts_web.dart';
 
 // ignore: must_be_immutable
 class PageGameSentence extends StatefulWidget {
@@ -65,13 +66,10 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
-      final utterance = html.SpeechSynthesisUtterance(text);
-      utterance.lang =
-          containsChinese ? 'zh-TW' : 'en-US';
-
-      html.window.speechSynthesis?.speak(utterance);
+      await speakWeb(text);
       return;
     }
+
     String url = "";
     if (containsChinese) {
       url =
