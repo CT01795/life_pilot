@@ -18,6 +18,7 @@ class PageGameMarioTranslation extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents, TapCallbacks {
   List<WordItem> optionItems = [];
   late double sizeX;
+  late double sizeY;
   late Player player;
   late RectangleComponent ground;
   late ControllerGameMarioTranslation controller;
@@ -28,7 +29,7 @@ class PageGameMarioTranslation extends FlameGame
   late QuestionDisplay scoreText;
 
   // 世界大小
-  double screenW = 2000;
+  double screenW = 800;
   double screenH = 500;
 
   PageGameMarioTranslation({
@@ -43,7 +44,7 @@ class PageGameMarioTranslation extends FlameGame
   void layoutByScreen() {
     if (!isLoaded) return; // ⭐ 防止還沒 onLoad 就執行
 
-    final groundY = screenH - 200;
+    final groundY = screenH - sizeY;
 
     // ⭐ 地板
     ground.position = Vector2(0, groundY);
@@ -65,15 +66,16 @@ class PageGameMarioTranslation extends FlameGame
       i = i + 1;
     }
     // ⭐ HUD（固定畫面）
-    scoreText.position = Vector2(40, 50);
-    questionText.position = Vector2(40, 100);
+    scoreText.position = Vector2(40, sizeX);
+    questionText.position = Vector2(40, sizeX + 50);
   }
 
   @override
   Future<void> onLoad() async {
-    screenW = camera.viewport.size.x; //2000;
+    screenW = camera.viewport.size.x;
     screenH = camera.viewport.size.y;
     sizeX = 50;
+    sizeY = 200;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
@@ -86,7 +88,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 地板
     ground = RectangleComponent(
-      position: Vector2(0, screenH - 200),
+      position: Vector2(0, screenH - sizeY),
       size: Vector2(screenW, sizeX),
       paint: Paint()..color = const Color(0xFF8B4513),
     );
@@ -95,7 +97,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 玩家
     player = Player(
-        position: Vector2(100, ground.position.y - sizeX),
+        position: Vector2(sizeX + 50, ground.position.y - sizeX),
         size: Vector2(sizeX, sizeX));
     add(player);
 
@@ -135,7 +137,7 @@ class PageGameMarioTranslation extends FlameGame
   }
 
   void spawnEnemy() {
-    player.position.x = 100;
+    player.position.x = sizeX;
     add(Enemy(
       position: Vector2(screenW * 2 / 3, player.position.y),
       size: Vector2(sizeX, sizeX),
