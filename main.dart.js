@@ -153842,8 +153842,8 @@ s=q.fc
 A.b.dZ(s,new B.aUW())
 s=s.length
 r=J.e3(q.ge0(0).ez(0,t.BF))
-if(s===0&&r)if(q.e9>=1.5){q.e9=0
-q.Kq()}},
+if(q.e9>=1.5){q.e9=0
+if(s===0&&r)q.Kq()}},
 oi(a){var s,r=this
 r.axd(a)
 s=a.a
