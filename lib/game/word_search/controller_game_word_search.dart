@@ -7,7 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'dart:html' as html;
+import 'package:life_pilot/utils/tts/tts_stub.dart'
+    if (dart.library.html) 'tts_web.dart';
+
 
 class ControllerGameWordSearch extends ChangeNotifier {
   final String userName;
@@ -52,13 +54,8 @@ class ControllerGameWordSearch extends ChangeNotifier {
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
     
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
-      final utterance = html.SpeechSynthesisUtterance(text);
-      utterance.lang =
-          containsChinese ? 'zh-TW' : 'en-US';
-
-      html.window.speechSynthesis?.speak(utterance);
+      await speakWeb(text);
       return;
     }
     

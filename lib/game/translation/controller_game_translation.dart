@@ -8,7 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'dart:html' as html;
+import 'package:life_pilot/utils/tts/tts_stub.dart'
+    if (dart.library.html) 'tts_web.dart';
 
 class ControllerGameTranslation extends ChangeNotifier {
   final String userName;
@@ -41,11 +42,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     
     final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
-      final utterance = html.SpeechSynthesisUtterance(text);
-      utterance.lang =
-          containsChinese ? 'zh-TW' : 'en-US';
-
-      html.window.speechSynthesis?.speak(utterance);
+      await speakWeb(text);
       return;
     }
     String url = "";
