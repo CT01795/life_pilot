@@ -237,11 +237,22 @@ class PageGameMarioTranslation extends FlameGame
     spawnEnemy();
   }
 
-  /*@override
+  double enemySpawnTimer = 0;
+  @override
   void update(double dt) {
     super.update(dt);
+    enemySpawnTimer += dt;
+    if (enemySpawnTimer >= 1.5) {
+      enemySpawnTimer = 0;
 
-    // 鏡頭跟隨玩家 (Flame 1.35.1 官方做法)
+      final noOption = optionItems.isEmpty;
+      final noEnemy = children.whereType<Enemy>().isEmpty;
+
+      if (noOption && noEnemy) {
+        spawnEnemy();
+      }
+    }
+    /*// 鏡頭跟隨玩家 (Flame 1.35.1 官方做法)
     final viewport = camera.viewport;
     if (viewport is FixedResolutionViewport) {
       final halfWidth = viewport.resolution.x / 2;
@@ -253,8 +264,8 @@ class PageGameMarioTranslation extends FlameGame
         (player.position.y - halfHeight)
             .clamp(0, screenH - viewport.resolution.y),
       );
-    }
-  }*/
+    }*/
+  }
 
   @override
   void onGameResize(Vector2 size) {
