@@ -195,9 +195,9 @@ class PageGameMarioTranslation extends FlameGame
         },
         position: Vector2(screenW / 2, player.position.y - (i + 1) * 120),
         onCollect: (word) async {
-          controller.answer(word);
+          bool isRightAnswer = await controller.answer(word);
 
-          if (word == q.correctAnswer) {
+          if (isRightAnswer) {
             for (var o in optionItems) {
               o.removeFromParent();
             }

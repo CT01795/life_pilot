@@ -93,9 +93,9 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
 
   Map<String, Set<String>> synonyms = {};
   bool isAnswering = false;
-  Future<void> answer(String answer) async {
+  Future<bool> answer(String answer) async {
     try {
-      if (currentQuestion == null || isAnswering) return;
+      if (currentQuestion == null || isAnswering) return false;
       isAnswering = true;
       if (synonyms.isEmpty) {
         synonyms = await service.getSynonyms();
@@ -104,7 +104,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
       lastAnswer = answer;
       answeredCount++;
       final q = currentQuestion!.question.toLowerCase();
-      final normalized = answer.replaceAll(" ", "").toLowerCase();
+      final normalized = answer.toLowerCase();
       final isRightAnswer =
           normalized == currentQuestion!.correctAnswer.toLowerCase() ||
               synonyms[q]?.contains(normalized) == true;
@@ -126,6 +126,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
         answer: answer,
         isRightAnswer: isRightAnswer,
       );
+      return isRightAnswer;
     } finally {
       isAnswering = false;
     }
