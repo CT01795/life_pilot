@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'tts_web.dart';
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameMarioTranslation extends ChangeNotifier {
   final String userName;

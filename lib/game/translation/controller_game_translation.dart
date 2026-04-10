@@ -9,7 +9,7 @@ import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'tts_web.dart';
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameTranslation extends ChangeNotifier {
   final String userName;

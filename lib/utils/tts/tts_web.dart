@@ -6,8 +6,7 @@ Future<void> speakWeb(String text) async {
   final utterance = html.SpeechSynthesisUtterance(text.split('/').first.trim());
 
   // 判斷語言
-  utterance.lang =
-      RegExp(r'[\u4e00-\u9fff]').hasMatch(text) ? 'zh-TW' : 'en-US';
+  utterance.lang = RegExp(r'[\u4e00-\u9fff]').hasMatch(text) ? 'zh-TW' : 'en-US';
 
   html.window.speechSynthesis?.speak(utterance);
 }
