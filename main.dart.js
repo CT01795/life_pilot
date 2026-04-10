@@ -153512,41 +153512,45 @@ lm(){var s=this.t0$
 return s==null?this.KF():s}}
 B.ac4.prototype={}
 B.kb.prototype={
-a3o(){var s,r,q=this,p=q.p1.ax,o=p.gv(0).a[0],n=p.gv(0).a[1]-200
-p=q.ar
-p===$&&B.b()
-s=new B.aU(new Float32Array(2))
-s.dz(0,n)
-p=p.ax.d
-p.j2(s)
-p.K()
-p=q.ar
-s=q.dk
+a3o(){var s,r,q,p,o,n=this
+if((n.a&2)===0)return
+s=n.p1.ax
+r=s.gv(0).a[0]
+q=s.gv(0).a[1]-200
+s=n.ar
 s===$&&B.b()
-r=new B.aU(new Float32Array(2))
-r.dz(o,s)
-p.sv(0,r)
-r=q.dD
-r===$&&B.b()
-r=r.ax.d
-r.zt(0,n-q.dk)
-r.K()
-for(p=J.b8(q.ged(0).eX(0,t.BF));p.p();){s=p.gM(p).ax.d
-s.zt(0,n-q.dk)
-s.K()}p=q.D
+p=new B.aU(new Float32Array(2))
+p.dz(0,q)
+s=s.ax.d
+s.j2(p)
+s.K()
+s=n.ar
+p=n.dk
 p===$&&B.b()
-s=new B.aU(new Float32Array(2))
-s.dz(40,100)
-p=p.ax.d
-p.j2(s)
-p.K()
-p=q.fc
-p===$&&B.b()
-s=new B.aU(new Float32Array(2))
-s.dz(40,200)
-p=p.ax.d
-p.j2(s)
-p.K()},
+o=new B.aU(new Float32Array(2))
+o.dz(r,p)
+s.sv(0,o)
+o=n.dD
+o===$&&B.b()
+o=o.ax.d
+o.zt(0,q-n.dk)
+o.K()
+for(s=J.b8(n.ged(0).eX(0,t.BF));s.p();){p=s.gM(s).ax.d
+p.zt(0,q-n.dk)
+p.K()}s=n.D
+s===$&&B.b()
+p=new B.aU(new Float32Array(2))
+p.dz(40,100)
+s=s.ax.d
+s.j2(p)
+s.K()
+s=n.fc
+s===$&&B.b()
+p=new B.aU(new Float32Array(2))
+p.dz(40,200)
+s=s.ax.d
+s.j2(p)
+s.K()},
 fp(a){var s=0,r=B.n(t.H),q=this,p,o,n,m,l,k,j
 var $async$fp=B.o(function(b,c){if(b===1)return B.k(c,r)
 while(true)switch(s){case 0:j=q.p1.ax
