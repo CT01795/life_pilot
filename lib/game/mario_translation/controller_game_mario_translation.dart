@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -139,41 +138,5 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
       newGameId: gameId, // 使用傳入的 gameId
       newIsPass: isPass,
     );
-  }
-
-  Color getButtonColor(String option) {
-    if (lastAnswer == null) return Color(0xFFE3F2FD);
-    if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Color(0xFFC8E6C9)
-          : Color(0xFFFFCDD2);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
-      return Color(0xFFC8E6C9);
-    }
-    return Color(0xFFE3F2FD);
-  }
-
-  Color getBorderColor(String option) {
-    if (lastAnswer == null) return Color(0xFF1976D2);
-    if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Color(0xFF388E3C)
-          : Color(0xFFD32F2F);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
-      return Color(0xFF388E3C);
-    }
-    return Color(0xFF1976D2);
-  }
-
-  Icon? getStatusIcon(String option) {
-    if (lastAnswer == null) return null;
-    if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32)
-          : Icon(Icons.clear_rounded, color: Color(0xFFD32F2F), size: 32);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
-      return Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32);
-    }
-    return null;
   }
 }

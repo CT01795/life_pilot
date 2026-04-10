@@ -23,9 +23,9 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     required Vector2 position,
     required this.onCollect,
   }) : super(
-          position: position,
-          size: Vector2(100, 50), // ⭐ 一定要有
-        );
+    position: position,
+    size: Vector2(200, 50), // ⭐ 一定要有
+  );
 
   @override
   void onTapDown(TapDownEvent event) {
@@ -49,13 +49,22 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     // 白底
     add(RectangleComponent(
       size: size,
-      paint: Paint()..color = Colors.white,
+      paint: Paint()..color = GameColors.card
+                    ..style = PaintingStyle.fill,
+    ));
+
+    add(RectangleComponent(
+      size: size,
+      paint: Paint()
+        ..color = Colors.white.withOpacity(0.08)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     ));
 
     // 文字，自動換行
     final textPaint = TextPaint(
       style: const TextStyle(
-        color: Colors.black,
+        color: GameColors.textItemDark,
         fontSize: 24,
         fontWeight: FontWeight.bold,
       ),
@@ -79,7 +88,7 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
   @override
   void update(double dt) {
     super.update(dt);
-    position.y += 20 * dt;
+    position.y += 10 * dt;
 
     // ⭐ 限制 X 不超出
     position.x = position.x.clamp(0, gameRef.screenW - size.x);

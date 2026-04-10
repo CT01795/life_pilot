@@ -60,7 +60,7 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
           gameRef.questionText.updateText(
               gameRef.controller.currentQuestion?.question ?? '');
           gameRef.scoreText.updateText(
-              "分數：${gameRef.controller.score}");
+              "分數: ${gameRef.controller.score}");
           if (gameRef.controller.score < -20) {
             Future.microtask(() => Navigator.pop(gameRef.context, true));
           }
