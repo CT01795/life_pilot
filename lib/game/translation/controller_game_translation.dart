@@ -40,10 +40,10 @@ class ControllerGameTranslation extends ChangeNotifier {
     String url = "";
     if (containsChinese) {
       url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${text.split('/')[0]}";
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     } else {
       url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${text.split('/')[0]}";
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
     if (kIsWeb) {
       await player.play(UrlSource(url));
