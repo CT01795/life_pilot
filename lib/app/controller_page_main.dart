@@ -53,12 +53,19 @@ class ControllerPageMain extends ChangeNotifier {
     // ⭐ 已登入 → 基本 4 頁
     List<PageType> pages = [
       PageType.personalEvent,
+      PageType.stock,
       PageType.recommendedEvent,
       PageType.recommendedAttractions,
+      PageType.memoryTrace,
+      PageType.accountRecords,
+      PageType.pointsRecord,
       PageType.game,
       PageType.ai,
     ];
 
+    if (auth.currentAccount != AuthConstants.sysAdminEmail) {
+      pages.remove(PageType.stock);
+    }
     // ⭐ optional 功能（依 DB 開放）
     const optionalMap = {
       "memoryTrace": PageType.memoryTrace,
@@ -66,26 +73,13 @@ class ControllerPageMain extends ChangeNotifier {
       "pointsRecord": PageType.pointsRecord,
     };
 
-    pages.remove(PageType.recommendedEvent);
-    pages.remove(PageType.recommendedAttractions);
-    pages.remove(PageType.game);
-    pages.remove(PageType.ai);
-    if (auth.currentAccount == AuthConstants.sysAdminEmail) {
-      pages.add(PageType.stock);
-    }
-    pages.add(PageType.recommendedEvent);
-    pages.add(PageType.recommendedAttractions);
-    for (final key in dbPages) {
-      if (optionalMap.containsKey(key)) {
-        pages.add(optionalMap[key]!);
-      }
+    if (dbPages.isNotEmpty) {
+      dbPages.removeWhere((key) => !optionalMap.containsKey(key));
     }
     // 最後加遊戲頁
-    pages.add(PageType.game);
-    pages.add(PageType.ai);
     if (auth.currentAccount == AuthConstants.sysAdminEmail) {
-      pages.add(PageType.feedbackAdmin);
       pages.add(PageType.businessPlan);
+      pages.add(PageType.feedbackAdmin);
     }
 
     return pages;
