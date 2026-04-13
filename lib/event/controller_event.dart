@@ -366,7 +366,7 @@ class ControllerEvent extends ChangeNotifier {
   // 取得天氣預報（緩存）
   Future<List<EventWeather>?> loadWeather(EventViewModel event) async {
     return await _serviceWeather.loadWeather(
-      eventId: event.id,
+      event: event,
       hasLocation: event.hasLocation,
       locationDisplay: event.locationDisplay,
       startDate: event.startDate,

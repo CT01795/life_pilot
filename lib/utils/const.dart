@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 String? weatherApiKey;
+double zoolLevel = 8;
 
 final List<String> currencyList = [
   'TWD',
@@ -136,6 +137,8 @@ class EventFields {
   static const String likeCounts = "like_counts";
   static const String dislikeCounts = "dislike_counts";
   static const String source = "source";
+  static const String lat = "lat";
+  static const String lng = "lng";
 }
 
 // -------------------- Gap --------------------

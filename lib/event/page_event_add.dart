@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
@@ -77,7 +78,8 @@ class _PageEventAddState extends State<PageEventAdd> {
       if (!(_formKey.currentState?.validate() ?? false)) return;
       FocusScope.of(context).unfocus();
 
-      final event = controllerAdd.toEventItem();
+      EventItem event = controllerAdd.toEventItem();
+      event = await ClusterItem.getLatLngFromAddressItem(event);
       await widget.controllerEvent.saveEvent(
         oldEvent: widget.existingEvent ?? event,
         newEvent: event,

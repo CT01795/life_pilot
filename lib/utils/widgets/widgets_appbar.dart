@@ -8,6 +8,7 @@ AppBar widgetsWhiteAppBar({
   required ControllerAppBarActions handler,
   required AppLocalizations loc,
   VoidCallback? onAdd,
+  VoidCallback? onView,
   bool enableSearchAndExport = false,
   required bool enableUpload,
 }) {
@@ -20,6 +21,7 @@ AppBar widgetsWhiteAppBar({
         handler: handler,
         loc: loc,
         onAdd: onAdd,
+        onView: onView,
         enableSearchAndExport: enableSearchAndExport,
         enableUpload: enableUpload),
   );
@@ -29,10 +31,21 @@ List<Widget> _buildActions({
   required ControllerAppBarActions handler,
   required AppLocalizations loc,
   VoidCallback? onAdd,
+  VoidCallback? onView,
   bool enableSearchAndExport = false,
   required bool enableUpload,
 }) {
   final List<Widget> actions = [];
+
+  if (onView != null) {
+    actions.add(
+      IconButton(
+        icon: const Icon(Icons.map),
+        //tooltip: loc.eventAdd,
+        onPressed: onView,
+      ),
+    );
+  }
 
   if (enableSearchAndExport) {
     actions.addAll([
