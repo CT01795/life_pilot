@@ -49,6 +49,8 @@ abstract class EventBase {
   int? get likeCounts;
   int? get dislikeCounts;
   String? get source;
+  double? get lat;
+  double? get lng;
   List<EventItem> get subEvents;
 
   Map<String, dynamic> toJson();
@@ -126,6 +128,10 @@ class EventItem implements EventBase {
   int? dislikeCounts;
   @override
   String? source;
+  @override
+  double? lat;
+  @override
+  double? lng;
 
   List<EventItem> _subEvents;
 
@@ -168,6 +174,8 @@ class EventItem implements EventBase {
     this.likeCounts,
     this.dislikeCounts,
     this.source,
+    this.lat,
+    this.lng,
     List<EventItem>? subEvents,
   })  : id = id ?? _uuid.v4(),
         _subEvents = List<EventItem>.from(subEvents ?? []);
@@ -213,6 +221,8 @@ class EventItem implements EventBase {
       EventFields.likeCounts: likeCounts,
       EventFields.dislikeCounts: dislikeCounts,
       EventFields.source: source,
+      EventFields.lat: lat,
+      EventFields.lng: lng,
       EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
     };
   }
@@ -257,6 +267,8 @@ class EventItem implements EventBase {
       likeCounts: json[EventFields.likeCounts],
       dislikeCounts: json[EventFields.dislikeCounts],
       source: json[EventFields.source],
+      lat: json[EventFields.lat],
+      lng: json[EventFields.lng],
       subEvents: subEventsJson is List
           ? subEventsJson
               .whereType<Map<String, dynamic>>()
@@ -303,6 +315,8 @@ class EventItem implements EventBase {
     int? newLikeCounts,
     int? newDislikeCounts,
     String? newSource,
+    double? newLat,
+    double? newLng,
     List<EventItem>? newSubEvents,
   }) {
     return EventItem(
@@ -342,6 +356,8 @@ class EventItem implements EventBase {
       likeCounts: newLikeCounts ?? likeCounts,
       dislikeCounts: newDislikeCounts ?? dislikeCounts,
       source: newSource ?? source,
+      lat: newLat ?? lat,
+      lng: newLng ?? lng,
     );
   }
 
@@ -410,6 +426,8 @@ class EventViewModel {
   final int? likeCounts;
   final int? dislikeCounts;
   final String? source;
+  double? lat;
+  double? lng;
 
   EventViewModel(
       {required this.event,
@@ -441,7 +459,9 @@ class EventViewModel {
       this.registrationClicks,
       this.likeCounts,
       this.dislikeCounts,
-      this.source});
+      this.source,
+      this.lat,
+      this.lng});
 
   DateTime get firstEventDate {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
@@ -537,6 +557,8 @@ class EventViewModel {
       likeCounts: event.likeCounts,
       dislikeCounts: event.dislikeCounts,
       source: event.source,
+      lat: event.lat,
+      lng: event.lng,
     );
   }
 }

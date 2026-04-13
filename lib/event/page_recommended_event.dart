@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -70,6 +71,14 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
                 scrollController: scrollController,
                 controllerEvent: _controllerEvent,
                 auth: auth);
+          },
+          mapBuilder: ({
+            required List<EventItem> filteredEvents,
+          }) {
+            return WidgetsEventMap(
+              events: filteredEvents,
+              controllerEvent: _controllerEvent
+            );
           },
         ));
   }

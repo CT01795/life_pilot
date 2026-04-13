@@ -17,11 +17,17 @@ typedef EventListBuilder = Widget Function({
   required ScrollController scrollController,
 });
 
+typedef EventMapBuilder = Widget Function({
+  required List<EventItem> filteredEvents,
+});
+
 typedef SearchPanelBuilder = Widget Function({
   required ControllerEvent controllerEvent,
   required AppLocalizations loc,
   required BuildContext context,
 });
+
+enum EventViewMode { list, map }
 
 class GenericEventPage extends StatefulWidget {
   final ControllerEvent controllerEvent;
@@ -29,6 +35,7 @@ class GenericEventPage extends StatefulWidget {
   final String emptyText;
   final ControllerAuth auth;
   final EventListBuilder listBuilder;
+  final EventMapBuilder? mapBuilder;
   final SearchPanelBuilder? searchPanelBuilder;
 
   const GenericEventPage({
@@ -38,6 +45,7 @@ class GenericEventPage extends StatefulWidget {
     required this.emptyText,
     required this.auth,
     required this.listBuilder,
+    required this.mapBuilder,
     this.searchPanelBuilder,
   });
 
@@ -51,6 +59,8 @@ class _GenericEventPageState extends State<GenericEventPage> {
   ControllerEvent get _controller => widget.controllerEvent;
 
   late final ControllerAppBarActions _appBarHandler;
+
+  EventViewMode _viewMode = EventViewMode.list;
 
   @override
   void initState() {
@@ -90,6 +100,14 @@ class _GenericEventPageState extends State<GenericEventPage> {
     }
   }
 
+  Future<void> _onViewPressed(BuildContext context) async {
+    setState(() {
+      _viewMode = _viewMode == EventViewMode.list
+          ? EventViewMode.map
+          : EventViewMode.list;
+    });
+  }
+
   Widget _buildSearchPanel(AppLocalizations loc, BuildContext context) {
     if (!widget.controllerEvent.showSearchPanel || widget.searchPanelBuilder == null) {
       return const SizedBox.shrink();
@@ -113,7 +131,8 @@ class _GenericEventPageState extends State<GenericEventPage> {
           enableUpload: widget.auth.currentAccount == AuthConstants.sysAdminEmail,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
-          loc: loc),
+          onView: () => _onViewPressed(context),
+          loc: loc,),
       body: Column(
         children: [
           AnimatedBuilder(
@@ -127,9 +146,19 @@ class _GenericEventPageState extends State<GenericEventPage> {
             child: Selector<ControllerEvent, List<EventItem>>(
               selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
               builder: (_, filteredEvents, __) {
-                return widget.listBuilder(
+                final listView = widget.listBuilder(
                   filteredEvents: filteredEvents,
                   scrollController: _controller.scrollController,
+                );
+
+                final mapView = widget.mapBuilder?.call(
+                  filteredEvents: filteredEvents,
+                );
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _viewMode == EventViewMode.list || mapView == null
+                      ? listView
+                      : mapView,
                 );
               },
             )
