@@ -27,15 +27,12 @@ typedef SearchPanelBuilder = Widget Function({
   required BuildContext context,
 });
 
-enum EventViewMode { list, map }
-
 class MemoryGenericEventPage extends StatefulWidget {
   final ControllerEvent controllerEvent;
   final String title;
   final String emptyText;
   final ControllerAuth auth;
   final EventListBuilder listBuilder;
-  final EventMapBuilder? mapBuilder;
   final SearchPanelBuilder? searchPanelBuilder;
 
   const MemoryGenericEventPage({
@@ -45,7 +42,6 @@ class MemoryGenericEventPage extends StatefulWidget {
     required this.emptyText,
     required this.auth,
     required this.listBuilder,
-    required this.mapBuilder,
     this.searchPanelBuilder,
   });
 
@@ -60,15 +56,13 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
 
   late final ControllerAppBarActions _appBarHandler;
 
-  EventViewMode _viewMode = EventViewMode.list;
-
   @override
   void initState() {
     super.initState();
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
       modelEvent: widget.controllerEvent.modelEvent, // 使用頁面同一個 model
-      serviceEvent: widget.controllerEvent.serviceEvent,       // 使用頁面同一個 controller
+      serviceEvent: widget.controllerEvent.serviceEvent, // 使用頁面同一個 controller
       exportService: context.read<ServiceExportPlatform>(),
       excelService: context.read<ServiceExportExcel>(),
       tableName: widget.controllerEvent.fromTableName,
@@ -82,7 +76,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
 
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
-    _hasLoaded = true; 
+    _hasLoaded = true;
     await _controller.loadEvents(isGetPublicEvents: false);
   }
 
@@ -100,16 +94,9 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
     }
   }
 
-  Future<void> _onViewPressed(BuildContext context) async {
-    setState(() {
-      _viewMode = _viewMode == EventViewMode.list
-          ? EventViewMode.map
-          : EventViewMode.list;
-    });
-  }
-
   Widget _buildSearchPanel(AppLocalizations loc, BuildContext context) {
-    if (!widget.controllerEvent.showSearchPanel || widget.searchPanelBuilder == null) {
+    if (!widget.controllerEvent.showSearchPanel ||
+        widget.searchPanelBuilder == null) {
       return const SizedBox.shrink();
     }
 
@@ -125,46 +112,36 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: widgetsWhiteAppBar(
+        appBar: widgetsWhiteAppBar(
           title: widget.title,
           enableSearchAndExport: true,
-          enableUpload: widget.auth.currentAccount == AuthConstants.sysAdminEmail,
+          enableUpload:
+              widget.auth.currentAccount == AuthConstants.sysAdminEmail,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
-          onView: () => _onViewPressed(context),
-          loc: loc,),
-      body: Column(
-        children: [
-          AnimatedBuilder(
-            animation: Listenable.merge([
-              _controller,
-              _appBarHandler,
-            ]),
-            builder: (_, __) => _buildSearchPanel(loc, context),
-          ),
-          Expanded( // ✅ 讓 ListView 可以使用剩餘高度
-            child: Selector<ControllerEvent, List<EventItem>>(
+          loc: loc,
+        ),
+        body: Column(
+          children: [
+            AnimatedBuilder(
+              animation: Listenable.merge([
+                _controller,
+                _appBarHandler,
+              ]),
+              builder: (_, __) => _buildSearchPanel(loc, context),
+            ),
+            Expanded(
+                // ✅ 讓 ListView 可以使用剩餘高度
+                child: Selector<ControllerEvent, List<EventItem>>(
               selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
               builder: (_, filteredEvents, __) {
-                final listView = widget.listBuilder(
+                return widget.listBuilder(
                   filteredEvents: filteredEvents,
                   scrollController: _controller.scrollController,
                 );
-
-                final mapView = widget.mapBuilder?.call(
-                  filteredEvents: filteredEvents,
-                );
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _viewMode == EventViewMode.list || mapView == null
-                      ? listView
-                      : mapView,
-                );
               },
-            )
-          ),
-        ],
-      )
-    );
+            )),
+          ],
+        ));
   }
 }

@@ -5,7 +5,6 @@ import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_base_event.dart';
 import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
@@ -68,14 +67,6 @@ class _PageRecommendedAttractionsState
                 scrollController: scrollController,
                 controllerEvent: _controllerEvent,
                 auth: auth);
-          },
-          mapBuilder: ({
-            required List<EventItem> filteredEvents,
-          }) {
-            return WidgetsEventMap(
-              events: filteredEvents,
-              controllerEvent: _controllerEvent
-            );
           },
         ));
   }

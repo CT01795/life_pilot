@@ -3,7 +3,6 @@ import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/memory_trace/widgets_memory_map.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -97,14 +96,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
               scrollController: scrollController,
               controllerEvent: _controllerEvent,
               auth: auth);
-        },
-        mapBuilder: ({
-          required List<EventItem> filteredEvents,
-        }) {
-          return WidgetsMemoryMap(
-            events: filteredEvents,
-            controllerEvent: _controllerEvent
-          );
         },
       ),
     );

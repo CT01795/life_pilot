@@ -192,7 +192,7 @@ class ClusterItem {
       return event;
     }
     Map tmpMap =
-        await ClusterItem.getLatLngFromAddressCommon(event.locationDisplay.split("．")[0]);
+        await ClusterItem.getLatLngFromAddressCommon(event.locationDisplay.split("．")[0]); //.split("．")[0]
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;
@@ -203,7 +203,7 @@ class ClusterItem {
       return event;
     }
     Map tmpMap =
-        await ClusterItem.getLatLngFromAddressCommon(event.city);
+        await ClusterItem.getLatLngFromAddressCommon(event.city); // ${event.location}
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;
