@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -68,20 +69,29 @@ class ServiceEventPublic {
     Set<String> dbNameDateSet,
   ) async {
     if (events.isEmpty) return dbNameDateSet;
+    final List<EventItem> newEvents = [];
 
-    final newEvents = events.where((e) {
+    for (final e in events) {
       final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") +
           DateFormat('yyyy-MM-dd').format(e.startDate!) +
           e.location;
+
       final tmpId =
           e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
+
       if (dbNameDateSet.contains(tmpName) || dbNameDateSet.contains(tmpId)) {
-        return false;
+        continue;
       }
+
       dbNameDateSet.add(tmpName);
       dbNameDateSet.add(tmpId);
-      return true;
-    }).toList();
+
+      // ✅ await 放這裡
+      final updatedEvent =
+          await ClusterItem.getLatLngFromAddressItem(e);
+
+      newEvents.add(updatedEvent);
+    }
 
     if (newEvents.isNotEmpty) {
       await client

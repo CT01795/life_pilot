@@ -6,8 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ClusterItem {
+  static final supabase = Supabase.instance.client;
   final String id;
   final LatLng position;
   final List<EventItem> events;
@@ -28,7 +30,7 @@ class ClusterItem {
     /// 🇹🇼 TAIWAN（22 縣市）
     /// ======================
     if (RegExp(r'(台灣|臺灣|Taiwan|'
-            r'台北|臺北|Taipei|新北|基隆|Keelung|桃園|Taoyuan|新竹|Hsinchu|苗栗|Miaoli|'
+            r'台北|臺北|Taipei|新北|New Taipei|基隆|Keelung|桃園|Taoyuan|新竹|Hsinchu|苗栗|Miaoli|'
             r'台中|臺中|Taichung|彰化|Changhua|南投|Nantou|'
             r'雲林|Yunlin|嘉義|Chiayi|'
             r'台南|Tainan|臺南|高雄|Kaohsiung|'
@@ -161,11 +163,27 @@ class ClusterItem {
     return _apiKey!;
   }
 
-  static Future<Map<String, double>> getLatLngFromAddressCommon(
-      String tmpLocation) async {
+  static Future<Map<String, double>> getLatLngFromAddressCommon({required
+      String locationDisplay}) async {
     try {
-      String currentCountry = detectCountryHint(tmpLocation);
-      final address = Uri.encodeComponent(tmpLocation);
+      final tmpLocationDisplay = locationDisplay.split("．");
+      // 1️⃣ 用 OpenWeather Geocoding API 取得經緯度
+      final cityLike = tmpLocationDisplay[0];
+      final locationLike = tmpLocationDisplay.length > 1
+          ? tmpLocationDisplay[1]
+          : tmpLocationDisplay[0];
+      final result = await supabase.rpc('search_lat_lng', params: {
+        'city_like': cityLike, // city contains
+        'location_like': locationLike,
+        'country_like': null, // 反向比對用
+      });
+      if (result.isNotEmpty) {
+        final row = result[0];
+        return {"lat": row['lat'], "lng": row['lng']};
+      }
+
+      String currentCountry = detectCountryHint(tmpLocationDisplay[0]);
+      final address = Uri.encodeComponent(tmpLocationDisplay[0]);
       await getKey();
       final geoUrl = Uri.parse(
         'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey',
@@ -191,8 +209,8 @@ class ClusterItem {
     if (event.lat != null && event.lng != null) {
       return event;
     }
-    Map tmpMap =
-        await ClusterItem.getLatLngFromAddressCommon(event.locationDisplay.split("．")[0]); //.split("．")[0]
+    Map tmpMap = await ClusterItem.getLatLngFromAddressCommon(
+        locationDisplay: event.locationDisplay); //.split("．")[0]
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;
@@ -202,8 +220,8 @@ class ClusterItem {
     if (event.lat != null && event.lng != null) {
       return event;
     }
-    Map tmpMap =
-        await ClusterItem.getLatLngFromAddressCommon(event.city); // ${event.location}
+    Map tmpMap = await ClusterItem.getLatLngFromAddressCommon(
+        locationDisplay: "${event.city}．${event.location}"); // ${event.location}
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;

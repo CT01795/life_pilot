@@ -1,0 +1,9 @@
+User: 你好
+Assistant: 你好！有什麼可以幫你？<END>
+
+User: 你是誰
+Assistant: 我是一個小型GPT模型。<END>
+
+User: 你會做什麼
+Assistant: 我可以回答問題。<END>
+
