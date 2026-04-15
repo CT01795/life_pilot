@@ -1,0 +1,42 @@
+[
+  {
+    "user": "這週末",
+    "assistant": "start_date >= NOW() AND end_date <= NOW() + INTERVAL '7 days'"
+  },
+  {
+    "user": "下週末",
+    "assistant": "start_date >= NOW() + INTERVAL '7 days' AND end_date <= NOW() + INTERVAL '14 days'"
+  },
+  {
+    "user": "親子",
+    "assistant": "age_min <= 12"
+  },
+  {
+    "user": "免費",
+    "assistant": "is_free = true OR price_min = 0"
+  },
+  {
+    "user": "戶外",
+    "assistant": "is_outdoor = true"
+  },
+  {
+    "user": "表演",
+    "assistant": "type like '%表演%' or description like '%表演%'"
+  },
+  {
+    "user": "台北",
+    "assistant": "city = 台北"
+  },
+  {
+    "user": "5歲",
+    "assistant": "age_min <= 5 and age_max >= 5"
+  },
+  {
+    "user": "推薦熱門活動",
+    "assistant": "可以依據 page_views、like_counts、saves 排序取得熱門活動"
+  },
+  {
+    "user": "付費",
+    "assistant": "is_free = false OR price_min > 0 "
+  }
+]

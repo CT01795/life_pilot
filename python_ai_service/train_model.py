@@ -2,9 +2,7 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import classification_report
 #import joblib
 from utils import prepare_stock_data
 import logging

@@ -73,7 +73,7 @@ class ServiceWeather {
 
   Future<List<EventWeather>> getWeather(
       {required EventViewModel event, required DateTime? startDate}) async {
-    String tmpLocation = event.locationDisplay.split("．")[0];
+    final tmpLocationDisplay = event.locationDisplay.split("．");
     final today = DateTime.now();
     final resultStartDate =
         startDate == null || startDate.isBefore(today) ? today : startDate;
@@ -88,7 +88,7 @@ class ServiceWeather {
     final dbRes = await supabase
         .from('weather_forecast')
         .select()
-        .eq('location', tmpLocation)
+        .eq('location', event.locationDisplay)
         .gte('date', resultStartDate.add(Duration(hours: -3)).toIso8601String())
         .gte('created_at', todayDate.toIso8601String())
         .order('date', ascending: true);
@@ -99,14 +99,14 @@ class ServiceWeather {
           .toList();
     }
 
-    // 1️⃣ 用 OpenWeather Geocoding API 取得經緯度
+    
+    String country = ClusterItem.detectCountryHint(tmpLocationDisplay[0])
+          .replaceAll(",", "");    
     event = await ClusterItem.getLatLngFromAddressView(event);
+    
     if (event.lat != null && event.lng != null) {
       final lat = event.lat;
       final lon = event.lng;
-      final country =
-          ClusterItem.detectCountryHint(tmpLocation).replaceAll(",", "");
-      final name = tmpLocation;
       _apiKey = await ClusterItem.getKey();
       // 2️⃣ 再呼叫 OpenWeather Weather API
       final url =
@@ -138,21 +138,21 @@ class ServiceWeather {
       /// 3️⃣ 寫 DB
       for (final day in days) {
         await supabase.from('weather_forecast').upsert({
-          'location': tmpLocation,
+          'location': event.locationDisplay,
           'date': day.date.toIso8601String(),
           'weather': day.toJson(),
           'created_at': todayDate.toIso8601String(),
           'lat': lat,
           'lon': lon,
           'country': country,
-          'name': name
+          'name': event.locationDisplay
         });
       }
 
       final dbRes = await supabase
           .from('weather_forecast')
           .select()
-          .eq('location', tmpLocation)
+          .eq('location', event.locationDisplay)
           .gte('date',
               resultStartDate.add(Duration(hours: -3)).toIso8601String())
           .gte('created_at', todayDate.toIso8601String())
