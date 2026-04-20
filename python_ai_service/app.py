@@ -189,7 +189,7 @@ def backtest_model_api():
         query = """
             SELECT *
             FROM stock_daily_price
-            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '90 days'
+            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '30 days'
             AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
             AND vol5 IS NOT NULL AND rsi IS NOT NULL ORDER BY date desc;
         """
