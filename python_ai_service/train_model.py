@@ -30,20 +30,20 @@ def train_model():
     """
     df = pd.read_sql(query, engine)
     logging.info(df.shape)
+    # 計算 target
+    df = prepare_stock_data(df, is_train=True)
     # 訓練資料
     features = [
         'ma5','ma20','high20','vol5','rsi','pct_change',
         'pct_change_3d','pct_change_5d','ma_diff'
     ]
-    # 計算 target
-    df = prepare_stock_data(df, is_train=True)
     df = df.dropna(subset=features + ['future_pct'])
     df = df[df['pct_change'] > -9]
     # df = df[df['ma_diff'] > 0]
     df = df[df['traded_number'] > 8000000]
     df = df[df['closing_price'] > 10]
     X = df[features]
-    df['target'] = ((df['future_pct'] > 3)).astype(int) #(df['future_pct'] > df['future_pct'].quantile(0.8)) | 
+    df['target'] = ((df['future_pct'] > 3) | (df['future_pct'] > df['future_pct'].quantile(0.8))).astype(int)
     y = df['target']
     #y = df['future_pct']   # 👈 改成回歸目標
 

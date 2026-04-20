@@ -89,23 +89,25 @@ def train_and_save_model():
         ]
 
         X = df[features]
-        df['pred_pct'] = model.predict(X)
+        df['pred_class'] = model.predict(X)
+        df['pred_prob'] = model.predict_proba(X)[:, 1]
+        df['pred_pct'] = df['pred_prob']
         # ===== 新增這段 =====
-        BUY_THRESHOLD = 3
-        SELL_THRESHOLD = -5
+        BUY_THRESHOLD = 0.65
+        SELL_THRESHOLD = 0.35
 
         df['signal'] = 0
 
         df.loc[
             (df['pred_pct'] >= BUY_THRESHOLD) &
             (df['ma5'] > df['ma20']) &
-            (df['rsi'] < 70),
+            (df['rsi'] < 75),
             'signal'
         ] = 1
 
         df.loc[
             (df['pred_pct'] <= SELL_THRESHOLD) |
-            (df['rsi'] > 80),
+            (df['rsi'] > 88),
             'signal'
         ] = -1
 
