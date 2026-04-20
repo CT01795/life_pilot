@@ -12,8 +12,10 @@ def prepare_stock_data(df: pd.DataFrame, is_train=True) -> pd.DataFrame:
         df['future_pct'] = (df['future_price'] - df['closing_price']) / df['closing_price'] * 100
 
     # === 2️⃣ 趨勢特徵（避免只看一天）===
-    df['pct_change_3d'] = df.groupby('security_code')['pct_change'].rolling(3).mean().reset_index(0, drop=True)
-    df['pct_change_5d'] = df.groupby('security_code')['pct_change'].rolling(5).mean().reset_index(0, drop=True)
+    #df['pct_change_3d'] = df.groupby('security_code')['pct_change'].rolling(3).mean().reset_index(0, drop=True)
+    df['pct_change_3d'] = df.groupby('security_code')['pct_change'].transform(lambda x: x.rolling(3).mean())
+    #df['pct_change_5d'] = df.groupby('security_code')['pct_change'].rolling(5).mean().reset_index(0, drop=True)
+    df['pct_change_5d'] = df.groupby('security_code')['pct_change'].transform(lambda x: x.rolling(5).mean())
 
     # 均線差（判斷多頭/空頭）
     df['ma_diff'] = df['ma5'] - df['ma20']

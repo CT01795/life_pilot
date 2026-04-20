@@ -26,6 +26,8 @@ class ModelStock {
   double? rsi;
   bool? isRising;
   double? predPct;
+  int? signal;
+  String? signalText;
 
   ModelStock(
       {required this.date,
@@ -53,7 +55,9 @@ class ModelStock {
       this.vol5,
       this.rsi,
       this.isRising,
-      this.predPct});
+      this.predPct,
+      this.signal,
+      this.signalText});
 
   Map<String, dynamic> toJson() {
     return {
@@ -81,6 +85,8 @@ class ModelStock {
       'pct_change': pctChange,
       'vol5': vol5,
       'rsi': rsi,
+      'signal': signal,
+      'signal_text': signalText
       //'pred_pct': predPct,
     };
   }
@@ -116,6 +122,8 @@ class ModelStock {
       vol5: (json['vol5'] as num?)?.toDouble(),
       rsi: (json['rsi'] as num?)?.toDouble(),
       predPct: (json['pred_pct'] as num?)?.toDouble(),
+      signal: json['signal'],
+      signalText: json['signal_text'],
     );
   }
 }
