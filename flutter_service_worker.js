@@ -115,7 +115,7 @@ const RESOURCES = {"assets/assets/maps/oceania.png": "568ec09c665f833638f14a245e
 "canvaskit/skwasm_heavy.wasm": "8034ad26ba2485dab2fd49bdd786837b",
 "canvaskit/skwasm.js": "1ef3ea3a0fec4569e5d531da25f34095",
 "flutter.js": "888483df48293866f9f41d3d9274a779",
-"flutter_bootstrap.js": "5cf16680c634163adb1fc1256937f309",
+"flutter_bootstrap.js": "029d1c928784377a348969043aca9a4c",
 "main.dart.js": "ab96312e306865d8fc0d69eb79ae8a32",
 "version.json": "3d24f8e1c43390d4ffe74cc3fce20e2a",
 "icons/Icon-maskable-512.png": "301a7604d45b3e739efc881eb04896ea",
