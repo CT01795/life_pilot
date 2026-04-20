@@ -75,9 +75,9 @@ def train_and_save_model():
 
         df = prepare_stock_data(df, is_train=False)
         # ✅ 先做風險過濾（放這裡！！）
-        df = df[df['pct_change'] > -5]   # 避免暴跌股
-        df = df[df['ma_diff'] > 0]       # 避免空頭趨勢
-        df = df[df['traded_number'] > 9000000]
+        #df = df[df['pct_change'] > -9]   # 避免暴跌股
+        # df = df[df['ma_diff'] > 0]       # 避免空頭趨勢
+        df = df[df['traded_number'] > 20000000]
         df = df[df['closing_price'] > 10]
         latest_date = df['date'].max()
         df = df[df['date'] == latest_date] # 取最新的一天
@@ -90,14 +90,42 @@ def train_and_save_model():
 
         X = df[features]
         df['pred_pct'] = model.predict(X)
-        recommended = df[df['pred_pct'] >= 3].sort_values(by="pred_pct", ascending=False).head(50)[[
-            'date','security_code','security_name','closing_price','traded_number','pe_ratio'
-            ,'ma5','ma20','high20','vol5','rsi','pct_change','pred_pct'
-        ]]
+        # ===== 新增這段 =====
+        BUY_THRESHOLD = 3
+        SELL_THRESHOLD = -5
+
+        df['signal'] = 0
+
+        df.loc[
+            (df['pred_pct'] >= BUY_THRESHOLD) &
+            (df['ma5'] > df['ma20']) &
+            (df['rsi'] < 70),
+            'signal'
+        ] = 1
+
+        df.loc[
+            (df['pred_pct'] <= SELL_THRESHOLD) |
+            (df['rsi'] > 80),
+            'signal'
+        ] = -1
+
+        df['signal_text'] = df['signal'].map({
+            1: 'BUY',
+            -1: 'SELL',
+            0: 'HOLD'
+        })
+        recommended = df[df['signal'] != 0] \
+            .sort_values(by="pred_pct", ascending=False) \
+            .head(100)
+        ##recommended = df[df['pred_pct'] >= 3].sort_values(by="pred_pct", ascending=False).head(50)[[
+        ##    'date','security_code','security_name','closing_price','traded_number','pe_ratio'
+        ##    ,'ma5','ma20','high20','vol5','rsi','pct_change','pred_pct'
+        ##]]
 
         recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
         recommended['date'] = recommended['date'].astype(str)
-        data_json = recommended.to_dict(orient="records")
+        data_json = json.loads(recommended.to_json(orient="records", date_format="iso"))
+        #data_json = recommended.to_dict(orient="records")
         latest_date = df['date'].max()
         with engine.begin() as conn:
             conn.execute(

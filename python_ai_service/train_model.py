@@ -2,7 +2,8 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
 #import joblib
 from utils import prepare_stock_data
 import logging
@@ -29,33 +30,44 @@ def train_model():
     """
     df = pd.read_sql(query, engine)
     logging.info(df.shape)
-    # 計算 target
-    df = prepare_stock_data(df, is_train=True)
-    df = df[df['pct_change'] > -5]
-    df = df[df['ma_diff'] > 0]
-    df = df[df['traded_number'] > 9000000]
-    df = df[df['closing_price'] > 10]
     # 訓練資料
     features = [
         'ma5','ma20','high20','vol5','rsi','pct_change',
         'pct_change_3d','pct_change_5d','ma_diff'
     ]
+    # 計算 target
+    df = prepare_stock_data(df, is_train=True)
+    df = df.dropna(subset=features + ['future_pct'])
+    df = df[df['pct_change'] > -9]
+    # df = df[df['ma_diff'] > 0]
+    df = df[df['traded_number'] > 8000000]
+    df = df[df['closing_price'] > 10]
     X = df[features]
-    y = df['future_pct']   # 👈 改成回歸目標
+    df['target'] = ((df['future_pct'] > 3)).astype(int) #(df['future_pct'] > df['future_pct'].quantile(0.8)) | 
+    y = df['target']
+    #y = df['future_pct']   # 👈 改成回歸目標
 
     # 分訓練集/測試集
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=False)
 
-    model = RandomForestRegressor(
-        n_estimators=50,
+    #model = RandomForestRegressor(
+    #    n_estimators=50,
+    #    random_state=42,
+    #    n_jobs=-1
+    #)
+    model = RandomForestClassifier(
+        n_estimators=100,
         random_state=42,
-        n_jobs=-1
+        n_jobs=-1,
+        class_weight="balanced"
     )
     model.fit(X_train, y_train)
 
-    score = model.score(X_test, y_test)
-    logging.info(f"R2 score: {score}")
+    #score = model.score(X_test, y_test)
+    #logging.info(f"R2 score: {score}")
+    y_pred = model.predict(X_test)
 
+    logging.info(classification_report(y_test, y_pred))
     # 儲存模型
     # joblib.dump(model, "stock_model.pkl")
     # logging.info("模型已儲存: stock_model.pkl")
