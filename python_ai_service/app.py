@@ -1,13 +1,13 @@
-import os
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-from sqlalchemy import create_engine, text
 import json
-from utils import prepare_stock_data
-from train_model import train_model
 import logging
 import sys
+
+import pandas as pd
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import create_engine, text
+from train_model import backtest_model, train_model
+from utils import prepare_stock_data
 
 app = FastAPI()
 
@@ -118,17 +118,40 @@ def train_and_save_model():
         })
         recommended = df[df['signal'] != 0] \
             .sort_values(by="pred_pct", ascending=False) \
-            .head(100)
-        ##recommended = df[df['pred_pct'] >= 3].sort_values(by="pred_pct", ascending=False).head(50)[[
-        ##    'date','security_code','security_name','closing_price','traded_number','pe_ratio'
-        ##    ,'ma5','ma20','high20','vol5','rsi','pct_change','pred_pct'
-        ##]]
+            .head(100)[[
+            'date','security_code','security_name','closing_price','traded_number','pe_ratio'
+            ,'ma5','ma20','high20','vol5','rsi','pct_change','pred_pct','signal','signal_text'
+        ]]
 
         recommended = recommended.fillna(0).replace([float('inf'), float('-inf')], 0)
         recommended['date'] = recommended['date'].astype(str)
         data_json = json.loads(recommended.to_json(orient="records", date_format="iso"))
-        #data_json = recommended.to_dict(orient="records")
         latest_date = df['date'].max()
+
+        logging.info(recommended.shape)
+        if recommended.empty:
+            return {"message": "No recommended"}
+
+        insert_sql = text("""
+            INSERT INTO stock_predicted_list (
+                date, security_code, security_name, closing_price, traded_number, pe_ratio, ma5, ma20
+                , high20, vol5, rsi, pct_change, pred_pct, signal, signal_text
+            ) VALUES (
+                :date, :security_code, :security_name, :closing_price, :traded_number, :pe_ratio, :ma5, :ma20
+                , :high20, :vol5, :rsi, :pct_change, :pred_pct, :signal, :signal_text
+            )
+            ON CONFLICT (date, security_code) DO NOTHING
+        """)
+
+        batch_size = 1000
+
+        for i in range(0, len(recommended), batch_size):
+            batch = recommended.iloc[i:i+batch_size]
+            with engine.begin() as conn:
+                conn.execute(insert_sql, batch.to_dict(orient="records"))
+                logging.info(f"Inserted {i + len(batch)} rows")
+        logging.info("Inserted OK")
+        
         with engine.begin() as conn:
             conn.execute(
                 text("""
@@ -150,6 +173,67 @@ def update_model(background_tasks: BackgroundTasks):
     logging.info("update_model started")
     background_tasks.add_task(train_and_save_model)
     return {"message": "Model training started in background"}
+
+@app.get("/backtest_model", summary="回測", description="模型回測")
+def backtest_model_api():
+    try:
+        logging.info("backtest_model_api train_model started")
+        model = train_model()
+        logging.info("backtest_model_api train_model get")
+        # 3️⃣ 查看每棵樹
+        logging.info(f"Number of trees: {len(model.estimators_)}")
+        logging.info(model.estimators_[0])  # 第一棵決策樹的細節
+
+        # 取得最新日期資料
+        query = """
+            SELECT *
+            FROM stock_daily_price
+            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '90 days'
+            AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
+            AND vol5 IS NOT NULL AND rsi IS NOT NULL ORDER BY date desc;
+        """
+        df = pd.read_sql(query, engine)
+        if df.empty:
+            return {"stocks": [], "message": "No data available"}
+
+        df = prepare_stock_data(df, is_train=False)
+
+        # 👉 特徵
+        features = [
+            'ma5','ma20','high20','vol5','rsi','pct_change',
+            'pct_change_3d','pct_change_5d','ma_diff'
+        ]
+    
+        df = df.dropna(subset=features)
+        logging.info(df.shape)
+        logging.info("backtest_model started")
+        trades = backtest_model(model, df, features)
+        logging.info(trades.shape)
+        if trades.empty:
+            return {"message": "No trades"}
+        logging.info("backtest_model ended")
+
+        insert_sql = text("""
+            INSERT INTO stock_backtest (
+                trade_date, stock_id, entry_price, exit_price, buy_date, sell_date, return, holding_days
+            ) VALUES (
+                :trade_date, :stock_id, :entry_price, :exit_price, :buy_date, :sell_date, :return, :holding_days
+            )
+            ON CONFLICT (trade_date, stock_id) DO NOTHING
+        """)
+
+        batch_size = 1000
+
+        for i in range(0, len(trades), batch_size):
+            batch = trades.iloc[i:i+batch_size]
+            with engine.begin() as conn:
+                conn.execute(insert_sql, batch.to_dict(orient="records"))
+                logging.info(f"Inserted {i + len(batch)} rows")
+    except Exception as e:
+        logging.info(f"Error during Inserted: {i + len(batch)} rows")
+        return f"Error during Inserted: {i + len(batch)} rows"
+    logging.info("backtest_model OK")
+    return "backtest_model OK"
 
 @app.get("/predict", summary="取得預測資料", description="回傳預測資料")
 def predict():

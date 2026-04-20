@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.model_selection import train_test_split
@@ -50,11 +49,6 @@ def train_model():
     # 分訓練集/測試集
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=False)
 
-    #model = RandomForestRegressor(
-    #    n_estimators=50,
-    #    random_state=42,
-    #    n_jobs=-1
-    #)
     model = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
@@ -63,8 +57,6 @@ def train_model():
     )
     model.fit(X_train, y_train)
 
-    #score = model.score(X_test, y_test)
-    #logging.info(f"R2 score: {score}")
     y_pred = model.predict(X_test)
 
     logging.info(classification_report(y_test, y_pred))
@@ -73,3 +65,41 @@ def train_model():
     # logging.info("模型已儲存: stock_model.pkl")
     logging.info("train_model ended")
     return model
+
+def backtest_model(model, df, features):
+    df = df.copy()
+
+    df['pred_prob'] = model.predict_proba(df[features])[:, 1]
+
+    BUY_THRESHOLD = 0.35
+
+    df['signal'] = 0
+    df.loc[df['pred_prob'] >= BUY_THRESHOLD, 'signal'] = 1
+
+    df = df.sort_values(['security_code', 'date'])
+
+    trades = []
+
+    for stock, g in df.groupby('security_code'):
+        g = g.reset_index(drop=True)
+
+        for i in range(len(g) - 5):
+            if g.loc[i, 'signal'] == 1:
+
+                buy_price = g.loc[i, 'closing_price']
+                sell_price = g.loc[i + 5, 'closing_price']
+
+                ret = (sell_price - buy_price) / buy_price
+
+                trades.append({
+                    "trade_date": g.loc[i, 'date'],   # 或 sell_date，看你定義
+                    "stock_id": stock,
+                    "entry_price": buy_price,
+                    "exit_price": sell_price,
+                    "buy_date": str(g.loc[i, 'date']),
+                    "sell_date": str(g.loc[i + 5, 'date']),
+                    "return": ret,
+                    "holding_days": 5
+                })
+
+    return pd.DataFrame(trades)
