@@ -93,8 +93,8 @@ def train_and_save_model():
         df['pred_prob'] = model.predict_proba(X)[:, 1]
         df['pred_pct'] = df['pred_prob']
         # ===== 新增這段 =====
-        BUY_THRESHOLD = 0.65
-        SELL_THRESHOLD = 0.35
+        BUY_THRESHOLD = 0.35
+        SELL_THRESHOLD = 0.15
 
         df['signal'] = 0
 
