@@ -95,7 +95,6 @@ def train_and_save_model():
         df['pred_pct'] = df['pred_prob']
         # ===== 新增這段 =====
         BUY_THRESHOLD = 0.35
-        SELL_THRESHOLD = 0.15
 
         df['signal'] = 0
 
@@ -106,11 +105,8 @@ def train_and_save_model():
             'signal'
         ] = 1
 
-        df.loc[
-            (df['pred_pct'] <= SELL_THRESHOLD) |
-            (df['rsi'] > 88),
-            'signal'
-        ] = -1
+        # ✅ 賣出訊號改用技術指標判斷，不依賴模型機率
+        df.loc[df['rsi'] > 90, 'signal'] = -1
 
         df['signal_text'] = df['signal'].map({
             1: 'BUY',
