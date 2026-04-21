@@ -96,6 +96,7 @@ def backtest_model(model, df, features):
                 trades.append({
                     "trade_date": g.loc[i, 'date'],   # 或 sell_date，看你定義
                     "stock_id": stock,
+                    "stock_name": g.loc[i, 'security_name'],
                     "entry_price": buy_price,
                     "exit_price": sell_price,
                     "buy_date": str(g.loc[i, 'date']),

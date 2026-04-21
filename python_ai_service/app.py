@@ -185,7 +185,7 @@ def backtest_model_api():
         query = """
             SELECT *
             FROM stock_daily_price
-            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '30 days'
+            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '20 days'
             AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
             AND vol5 IS NOT NULL AND rsi IS NOT NULL ORDER BY date desc;
         """
@@ -212,9 +212,9 @@ def backtest_model_api():
 
         insert_sql = text("""
             INSERT INTO stock_backtest (
-                trade_date, stock_id, entry_price, exit_price, buy_date, sell_date, return, holding_days
+                trade_date, stock_id, stock_name, entry_price, exit_price, buy_date, sell_date, return, holding_days
             ) VALUES (
-                :trade_date, :stock_id, :entry_price, :exit_price, :buy_date, :sell_date, :return, :holding_days
+                :trade_date, :stock_id, :stock_name, :entry_price, :exit_price, :buy_date, :sell_date, :return, :holding_days
             )
             ON CONFLICT (trade_date, stock_id) DO NOTHING
         """)
