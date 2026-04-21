@@ -160703,7 +160703,7 @@ return B.k(null,r)}})
 return B.l($async$lP,r)}}
 B.jJ.prototype={
 ek(){var s=this
-return B.F(["date",s.a.fv(),"security_code",s.b,"security_name",s.c,"traded_number",s.d,"transactions_number",s.e,"transaction_amount",s.f,"opening_price",s.r,"highest_price",s.w,"lowest_price",s.x,"closing_price",s.y,"change",s.z,"price_difference",s.Q,"final_reveal_buying_price",s.as,"final_reveal_buying_volume",s.at,"final_reveal_selling_price",s.ax,"final_reveal_selling_volume",s.ay,"pe_ratio",s.ch,"source",s.CW,"ma5",s.cx,"ma20",s.cy,"high20",s.db,"pct_change",s.dx,"vol5",s.dy,"rsi",s.fr,"signal",s.go,"signal_text",s.id],t.N,t.z)}}
+return B.F(["date",s.a.fv(),"security_code",s.b,"security_name",s.c,"traded_number",s.d,"transactions_number",s.e,"transaction_amount",s.f,"opening_price",s.r,"highest_price",s.w,"lowest_price",s.x,"closing_price",s.y,"change",s.z,"price_difference",s.Q,"final_reveal_buying_price",s.as,"final_reveal_buying_volume",s.at,"final_reveal_selling_price",s.ax,"final_reveal_selling_volume",s.ay,"pe_ratio",s.ch,"source",s.CW,"ma5",s.cx,"ma20",s.cy,"high20",s.db,"pct_change",s.dx,"vol5",s.dy,"rsi",s.fr],t.N,t.z)}}
 B.acV.prototype={
 F(a){var s=t.mn
 return B.a34(B.qU(new B.aVm(),s),new B.aVn(),s)}}
