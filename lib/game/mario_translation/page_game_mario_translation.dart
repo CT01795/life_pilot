@@ -140,7 +140,7 @@ class PageGameMarioTranslation extends FlameGame
         controller: controller,
         positionX: 120,
         positionY: 100,
-        sizeX: max(screenW, screenH),
+        sizeX: min(screenW, screenH) - 16,
         sizeY: sizeX)
       ..priority = 100;
 

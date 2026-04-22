@@ -1,15 +1,21 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:life_pilot/utils/tts/tts_stub.dart'
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameSpeaking extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final player = AudioPlayer();
 
+  Map<String, Uint8List> audioCache = {};
   ModelGameSpeaking? currentQuestion;
   int score = 0; // +1 / -1
   int scoreMinus = 0; // +1 / -1
@@ -44,6 +50,44 @@ class ControllerGameSpeaking extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    speak(currentQuestion!.correctAnswer);
+  }
+
+  Future<void> speak(String text) async {
+    if (text.isEmpty) return;
+
+    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    if (kIsWeb) {
+      await speakWeb(text);
+      return;
+    }
+
+    if (audioCache.containsKey(text)) {
+      await player.play(BytesSource(audioCache[text]!));
+      return;
+    }
+    String url = "";
+    if (containsChinese) {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    } else {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    }
+
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(audioCache[text]!));
+    }
   }
 
   void answer(String answer) {
@@ -69,8 +113,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
     if (isRightAnswer != true && repeatCounts < 2) {
       notifyListeners();
       return;
-    }
-    else if (isRightAnswer != true && repeatCounts == 2) {
+    } else if (isRightAnswer != true && repeatCounts == 2) {
       score += 4;
     }
 

@@ -25,9 +25,14 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
     super.onLoad();
 
     // 顯示文字
-    add(TextComponent(
+    add(TextBoxComponent(
       text: text,
       anchor: Anchor.topLeft,
+      boxConfig: TextBoxConfig(
+        maxWidth: sizeX,        // 用你傳入的寬度當換行邊界
+        timePerChar: 0,         // 0 = 不做打字機效果，直接顯示
+        growingBox: true,       // 文字多的時候自動往下長
+      ),
       textRenderer: TextPaint(
         style: TextStyle(
           fontSize: 32,
@@ -49,7 +54,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
 
   // 方便更新文字
   void updateText(String newText) {
-    final textComp = children.whereType<TextComponent>().firstOrNull;
+    final textComp = children.whereType<TextBoxComponent>().firstOrNull;
     textComp?.text = newText;
   }
 }

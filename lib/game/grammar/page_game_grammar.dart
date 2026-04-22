@@ -1,17 +1,11 @@
 // ignore_for_file: deprecated_member_use
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/grammar/controller_game_grammar.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 // ignore: must_be_immutable
 class PageGameGrammar extends StatefulWidget {
@@ -57,39 +51,6 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));
-    }
-  }
-
-  final player = AudioPlayer();
-
-  final Map<String, Uint8List> _audioCache = {};
-  Future<void> speak(String text) async {
-    if (text.isEmpty) return;
-
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
-    }
-
-    if (_audioCache.containsKey(text)) {
-      await player.play(BytesSource(_audioCache[text]!));
-      return;
-    }
-
-    final url =
-      "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    // 用 http.get 先取得 bytes，並加上 User-Agent
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-      },
-    );
-
-    if (response.statusCode == 200) {
-      _audioCache[text] = response.bodyBytes;
-      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 
@@ -208,7 +169,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                             size: 44,
                             color: Color(0xFF26A69A),
                           ),
-                          onPressed: () => speak(controller
+                          onPressed: () => controller.speak(controller
                               .currentQuestion!.question
                               .replaceAll("______",
                                   controller.currentQuestion!.correctAnswer)

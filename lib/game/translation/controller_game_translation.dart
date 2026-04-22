@@ -94,6 +94,7 @@ class ControllerGameTranslation extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    speak(currentQuestion!.question);
   }
 
   Map<String, Set<String>> synonyms = {};
