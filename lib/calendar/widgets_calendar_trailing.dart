@@ -20,11 +20,13 @@ Widget widgetsCalendarTrailing({
           Selector<ControllerCalendar, bool>(
             selector: (_, controller) => controller.isEventSelected(event.id),
             builder: (_, isSelected, __) {
-              return Checkbox(
-                value: isSelected,
-                onChanged: (value) => onMemoryCheckboxChanged(
-                  context: context, controller: controllerCalendar, value: value, event: event, loc: loc),
-              );
+              return Tooltip(
+                message: loc.memoryAdd,
+                child: Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => onMemoryCheckboxChanged(
+                    context: context, controller: controllerCalendar, value: value, event: event, loc: loc),
+                ));
             },
           ),
         if (!event.isHoliday)
