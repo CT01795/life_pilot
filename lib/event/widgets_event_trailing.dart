@@ -23,11 +23,13 @@ Widget widgetsEventTrailing({
           Selector<ControllerEvent, bool>(
             selector: (_, c) => c.isEventSelected(event.id),
             builder: (_, isSelected, __) {
-              return Checkbox(
-                value: isSelected,
-                onChanged: (value) => onMemoryCheckboxChanged(
-                  context: context, controller: controllerEvent, value: value, event: event, loc: loc),
-              );
+              return Tooltip(
+                message: loc.eventAdd1,
+                child: Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => onMemoryCheckboxChanged(
+                    context: context, controller: controllerEvent, value: value, event: event, loc: loc),
+                ));
             },
           ),
         if (auth.currentAccount == event.account)
