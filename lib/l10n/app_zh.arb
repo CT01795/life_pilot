@@ -102,7 +102,7 @@
   "@uploadExcel": {"description": "Label for uploadCsv"},
   "exportExcel": "匯出 Excel",
   "@exportExcel": {"description": "Label for exportExcel"},
-  "eventAdd": "新增活動",
+  "eventAdd": "行事曆新增活動",
   "@eventAdd": {"description": "Label for add event"},
   "eventAddOk": "✅ 已新增活動",
   "@eventAddOk": {"description": "Label for add event ok"},
