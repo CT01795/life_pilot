@@ -2,6 +2,7 @@ import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
+import 'package:life_pilot/game/social/model_game_social.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/model_game_user.dart';
@@ -184,6 +185,29 @@ class ServiceGame {
     return ModelGameTranslation(
         questionId: data['id'],
         question: data['question'],
+        correctAnswer: data['correct_answer'],
+        options: [
+          data['correct_answer'],
+          data['wrong1'],
+          data['wrong2'],
+        ]..shuffle());
+  }
+
+  //------------------------- Social -------------------------
+  Future<ModelGameSocial> fetchSocialQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_social_with_options",
+        params: {'user_name': userName, 'p_level': level});
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+
+    return ModelGameSocial(
+        id: data['id'],
+        scene: data['scene'],
         correctAnswer: data['correct_answer'],
         options: [
           data['correct_answer'],

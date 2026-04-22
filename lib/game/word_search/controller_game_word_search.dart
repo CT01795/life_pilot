@@ -10,7 +10,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
-
 class ControllerGameWordSearch extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
@@ -31,10 +30,10 @@ class ControllerGameWordSearch extends ChangeNotifier {
   int maxQuestions = 10;
 
   List<List<int>> directions = [
-    [0, 1],   // →
-    [1, 0],   // ↓
-    [1, 1],   // ↘
-    [-1, 1],  // ↗
+    [0, 1], // →
+    [1, 0], // ↓
+    [1, 1], // ↘
+    [-1, 1], // ↗
   ];
 
   List<int>? _currentDirection;
@@ -54,17 +53,18 @@ class ControllerGameWordSearch extends ChangeNotifier {
   final Map<String, Uint8List> _audioCache = {};
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
-    
+
     if (kIsWeb) {
       await speakWeb(text);
       return;
     }
-    
+
     if (_audioCache.containsKey(text)) {
       await player.play(BytesSource(_audioCache[text]!));
       return;
     }
-    String url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    String url =
+        "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
 
     // 用 http.get 先取得 bytes，並加上 User-Agent
     final response = await http.get(
@@ -95,11 +95,13 @@ class ControllerGameWordSearch extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchWordSearchQuestion(userName, gameLevel);
+    currentQuestion =
+        await service.fetchWordSearchQuestion(userName, gameLevel);
     _generateBoardFromQuestion();
 
     isLoading = false;
     notifyListeners();
+    speak(currentQuestion.question);
   }
 
   void _generateBoardFromQuestion() {
@@ -237,8 +239,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
   }
 
   void submitSelection() {
-    final selectedWord =
-        board.currentSelection.map((c) => c.letter).join();
+    final selectedWord = board.currentSelection.map((c) => c.letter).join();
 
     answer(selectedWord);
 
@@ -255,7 +256,8 @@ class ControllerGameWordSearch extends ChangeNotifier {
 
     lastAnswer = answer;
     answeredCount++;
-    final isRightAnswer = answer == currentQuestion.question.replaceAll(' ', '');
+    final isRightAnswer =
+        answer == currentQuestion.question.replaceAll(' ', '');
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;
