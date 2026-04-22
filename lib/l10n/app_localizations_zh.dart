@@ -153,7 +153,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exportExcel => '匯出 Excel';
 
   @override
-  String get eventAdd => '行事曆新增活動';
+  String get eventAdd => '新增活動';
+
+  @override
+  String get eventAdd1 => '行事曆新增活動';
 
   @override
   String get eventAddOk => '✅ 已新增活動';

@@ -153,7 +153,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportExcel => 'Export';
 
   @override
-  String get eventAdd => 'Add to calendar';
+  String get eventAdd => 'Add';
+
+  @override
+  String get eventAdd1 => 'Add to calendar';
 
   @override
   String get eventAddOk => '✅ Event added';

@@ -390,8 +390,14 @@ abstract class AppLocalizations {
   /// Label for add event
   ///
   /// In en, this message translates to:
-  /// **'Add to calendar'**
+  /// **'Add'**
   String get eventAdd;
+
+  /// Label for add event
+  ///
+  /// In en, this message translates to:
+  /// **'Add to calendar'**
+  String get eventAdd1;
 
   /// Label for add event ok
   ///
