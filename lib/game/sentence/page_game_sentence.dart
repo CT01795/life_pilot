@@ -1,19 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:math';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/sentence/controller_game_sentence.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 // ignore: must_be_immutable
 class PageGameSentence extends StatefulWidget {
@@ -56,47 +50,6 @@ class _PageGameSentenceState extends State<PageGameSentence> {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() => Navigator.pop(context, true));
-    }
-  }
-
-  final player = AudioPlayer();
-
-  final Map<String, Uint8List> _audioCache = {};
-  Future<void> speak(String text) async {
-    if (text.isEmpty) return;
-    
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
-    }
-
-    if (_audioCache.containsKey(text)) {
-      await player.play(BytesSource(_audioCache[text]!));
-      return;
-    }
-
-    String url = "";
-    if (containsChinese) {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    }
-
-    // 用 http.get 先取得 bytes，並加上 User-Agent
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-      },
-    );
-
-    if (response.statusCode == 200) {
-      _audioCache[text] = response.bodyBytes;
-      await player.play(BytesSource(_audioCache[text]!));
     }
   }
 
@@ -145,8 +98,8 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                       IconButton(
                         icon: Icon(Icons.volume_up,
                             size: 60, color: Color(0xFF26A69A)),
-                        onPressed: () =>
-                            speak(controller.currentQuestion!.correctAnswer),
+                        onPressed: () async =>
+                            await controller.speak(controller.currentQuestion!.correctAnswer),
                       ),
                       Gaps.w36,
                       ElevatedButton(

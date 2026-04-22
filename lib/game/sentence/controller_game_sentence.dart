@@ -1,16 +1,21 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:uuid/uuid.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
+import 'package:life_pilot/utils/tts/tts_stub.dart'
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameSentence extends ChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
-
+  final player = AudioPlayer();
+  Map<String, Uint8List> audioCache = {};
   ModelGameSentence? currentQuestion;
   bool isFinished = false;
   bool isLoading = false;
@@ -57,6 +62,46 @@ class ControllerGameSentence extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    speak(currentQuestion!.correctAnswer);
+  }
+
+  Future<void> speak(String text) async {
+    if (text.isEmpty) return;
+
+    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    if (kIsWeb) {
+      await speakWeb(text);
+      return;
+    }
+
+    if (audioCache.containsKey(text)) {
+      await player.play(BytesSource(audioCache[text]!));
+      return;
+    }
+
+    String url = "";
+    if (containsChinese) {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    } else {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    }
+
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(audioCache[text]!));
+    }
+    return;
   }
 
   // 🔹 將單字移動到答案槽
@@ -119,6 +164,8 @@ class ControllerGameSentence extends ChangeNotifier {
       answer: userAnswer,
       isRightAnswer: isRightAnswer ?? false,
     ));
+
+    return;
   }
 
   Future<void> _saveScore(bool isPass) async {
