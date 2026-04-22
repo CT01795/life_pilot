@@ -1,8 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:audioplayers/audioplayers.dart';
+import 'package:life_pilot/utils/tts/tts_stub.dart'
+    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameGrammar extends ChangeNotifier {
   final String userName;
@@ -10,6 +14,9 @@ class ControllerGameGrammar extends ChangeNotifier {
   final String gameId;
   final int gameLevel;
   final ModelGameGrammar model;
+  final player = AudioPlayer();
+
+  Map<String, Uint8List> audioCache = {};
   bool? isRightAnswer;
   int answeredCount = 0; // 紀錄答了幾題
 
@@ -54,6 +61,39 @@ class ControllerGameGrammar extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    speak(currentQuestion!.question
+        .replaceAll("______", currentQuestion!.correctAnswer)
+        .replaceAll("<-->", ","));
+  }
+
+  Future<void> speak(String text) async {
+    if (text.isEmpty) return;
+
+    if (kIsWeb) {
+      await speakWeb(text);
+      return;
+    }
+
+    if (audioCache.containsKey(text)) {
+      await player.play(BytesSource(audioCache[text]!));
+      return;
+    }
+
+    final url =
+        "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    // 用 http.get 先取得 bytes，並加上 User-Agent
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      audioCache[text] = response.bodyBytes;
+      await player.play(BytesSource(audioCache[text]!));
+    }
   }
 
   Future<void> answer(String answer) async {
