@@ -153,7 +153,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get exportExcel => 'Excel 내보내기';
 
   @override
-  String get eventAdd => '이벤트 추가';
+  String get eventAdd => '캘린더에 새 이벤트 추가';
 
   @override
   String get eventAddOk => '✅ 이벤트가 추가되었습니다';

@@ -100,7 +100,7 @@
   "@toggleView": {"description": "Label for toggleView"},
   "exportExcel": "Export",
   "@exportExcel": {"description": "Label for exportExcel"},
-  "eventAdd": "Add",
+  "eventAdd": "Add to calendar",
   "@eventAdd": {"description": "Label for add event"},
   "eventAddOk": "✅ Event added",
   "@eventAddOk": {"description": "Label for add event ok"},
