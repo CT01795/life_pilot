@@ -84,11 +84,12 @@ class ServiceWeather {
         startDate == null || startDate.isBefore(today) ? today : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
 
-    /*await supabase
-        .from('weather_forecast')
-        .delete()
-        .lte('date', today.subtract(Duration(days: 2)).toIso8601String());*/
-
+    if(today.weekday == 3){
+      await supabase
+          .from('weather_forecast')
+          .delete()
+          .lte('date', today.subtract(Duration(days: 1)).toIso8601String());
+    }
     /// 1️⃣ 查 DB
     final dbRes = await supabase
         .from('weather_forecast')
