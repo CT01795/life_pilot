@@ -30,14 +30,14 @@ class ServiceEvent {
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
-    if (tableName == TableNames.recommendedEvents) {
+    if (tableName == TableNames.recommendedEvents && today.weekday == 3) {
       await client.rpc('cleanup_recommended_events', params: {
         'cutoff': cutoffDate.toIso8601String()
       });
     }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace
-                ? DateTime(today.year - 1, today.month, today.day)
+                ? DateTime(today.year, today.month, today.day).subtract(Duration(days:60))
                 : today))
         .formatDateString();
     final inputDateE =
