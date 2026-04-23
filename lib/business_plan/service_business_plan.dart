@@ -78,100 +78,6 @@ class ServiceBusinessPlan {
     }
   }
 
-  Stream<ModelPlanSection> streamSectionsWithQuestions(String planId) async* {
-    final sectionsRes = await supabase
-        .from('business_plan_section')
-        .select('*')
-        .eq('plan_id', planId)
-        .order('sort_order', ascending: true);
-
-    for (final s in sectionsRes) {
-      final questionsRes = await supabase
-          .from('business_plan_question')
-          .select('*')
-          .eq('section_id', s['id'])
-          .order('sort_order', ascending: true);
-
-      List<ModelPlanQuestion> questions = [];
-
-      for (final q in questionsRes) {
-        final answerRes = await supabase
-            .from('business_plan_answer')
-            .select('answer')
-            .eq('plan_id', planId)
-            .eq('question_id', q['id'])
-            .maybeSingle();
-
-        questions.add(ModelPlanQuestion(
-          id: q['id'],
-          prompt: q['prompt'],
-          answer: answerRes?['answer'] ?? '',
-          sortOrder: q['sort_order'],
-        ));
-      }
-
-      yield ModelPlanSection(
-        id: s['id'],
-        title: s['title'],
-        sortOrder: s['sort_order'],
-        questions: questions,
-      );
-    }
-  }
-
-  // 取得 Plan + Section + Question（帶答案）
-  Future<List<ModelPlanSection>> fetchSectionsWithQuestions(String planId,
-      {int? limit}) async {
-    final query = supabase
-        .from('business_plan_section')
-        .select('*')
-        .eq('plan_id', planId)
-        .order('sort_order', ascending: true);
-    PostgrestList sectionsRes;
-    if (limit != null) {
-      sectionsRes = await query.range(0, limit - 1);
-    } else {
-      sectionsRes = await query;
-    }
-
-    List<ModelPlanSection> sections = [];
-
-    for (final s in sectionsRes) {
-      final questionsRes = await supabase
-          .from('business_plan_question')
-          .select('*')
-          .eq('section_id', s['id'])
-          .order('sort_order', ascending: true);
-
-      List<ModelPlanQuestion> questions = [];
-
-      for (final q in questionsRes) {
-        final answerRes = await supabase
-            .from('business_plan_answer')
-            .select('answer')
-            .eq('plan_id', planId)
-            .eq('question_id', q['id'])
-            .maybeSingle();
-
-        questions.add(ModelPlanQuestion(
-          id: q['id'],
-          prompt: q['prompt'],
-          answer: answerRes?['answer'] ?? '',
-          sortOrder: q['sort_order'],
-        ));
-      }
-
-      sections.add(ModelPlanSection(
-        id: s['id'],
-        title: s['title'],
-        sortOrder: s['sort_order'],
-        questions: questions,
-      ));
-    }
-
-    return sections;
-  }
-
   Future<void> updatePlanTitle({
     required String planId,
     required String title,
@@ -230,58 +136,32 @@ class ServiceBusinessPlan {
   }
 
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
-    final planRes = await supabase
-        .from('business_plan')
-        .select('*')
-        .eq('id', planId)
-        .maybeSingle();
+    final res = await supabase.rpc(
+      'get_business_plan_detail',
+      params: {'p_plan_id': planId},
+    );
 
-    final sectionsRes = await supabase
-        .from('business_plan_section')
-        .select('*')
-        .eq('plan_id', planId)
-        .order('sort_order', ascending: true);
-
-    List<ModelPlanSection> sections = [];
-
-    for (final s in sectionsRes) {
-      final questionsRes = await supabase
-          .from('business_plan_question')
-          .select('*')
-          .eq('section_id', s['id'])
-          .order('sort_order', ascending: true);
-
-      List<ModelPlanQuestion> questions = [];
-
-      for (final q in questionsRes) {
-        final answerRes = await supabase
-            .from('business_plan_answer')
-            .select('answer')
-            .eq('plan_id', planId)
-            .eq('question_id', q['id'])
-            .maybeSingle();
-
-        questions.add(ModelPlanQuestion(
-          id: q['id'],
-          prompt: q['prompt'],
-          answer: answerRes?['answer'] ?? '',
-          sortOrder: q['sort_order'],
-        ));
-      }
-
-      sections.add(ModelPlanSection(
-        id: s['id'],
-        title: s['title'],
-        sortOrder: s['sort_order'],
-        questions: questions,
-      ));
-    }
+    final data = res as Map<String, dynamic>;
 
     return ModelBusinessPlan(
-      id: planRes?['id'],
-      title: planRes?['title'],
-      createdAt: DateTime.parse(planRes?['created_at']),
-      sections: sections,
+      id: data['id'],
+      title: data['title'],
+      createdAt: DateTime.parse(data['created_at']),
+      sections: (data['sections'] as List)
+          .map((s) => ModelPlanSection(
+                id: s['id'],
+                title: s['title'],
+                sortOrder: s['sort_order'],
+                questions: (s['questions'] as List)
+                    .map((q) => ModelPlanQuestion(
+                          id: q['id'],
+                          prompt: q['prompt'],
+                          answer: q['answer'] ?? '',
+                          sortOrder: q['sort_order'],
+                        ))
+                    .toList(),
+              ))
+          .toList(),
     );
   }
 }

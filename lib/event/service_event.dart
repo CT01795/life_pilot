@@ -31,27 +31,9 @@ class ServiceEvent {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
     if (tableName == TableNames.recommendedEvents) {
-      final res1 = await client.from(tableName).select('id').or(
-            '${EventFields.endDate}.lte.$cutoffDate,'
-            'and(${EventFields.endDate}.is.null,${EventFields.startDate}.lte.$cutoffDate)',
-          );
-      final res2 = await client.from(TableNames.recommendedEventsDeleted).select('id').or(
-            '${EventFields.endDate}.lte.$cutoffDate,'
-            'and(${EventFields.endDate}.is.null,${EventFields.startDate}.lte.$cutoffDate)',
-          );
-      final allIds = [
-        ...(res1 as List).map((e) => e['id']),
-        ...(res2 as List).map((e) => e['id']),
-      ];
-      if (allIds.isNotEmpty) {
-        await client.from(TableNames.recommendedEventsFavor).delete().filter('id', 'in', allIds);
-        await client.from(tableName).delete().filter('id', 'in', allIds);
-        await client.from(TableNames.recommendedEventsDeleted).delete().filter('id', 'in', allIds);
-      }
-      await client
-          .from(TableNames.recommendedEventUrl)
-          .delete()
-          .lte('start_date', cutoffDate);
+      await client.rpc('cleanup_recommended_events', params: {
+        'cutoff': cutoffDate.toIso8601String()
+      });
     }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace

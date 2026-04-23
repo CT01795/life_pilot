@@ -32,7 +32,12 @@ class ServiceWeather {
   }) async {
     if (!hasLocation) return null;
     //if (_forecastCache.containsKey(event.id)) return;
-    if (_loadingIds.contains(event.id)) return null;
+    if (_loadingIds.contains(event.id)) {
+      while (_loadingIds.contains(event.id)) { //避免 UI 同時多 request 空回傳
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _forecastCache[event.id]?.data;
+    }
     final now = DateTime.now();
     final today = DateTimeFormatter.dateOnly(now);
     if (tableName == TableNames.recommendedAttractions) {
@@ -50,7 +55,7 @@ class ServiceWeather {
       final diff = now.difference(cache.created);
 
       // 3小時內不重新抓
-      if (diff.inMinutes < 180) {
+      if (diff.inMinutes < 240) {
         return cache.data;
       }
     }
@@ -79,10 +84,10 @@ class ServiceWeather {
         startDate == null || startDate.isBefore(today) ? today : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
 
-    await supabase
+    /*await supabase
         .from('weather_forecast')
         .delete()
-        .lte('date', today.subtract(Duration(days: 2)).toIso8601String());
+        .lte('date', today.subtract(Duration(days: 2)).toIso8601String());*/
 
     /// 1️⃣ 查 DB
     final dbRes = await supabase
@@ -135,9 +140,8 @@ class ServiceWeather {
         );
       }
 
-      /// 3️⃣ 寫 DB
-      for (final day in days) {
-        await supabase.from('weather_forecast').upsert({
+      await supabase.from('weather_forecast').insert(
+        days.map((day) => {
           'location': event.locationDisplay,
           'date': day.date.toIso8601String(),
           'weather': day.toJson(),
@@ -146,23 +150,10 @@ class ServiceWeather {
           'lon': lon,
           'country': country,
           'name': event.locationDisplay
-        });
-      }
+        }).toList(),
+      );
 
-      final dbRes = await supabase
-          .from('weather_forecast')
-          .select()
-          .eq('location', event.locationDisplay)
-          .gte('date',
-              resultStartDate.add(Duration(hours: -3)).toIso8601String())
-          .gte('created_at', todayDate.toIso8601String())
-          .order('date', ascending: true);
-
-      if (dbRes.isNotEmpty) {
-        return dbRes
-            .map<EventWeather>((e) => EventWeather.fromJson(e['weather']))
-            .toList();
-      }
+      return days;
     }
     return [];
   }

@@ -15,7 +15,9 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
   @override
   void initState() {
     super.initState();
-    context.read<ControllerBusinessPlan>().loadTemplates();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ControllerBusinessPlan>().loadTemplates();
+    });
   }
 
   @override

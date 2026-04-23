@@ -20,6 +20,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
     super.initState();
     _htmlController = HtmlEditorController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _loadCurrentAnswer();
     });
   }

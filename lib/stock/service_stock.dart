@@ -20,9 +20,9 @@ class ServiceStock {
         .lte('date', cutoffDate);
     await client.from(TableNames.stockDate).delete().lte('date', cutoffDate);
 
-    int checkDates = 6;
+    int checkDates = 3;
     if (today.month < 3) {
-      checkDates = 15;
+      checkDates = 12;
     }
     for (int i = checkDates; i >= 1; i--) {
       await loadRawDataTWSE(
@@ -41,7 +41,7 @@ class ServiceStock {
         loop = 0;
       } on Exception catch (ex) {
         logger.e(ex);
-        if (loop > 5) {
+        if (loop > 3) {
           loop = 0;
         } else {
           i = i - 1;
@@ -220,8 +220,8 @@ class ServiceStock {
         .from(TableNames.stockDailyPrice)
         .select('*')
         .eq('date', date)
-        .gte('traded_number', 9000000)
-        .gte('closing_price', 10)
+        .gte('traded_number', 20000000)
+        .gte('closing_price', 12)
         .lt('closing_price', 1000);
 
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
@@ -334,8 +334,8 @@ class ServiceStock {
           pct >= 2 && // 3️⃣ 漲幅 > 2%
           ma5 >= ma20 && // 4️⃣ 均線多頭
           rsi >= 50 &&
-          s.closingPrice >= 10 &&
-          s.tradedNumber != null && s.tradedNumber! >= 9000000;
+          s.closingPrice >= 12 &&
+          s.tradedNumber != null && s.tradedNumber! >= 20000000;
 
       //&& rsi < 80; //排除假突破與過熱
 
