@@ -34,7 +34,7 @@ class ServiceWeather {
     //if (_forecastCache.containsKey(event.id)) return;
     if (_loadingIds.contains(event.id)) {
       while (_loadingIds.contains(event.id)) { //避免 UI 同時多 request 空回傳
-        await Future.delayed(const Duration(milliseconds: 100));
+        await Future.delayed(const Duration(seconds: 1));
       }
       return _forecastCache[event.id]?.data;
     }
@@ -54,8 +54,8 @@ class ServiceWeather {
     if (cache != null) {
       final diff = now.difference(cache.created);
 
-      // 3小時內不重新抓
-      if (diff.inMinutes < 240) {
+      // 8小時內不重新抓
+      if (diff.inMinutes < 480) {
         return cache.data;
       }
     }
