@@ -165,13 +165,11 @@ class ServiceWeather {
     final DateTime thisWeek = today.add(Duration(days: 8));
     for (final e in events) {
       if (!(e.endDate == null && thisWeek.compareTo(e.startDate!) == 1 &&
-          yesterday.compareTo(e.startDate!) == -1)) {
+          yesterday.compareTo(e.startDate!) == -1) || !(e.endDate != null && thisWeek.compareTo(e.startDate!) == 1 &&
+          yesterday.compareTo(e.endDate!) == -1)) {
         continue;
       } //當只有start date, 日期必須是今日或一周內才要看天氣
-     if (!(e.endDate != null && thisWeek.compareTo(e.startDate!) == 1 &&
-          yesterday.compareTo(e.endDate!) == 1)) {
-        continue;
-      } //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
+       //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
       if (!e.hasLocation) continue;
       if (WeatherCacheStore.I.cache.containsKey(e.locationDisplay)) continue;
 
