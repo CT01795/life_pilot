@@ -175,11 +175,18 @@ class ControllerGameSocial extends ChangeNotifier {
 
   Icon? getStatusIcon(String option) {
     if (lastAnswer == null) return null;
+    int inputScore = -1;
+    for(int i = 0; i< currentQuestion!.options.length ; i++){
+      if(currentQuestion!.options[i] == option){
+        inputScore = currentQuestion!.scores[i];
+        break;
+      }
+    }
     if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
+      return inputScore >= 0
           ? Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32)
           : Icon(Icons.clear_rounded, color: Color(0xFFD32F2F), size: 32);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
+    } else if (inputScore >= 0 && showCorrectAnswer) {
       return Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32);
     }
     return null;
