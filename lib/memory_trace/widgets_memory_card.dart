@@ -121,20 +121,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
 }
 
 class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
-  bool _weatherLoaded = false;
   final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!_weatherLoaded) {
-        await widget.controllerEvent.loadWeather(widget.eventViewModel);
-        if (mounted) setState(() {});
-        _weatherLoaded = true;
-      }
-    });
-  }
 
   Future<bool> _cachedAssetExists(String path) async {
     if (_assetCache.containsKey(path)) return _assetCache[path]!;
@@ -148,7 +135,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate = widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
-    final forecast = widget.controllerEvent.getForecast(widget.eventViewModel.id);
+    final forecast = widget.controllerEvent.getForecast(locationDisplay: widget.eventViewModel.locationDisplay);
 
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);

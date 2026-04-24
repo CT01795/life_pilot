@@ -9,17 +9,16 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
+import 'package:life_pilot/utils/weather_cache_store.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceWeather {
   final supabase = Supabase.instance.client;
   String? _apiKey;
 
-  final Set<String> _loadingIds = {};
-  final Map<String, WeatherCache?> _forecastCache = {};
-
-  List<EventWeather>? getForecast(String eventId) {
-    return _forecastCache[eventId]?.data;
+  final cacheStore = WeatherCacheStore.I;
+  List<EventWeather>? getForecast({required String locationDisplay}) {
+    return cacheStore.cache[locationDisplay]?.data;
   }
 
   Future<List<EventWeather>?> loadWeather({
@@ -31,12 +30,9 @@ class ServiceWeather {
     required String tableName,
   }) async {
     if (!hasLocation) return null;
-    //if (_forecastCache.containsKey(event.id)) return;
-    if (_loadingIds.contains(event.id)) {
-      while (_loadingIds.contains(event.id)) { //避免 UI 同時多 request 空回傳
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      return _forecastCache[event.id]?.data;
+    //if (cacheStore.cache.containsKey(event.locationDisplay)) return;
+    if (cacheStore.loading.contains(event.locationDisplay)) {
+      return cacheStore.cache[event.locationDisplay]?.data;
     }
     final now = DateTime.now();
     final today = DateTimeFormatter.dateOnly(now);
@@ -49,7 +45,7 @@ class ServiceWeather {
       return null;
     }
 
-    WeatherCache? cache = _forecastCache[event.id];
+    final cache = cacheStore.cache[event.locationDisplay];
 
     if (cache != null) {
       final diff = now.difference(cache.created);
@@ -60,19 +56,21 @@ class ServiceWeather {
       }
     }
 
-    _loadingIds.add(event.id);
+    cacheStore.loading.add(event.locationDisplay);
 
     try {
       final data = await getWeather(event: event, startDate: startDate);
 
-      _forecastCache[event.id] = WeatherCache(data: data, created: now);
+      cacheStore.cache[event.locationDisplay] =
+          WeatherCache(data: data, created: now);
       return data;
     } catch (e, st) {
       logger.e('loadWeather failed for ${event.id}: $e\n$st');
-      _forecastCache[event.id] = WeatherCache(data: [], created: now);
+      cacheStore.cache[event.locationDisplay] =
+          WeatherCache(data: [], created: now);
       return null;
     } finally {
-      _loadingIds.remove(event.id);
+      cacheStore.loading.remove(event.locationDisplay);
     }
   }
 
@@ -84,12 +82,13 @@ class ServiceWeather {
         startDate == null || startDate.isBefore(today) ? today : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
 
-    if(today.weekday == 3){
+    if (today.weekday == 3) {
       await supabase
           .from('weather_forecast')
           .delete()
           .lte('date', today.subtract(Duration(days: 1)).toIso8601String());
     }
+
     /// 1️⃣ 查 DB
     final dbRes = await supabase
         .from('weather_forecast')
@@ -105,11 +104,10 @@ class ServiceWeather {
           .toList();
     }
 
-    
     String country = ClusterItem.detectCountryHint(tmpLocationDisplay[0])
-          .replaceAll(",", "");    
+        .replaceAll(",", "");
     event = await ClusterItem.getLatLngFromAddressView(event);
-    
+
     if (event.lat != null && event.lng != null) {
       final lat = event.lat;
       final lon = event.lng;
@@ -142,20 +140,49 @@ class ServiceWeather {
       }
 
       await supabase.from('weather_forecast').insert(
-        days.map((day) => {
-          'location': event.locationDisplay,
-          'date': day.date.toIso8601String(),
-          'weather': day.toJson(),
-          'created_at': todayDate.toIso8601String(),
-          'lat': lat,
-          'lon': lon,
-          'country': country,
-          'name': event.locationDisplay
-        }).toList(),
-      );
+            days
+                .map((day) => {
+                      'location': event.locationDisplay,
+                      'date': day.date.toIso8601String(),
+                      'weather': day.toJson(),
+                      'created_at': todayDate.toIso8601String(),
+                      'lat': lat,
+                      'lon': lon,
+                      'country': country,
+                      'name': event.locationDisplay
+                    })
+                .toList(),
+          );
 
       return days;
     }
     return [];
+  }
+
+  Future<void> preloadWeather(List<EventViewModel> events) async {
+    final DateTime today = DateTimeFormatter.dateOnly(DateTime.now());
+    final DateTime yesterday = today.add(Duration(days: -1));
+    final DateTime thisWeek = today.add(Duration(days: 8));
+    for (final e in events) {
+      if (!(e.endDate == null && thisWeek.compareTo(e.startDate!) == 1 &&
+          yesterday.compareTo(e.startDate!) == -1)) {
+        continue;
+      } //當只有start date, 日期必須是今日或一周內才要看天氣
+     if (!(e.endDate != null && thisWeek.compareTo(e.startDate!) == 1 &&
+          yesterday.compareTo(e.endDate!) == 1)) {
+        continue;
+      } //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
+      if (!e.hasLocation) continue;
+      if (WeatherCacheStore.I.cache.containsKey(e.locationDisplay)) continue;
+
+      await loadWeather(
+        event: e,
+        hasLocation: e.hasLocation,
+        locationDisplay: e.locationDisplay,
+        startDate: null,
+        endDate: null,
+        tableName: '',
+      );
+    }
   }
 }

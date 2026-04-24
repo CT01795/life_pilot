@@ -8,6 +8,7 @@ import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
+import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -135,6 +136,9 @@ class ControllerCalendar extends ChangeNotifier {
       googleApiKey: _googleApiKey,
     );
 
+    // ✅ STOP: UI card 不再觸發 weather
+    _warmUpWeather(result);
+
     // ❗只允許最新請求寫入 model
     if (_reloadToken != myToken) {
       return;
@@ -147,6 +151,33 @@ class ControllerCalendar extends ChangeNotifier {
     if (notify) {
       notifyListeners();
     }
+  }
+
+  Future<void> _warmUpWeather(List<EventItem> events) async {
+    final futures = events.map((e) {
+      final vm = buildViewModel(event: e, loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!);
+      return _serviceWeather.preloadWeather([vm]);
+    });
+
+    await Future.wait(futures);
+  }
+
+  EventViewModel buildViewModel({
+    required EventItem event,
+    required AppLocalizations loc,
+  }) {
+    EventViewModel tmp = EventViewModel.buildEventViewModel(
+      event: event,
+      parentLocation: '',
+      canDelete: canDelete(
+        account: event.account ?? '',
+      ),
+      showSubEvents: true,
+      loc: loc,
+      tableName: _tableName,
+    );
+
+    return tmp;
   }
 
   // 載入月曆事件（含服務端與假日）
@@ -610,8 +641,8 @@ class ControllerCalendar extends ChangeNotifier {
   // ------------------ controller event card ------------------
 
   // ------------------ Public ------------------
-  List<EventWeather>? getForecast(String eventId) {
-    return _serviceWeather.getForecast(eventId);
+  List<EventWeather>? getForecast({required String locationDisplay}) {
+    return _serviceWeather.getForecast(locationDisplay: locationDisplay);
   }
 
   // 取得天氣預報（緩存）
