@@ -161983,11 +161983,11 @@ n=l==null
 if(n){m=o.at
 m.toString
 m=i.bD(0,m)===1&&j.bD(0,m)===-1}else m=!1
-if(!m){s=3
-break}if(!n){n=o.at
+if(m){if(!n){n=o.at
 n.toString
-l=i.bD(0,n)===1&&j.bD(0,l)===1}else l=!1
-if(!l){s=3
+l=i.bD(0,n)===1&&j.bD(0,l)===-1}else l=!1
+l=!l}else l=!0
+if(l){s=3
 break}if(!o.r){s=3
 break}l=o.w
 if($.bHg().a.aw(0,l)){s=3
