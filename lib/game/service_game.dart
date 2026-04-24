@@ -170,6 +170,75 @@ class ServiceGame {
     });
   }
 
+  //------------------------- Social -------------------------
+  Future<ModelGameSocial> fetchSocialQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_social_with_options",
+        params: {'user_name': userName, 'p_level': level});
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+    Map tmpMap = {
+      data['answer1']: data['score1'],
+      data['answer2']: data['score2'],
+      data['answer3']: data['score3']
+    };
+    List<String> options = [
+      data['answer1'],
+      data['answer2'],
+      data['answer3'],
+    ]..shuffle();
+    List<int> scores = [tmpMap[options[0]], tmpMap[options[1]], tmpMap[options[2]]];
+    return ModelGameSocial(
+        id: data['id'],
+        scene: data['scene'],
+        correctAnswer: data['answer1'],
+        options: options,
+        scores: scores);
+  }
+
+  // 寫入使用者答題紀錄
+  Future<void> submitSocialAnswer({
+    required String userName,
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    await client.from('game_social_user').insert({
+      'user': userName,
+      'question_id': questionId,
+      'answer': answer,
+      'is_right': isRightAnswer,
+      'created_at': DateTime.now().toIso8601String(), // 強制存 UTC
+    });
+  }
+
+  //------------------------- Mario Translation -------------------------
+  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(
+      String userName, int level) async {
+    final result = await client.rpc("get_translation_with_options",
+        params: {'user_name': userName, 'p_level': level});
+
+    if (result == null || result.isEmpty) {
+      throw Exception("No data returned");
+    }
+
+    final data = result[0];
+
+    return ModelGameMarioTranslation(
+        questionId: data['id'],
+        question: data['question'],
+        correctAnswer: data['correct_answer'],
+        options: [
+          data['correct_answer'],
+          data['wrong1'],
+          data['wrong2'],
+        ]..shuffle());
+  }
+
   //------------------------- Translation -------------------------
   Future<ModelGameTranslation> fetchTranslationQuestion(
       String userName, int level) async {
@@ -183,51 +252,6 @@ class ServiceGame {
     final data = result[0];
 
     return ModelGameTranslation(
-        questionId: data['id'],
-        question: data['question'],
-        correctAnswer: data['correct_answer'],
-        options: [
-          data['correct_answer'],
-          data['wrong1'],
-          data['wrong2'],
-        ]..shuffle());
-  }
-
-  //------------------------- Social -------------------------
-  Future<ModelGameSocial> fetchSocialQuestion(
-      String userName, int level) async {
-    final result = await client.rpc("get_social_with_options",
-        params: {'user_name': userName, 'p_level': level});
-
-    if (result == null || result.isEmpty) {
-      throw Exception("No data returned");
-    }
-
-    final data = result[0];
-
-    return ModelGameSocial(
-        id: data['id'],
-        scene: data['scene'],
-        correctAnswer: data['correct_answer'],
-        options: [
-          data['correct_answer'],
-          data['wrong1'],
-          data['wrong2'],
-        ]..shuffle());
-  }
-
-  Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(
-      String userName, int level) async {
-    final result = await client.rpc("get_translation_with_options",
-        params: {'user_name': userName, 'p_level': level});
-
-    if (result == null || result.isEmpty) {
-      throw Exception("No data returned");
-    }
-
-    final data = result[0];
-
-    return ModelGameMarioTranslation(
         questionId: data['id'],
         question: data['question'],
         correctAnswer: data['correct_answer'],

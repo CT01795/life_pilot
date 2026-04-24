@@ -89,36 +89,36 @@ class ControllerGameSocial extends ChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion =
-        await service.fetchSocialQuestion(userName, gameLevel);
+    currentQuestion = await service.fetchSocialQuestion(userName, gameLevel);
 
     isLoading = false;
     notifyListeners();
+    speak(currentQuestion!.scene);
   }
 
   Map<String, Set<String>> synonyms = {};
   Future<void> answer(String answer) async {
     if (currentQuestion == null || lastAnswer != null) return;
 
-    if (synonyms.isEmpty) {
-      synonyms = await service.getSynonyms();
+    int inputScore = -1;
+    for(int i = 0; i< currentQuestion!.options.length ; i++){
+      if(currentQuestion!.options[i] == answer){
+        inputScore = currentQuestion!.scores[i];
+        break;
+      }
     }
 
     lastAnswer = answer;
     answeredCount++;
-    final q = currentQuestion!.scene.toLowerCase();
-    final normalized = answer.toLowerCase();
-    final isRightAnswer =
-        normalized == currentQuestion!.correctAnswer.toLowerCase() ||
-            synonyms[q]?.contains(normalized) == true;
+    final isRightAnswer = inputScore >= 0;
 
     int seconds = 1;
     if (isRightAnswer) {
-      score += 4;
+      score += inputScore;
       seconds = 1;
     } else {
-      score -= 4;
-      scoreMinus -= 4;
+      score += inputScore;
+      scoreMinus += inputScore;
       seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
@@ -132,7 +132,7 @@ class ControllerGameSocial extends ChangeNotifier {
     if (answeredCount >= maxQuestions) {
       isFinished = true;
     }
-    unawaited(service.submitTranslationAnswer(
+    unawaited(service.submitSocialAnswer(
       userName: userName,
       questionId: currentQuestion!.id,
       answer: answer,
