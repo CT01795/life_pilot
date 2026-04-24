@@ -13,6 +13,7 @@ import 'package:life_pilot/utils/model_event_weather.dart';
 import 'dart:async';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 
 class ControllerEvent extends ChangeNotifier {
   final TextEditingController _searchController = TextEditingController();
@@ -341,6 +342,10 @@ class ControllerEvent extends ChangeNotifier {
       inputUser: auth.currentAccount,
     );
     _modelEvent.setEvents(list ?? []);
+
+    // ✅ STOP: UI card 不再觸發 weather
+    _warmUpWeather(list ?? []);
+
     _invalidateViewModelCache();
     if (!_disposed) notifyListeners();
 
@@ -357,10 +362,19 @@ class ControllerEvent extends ChangeNotifier {
     }
   }
 
+  Future<void> _warmUpWeather(List<EventItem> events) async {
+    final futures = events.map((e) {
+      final vm = buildViewModel(event: e, loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!);
+      return _serviceWeather.preloadWeather([vm]);
+    });
+
+    await Future.wait(futures);
+  }
+
   // ------------------ controller event card ------------------
   // ------------------ Public ------------------
-  List<EventWeather>? getForecast(String eventId) {
-    return _serviceWeather.getForecast(eventId);
+  List<EventWeather>? getForecast({required String locationDisplay}) {
+    return _serviceWeather.getForecast(locationDisplay:locationDisplay);
   }
 
   // 取得天氣預報（緩存）

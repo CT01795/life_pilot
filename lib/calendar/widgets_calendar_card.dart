@@ -120,21 +120,7 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
 class _WidgetsCalendarCardBodyState
     extends State<_WidgetsCalendarCardBody> {
   
-  bool _weatherLoaded = false;
   final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!_weatherLoaded) {
-        final ctrl = context.read<ControllerCalendar>();
-        ctrl.loadWeather(widget.eventViewModel);
-        if (mounted) setState(() {});
-        _weatherLoaded = true;
-      }
-    });
-  }
 
   Future<bool> _cachedAssetExists(String path) async {
     if (_assetCache.containsKey(path)) return _assetCache[path]!;
@@ -150,7 +136,7 @@ class _WidgetsCalendarCardBodyState
     
     // 使用 Selector 只監聽對應 event 的天氣
     final forecast = context.select<ControllerCalendar, List<EventWeather>?>(
-      (c) => c.getForecast(widget.eventViewModel.id),
+      (c) => c.getForecast(locationDisplay: widget.eventViewModel.locationDisplay),
     );
 
     final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);

@@ -9,11 +9,10 @@ import 'package:uuid/uuid.dart';
 import '../utils/logger.dart';
 
 class ServiceCalendar {
-  static final http.Client _sharedClient = http.Client();
   static final Uuid _uuid = const Uuid();
   static Future<List<EventItem>> fetchHolidays(
       DateTime start, DateTime end, Locale locale, String googleApiKey, {http.Client? client}) async {
-    final httpClient = client ?? _sharedClient;
+    final httpClient = client ?? http.Client();
     final List<EventItem> holidays = [];
     final String calendarId = Holidays.getCalendarIdByLocale(CalendarConfig.tzLocation, locale.languageCode.toLowerCase());
     final url = Uri.parse(
