@@ -162,7 +162,7 @@ class ServiceWeather {
   Future<void> preloadWeather(List<EventViewModel> events) async {
     final DateTime today = DateTimeFormatter.dateOnly(DateTime.now());
     final DateTime yesterday = today.add(Duration(days: -1));
-    final DateTime thisWeek = today.add(Duration(days: 8));
+    final DateTime thisWeek = today.add(Duration(days: 6));
     for (final e in events) {
       if (e.endDate == null) {
         if (!(thisWeek.compareTo(e.startDate!) == 1 &&
