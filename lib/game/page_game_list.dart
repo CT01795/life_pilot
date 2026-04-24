@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
+import 'package:life_pilot/game/social/page_game_social.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/model_game_user.dart';
@@ -203,6 +204,20 @@ class _PageGameListState extends State<PageGameList> {
                   ? () async {
                       final game = selectedGameItem!;
                       if (game.gameName.toLowerCase() ==
+                          "social".toLowerCase()) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameSocial(
+                              gameId: game.id,
+                              gameLevel: game.level,
+                            ),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase() ==
                           "translation".toLowerCase()) {
                         final result = await Navigator.push(
                           context,
