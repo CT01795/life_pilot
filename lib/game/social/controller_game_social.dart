@@ -100,13 +100,7 @@ class ControllerGameSocial extends ChangeNotifier {
   Future<void> answer(String answer) async {
     if (currentQuestion == null || lastAnswer != null) return;
 
-    int inputScore = -1;
-    for(int i = 0; i< currentQuestion!.options.length ; i++){
-      if(currentQuestion!.options[i] == answer){
-        inputScore = currentQuestion!.scores[i];
-        break;
-      }
-    }
+    int inputScore = getScore(answer);
 
     lastAnswer = answer;
     answeredCount++;
@@ -151,23 +145,32 @@ class ControllerGameSocial extends ChangeNotifier {
 
   Color getButtonColor(String option) {
     if (lastAnswer == null) return Color(0xFFE3F2FD);
+    int inputScore = getScore(option);
     if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
+      return inputScore >= 0
           ? Color(0xFFC8E6C9)
           : Color(0xFFFFCDD2);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
+    } else if (inputScore >= 0 && showCorrectAnswer) {
       return Color(0xFFC8E6C9);
     }
     return Color(0xFFE3F2FD);
   }
 
+  int getScore(String option) {
+    for (int i = 0; i < currentQuestion!.options.length; i++) {
+      if (currentQuestion!.options[i] == option) {
+        return currentQuestion!.scores[i];
+      }
+    }
+    return -1;
+  }
+
   Color getBorderColor(String option) {
     if (lastAnswer == null) return Color(0xFF1976D2);
+    int inputScore = getScore(option);
     if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Color(0xFF388E3C)
-          : Color(0xFFD32F2F);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
+      return inputScore >= 0 ? Color(0xFF388E3C) : Color(0xFFD32F2F);
+    } else if (inputScore >= 0 && showCorrectAnswer) {
       return Color(0xFF388E3C);
     }
     return Color(0xFF1976D2);
@@ -175,13 +178,7 @@ class ControllerGameSocial extends ChangeNotifier {
 
   Icon? getStatusIcon(String option) {
     if (lastAnswer == null) return null;
-    int inputScore = -1;
-    for(int i = 0; i< currentQuestion!.options.length ; i++){
-      if(currentQuestion!.options[i] == option){
-        inputScore = currentQuestion!.scores[i];
-        break;
-      }
-    }
+    int inputScore = getScore(option);
     if (option == lastAnswer) {
       return inputScore >= 0
           ? Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32)
