@@ -49,7 +49,8 @@ class ServiceBusinessPlan {
     List<String> sectionIdList = [];
     List<String> questionIdList = [];
     try {
-      await api.post('business_plan/create_plan_from_template', {
+      //await 
+      api.post('business_plan/create_plan_from_template', {
         "table_name": TableNames.businessPlan,
         "user": user,
         "planId": planId,
@@ -159,7 +160,8 @@ class ServiceBusinessPlan {
   }) async {
     try {
       // 1️⃣ 建立 plan
-      await api.post('business_plan/update_plan_title', {
+      //await 
+      api.post('business_plan/update_plan_title', {
         "table_name": TableNames.businessPlan,
         "planId": planId,
         "title": title,
@@ -188,7 +190,8 @@ class ServiceBusinessPlan {
     required String answer,
   }) async {
     try {
-      await api.post('business_plan/update_answer', {
+      //await 
+      api.post('business_plan/update_answer', {
         "table_name": TableNames.businessPlanAnswer,
         "planId": planId,
         "sectionId": sectionId,

@@ -36,7 +36,8 @@ class ServiceEvent {
     final cutoffDate = today.subtract(Duration(days: 2));
     if (tableName == TableNames.recommendedEvents && today.weekday == 3) {
       try {
-        await api.post('event/cleanup_recommended_events',
+        //await 
+        api.post('event/cleanup_recommended_events',
             {'cutoff': cutoffDate.toIso8601String()});
       } on Exception catch (ex) {
         logger.e(ex);
@@ -125,7 +126,8 @@ class ServiceEvent {
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
         try {
-          await api.post('event/insert', {
+          //await 
+          api.post('event/insert', {
             'table_name': tableName,
             'events': [event.toJson()],
           });
@@ -138,7 +140,8 @@ class ServiceEvent {
         });
       } else {
         try {
-          await api.post('event/update', {
+          //await 
+          api.post('event/update', {
             'table_name': tableName,
             'current_account': currentAccount,
             'event': event.toJson(),
@@ -166,7 +169,8 @@ class ServiceEvent {
     try {
       if (tableName == TableNames.recommendedEvents) {
         try {
-          await api.post('event/insert', {
+          //await 
+          api.post('event/insert', {
             'table_name': TableNames.recommendedEventsDeleted,
             'events': [event.toJson()],
           });
@@ -179,7 +183,8 @@ class ServiceEvent {
         });
       }
       try {
-        await api.post('event/delete', {
+        //await 
+        api.post('event/delete', {
           'table_name': tableName,
           'current_account': currentAccount,
           'event': event.toJson(),
@@ -202,7 +207,8 @@ class ServiceEvent {
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
     try {
-      await api.post('event/update', {
+      //await 
+      api.post('event/update', {
         'table_name': tableName,
         'current_account': AuthConstants.sysAdminEmail,
         'event': event.toJson(),
@@ -227,13 +233,15 @@ class ServiceEvent {
       "account": account
     };
     try {
-      await api.post('event/insert', {
+      //await 
+      api.post('event/insert', {
         'table_name': TableNames.recommendedEventsFavor,
         'events': [data],
       });
     } catch (ex) {
       try {
-        await api.post('event/update', {
+        //await 
+        api.post('event/update', {
           'table_name': TableNames.recommendedEventsFavor,
           'event': data,
         });
@@ -266,7 +274,8 @@ class ServiceEvent {
     required String account,
   }) async {
     try {
-      await api.post('event/increment_event_counter', {
+      //await 
+      api.post('event/increment_event_counter', {
         'p_event_id': eventId,
         'p_event_name': eventName,
         'p_column': column,
