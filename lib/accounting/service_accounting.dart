@@ -125,8 +125,8 @@ class ServiceAccounting {
       "main_currency": currency,
     };
     try {
-      //final result =
-      await api.post('accounting/create_account', {
+      //final result = await
+      api.post('accounting/create_account', {
         "table_name": TableNames.accountingAccount,
         "data": map,
       });
@@ -157,7 +157,8 @@ class ServiceAccounting {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      await api.post('accounting/delete_account', {
+      //await 
+      api.post('accounting/delete_account', {
         "table_name": TableNames.accountingAccount,
         "id": accountId,
       });
@@ -181,7 +182,8 @@ class ServiceAccounting {
     // 不管 Web / Mobile 都轉 base64
     // Mobile / Web 統一存 bytea (Uint8List)
     try {
-      await api.post('accounting/upload_account_image_bytes_direct', {
+      //await 
+      api.post('accounting/upload_account_image_bytes_direct', {
         "table_name": TableNames.accountingAccount,
         "id": accountId,
         "master_graph_url": base64Encode(imageBytes),
@@ -257,7 +259,8 @@ class ServiceAccounting {
           })
       .toList();
     try {
-      await api.post('accounting/insert_records_batch', {
+      //await 
+      api.post('accounting/insert_records_batch', {
         "p_account_id": accountId,
         "p_type": type,
         "p_records": recordsMap,
@@ -284,7 +287,8 @@ class ServiceAccounting {
     required String newDescription,
   }) async {
     try {
-      await api.post('accounting/update_accounting_detail', {
+      //await 
+      api.post('accounting/update_accounting_detail', {
         "p_detail_id": detailId,
         "p_new_value": newValue,
         "p_new_currency": newCurrency,
@@ -336,7 +340,8 @@ class ServiceAccounting {
     required String currency,
   }) async {
     try {
-      await api.post('accounting/switch_main_currency', {
+      //await 
+      api.post('accounting/switch_main_currency', {
         "p_account_id": accountId,
         "p_currency": currency,
       });

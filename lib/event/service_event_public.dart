@@ -58,7 +58,8 @@ class ServiceEventPublic {
     }
 
     try {
-      await api.post('event/insert_event_url', {
+      //await 
+      api.post('event/insert_event_url', {
         'table_name': TableNames.recommendedEventUrl,
         'event_url': {'master_url': url, 'start_date': today.toIso8601String()},
       });
@@ -109,7 +110,8 @@ class ServiceEventPublic {
 
     if (newEvents.isNotEmpty) {
       try {
-        await api.post('event/insert', {
+        //await 
+        api.post('event/insert', {
           'table_name': TableNames.recommendedEvents,
           'events': newEvents.map((e) => e.toJson()).toList(),
         });
