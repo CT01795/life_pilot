@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
-import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -13,14 +14,17 @@ class ServiceEvent {
 
   Future<String> getKey({required String keyName}) async {
     try {
-      return await client.rpc('get_key', params: {'p_key_name': keyName});
+      //final response = await api.post('event/get_api_key', {'p_key_name': keyName});
+      final response =
+          await apiSupabase.post('event/get_api_key', {'p_key_name': keyName});
+      return response['value'];
     } catch (e) {
       logger.e('Error fetching key: $e');
       return '';
     }
   }
 
-  // 📌 取得推薦事件 (由 Supabase 的 RPC 呼叫)
+  // 📌 取得推薦事件
   Future<List<EventItem>?> getEvents({
     required String tableName,
     DateTime? dateS,
@@ -31,37 +35,57 @@ class ServiceEvent {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
     if (tableName == TableNames.recommendedEvents && today.weekday == 3) {
-      await client.rpc('cleanup_recommended_events', params: {
-        'cutoff': cutoffDate.toIso8601String()
-      });
+      try {
+        await api.post('event/cleanup_recommended_events',
+            {'cutoff': cutoffDate.toIso8601String()});
+      } on Exception catch (ex) {
+        logger.e(ex);
+      }
+
+      await apiSupabase.post('event/cleanup_recommended_events',
+          {'cutoff': cutoffDate.toIso8601String()});
     }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace
-                ? DateTime(today.year, today.month, today.day).subtract(Duration(days:60))
+                ? DateTime(today.year, today.month, today.day)
+                    .subtract(Duration(days: 60))
                 : today))
         .formatDateString();
     final inputDateE =
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
 
-    final response = await client.rpc('get_filtered_$tableName', params: {
-      'payload': {
+    try {
+      /*
+      final response = await api.post('event/get_filtered', {
+        'table_name': tableName,
         'inputid': id,
-        'inputdates': inputDateS, // 傳 YYYY-MM-DD 格式給 SQL
-        'inputdatee': inputDateE, // 傳 YYYY-MM-DD 格式給 SQL
+        'inputdates': inputDateS,
+        'inputdatee': inputDateE,
         'inputuser': inputUser,
-      }
-    });
+      });
+      */
+      final response = await apiSupabase.post('event/get_filtered', {
+        'table_name': tableName,
+        'inputid': id,
+        'inputdates': inputDateS,
+        'inputdatee': inputDateE,
+        'inputuser': inputUser,
+      });
 
-    final events = (response as List)
-        .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
-        .toList()
-        .map((e) {
-      e.startDate = e.startDate?.toLocal();
-      e.endDate = e.endDate?.toLocal();
-      return e;
-    }).toList();
-    return events;
+      final events = (response as List)
+          .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
+          .toList()
+          .map((e) {
+        e.startDate = e.startDate?.toLocal();
+        e.endDate = e.endDate?.toLocal();
+        return e;
+      }).toList();
+      return events;
+    } catch (ex, st) {
+      logger.e(ex, stackTrace: st);
+      rethrow;
+    }
   }
 
   // 💾 儲存（新增或更新）事件 + 排程通知
@@ -98,18 +122,35 @@ class ServiceEvent {
 
       event.account = currentAccount;
       event.isApproved = false;
-      final Map<String, dynamic> data = event.toJson();
+      //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
-        await client.from(tableName).insert([data]); //'recommended_events'
-      } else {
-        var query =
-            client.from(tableName).update(data).eq(EventFields.id, event.id);
-        if (currentAccount != AuthConstants.sysAdminEmail &&
-            event.account != null &&
-            event.account!.isNotEmpty) {
-          query = query.eq(EventFields.account, event.account!); // ✅ 明確保證非 null
+        try {
+          await api.post('event/insert', {
+            'table_name': tableName,
+            'events': [event.toJson()],
+          });
+        } on Exception catch (ex) {
+          logger.e(ex);
         }
-        await query;
+        await apiSupabase.post('event/insert', {
+          'table_name': tableName,
+          'events': [event.toJson()],
+        });
+      } else {
+        try {
+          await api.post('event/update', {
+            'table_name': tableName,
+            'current_account': currentAccount,
+            'event': event.toJson(),
+          });
+        } on Exception catch (ex) {
+          logger.e(ex);
+        }
+        await apiSupabase.post('event/update', {
+          'table_name': tableName,
+          'current_account': currentAccount,
+          'event': event.toJson(),
+        });
       }
     } catch (ex, stacktrace) {
       logger.e("saveEvent error", error: ex, stackTrace: stacktrace);
@@ -124,16 +165,33 @@ class ServiceEvent {
       required String tableName}) async {
     try {
       if (tableName == TableNames.recommendedEvents) {
-        final Map<String, dynamic> data = event.toJson();
-        await client.from(TableNames.recommendedEventsDeleted).upsert([data]);
+        try {
+          await api.post('event/insert', {
+            'table_name': TableNames.recommendedEventsDeleted,
+            'events': [event.toJson()],
+          });
+        } on Exception catch (ex) {
+          logger.e(ex);
+        }
+        await apiSupabase.post('event/insert', {
+          'table_name': TableNames.recommendedEventsDeleted,
+          'events': [event.toJson()],
+        });
       }
-      var query = client.from(tableName).delete().eq(EventFields.id, event.id);
-      if (currentAccount != AuthConstants.sysAdminEmail &&
-          event.account != null &&
-          event.account!.isNotEmpty) {
-        query = query.eq(EventFields.account, event.account!);
+      try {
+        await api.post('event/delete', {
+          'table_name': tableName,
+          'current_account': currentAccount,
+          'event': event.toJson(),
+        });
+      } on Exception catch (ex) {
+        logger.e(ex);
       }
-      await query;
+      await apiSupabase.post('event/delete', {
+        'table_name': tableName,
+        'current_account': currentAccount,
+        'event': event.toJson(),
+      });
     } catch (ex, stacktrace) {
       logger.e("deleteEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
@@ -144,30 +202,60 @@ class ServiceEvent {
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
     try {
-      final Map<String, dynamic> data = event.toJson();
-      var query =
-          client.from(tableName).update(data).eq(EventFields.id, event.id);
-      await query;
+      await api.post('event/update', {
+        'table_name': tableName,
+        'current_account': AuthConstants.sysAdminEmail,
+        'event': event.toJson(),
+      });
     } catch (ex, stacktrace) {
       logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);
-      rethrow;
     }
+
+    await apiSupabase.post('event/update', {
+      'table_name': tableName,
+      'current_account': AuthConstants.sysAdminEmail,
+      'event': event.toJson(),
+    });
   }
 
   Future<void> updateLikeEvent(
       {required EventItem event, required String account}) async {
+    final Map<String, dynamic> data = {
+      "id": event.id,
+      "is_like": event.isLike,
+      "is_dislike": event.isDislike,
+      "account": account
+    };
     try {
-      final Map<String, dynamic> data = {
-        "id": event.id,
-        "is_like": event.isLike,
-        "is_dislike": event.isDislike,
-        "account": account
-      };
-      var query = client.from(TableNames.recommendedEventsFavor).upsert(data);
-      await query;
-    } catch (ex, stacktrace) {
-      logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);
-      rethrow;
+      await api.post('event/insert', {
+        'table_name': TableNames.recommendedEventsFavor,
+        'events': [data],
+      });
+    } catch (ex) {
+      try {
+        await api.post('event/update', {
+          'table_name': TableNames.recommendedEventsFavor,
+          'event': data,
+        });
+      } catch (ex) {
+        logger.e(ex);
+      }
+    }
+
+    try {
+      await apiSupabase.post('event/insert', {
+        'table_name': TableNames.recommendedEventsFavor,
+        'events': [data],
+      });
+    } catch (ex) {
+      try {
+        await apiSupabase.post('event/update', {
+          'table_name': TableNames.recommendedEventsFavor,
+          'event': data,
+        });
+      } catch (ex) {
+        logger.e(ex);
+      }
     }
   }
 
@@ -178,15 +266,23 @@ class ServiceEvent {
     required String account,
   }) async {
     try {
-      await client.rpc(
-        'increment_event_counter',
-        params: {
-          'p_event_id': eventId,
-          'p_event_name': eventName,
-          'p_column': column,
-          'p_account': account,
-        },
-      );
+      await api.post('event/increment_event_counter', {
+        'p_event_id': eventId,
+        'p_event_name': eventName,
+        'p_column': column,
+        'p_account': account,
+      });
+    } catch (e) {
+      logger.e('Error incrementEventCounter $column: $e');
+    }
+
+    try {
+      await apiSupabase.post('event/increment_event_counter', {
+        'p_event_id': eventId,
+        'p_event_name': eventName,
+        'p_column': column,
+        'p_account': account,
+      });
     } catch (e) {
       logger.e('Error incrementEventCounter $column: $e');
     }

@@ -131,7 +131,6 @@ class ControllerAccountingList extends ChangeNotifier {
 
   Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId}) async {
-    // 或者直接從 Supabase 查詢
     return await _service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',

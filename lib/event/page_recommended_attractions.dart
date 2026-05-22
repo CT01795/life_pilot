@@ -63,7 +63,6 @@ class _PageRecommendedAttractionsState
             required ScrollController scrollController,
           }) {
             return WidgetsEventList(
-                filteredEvents: filteredEvents,
                 scrollController: scrollController,
                 controllerEvent: _controllerEvent,
                 auth: auth);

@@ -1,7 +1,7 @@
-import 'package:life_pilot/utils/date_time.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/model_search_filter.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/date_time.dart';
 
 class ModelEvent {
   List<EventItem> _events = [];
@@ -28,6 +28,10 @@ class ModelEvent {
       removedEventIds: removedEventIds,
       loc: loc,
     );
+  }
+
+  EventItem getEventById(String id) {
+    return _events.firstWhere((e) => e.id == id);
   }
 
   void updateEvent(EventItem updatedEvent) {
@@ -250,11 +254,13 @@ class ModelEvent {
       final startDateFilter = inFilter.startDate;
       final endDateFilter = inFilter.endDate;
       if (startDateFilter != null &&
-          endDate.isBefore(startDateFilter) && endDate != startDateFilter) {
+          endDate.isBefore(startDateFilter) &&
+          endDate != startDateFilter) {
         matchesDate = false;
       }
       if (endDateFilter != null &&
-          startDate.isAfter(endDateFilter) && startDate != endDateFilter ) {
+          startDate.isAfter(endDateFilter) &&
+          startDate != endDateFilter) {
         matchesDate = false;
       }
 

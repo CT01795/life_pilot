@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/controller_event_ui.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/event/controller_event_ui.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/widgets_event_card.dart';
 import 'package:life_pilot/event/widgets_event_dialog.dart';
 import 'package:life_pilot/event/widgets_event_trailing.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 
 class WidgetsEventList extends StatelessWidget {
   final ControllerAuth auth;
-  final List<EventItem> filteredEvents;
   final ScrollController scrollController;
   final ControllerEvent controllerEvent;
 
   const WidgetsEventList({
     super.key,
     required this.auth,
-    required this.filteredEvents,
     required this.scrollController,
     required this.controllerEvent,
   });
@@ -25,6 +23,7 @@ class WidgetsEventList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final filteredEvents = controllerEvent.getFilteredEvents(loc);
     final viewModels =
         controllerEvent.buildViewModels(events: filteredEvents, loc: loc);
 
@@ -39,7 +38,8 @@ class WidgetsEventList extends StatelessWidget {
         EventViewModel eventViewModel = viewModels[index];
 
         return WidgetsEventCard(
-          key: ValueKey(eventViewModel.id),
+          key: ValueKey(
+              '${eventViewModel.id}_${eventViewModel.event.isLike}_${eventViewModel.event.isDislike}'),
           controllerEvent: controllerEvent,
           eventViewModel: eventViewModel,
           tableName: controllerEvent.fromTableName,

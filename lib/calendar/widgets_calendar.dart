@@ -1,4 +1,5 @@
 // --- AppBar Widget ---
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
@@ -10,7 +11,6 @@ import 'package:life_pilot/utils/date_time.dart'
     show DateTimeCompare, DateTimeFormatter;
 import 'package:life_pilot/utils/extension.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
 
 class CalendarAppBar extends StatelessWidget {
   final String monthLabel;
@@ -93,17 +93,13 @@ class CalendarBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double availableHeight =
-            constraints.maxHeight - kToolbarHeight + 2;
-
         return Column(
           children: [
             WeekDayHeader(
                 isCurrentMonth: DateTimeCompare.isCurrentMonth(
                     controllerCalendar.currentMonth)),
             // 顯示日曆的每一行
-            SizedBox(
-              height: availableHeight,
+            Expanded(
               child: PageView.builder(
                 controller: pageController,
                 onPageChanged: (index) async {
@@ -203,10 +199,6 @@ class CalendarMonthView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final weeks = controllerCalendar.getWeeks(month: displayedMonth);
-    // ✅ 建立 key 映射，每週一個 GlobalKey
-    /*final Map<String, GlobalKey> weekKeys = {
-      for (var week in weeks) week.first.toIso8601String(): GlobalKey()
-    };*/
 
     return Column(
       children: weeks.asMap().entries.map((entry) {
@@ -218,7 +210,7 @@ class CalendarMonthView extends StatelessWidget {
             controllerCalendar: controllerCalendar,
             week: week,
             displayedMonth: displayedMonth,
-            weekIndex: entry.key, //weekKeys[week.first.toIso8601String()]!, // ✅ 傳入一個 key（可共用或為每週新建）
+            weekIndex: entry.key, // ✅ 傳入一個 key（可共用或為每週新建）
           ),
         );
       }).toList(),
@@ -282,8 +274,7 @@ class WeekRow extends StatelessWidget {
                                 padding: Insets.all2,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: Colors.blueAccent),
+                                  border: Border.all(color: Colors.blueAccent),
                                 ),
                                 child: Text(
                                   '${date.day}',
@@ -310,88 +301,93 @@ class WeekRow extends StatelessWidget {
           ),
           // 3. 使用 controller 已計算的事件分組來畫事件條
           Selector<ControllerCalendar, List<EventWithRow>>(
-            selector: (_, controller) =>
-                controller.getWeekEventRows(month: displayedMonth)[weekIndex] ?? [],
-            shouldRebuild: (prev, next) => !listEquals(prev, next),
-            builder: (context, weekEvents, _) {
-              return Stack(
-                children: weekEvents.map((eventWithRow) {
-                  final event = eventWithRow.event;
-                  final rowIndex = eventWithRow.rowIndex;
+              selector: (_, controller) =>
+                  controller.getWeekEventRows(
+                      month: displayedMonth)[weekIndex] ??
+                  [],
+              shouldRebuild: (prev, next) => !listEquals(prev, next),
+              builder: (context, weekEvents, _) {
+                return Stack(
+                  children: weekEvents.map((eventWithRow) {
+                    final event = eventWithRow.event;
+                    final rowIndex = eventWithRow.rowIndex;
 
-                  final start = DateTimeFormatter.dateOnly(event.startDate!);
-                  final end =
-                      DateTimeFormatter.dateOnly(event.endDate ?? event.startDate!);
-                  final weekStart = week.first;
-                  final weekEnd = week.last;
+                    final start = DateTimeFormatter.dateOnly(event.startDate!);
+                    final end = DateTimeFormatter.dateOnly(
+                        event.endDate ?? event.startDate!);
+                    final weekStart = week.first;
+                    final weekEnd = week.last;
 
-                  final visibleStart =
-                      start.isBefore(weekStart) ? weekStart : start;
-                  final visibleEnd = end.isAfter(weekEnd) ? weekEnd : end;
+                    final visibleStart =
+                        start.isBefore(weekStart) ? weekStart : start;
+                    final visibleEnd = end.isAfter(weekEnd) ? weekEnd : end;
 
-                  final startIndex = visibleStart.difference(weekStart).inDays;
-                  final spanDays = visibleEnd.difference(visibleStart).inDays + 1;
+                    final startIndex =
+                        visibleStart.difference(weekStart).inDays;
+                    final spanDays =
+                        visibleEnd.difference(visibleStart).inDays + 1;
 
-                  return PositionedDirectional(
-                    top: dateCellHeight +
-                        eventHeight * rowIndex, // ✅ 自適應 top: 28 + 23.0 * rowIndex,
-                    start: startIndex * cellWidth,
-                    end: (7 - (startIndex + spanDays)) * cellWidth,
-                    height: eventHeight, //height: 22,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapDown: (details) async {
-                        // 算出第幾格（哪一天）
-                        final tapX = details.localPosition.dx;
-                        final tappedOffset = (tapX / cellWidth).floor().clamp(0, spanDays - 1);
-                        final tappedDate = visibleStart.add(Duration(days: tappedOffset));
-                        // 4. 呼叫 dialog，並傳入正確的日期
-                        await openDayDialog(context, controllerCalendar, tappedDate);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: event.isTaiwanHoliday
-                              ? Colors.redAccent
-                              : (event.isHoliday
-                                  ? Colors.transparent
-                                  : Colors.lightBlue),
-                          borderRadius: BorderRadiusDirectional.horizontal(
-                            start: (start.isAtSameMomentAs(visibleStart)
-                                ? const Radius.circular(2)
-                                : Radius.zero),
-                            end: (end.isAtSameMomentAs(visibleEnd)
-                                ? const Radius.circular(2)
-                                : Radius.zero),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        alignment: Alignment.centerLeft,
-                        child: Center(
-                          child: Text(
-                            event.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 9,
-                              color: !event.isTaiwanHoliday && event.isHoliday
-                                  ? Colors.grey
-                                  : Colors.white,
-                              overflow: TextOverflow.clip, //.ellipsis,
+                    return PositionedDirectional(
+                      top: dateCellHeight +
+                          eventHeight *
+                              rowIndex, // ✅ 自適應 top: 28 + 23.0 * rowIndex,
+                      start: startIndex * cellWidth,
+                      end: (7 - (startIndex + spanDays)) * cellWidth,
+                      height: eventHeight, //height: 22,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: (details) async {
+                          // 算出第幾格（哪一天）
+                          final tapX = details.localPosition.dx;
+                          final tappedOffset =
+                              (tapX / cellWidth).floor().clamp(0, spanDays - 1);
+                          final tappedDate =
+                              visibleStart.add(Duration(days: tappedOffset));
+                          // 4. 呼叫 dialog，並傳入正確的日期
+                          await openDayDialog(
+                              context, controllerCalendar, tappedDate);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: event.isTaiwanHoliday
+                                ? Colors.redAccent
+                                : (event.isHoliday
+                                    ? Colors.transparent
+                                    : Colors.lightBlue),
+                            borderRadius: BorderRadiusDirectional.horizontal(
+                              start: (start.isAtSameMomentAs(visibleStart)
+                                  ? const Radius.circular(2)
+                                  : Radius.zero),
+                              end: (end.isAtSameMomentAs(visibleEnd)
+                                  ? const Radius.circular(2)
+                                  : Radius.zero),
                             ),
-                            maxLines: 1,
-                            textAlign: TextAlign.center,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          alignment: Alignment.centerLeft,
+                          child: Center(
+                            child: Text(
+                              event.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9,
+                                color: !event.isTaiwanHoliday && event.isHoliday
+                                    ? Colors.grey
+                                    : Colors.white,
+                                overflow: TextOverflow.clip, //.ellipsis,
+                              ),
+                              maxLines: 1,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              );
-            }
-          ),
+                    );
+                  }).toList(),
+                );
+              }),
         ],
       );
     });
   }
 }
-
-

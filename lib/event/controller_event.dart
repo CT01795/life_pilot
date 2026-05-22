@@ -1,19 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
-import 'package:life_pilot/event/service_event_public.dart';
-import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
-import 'dart:async';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 
 class ControllerEvent extends ChangeNotifier {
   final TextEditingController _searchController = TextEditingController();
@@ -52,6 +53,10 @@ class ControllerEvent extends ChangeNotifier {
       _modelEvent.getFilteredEvents(loc);
   bool isEventSelected(String eventId) {
     return _modelEvent.selectedEventIds.contains(eventId);
+  }
+
+  EventItem getEventById(String id) {
+    return _modelEvent.getEventById(id);
   }
 
   bool get showSearchPanel => _modelEvent.showSearchPanel;
@@ -124,11 +129,11 @@ class ControllerEvent extends ChangeNotifier {
     }
     _invalidateViewModelCache();
     final newList = await _serviceEvent.getEvents(
-        tableName: _tableName,
-        inputUser: auth.currentAccount,
-      );
+      tableName: _tableName,
+      inputUser: auth.currentAccount,
+    );
 
-      _modelEvent.setEvents(newList ?? []);
+    _modelEvent.setEvents(newList ?? []);
     if (!_disposed) notifyListeners();
   }
 
@@ -149,11 +154,11 @@ class ControllerEvent extends ChangeNotifier {
     }
     _invalidateViewModelCache();
     final newList = await _serviceEvent.getEvents(
-        tableName: _tableName,
-        inputUser: auth.currentAccount,
-      );
+      tableName: _tableName,
+      inputUser: auth.currentAccount,
+    );
 
-      _modelEvent.setEvents(newList ?? []);
+    _modelEvent.setEvents(newList ?? []);
     if (!_disposed) notifyListeners();
   }
 
@@ -364,7 +369,10 @@ class ControllerEvent extends ChangeNotifier {
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
     final futures = events.map((e) {
-      final vm = buildViewModel(event: e, loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!);
+      final vm = buildViewModel(
+          event: e,
+          loc:
+              AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!);
       return _serviceWeather.preloadWeather([vm]);
     });
 
@@ -374,7 +382,7 @@ class ControllerEvent extends ChangeNotifier {
   // ------------------ controller event card ------------------
   // ------------------ Public ------------------
   List<EventWeather>? getForecast({required String locationDisplay}) {
-    return _serviceWeather.getForecast(locationDisplay:locationDisplay);
+    return _serviceWeather.getForecast(locationDisplay: locationDisplay);
   }
 
   // 取得天氣預報（緩存）

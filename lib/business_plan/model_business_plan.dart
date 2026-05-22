@@ -14,14 +14,16 @@ class ModelBusinessPlan {
   });
 
   ModelBusinessPlan copyWith({
+    String? id,
     String? title,
+    DateTime? createdAt,
     List<ModelPlanSection>? sections,
   }) {
     return ModelBusinessPlan(
-      id: id,
+      id: id ?? this.id,
       title: title ?? this.title,
-      createdAt: createdAt,
-      sections: sections ?? this.sections,
+      createdAt: createdAt ?? this.createdAt,
+      sections: sections ?? this.sections.map((e) => e.copyWith()).toList(),
     );
   }
 }

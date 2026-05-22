@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 String? weatherApiKey;
 double zoolLevel = 8;
 
+final String dbMacUrl = "http://100.76.202.70:8000";
+final String dbSupabaseUrl = "http://127.0.0.1:8000"; //TODO
 final List<String> currencyList = [
   'TWD',
   'USD',
@@ -47,15 +49,42 @@ class Source {
 
 // -------------------- Tables --------------------
 class TableNames {
+  static const userModule = "user_module";
   static const calendarEvents = "calendar_events";
-  static const stockDailyPrice = "stock_daily_price";
-  static const stockDate = "stock_date";
   static const recommendedEvents = "recommended_events";
   static const recommendedEventsDeleted = "recommended_events_deleted";
   static const recommendedEventsFavor = "recommended_events_favor";
   static const recommendedEventUrl = "recommended_event_url";
   static const recommendedAttractions = "recommended_attractions";
   static const memoryTrace = "memory_trace";
+
+  static const stockDailyPrice = "stock_daily_price";
+  static const stockDate = "stock_date";
+  static const stockPredicted = "stock_predicted";
+
+  static const accountingAccount = "accounting_account";
+  static const pointRecordAccount = "point_record_account";
+
+  static const businessPlan = "business_plan";
+  static const businessPlanSection = "business_plan_section";
+  static const businessPlanQuestion = "business_plan_question";
+  static const businessPlanAnswer = "business_plan_answer";
+  static const businessPlanTemplate = "business_plan_template";
+  static const businessPlanTemplateQuestion = "business_plan_template_question";
+  static const businessPlanTemplateSection = "business_plan_template_section";
+  
+  static const feedback = "feedback";
+
+  static const weatherForecast = "weather_forecast";
+
+  static const gameUser = "game_user";
+  static const gameList = "game_list";
+  static const gameGrammarUser = "game_grammar_user";
+  static const gameSentenceUser = "game_sentence_user";
+  static const gameSpeakingUser = "game_speaking_user";
+  static const gameSocialUser = "game_social_user";
+  static const gameTranslationUser = "game_translation_user";
+  static const gameWordSearchUser = "game_word_search_user";
   static const gameTranslationSynonyms = "game_translation_synonyms";
 }
 
