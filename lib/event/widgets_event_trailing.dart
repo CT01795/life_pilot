@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_event_ui.dart';
-import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 Widget widgetsEventTrailing({
@@ -19,36 +19,54 @@ Widget widgetsEventTrailing({
     child: Row(
       mainAxisSize: MainAxisSize.min, // 避免 unbounded 爆錯
       children: [
-        if (!auth.isAnonymous && controllerEvent.fromTableName != TableNames.memoryTrace)
+        if (!auth.isAnonymous &&
+            controllerEvent.fromTableName != TableNames.memoryTrace)
           Selector<ControllerEvent, bool>(
             selector: (_, c) => c.isEventSelected(event.id),
             builder: (_, isSelected, __) {
               return Tooltip(
-                message: loc.eventAdd1,
-                child: Checkbox(
-                  value: isSelected,
-                  onChanged: (value) => onMemoryCheckboxChanged(
-                    context: context, controller: controllerEvent, value: value, event: event, loc: loc),
-                ));
+                  message: loc.eventAdd1,
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: (value) => onMemoryCheckboxChanged(
+                        context: context,
+                        controller: controllerEvent,
+                        value: value,
+                        event: event,
+                        loc: loc),
+                  ));
             },
           ),
         if (auth.currentAccount == event.account)
           IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: loc.edit,
-              onPressed: () => onEditPressed(
-                context: context, controller: controllerEvent, event: event,),
-              ),
-        if (controllerEvent.fromTableName != TableNames.memoryTrace &&
-            !event.isApproved &&
-            auth.currentAccount == AuthConstants.sysAdminEmail)
-          IconButton(
-            icon: const Icon(Icons.task_alt),
-            tooltip: loc.review,
-            onPressed: () async {
-              await controllerEvent.approveEvent(event: event);
-            },
+            icon: const Icon(Icons.edit),
+            tooltip: loc.edit,
+            onPressed: () => onEditPressed(
+              context: context,
+              controller: controllerEvent,
+              event: event,
+            ),
           ),
+        Selector<ControllerEvent, bool>(
+          selector: (_, c) {
+            final e = c.getEventById(event.id);
+            return e.isApproved;
+          },
+          builder: (_, isApproved, __) {
+            if (controllerEvent.fromTableName != TableNames.memoryTrace &&
+                !isApproved &&
+                auth.currentAccount == AuthConstants.sysAdminEmail) {
+              return IconButton(
+                icon: const Icon(Icons.task_alt),
+                tooltip: loc.review,
+                onPressed: () async {
+                  await controllerEvent.approveEvent(event: event);
+                },
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
         Gaps.w24,
       ],
     ),

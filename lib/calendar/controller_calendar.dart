@@ -7,7 +7,10 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
+import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -16,14 +19,11 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
 import 'package:life_pilot/utils/service/service_permission.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
-import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends ChangeNotifier {
   late String _googleApiKey;
@@ -154,7 +154,9 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
-    for (final e in events) {
+    final safeList = List<EventItem>.from(events); // ⭐ 複製！
+
+    for (final e in safeList) {
       final vm = buildViewModel(
         event: e,
         loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!,
@@ -456,10 +458,10 @@ class ControllerCalendar extends ChangeNotifier {
       for (final event in todayEvents) {
         _controllerNotification.service.plugin?.show(
           //拿掉await
-          event.id ?? Random().nextInt(1000) + 1,
-          event.title,
-          event.body,
-          event.details,
+          id: event.id ?? Random().nextInt(1000) + 1,
+          title: event.title,
+          body: event.body,
+          notificationDetails: event.details,
           payload: event.payload,
         );
       }

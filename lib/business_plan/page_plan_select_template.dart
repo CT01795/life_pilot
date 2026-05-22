@@ -39,7 +39,7 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
                 itemBuilder: (_, i) {
                   final t = templates[i];
                   return ListTile(
-                    title: Text(t.name),
+                    title: Text(t.title),
                     subtitle: Text(t.description),
                     onTap: () => _createPlan(context, t),
                   );

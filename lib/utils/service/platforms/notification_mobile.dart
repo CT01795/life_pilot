@@ -28,7 +28,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
     const android = AndroidInitializationSettings(CalendarMisc.androidIcon);
     const ios = DarwinInitializationSettings();
     await _plugin
-        .initialize(InitializationSettings(android: android, iOS: ios));
+        .initialize(settings: InitializationSettings(android: android, iOS: ios));
     await _requestPermissions();
   }
 
@@ -85,11 +85,11 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
             '**: ${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime?.formatTimeString()} ${event.name}';
         final details = _buildNotificationDetails();
         await _plugin.zonedSchedule(
-          id,
-          title,
-          '',
-          tz.TZDateTime.from(reminderTime, tz.local),
-          details,
+          id: id,
+          title: title,
+          body:'',
+          scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
+          notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
       }
@@ -130,7 +130,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
       {required String eventId, required List<CalendarReminderOption> reminderOptions}) async {
     try {
       for (final option in reminderOptions) {
-        await _plugin.cancel(ServiceReminder.generateNotificationId(
+        await _plugin.cancel(id: ServiceReminder.generateNotificationId(
             eventId: eventId, reminderOption: option));
       }
       return NotificationResult(success: true);

@@ -68,22 +68,27 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
             title: InlineEditableTitle(
               initialText: plan.title,
               onSave: (newTitle) {
-                context.read<ControllerBusinessPlan>().updateCurrentPlanTitle(newTitle);
+                context
+                    .read<ControllerBusinessPlan>()
+                    .updateCurrentPlanTitle(plan, newTitle);
               },
               onEditingChanged: (editing) {
                 setState(() => isEditingTitle = editing);
               },
             ),
-            onTap: () {
+            onTap: () async {
               if (isEditingTitle) return; // 🔒 編輯中鎖定跳頁
-              context.read<ControllerBusinessPlan>().setCurrentPlanSummary(plan);
-              context.read<ControllerBusinessPlan>().loadPlanDetailIfNeeded(plan.id);
+              final c = context.read<ControllerBusinessPlan>();
+              c.setCurrentPlanSummary(plan);
+              c.loadPlanDetailIfNeeded(plan.id);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
-                  value: context.read<ControllerBusinessPlan>(),
-                  child: const PagePlanPreview(),
-                ),),
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider.value(
+                    value: c,
+                    child: const PagePlanPreview(),
+                  ),
+                ),
               );
             },
           );
@@ -160,7 +165,9 @@ class _InlineEditableTitleState extends State<InlineEditableTitle> {
       return Row(
         children: [
           Expanded(
-            child: Text(widget.initialText.isEmpty ? 'Untitled Plan' : widget.initialText),
+            child: Text(widget.initialText.isEmpty
+                ? 'Untitled Plan'
+                : widget.initialText),
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.grey),

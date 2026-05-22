@@ -4,20 +4,23 @@ class ModelPlanQuestion {
   final String answer;
   final int sortOrder;
 
-  ModelPlanQuestion({
-    required this.id,
-    required this.prompt,
-    this.answer = '',
-    this.sortOrder = 0
-  });
+  ModelPlanQuestion(
+      {required this.id,
+      required this.prompt,
+      this.answer = '',
+      this.sortOrder = 0});
 
   ModelPlanQuestion copyWith({
+    String? id,
+    String? prompt,
     String? answer,
+    int? sortOrder,
   }) {
     return ModelPlanQuestion(
-      id: id,
-      prompt: prompt,
+      id: id ?? this.id,
+      prompt: prompt ?? this.prompt,
       answer: answer ?? this.answer,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerBusinessPlan extends ChangeNotifier {
@@ -28,10 +28,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
   int questionIndex = 0;
 
   bool isPlansLoading = false; // 列表用
-  bool isCurrentPlanLoading = false; // Preview / Editor 用
   bool isTemplateLoading = false;
-
-  String? _loadingPlanId;
 
   // 單個 question 的 ValueNotifier
   final Map<String, ValueNotifier<String>> _answerNotifiers = {};
@@ -42,7 +39,8 @@ class ControllerBusinessPlan extends ChangeNotifier {
   void setCurrentPlanSummary(ModelBusinessPlan plan) {
     currentPlan = plan; // 只有 id / title
     currentPlanId = plan.id;
-    // ❌ 不 notify（避免 preview 先 rebuild）
+    _answerNotifiers.clear();
+    notifyListeners();
   }
 
   ValueNotifier<String> answerNotifier(int section, int question) {
@@ -146,44 +144,38 @@ class ControllerBusinessPlan extends ChangeNotifier {
     try {
       plans = await _service.fetchPlans(
           user: auth?.currentAccount ?? AuthConstants.guest);
-    } catch (e, stack) {
-      debugPrint('loadPlans error: $e');
-      debugPrintStack(stackTrace: stack);
     } finally {
       isPlansLoading = false;
       safeNotify();
     }
   }
 
-  Future<void> loadPlanDetailIfNeeded(String planId) async {
-    if (isCurrentPlanLoading && _loadingPlanId == planId) return; // 🔒 關鍵
-    // 先從 cache 讀
-    if (_planCache.containsKey(planId)) {
-      // 如果 currentPlan 不是同一個 plan 或 sections 是空的，才 assign
-      if (currentPlan?.id != planId || currentPlan!.sections.isEmpty) {
-        currentPlan = _planCache[planId];
-        sectionIndex = 0;
-        questionIndex = 0;
-        safeNotify();
-      }
-      return; // 不再抓 API
-    }
-
-    _loadingPlanId = planId;
-    isCurrentPlanLoading = true;
-    safeNotify();
-    try {
-      final plan = await _service.fetchPlanDetail(planId: planId); // 👈 只打 RPC
-      currentPlan = plan;
-      _planCache[planId] = plan.copyWith();
+  Future<void> loadPlanDetailIfNeeded(String inputPlanId) async {
+    String planId = inputPlanId.trim();
+    // 🚨 如果切換 plan，一定要 reset state
+    if (currentPlanId != planId) {
       sectionIndex = 0;
       questionIndex = 0;
-    } catch (e, stack) {
-      debugPrint('loadPlanDetailIfNeeded error: $e');
-      debugPrintStack(stackTrace: stack);
+      currentPlan = null;
+      currentPlanId = planId;
+    }
+
+    if (_planCache.containsKey(planId) &&
+        _planCache[planId]!.sections.isNotEmpty) {
+      currentPlan = _planCache[planId]?.copyWith();
+      safeNotify();
+      return;
+    }
+    safeNotify();
+
+    try {
+      final plan = await _service.fetchPlanDetail(planId: planId);
+      currentPlan = plan;
+      currentPlanId = planId;
+      _answerNotifiers.clear();
+      // 🔥 建議 copy 避免 reference污染
+      _planCache[planId] = plan.copyWith();
     } finally {
-      _loadingPlanId = null;
-      isCurrentPlanLoading = false;
       safeNotify();
     }
   }
@@ -204,28 +196,27 @@ class ControllerBusinessPlan extends ChangeNotifier {
       templateId: templateId,
     );
 
-    isCurrentPlanLoading = true;
     safeNotify();
     try {
       // 2️⃣ 拉剛建立的 sections（帶題目）
       final plan = await _service.fetchPlanDetail(planId: planId); // 👈 只打 RPC
       currentPlan = plan;
+      _answerNotifiers.clear();
       _planCache[planId] = plan.copyWith();
 
       sectionIndex = 0;
       questionIndex = 0;
     } finally {
-      isCurrentPlanLoading = false;
       safeNotify();
     }
   }
 
-  Future<void> updateCurrentPlanTitle(String newTitle) async {
-    if (currentPlan == null) return;
-
-    final oldPlan = currentPlan!;
-    currentPlan = oldPlan.copyWith(title: newTitle, sections: oldPlan.sections);
-
+  Future<void> updateCurrentPlanTitle(
+      ModelBusinessPlan oldPlan, String newTitle) async {
+    currentPlan = (_planCache.containsKey(oldPlan.id)
+            ? _planCache[oldPlan.id] as ModelBusinessPlan
+            : oldPlan)
+        .copyWith(title: newTitle);
     final index = plans.indexWhere((p) => p.id == oldPlan.id);
     if (index != -1) {
       plans[index] = plans[index].copyWith(title: newTitle);
@@ -280,10 +271,7 @@ class ControllerBusinessPlan extends ChangeNotifier {
         questionId: question.id,
         answer: answer,
       );
-    } catch (e, stack) {
-      debugPrint('commitCurrentAnswer error: $e');
-      debugPrintStack(stackTrace: stack);
-
+    } catch (e) {
       // 回滾到舊資料
       questions[questionIndex] =
           questions[questionIndex].copyWith(answer: question.answer);

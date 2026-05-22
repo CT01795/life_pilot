@@ -1,11 +1,11 @@
 class ModelPlanTemplate {
   final String id;
-  final String name;
+  final String title;
   final String description;
 
   ModelPlanTemplate({
     required this.id,
-    required this.name,
+    required this.title,
     required this.description,
   });
 }

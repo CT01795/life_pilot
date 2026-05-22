@@ -2,14 +2,13 @@
 
 import 'dart:convert';
 
-import 'package:charset/charset.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:html/parser.dart' show parse;
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -36,13 +35,19 @@ class ServiceEventPublic {
       : '';
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
-    final result = await client
-        .from(TableNames.recommendedEventUrl)
-        .select('master_url')
-        .eq('start_date', today)
-        .eq('master_url', url)
-        .limit(1);
-    return result.isNotEmpty;
+    /*
+    final res = await api.post('event/select_event_url', {
+        'table_name': TableNames.recommendedEventUrl,
+        'start_date': today.toIso8601String(),
+        'master_url': url,
+    });
+    */
+    final res = await apiSupabase.post('event/select_event_url', {
+      'table_name': TableNames.recommendedEventUrl,
+      'start_date': today.toIso8601String(),
+      'master_url': url,
+    });
+    return res['is_exists'] == true;
   }
 
   Future<bool> checkEventsUrl(String url, DateTime today) async {
@@ -53,10 +58,19 @@ class ServiceEventPublic {
     }
 
     try {
-      await client.from(TableNames.recommendedEventUrl).upsert(
-        {'master_url': url, 'start_date': today.toIso8601String()},
-        onConflict: 'master_url,start_date',
-      );
+      await api.post('event/insert_event_url', {
+        'table_name': TableNames.recommendedEventUrl,
+        'event_url': {'master_url': url, 'start_date': today.toIso8601String()},
+      });
+    } on Exception catch (ex) {
+      logger.e(ex);
+    }
+
+    try {
+      await apiSupabase.post('event/insert_event_url', {
+        'table_name': TableNames.recommendedEventUrl,
+        'event_url': {'master_url': url, 'start_date': today.toIso8601String()},
+      });
       return true;
     } on Exception catch (ex) {
       logger.e(ex);
@@ -67,6 +81,7 @@ class ServiceEventPublic {
   Future<Set<String>> _insertIfNotExists(
     List<EventItem> events,
     Set<String> dbNameDateSet,
+    String url,
   ) async {
     if (events.isEmpty) return dbNameDateSet;
     final List<EventItem> newEvents = [];
@@ -87,16 +102,29 @@ class ServiceEventPublic {
       dbNameDateSet.add(tmpId);
 
       // ✅ await 放這裡
-      final updatedEvent =
-          await ClusterItem.getLatLngFromAddressItem(e);
-
+      EventItem updatedEvent = await ClusterItem.getLatLngFromAddressItem(e);
+      updatedEvent.source = url;
       newEvents.add(updatedEvent);
     }
 
     if (newEvents.isNotEmpty) {
-      await client
-          .from(TableNames.recommendedEvents)
-          .insert(newEvents.map((e) => e.toJson()).toList());
+      try {
+        await api.post('event/insert', {
+          'table_name': TableNames.recommendedEvents,
+          'events': newEvents.map((e) => e.toJson()).toList(),
+        });
+      } on Exception catch (ex) {
+        logger.e(ex);
+      }
+      try {
+        await apiSupabase.post('event/insert', {
+          'table_name': TableNames.recommendedEvents,
+          'events': newEvents.map((e) => e.toJson()).toList(),
+        });
+      } on Exception catch (ex) {
+        logger.e(ex);
+        rethrow;
+      }
     }
     return dbNameDateSet;
   }
@@ -156,7 +184,7 @@ class ServiceEventPublic {
     }
 
     // ========= 時間 =========
-    final timeMatches = // ignore: 
+    final timeMatches = // ignore:
         RegExp(r'(\d{1,2}):(\d{2})').allMatches(normalized).toList();
 
     TimeOfDay? startTime;
@@ -373,9 +401,15 @@ class ServiceEventPublic {
         ) ??
         []);
 
-    final response =
-        await client.from(TableNames.recommendedEventsDeleted).select();
-    final deletedList = (response as List)
+    /*
+    final res = await api.post('event/select_events_deleted', {
+      'table_name': TableNames.recommendedEventsDeleted,
+    });
+    */
+    final res = await apiSupabase.post('event/select_events_deleted', {
+      'table_name': TableNames.recommendedEventsDeleted,
+    });
+    final deletedList = (res as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList()
         .map((e) {
@@ -419,8 +453,8 @@ class ServiceEventPublic {
             [];
 
         //==================================== strolltimesList事件寫入 ====================================
-        dbNameDateSet =
-            await _insertIfNotExists(strolltimesList, dbNameDateSet);
+        dbNameDateSet = await _insertIfNotExists(
+            strolltimesList, dbNameDateSet, strolltimesWeekendUrl);
       } on Exception catch (ex) {
         logger.e(ex);
       }
@@ -429,23 +463,25 @@ class ServiceEventPublic {
     String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
     if (await checkEventsUrl(strolltimesEventsUrl, today)) {
       try {
-        final url = Uri.parse(strolltimesEventsUrl);
-
-        final response = await http.get(url);
-
-        if (response.statusCode == 200) {
+        /*
+        final res = await api.post('event/get_url_data', {
+          'url': strolltimesEventsUrl,
+          'method': 'GET',
+        });
+        */
+        final res = await apiSupabase.post('event/get_url_data', {
+          'url': strolltimesEventsUrl,
+          'method': 'GET',
+        });
+        if (res['status'] == 'ok') {
           String csv;
-          try {
-            csv = utf8.decode(response.bodyBytes);
-          } catch (e, s) {
-            logger.e('❌ utf8 decode error: $e', stackTrace: s);
-            csv = Charset.getByName('big5')!.decode(response.bodyBytes);
-          }
+          csv =
+              res['data'] as String; //res.bodyBytes //utf8.decode(res['data']);
           List<EventItem> strolltimesList =
               parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
           //==================================== strolltimesList事件寫入 ====================================
-          dbNameDateSet =
-              await _insertIfNotExists(strolltimesList, dbNameDateSet);
+          dbNameDateSet = await _insertIfNotExists(
+              strolltimesList, dbNameDateSet, strolltimesEventsUrl);
         }
       } on Exception catch (ex) {
         logger.e(ex);
@@ -480,8 +516,8 @@ class ServiceEventPublic {
               [];
 
           //==================================== cloud.culture.tw事件寫入 ====================================
-          dbNameDateSet =
-              await _insertIfNotExists(cloudCultureList, dbNameDateSet);
+          dbNameDateSet = await _insertIfNotExists(
+              cloudCultureList, dbNameDateSet, cloudCultureUrl);
         } on Exception catch (ex) {
           logger.e(ex);
         }
@@ -498,14 +534,16 @@ class ServiceEventPublic {
                 accupassUrl, today, Source.accupass) ??
             [];
 
-        dbNameDateSet = await _insertIfNotExists(accupassList, dbNameDateSet);
+        dbNameDateSet =
+            await _insertIfNotExists(accupassList, dbNameDateSet, accupassUrl);
       } catch (ex) {
         logger.e(ex);
       }
     }
 
     //==================================== 取得紙風車活動 ====================================
-    String paperWindmillUrl = "https://www.paperwindmill.com.tw/paper/";
+    String paperWindmillUrl =
+        "https://www.paperwindmill.com.tw/zh-tw/paper/schedule"; //"https://www.paperwindmill.com.tw/paper/";
 
     if (await checkEventsUrl(paperWindmillUrl, today)) {
       try {
@@ -513,8 +551,8 @@ class ServiceEventPublic {
                 paperWindmillUrl, today, Source.paperwindmill) ??
             [];
 
-        dbNameDateSet =
-            await _insertIfNotExists(paperWindmillList, dbNameDateSet);
+        dbNameDateSet = await _insertIfNotExists(
+            paperWindmillList, dbNameDateSet, paperWindmillUrl);
       } catch (ex) {
         logger.e(ex);
       }
@@ -531,7 +569,8 @@ class ServiceEventPublic {
           List<EventItem> moclUrlList =
               await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];
 
-          dbNameDateSet = await _insertIfNotExists(moclUrlList, dbNameDateSet);
+          dbNameDateSet =
+              await _insertIfNotExists(moclUrlList, dbNameDateSet, moclUrl);
         } catch (ex) {
           logger.e(ex);
         }
@@ -551,8 +590,8 @@ class ServiceEventPublic {
                   taiwanNetUrl, today, Source.taiwanNet) ??
               [];
 
-          dbNameDateSet =
-              await _insertIfNotExists(taiwanNetList, dbNameDateSet);
+          dbNameDateSet = await _insertIfNotExists(
+              taiwanNetList, dbNameDateSet, taiwanNetUrl);
           pageIndex = pageIndex + 1;
           isBreakTime = taiwanNetList.isEmpty && pageIndex >= 15;
         } catch (ex) {
@@ -572,7 +611,8 @@ class ServiceEventPublic {
         List<EventItem> ntpcList =
             await fetchPageEventsNtpc(ntpcUrl, today, Source.ntpc) ?? [];
 
-        dbNameDateSet = await _insertIfNotExists(ntpcList, dbNameDateSet);
+        dbNameDateSet =
+            await _insertIfNotExists(ntpcList, dbNameDateSet, ntpcUrl);
       } catch (ex) {
         logger.e(ex);
       }
@@ -589,8 +629,8 @@ class ServiceEventPublic {
                     taipeiOpenDataUrl, today, Source.taipeiOpenData) ??
                 [];
 
-        dbNameDateSet =
-            await _insertIfNotExists(taipeiOpenDataList, dbNameDateSet);
+        dbNameDateSet = await _insertIfNotExists(
+            taipeiOpenDataList, dbNameDateSet, taipeiOpenDataUrl);
       } catch (ex) {
         logger.e(ex);
       }
@@ -599,12 +639,21 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
       String url, DateTime today, String source) async {
-    final uri = Uri.parse(url);
-    final res = await http.get(uri);
+    //final uri = Uri.parse(url);
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
 
-    if (res.statusCode != 200) return [];
+    if (res['status'] != 'ok') return [];
 
-    final List data = json.decode(utf8.decode(res.bodyBytes));
+    final List data = json.decode(res["data"]); //utf8.decode(res.bodyBytes)
 
     final uuid = const Uuid();
     List<EventItem> events = [];
@@ -659,25 +708,26 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsNtpc(
       String url, DateTime today, String source) async {
-    final uri = Uri.parse(url);
-
-    final res = await http.post(
-      uri,
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Referer": "https://www.ntpc.gov.tw/"
-      },
-      body: {
-        "id": "2d113acd09f81b46", // 🔥 活動分類
-        "page": "1",
-        "intpage": "1",
-        "pagesize": "110" // 🔥 一次全抓
-      },
-    );
-
-    if (res.statusCode != 200) return [];
-
-    final document = parse(res.body);
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'POST',
+      'body': {
+        "id": "2d113acd09f81b46",
+        "page": "1","intpage": "1","pagesize": "110" // 🔥 一次全抓
+      }
+    }); 
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': url,
+      'method': 'POST',
+      'body': {
+        "id": "2d113acd09f81b46",
+        "page": "1", "intpage": "1", "pagesize": "110" // 🔥 一次全抓
+      }
+    });
+    if (res['status'] != 'ok') return [];
+    final document = parse(res["data"]); //res.body
     final items = document.querySelectorAll(".article");
 
     final uuid = const Uuid();
@@ -790,11 +840,20 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 文化局 ====================================
   Future<List<EventItem>?> fetchPageEventsMoc(
       String url, DateTime today, String source) async {
-    final res =
-        await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
-    if (res.statusCode != 200) return [];
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
 
-    final document = parse(res.body);
+    if (res['status'] != 'ok') return [];
+
+    final document = parse(res["data"]); //res.body
     final events = <EventItem>[];
     final uuid = const Uuid();
 
@@ -884,11 +943,16 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
       String url, DateTime today, String source) async {
-    final res =
-        await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
-    if (res.statusCode != 200) return [];
-
-    final document = parse(res.body);
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET'
+    });
+    */
+    final res = await apiSupabase
+        .post('event/get_url_data', {'url': url, 'method': 'GET'});
+    if (res['status'] != 'ok') return [];
+    final document = parse(res["data"]); //res.body
     final events = <EventItem>[];
     final uuid = const Uuid();
 
@@ -974,10 +1038,18 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          final detailRes = await http.get(Uri.parse(masterUrl),
-              headers: {'User-Agent': 'Mozilla/5.0'});
-          if (detailRes.statusCode == 200) {
-            final detailDoc = parse(detailRes.body);
+          /*
+          final detailRes = await api.post('event/get_url_data', {
+            'url': masterUrl,
+            'method': 'GET',
+          });
+          */
+          final detailRes = await apiSupabase.post('event/get_url_data', {
+            'url': masterUrl,
+            'method': 'GET',
+          });
+          if (detailRes["status"] == 'ok') {
+            final detailDoc = parse(detailRes["data"]); //detailRes.body
             final infoTable = detailDoc.querySelector("dl.info-table");
             if (infoTable != null) {
               // 取所有 dt 元素
@@ -1029,12 +1101,18 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 PaperWindmill ====================================
   Future<List<EventItem>?> fetchPageEventsPaperWindmill(
       String url, DateTime today, String source) async {
-    final res =
-        await http.get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'});
-
-    if (res.statusCode != 200) return [];
-
-    final document = parse(res.body);
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    if (res['status'] != 'ok') return [];
+    final document = parse(res["data"]); //res.body
 
     final items = document.querySelectorAll("li");
 
@@ -1111,14 +1189,18 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsAccupass(
       String inUrl, DateTime today, String source) async {
-    final url = Uri.parse(inUrl);
-    final res = await http.get(
-      url,
-      headers: {"User-Agent": "Mozilla/5.0"},
-    );
-    if (res.statusCode != 200) return [];
-
-    final html = res.body;
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': inUrl,
+      'method': 'GET',
+    });
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': inUrl,
+      'method': 'GET',
+    });
+    if (res['status'] != 'ok') return [];
+    final html = res["data"]; //res.body
 
     // 1️⃣ 抓所有 <script> 標籤
     final scriptRegex = RegExp(r'<script.*?>(.*?)<\/script>', dotAll: true);
@@ -1250,7 +1332,7 @@ class ServiceEventPublic {
       String strE = row[colsToDetail["endDate"] ?? 99]?.toString().trim() ?? '';
       DateTime? endDate =
           strE.length >= 8 ? DateFormat('yyyy-M-d').parse(strE) : null;
-      if (startDate == null || endDate == null || endDate.isBefore(today)) {
+      if (endDate == null || endDate.isBefore(today)) {
         continue;
       }
 
@@ -1281,11 +1363,7 @@ class ServiceEventPublic {
           location: row[colsToDetail["location"] ?? 99]?.toString() ?? '',
           //fee: row[?]?.toString(),
           startDate: startDate,
-          //startTime: DateTimeParser.parseTime(
-          //    row[colsToDetail["startTime"] ?? 99]?.toString() ?? ''),
           endDate: endDate,
-          //endTime: DateTimeParser.parseTime(
-          //    row[colsToDetail["endTime"] ?? 99]?.toString() ?? ''),
           description:
               "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}\n",
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
@@ -1300,16 +1378,19 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 cloud.Culture ====================================
   Future<List<EventItem>?> fetchPageEventsCloudCulture(
       String url, DateTime today, String source) async {
-    final res = await http.get(
-      Uri.parse(url),
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)',
-      },
-    );
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
 
-    if (res.statusCode != 200) return [];
-
-    final List<dynamic> data = jsonDecode(res.body);
+    if (res['status'] != 'ok') return [];
+    final List<dynamic> data = jsonDecode(res['data']); //res.body
     Set<String> tmpSet = {};
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
@@ -1412,10 +1493,19 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
       String inUrl, DateTime today, String source) async {
-    final url = Uri.parse(inUrl);
-    final res = await http.get(url);
-    if (res.statusCode != 200) return [];
-    final List<dynamic> data = jsonDecode(res.body);
+    //final url = Uri.parse(inUrl);
+    /*
+    final res = await api.post('event/get_url_data', {
+      'url': inUrl,
+      'method': 'GET',
+    });
+    */
+    final res = await apiSupabase.post('event/get_url_data', {
+      'url': inUrl,
+      'method': 'GET',
+    });
+    if (res['status'] != 'ok') return [];
+    final List<dynamic> data = jsonDecode(res['data']); //res.body
     List<dynamic> links =
         data.take(2).map((e) => 'https://strolltimes.com${e['link']}').toList();
     if (links.isEmpty) return [];
@@ -1424,11 +1514,18 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     for (int i = 1; i < links.length; i++) {
-      final res2 = await http.get(Uri.parse(links[i]), headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; StrollTimesCrawler/1.0)'
+      /*
+      final res2 = await api.post('event/get_url_data', {
+        'url': links[i],
+        'method': 'GET',
       });
-      if (res2.statusCode != 200) return [];
-      final document2 = parse(res2.body);
+      */
+      final res2 = await apiSupabase.post('event/get_url_data', {
+        'url': links[i],
+        'method': 'GET',
+      });
+      if (res2['status'] != 'ok') return [];
+      final document2 = parse(res2["data"]); //res2.body
 
       // 找到所有 <h2> 標題
       final h2List = document2.querySelectorAll('h2');
@@ -1450,9 +1547,7 @@ class ServiceEventPublic {
             DateTime? endDate = cells[1].text.trim().length >= 8
                 ? DateFormat('yyyy/M/d').parse(cells[1].text.trim())
                 : null;
-            if (startDate != null &&
-                endDate != null &&
-                !endDate.isBefore(today)) {
+            if (endDate != null && !endDate.isBefore(today)) {
               final location = cells[3].text.trim();
               final aTag = cells[2].querySelector('a');
               final eventName = aTag?.text.trim() ?? '';

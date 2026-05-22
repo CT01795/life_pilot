@@ -66,7 +66,6 @@ class _PageRecommendedEventState extends State<PageRecommendedEvent> {
             required ScrollController scrollController,
           }) {
             return WidgetsEventList(
-                filteredEvents: filteredEvents,
                 scrollController: scrollController,
                 controllerEvent: _controllerEvent,
                 auth: auth);

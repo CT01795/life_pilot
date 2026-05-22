@@ -97,8 +97,8 @@ Future<void> onMemoryCheckboxChanged({
   }
 
   // 判斷是否已經存在
-  final isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
-      event, tmpValue);
+  final isAlreadyAdded =
+      await controller.handleEventCheckboxIsAlreadyAdd(event, tmpValue);
 
   // 顯示確認對話框
   final shouldTransfer = await confirmCalenderEventTransfer(
@@ -131,7 +131,9 @@ Future<void> onAlarmPressed({
     loc,
   );
 
-  if (result == null) return;
+  if (result == null) {
+    return;
+  }
 
   final msg = await controller.updateAlarmSettings(
     event: event,
@@ -175,8 +177,7 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
                     Row(// 重複頻率單選
                         children: [
                       Text(loc.repeatOptions,
-                          style:
-                              TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
+                          style: TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
                       Gaps.w16,
                       Expanded(
                         child: DropdownButton<CalendarRepeatRule>(
@@ -218,8 +219,7 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
                               });
                             },
                           ),
-                          Expanded(
-                              child: Text(option.label(loc))), // ⬅️ 保證文字不擠
+                          Expanded(child: Text(option.label(loc))), // ⬅️ 保證文字不擠
                         ],
                       );
                     }),
@@ -278,8 +278,7 @@ Future<void> openDayDialog(
     );
 
     if (result != null && result.startDate != null && result is EventItem) {
-      await controller.loadCalendarEvents(
-        month: controller.currentMonth);
+      await controller.loadCalendarEvents(month: controller.currentMonth);
     }
 
     return; // 🔥 直接結束，不開 Dialog
@@ -297,7 +296,6 @@ Future<void> openDayDialog(
   );
 
   if (shouldReload == true) {
-    await controller.loadCalendarEvents(
-        month: controller.currentMonth);
+    await controller.loadCalendarEvents(month: controller.currentMonth);
   }
 }
