@@ -503,20 +503,22 @@ class ServiceEventPublic {
       }
     }
 
-    //==================================== 取得紙風車活動 ====================================
-    String paperWindmillUrl =
-        "https://www.paperwindmill.com.tw/zh-tw/paper/schedule"; //"https://www.paperwindmill.com.tw/paper/";
+    //==================================== 取得紙風車活動 ====================================/"https://www.paperwindmill.com.tw/paper/";
+    for (int i = 1; i <= 2; i++) {
+      String paperWindmillUrl =
+          "https://www.paperwindmill.com.tw/zh-tw/paper/schedule?page=$i";
+      if (await checkEventsUrl(paperWindmillUrl, today)) {
+        try {
+          List<EventItem> paperWindmillList =
+              await fetchPageEventsPaperWindmill(
+                      paperWindmillUrl, today, Source.paperwindmill) ??
+                  [];
 
-    if (await checkEventsUrl(paperWindmillUrl, today)) {
-      try {
-        List<EventItem> paperWindmillList = await fetchPageEventsPaperWindmill(
-                paperWindmillUrl, today, Source.paperwindmill) ??
-            [];
-
-        dbNameDateSet = await _insertIfNotExists(
-            paperWindmillList, dbNameDateSet, paperWindmillUrl);
-      } catch (ex) {
-        logger.e(ex);
+          dbNameDateSet = await _insertIfNotExists(
+              paperWindmillList, dbNameDateSet, paperWindmillUrl);
+        } catch (ex) {
+          logger.e(ex);
+        }
       }
     }
 
@@ -1036,73 +1038,97 @@ class ServiceEventPublic {
     if (res['status'] != 'ok') return [];
     final document = parse(res["data"]); //res.body
 
-    final items = document.querySelectorAll("li");
+    final cards = document.querySelectorAll(".schedule-card");
 
     List<EventItem> events = [];
     final uuid = const Uuid();
 
-    for (var li in items) {
-      final dataDiv = li.querySelector(".DATA");
-      if (dataDiv == null) continue;
+    for (var card in cards) {
+      try {
+        final row = card.querySelector(
+          '.row.content-between.items-center',
+        );
 
-      final h6 = dataDiv.querySelectorAll("h6");
-      if (h6.length < 2) continue;
-
-      int month = int.tryParse(h6[0].text.trim()) ?? 0;
-      int day = int.tryParse(h6[1].text.trim()) ?? 0;
-
-      if (month == 0 || day == 0) continue;
-
-      final text = li.text.replaceAll("\n", "").trim();
-
-      // 取得時間
-      final timeMatch = RegExp(r'(下午|晚上)?\s*(\d{1,2}:\d{2})').firstMatch(text);
-
-      TimeOfDay? startTime;
-
-      if (timeMatch != null) {
-        int hour = int.parse(timeMatch.group(2)!.split(":")[0]);
-        int minute = int.parse(timeMatch.group(2)!.split(":")[1]);
-
-        if (timeMatch.group(1) == "下午" || timeMatch.group(1) == "晚上") {
-          if (hour < 12) hour += 12;
+        if (row == null) {
+          continue;
         }
 
-        startTime = TimeOfDay(hour: hour, minute: minute);
+        final spans = row.querySelectorAll('span');
+        /// 日期時間 範例: 2026.05.29 (五) 19:30
+        final dateText = spans[0].text.trim();
+        final dateMatch = RegExp(
+          r'(\d{4})\.(\d{2})\.(\d{2}).*?(\d{1,2}):(\d{2})',
+        ).firstMatch(dateText);
+
+        if (dateMatch == null) continue;
+
+        final year = int.parse(dateMatch.group(1)!);
+        final month = int.parse(dateMatch.group(2)!);
+        final day = int.parse(dateMatch.group(3)!);
+
+        int hour = int.parse(dateMatch.group(4)!);
+        int minute = int.parse(dateMatch.group(5)!);
+
+        final startDate = DateTime(year, month, day);
+
+        if (startDate.isBefore(today)) continue;
+
+        final startTime = TimeOfDay(
+          hour: hour,
+          minute: minute,
+        );
+
+        final subtitle = spans[1].text.trim();
+
+        String eventName = spans[2].text.trim();
+
+        if (eventName.isEmpty) {
+          eventName = subtitle;
+        }
+
+        final addressBlock = card.querySelector('.text-body.text-brown-800');
+        String district = '';
+        String venue = '';
+        String city = '';
+        if (addressBlock != null) {
+          /// 抓所有 span
+          final spans = addressBlock.querySelectorAll('span');
+
+          /// 結構:
+          /// 0 高雄市
+          /// 1 苓雅區
+          /// 2 高雄市文化中心圓形廣場
+          city = spans[0].text.trim();
+          if (spans.length >= 2) {
+            district = spans[1].text.trim();
+          }
+
+          if (spans.length >= 3) {
+            venue = spans[2].text.trim();
+          }
+        }
+
+        final location = '$district$venue';
+
+        events.add(
+          EventItem(
+            id: uuid.v4(),
+            masterUrl: url,
+            startDate: startDate,
+            startTime: startTime,
+            endDate: startDate,
+            city: safeCity2(city),
+            location: location,
+            name: eventName,
+            description: subtitle,
+            type: "紙風車",
+            account: AuthConstants.sysAdminEmail,
+            source: source,
+          ),
+        );
+      } catch (e) {
+        debugPrint("parse error: $e");
       }
-
-      // 抓活動名稱 《》
-      final nameMatch = RegExp(r'《([^》]+)》').firstMatch(text);
-      final eventName =
-          "${(nameMatch?.group(1) ?? "紙風車演出")} ${timeMatch?.group(0)}";
-
-      // 地點
-      String location = text
-          .replaceAll(RegExp(r'^\(\S+\)'), '')
-          .replaceAll(RegExp(r'(下午|晚上)?.*?\d{1,2}:\d{2}'), '')
-          .replaceAll(RegExp(r'《[^》]+》'), '')
-          .trim();
-
-      final startDate =
-          DateTime((month < today.month ? 1 : 0) + today.year, month, day);
-
-      if (startDate.isBefore(today)) continue;
-
-      events.add(
-        EventItem(
-          id: uuid.v4(),
-          masterUrl: url,
-          startDate: startDate,
-          startTime: startTime,
-          endDate: startDate,
-          city: safeCity2(location),
-          location: safeAddress2(location),
-          name: eventName,
-          type: "紙風車",
-          account: AuthConstants.sysAdminEmail,
-          source: source,
-        ),
-      );
     }
 
     return events;

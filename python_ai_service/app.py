@@ -12,7 +12,6 @@ from point_record.service_point_record import router as service_point_record_rou
 from stock.service_stock import router as service_stock_router
 from game.service_game import router as service_game_router
 from utils_service.service_weather_forecast import router as service_weather_forecast_router
-from config import engine
 
 app = FastAPI()
 
