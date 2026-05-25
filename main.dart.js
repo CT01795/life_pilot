@@ -152480,18 +152480,18 @@ case 1:return B.k(q,r)
 case 2:return B.j(o.at(-1),r)}})
 return B.l($async$H4,r)},
 PM(a,b,c){return this.b59(a,b,c)},
-b59(c3,c4,c5){var s=0,r=B.m(t.IG),q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2
-var $async$PM=B.n(function(c7,c8){if(c7===1)return B.j(c8,r)
+b59(c4,c5,c6){var s=0,r=B.m(t.IG),q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2,c3
+var $async$PM=B.n(function(c8,c9){if(c8===1)return B.j(c9,r)
 while(true)switch(s){case 0:s=3
-return B.e($.bV().bo("event/get_url_data",B.E(["url",c3,"method","GET"],t.N,t.z)),$async$PM)
-case 3:c1=c8
-c2=J.Z(c1)
-if(!J.h(c2.h(c1,"status"),"ok")){q=B.c([],t._)
+return B.e($.bV().bo("event/get_url_data",B.E(["url",c4,"method","GET"],t.N,t.z)),$async$PM)
+case 3:c2=c9
+c3=J.Z(c2)
+if(!J.h(c3.h(c2,"status"),"ok")){q=B.c([],t._)
 s=1
-break}a7=B.axQ(B.a0X(c2.h(c1,"data")),".schedule-card")
+break}a7=B.axQ(B.a0X(c3.h(c2,"data")),".schedule-card")
 p=B.c([],t._)
 o=A.bM
-for(c2=a7.length,a8=t.kb,a9=t.n_,b0=c4.a,b1=t.CE,b2=c4.b,b3=0;b3<a7.length;a7.length===c2||(0,B.J)(a7),++b3){n=a7[b3]
+for(c3=a7.length,a8=t.kb,a9=t.n_,b0=c5.a,b1=t.CE,b2=c5.b,b3=0;b3<a7.length;a7.length===c3||(0,B.J)(a7),++b3){n=a7[b3]
 try{b4=B.c([],a9)
 b5=B.iW(".row.content-between.items-center",b4)
 if(b5==null||b4.length!==0)B.X(B.bG("'.row.content-between.items-center' is not a valid selector: "+B.o(b4),null,null))
@@ -152568,7 +152568,8 @@ b7=o.fw()
 b8=a3
 if(b8.length>=3)b8=A.c.X(b8,0,A.c.X(b8,2,3)==="\u7e23"?3:2)
 b9=a
-J.j_(p,new B.cs(b7,null,c3,d,d,c,null,b8,a5,b9,"\u7d19\u98a8\u8eca",b,"","minavi@alumni.nccu.edu.tw",A.aU,A.bg,!1,!1,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,c5,null,null,B.cH([],!0,a8)))}catch(c6){a6=B.a4(c6)
+c0=B.o(b)
+J.j_(p,new B.cs(b7,null,c4,d,d,c,null,b8,a5,b9,"\u7d19\u98a8\u8eca",c0+"\n","","minavi@alumni.nccu.edu.tw",A.aU,A.bg,!1,!1,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,c6,null,null,B.cH([],!0,a8)))}catch(c7){a6=B.a4(c7)
 B.LK().$1("parse error: "+B.o(a6))}}q=p
 s=1
 break
