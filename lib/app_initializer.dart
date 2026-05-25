@@ -25,11 +25,5 @@ class AppInitializer {
       anonKey: SupabaseConfig.anonKey,
       debug: true, // 可選，用於除錯
     );
-
-    final supabase = Supabase.instance.client;
-    // ✅ 自動匿名登入，如果沒有 session 就登入
-    if (supabase.auth.currentSession == null) {
-      await supabase.auth.signInAnonymously();
-    }
   }
 }

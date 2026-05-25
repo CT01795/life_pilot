@@ -6,10 +6,8 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceStock {
-  final client = Supabase.instance.client;
   List<ModelStock> stocks = [];
   int? stocksLength;
   Future<void> loadRawData() async {
