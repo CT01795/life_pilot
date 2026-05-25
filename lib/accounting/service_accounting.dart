@@ -38,13 +38,6 @@ class ServiceAccounting {
         "id": eventId,
         "user": user,
       });
-      /*
-      final response = await api.post('accounting/find_account_by_id', {
-        "table_name": TableNames.accountingAccount,
-        "id": eventId,
-        "user": user,
-      });
-      */
       Uint8List? bytes;
       if (response['master_graph_url'] != null) {
         bytes = await compute<String?, Uint8List?>(
@@ -78,13 +71,6 @@ class ServiceAccounting {
         "category": category,
         "user": user,
       });
-      /*
-      final response = await api.post('accounting/fetch_accounts', {
-        "table_name": TableNames.accountingAccount,
-        "category": category,
-        "user": user,
-      });
-      */
       if (response == null) return [];
       final list = (response as List);
       return Future.wait(
@@ -124,15 +110,6 @@ class ServiceAccounting {
       "category": category,
       "main_currency": currency,
     };
-    try {
-      //final result = await
-      api.post('accounting/create_account', {
-        "table_name": TableNames.accountingAccount,
-        "data": map,
-      });
-    } catch (e, st) {
-      logger.e('createAccount by api failed $e,$st');
-    }
 
     try {
       final result = await apiSupabase.post('accounting/create_account', {
@@ -157,16 +134,6 @@ class ServiceAccounting {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      //await 
-      api.post('accounting/delete_account', {
-        "table_name": TableNames.accountingAccount,
-        "id": accountId,
-      });
-    } catch (e, st) {
-      logger.e('deleteAccount by api failed $e,$st');
-    }
-
-    try {
       await apiSupabase.post('accounting/delete_account', {
         "table_name": TableNames.accountingAccount,
         "id": accountId,
@@ -181,16 +148,6 @@ class ServiceAccounting {
       String accountId, Uint8List imageBytes) async {
     // 不管 Web / Mobile 都轉 base64
     // Mobile / Web 統一存 bytea (Uint8List)
-    try {
-      //await 
-      api.post('accounting/upload_account_image_bytes_direct', {
-        "table_name": TableNames.accountingAccount,
-        "id": accountId,
-        "master_graph_url": base64Encode(imageBytes),
-      });
-    } catch (e, st) {
-      logger.e('uploadAccountImageBytesDirect by api failed $e,$st');
-    }
     try {
       await apiSupabase.post('accounting/upload_account_image_bytes_direct', {
         "table_name": TableNames.accountingAccount,
@@ -207,12 +164,6 @@ class ServiceAccounting {
   // ===== 明細 =====
   Future<List<ModelAccountingDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
-    /*
-    final res = await api.post('accounting/fetch_today_records', {
-      "p_account_id": accountId,
-      "p_type": type,
-    });
-    */
     final res = await apiSupabase.post('accounting/fetch_today_records', {
       "p_account_id": accountId,
       "p_type": type,
@@ -259,16 +210,6 @@ class ServiceAccounting {
           })
       .toList();
     try {
-      //await 
-      api.post('accounting/insert_records_batch', {
-        "p_account_id": accountId,
-        "p_type": type,
-        "p_records": recordsMap,
-      });
-    } catch (e, st) {
-      logger.e('insertRecordsBatch by api failed $e,$st');
-    }
-    try {
       await apiSupabase.post('accounting/insert_records_batch', {
         "p_account_id": accountId,
         "p_type": type,
@@ -287,17 +228,6 @@ class ServiceAccounting {
     required String newDescription,
   }) async {
     try {
-      //await 
-      api.post('accounting/update_accounting_detail', {
-        "p_detail_id": detailId,
-        "p_new_value": newValue,
-        "p_new_currency": newCurrency,
-        "p_new_description": newDescription,
-      });
-    } catch (e, st) {
-      logger.e('updateAccountingDetail by api failed $e,$st');
-    }
-    try {
       await apiSupabase.post('accounting/update_accounting_detail', {
         "p_detail_id": detailId,
         "p_new_value": newValue,
@@ -315,13 +245,6 @@ class ServiceAccounting {
     required String category,
   }) async {
     try {
-      /*
-      final res = await api.post('accounting/fetch_latest_account', {
-        "table_name": TableNames.accountingAccount,
-        "category": category,
-        "user": user,
-      });
-      */
       final res = await apiSupabase.post('accounting/fetch_latest_account', {
         "table_name": TableNames.accountingAccount,
         "category": category,
@@ -339,15 +262,6 @@ class ServiceAccounting {
     required String accountId,
     required String currency,
   }) async {
-    try {
-      //await 
-      api.post('accounting/switch_main_currency', {
-        "p_account_id": accountId,
-        "p_currency": currency,
-      });
-    } catch (e, st) {
-      logger.e('switchMainCurrency failed by api $e,$st');
-    }
     try {
       await apiSupabase.post('accounting/switch_main_currency', {
         "p_account_id": accountId,

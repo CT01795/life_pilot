@@ -15,11 +15,6 @@ class ServiceBusinessPlan {
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
-      /*
-      final res = await api.post('business_plan/fetch_templates', {
-        "table_name": TableNames.businessPlanTemplate
-      });
-      */
       final res = await apiSupabase.post('business_plan/fetch_templates',
           {"table_name": TableNames.businessPlanTemplate});
 
@@ -49,58 +44,6 @@ class ServiceBusinessPlan {
     List<String> sectionIdList = [];
     List<String> questionIdList = [];
     try {
-      //await 
-      api.post('business_plan/create_plan_from_template', {
-        "table_name": TableNames.businessPlan,
-        "user": user,
-        "planId": planId,
-        "title": title,
-        "templateId": templateId,
-      });
-
-      // 2️⃣ 取得模板 sections
-      List responseSectionsTemplate =
-          await api.post('business_plan/get_sections_from_template', {
-        "table_name": TableNames.businessPlanTemplateSection,
-        "templateId": templateId,
-      });
-      int i = 0;
-      int j = 0;
-      for (final s in responseSectionsTemplate) {
-        sectionIdList.add(const Uuid().v4());
-
-        // 3️⃣ 建立 section
-        await api.post('business_plan/insert_plan_sections', {
-          "table_name": TableNames.businessPlanSection,
-          "id": sectionIdList[i],
-          "plan_id": planId,
-          "title": s['title'],
-          "sort_order": s['sort_order'],
-        });
-
-        // 4️⃣ 建立題目
-        List responseQuestionsTemplate =
-            await api.post('business_plan/get_questions_from_template', {
-          "table_name": TableNames.businessPlanTemplateQuestion,
-          "section_id": s['id'],
-        });
-        for (final q in responseQuestionsTemplate) {
-          questionIdList.add(const Uuid().v4());
-          await api.post('business_plan/insert_plan_questions', {
-            "table_name": TableNames.businessPlanQuestion,
-            "id": questionIdList[j],
-            "section_id": sectionIdList[i],
-            "prompt": q['prompt'],
-            "sort_order": q['sort_order'],
-          });
-          j++;
-        }
-        i++;
-      }
-    } on Exception catch (exception, st) {
-      logger.e(exception, stackTrace: st);
-    }
-    try {
       await apiSupabase.post('business_plan/create_plan_from_template', {
         "table_name": TableNames.businessPlan,
         "user": user,
@@ -111,7 +54,7 @@ class ServiceBusinessPlan {
 
       // 2️⃣ 取得模板 sections
       List responseSectionsTemplate =
-          await api.post('business_plan/get_sections_from_template', {
+          await apiSupabase.post('business_plan/get_sections_from_template', {
         "table_name": TableNames.businessPlanTemplateSection,
         "templateId": templateId,
       });
@@ -131,7 +74,7 @@ class ServiceBusinessPlan {
 
         // 4️⃣ 建立題目
         List responseQuestionsTemplate =
-            await api.post('business_plan/get_questions_from_template', {
+            await apiSupabase.post('business_plan/get_questions_from_template', {
           "table_name": TableNames.businessPlanTemplateQuestion,
           "section_id": s['id'],
         });
@@ -160,18 +103,6 @@ class ServiceBusinessPlan {
   }) async {
     try {
       // 1️⃣ 建立 plan
-      //await 
-      api.post('business_plan/update_plan_title', {
-        "table_name": TableNames.businessPlan,
-        "planId": planId,
-        "title": title,
-      });
-    } on Exception catch (exception) {
-      logger.e(exception);
-    }
-
-    try {
-      // 1️⃣ 建立 plan
       await apiSupabase.post('business_plan/update_plan_title', {
         "table_name": TableNames.businessPlan,
         "planId": planId,
@@ -190,18 +121,6 @@ class ServiceBusinessPlan {
     required String answer,
   }) async {
     try {
-      //await 
-      api.post('business_plan/update_answer', {
-        "table_name": TableNames.businessPlanAnswer,
-        "planId": planId,
-        "sectionId": sectionId,
-        "questionId": questionId,
-        "answer": answer,
-      });
-    } on Exception catch (exception) {
-      logger.e(exception);
-    }
-    try {
       // 插入新的
       await apiSupabase.post('business_plan/update_answer', {
         "table_name": TableNames.businessPlanAnswer,
@@ -218,12 +137,6 @@ class ServiceBusinessPlan {
 
   Future<List<ModelBusinessPlan>> fetchPlans({required String user}) async {
     try {
-      /*
-      final res = await api.post('business_plan/fetch_plans', {
-        "table_name": TableNames.businessPlan,
-        "user": user,
-      });
-      */
       final res = await apiSupabase.post('business_plan/fetch_plans', {
         "table_name": TableNames.businessPlan,
         "user": user,
@@ -247,11 +160,6 @@ class ServiceBusinessPlan {
 
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
     try {
-      /*
-      final res = await api.post('business_plan/fetch_plan_detail', {
-        "p_plan_id": planId,
-      });
-      */
       final res = await apiSupabase.post('business_plan/fetch_plan_detail', {
         "p_plan_id": planId,
       });
