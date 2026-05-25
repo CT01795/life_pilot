@@ -1120,7 +1120,7 @@ class ServiceEventPublic {
             city: safeCity2(city),
             location: location,
             name: eventName,
-            description: subtitle,
+            description: '$subtitle\n',
             type: "紙風車",
             account: AuthConstants.sysAdminEmail,
             source: source,
