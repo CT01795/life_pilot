@@ -14,7 +14,6 @@ class ServiceEvent {
 
   Future<String> getKey({required String keyName}) async {
     try {
-      //final response = await api.post('event/get_api_key', {'p_key_name': keyName});
       final response =
           await apiSupabase.post('event/get_api_key', {'p_key_name': keyName});
       return response['value'];
@@ -35,14 +34,6 @@ class ServiceEvent {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
     if (tableName == TableNames.recommendedEvents && today.weekday == 3) {
-      try {
-        //await 
-        api.post('event/cleanup_recommended_events',
-            {'cutoff': cutoffDate.toIso8601String()});
-      } on Exception catch (ex) {
-        logger.e(ex);
-      }
-
       await apiSupabase.post('event/cleanup_recommended_events',
           {'cutoff': cutoffDate.toIso8601String()});
     }
@@ -57,15 +48,6 @@ class ServiceEvent {
             .formatDateString();
 
     try {
-      /*
-      final response = await api.post('event/get_filtered', {
-        'table_name': tableName,
-        'inputid': id,
-        'inputdates': inputDateS,
-        'inputdatee': inputDateE,
-        'inputuser': inputUser,
-      });
-      */
       final response = await apiSupabase.post('event/get_filtered', {
         'table_name': tableName,
         'inputid': id,
@@ -125,30 +107,11 @@ class ServiceEvent {
       event.isApproved = false;
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
-        try {
-          //await 
-          api.post('event/insert', {
-            'table_name': tableName,
-            'events': [event.toJson()],
-          });
-        } on Exception catch (ex) {
-          logger.e(ex);
-        }
         await apiSupabase.post('event/insert', {
           'table_name': tableName,
           'events': [event.toJson()],
         });
       } else {
-        try {
-          //await 
-          api.post('event/update', {
-            'table_name': tableName,
-            'current_account': currentAccount,
-            'event': event.toJson(),
-          });
-        } on Exception catch (ex) {
-          logger.e(ex);
-        }
         await apiSupabase.post('event/update', {
           'table_name': tableName,
           'current_account': currentAccount,
@@ -168,29 +131,10 @@ class ServiceEvent {
       required String tableName}) async {
     try {
       if (tableName == TableNames.recommendedEvents) {
-        try {
-          //await 
-          api.post('event/insert', {
-            'table_name': TableNames.recommendedEventsDeleted,
-            'events': [event.toJson()],
-          });
-        } on Exception catch (ex) {
-          logger.e(ex);
-        }
         await apiSupabase.post('event/insert', {
           'table_name': TableNames.recommendedEventsDeleted,
           'events': [event.toJson()],
         });
-      }
-      try {
-        //await 
-        api.post('event/delete', {
-          'table_name': tableName,
-          'current_account': currentAccount,
-          'event': event.toJson(),
-        });
-      } on Exception catch (ex) {
-        logger.e(ex);
       }
       await apiSupabase.post('event/delete', {
         'table_name': tableName,
@@ -206,17 +150,6 @@ class ServiceEvent {
   // ✅ 核准事件 (由管理者)
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
-    try {
-      //await 
-      api.post('event/update', {
-        'table_name': tableName,
-        'current_account': AuthConstants.sysAdminEmail,
-        'event': event.toJson(),
-      });
-    } catch (ex, stacktrace) {
-      logger.e("approvalEvent error", error: ex, stackTrace: stacktrace);
-    }
-
     await apiSupabase.post('event/update', {
       'table_name': tableName,
       'current_account': AuthConstants.sysAdminEmail,
@@ -232,24 +165,6 @@ class ServiceEvent {
       "is_dislike": event.isDislike,
       "account": account
     };
-    try {
-      //await 
-      api.post('event/insert', {
-        'table_name': TableNames.recommendedEventsFavor,
-        'events': [data],
-      });
-    } catch (ex) {
-      try {
-        //await 
-        api.post('event/update', {
-          'table_name': TableNames.recommendedEventsFavor,
-          'event': data,
-        });
-      } catch (ex) {
-        logger.e(ex);
-      }
-    }
-
     try {
       await apiSupabase.post('event/insert', {
         'table_name': TableNames.recommendedEventsFavor,
@@ -273,18 +188,6 @@ class ServiceEvent {
     required String column,
     required String account,
   }) async {
-    try {
-      //await 
-      api.post('event/increment_event_counter', {
-        'p_event_id': eventId,
-        'p_event_name': eventName,
-        'p_column': column,
-        'p_account': account,
-      });
-    } catch (e) {
-      logger.e('Error incrementEventCounter $column: $e');
-    }
-
     try {
       await apiSupabase.post('event/increment_event_counter', {
         'p_event_id': eventId,

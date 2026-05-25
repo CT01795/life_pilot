@@ -26,12 +26,6 @@ class ServiceCalendar {
     //);
 
     try {
-      /*
-      final response = await api.post('event/get_url_data', {
-        'url': url,
-        'method': 'GET',
-      });
-      */
       final response = await apiSupabase.post('event/get_url_data', {
         'url': url,
         'method': 'GET',

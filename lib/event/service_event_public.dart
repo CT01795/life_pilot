@@ -35,13 +35,6 @@ class ServiceEventPublic {
       : '';
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
-    /*
-    final res = await api.post('event/select_event_url', {
-        'table_name': TableNames.recommendedEventUrl,
-        'start_date': today.toIso8601String(),
-        'master_url': url,
-    });
-    */
     final res = await apiSupabase.post('event/select_event_url', {
       'table_name': TableNames.recommendedEventUrl,
       'start_date': today.toIso8601String(),
@@ -55,16 +48,6 @@ class ServiceEventPublic {
     bool exists = await checkIfUrlExists(url, today);
     if (exists) {
       return false;
-    }
-
-    try {
-      //await 
-      api.post('event/insert_event_url', {
-        'table_name': TableNames.recommendedEventUrl,
-        'event_url': {'master_url': url, 'start_date': today.toIso8601String()},
-      });
-    } on Exception catch (ex) {
-      logger.e(ex);
     }
 
     try {
@@ -109,15 +92,6 @@ class ServiceEventPublic {
     }
 
     if (newEvents.isNotEmpty) {
-      try {
-        //await 
-        api.post('event/insert', {
-          'table_name': TableNames.recommendedEvents,
-          'events': newEvents.map((e) => e.toJson()).toList(),
-        });
-      } on Exception catch (ex) {
-        logger.e(ex);
-      }
       try {
         await apiSupabase.post('event/insert', {
           'table_name': TableNames.recommendedEvents,
@@ -402,12 +376,6 @@ class ServiceEventPublic {
           inputUser: AuthConstants.sysAdminEmail,
         ) ??
         []);
-
-    /*
-    final res = await api.post('event/select_events_deleted', {
-      'table_name': TableNames.recommendedEventsDeleted,
-    });
-    */
     final res = await apiSupabase.post('event/select_events_deleted', {
       'table_name': TableNames.recommendedEventsDeleted,
     });
@@ -465,12 +433,6 @@ class ServiceEventPublic {
     String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
     if (await checkEventsUrl(strolltimesEventsUrl, today)) {
       try {
-        /*
-        final res = await api.post('event/get_url_data', {
-          'url': strolltimesEventsUrl,
-          'method': 'GET',
-        });
-        */
         final res = await apiSupabase.post('event/get_url_data', {
           'url': strolltimesEventsUrl,
           'method': 'GET',
@@ -642,12 +604,6 @@ class ServiceEventPublic {
   Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
       String url, DateTime today, String source) async {
     //final uri = Uri.parse(url);
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': url,
       'method': 'GET',
@@ -710,16 +666,6 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsNtpc(
       String url, DateTime today, String source) async {
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'POST',
-      'body': {
-        "id": "2d113acd09f81b46",
-        "page": "1","intpage": "1","pagesize": "110" // 🔥 一次全抓
-      }
-    }); 
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': url,
       'method': 'POST',
@@ -842,12 +788,6 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 文化局 ====================================
   Future<List<EventItem>?> fetchPageEventsMoc(
       String url, DateTime today, String source) async {
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': url,
       'method': 'GET',
@@ -945,12 +885,6 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
       String url, DateTime today, String source) async {
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET'
-    });
-    */
     final res = await apiSupabase
         .post('event/get_url_data', {'url': url, 'method': 'GET'});
     if (res['status'] != 'ok') return [];
@@ -1040,12 +974,6 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          /*
-          final detailRes = await api.post('event/get_url_data', {
-            'url': masterUrl,
-            'method': 'GET',
-          });
-          */
           final detailRes = await apiSupabase.post('event/get_url_data', {
             'url': masterUrl,
             'method': 'GET',
@@ -1103,12 +1031,6 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 PaperWindmill ====================================
   Future<List<EventItem>?> fetchPageEventsPaperWindmill(
       String url, DateTime today, String source) async {
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': url,
       'method': 'GET',
@@ -1191,12 +1113,6 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsAccupass(
       String inUrl, DateTime today, String source) async {
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': inUrl,
-      'method': 'GET',
-    });
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': inUrl,
       'method': 'GET',
@@ -1380,12 +1296,6 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 cloud.Culture ====================================
   Future<List<EventItem>?> fetchPageEventsCloudCulture(
       String url, DateTime today, String source) async {
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': url,
       'method': 'GET',
@@ -1496,12 +1406,6 @@ class ServiceEventPublic {
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
       String inUrl, DateTime today, String source) async {
     //final url = Uri.parse(inUrl);
-    /*
-    final res = await api.post('event/get_url_data', {
-      'url': inUrl,
-      'method': 'GET',
-    });
-    */
     final res = await apiSupabase.post('event/get_url_data', {
       'url': inUrl,
       'method': 'GET',
@@ -1516,12 +1420,6 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     for (int i = 1; i < links.length; i++) {
-      /*
-      final res2 = await api.post('event/get_url_data', {
-        'url': links[i],
-        'method': 'GET',
-      });
-      */
       final res2 = await apiSupabase.post('event/get_url_data', {
         'url': links[i],
         'method': 'GET',
