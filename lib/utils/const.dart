@@ -4,7 +4,7 @@ String? weatherApiKey;
 double zoolLevel = 8;
 
 final String dbMacUrl = "http://100.76.202.70:8000";
-final String dbSupabaseUrl = "https://life-pilot.onrender.com"; //"http://127.0.0.1:8000"; //TODO
+final String dbSupabaseUrl = "https://life-pilot.onrender.com"; //"http://127.0.0.1:8000";
 final List<String> currencyList = [
   'TWD',
   'USD',

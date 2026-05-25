@@ -2,14 +2,12 @@ import 'dart:convert';
 import 'dart:core';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ClusterItem {
-  static final supabase = Supabase.instance.client;
   final String id;
   final LatLng position;
   final List<EventItem> events;
@@ -163,8 +161,8 @@ class ClusterItem {
     return _apiKey!;
   }
 
-  static Future<Map<String, double>> getLatLngFromAddressCommon({required
-      String locationDisplay}) async {
+  static Future<Map<String, double>> getLatLngFromAddressCommon(
+      {required String locationDisplay}) async {
     try {
       final tmpLocationDisplay = locationDisplay.split("．");
       // 1️⃣ 用 OpenWeather Geocoding API 取得經緯度
@@ -172,26 +170,40 @@ class ClusterItem {
       final locationLike = tmpLocationDisplay.length > 1
           ? tmpLocationDisplay[1]
           : tmpLocationDisplay[0];
-      final result = await supabase.rpc('search_lat_lng', params: {
-        'city_like': cityLike, // city contains
-        'location_like': locationLike,
-        'country_like': null, // 反向比對用
-      });
-      if (result.isNotEmpty) {
-        final row = result[0];
-        return {"lat": row['lat'], "lng": row['lng']};
+      try {
+        final result = await apiSupabase.post('event/search_lat_lng', {
+          "city_like": cityLike,
+          "location_like": locationLike,
+          "country_like": null, // 反向比對用
+        });
+        if (result != null) {
+          return {
+            "lat": result['lat'],
+            "lng": result['lng'],
+          };
+        }
+      } catch (e) {
+        logger.e('Error search_lat_lng: $e');
       }
 
       String currentCountry = detectCountryHint(tmpLocationDisplay[0]);
       final address = Uri.encodeComponent(tmpLocationDisplay[0]);
+      if (address.isEmpty && currentCountry.isEmpty) {
+        return {};
+      }
       await getKey();
-      final geoUrl = Uri.parse(
+      final geoUrl =
+          'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey';
+      /*final geoUrl = Uri.parse(
         'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey',
-      );
+      );*/
 
-      final geoRes = await http.get(geoUrl);
-      if (geoRes.statusCode == 200) {
-        final geoData = json.decode(geoRes.body);
+      final response = await apiSupabase.post('event/get_url_data', {
+        'url': geoUrl,
+        'method': 'GET',
+      });
+      if (response['status'] == 'ok') {
+        final geoData = json.decode(response["data"]);
         if (geoData is List && geoData.isNotEmpty) {
           final loc = geoData[0];
           return {"lat": loc['lat'], "lng": loc['lon']};
@@ -221,7 +233,8 @@ class ClusterItem {
       return event;
     }
     Map tmpMap = await ClusterItem.getLatLngFromAddressCommon(
-        locationDisplay: "${event.city}．${event.location}"); // ${event.location}
+        locationDisplay:
+            "${event.city}．${event.location}"); // ${event.location}
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;

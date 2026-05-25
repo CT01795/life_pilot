@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
+import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
@@ -11,7 +13,9 @@ class PageFeedbackAdmin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ControllerFeedbackAdmin()..loadFeedback(),
+      create: (_) => ControllerFeedbackAdmin(
+          ServiceFeedback(), context.read<ControllerAuth>())
+        ..loadFeedback(),
       child: Consumer<ControllerFeedbackAdmin>(
         builder: (context, controller, _) {
           return Scaffold(
@@ -38,7 +42,6 @@ class PageFeedbackAdmin extends StatelessWidget {
                                       child: const Text('Mark Done'),
                                     ),
                               onTap: () async {
-                                await controller.loadFeedbackScreenshots(feedback);
                                 showDialog(
                                   context: context,
                                   builder: (_) => AlertDialog(
@@ -51,14 +54,17 @@ class PageFeedbackAdmin extends StatelessWidget {
                                           Text(feedback.content),
                                           Gaps.h8,
                                           // ✅ 多張截圖縮圖化顯示
-                                          if (feedback.screenshot != null && feedback.screenshot!.isNotEmpty)
+                                          if (feedback.screenshot != null &&
+                                              feedback.screenshot!.isNotEmpty)
                                             FutureBuilder<List<Uint8List>>(
-                                              future: feedback.decodeScreenshotsAsync(),
+                                              future: feedback
+                                                  .decodeScreenshotsAsync(),
                                               builder: (context, snapshot) {
                                                 if (!snapshot.hasData) {
                                                   return const Padding(
                                                     padding: EdgeInsets.all(8),
-                                                    child: CircularProgressIndicator(),
+                                                    child:
+                                                        CircularProgressIndicator(),
                                                   );
                                                 }
 
@@ -71,8 +77,10 @@ class PageFeedbackAdmin extends StatelessWidget {
                                                       onTap: () => showDialog(
                                                         context: context,
                                                         builder: (_) => Dialog(
-                                                          child: InteractiveViewer(
-                                                            child: Image.memory(bytes),
+                                                          child:
+                                                              InteractiveViewer(
+                                                            child: Image.memory(
+                                                                bytes),
                                                           ),
                                                         ),
                                                       ),

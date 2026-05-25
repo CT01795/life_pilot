@@ -2,20 +2,17 @@
 
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceWeather {
-  final supabase = Supabase.instance.client;
   String? _apiKey;
-
   final cacheStore = WeatherCacheStore.I;
   List<EventWeather>? getForecast({required String locationDisplay}) {
     return cacheStore.cache[locationDisplay]?.data;
@@ -81,82 +78,87 @@ class ServiceWeather {
     final resultStartDate =
         startDate == null || startDate.isBefore(today) ? today : startDate;
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
-
-    if (today.weekday == 3) {
-      await supabase
-          .from('weather_forecast')
-          .delete()
-          .lte('date', today.subtract(Duration(days: 1)).toIso8601String());
-    }
-
-    /// 1️⃣ 查 DB
-    final dbRes = await supabase
-        .from('weather_forecast')
-        .select()
-        .eq('location', event.locationDisplay)
-        .gte('date', resultStartDate.add(Duration(hours: -3)).toIso8601String())
-        .gte('created_at', todayDate.toIso8601String())
-        .order('date', ascending: true);
-
-    if (dbRes.isNotEmpty) {
-      return dbRes
-          .map<EventWeather>((e) => EventWeather.fromJson(e['weather']))
-          .toList();
-    }
-
-    String country = ClusterItem.detectCountryHint(tmpLocationDisplay[0])
-        .replaceAll(",", "");
-    event = await ClusterItem.getLatLngFromAddressView(event);
-
-    if (event.lat != null && event.lng != null) {
-      final lat = event.lat;
-      final lon = event.lng;
-      _apiKey = await ClusterItem.getKey();
-      // 2️⃣ 再呼叫 OpenWeather Weather API
-      final url =
-          'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$_apiKey&units=metric';
-
-      final res = await http.get(Uri.parse(url));
-      final data = json.decode(res.body);
-
-      final List<EventWeather> days = [];
-
-      for (var item in data['list']) {
-        days.add(
-          EventWeather(
-            date: DateTime.parse(item['dt_txt']).toLocal(),
-            main: item['weather'][0]['main'],
-            description: item['weather'][0]['description'],
-            icon: item['weather'][0]['icon'],
-            temp: (item['main']['temp'] as num).toDouble(),
-            feelsLike: (item['main']['feels_like'] as num).toDouble(),
-            tempMin: (item['main']['temp_min'] as num).toDouble(),
-            tempMax: (item['main']['temp_max'] as num).toDouble(),
-            pressure: (item['main']['pressure'] as num).toDouble(),
-            seaLevel: (item['main']['sea_level'] as num).toDouble(),
-            grndLevel: (item['main']['grnd_level'] as num).toDouble(),
-          ),
-        );
+    try {
+      if (today.weekday == 3) {
+        await apiSupabase.post('utils_service/delete_weather_forecast', {
+          'table_name': TableNames.weatherForecast,
+        });
       }
 
-      await supabase.from('weather_forecast').insert(
-            days
-                .map((day) => {
-                      'location': event.locationDisplay,
-                      'date': day.date.toIso8601String(),
-                      'weather': day.toJson(),
-                      'created_at': todayDate.toIso8601String(),
-                      'lat': lat,
-                      'lon': lon,
-                      'country': country,
-                      'name': event.locationDisplay
-                    })
-                .toList(),
-          );
+      /// 1️⃣ 查 DB
+      final dbRes =
+          await apiSupabase.post('utils_service/select_weather_forecast', {
+        'table_name': TableNames.weatherForecast,
+        'location': event.locationDisplay,
+        'date': resultStartDate.add(Duration(hours: -3)).toIso8601String(),
+        'created_at': todayDate.toIso8601String(),
+      });
 
-      return days;
+      if (dbRes.isNotEmpty) {
+        return dbRes
+            .map<EventWeather>((e) => EventWeather.fromJson(e['weather']))
+            .toList();
+      }
+
+      String country = ClusterItem.detectCountryHint(tmpLocationDisplay[0])
+          .replaceAll(",", "");
+      event = await ClusterItem.getLatLngFromAddressView(event);
+
+      if (event.lat != null && event.lng != null) {
+        final lat = event.lat;
+        final lon = event.lng;
+        _apiKey = await ClusterItem.getKey();
+        // 2️⃣ 再呼叫 OpenWeather Weather API
+        final url =
+            'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$_apiKey&units=metric';
+
+        final response = await apiSupabase.post('event/get_url_data', {
+          'url': url,
+          'method': 'GET',
+        });
+        final data = json.decode(response["data"]);
+
+        final List<EventWeather> days = [];
+
+        for (var item in data['list']) {
+          days.add(
+            EventWeather(
+              date: DateTime.parse(item['dt_txt']).toLocal(),
+              main: item['weather'][0]['main'],
+              description: item['weather'][0]['description'],
+              icon: item['weather'][0]['icon'],
+              temp: (item['main']['temp'] as num).toDouble(),
+              feelsLike: (item['main']['feels_like'] as num).toDouble(),
+              tempMin: (item['main']['temp_min'] as num).toDouble(),
+              tempMax: (item['main']['temp_max'] as num).toDouble(),
+              pressure: (item['main']['pressure'] as num).toDouble(),
+              seaLevel: (item['main']['sea_level'] as num).toDouble(),
+              grndLevel: (item['main']['grnd_level'] as num).toDouble(),
+            ),
+          );
+        }
+        await apiSupabase.post('utils_service/insert_weather_forecast', {
+          'table_name': TableNames.weatherForecast,
+          'items': days
+              .map((day) => {
+                    'location': event.locationDisplay,
+                    'date': day.date.toIso8601String(),
+                    'weather': day.toJson(),
+                    'created_at': todayDate.toIso8601String(),
+                    'lat': lat,
+                    'lon': lon,
+                    'country': country,
+                    'name': event.locationDisplay
+                  })
+              .toList(),
+        });
+        return days;
+      }
+      return [];
+    } catch (ex, stacktrace) {
+      logger.e("getWeather error", error: ex, stackTrace: stacktrace);
+      rethrow;
     }
-    return [];
   }
 
   Future<void> preloadWeather(List<EventViewModel> events) async {

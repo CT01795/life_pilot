@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
-import 'package:uuid/uuid.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:http/http.dart' as http;
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
+import 'package:uuid/uuid.dart';
 
 class ControllerGameSentence extends ChangeNotifier {
   final String userName;
@@ -85,21 +86,16 @@ class ControllerGameSentence extends ChangeNotifier {
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     } else {
       url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
 
     // 用 http.get 先取得 bytes，並加上 User-Agent
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-      },
-    );
-
-    if (response.statusCode == 200) {
-      audioCache[text] = response.bodyBytes;
-      await player.play(BytesSource(audioCache[text]!));
+    final response = await apiSupabase.post('event/get_url_data',
+        {'url': url, 'method': 'GET', "data_type": "audio"});
+    if (response['status'] == 'ok') {
+      final bytes = base64Decode(response['data']);
+      audioCache[text] = bytes;
+      await player.play(BytesSource(bytes));
     }
     return;
   }

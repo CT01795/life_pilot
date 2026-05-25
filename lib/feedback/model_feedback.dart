@@ -14,7 +14,7 @@ class ModelFeedback {
   bool? isOk;
   String? dealBy;
   DateTime? dealAt;
-      
+
   ModelFeedback({
     required this.id,
     required this.subject,
@@ -30,21 +30,28 @@ class ModelFeedback {
 
   factory ModelFeedback.fromMap(Map<String, dynamic> map) {
     return ModelFeedback(
-      id: map['id'] as int,
+      id: int.parse(map['id'].toString()),
       subject: map['subject'] as String,
       content: map['content'] as String,
       cc: (map['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
-      screenshot: (map['screenshot'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      screenshot: (map['screenshot'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
       createdBy: map['created_by'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
-      isOk: map['is_ok'] as bool?,
+      isOk: map['is_ok'] is bool
+          ? map['is_ok']
+          : map['is_ok']?.toString() == 'true',
       dealBy: map['deal_by'] as String?,
-      dealAt: map['deal_at'] != null ? DateTime.parse(map['deal_at']) : null,
+      dealAt: map['deal_at'] != null && map['deal_at'].toString().isNotEmpty
+          ? DateTime.parse(map['deal_at'])
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'is_ok': isOk,
+        'id': id,
+        'is_ok': isOk ?? false,
         'deal_by': dealBy,
         'deal_at': dealAt?.toIso8601String(),
       };
@@ -62,7 +69,8 @@ class ModelFeedback {
     if (screenshot == null) return [];
 
     // async decode
-    final decoded = await Future.wait(screenshot!.map((s) => compute(decodeBase64, s)));
+    final decoded =
+        await Future.wait(screenshot!.map((s) => compute(decodeBase64, s)));
     screenshotDecodeRawData = decoded;
     return decoded;
   }

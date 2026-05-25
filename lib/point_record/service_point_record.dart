@@ -1,17 +1,17 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:life_pilot/point_record/model_point_record_account.dart';
+import 'package:life_pilot/point_record/model_point_record_detail.dart';
+import 'package:life_pilot/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/point_record/model_point_record_detail.dart';
-import 'package:life_pilot/point_record/model_point_record_account.dart';
-import 'package:life_pilot/point_record/model_point_record_preview.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide MultipartFile;
 
 class ServicePointRecord {
-  String currentTable = 'point_record_account';
+  String currentTable = TableNames.pointRecordAccount;
   ServicePointRecord();
-
-  final supabase = Supabase.instance.client;
 
   // ===== 帳戶 =====
   Uint8List? parseMasterGraph(dynamic data) {
@@ -30,30 +30,31 @@ class ServicePointRecord {
 
   Future<ModelPointRecordAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
-    // 或者直接從 Supabase 查詢
     try {
-      final res = await supabase
-          .from(currentTable)
-          .select('*')
-          .eq('id', eventId)
-          .eq('created_by', user)
-          .eq('is_valid', true)
-          .limit(1)
-          .single();
+      final response =
+          await apiSupabase.post('point_record/find_account_by_id', {
+        'table_name': currentTable,
+        'id': eventId,
+        'user': user,
+      });
 
-      final bytes = await compute<String?, Uint8List?>(
-        decodeBase64InIsolate,
-        res['master_graph_url'],
-      );
+      Uint8List? bytes;
+      if (response['master_graph_url'] != null) {
+        bytes = await compute<String?, Uint8List?>(
+          decodeBase64InIsolate,
+          response['master_graph_url'],
+        );
+      }
 
       return ModelPointRecordAccount(
-        id: res['id'],
-        accountName: res['account'],
-        category: res['category'],
+        id: response['id'],
+        accountName: response['account'],
+        category: response['category'],
         masterGraphUrl: bytes,
-        points: (res['points'] ?? 0).toInt(),
+        points: (response['points'] ?? 0).toInt(),
       );
-    } on Exception{
+    } on Exception catch (exception) {
+      logger.e(exception);
       return null;
     }
   }
@@ -62,45 +63,32 @@ class ServicePointRecord {
     required String user,
     required String category, // personal / project
   }) async {
-    var query = supabase
-        .from(currentTable)
-        .select()
-        .eq('created_by', user)
-        .eq('is_valid', true)
-        .eq('category', category);
-    final res = await query.order('account', ascending: true);
+    try {
+      final response = await apiSupabase.post('point_record/fetch_accounts', {
+        "table_name": TableNames.pointRecordAccount,
+        "category": category,
+        "user": user,
+      });
+      if (response == null) return [];
 
-    return Future.wait((res as List).map((e) async {
-      final bytes = await compute<String?, Uint8List?>(
-        decodeBase64InIsolate,
-        e['master_graph_url'],
-      );
-      return ModelPointRecordAccount(
-        id: e['id'],
-        accountName: e['account'],
-        category: e['category'],
-        masterGraphUrl: bytes,
-        points: (e['points'] ?? 0).toInt(),
-      );
-    }));
-  }
-
-  Future<String> fetchLatestAccount({
-    required String user,
-    required String category,
-  }) async {
-    var query = supabase
-        .from(currentTable)
-        .select()
-        .eq('created_by', user)
-        .eq('is_valid', true)
-        .eq('category', category);
-    final res = await query
-        .order('created_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    return res?['main_currency'];
+      final list = (response as List);
+      return Future.wait(list.map((e) async {
+        final bytes = await compute<String?, Uint8List?>(
+          decodeBase64InIsolate,
+          e['master_graph_url'],
+        );
+        return ModelPointRecordAccount(
+          id: e['id'],
+          accountName: e['account'],
+          category: e['category'],
+          masterGraphUrl: bytes,
+          points: (e['points'] ?? 0).toInt(),
+        );
+      }));
+    } on Exception catch (exception) {
+      logger.e(exception);
+      return [];
+    }
   }
 
   Future<ModelPointRecordAccount> createAccount(
@@ -109,76 +97,48 @@ class ServicePointRecord {
       required String? currency,
       required String category,
       String? eventId}) async {
-    // 先檢查是否有重複帳戶
-    var query = supabase
-        .from(currentTable)
-        .select('id, is_valid, category')
-        .eq('created_by', user)
-        .eq('account', name);
-    final res = await query.maybeSingle();
-
-    PostgrestMap result;
-    if (res != null) {
-      if (res['is_valid'] == false && res['category'] == category) {
-        // 帳戶存在但被刪除 → 直接改成 true
-        result = await supabase
-            .from(currentTable)
-            .update({'is_valid': true})
-            .eq('id', res['id'])
-            .eq('category', res['category'])
-            .select()
-            .single();
-      } else {
-        if (eventId != null) {
-          result = await supabase
-              .from(currentTable)
-              .select('*')
-              .eq('created_by', user)
-              .eq('account', name)
-              .single();
-        } else {
-          throw Exception('Account already exists'); // 已存在有效帳戶
-        }
-      }
-    } else {
-      result = await supabase
-          .from(currentTable)
-          .insert({
-            'id': eventId,
-            'account': name,
-            'created_by': user,
-            'category': category,
-            'points': 0,
-          })
-          .select()
-          .single();
-    }
-
-    final bytes = parseMasterGraph(result['master_graph_url']);
-    return ModelPointRecordAccount(
-        id: result['id'],
-        accountName: result['account'],
-        category: result['category'],
+    try {
+      Map res = {
+        "id": eventId,
+        "account": name,
+        "created_by": user,
+        "category": category,
+      };
+      final response = await apiSupabase.post('point_record/create_account', {
+        "table_name": TableNames.pointRecordAccount,
+        "data": res,
+      });
+      final bytes = parseMasterGraph(response['master_graph_url']);
+      return ModelPointRecordAccount(
+        id: response['id'],
+        accountName: response['account'],
+        category: response['category'],
         masterGraphUrl: bytes,
-        points: (result['points'] ?? 0).toInt(),);
+        points: (response['points'] ?? 0).toInt(),
+      );
+    } catch (e, st) {
+      logger.e('createAccount failed $e,$st');
+      rethrow;
+    }
   }
 
-  Future<void> deleteAccount(
-      {required String accountId}) async {
-    await supabase
-        .from(currentTable)
-        .update({'is_valid': false}).eq('id', accountId);
+  Future<void> deleteAccount({required String accountId}) async {
+    await apiSupabase.post('point_record/delete_account', {
+      "table_name": TableNames.pointRecordAccount,
+      "id": accountId,
+    });
   }
 
   Future<Uint8List> uploadAccountImageBytesDirect(
       String accountId, Uint8List imageBytes) async {
     try {
       // 不管 Web / Mobile 都轉 base64
-      final base64Str = base64Encode(imageBytes);
       // Mobile / Web 統一存 bytea (Uint8List)
-      await supabase
-          .from(currentTable)
-          .update({'master_graph_url': base64Str}).eq('id', accountId);
+      await apiSupabase.post('point_record/upload_account_image_bytes_direct', {
+        "table_name": TableNames.pointRecordAccount,
+        "id": accountId,
+        "master_graph_url": base64Encode(imageBytes),
+      });
       return imageBytes;
     } catch (e, st) {
       logger.e('uploadAccountImageBytesDirect failed $e,$st');
@@ -189,44 +149,60 @@ class ServicePointRecord {
   // ===== 明細 =====
   Future<List<ModelPointRecordDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
-    String currentFunc = 'fetch_today_point_records';
-    final res = await supabase.rpc(
-      currentFunc,
-      params: {
-        'p_account_id': accountId,
-        'p_type': type,
-      },
-    );
-    return (res as List)
-        .map((e) => ModelPointRecordDetail(
-              id: e['detail']['id'],
-              accountId: e['detail']['account_id'],
-              createdAt: DateTime.parse(e['detail']['created_at']),
-              description: e['detail']['description'],
-              type: e['detail']['type'],
-              value: (e['detail']['value'] ?? 0).toInt(),
-              points: e['points'] ?? 0
-            ))
-        .toList();
+    try {
+      final res = await apiSupabase.post('point_record/fetch_today_records', {
+        "p_account_id": accountId,
+        "p_type": type,
+      });
+      if (res == null || res is! List) {
+        logger.e('fetchTodayRecords invalid response: $res');
+        return [];
+      }
+
+      return res.map((e) {
+        final rawDetail = e['detail'];
+
+        // 🔥 強制轉 Map（關鍵）
+        final detail = (rawDetail is Map) ? rawDetail : <String, dynamic>{};
+
+        return ModelPointRecordDetail(
+          id: detail['id']?.toString() ?? '',
+          accountId: detail['account_id']?.toString() ?? '',
+          createdAt:
+              DateTime.tryParse(detail['created_at']?.toString() ?? '') ??
+                  DateTime.now(),
+          description: detail['description']?.toString() ?? '',
+          type: detail['type']?.toString() ?? '',
+          value: detail['value'] is int
+              ? detail['value']
+              : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+          points: (e['points'] ?? 0) as int,
+        );
+      }).toList();
+    } catch (e, st) {
+      logger.e('fetchTodayRecords failed $e,$st');
+      rethrow;
+    }
   }
 
   Future<void> insertRecordsBatch(
       {required String accountId,
       required String type,
       required List<PointRecordPreview> records}) async {
-    String currentFunc = 'add_point_records_batch';
-    await supabase.rpc(
-      currentFunc,
-      params: {
-        'p_account_id': accountId,
-        'p_type': type,
-        'p_records': records
+    try {
+      await apiSupabase.post('point_record/insert_records_batch', {
+        "p_account_id": accountId,
+        "p_type": type,
+        "p_records": records
             .map((r) => {
                   'description': r.description,
                   'value': r.value,
                 })
             .toList(),
-      },
-    );
+      });
+    } catch (e, st) {
+      logger.e('insertRecordsBatch failed $e,$st');
+      rethrow;
+    }
   }
 }
