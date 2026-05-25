@@ -1,22 +1,26 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/logger.dart';
 
 class ServiceModule {
-  final client = Supabase.instance.client;
   ServiceModule();
 
-  // ✅ 載入模組啟用狀態（實作可替換為從 Firebase/Supabase 拉）
   Future<List<String>> loadModulesFromServer(String account) async {
-    final response = await client
-      .from('user_module')
-      .select('module_key')
-      .eq('account', account)
-      .or('stop_at.is.null,stop_at.gt.${DateTime.now().toIso8601String()}'); // ✅ 新版 SDK 必須 execute()
+    try {
+      final response =
+          await apiSupabase.post('module/load_modules_from_server', {
+        "table_name": TableNames.userModule,
+        "account": account,
+      });
 
-      // data 可能為 null
-      final data = response as List<dynamic>?;
-      if (data == null) return [];
+      if (response == null) return [];
 
-      // 轉成 List<String>
-      return data.map((e) => e['module_key'] as String).toList();
+      final list = (response as List).map((e) => e.toString()).toList();
+
+      return list;
+    } on Exception catch (exception) {
+      logger.e(exception);
+      return [];
+    }
   }
 }

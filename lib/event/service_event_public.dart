@@ -12,11 +12,9 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceEventPublic {
-  final client = Supabase.instance.client;
   final Duration perEventDelay;
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
 

@@ -61,7 +61,7 @@ class ModelStock {
 
   Map<String, dynamic> toJson() {
     return {
-      'date': date.toIso8601String(),
+      'date': date.toUtc().toIso8601String(),
       'security_code': securityCode,
       'security_name': securityName,
       'traded_number': tradedNumber,
@@ -91,7 +91,7 @@ class ModelStock {
 
   factory ModelStock.fromJson(Map<String, dynamic> json) {
     return ModelStock(
-      date: DateTime.parse(json['date'].toString().substring(0,10)),
+      date: DateTime.parse(json['date'].toString()),
       securityCode: json['security_code'],
       securityName: json['security_name'],
       tradedNumber: (json['traded_number'] as num?)?.toDouble(),

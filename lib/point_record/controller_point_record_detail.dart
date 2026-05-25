@@ -51,7 +51,6 @@ class ControllerPointRecordDetail extends ChangeNotifier {
 
   Future<ModelPointRecordAccount?> findAccountByEventId(
       {required String eventId}) async {
-    // 或者直接從 Supabase 查詢
     return await service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',

@@ -7,11 +7,9 @@ import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceBusinessPlan {
-  final supabase = Supabase.instance.client;
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
@@ -62,7 +60,7 @@ class ServiceBusinessPlan {
       int j = 0;
       for (final s in responseSectionsTemplate) {
         sectionIdList.add(const Uuid().v4());
-      
+
         // 3️⃣ 建立 section
         await apiSupabase.post('business_plan/insert_plan_sections', {
           "table_name": TableNames.businessPlanSection,
@@ -73,8 +71,8 @@ class ServiceBusinessPlan {
         });
 
         // 4️⃣ 建立題目
-        List responseQuestionsTemplate =
-            await apiSupabase.post('business_plan/get_questions_from_template', {
+        List responseQuestionsTemplate = await apiSupabase
+            .post('business_plan/get_questions_from_template', {
           "table_name": TableNames.businessPlanTemplateQuestion,
           "section_id": s['id'],
         });

@@ -6,10 +6,8 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceEvent {
-  final client = Supabase.instance.client;
   ServiceEvent();
 
   Future<String> getKey({required String keyName}) async {

@@ -1,8 +1,9 @@
 // lib/services/stock_service.dart
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/stock/model_stock.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,232 +13,224 @@ class ServiceStock {
   List<ModelStock> stocks = [];
   int? stocksLength;
   Future<void> loadRawData() async {
-    DateTime today = DateUtils.dateOnly(DateTime.now());
+    DateTime today = DateUtils.dateOnly(DateTime.now()).add(Duration(hours: 8));
     final cutoffDate = today.subtract(Duration(days: 370));
-    await client
-        .from(TableNames.stockDailyPrice)
-        .delete()
-        .lte('date', cutoffDate);
-    await client.from(TableNames.stockDate).delete().lte('date', cutoffDate);
-
-    int checkDates = 3;
+    await api.post('stock/delete_stock_daily_price', {
+      'table_name': TableNames.stockDailyPrice,
+      'date': cutoffDate.toIso8601String(),
+    });
+    await api.post('stock/delete_stock_date', {
+      'table_name': TableNames.stockDate,
+      'date': cutoffDate.toIso8601String(),
+    });
+    int checkDates = 5;
     if (today.month < 3) {
       checkDates = 12;
     }
     for (int i = checkDates; i >= 1; i--) {
-      await loadRawDataTWSE(
-        today.subtract(Duration(days: i)),
-      );
-      await loadRawDataOTC(
-        today.subtract(Duration(days: i)),
-      );
-    }
-    int loop = 0;
-    for (int i = 1; i <= checkDates; i++) {
-      //345 - 410
-      try {
-        await quantitativeCalculation(
-            530 - loop * 100, today.subtract(Duration(days: i)));
-        loop = 0;
-      } on Exception catch (ex) {
-        logger.e(ex);
-        if (loop > 3) {
-          loop = 0;
-        } else {
-          i = i - 1;
-          loop = loop + 1;
-        }
-      }
+      final targetDate = today.subtract(Duration(days: i));
+      await loadRawDataTWSE(targetDate);
+      await loadRawDataOTC(targetDate);
+      await quantitativeCalculation(500, targetDate);
     }
   }
 
   Future<void> loadRawDataTWSE(DateTime date) async {
-    try {
-      String type = Source.twse;
-      if (await isDataExist(date, type)) {
-        return;
-      }
-      final dateStr =
-          "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
-      final url =
-          "https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=$dateStr&type=ALL";
-
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode != 200) {
-        return;
-      }
-
-      final data = jsonDecode(response.body);
-      final tables = data['tables'];
-
-      if (tables == null) {
-        return;
-      }
-      for (Map table in tables) {
-        if (!(table["title"] ?? '').toString().contains("每日收盤行情")) {
-          continue;
-        }
-        List<dynamic> fields = table["fields"];
-        Map<String, String> chtToEn = {
-          "證券代號": "security_code",
-          "證券名稱": "security_name",
-          "成交股數": "traded_number",
-          "成交筆數": "transactions_number",
-          "成交金額": "transaction_amount",
-          "開盤價": "opening_price",
-          "最高價": "highest_price",
-          "最低價": "lowest_price",
-          "收盤價": "closing_price",
-          "漲跌(+/-)": "change",
-          "漲跌價差": "price_difference",
-          "最後揭示買價": "final_reveal_buying_price",
-          "最後揭示買量": "final_reveal_buying_volume",
-          "最後揭示賣價": "final_reveal_selling_price",
-          "最後揭示賣量": "final_reveal_selling_volume",
-          "本益比": "pe_ratio"
-        };
-        Map<String, int> enToIndex = {};
-        for (int i = 0; i < fields.length; i++) {
-          final key = chtToEn[fields[i]];
-          if (key != null) enToIndex[key] = i;
-        }
-        List<dynamic> data = table["data"];
-        List<Map<String, dynamic>> batch = [];
-        for (int j = 0; j < data.length; j++) {
-          final stock =
-              StockParser.parse(data[j], enToIndex, date, false, type);
-          if (stock == null) {
-            continue;
-          }
-          batch.add(stock.toJson());
-          if (batch.length >= 500) {
-            await client.from(TableNames.stockDailyPrice).insert(batch);
-            batch.clear();
-          }
-        }
-        if (batch.isNotEmpty) {
-          await client.from(TableNames.stockDailyPrice).insert(batch);
-          batch.clear();
-        }
-        await client
-            .from(TableNames.stockDate)
-            .insert({"date": date.toIso8601String(), "type": type});
-      }
-    } on Exception catch (ex) {
-      logger.e(ex);
+    String type = Source.twse;
+    if (await isDataExist(date, type)) {
+      return;
     }
-  }
+    final dateStr =
+        "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
+    final url =
+        "https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=$dateStr&type=ALL";
 
-  Future<void> loadRawDataOTC(DateTime date) async {
-    try {
-      String type = Source.tpex;
-      if (await isDataExist(date, type)) {
-        return;
+    final response = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    if (response['status'] != 'ok') return;
+    final data = jsonDecode(response["data"]);
+
+    final tables = data['tables'];
+
+    if (tables == null) {
+      return;
+    }
+    for (Map table in tables) {
+      if (!(table["title"] ?? '').toString().contains("每日收盤行情")) {
+        continue;
       }
-      final dateStr =
-          "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
-      final url =
-          "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=$dateStr&type=AL&id=&response=json";
-
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode != 200) {
-        return;
-      }
-
-      final rawData = jsonDecode(response.body);
-      final tables = rawData['tables'];
-
-      if (tables == null) {
-        return;
-      }
-
-      List<dynamic> fields = tables[0]["fields"];
+      List<dynamic> fields = table["fields"];
       Map<String, String> chtToEn = {
-        "代號": "security_code", //
-        "名稱": "security_name", //
-        "收盤": "closing_price", //
-        "開盤": "opening_price", //
-        "最高": "highest_price", //
-        "最低": "lowest_price", //
-        "成交股數": "traded_number", //
-        "成交金額(元)": "transaction_amount", //
-        "成交筆數": "transactions_number", //
-        "最後買價": "final_reveal_buying_price", //
-        "最後買量": "final_reveal_buying_volume", //
-        "最後賣價": "final_reveal_selling_price", //
-        "最後賣量": "final_reveal_selling_volume", //
+        "證券代號": "security_code",
+        "證券名稱": "security_name",
+        "成交股數": "traded_number",
+        "成交筆數": "transactions_number",
+        "成交金額": "transaction_amount",
+        "開盤價": "opening_price",
+        "最高價": "highest_price",
+        "最低價": "lowest_price",
+        "收盤價": "closing_price",
         "漲跌(+/-)": "change",
-        "漲跌": "price_difference", //
+        "漲跌價差": "price_difference",
+        "最後揭示買價": "final_reveal_buying_price",
+        "最後揭示買量": "final_reveal_buying_volume",
+        "最後揭示賣價": "final_reveal_selling_price",
+        "最後揭示賣量": "final_reveal_selling_volume",
+        "本益比": "pe_ratio"
       };
       Map<String, int> enToIndex = {};
       for (int i = 0; i < fields.length; i++) {
-        final key = chtToEn[fields[i].toString().trim().split("<")[0]];
+        final key = chtToEn[fields[i]];
         if (key != null) enToIndex[key] = i;
       }
-      List<dynamic> data = tables[0]["data"];
+      List<dynamic> data = table["data"];
       List<Map<String, dynamic>> batch = [];
       for (int j = 0; j < data.length; j++) {
-        final stock = StockParser.parse(data[j], enToIndex, date, true, type);
+        final stock = StockParser.parse(data[j], enToIndex, date, false, type);
         if (stock == null) {
           continue;
         }
         batch.add(stock.toJson());
         if (batch.length >= 500) {
-          await client.from(TableNames.stockDailyPrice).insert(batch);
+          await api.post('stock/insert_stock_daily_price_batch', {
+            'table_name': TableNames.stockDailyPrice,
+            'stocks': batch,
+          });
           batch.clear();
         }
       }
       if (batch.isNotEmpty) {
-        await client.from(TableNames.stockDailyPrice).insert(batch);
+        await api.post('stock/insert_stock_daily_price_batch', {
+          'table_name': TableNames.stockDailyPrice,
+          'stocks': batch,
+        });
         batch.clear();
       }
-      await client
-          .from(TableNames.stockDate)
-          .insert({"date": date.toIso8601String(), "type": type});
-    } on Exception catch (ex) {
-      logger.e(ex);
+
+      await api.post('stock/insert_stock_date_batch', {
+        'table_name': TableNames.stockDate,
+        'stocks': [
+          {
+            'date': date.toUtc().toIso8601String(),
+            'type': type,
+          }
+        ],
+      });
     }
   }
 
-  Future<bool> isDataExist(DateTime date, String type) async {
-    final result = await client
-        .from(TableNames.stockDate)
-        .select('date')
-        .eq('date', date)
-        .eq('type', type)
-        .limit(1);
-    return result.isNotEmpty;
+  Future<void> loadRawDataOTC(DateTime date) async {
+    String type = Source.tpex;
+    if (await isDataExist(date, type)) {
+      return;
+    }
+    final dateStr =
+        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+    final url =
+        "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=$dateStr&type=AL&id=&response=json";
+
+    final response = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    if (response['status'] != 'ok') {
+      return;
+    }
+
+    final rawData = jsonDecode(response["data"]);
+    final tables = rawData['tables'];
+
+    if (tables == null) {
+      return;
+    }
+
+    List<dynamic> fields = tables[0]["fields"];
+    Map<String, String> chtToEn = {
+      "代號": "security_code", //
+      "名稱": "security_name", //
+      "收盤": "closing_price", //
+      "開盤": "opening_price", //
+      "最高": "highest_price", //
+      "最低": "lowest_price", //
+      "成交股數": "traded_number", //
+      "成交金額(元)": "transaction_amount", //
+      "成交筆數": "transactions_number", //
+      "最後買價": "final_reveal_buying_price", //
+      "最後買量": "final_reveal_buying_volume", //
+      "最後賣價": "final_reveal_selling_price", //
+      "最後賣量": "final_reveal_selling_volume", //
+      "漲跌(+/-)": "change",
+      "漲跌": "price_difference", //
+    };
+    Map<String, int> enToIndex = {};
+    for (int i = 0; i < fields.length; i++) {
+      final key = chtToEn[fields[i].toString().trim().split("<")[0]];
+      if (key != null) enToIndex[key] = i;
+    }
+    List<dynamic> data = tables[0]["data"];
+    List<Map<String, dynamic>> batch = [];
+    for (int j = 0; j < data.length; j++) {
+      final stock = StockParser.parse(data[j], enToIndex, date, true, type);
+      if (stock == null) {
+        continue;
+      }
+      batch.add(stock.toJson());
+      if (batch.length >= 500) {
+        await api.post('stock/insert_stock_daily_price_batch', {
+          'table_name': TableNames.stockDailyPrice,
+          'stocks': batch,
+        });
+        batch.clear();
+      }
+    }
+    if (batch.isNotEmpty) {
+      await api.post('stock/insert_stock_daily_price_batch', {
+        'table_name': TableNames.stockDailyPrice,
+        'stocks': batch,
+      });
+      batch.clear();
+    }
+    await api.post('stock/insert_stock_date_batch', {
+      'table_name': TableNames.stockDate,
+      'stocks': [
+        {
+          'date': date.toUtc().toIso8601String(),
+          'type': type,
+        }
+      ],
+    });
   }
 
-  Future<void> insertStock(ModelStock stock) async {
-    await client.from(TableNames.stockDailyPrice).insert(stock.toJson());
+  Future<bool> isDataExist(DateTime date, String type) async {
+    final result = await api.post('stock/check_stock_date', {
+      'table_name': TableNames.stockDate,
+      'date': date.toIso8601String(),
+      'type': type,
+    });
+    return result["status"] == true;
   }
 
   Future<List<ModelStock>> getByDate(DateTime date) async {
-    final result = await client
-        .from(TableNames.stockDailyPrice)
-        .select('*')
-        .eq('date', date)
-        .gte('traded_number', 20000000)
-        .gte('closing_price', 12)
-        .lt('closing_price', 1000);
+    final result = await api.post('stock/select_stock_daily_price_by_date', {
+      'table_name': TableNames.stockDailyPrice,
+      'date': date.toIso8601String(),
+      'traded_number': 20000000,
+    });
 
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
   }
 
   Future<DateTime?> getLatestDate() async {
-    final result = await client
-        .from(TableNames.stockDate)
-        .select('date')
-        .eq('type', "update_stock_technical_for_date")
-        .order('date', ascending: false)
-        .limit(1);
-
-    if (result.isEmpty) return null;
-
-    return DateTime.parse(result.first['date']);
+    final result = await api.post('stock/select_latest_stock_date', {
+      'table_name': TableNames.stockDate,
+      'type': "update_stock_technical_for_date"
+    });
+    if (result["date"] == null) {
+      return null;
+    }
+    return DateTime.parse(result["date"]);
   }
 
   Future<List<ModelStock>> getSimpleStrategy() async {
@@ -285,28 +278,20 @@ class ServiceStock {
 
   Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
     // 檢查同一天是否已經有資料
-    final existing = await client
-        .from('stock_predicted')
-        .select('data')
-        .eq('date', date.toIso8601String().substring(0, 10))
-        .maybeSingle();
-
+    final existing = await api.post('stock/select_stock_predicted', {
+      'table_name': TableNames.stockPredicted,
+      'date': date.toIso8601String()
+    });
     dynamic tmp;
-    if (existing != null) {
-      tmp = existing["data"];
-    } else {
-      final response =
-          await http.get(Uri.parse('https://life-pilot.onrender.com/predict'));
-
-      if (response.statusCode == 200) {
-        // 成功取得 JSON，解析成 List<ModelStock>
-        tmp = jsonDecode(response.body);
-      }
-    }
-    if (tmp == null || tmp is! List) {
+    if (existing["data"] == null) {
+      api.post('stock/update_model', {});
       return [];
     }
-    return tmp.map((json) => ModelStock.fromJson(json)).toList();
+    tmp = existing["data"];
+    return (tmp as List)
+        .map<ModelStock>(
+            (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
   }
 
   List<ModelStock> _rankStocks(List<ModelStock> list) {
@@ -335,7 +320,8 @@ class ServiceStock {
           ma5 >= ma20 && // 4️⃣ 均線多頭
           rsi >= 50 &&
           s.closingPrice >= 12 &&
-          s.tradedNumber != null && s.tradedNumber! >= 20000000;
+          s.tradedNumber != null &&
+          s.tradedNumber! >= 20000000;
 
       //&& rsi < 80; //排除假突破與過熱
 
@@ -353,31 +339,32 @@ class ServiceStock {
       high20        → 過去20日最高收盤價
       pctChange     → 當日漲幅 %
       vol5        → 最近5日平均成交量*/
-    final result = await client
-        .from('stock_daily_price')
-        .select('*')
-        .eq('date', date)
-        .or('ma5.is.null,ma20.is.null,high20.is.null,vol5.is.null,rsi.is.null')
-        .count(); // ✅ 只返回 count，不取資料
-    stocksLength = (result.count / batch).ceil();
-    if (result.count == 0) {
+    final result = await api.post('stock/select_stock_quantitative_count', {
+      'table_name': TableNames.stockDailyPrice,
+      'date': date.toUtc().toIso8601String()
+    });
+    if (result["count"] == 0) {
       return;
     }
 
+    stocksLength = (result["count"] / batch).ceil();
     for (int i = 0; i < stocksLength!; i++) {
-      await client.rpc(
-        'update_stock_technical_for_date',
-        params: {
-          'p_date': date.toIso8601String().substring(0, 10),
-          'p_start': 1,
-          'p_end': i == stocksLength! - 1 ? result.count - i * batch : batch,
-        },
-      );
+      await api.post('stock/update_stock_technical_for_date', {
+        'p_date': date.toUtc().toIso8601String(),
+        'p_start': 1,
+        'p_end': i == stocksLength! - 1 ? result["count"] - i * batch : batch,
+      });
     }
-    await client.from(TableNames.stockDate).insert({
-      "type": 'update_stock_technical_for_date',
-      "date": date.toIso8601String().substring(0, 10)
+    await api.post('stock/insert_stock_date_batch', {
+      'table_name': TableNames.stockDate,
+      'stocks': [
+        {
+          'date': date.toUtc().toIso8601String(),
+          'type': 'update_stock_technical_for_date',
+        }
+      ],
     });
+    await api.post('stock/update_model', {});
   }
 }
 
