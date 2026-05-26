@@ -84,8 +84,10 @@ class ModelStock {
       'high20': high20,
       'pct_change': pctChange,
       'vol5': vol5,
-      'rsi': rsi
-      //'pred_pct': predPct,
+      'rsi': rsi,
+      'predPct': predPct,
+      'signal': signal,
+      'signalText': signalText
     };
   }
 
