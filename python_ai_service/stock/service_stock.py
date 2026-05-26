@@ -205,7 +205,6 @@ def route_insert_stock_predicted(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     stocks = payload.get("stocks")
-    print("start")
     db: Session = SessionLocal()
     try:
         StockPredictedModel = create_stock_predicted_model(table_name)
@@ -214,7 +213,6 @@ def route_insert_stock_predicted(payload: dict = Body(...)):
             data=stocks,
             created_at=datetime.now()
         )
-        print(row)
         db.add(row)
         db.commit()
         return {"status": "ok"}
