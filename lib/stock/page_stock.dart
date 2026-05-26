@@ -130,7 +130,7 @@ class PageStock extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "${DateFormat('M/d').format(stock.date)} ${stock.level}",
+                            "${DateFormat('M/d').format(stock.date)} ${stock.level ?? ''}",
                           ),
                         ],
                       ),

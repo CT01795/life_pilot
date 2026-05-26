@@ -34,6 +34,7 @@ class ControllerStock extends ChangeNotifier {
     
     // 3️⃣ 更新完成後，再抓一次（刷新畫面🔥）
     stocks = await service.getSimpleStrategy("Updated 3");
+    loading = false;
     notifyListeners();
   }
 }
