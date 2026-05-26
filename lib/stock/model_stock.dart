@@ -86,6 +86,35 @@ class ModelStock {
       'high20': high20,
       'pct_change': pctChange,
       'vol5': vol5,
+      'rsi': rsi
+    };
+  }
+
+  Map<String, dynamic> toJsonPred() {
+    return {
+      'date': date.toUtc().toIso8601String(),
+      'security_code': securityCode,
+      'security_name': securityName,
+      'traded_number': tradedNumber,
+      'transactions_number': transactionsNumber,
+      'transaction_amount': transactionAmount,
+      'opening_price': openingPrice,
+      'highest_price': highestPrice,
+      'lowest_price': lowestPrice,
+      'closing_price': closingPrice,
+      'change': change,
+      'price_difference': priceDifference,
+      'final_reveal_buying_price': finalRevealBuyingPrice,
+      'final_reveal_buying_volume': finalRevealBuyingVolume,
+      'final_reveal_selling_price': finalRevealSellingPrice,
+      'final_reveal_selling_volume': finalRevealSellingVolume,
+      'pe_ratio': peRatio,
+      'source': source,
+      'ma5': ma5,
+      'ma20': ma20,
+      'high20': high20,
+      'pct_change': pctChange,
+      'vol5': vol5,
       'rsi': rsi,
       'pred_pct': predPct,
       'signal': signal,
