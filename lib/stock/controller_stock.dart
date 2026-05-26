@@ -15,7 +15,12 @@ class ControllerStock extends ChangeNotifier {
     notifyListeners();
 
     // 1️⃣ 先顯示現有資料（快速）
-    stocks = await service.getSimpleStrategy();
+    stocks = await service.getSimpleStrategySupabase("From Supabase 1");
+    loading = false;
+    notifyListeners();
+
+    // 1️⃣ 先顯示現有資料（快速）
+    stocks = await service.getSimpleStrategy("Updating 2");
     loading = false;
     notifyListeners();
 
@@ -23,7 +28,7 @@ class ControllerStock extends ChangeNotifier {
     await service.loadRawData();
 
     // 3️⃣ 更新完成後，再抓一次（刷新畫面🔥）
-    stocks = await service.getSimpleStrategy();
+    stocks = await service.getSimpleStrategy("Updated 3");
     notifyListeners();
   }
 }
