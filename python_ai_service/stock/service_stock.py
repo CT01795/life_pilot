@@ -69,13 +69,26 @@ def route_insert_stock_daily_price_batch(payload: dict = Body(...)):
     db: Session = SessionLocal()
     try:
       StockModel = create_stock_model(table_name)
+      # 取得 model 欄位
+      model_columns = StockModel.__table__.columns.keys()
+      objects = []
       for stock_data in stocks_data:
-          if stock_data.get("date"):
-              stock_data["date"] = datetime.fromisoformat(stock_data["date"]).astimezone(ZoneInfo("UTC"))
-      objects = [
-            StockModel(**stock_data)
-            for stock_data in stocks_data
-        ]
+        # 過濾不存在欄位
+        filtered_data = {
+            k: v
+            for k, v in stock_data.items()
+            if k in model_columns
+        }
+        # 處理 date
+        if filtered_data.get("date"):
+            filtered_data["date"] = (
+                datetime.fromisoformat(
+                    filtered_data["date"]
+                ).astimezone(ZoneInfo("UTC"))
+            )
+        objects.append(
+            StockModel(**filtered_data)
+        )
       db.add_all(objects) 
       db.commit()
       return {"status": "ok"}
