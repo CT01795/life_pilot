@@ -220,7 +220,7 @@ class ServiceStock {
     return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
   }
 
-  Future<DateTime?> getLatestDate() async {
+  Future<DateTime?> getLatestDateMac() async {
     final result = await api.post('stock/select_latest_stock_date', {
       'table_name': TableNames.stockDate,
       'type': "update_stock_technical_for_date"
@@ -231,50 +231,86 @@ class ServiceStock {
     return DateTime.parse(result["date"]);
   }
 
-  Future<List<ModelStock>> getSimpleStrategy() async {
-    // 1️⃣ 找最新日期
-    final latestDate = await getLatestDate();
-    if (latestDate == null) {
-      return [];
+  Future<DateTime?> getLatestDate() async {
+    final result = await apiSupabase.post('stock/select_latest_stock_date', {
+      'table_name': TableNames.stockDate,
+      'type': "update_stock_technical_for_date"
+    });
+    if (result["date"] == null) {
+      return null;
     }
-
-    // 2️⃣ 抓該日全部股票
-    List<ModelStock> allStocks = await getByDate(latestDate);
-
-    /*close >= high20	今日收盤突破過去 20 日高點 → 剛起漲
-      volume >= vol5*1.5	成交量放大 → 市場有力道
-      pct_change >= 2	當日漲幅 >2% → 明顯起漲
-      ma5 >= ma20	均線多頭排列 → 趨勢向上*/
-    List<ModelStock> risingStocks = filterRisingStocks(allStocks);
-
-    // 4️⃣ 合併（避免重複）
-    final map = {
-      for (var s in risingStocks) s.securityCode: s,
-    };
-
-    try {
-      final apiStocks = await fetchStocksFromApi(latestDate);
-
-      for (var s in apiStocks) {
-        s.securityName = "FastAPI: ${s.securityName}";
-        map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
-      }
-    } catch (ex) {
-      logger.e(ex);
-    }
-
-    // 👉 下一步：量化排序
-    List<ModelStock> ranked = _rankStocks(allStocks);
-
-    for (var s in ranked.take(200)) {
-      map.putIfAbsent(s.securityCode, () => s);
-    }
-
-    stocks = map.values.toList();
-    return stocks;
+    return DateTime.parse(result["date"]);
   }
 
-  Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
+  Future<List<ModelStock>> getSimpleStrategy() async {
+    try {
+      // 1️⃣ 找最新日期
+      final latestDate = await getLatestDateMac();
+      if (latestDate == null) {
+        return [];
+      }
+
+      // 2️⃣ 抓該日全部股票
+      List<ModelStock> allStocks = await getByDate(latestDate);
+
+      /*close >= high20	今日收盤突破過去 20 日高點 → 剛起漲
+        volume >= vol5*1.5	成交量放大 → 市場有力道
+        pct_change >= 2	當日漲幅 >2% → 明顯起漲
+        ma5 >= ma20	均線多頭排列 → 趨勢向上*/
+      List<ModelStock> risingStocks = filterRisingStocks(allStocks);
+
+      // 4️⃣ 合併（避免重複）
+      Map<String, ModelStock> map = {
+        for (var s in risingStocks) s.securityCode: s,
+      };
+
+      try {
+        List<ModelStock> apiStocks = await fetchStocksFromApiMac(latestDate);
+
+        for (var s in apiStocks) {
+          s.securityName = "FastAPI: ${s.securityName}";
+          map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+        }
+      } catch (ex) {
+        logger.e(ex);
+      }
+
+      // 👉 下一步：量化排序
+      List<ModelStock> ranked = _rankStocks(allStocks);
+
+      for (var s in ranked.take(200)) {
+        map.putIfAbsent(s.securityCode, () => s);
+      }
+
+      stocks = map.values.toList();
+      return stocks;
+    } catch (ex) {
+      logger.e(ex);
+      // 1️⃣ 找最新日期
+      final latestDate = await getLatestDate();
+      if (latestDate == null) {
+        return [];
+      }
+
+      Map<String, ModelStock> map = {};
+
+      try {
+        List<ModelStock> apiStocks = await fetchStocksFromApi(latestDate);
+
+        for (var s in apiStocks) {
+          s.securityName = "FastAPI: ${s.securityName}";
+          map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+        }
+      } catch (ex) {
+        logger.e(ex);
+      }
+
+      stocks = map.values.toList();
+      return stocks;
+    }
+  }
+
+  Future<List<ModelStock>> fetchStocksFromApiMac(DateTime date) async {
     // 檢查同一天是否已經有資料
     final existing = await api.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
@@ -283,6 +319,24 @@ class ServiceStock {
     dynamic tmp;
     if (existing["data"] == null) {
       api.post('stock/update_model', {});
+      return [];
+    }
+    tmp = existing["data"];
+    return (tmp as List)
+        .map<ModelStock>(
+            (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
+  }
+
+  Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
+    // 檢查同一天是否已經有資料
+    final existing = await apiSupabase.post('stock/select_stock_predicted', {
+      'table_name': TableNames.stockPredicted,
+      'date': date.toIso8601String()
+    });
+    dynamic tmp;
+    if (existing["data"] == null) {
+      //api.post('stock/update_model', {});
       return [];
     }
     tmp = existing["data"];
@@ -363,6 +417,40 @@ class ServiceStock {
       ],
     });
     await api.post('stock/update_model', {});
+
+    await apiSupabase.post('stock/insert_stock_date_batch', {
+      //TODO
+      'table_name': TableNames.stockDate,
+      'stocks': [
+        {
+          'date': date.toUtc().toIso8601String(),
+          'type': 'update_stock_technical_for_date',
+        }
+      ],
+    });
+
+    try {
+      List<ModelStock> apiStocks = await fetchStocksFromApiMac(date);
+      await insertFromApi(apiStocks, date);
+    } catch (ex) {
+      logger.e(ex);
+    }
+  }
+
+  Future<void> insertFromApi(List<ModelStock> stocks, DateTime date) async {
+    // 檢查同一天是否已經有資料
+    final existing = await apiSupabase.post('stock/select_stock_predicted', {
+      'table_name': TableNames.stockPredicted,
+      'date': date.toIso8601String()
+    });
+    if (existing["data"] != null) {
+      return;
+    }
+    await apiSupabase.post('stock/insert_stock_predicted', { //TODO 寫這個chanel
+      'table_name': TableNames.stockPredicted,
+      'date': date.toIso8601String(),
+      'stocks': stocks.map((stock) => stock.toJson()).toList()
+    });
   }
 }
 
