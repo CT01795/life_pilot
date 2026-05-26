@@ -195,6 +195,35 @@ def route_select_stock_predicted(payload: dict = Body(...)):
       db.close()
 
 @router.post(
+      "/stock/insert_stock_predicted"
+      , summary="新增模型預測結果"
+      , description="""新增模型預測結果, 參數
+        { 'table_name': table_name
+        , 'date': date}""")   
+def route_insert_stock_predicted(payload: dict = Body(...)):
+    table_name = payload.get("table_name")
+    date = datetime.fromisoformat(payload.get("date"))
+    stocks = payload.get("stocks")
+    db: Session = SessionLocal()
+    try:
+        StockPredictedModel = create_stock_predicted_model(table_name)
+        rows = []
+        for stock in stocks:
+            row = StockPredictedModel(
+                date=date,
+                data=stock["data"],
+                created_at=datetime.now()
+            )
+            rows.append(row)
+        db.add_all(rows)
+        db.commit()
+        return {
+            "inserted": len(rows)
+        }
+    finally:
+        db.close()
+
+@router.post(
       "/stock/select_stock_quantitative_count"
       , summary="量化筆數"
       , description="""量化筆數, 參數
