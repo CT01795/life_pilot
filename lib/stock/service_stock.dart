@@ -454,7 +454,7 @@ class ServiceStock {
     await apiSupabase.post('stock/insert_stock_predicted', {
       'table_name': TableNames.stockPredicted,
       'date': date.toIso8601String(),
-      'stocks': stocks.map((stock) => stock.toJson()).toList()
+      'stocks': stocks.map((stock) => stock.toJsonPred()).toList()
     });
   }
 }
