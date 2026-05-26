@@ -97,7 +97,8 @@ def route_insert_stock_date_batch(payload: dict = Body(...)):
       for stock_data in stocks_data:
             if stock_data.get("date"):
                 stock_data["date"] = datetime.fromisoformat(
-                    stock_data["date"]).astimezone(ZoneInfo("UTC"))
+                    stock_data["date"].replace("Z", "+00:00")
+                )
       objects = [
             StockModel(**stock_data)
             for stock_data in stocks_data
@@ -182,7 +183,7 @@ def route_select_latest_stock_date(payload: dict = Body(...)):
         , 'date': date}""")   
 def route_select_stock_predicted(payload: dict = Body(...)):
     table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
+    date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     db: Session = SessionLocal()
     try:
       StockPredictedModel = create_stock_predicted_model(table_name)
@@ -202,24 +203,21 @@ def route_select_stock_predicted(payload: dict = Body(...)):
         , 'date': date}""")   
 def route_insert_stock_predicted(payload: dict = Body(...)):
     table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
+    date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     stocks = payload.get("stocks")
+    print("start")
     db: Session = SessionLocal()
     try:
         StockPredictedModel = create_stock_predicted_model(table_name)
-        rows = []
-        for stock in stocks:
-            row = StockPredictedModel(
-                date=date,
-                data=stock["data"],
-                created_at=datetime.now()
-            )
-            rows.append(row)
-        db.add_all(rows)
+        row = StockPredictedModel(
+            date=date,
+            data=stocks,
+            created_at=datetime.now()
+        )
+        print(row)
+        db.add(row)
         db.commit()
-        return {
-            "inserted": len(rows)
-        }
+        return {"status": "ok"}
     finally:
         db.close()
 

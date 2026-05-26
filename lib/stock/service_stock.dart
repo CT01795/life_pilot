@@ -266,7 +266,6 @@ class ServiceStock {
 
       try {
         List<ModelStock> apiStocks = await fetchStocksFromApiMac(latestDate);
-
         for (var s in apiStocks) {
           s.securityName = "FastAPI: ${s.securityName}";
           map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
@@ -419,7 +418,6 @@ class ServiceStock {
     await api.post('stock/update_model', {});
 
     await apiSupabase.post('stock/insert_stock_date_batch', {
-      //TODO
       'table_name': TableNames.stockDate,
       'stocks': [
         {
@@ -446,7 +444,7 @@ class ServiceStock {
     if (existing["data"] != null) {
       return;
     }
-    await apiSupabase.post('stock/insert_stock_predicted', { //TODO 寫這個chanel
+    await apiSupabase.post('stock/insert_stock_predicted', { 
       'table_name': TableNames.stockPredicted,
       'date': date.toIso8601String(),
       'stocks': stocks.map((stock) => stock.toJson()).toList()
