@@ -27,10 +27,8 @@ router = APIRouter()
         {'table_name': table_name}""")
 def route_fetch_templates(payload: dict = Body(...)):
     table_name = payload.get("table_name")
-    print(table_name)
     db: Session = SessionLocal()
     try:
-      print("try")
       PlanTemplateModel = create_plan_template_model(table_name)
       query = db.query(PlanTemplateModel).filter(PlanTemplateModel.is_valid == True).order_by(PlanTemplateModel.created_at)
       planList = query.all()
@@ -180,7 +178,6 @@ def route_insert_plan_questions(payload: dict = Body(...)):
         'sort_order': sort_order
       }
       question = PlanQuestionModel(**question_data)
-      print(question_data)
       db.add(question)
       db.commit()
       return model_to_dict(question)

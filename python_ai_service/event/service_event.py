@@ -68,14 +68,12 @@ def route_cleanup_recommended_events(payload: dict = Body(...)):
 def route_get_filtered(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     query = f"SELECT row_to_json(t)  FROM get_filtered_{table_name}(:payload) t"
-    print(json.dumps(payload))
     with engine.begin() as conn:
         result = conn.execute(
             text(query),
             {"payload": json.dumps(payload)}
         )
         rows = [r[0] for r in result.fetchall()]
-        print(rows)
         return rows
 
 @router.post(
