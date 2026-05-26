@@ -123,6 +123,17 @@ class PageStock extends StatelessWidget {
                           ),
                         ],
                       ),
+                      Gaps.h8,
+
+                      /// 🔹 第四行：其他資訊
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "${DateFormat('M/d').format(stock.date)} ${stock.level}",
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

@@ -242,7 +242,7 @@ class ServiceStock {
     return DateTime.parse(result["date"]);
   }
 
-  Future<List<ModelStock>> getSimpleStrategy() async {
+  Future<List<ModelStock>> getSimpleStrategy(String level) async {
     try {
       // 1️⃣ 找最新日期
       final latestDate = await getLatestDateMac();
@@ -267,8 +267,9 @@ class ServiceStock {
       try {
         List<ModelStock> apiStocks = await fetchStocksFromApiMac(latestDate);
         for (var s in apiStocks) {
-          s.securityName = "FastAPI: ${s.securityName}";
-          map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
+          s.securityName = "API: ${s.securityName}";
+          s.level = level;
+          map.putIfAbsent("API: ${s.securityCode}", () => s);
         }
       } catch (ex) {
         logger.e(ex);
@@ -286,27 +287,33 @@ class ServiceStock {
     } catch (ex) {
       logger.e(ex);
       // 1️⃣ 找最新日期
-      final latestDate = await getLatestDate();
-      if (latestDate == null) {
-        return [];
-      }
-
-      Map<String, ModelStock> map = {};
-
-      try {
-        List<ModelStock> apiStocks = await fetchStocksFromApi(latestDate);
-
-        for (var s in apiStocks) {
-          s.securityName = "FastAPI: ${s.securityName}";
-          map.putIfAbsent("FastAPI: ${s.securityCode}", () => s);
-        }
-      } catch (ex) {
-        logger.e(ex);
-      }
-
-      stocks = map.values.toList();
-      return stocks;
+      return getSimpleStrategySupabase("$level (lost server)");
     }
+  }
+
+  Future<List<ModelStock>> getSimpleStrategySupabase(String level) async {
+    // 1️⃣ 找最新日期
+    final latestDate = await getLatestDate();
+    if (latestDate == null) {
+      return [];
+    }
+
+    Map<String, ModelStock> map = {};
+
+    try {
+      List<ModelStock> apiStocks = await fetchStocksFromApi(latestDate);
+
+      for (var s in apiStocks) {
+        s.securityName = "API: ${s.securityName}";
+        s.level = level;
+        map.putIfAbsent("API: ${s.securityCode}", () => s);
+      }
+    } catch (ex) {
+      logger.e(ex);
+    }
+
+    stocks = map.values.toList();
+    return stocks;
   }
 
   Future<List<ModelStock>> fetchStocksFromApiMac(DateTime date) async {
@@ -444,7 +451,7 @@ class ServiceStock {
     if (existing["data"] != null) {
       return;
     }
-    await apiSupabase.post('stock/insert_stock_predicted', { 
+    await apiSupabase.post('stock/insert_stock_predicted', {
       'table_name': TableNames.stockPredicted,
       'date': date.toIso8601String(),
       'stocks': stocks.map((stock) => stock.toJson()).toList()
