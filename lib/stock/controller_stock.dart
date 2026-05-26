@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
+import 'package:life_pilot/utils/logger.dart';
 
 class ControllerStock extends ChangeNotifier {
   final ServiceStock service;
@@ -24,9 +25,13 @@ class ControllerStock extends ChangeNotifier {
     loading = false;
     notifyListeners();
 
-    // 2️⃣ 背景更新資料（不阻塞 UI）
-    await service.loadRawData();
-
+     try{
+      // 2️⃣ 背景更新資料（不阻塞 UI）
+      await service.loadRawData();
+    } catch (ex) {
+      logger.e(ex);
+    }
+    
     // 3️⃣ 更新完成後，再抓一次（刷新畫面🔥）
     stocks = await service.getSimpleStrategy("Updated 3");
     notifyListeners();
