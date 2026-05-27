@@ -435,7 +435,7 @@ class ServiceStock {
     });
 
     try {
-      List<ModelStock> apiStocks = await fetchStocksFromApiMac(date);
+      List<ModelStock> apiStocks = await fetchStocksFromApiMac(date.toUtc());
       await insertFromApi(apiStocks, date);
     } catch (ex) {
       logger.e(ex);
@@ -446,14 +446,14 @@ class ServiceStock {
     // 檢查同一天是否已經有資料
     final existing = await apiSupabase.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
-      'date': date.toIso8601String()
+      'date': date.toUtc().toIso8601String()
     });
     if (existing["data"] != null) {
       return;
     }
     await apiSupabase.post('stock/insert_stock_predicted', {
       'table_name': TableNames.stockPredicted,
-      'date': date.toIso8601String(),
+      'date': date.toUtc().toIso8601String(),
       'stocks': stocks.map((stock) => stock.toJsonPred()).toList()
     });
   }
