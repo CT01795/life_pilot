@@ -120,8 +120,8 @@ def train_and_save_model():
         # ✅ 先做風險過濾（放這裡！！）
         #df = df[df['pct_change'] > -9]   # 避免暴跌股
         # df = df[df['ma_diff'] > 0]       # 避免空頭趨勢
-        df = df[df['traded_number'] > 20000000]
-        df = df[df['closing_price'] > 10]
+        df = df[df['traded_number'] > 35000000]
+        df = df[df['closing_price'] > 18]
         df['date'] = pd.to_datetime(df['date'], utc=True)
         latest_date = df['date'].max()
         df = df[df['date'] == latest_date] # 取最新的一天
@@ -137,14 +137,14 @@ def train_and_save_model():
         df['pred_prob'] = model.predict_proba(X)[:, 1]
         df['pred_pct'] = df['pred_prob']
         # ===== 新增這段 =====
-        BUY_THRESHOLD = 0.35
+        BUY_THRESHOLD = 0.5
 
         df['signal'] = 0
 
         df.loc[
             (df['pred_pct'] >= BUY_THRESHOLD) &
-            (df['ma5'] > df['ma20']) &
-            (df['rsi'] < 75),
+            (df['ma5'] > df['ma20']), #&
+            #(df['rsi'] < 75),
             'signal'
         ] = 1
 

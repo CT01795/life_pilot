@@ -377,9 +377,9 @@ class ServiceStock {
           pct >= 2 && // 3️⃣ 漲幅 > 2%
           ma5 >= ma20 && // 4️⃣ 均線多頭
           rsi >= 50 &&
-          s.closingPrice >= 12 &&
+          s.closingPrice >= 20 &&
           s.tradedNumber != null &&
-          s.tradedNumber! >= 20000000;
+          s.tradedNumber! >= 35000000;
 
       //&& rsi < 80; //排除假突破與過熱
 
