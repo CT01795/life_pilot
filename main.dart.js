@@ -161719,7 +161719,7 @@ m=a.cy
 if(m==null)m=0
 l=a.fr
 if(l==null)l=0
-k=j>=i&&p>=s*1.5&&o>=2&&n>=m&&l>=50&&j>=12&&!q&&r>=2e7
+k=j>=i&&p>=s*1.5&&o>=2&&n>=m&&l>=50&&j>=20&&!q&&r>=35e6
 return k},
 $S:1121}
 B.b2b.prototype={
