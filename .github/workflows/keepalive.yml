@@ -1,0 +1,12 @@
+name: keep-alive
+
+on:
+  schedule:
+    - cron: "*/13 * * * *"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call health endpoint
+        run: curl https://life-pilot.onrender.com/health

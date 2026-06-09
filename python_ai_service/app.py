@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import sys
 
@@ -35,6 +36,14 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "time": datetime.now().isoformat()
+    }
 
 @app.get("/", summary="根節點", description="根節點，相當於網址 http://127.0.0.1:8000/ 的畫面訊息")
 def root():
