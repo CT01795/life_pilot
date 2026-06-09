@@ -153,6 +153,7 @@ def route_select_stock_daily_price_by_date(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date"))
     traded_number = payload.get("traded_number")
     db: Session = SessionLocal()
+    print("DB URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.traded_number >= traded_number).filter(StockModel.closing_price >= 12).filter(StockModel.closing_price < 1000)
