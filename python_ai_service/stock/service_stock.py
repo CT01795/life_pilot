@@ -31,6 +31,7 @@ def route_delete_stock_daily_price(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
+    print("route_delete_stock_daily_price DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       db.query(StockModel).filter(StockModel.date <= date.date()).delete(synchronize_session=False)
@@ -49,6 +50,7 @@ def route_delete_stock_date(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
+    print("route_delete_stock_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       db.query(StockModel).filter(StockModel.date <= date.date()).delete(synchronize_session=False)
@@ -67,6 +69,7 @@ def route_insert_stock_daily_price_batch(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     stocks_data = payload.get("stocks")
     db: Session = SessionLocal()
+    print("route_insert_stock_daily_price_batch DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       # 取得 model 欄位
@@ -105,6 +108,7 @@ def route_insert_stock_date_batch(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     stocks_data = payload.get("stocks")
     db: Session = SessionLocal()
+    print("route_insert_stock_date_batch DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       for stock_data in stocks_data:
@@ -134,6 +138,7 @@ def route_check_stock_date(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date"))
     type = payload.get("type")
     db: Session = SessionLocal()
+    print("route_check_stock_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.type == type)
@@ -153,7 +158,7 @@ def route_select_stock_daily_price_by_date(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date"))
     traded_number = payload.get("traded_number")
     db: Session = SessionLocal()
-    print("DB URL =", engine.url)
+    print("route_select_stock_daily_price_by_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.traded_number >= traded_number).filter(StockModel.closing_price >= 12).filter(StockModel.closing_price < 1000)
@@ -174,6 +179,7 @@ def route_select_latest_stock_date(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     type = payload.get("type")
     db: Session = SessionLocal()
+    print("route_select_latest_stock_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(StockModel.type == type).order_by(StockModel.date.desc())
@@ -199,6 +205,7 @@ def route_select_stock_predicted(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     db: Session = SessionLocal()
+    print("route_select_stock_predicted DB_URL =", engine.url)
     try:
       print("select_stock_predicted")
       print(date)
@@ -222,6 +229,7 @@ def route_insert_stock_predicted(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     stocks = payload.get("stocks")
     db: Session = SessionLocal()
+    print("route_insert_stock_predicted DB_URL =", engine.url)
     try:
         StockPredictedModel = create_stock_predicted_model(table_name)
         row = StockPredictedModel(
@@ -245,6 +253,7 @@ def route_select_stock_quantitative_count(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
+    print("route_select_stock_quantitative_count DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(
@@ -273,6 +282,7 @@ def route_update_stock_technical_for_date(payload: dict = Body(...)):
     p_date = datetime.fromisoformat(payload.get("p_date")).astimezone(ZoneInfo("UTC"))
     p_start = payload.get("p_start")
     p_end = payload.get("p_end")
+    print("route_update_stock_technical_for_date DB_URL =", engine.url)
     with engine.begin() as conn:
         conn.execute(
             text("SELECT update_stock_technical_for_date(:p_date, :p_start, :p_end)"),
