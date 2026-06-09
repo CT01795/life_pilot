@@ -38,7 +38,8 @@ logging.basicConfig(
 )
 
 
-@app.api_route("/health", methods=["GET", "HEAD"])
+@app.get("/health")
+@app.head("/health")
 def health():
     return {
         "status": "ok",
