@@ -2,12 +2,15 @@ name: keep-alive
 
 on:
   schedule:
-    - cron: "*/13 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
-    
+
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - name: Call health endpoint
-        run: curl https://life-pilot.onrender.com/health
+        run: |
+          echo "Ping start"
+          curl -fsS --connect-timeout 5 --max-time 20 https://life-pilot.onrender.com/health || echo "fail"
+          echo "Ping done"
