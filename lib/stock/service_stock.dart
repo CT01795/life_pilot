@@ -21,11 +21,15 @@ class ServiceStock {
       'table_name': TableNames.stockDate,
       'date': cutoffDate.toIso8601String(),
     });
-    int checkDates = 5;
+    int checkDates = 4;
     if (today.month < 3) {
       checkDates = 12;
     }
-    for (int i = checkDates; i >= 1; i--) {
+    int minDayValue = 1;
+    if(DateTime.now().hour >=17){
+      minDayValue = 0;
+    }
+    for (int i = checkDates; i >= minDayValue; i--) {
       final targetDate = today.subtract(Duration(days: i));
       await loadRawDataTWSE(targetDate);
       await loadRawDataOTC(targetDate);

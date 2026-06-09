@@ -199,6 +199,8 @@ def route_select_stock_predicted(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     db: Session = SessionLocal()
     try:
+      print("select_stock_predicted")
+      print(date)
       StockPredictedModel = create_stock_predicted_model(table_name)
       result = db.query(StockPredictedModel).filter(func.date(StockPredictedModel.date) == date.date())
       stockPredicted = result.first()
