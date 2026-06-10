@@ -25,10 +25,11 @@ class ServiceStock {
     if (today.month < 3) {
       checkDates = 12;
     }
-    int minDayValue = 1;
-    if(DateTime.now().hour >=17){
-      minDayValue = 0;
-    }
+    int minDayValue = 0;
+    //int minDayValue = 1;
+    //if(DateTime.now().hour >=17){
+      //minDayValue = 0;
+    //}
     for (int i = checkDates; i >= minDayValue; i--) {
       final targetDate = today.subtract(Duration(days: i));
       await loadRawDataTWSE(targetDate);
@@ -288,8 +289,8 @@ class ServiceStock {
 
       stocks = map.values.toList();
       return stocks;
-    } catch (ex) {
-      logger.e(ex);
+    } catch (ex, stackTrace) {
+      logger.e(stackTrace);
       // 1️⃣ 找最新日期
       return getSimpleStrategySupabase("$level (lost server)");
     }
