@@ -17,7 +17,7 @@ def prepare_stock_data(df: pd.DataFrame, is_train=True) -> pd.DataFrame:
     """
     計算未來一週漲幅百分比並產生 target (1=未來一週漲幅 >=10%, 0=其他)
     """
-    df = df.sort_values(['security_code', 'date'])
+    df = df.sort_values(['security_code', 'date']).copy()
     
     if is_train:
         # 計算未來5個交易日的最高收盤價
@@ -50,29 +50,32 @@ def prepare_stock_data(df: pd.DataFrame, is_train=True) -> pd.DataFrame:
         # === 4️⃣ 移除不完整資料 ===
         df.dropna(subset=[
             'ma5','ma20','high20','vol5','rsi','pct_change',
-            'pct_change_3d','pct_change_5d','ma_diff','future_pct'
+            'pct_change_3d','pct_change_5d','ma_diff','future_pct',
+            'vol_ratio','price_drop_1d','distribution_flag'
         ], inplace=True)
     else:
         # === 4️⃣ 移除不完整資料 ===
         df.dropna(subset=[
             'ma5','ma20','high20','vol5','rsi','pct_change',
-            'pct_change_3d','pct_change_5d','ma_diff'
+            'pct_change_3d','pct_change_5d','ma_diff',
+            'vol_ratio','price_drop_1d','distribution_flag'
         ], inplace=True)
     return df
 
 def train_sell_model():
+    logging.info("train_sell_model started")
     df = pd.read_sql("""
         SELECT security_code, date, ma5, ma20, high20, vol5, rsi,
                pct_change, closing_price, traded_number
         FROM stock_daily_price
-        ORDER BY security_code, date
+        ORDER BY date, security_code
     """, engine)
 
     df = prepare_stock_data(df, is_train=False)
 
     # === SELL label（重點）===
     df['vol_ratio'] = df['traded_number'] / df['vol5']
-    df['price_drop'] = df.groupby('security_code')['closing_price'].pct_change()
+    df['price_drop_1d'] = df.groupby('security_code')['closing_price'].pct_change()
 
     df['future_return_3d'] = (
         df.groupby('security_code')['closing_price']
@@ -81,13 +84,13 @@ def train_sell_model():
     df['sell_target'] = (
         (df['ma5'] < df['ma20']) |
         (df['rsi'] > 85) |
-        ((df['vol_ratio'] > 2) & (df['price_drop'] < -0.03))
+        ((df['vol_ratio'] > 2) & (df['price_drop_1d'] < -0.03))
     ).astype(int)
 
     features = [
         'ma5','ma20','high20','vol5','rsi',
         'pct_change','pct_change_3d','pct_change_5d','ma_diff',
-        'vol_ratio','price_drop'
+        'vol_ratio','price_drop_1d','distribution_flag'
     ]
 
     df = df.dropna(subset=features + ['sell_target'])
@@ -104,6 +107,7 @@ def train_sell_model():
     )
 
     model.fit(X, y)
+    logging.info("train_sell_model ended")
     return model
 
 def train_model():
@@ -112,11 +116,13 @@ def train_model():
     query = """
     SELECT security_code, date, ma5, ma20, high20, vol5, rsi, pct_change, closing_price,traded_number
     FROM stock_daily_price
-    ORDER BY security_code, date
+    ORDER BY date, security_code
     """
     df = pd.read_sql(query, engine)
     # 計算 target
     df = prepare_stock_data(df, is_train=True)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values('date').copy()
     # 訓練資料
     features = [
         'ma5','ma20','high20','vol5','rsi','pct_change',
@@ -131,13 +137,23 @@ def train_model():
     df['target'] = ((df['future_pct'] > 3) & (df['distribution_flag'] == 0)).astype(int)
     #future_pct > 3%可能會漲 & distribution_flag = 1 爆量出貨 → 排除
     #df['target'] = ((df['future_pct'] > 3)).astype(int)
-    X = df[features]
-    y = df['target']
+    # 1️⃣ 先排序
+    df = df.sort_values('date').copy()
 
-    # ✅ Walk-Forward: 用前 80% 訓練，後 20% 測試，保留時間順序
-    split = int(len(df) * 0.8)
-    X_train, X_test = X.iloc[:split], X.iloc[split:]
-    y_train, y_test = y.iloc[:split], y.iloc[split:]
+    # 2️⃣ 用「日期切分」（關鍵）
+    unique_dates = df['date'].drop_duplicates().sort_values()
+
+    split_index = int(len(unique_dates) * 0.8)
+    split_date = unique_dates.iloc[split_index]
+
+    train_df = df[df['date'] < split_date]
+    test_df = df[df['date'] >= split_date]
+
+    X_train = train_df[features]
+    y_train = train_df['target']
+
+    X_test = test_df[features]
+    y_test = test_df['target']
 
     model = RandomForestClassifier(
         n_estimators=300,       # ✅ 增加樹的數量
@@ -161,8 +177,9 @@ def train_and_save_model():
     try:
         logging.info("train_and_save_model started")
         model = train_model()
-        model2 = train_sell_model()
         logging.info("train_and_save_model model get")
+        model2 = train_sell_model()
+        logging.info("train_and_save_model model2 get")
 
         # 取得最新日期資料
         query = """
@@ -300,51 +317,3 @@ def train_and_save_model():
         logging.info(f"Error during training: {e}")
     finally:
         logging.info("train_and_save_model ended")
-        
-def backtest_model(model, df, features):
-    df = df.copy()
-
-    COST = 0.003        # ✅ 單邊 0.3% 交易成本（含稅券商）
-    BUY_THRESHOLD = 0.35
-
-    df['pred_prob'] = model.predict_proba(df[features])[:, 1]
-    df['signal'] = (df['pred_prob'] >= BUY_THRESHOLD).astype(int)
-    df = df.sort_values(['security_code', 'date'])
-
-    trades = []
-
-    for stock, g in df.groupby('security_code'):
-        g = g.reset_index(drop=True)
-        in_position = False     # ✅ 避免重複買入同一檔
-        for i in range(len(g) - 5):
-            if g.loc[i, 'signal'] == 1 and not in_position:
-
-                buy_price = g.loc[i, 'closing_price']
-                sell_price = g.loc[i + 5, 'closing_price']
-
-                # ✅ 扣除交易成本
-                ret = (sell_price / buy_price) - 1 - COST * 2
-
-                trades.append({
-                    "trade_date": g.loc[i, 'date'],   # 或 sell_date，看你定義
-                    "stock_id": stock,
-                    "stock_name": g.loc[i, 'security_name'],
-                    "entry_price": buy_price,
-                    "exit_price": sell_price,
-                    "buy_date": str(g.loc[i, 'date']),
-                    "sell_date": str(g.loc[i + 5, 'date']),
-                    "return": ret,
-                    "holding_days": 5
-                })
-                in_position = True
-            elif in_position and i % 5 == 0:
-                in_position = False     # ✅ 持倉 5 天後解鎖
-    trades_df = pd.DataFrame(trades)
-    if not trades_df.empty:
-        # ✅ 印出基本回測統計
-        logging.info(f"總交易次數: {len(trades_df)}")
-        logging.info(f"勝率: {(trades_df['return'] > 0).mean():.2%}")
-        logging.info(f"平均報酬: {trades_df['return'].mean():.2%}")
-        logging.info(f"最大虧損: {trades_df['return'].min():.2%}")
-
-    return trades_df
