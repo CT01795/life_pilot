@@ -10,7 +10,7 @@ import sys
 from fastapi import APIRouter, BackgroundTasks, Body
 from config import engine, SessionLocal
 from utils_service.utils import model_to_dict
-from stock.train_model import prepare_stock_data, backtest_model, train_and_save_model, train_model
+from stock.train_model import train_and_save_model
 from stock.model_stock_predicted import create_stock_predicted_model
 from stock.model_stock import create_stock_model
 
@@ -254,6 +254,7 @@ def route_select_stock_quantitative_count(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
     print("route_select_stock_quantitative_count DB_URL =", engine.url)
+    print("date =", date)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(
@@ -308,54 +309,7 @@ def route_update_model(background_tasks: BackgroundTasks):
       , summary="模型回測"
       , description="模型回測")
 def route_backtest_model():
-    try:
-        model = train_model()
-
-        # 取得最新日期資料
-        query = """
-            SELECT *
-            FROM stock_daily_price
-            WHERE date >= (SELECT MAX(date) FROM stock_date WHERE type ='update_stock_technical_for_date') - INTERVAL '20 days'
-            AND ma5 IS NOT NULL AND ma20 IS NOT NULL AND high20 IS NOT NULL
-            AND vol5 IS NOT NULL AND rsi IS NOT NULL ORDER BY date desc;
-        """
-        df = pd.read_sql(query, engine)
-        if df.empty:
-            return {"stocks": [], "message": "No data available"}
-
-        df = prepare_stock_data(df, is_train=False)
-
-        # 👉 特徵
-        features = [
-            'ma5','ma20','high20','vol5','rsi','pct_change',
-            'pct_change_3d','pct_change_5d','ma_diff'
-        ]
-    
-        df = df.dropna(subset=features)
-        logging.info("backtest_model started")
-        trades = backtest_model(model, df, features)
-        if trades.empty:
-            return {"message": "No trades"}
-        logging.info("backtest_model ended")
-
-        insert_sql = text("""
-            INSERT INTO stock_backtest (
-                trade_date, stock_id, stock_name, entry_price, exit_price, buy_date, sell_date, return, holding_days
-            ) VALUES (
-                :trade_date, :stock_id, :stock_name, :entry_price, :exit_price, :buy_date, :sell_date, :return, :holding_days
-            )
-            ON CONFLICT (trade_date, stock_id) DO NOTHING
-        """)
-
-        batch_size = 1000
-
-        for i in range(0, len(trades), batch_size):
-            batch = trades.iloc[i:i+batch_size]
-            with engine.begin() as conn:
-                conn.execute(insert_sql, batch.to_dict(orient="records"))
-    except Exception as e:
-        return f"Error during Inserted: {i + len(batch)} rows"
-    return "backtest_model OK"
+    return {"stocks": [], "message": "No data available"}
 
 @router.post(
       "/stock/predict"
