@@ -21,19 +21,18 @@ class ServiceStock {
       'table_name': TableNames.stockDate,
       'date': cutoffDate.toIso8601String(),
     });
-    int checkDates = 4;
-    if (today.month < 3) {
-      checkDates = 12;
-    }
+    int checkDates = 2;
     int minDayValue = 0;
     //int minDayValue = 1;
     //if(DateTime.now().hour >=17){
-      //minDayValue = 0;
+    //minDayValue = 0;
     //}
     for (int i = checkDates; i >= minDayValue; i--) {
-      final targetDate = today.subtract(Duration(days: i));
+      DateTime targetDate = today.subtract(Duration(days: i));
       await loadRawDataTWSE(targetDate);
+      await loadStockInstitutionalTWSE(targetDate);
       await loadRawDataOTC(targetDate);
+      await loadStockInstitutionalOTC(targetDate);
       await quantitativeCalculation(500, targetDate);
     }
   }
@@ -121,6 +120,153 @@ class ServiceStock {
           }
         ],
       });
+    }
+  }
+
+  Future<void> loadStockInstitutionalTWSE(DateTime date) async {
+    String type = Source.twse;
+    //if (await isDataExist(date, type)) {
+    //  return;
+    //}
+    final dateStr =
+        "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
+    final url =
+        "https://www.twse.com.tw/rwd/zh/fund/T86?date=$dateStr&selectType=ALL&response=json";
+
+    final response = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
+    if (response['status'] != 'ok') return;
+    Map dataSource = jsonDecode(response["data"]);
+    if (dataSource["stat"]?.toString().toLowerCase() != 'ok') return;
+    List<dynamic> fields = dataSource["fields"];
+
+    Map<String, String> chtToEn = {
+      "證券代號": "stock_no",
+      "證券名稱": "stock_name",
+      "外陸資買進股數(不含外資自營商)": "foreign_buy",
+      "外陸資賣出股數(不含外資自營商)": "foreign_sell",
+      "外陸資買賣超股數(不含外資自營商)": "foreign_diff",
+      "外資自營商買進股數": "foreign_dealer_buy",
+      "外資自營商賣出股數": "foreign_dealer_sell",
+      "外資自營商買賣超股數": "foreign_dealer_diff",
+      "投信買進股數": "trust_buy",
+      "投信賣出股數": "trust_sell",
+      "投信買賣超股數": "trust_diff",
+      "自營商買賣超股數": "dealer_diff",
+      "自營商買進股數(自行買賣)": "dealer_self_buy",
+      "自營商賣出股數(自行買賣)": "dealer_self_sell",
+      "自營商買賣超股數(自行買賣)": "dealer_self_diff",
+      "自營商買進股數(避險)": "dealer_hedge_buy",
+      "自營商賣出股數(避險)": "dealer_hedge_sell",
+      "自營商買賣超股數(避險)": "dealer_hedge_diff",
+      "三大法人買賣超股數": "total_diff",
+    };
+    Map<String, int> enToIndex = {};
+    for (int i = 0; i < fields.length; i++) {
+      final key = chtToEn[fields[i]];
+      if (key != null) enToIndex[key] = i;
+    }
+    List<dynamic> data = dataSource["data"];
+    List<Map<String, dynamic>> batch = [];
+    for (int j = 0; j < data.length; j++) {
+      final stockInstitutional =
+          StockParser.parseT86(data[j], enToIndex, date, type);
+      if (stockInstitutional == null) {
+        continue;
+      }
+      batch.add(stockInstitutional);
+      if (batch.length >= 500) {
+        await api.post('stock/insert_stock_institutional_batch', {
+          'table_name': TableNames.stockInstitutional,
+          'stocks': batch,
+        });
+        batch.clear();
+      }
+    }
+    if (batch.isNotEmpty) {
+      await api.post('stock/insert_stock_institutional_batch', {
+        'table_name': TableNames.stockInstitutional,
+        'stocks': batch,
+      });
+      batch.clear();
+    }
+  }
+
+  Future<void> loadStockInstitutionalOTC(DateTime date) async {
+    String type = Source.tpex;
+    //if (await isDataExist(date, type)) {
+    //  return;
+    //}
+    final dateStr =
+        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+    final url =
+        "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade";
+
+    final body = {
+        "type": "Daily",
+        "sect": "AL",
+        "date": dateStr,
+        "id": "",
+        "response": "json"
+    };
+
+    final response = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'POST',
+      'body': body
+    });
+    if (response['status'] != 'ok') return;
+    Map dataSource = jsonDecode(response["data"]);
+
+    List<dynamic> tables = dataSource["tables"];
+
+    Map<String, int> enToIndex = {
+      "stock_no": 0,
+      "stock_name": 1,
+      "foreign_buy": 2,
+      "foreign_sell": 3,
+      "foreign_diff": 4,
+      "foreign_dealer_buy": 5,
+      "foreign_dealer_sell": 6,
+      "foreign_dealer_diff": 7,
+      "trust_buy": 11,
+      "trust_sell": 12,
+      "trust_diff": 13,
+      "dealer_diff": 22,
+      "dealer_self_buy": 14,
+      "dealer_self_sell": 15,
+      "dealer_self_diff": 16,
+      "dealer_hedge_buy": 17,
+      "dealer_hedge_sell": 18,
+      "dealer_hedge_diff": 19,
+      "total_diff": 23,
+    };
+  
+    List<dynamic> data = tables[0]["data"];
+    List<Map<String, dynamic>> batch = [];
+    for (int j = 0; j < data.length; j++) {
+      final stockInstitutional =
+          StockParser.parseT86(data[j], enToIndex, date, type);
+      if (stockInstitutional == null) {
+        continue;
+      }
+      batch.add(stockInstitutional);
+      if (batch.length >= 500) {
+        await api.post('stock/insert_stock_institutional_batch', {
+          'table_name': TableNames.stockInstitutional,
+          'stocks': batch,
+        });
+        batch.clear();
+      }
+    }
+    if (batch.isNotEmpty) {
+      await api.post('stock/insert_stock_institutional_batch', {
+        'table_name': TableNames.stockInstitutional,
+        'stocks': batch,
+      });
+      batch.clear();
     }
   }
 
@@ -554,6 +700,44 @@ class StockParser {
           peRatio: isOTC ? null : double.tryParse(row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', '')),
           source: source);
     } catch (e) {
+      return null;
+    }
+  }
+
+  static Map<String, dynamic>? parseT86(
+      List row, Map<String, int> enToIndex, DateTime date, String source) {
+    try {
+      String get(String key) {
+        final i = enToIndex[key];
+        if (i == null) return "0";
+        return row[i].toString().replaceAll(",", "");
+      }
+
+      return {
+        "date": date.toUtc().toIso8601String(),
+        "stock_no": row[enToIndex["stock_no"]!],
+        "stock_name": row[enToIndex["stock_name"]!],
+        "foreign_buy": int.parse(get("foreign_buy")),
+        "foreign_sell": int.parse(get("foreign_sell")),
+        "foreign_diff": int.parse(get("foreign_diff")),
+        "foreign_dealer_buy": int.parse(get("foreign_dealer_buy")),
+        "foreign_dealer_sell": int.parse(get("foreign_dealer_sell")),
+        "foreign_dealer_diff": int.parse(get("foreign_dealer_diff")),
+        "trust_buy": int.parse(get("trust_buy")),
+        "trust_sell": int.parse(get("trust_sell")),
+        "trust_diff": int.parse(get("trust_diff")),
+        "dealer_diff": int.parse(get("dealer_diff")),
+        "dealer_self_buy": int.parse(get("dealer_self_buy")),
+        "dealer_self_sell": int.parse(get("dealer_self_sell")),
+        "dealer_self_diff": int.parse(get("dealer_self_diff")),
+        "dealer_hedge_buy": int.parse(get("dealer_hedge_buy")),
+        "dealer_hedge_sell": int.parse(get("dealer_hedge_sell")),
+        "dealer_hedge_diff": int.parse(get("dealer_hedge_diff")),
+        "total_diff": int.parse(get("total_diff")),
+        "source": source,
+      };
+    } catch (e) {
+      logger.e(row[enToIndex["stock_name"]!]);
       return null;
     }
   }

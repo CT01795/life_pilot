@@ -287,7 +287,7 @@ def get_url_data(payload: dict = Body(...)):
             )
         else:
             res = requests.get(
-                url,timeout=(10, 60),headers=headers,
+                url,timeout=(10, 180),headers=headers,
                 verify=False,
             )
 

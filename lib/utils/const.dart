@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 String? weatherApiKey;
 double zoolLevel = 8;
 
-final String dbMacUrl = "http://100.76.202.70:8000";
-final String dbSupabaseUrl = "https://life-pilot.onrender.com";//"https://life-pilot.onrender.com"; //"http://127.0.0.1:8000";
+final String dbMacUrl = "http://100.76.202.70:8000"; 
+final String dbSupabaseUrl = "https://life-pilot.onrender.com";//"https://life-pilot.onrender.com"; //"http://100.69.90.77:8000", "http://127.0.0.1:8000";
 final List<String> currencyList = [
   'TWD',
   'USD',
@@ -59,6 +59,8 @@ class TableNames {
   static const memoryTrace = "memory_trace";
 
   static const stockDailyPrice = "stock_daily_price";
+  static const stockInstitutional = "stock_institutional";
+  static const futuresInstitutional = "futures_institutional";
   static const stockDate = "stock_date";
   static const stockPredicted = "stock_predicted";
 
