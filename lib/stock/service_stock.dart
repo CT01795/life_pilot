@@ -125,9 +125,9 @@ class ServiceStock {
 
   Future<void> loadStockInstitutionalTWSE(DateTime date) async {
     String type = Source.twse;
-    //if (await isDataExist(date, type)) {
-    //  return;
-    //}
+    if (await isDataExist(date, type)) {
+      return;
+    }
     final dateStr =
         "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
     final url =
@@ -196,9 +196,9 @@ class ServiceStock {
 
   Future<void> loadStockInstitutionalOTC(DateTime date) async {
     String type = Source.tpex;
-    //if (await isDataExist(date, type)) {
-    //  return;
-    //}
+    if (await isDataExist(date, type)) {
+      return;
+    }
     final dateStr =
         "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
     final url =
