@@ -9,6 +9,8 @@ import logging
 import sys
 from fastapi import APIRouter, BackgroundTasks, Body
 from config import engine, SessionLocal
+from stock.model_stock_institutional import create_stock_institutional_model
+from stock.model_futures_institutional import create_futures_institutional_model
 from utils_service.utils import model_to_dict
 from stock.train_model import train_and_save_model
 from stock.model_stock_predicted import create_stock_predicted_model
@@ -91,6 +93,45 @@ def route_insert_stock_daily_price_batch(payload: dict = Body(...)):
             )
         objects.append(
             StockModel(**filtered_data)
+        )
+      db.add_all(objects) 
+      db.commit()
+      return {"status": "ok"}
+    finally:
+      db.close()
+
+@router.post(
+      "/stock/insert_stock_institutional_batch"
+      , summary="批量插入TWSE三大法人股票數據"
+      , description="""批量插入TWSE三大法人股票數據, 參數
+        { 'table_name': table_name
+        , 'stocks': stocks,}""")   
+def route_insert_stock_institutional_batch(payload: dict = Body(...)):
+    table_name = payload.get("table_name")
+    stocks_institutional_data = payload.get("stocks")
+    db: Session = SessionLocal()
+    print("route_insert_stock_institutional_batch DB_URL =", engine.url)
+    try:
+      StockInstitutionalModel = create_stock_institutional_model(table_name)
+      # 取得 model 欄位
+      model_columns = StockInstitutionalModel.__table__.columns.keys()
+      objects = []
+      for stock_institutional_data in stocks_institutional_data:
+        # 過濾不存在欄位
+        filtered_institutional_data = {
+            k: v
+            for k, v in stock_institutional_data.items()
+            if k in model_columns
+        }
+        # 處理 date
+        if filtered_institutional_data.get("date"):
+            filtered_institutional_data["date"] = (
+                datetime.fromisoformat(
+                    filtered_institutional_data["date"].replace("Z", "+00:00")
+                )
+            )
+        objects.append(
+            StockInstitutionalModel(**filtered_institutional_data)
         )
       db.add_all(objects) 
       db.commit()
