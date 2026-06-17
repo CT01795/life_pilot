@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -33,6 +34,7 @@ class ServiceStock {
       await loadStockInstitutionalTWSE(targetDate);
       await loadRawDataOTC(targetDate);
       await loadStockInstitutionalOTC(targetDate);
+      await insertDataToSupabase(targetDate);
       await quantitativeCalculation(500, targetDate);
     }
   }
@@ -349,6 +351,21 @@ class ServiceStock {
           'type': type,
         }
       ],
+    });
+  }
+
+  Future<void> insertDataToSupabase(DateTime date) async {
+    /*TODO String type = Source.tpex;
+    if (await isDataExist(date, type)) {
+      return;
+    }*/
+    final result = await api.post('stock/select_stock_institutional', {
+      'date': DateFormat('yyyy-MM-dd').format(date),
+    });
+    
+    await apiSupabase.post('stock/insert_stock_institutional_batch', {
+      'table_name': TableNames.stockInstitutional,
+      'stocks': result,
     });
   }
 
