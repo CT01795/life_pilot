@@ -1,12 +1,14 @@
 // lib/services/stock_service.dart
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Element;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:html/parser.dart' as html_parser;
+import 'package:html/dom.dart';
 
 class ServiceStock {
   List<ModelStock> stocks = [];
@@ -34,7 +36,9 @@ class ServiceStock {
       await loadStockInstitutionalTWSE(targetDate);
       await loadRawDataOTC(targetDate);
       await loadStockInstitutionalOTC(targetDate);
-      await insertDataToSupabase(targetDate);
+      await insertStockInstitutionalToSupabase(targetDate);
+      //TODO await loadFuturesInstitutional(targetDate);
+      //TODO await insertFuturesToSupabase(targetDate);
       await quantitativeCalculation(500, targetDate);
     }
   }
@@ -354,7 +358,7 @@ class ServiceStock {
     });
   }
 
-  Future<void> insertDataToSupabase(DateTime date) async {
+  Future<void> insertStockInstitutionalToSupabase(DateTime date) async {
     String type = Source.twse;
     if (await isDataExist(date, type)) {
       return;
@@ -364,6 +368,102 @@ class ServiceStock {
     });
     
     await apiSupabase.post('stock/insert_stock_institutional_batch', {
+      'table_name': TableNames.stockInstitutional,
+      'stocks': result,
+    });
+  }
+
+  Future<void> loadFuturesInstitutional(DateTime date) async {
+    /*TODO if (await isDataExist(date, type)) {
+      return;
+    }*/
+    final url =
+        "https://www.taifex.com.tw/cht/3/futContractsDate";
+
+    final body = {
+      'queryType': '1',
+      'goDay': '',
+      'doQuery': '1',
+      'dateaddcnt': '',
+      'queryDate': "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}",
+      'commodityId': 'TX',
+    };
+
+    final response = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'POST',
+      'body': body
+    });
+    if (response['status'] != 'ok') return;
+    try{ 
+      final html = response['data'];
+      final doc = html_parser.parse(html);
+      final sections = doc.querySelectorAll("div.section");
+      // 1️⃣ 找到「期貨契約」
+      Element? targetTable;
+
+      for (final s in sections) {
+        final title = s.firstChild;
+
+        if (title != null && title.text == "期貨契約") {
+          targetTable = s;
+          break;
+        }
+      }
+
+      if (targetTable == null) return;
+
+      // 2️⃣ 解析 tr
+      final rows = targetTable.querySelectorAll("tbody tr");
+
+      List<Map<String, dynamic>> result = [];
+
+      for (final row in rows) {
+        final cols = row.querySelectorAll("td");
+
+        if (cols.length < 10) continue;
+
+        String textAt(int i) =>
+            cols[i].text.replaceAll(RegExp(r'\s+'), '').trim();
+
+        result.add({
+          "product": textAt(1), // 商品名稱
+          "identity": textAt(2), // 身份別
+
+          "long_volume": textAt(3),
+          "long_amount": textAt(4),
+
+          "short_volume": textAt(5),
+          "short_amount": textAt(6),
+
+          "net_volume": textAt(7),
+          "net_amount": textAt(8),
+
+          "oi_long": textAt(9),
+          "oi_short": textAt(10),
+          "oi_net": textAt(11),
+        });
+      }
+      /*TODO await apiSupabase.post('stock/insert_futures_institutional_batch', {
+        'table_name': TableNames.futuresInstitutional,
+        'futures': result,
+      });*/
+    } catch (ex) {
+      logger.e(ex);
+    }
+  }
+
+  //TODO
+  Future<void> insertFuturesToSupabase(DateTime date) async {
+    String type = Source.twse;
+    if (await isDataExist(date, type)) {
+      return;
+    }
+    final result = await api.post('stock/select_futures_institutional', {
+      'date': DateFormat('yyyy-MM-dd').format(date),
+    });
+    
+    await apiSupabase.post('stock/insert_futures_institutional_batch', {
       'table_name': TableNames.stockInstitutional,
       'stocks': result,
     });
