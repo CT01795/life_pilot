@@ -355,10 +355,10 @@ class ServiceStock {
   }
 
   Future<void> insertDataToSupabase(DateTime date) async {
-    /*TODO String type = Source.tpex;
+    String type = Source.twse;
     if (await isDataExist(date, type)) {
       return;
-    }*/
+    }
     final result = await api.post('stock/select_stock_institutional', {
       'date': DateFormat('yyyy-MM-dd').format(date),
     });
