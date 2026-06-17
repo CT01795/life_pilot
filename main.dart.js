@@ -142048,7 +142048,7 @@ s=B.bCO(r,q===""?null:q)
 s.b=b.e
 s.e=b.a
 return s},
-ee(a){if(this.r)return this.b8k(a)
+ee(a){if(this.r)return this.b8j(a)
 return this.anh(a)},
 anh(a){var s,r,q=a.b,p=a.w
 if(p==null)p=this.a
@@ -142060,7 +142060,7 @@ r=this.c
 A.b.gN(r).gdW(0).t(0,s)
 r.push(s)
 return s},
-b8k(a){var s,r,q=this,p=q.akL(0,a),o=q.c
+b8j(a){var s,r,q=this,p=q.akL(0,a),o=q.c
 if(!A.c_e.n(0,A.b.gN(o).x))return q.anh(a)
 else{s=q.US()
 r=s[1]
@@ -142138,7 +142138,7 @@ break
 case 1:return B.k(q,r)}})
 return B.l($async$yX,r)},
 a6S(a){this.mQ(B.C(["type","toIframe: setText","text",this.aeT(a)],t.N,t.X))},
-C_(a){this.mQ(B.C(["type","toIframe: insertHtml","html",this.aeT(a)],t.N,t.X))},
+BZ(a){this.mQ(B.C(["type","toIframe: insertHtml","html",this.aeT(a)],t.N,t.X))},
 nX(a,b,c){this.mQ(B.C(["type","toIframe: execCommand","command",b,"argument",c],t.N,t.X))},
 lI(a,b){return this.nX(0,b,null)},
 aeT(a){var s=B.b0(a,"\r","")
@@ -143213,7 +143213,7 @@ p=B.bT(null,t.u)
 s=40
 return B.d(p,$async$$1)
 case 40:n=c
-if(n==null?!0:n)i.a.c.C_("<hr/>")
+if(n==null?!0:n)i.a.c.BZ("<hr/>")
 case 39:return B.k(null,r)}})
 return B.l($async$$1,r)},
 $S:56}
@@ -143361,7 +143361,7 @@ o=B.bT(null,t.u)
 s=11
 return B.d(o,$async$$0)
 case 11:m=b
-if(m==null?!0:m)p.a.c.C_("<img src='data:image/"+A.b.gN(J.hk(l.b.a).b.split("."))+";base64,"+n+"' data-filename='"+J.hk(l.b.a).b+"' alt=/>")
+if(m==null?!0:m)p.a.c.BZ("<img src='data:image/"+A.b.gN(J.hk(l.b.a).b.split("."))+";base64,"+n+"' data-filename='"+J.hk(l.b.a).b+"' alt=/>")
 B.ae(q.f,!1).dA()
 s=9
 break
@@ -143451,7 +143451,7 @@ o=B.bT(null,t.u)
 s=11
 return B.d(o,$async$$0)
 case 11:m=b
-if(m==null?!0:m)p.a.c.C_("<audio controls src='data:audio/"+A.b.gN(J.hk(l.b.a).b.split("."))+";base64,"+n+"' data-filename='"+J.hk(l.b.a).b+"'></audio>")
+if(m==null?!0:m)p.a.c.BZ("<audio controls src='data:audio/"+A.b.gN(J.hk(l.b.a).b.split("."))+";base64,"+n+"' data-filename='"+J.hk(l.b.a).b+"'></audio>")
 B.ae(q.f,!1).dA()
 s=9
 break
@@ -143460,7 +143460,7 @@ l=B.bT(null,t.u)
 s=12
 return B.d(l,$async$$0)
 case 12:m=b
-if(m==null?!0:m)p.a.c.C_("<audio controls src='"+q.d.a.a+"'></audio>")
+if(m==null?!0:m)p.a.c.BZ("<audio controls src='"+q.d.a.a+"'></audio>")
 B.ae(q.f,!1).dA()
 case 9:case 6:case 3:return B.k(null,r)}})
 return B.l($async$$0,r)},
@@ -143540,7 +143540,7 @@ o=B.bT(null,t.u)
 s=11
 return B.d(o,$async$$0)
 case 11:m=b
-if(m==null?!0:m)p.a.c.C_("<video controls src='data:video/"+A.b.gN(J.hk(l.b.a).b.split("."))+";base64,"+n+"' data-filename='"+J.hk(l.b.a).b+"'></video>")
+if(m==null?!0:m)p.a.c.BZ("<video controls src='data:video/"+A.b.gN(J.hk(l.b.a).b.split("."))+";base64,"+n+"' data-filename='"+J.hk(l.b.a).b+"'></video>")
 B.ae(q.f,!1).dA()
 s=9
 break
@@ -143549,7 +143549,7 @@ l=B.bT(null,t.u)
 s=12
 return B.d(l,$async$$0)
 case 12:m=b
-if(m==null?!0:m)p.a.c.C_("<video controls src='"+q.d.a.a+"'></video>")
+if(m==null?!0:m)p.a.c.BZ("<video controls src='"+q.d.a.a+"'></video>")
 B.ae(q.f,!1).dA()
 case 9:case 6:case 3:return B.k(null,r)}})
 return B.l($async$$0,r)},
@@ -146089,8 +146089,8 @@ s=1
 break
 case 1:return B.k(q,r)}})
 return B.l($async$rK,r)},
-QW(a,b,c,d){return this.b8m(a,b,c,d)},
-b8m(a,b,c,d){var s=0,r=B.m(t.H),q=1,p=[],o,n,m,l,k,j,i
+QW(a,b,c,d){return this.b8l(a,b,c,d)},
+b8l(a,b,c,d){var s=0,r=B.m(t.H),q=1,p=[],o,n,m,l,k,j,i
 var $async$QW=B.n(function(e,f){if(e===1){p.push(f)
 s=q}while(true)switch(s){case 0:l=B.Y(c).i("P<1,t<o,K?>>")
 k=B.O(new B.P(c,new B.b1l(b),l),l.i("a5.E"))
@@ -161133,8 +161133,8 @@ break
 case 6:case 1:return B.k(q,r)
 case 2:return B.j(o.at(-1),r)}})
 return B.l($async$rK,r)},
-QV(a,b,c){return this.b8n(a,b,c)},
-b8n(a,b,c){var s=0,r=B.m(t.H),q=1,p=[],o,n,m,l,k,j
+QV(a,b,c){return this.b8m(a,b,c)},
+b8m(a,b,c){var s=0,r=B.m(t.H),q=1,p=[],o,n,m,l,k,j
 var $async$QV=B.n(function(d,e){if(d===1){p.push(e)
 s=q}while(true)switch(s){case 0:q=3
 m=$.bL()
@@ -161336,7 +161336,7 @@ return B.d(q.vi(n),$async$pm)
 case 9:s=10
 return B.d(q.ye(n),$async$pm)
 case 10:s=11
-return B.d(q.BZ(n),$async$pm)
+return B.d(q.C_(n),$async$pm)
 case 11:s=12
 return B.d(q.qx(500,n),$async$pm)
 case 12:case 5:--o
@@ -161527,21 +161527,21 @@ case 12:s=14
 return B.d($.h9().aQ("stock/insert_stock_date_batch",B.C(["table_name","stock_date","stocks",B.c([B.C(["date",a0.kQ().eB(),"type","tpex"],m,m)],t.m0)],m,l)),$async$vi)
 case 14:case 1:return B.k(q,r)}})
 return B.l($async$vi,r)},
-BZ(a){return this.b8j(a)},
-b8j(a){var s=0,r=B.m(t.H),q,p=this,o,n,m
-var $async$BZ=B.n(function(b,c){if(b===1)return B.j(c,r)
+C_(a){return this.b8n(a)},
+b8n(a){var s=0,r=B.m(t.H),q,p=this,o,n,m
+var $async$C_=B.n(function(b,c){if(b===1)return B.j(c,r)
 while(true)switch(s){case 0:s=3
-return B.d(p.vc(a,"twse"),$async$BZ)
+return B.d(p.vc(a,"twse"),$async$C_)
 case 3:if(c){s=1
 break}o=t.N
 n=t.z
 s=4
-return B.d($.h9().aQ("stock/select_stock_institutional",B.C(["date",B.fn("yyyy-MM-dd",null).dz(a)],o,n)),$async$BZ)
+return B.d($.h9().aQ("stock/select_stock_institutional",B.C(["date",B.fn("yyyy-MM-dd",null).dz(a)],o,n)),$async$C_)
 case 4:m=c
 s=5
-return B.d($.bL().aQ("stock/insert_stock_institutional_batch",B.C(["table_name","stock_institutional","stocks",m],o,n)),$async$BZ)
+return B.d($.bL().aQ("stock/insert_stock_institutional_batch",B.C(["table_name","stock_institutional","stocks",m],o,n)),$async$C_)
 case 5:case 1:return B.k(q,r)}})
-return B.l($async$BZ,r)},
+return B.l($async$C_,r)},
 vc(a,b){return this.b8H(a,b)},
 b8H(a,b){var s=0,r=B.m(t.y),q,p,o
 var $async$vc=B.n(function(c,d){if(c===1)return B.j(d,r)
@@ -161784,8 +161784,8 @@ break
 case 13:case 1:return B.k(q,r)
 case 2:return B.j(o.at(-1),r)}})
 return B.l($async$qx,r)},
-HK(a,b){return this.b8l(a,b)},
-b8l(a,b){var s=0,r=B.m(t.H),q,p,o,n,m,l,k
+HK(a,b){return this.b8k(a,b)},
+b8k(a,b){var s=0,r=B.m(t.H),q,p,o,n,m,l,k
 var $async$HK=B.n(function(c,d){if(c===1)return B.j(d,r)
 while(true)switch(s){case 0:m=t.N
 l=t.z
