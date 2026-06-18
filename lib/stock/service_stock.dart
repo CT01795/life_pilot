@@ -514,11 +514,13 @@ class ServiceStock {
       };
 
       try {
-        List<ModelStock> apiStocks = await fetchStocksFromApiMac(latestDate);
-        for (var s in apiStocks) {
-          s.securityName = "API: ${s.securityName}";
-          s.level = level;
-          map.putIfAbsent("API: ${s.securityCode}", () => s);
+        List<ModelStock>? apiStocks = await fetchStocksFromApiMac(latestDate);
+        if(apiStocks != null && apiStocks.isNotEmpty){
+          for (var s in apiStocks) {
+            s.securityName = "API: ${s.securityName}";
+            s.level = level;
+            map.putIfAbsent("API: ${s.securityCode}", () => s);
+          }
         }
       } catch (ex) {
         logger.e(ex);
@@ -565,7 +567,7 @@ class ServiceStock {
     return stocks;
   }
 
-  Future<List<ModelStock>> fetchStocksFromApiMac(DateTime date) async {
+  Future<List<ModelStock>?> fetchStocksFromApiMac(DateTime date) async {
     // 檢查同一天是否已經有資料
     final existing = await api.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
@@ -574,7 +576,7 @@ class ServiceStock {
     dynamic tmp;
     if (existing["data"] == null) {
       //api.post('stock/update_model', {});
-      return [];
+      return null;
     }
     tmp = existing["data"];
     return (tmp as List)
@@ -590,8 +592,15 @@ class ServiceStock {
       'date': date.toIso8601String()
     });
     dynamic tmp;
-    if (existing["data"] == null) {
-      //api.post('stock/update_model', {});
+    if (existing["data"] == null || existing["data"].length == 0) {
+      try {
+        List<ModelStock>? apiStocks = await fetchStocksFromApiMac(date.toUtc());
+        if (apiStocks != null && apiStocks.isNotEmpty) {
+          await insertFromApi(apiStocks, date);
+        }
+      } catch (ex) {
+        logger.e(ex);
+      }
       return [];
     }
     tmp = existing["data"];
@@ -697,8 +706,10 @@ class ServiceStock {
     });
 
     try {
-      List<ModelStock> apiStocks = await fetchStocksFromApiMac(date.toUtc());
-      await insertFromApi(apiStocks, date);
+      List<ModelStock>? apiStocks = await fetchStocksFromApiMac(date.toUtc());
+      if(apiStocks != null && apiStocks.isNotEmpty){
+        await insertFromApi(apiStocks, date);
+      }
     } catch (ex) {
       logger.e(ex);
     }
