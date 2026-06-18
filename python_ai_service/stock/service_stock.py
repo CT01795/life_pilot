@@ -101,8 +101,8 @@ def route_insert_stock_daily_price_batch(payload: dict = Body(...)):
       db.close()
 
 @router.post("/stock/select_stock_institutional"
-            , summary="批量插入三大法人股票數據"
-            , description="""批量插入三大法人股票數據, 參數
+            , summary="查询三大法人股票數據"
+            , description="""查询三大法人股票數據, 參數
               { 'date': date,}""")
 def route_select_stock_institutional(payload: dict = Body(...)):
     date = datetime.strptime(
@@ -163,6 +163,29 @@ def route_insert_stock_institutional_batch(payload: dict = Body(...)):
       raise e
     finally:
       db.close()
+
+@router.post("/stock/select_futures_institutional"
+            , summary="查询三大法人futures數據"
+            , description="""查询三大法人futures數據, 參數
+              { 'date': date,}""")
+def route_select_futures_institutional(payload: dict = Body(...)):
+    date = datetime.strptime(
+        payload.get("date"),
+        "%Y-%m-%d"
+    ).date()
+    db: Session = SessionLocal()
+    try:
+        rows = db.execute(
+            text("""
+                SELECT *
+                FROM futures_institutional
+                WHERE date = :date
+            """),
+            {"date": date}
+        ).mappings().all()
+        return [dict(row) for row in rows]
+    finally:
+        db.close()
 
 @router.post(
       "/stock/insert_futures_institutional_batch"

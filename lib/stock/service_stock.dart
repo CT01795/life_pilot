@@ -31,10 +31,10 @@ class ServiceStock {
       DateTime targetDate = today.subtract(Duration(days: i));
       await loadRawDataTWSE(targetDate);
       await loadRawDataOTC(targetDate);
-      await loadStockInstitutionalTWSE(targetDate);
+      /*await loadStockInstitutionalTWSE(targetDate);
       await loadStockInstitutionalOTC(targetDate);
       await insertStockInstitutionalToSupabase(targetDate);
-      await loadFuturesInstitutional(targetDate);
+      await loadFuturesInstitutional(targetDate);*/
       await insertFuturesToSupabase(targetDate);
       await quantitativeCalculation(500, targetDate);
     }
