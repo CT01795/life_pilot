@@ -36,6 +36,7 @@ class AuthConstants {
 class Source {
   static const twse = "twse";
   static const tpex = "tpex";
+  static const updateStockTechnicalForDate = "update_stock_technical_for_date";
   static const strolltimesWeekend = "strolltimes.com/weekend";
   static const strolltimesEventsData = "strolltimes.com/events-data";
   static const cloudCulture = "cloud.culture.tw";

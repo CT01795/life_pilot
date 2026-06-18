@@ -165,6 +165,48 @@ def route_insert_stock_institutional_batch(payload: dict = Body(...)):
       db.close()
 
 @router.post(
+      "/stock/insert_futures_institutional_batch"
+      , summary="批量插入三大法人futures數據"
+      , description="""批量插入三大法人futures數據, 參數
+        { 'table_name': table_name
+        , 'futures': futures,}""")   
+def route_insert_futures_institutional_batch(payload: dict = Body(...)):
+    table_name = payload.get("table_name")
+    futures_institutional_data = payload.get("futures")
+    db: Session = SessionLocal()
+    print("route_insert_futures_institutional_batch DB_URL =", engine.url)
+    try:
+      FuturesInstitutionalModel = create_futures_institutional_model(table_name)
+      # 取得 model 欄位
+      model_columns = FuturesInstitutionalModel.__table__.columns.keys()
+      objects = []
+      for future_institutional_data in futures_institutional_data:
+        # 過濾不存在欄位
+        filtered_institutional_data = {
+            k: v
+            for k, v in future_institutional_data.items()
+            if k in model_columns
+        }
+        # 處理 date
+        if filtered_institutional_data.get("date"):
+            filtered_institutional_data["date"] = (
+                datetime.fromisoformat(
+                    filtered_institutional_data["date"].replace("Z", "+00:00")
+                )
+            )
+        objects.append(
+            FuturesInstitutionalModel(**filtered_institutional_data)
+        )
+      db.add_all(objects) 
+      db.commit()
+      return {"status": "ok"}
+    except Exception as e:
+      db.rollback()
+      raise e
+    finally:
+      db.close()
+
+@router.post(
       "/stock/insert_stock_date_batch"
       , summary="批量插入股票date"
       , description="""批量插入股票date, 參數

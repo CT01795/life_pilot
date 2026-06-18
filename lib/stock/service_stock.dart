@@ -7,8 +7,6 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:html/parser.dart' as html_parser;
-import 'package:html/dom.dart';
 
 class ServiceStock {
   List<ModelStock> stocks = [];
@@ -25,20 +23,19 @@ class ServiceStock {
       'date': cutoffDate.toIso8601String(),
     });
     int checkDates = 2;
-    int minDayValue = 0;
-    //int minDayValue = 1;
-    //if(DateTime.now().hour >=17){
-    //minDayValue = 0;
-    //}
+    int minDayValue = 1;
+    if(DateTime.now().hour >=17){
+      minDayValue = 0;
+    }
     for (int i = checkDates; i >= minDayValue; i--) {
       DateTime targetDate = today.subtract(Duration(days: i));
       await loadRawDataTWSE(targetDate);
-      await loadStockInstitutionalTWSE(targetDate);
       await loadRawDataOTC(targetDate);
+      await loadStockInstitutionalTWSE(targetDate);
       await loadStockInstitutionalOTC(targetDate);
       await insertStockInstitutionalToSupabase(targetDate);
-      //TODO await loadFuturesInstitutional(targetDate);
-      //TODO await insertFuturesToSupabase(targetDate);
+      await loadFuturesInstitutional(targetDate);
+      await insertFuturesToSupabase(targetDate);
       await quantitativeCalculation(500, targetDate);
     }
   }
@@ -130,7 +127,7 @@ class ServiceStock {
   }
 
   Future<void> loadStockInstitutionalTWSE(DateTime date) async {
-    String type = Source.twse;
+    String type = Source.updateStockTechnicalForDate;
     if (await isDataExist(date, type)) {
       return;
     }
@@ -201,7 +198,7 @@ class ServiceStock {
   }
 
   Future<void> loadStockInstitutionalOTC(DateTime date) async {
-    String type = Source.tpex;
+    String type = Source.updateStockTechnicalForDate;
     if (await isDataExist(date, type)) {
       return;
     }
@@ -359,7 +356,7 @@ class ServiceStock {
   }
 
   Future<void> insertStockInstitutionalToSupabase(DateTime date) async {
-    String type = Source.twse;
+    String type = Source.updateStockTechnicalForDate;
     if (await isDataExist(date, type)) {
       return;
     }
@@ -374,88 +371,72 @@ class ServiceStock {
   }
 
   Future<void> loadFuturesInstitutional(DateTime date) async {
-    /*TODO if (await isDataExist(date, type)) {
+    String type = Source.updateStockTechnicalForDate;
+    if (await isDataExist(date, type)) {
       return;
-    }*/
-    final url =
-        "https://www.taifex.com.tw/cht/3/futContractsDate";
+    }
+    final dateStr =
+      "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
 
-    final body = {
-      'queryType': '1',
-      'goDay': '',
-      'doQuery': '1',
-      'dateaddcnt': '',
-      'queryDate': "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}",
-      'commodityId': 'TX',
-    };
+    final url =
+        "https://www.taifex.com.tw/cht/3/futContractsDateDown"
+        "?queryStartDate=$dateStr"
+        "&queryEndDate=$dateStr";
 
     final response = await api.post('event/get_url_data', {
       'url': url,
-      'method': 'POST',
-      'body': body
+      'method': 'GET',
     });
+
     if (response['status'] != 'ok') return;
-    try{ 
-      final html = response['data'];
-      final doc = html_parser.parse(html);
-      final sections = doc.querySelectorAll("div.section");
-      // 1️⃣ 找到「期貨契約」
-      Element? targetTable;
 
-      for (final s in sections) {
-        final title = s.firstChild;
-
-        if (title != null && title.text == "期貨契約") {
-          targetTable = s;
-          break;
-        }
-      }
-
-      if (targetTable == null) return;
-
-      // 2️⃣ 解析 tr
-      final rows = targetTable.querySelectorAll("tbody tr");
+    try {
+      final csvText = response['data'];
+      List<String> lines = csvText.split(RegExp(r'\r?\n'));
+      lines.removeAt(0); // 移除標題行
 
       List<Map<String, dynamic>> result = [];
 
-      for (final row in rows) {
-        final cols = row.querySelectorAll("td");
+      for (final line in lines) {
+        final cols = line.split(',');
 
         if (cols.length < 10) continue;
 
-        String textAt(int i) =>
-            cols[i].text.replaceAll(RegExp(r'\s+'), '').trim();
-
         result.add({
-          "product": textAt(1), // 商品名稱
-          "identity": textAt(2), // 身份別
+          "date": DateFormat('yyyy-MM-dd').format(date),
+          "product_name": cols[1],
+          "identity_type": cols[2],
 
-          "long_volume": textAt(3),
-          "long_amount": textAt(4),
+          "trade_long_qty": cols[3],
+          "trade_long_amount": cols[4],
 
-          "short_volume": textAt(5),
-          "short_amount": textAt(6),
+          "trade_short_qty": cols[5],
+          "trade_short_amount": cols[6],
 
-          "net_volume": textAt(7),
-          "net_amount": textAt(8),
+          "trade_net_qty": cols[7],
+          "trade_net_amount": cols[8],
 
-          "oi_long": textAt(9),
-          "oi_short": textAt(10),
-          "oi_net": textAt(11),
+          "oi_long_qty": cols[9],
+          "oi_long_amount": cols[10],
+
+          "oi_short_qty": cols[11],
+          "oi_short_amount": cols[12],
+
+          "oi_net_qty": cols[13],
+          "oi_net_amount": cols[14],
         });
       }
-      /*TODO await apiSupabase.post('stock/insert_futures_institutional_batch', {
+      await api.post('stock/insert_futures_institutional_batch', {
         'table_name': TableNames.futuresInstitutional,
         'futures': result,
-      });*/
+      });
     } catch (ex) {
       logger.e(ex);
     }
   }
 
-  //TODO
   Future<void> insertFuturesToSupabase(DateTime date) async {
-    String type = Source.twse;
+    String type = Source.updateStockTechnicalForDate;
     if (await isDataExist(date, type)) {
       return;
     }
@@ -464,8 +445,8 @@ class ServiceStock {
     });
     
     await apiSupabase.post('stock/insert_futures_institutional_batch', {
-      'table_name': TableNames.stockInstitutional,
-      'stocks': result,
+      'table_name': TableNames.futuresInstitutional,
+      'futures': result,
     });
   }
 
@@ -491,7 +472,7 @@ class ServiceStock {
   Future<DateTime?> getLatestDateMac() async {
     final result = await api.post('stock/select_latest_stock_date', {
       'table_name': TableNames.stockDate,
-      'type': "update_stock_technical_for_date"
+      'type': Source.updateStockTechnicalForDate
     });
     if (result["date"] == null) {
       return null;
@@ -502,7 +483,7 @@ class ServiceStock {
   Future<DateTime?> getLatestDate() async {
     final result = await apiSupabase.post('stock/select_latest_stock_date', {
       'table_name': TableNames.stockDate,
-      'type': "update_stock_technical_for_date"
+      'type': Source.updateStockTechnicalForDate
     });
     if (result["date"] == null) {
       return null;
@@ -592,7 +573,7 @@ class ServiceStock {
     });
     dynamic tmp;
     if (existing["data"] == null) {
-      api.post('stock/update_model', {});
+      //api.post('stock/update_model', {});
       return [];
     }
     tmp = existing["data"];
@@ -670,6 +651,19 @@ class ServiceStock {
       'date': date.toUtc().toIso8601String()
     });
     if (result["count"] == 0) {
+      try{
+        await api.post('stock/insert_stock_date_batch', {
+          'table_name': TableNames.stockDate,
+          'stocks': [
+            {
+              'date': date.toUtc().toIso8601String(),
+              'type': Source.updateStockTechnicalForDate,
+            }
+          ],
+        });
+      }catch(ex){
+        logger.e(ex);
+      }
       return;
     }
 
@@ -686,7 +680,7 @@ class ServiceStock {
       'stocks': [
         {
           'date': date.toUtc().toIso8601String(),
-          'type': 'update_stock_technical_for_date',
+          'type': Source.updateStockTechnicalForDate,
         }
       ],
     });
@@ -697,7 +691,7 @@ class ServiceStock {
       'stocks': [
         {
           'date': date.toUtc().toIso8601String(),
-          'type': 'update_stock_technical_for_date',
+          'type': Source.updateStockTechnicalForDate,
         }
       ],
     });
