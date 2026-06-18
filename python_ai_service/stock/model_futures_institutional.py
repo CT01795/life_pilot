@@ -18,9 +18,9 @@ def create_futures_institutional_model(table_name: str):
         {
             "__tablename__": table_name,
             "__table_args__": {"extend_existing": True},  
-            "date": Column(TIMESTAMP(timezone=True)),
-            "product_name": Column(String),
-            "identity_type": Column(String),
+            "date": Column(TIMESTAMP(timezone=True), primary_key=True),
+            "product_name": Column(String, primary_key=True),
+            "identity_type": Column(String, primary_key=True),
             "trade_long_qty": Column(BigInteger),
             "trade_long_amount": Column(BigInteger),
             "trade_short_qty": Column(BigInteger),
