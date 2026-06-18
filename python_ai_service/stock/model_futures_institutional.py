@@ -18,7 +18,6 @@ def create_futures_institutional_model(table_name: str):
         {
             "__tablename__": table_name,
             "__table_args__": {"extend_existing": True},  
-            "id": Column(BigInteger, primary_key=True),
             "date": Column(TIMESTAMP(timezone=True)),
             "product_name": Column(String),
             "identity_type": Column(String),
