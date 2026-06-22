@@ -41927,15 +41927,15 @@ n=o==null
 m=n?l:o.f
 if((m==null?0:m)<0)o=A.bU
 else{o=n?l:o.f
-o=(o==null?0:o)===0?A.q:A.b5}o=B.c([j,A.bN,i,s,A.fq,h,q,A.fq,r,B.G("Diff\uff1a"+p,l,l,l,l,B.bb(l,l,o,l,l,l,l,l,l,l,l,l,l,l,l,l,l,!0,l,l,l,l,l,l,l,l),l,l,l),A.c_M,B.G("\u5916\u8cc7\u8cb7\u8d85 Top15",l,l,l,l,l,l,l,l)],t.p)
+o=(o==null?0:o)===0?A.q:A.b5}o=B.c([j,A.bN,i,s,A.fq,h,q,A.fq,r,B.G("Diff\uff1a"+p,l,l,l,l,B.bb(l,l,o,l,l,l,l,l,l,l,l,l,l,l,l,l,l,!0,l,l,l,l,l,l,l,l),l,l,l),A.c_M,B.G("\u5916\u8cc7\u8cb7\u8d85 Top30",l,l,l,l,l,l,l,l)],t.p)
 p=a.e
 r=t.S
-p=B.i2(p,0,B.mG(15,"count",r),B.W(p).c)
+p=B.i2(p,0,B.mG(30,"count",r),B.W(p).c)
 A.b.R(o,new B.N(p,new B.bwZ(),p.$ti.i("N<a5.E,i>")))
 o.push(A.bN)
-o.push(B.G("\u5916\u8cc7\u8ce3\u8d85 Top15",l,l,l,l,l,l,l,l))
+o.push(B.G("\u5916\u8cc7\u8ce3\u8d85 Top30",l,l,l,l,l,l,l,l))
 p=a.f
-p=B.i2(p,0,B.mG(15,"count",r),B.W(p).c)
+p=B.i2(p,0,B.mG(30,"count",r),B.W(p).c)
 A.b.R(o,new B.N(p,new B.bx_(),p.$ti.i("N<a5.E,i>")))
 return B.bz(o,A.ah,A.m,A.u,0,A.x)},
 caK(a,b){var s,r,q,p,o,n,m,l=null,k=a.z,j=k!=null&&A.c.n(k,"+")
@@ -161406,12 +161406,12 @@ n.e=k
 A.b.fN(k,new B.aDK())
 k=n.e
 i=t.S
-n.e=B.i2(k,0,B.mG(15,"count",i),B.W(k).c).fL(0)
+n.e=B.i2(k,0,B.mG(30,"count",i),B.W(k).c).fL(0)
 k=B.O(n.d,j)
 n.f=k
 A.b.fN(k,new B.aDL())
 k=n.f
-n.f=B.i2(k,0,B.mG(15,"count",i),B.W(k).c).fL(0)
+n.f=B.i2(k,0,B.mG(30,"count",i),B.W(k).c).fL(0)
 p=9
 s=12
 return B.d(l.DA(a),$async$ux)
