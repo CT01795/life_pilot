@@ -64,7 +64,7 @@ class ControllerStock extends ChangeNotifier {
       ),
     );
 
-    foreignBuyTop30 = foreignBuyTop30.toList(); //.take(30).toList();
+    foreignBuyTop30 = foreignBuyTop30.where((e) => e.foreignDiff > 0).toList(); //.take(30).toList();
 
     // ==========
     // 外資賣超 Top30
@@ -77,7 +77,7 @@ class ControllerStock extends ChangeNotifier {
       ),
     );
 
-    foreignSellTop30 = foreignSellTop30.toList(); //.take(30).toList();
+    foreignSellTop30 = foreignSellTop30.where((e) => e.foreignDiff < 0).toList(); //.take(30).toList();
 
     // ==========
     // 期貨未平倉
