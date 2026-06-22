@@ -158,3 +158,53 @@ class ModelStock {
     );
   }
 }
+
+class ModelFuture {
+  String? productName;
+  String? identityType;
+
+  int? oiLongQty;
+  int? oiShortQty;
+  int? oiNetQty;
+  int? oiNetQtyDiff;
+
+  ModelFuture({
+    this.productName,
+    this.identityType,
+    this.oiLongQty,
+    this.oiShortQty,
+    this.oiNetQty,
+    this.oiNetQtyDiff,
+  });
+
+  factory ModelFuture.fromJson(Map<String, dynamic> json) {
+    return ModelFuture(
+      productName: json['product_name'],
+      identityType: json['identity_type'],
+      oiLongQty: int.tryParse("${json['oi_long_qty']}"),
+      oiShortQty: int.tryParse("${json['oi_short_qty']}"),
+      oiNetQty: int.tryParse("${json['oi_net_qty']}"),
+      oiNetQtyDiff: int.tryParse("${json['oi_net_qty_diff']}"),
+    );
+  }
+}
+
+class ModelInstitutional {
+  String stockNo;
+  String stockName;
+  int foreignDiff;
+
+  ModelInstitutional({
+    required this.stockNo,
+    required this.stockName,
+    required this.foreignDiff,
+  });
+
+  factory ModelInstitutional.fromJson(Map<String,dynamic> json){
+    return ModelInstitutional(
+      stockNo: json["stock_no"],
+      stockName: json["stock_name"],
+      foreignDiff: json["foreign_diff"] ?? 0,
+    );
+  }
+}

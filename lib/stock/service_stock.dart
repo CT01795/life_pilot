@@ -24,7 +24,7 @@ class ServiceStock {
     });
     int checkDates = 2;
     int minDayValue = 1;
-    if(DateTime.now().hour >=17){
+    if (DateTime.now().hour >= 17) {
       minDayValue = 0;
     }
     for (int i = checkDates; i >= minDayValue; i--) {
@@ -204,22 +204,18 @@ class ServiceStock {
     }
     final dateStr =
         "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
-    final url =
-        "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade";
+    final url = "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade";
 
     final body = {
-        "type": "Daily",
-        "sect": "AL",
-        "date": dateStr,
-        "id": "",
-        "response": "json"
+      "type": "Daily",
+      "sect": "AL",
+      "date": dateStr,
+      "id": "",
+      "response": "json"
     };
 
-    final response = await api.post('event/get_url_data', {
-      'url': url,
-      'method': 'POST',
-      'body': body
-    });
+    final response = await api.post(
+        'event/get_url_data', {'url': url, 'method': 'POST', 'body': body});
     if (response['status'] != 'ok') return;
     Map dataSource = jsonDecode(response["data"]);
 
@@ -246,7 +242,7 @@ class ServiceStock {
       "dealer_hedge_diff": 19,
       "total_diff": 23,
     };
-  
+
     List<dynamic> data = tables[0]["data"];
     List<Map<String, dynamic>> batch = [];
     for (int j = 0; j < data.length; j++) {
@@ -363,11 +359,22 @@ class ServiceStock {
     final result = await api.post('stock/select_stock_institutional', {
       'date': DateFormat('yyyy-MM-dd').format(date),
     });
-    
+
     await apiSupabase.post('stock/insert_stock_institutional_batch', {
       'table_name': TableNames.stockInstitutional,
       'stocks': result,
     });
+  }
+
+  Future<List<ModelInstitutional>> selectStockInstitutional(
+      DateTime date) async {
+    final result =
+        await apiSupabase.post('stock/select_stock_institutional_by_table', {
+      'date': DateFormat('yyyy-MM-dd').format(date),
+    });
+    return result
+        .map<ModelInstitutional>((e) => ModelInstitutional.fromJson(e))
+        .toList();
   }
 
   Future<void> loadFuturesInstitutional(DateTime date) async {
@@ -376,10 +383,9 @@ class ServiceStock {
       return;
     }
     final dateStr =
-      "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
 
-    final url =
-        "https://www.taifex.com.tw/cht/3/futContractsDateDown"
+    final url = "https://www.taifex.com.tw/cht/3/futContractsDateDown"
         "?queryStartDate=$dateStr"
         "&queryEndDate=$dateStr";
 
@@ -400,28 +406,22 @@ class ServiceStock {
       for (final line in lines) {
         final cols = line.split(',');
 
-        if (cols.length < 10) continue;
+        if (cols.length < 15) continue;
 
         result.add({
           "date": DateFormat('yyyy-MM-dd').format(date),
           "product_name": cols[1],
           "identity_type": cols[2],
-
           "trade_long_qty": cols[3],
           "trade_long_amount": cols[4],
-
           "trade_short_qty": cols[5],
           "trade_short_amount": cols[6],
-
           "trade_net_qty": cols[7],
           "trade_net_amount": cols[8],
-
           "oi_long_qty": cols[9],
           "oi_long_amount": cols[10],
-
           "oi_short_qty": cols[11],
           "oi_short_amount": cols[12],
-
           "oi_net_qty": cols[13],
           "oi_net_amount": cols[14],
         });
@@ -443,11 +443,47 @@ class ServiceStock {
     final result = await api.post('stock/select_futures_institutional', {
       'date': DateFormat('yyyy-MM-dd').format(date),
     });
-    
+
     await apiSupabase.post('stock/insert_futures_institutional_batch', {
       'table_name': TableNames.futuresInstitutional,
       'futures': result,
     });
+  }
+
+  Future<List<ModelFuture>> selectFutures(DateTime date) async {
+    final result =
+        await apiSupabase.post('stock/select_futures_institutional', {
+      'date': DateFormat('yyyy-MM-dd').format(date),
+    });
+    DateTime tmpDate = date;
+    List result2 = [];
+    try {
+      while(result2.isEmpty) {
+        tmpDate = tmpDate.subtract(Duration(days: 1));
+        result2 = await apiSupabase.post('stock/select_futures_institutional', {
+          'date': DateFormat('yyyy-MM-dd').format(tmpDate),
+        });
+      }
+    } catch (ex) {
+      logger.e(ex);
+    }
+
+     final Map<String, int> yesterdayMap = {
+      for (var e in result2)
+        "${e['product_name']}_${e['identity_type']}": e['oi_net_qty'] ?? 0,
+    };
+
+    return result.map<ModelFuture>((e) {
+      final key = "${e['product_name']}_${e['identity_type']}";
+
+      final todayQty = e['oi_net_qty'] ?? 0;
+      final yQty = yesterdayMap[key] ?? 0;
+
+      return ModelFuture.fromJson({
+        ...e,
+        "oi_net_qty_diff": todayQty - yQty,
+      });
+    }).toList();
   }
 
   Future<bool> isDataExist(DateTime date, String type) async {
@@ -515,7 +551,7 @@ class ServiceStock {
 
       try {
         List<ModelStock>? apiStocks = await fetchStocksFromApiMac(latestDate);
-        if(apiStocks != null && apiStocks.isNotEmpty){
+        if (apiStocks != null && apiStocks.isNotEmpty) {
           for (var s in apiStocks) {
             s.securityName = "API: ${s.securityName}";
             s.level = level;
@@ -544,7 +580,7 @@ class ServiceStock {
 
   Future<List<ModelStock>> getSimpleStrategySupabase(String level) async {
     // 1️⃣ 找最新日期
-    final latestDate = await getLatestDate();
+    DateTime? latestDate = await getLatestDate();
     if (latestDate == null) {
       return [];
     }
@@ -660,7 +696,7 @@ class ServiceStock {
       'date': date.toUtc().toIso8601String()
     });
     if (result["count"] == 0) {
-      try{
+      try {
         await api.post('stock/insert_stock_date_batch', {
           'table_name': TableNames.stockDate,
           'stocks': [
@@ -670,7 +706,7 @@ class ServiceStock {
             }
           ],
         });
-      }catch(ex){
+      } catch (ex) {
         logger.e(ex);
       }
       return;
@@ -707,7 +743,7 @@ class ServiceStock {
 
     try {
       List<ModelStock>? apiStocks = await fetchStocksFromApiMac(date.toUtc());
-      if(apiStocks != null && apiStocks.isNotEmpty){
+      if (apiStocks != null && apiStocks.isNotEmpty) {
         await insertFromApi(apiStocks, date);
       }
     } catch (ex) {
