@@ -87,13 +87,13 @@ Widget _buildDashboard(ControllerStock c) {
       ),
       Gaps.h32,
       Text("外資買超 Top30"),
-      ...c.foreignBuyTop30.take(30).map(
+      ...c.foreignBuyTop30.map( //.take(30).map(
             (e) => Text("${e.stockNo} ${e.stockName} ${NumberFormat('#,##0').format(e.foreignDiff)}",
                     style: TextStyle(color: Colors.red)),
           ),
       Gaps.h8,
       Text("外資賣超 Top30"),
-      ...c.foreignSellTop30.take(30).map(
+      ...c.foreignSellTop30.map( //.take(30).map(
             (e) => Text("${e.stockNo} ${e.stockName} ${NumberFormat('#,##0').format(e.foreignDiff)}",
                     style: TextStyle(color: Colors.green)),
           ),
