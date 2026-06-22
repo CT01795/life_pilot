@@ -9,8 +9,8 @@ class ControllerStock extends ChangeNotifier {
   List<ModelStock> stocks = [];
   List<ModelFuture> futures = [];
   List<ModelInstitutional> institutionals = [];
-  List<ModelInstitutional> foreignBuyTop15 = [];
-  List<ModelInstitutional> foreignSellTop15 = [];
+  List<ModelInstitutional> foreignBuyTop30 = [];
+  List<ModelInstitutional> foreignSellTop30 = [];
   ModelFuture? foreignFuture;
   ModelFuture? trustFuture;
   ModelFuture? dealerFuture;
@@ -53,31 +53,31 @@ class ControllerStock extends ChangeNotifier {
       return;
     }
     // ==========
-    // 外資買超 Top15
+    // 外資買超 Top30
     // ==========
     institutionals = await service.selectStockInstitutional(date);
-    foreignBuyTop15 = [...institutionals];
+    foreignBuyTop30 = [...institutionals];
 
-    foreignBuyTop15.sort(
+    foreignBuyTop30.sort(
       (a, b) =>
           b.foreignDiff.compareTo(a.foreignDiff,),
     );
 
-    foreignBuyTop15 =
-        foreignBuyTop15.take(15).toList();
+    foreignBuyTop30 =
+        foreignBuyTop30.take(30).toList();
 
     // ==========
-    // 外資賣超 Top15
+    // 外資賣超 Top30
     // ==========
-    foreignSellTop15 = [...institutionals];
+    foreignSellTop30 = [...institutionals];
 
-    foreignSellTop15.sort(
+    foreignSellTop30.sort(
       (a, b) =>
           a.foreignDiff.compareTo(b.foreignDiff,),
     );
 
-    foreignSellTop15 =
-        foreignSellTop15.take(15).toList();
+    foreignSellTop30 =
+        foreignSellTop30.take(30).toList();
 
     // ==========
     // 期貨未平倉
