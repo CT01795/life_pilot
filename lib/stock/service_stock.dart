@@ -131,6 +131,7 @@ class ServiceStock {
     if (await isDataExist(date, type)) {
       return;
     }
+    type = Source.twse;
     final dateStr =
         "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
     final url =
@@ -202,6 +203,7 @@ class ServiceStock {
     if (await isDataExist(date, type)) {
       return;
     }
+    type = Source.tpex;
     final dateStr =
         "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
     final url = "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade";
