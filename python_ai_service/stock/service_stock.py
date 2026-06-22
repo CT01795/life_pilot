@@ -122,6 +122,29 @@ def route_select_stock_institutional(payload: dict = Body(...)):
     finally:
         db.close()
 
+@router.post("/stock/select_stock_institutional_by_table"
+            , summary="查询三大法人股票數據"
+            , description="""查询三大法人股票數據, 參數
+              { 'date': date,}""")
+def route_select_stock_institutional_by_table(payload: dict = Body(...)):
+    date = datetime.strptime(
+        payload.get("date"),
+        "%Y-%m-%d"
+    ).date()
+    db: Session = SessionLocal()
+    try:
+        rows = db.execute(
+            text("""
+                SELECT *
+                FROM stock_institutional
+                WHERE date = :date
+            """),
+            {"date": date}
+        ).mappings().all()
+        return [dict(row) for row in rows]
+    finally:
+        db.close()
+
 @router.post(
       "/stock/insert_stock_institutional_batch"
       , summary="批量插入TWSE三大法人股票數據"
