@@ -33,8 +33,8 @@ class ControllerStock extends ChangeNotifier {
     await buildDashboard(stocks[0].date);
     loading = false;
     notifyListeners();
-     
-    try{
+
+    try {
       // 2️⃣ 背景更新資料（不阻塞 UI）
       await service.loadRawData();
     } catch (ex) {
@@ -59,12 +59,12 @@ class ControllerStock extends ChangeNotifier {
     foreignBuyTop30 = [...institutionals];
 
     foreignBuyTop30.sort(
-      (a, b) =>
-          b.foreignDiff.compareTo(a.foreignDiff,),
+      (a, b) => b.foreignDiff.compareTo(
+        a.foreignDiff,
+      ),
     );
 
-    foreignBuyTop30 =
-        foreignBuyTop30.take(30).toList();
+    foreignBuyTop30 = foreignBuyTop30.toList(); //.take(30).toList();
 
     // ==========
     // 外資賣超 Top30
@@ -72,12 +72,12 @@ class ControllerStock extends ChangeNotifier {
     foreignSellTop30 = [...institutionals];
 
     foreignSellTop30.sort(
-      (a, b) =>
-          a.foreignDiff.compareTo(b.foreignDiff,),
+      (a, b) => a.foreignDiff.compareTo(
+        b.foreignDiff,
+      ),
     );
 
-    foreignSellTop30 =
-        foreignSellTop30.take(30).toList();
+    foreignSellTop30 = foreignSellTop30.toList(); //.take(30).toList();
 
     // ==========
     // 期貨未平倉
@@ -85,38 +85,24 @@ class ControllerStock extends ChangeNotifier {
 
     try {
       futures = await service.selectFutures(date);
-      foreignFuture =
-          futures.firstWhere(
+      foreignFuture = futures.firstWhere(
         (e) =>
-            e.productName!.contains(
-                '臺股期貨') &&
-            e.identityType!.contains(
-                '外資'),
+            e.productName!.contains('臺股期貨') && e.identityType!.contains('外資'),
       );
     } catch (_) {}
 
     try {
-      trustFuture =
-          futures.firstWhere(
+      trustFuture = futures.firstWhere(
         (e) =>
-            e.productName!.contains(
-                '臺股期貨') &&
-            e.identityType!.contains(
-                '投信'),
+            e.productName!.contains('臺股期貨') && e.identityType!.contains('投信'),
       );
     } catch (_) {}
 
     try {
-      dealerFuture =
-          futures.firstWhere(
+      dealerFuture = futures.firstWhere(
         (e) =>
-            e.productName!.contains(
-                '臺股期貨') &&
-            e.identityType!.contains(
-                '自營商'),
+            e.productName!.contains('臺股期貨') && e.identityType!.contains('自營商'),
       );
     } catch (_) {}
   }
 }
-
-
