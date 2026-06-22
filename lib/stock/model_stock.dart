@@ -193,11 +193,13 @@ class ModelInstitutional {
   String stockNo;
   String stockName;
   int foreignDiff;
+  int totalDiff;
 
   ModelInstitutional({
     required this.stockNo,
     required this.stockName,
     required this.foreignDiff,
+    required this.totalDiff,
   });
 
   factory ModelInstitutional.fromJson(Map<String,dynamic> json){
@@ -205,6 +207,7 @@ class ModelInstitutional {
       stockNo: json["stock_no"],
       stockName: json["stock_name"],
       foreignDiff: json["foreign_diff"] ?? 0,
+      totalDiff: json["total_diff"] ?? 0,
     );
   }
 }

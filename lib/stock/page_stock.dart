@@ -88,15 +88,77 @@ Widget _buildDashboard(ControllerStock c) {
       Gaps.h32,
       Text("外資買超 Top30"),
       ...c.foreignBuyTop30.map( //.take(30).map(
-            (e) => Text("${e.stockNo} ${e.stockName} ${NumberFormat('#,##0').format(e.foreignDiff)}",
-                    style: TextStyle(color: Colors.red)),
-          ),
+            (e) => RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.black,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
+                    ),
+                    TextSpan(
+                      text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: "Net:",
+                    ),
+                    TextSpan(
+                      text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
+                      style: TextStyle(
+                        color: e.foreignDiff < e.totalDiff ? Colors.red : Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: "仟張",
+                    ),
+                  ],
+                ),
+              ),
+            ),
       Gaps.h8,
       Text("外資賣超 Top30"),
       ...c.foreignSellTop30.map( //.take(30).map(
-            (e) => Text("${e.stockNo} ${e.stockName} ${NumberFormat('#,##0').format(e.foreignDiff)}",
-                    style: TextStyle(color: Colors.green)),
-          ),
+            (e) => RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.black,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
+                    ),
+                    TextSpan(
+                      text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: "Net:",
+                    ),
+                    TextSpan(
+                      text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
+                      style: TextStyle(
+                        color: e.foreignDiff > e.totalDiff ? Colors.green : Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: "仟張",
+                    ),
+                  ],
+                ),
+              ),
+            ),
     ],
   );
 }
