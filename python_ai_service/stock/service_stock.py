@@ -200,9 +200,21 @@ def route_select_futures_institutional(payload: dict = Body(...)):
     try:
         rows = db.execute(
             text("""
-                SELECT *
-                FROM futures_institutional
-                WHERE date = :date
+                select * from futures_institutional 
+                where date = :date and
+                      product_name in ('臺股期貨','小型臺指期貨','微型臺指期貨','金融期貨','小型金融期貨','電子期貨','小型電子期貨','非金電期貨')
+                order by CASE product_name
+                          WHEN '臺股期貨' THEN 1
+                          WHEN '小型臺指期貨' THEN 2
+                          WHEN '微型臺指期貨' THEN 3
+                          WHEN '金融期貨' THEN 4
+                          WHEN '小型金融期貨' THEN 5
+                          WHEN '電子期貨' THEN 6
+                          WHEN '小型電子期貨' THEN 7
+                          WHEN '非金電期貨' THEN 8
+                          ELSE 999
+                        END,
+                        identity_type
             """),
             {"date": date}
         ).mappings().all()
