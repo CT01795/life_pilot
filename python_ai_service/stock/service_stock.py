@@ -201,8 +201,7 @@ def route_select_futures_institutional(payload: dict = Body(...)):
         rows = db.execute(
             text("""
                 select * from futures_institutional 
-                where date = :date and
-                      product_name in ('臺股期貨','小型臺指期貨','微型臺指期貨','金融期貨','小型金融期貨','電子期貨','小型電子期貨','非金電期貨')
+                where date = :date
                 order by CASE product_name
                           WHEN '臺股期貨' THEN 1
                           WHEN '小型臺指期貨' THEN 2
