@@ -475,17 +475,29 @@ class ServiceStock {
         "${e['product_name']}_${e['identity_type']}": e['oi_net_qty'] ?? 0,
     };
 
-    return result.map<ModelFuture>((e) {
-      final key = "${e['product_name']}_${e['identity_type']}";
+    return result.where((e) {
+        if (!['臺股期貨','小型臺指期貨','微型臺指期貨','金融期貨','小型金融期貨','電子期貨','小型電子期貨','非金電期貨'].contains(e['product_name'])) {
+          return false;
+        } 
+        final key = "${e['product_name']}_${e['identity_type']}";
 
-      final todayQty = e['oi_net_qty'] ?? 0;
-      final yQty = yesterdayMap[key] ?? 0;
+        final todayQty = e['oi_net_qty'] ?? 0;
+        final yQty = yesterdayMap[key] ?? 0;
+        final diff = todayQty - yQty;
+        return !(todayQty.abs() < 200 && diff.abs() < 200);
+      })
+      .map<ModelFuture>((e) {
+        final key = "${e['product_name']}_${e['identity_type']}";
 
-      return ModelFuture.fromJson({
-        ...e,
-        "oi_net_qty_diff": todayQty - yQty,
-      });
-    }).toList();
+        final todayQty = (e['oi_net_qty'] ?? 0) as num;
+        final yQty = (yesterdayMap[key] ?? 0) as num;
+
+        return ModelFuture.fromJson({
+          ...e,
+          "oi_net_qty_diff": todayQty - yQty,
+        });
+      })
+      .toList();
   }
 
   Future<bool> isDataExist(DateTime date, String type) async {
