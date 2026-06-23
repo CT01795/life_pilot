@@ -53,38 +53,38 @@ Widget _buildDashboard(ControllerStock c) {
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
       Gaps.h8,
-      Text(
-        "外資期貨：${NumberFormat('#,##0').format(c.foreignFuture?.oiNetQty ?? 0)}",
-        style: TextStyle(
-                        color: (c.foreignFuture?.oiNetQty?? 0) < 0 ? Colors.green : Colors.red),
-      ),
-      Text(
-        "Diff：${NumberFormat('#,##0').format(c.foreignFuture?.oiNetQtyDiff ?? 0)}",
-        style: TextStyle(
-                        color: (c.foreignFuture?.oiNetQtyDiff?? 0) < 0 ? Colors.green : (c.foreignFuture?.oiNetQtyDiff?? 0) == 0 ? Colors.black: Colors.red),
-      ),
-      Gaps.h4,
-      Text(
-        "投信期貨：${NumberFormat('#,##0').format(c.trustFuture?.oiNetQty ?? 0)}",
-        style: TextStyle(
-                        color: (c.trustFuture?.oiNetQty?? 0) < 0 ? Colors.green : Colors.red),
-      ),
-      Text(
-        "Diff：${NumberFormat('#,##0').format(c.trustFuture?.oiNetQtyDiff ?? 0)}",
-        style: TextStyle(
-                        color: (c.trustFuture?.oiNetQtyDiff?? 0) < 0 ? Colors.green : (c.trustFuture?.oiNetQtyDiff?? 0) == 0 ? Colors.black: Colors.red),
-      ),
-      Gaps.h4,
-      Text(
-        "自營商期貨：${NumberFormat('#,##0').format(c.dealerFuture?.oiNetQty ?? 0)}",
-        style: TextStyle(
-                        color: (c.dealerFuture?.oiNetQty?? 0) < 0 ? Colors.green : Colors.red),
-      ),
-      Text(
-        "Diff：${NumberFormat('#,##0').format(c.dealerFuture?.oiNetQtyDiff ?? 0)}",
-        style: TextStyle(
-                        color: (c.dealerFuture?.oiNetQtyDiff?? 0) < 0 ? Colors.green : (c.dealerFuture?.oiNetQtyDiff?? 0) == 0 ? Colors.black : Colors.red),
-      ),
+      ...c.futures.map( //.take(30).map(
+            (e) => RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.black,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "${e.productName?.trim()} ${e.identityType?.trim()} ",
+                    ),
+                    TextSpan(
+                      text: "${NumberFormat('#,##0').format(e.oiNetQty)} ",
+                      style: TextStyle(
+                        color: (e.oiNetQty ?? 0) >= 0 ? Colors.red : Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: "Net:",
+                    ),
+                    TextSpan(
+                      text: "${NumberFormat('#,##0').format(e.oiNetQtyDiff)} ",
+                      style: TextStyle(
+                        color: (e.oiNetQtyDiff ?? 0) > 0 ? Colors.red : Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
       Gaps.h32,
       Text("外資買超 Top30"),
       ...c.foreignBuyTop30.map( //.take(30).map(

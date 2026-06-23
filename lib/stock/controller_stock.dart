@@ -11,9 +11,6 @@ class ControllerStock extends ChangeNotifier {
   List<ModelInstitutional> institutionals = [];
   List<ModelInstitutional> foreignBuyTop30 = [];
   List<ModelInstitutional> foreignSellTop30 = [];
-  ModelFuture? foreignFuture;
-  ModelFuture? trustFuture;
-  ModelFuture? dealerFuture;
   bool loading = true;
 
   ControllerStock(this.service);
@@ -85,24 +82,6 @@ class ControllerStock extends ChangeNotifier {
 
     try {
       futures = await service.selectFutures(date);
-      foreignFuture = futures.firstWhere(
-        (e) =>
-            e.productName!.contains('臺股期貨') && e.identityType!.contains('外資'),
-      );
-    } catch (_) {}
-
-    try {
-      trustFuture = futures.firstWhere(
-        (e) =>
-            e.productName!.contains('臺股期貨') && e.identityType!.contains('投信'),
-      );
-    } catch (_) {}
-
-    try {
-      dealerFuture = futures.firstWhere(
-        (e) =>
-            e.productName!.contains('臺股期貨') && e.identityType!.contains('自營商'),
-      );
     } catch (_) {}
   }
 }
