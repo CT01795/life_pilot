@@ -734,26 +734,35 @@ class ServiceStock {
         'p_end': i == stocksLength! - 1 ? result["count"] - i * batch : batch,
       });
     }
-    await api.post('stock/insert_stock_date_batch', {
-      'table_name': TableNames.stockDate,
-      'stocks': [
-        {
-          'date': date.toUtc().toIso8601String(),
-          'type': Source.updateStockTechnicalForDate,
-        }
-      ],
-    });
+    try{
+      await api.post('stock/insert_stock_date_batch', {
+        'table_name': TableNames.stockDate,
+        'stocks': [
+          {
+            'date': date.toUtc().toIso8601String(),
+            'type': Source.updateStockTechnicalForDate,
+          }
+        ],
+      });
+    } catch (ex) {
+      logger.e(ex);
+    }
     await api.post('stock/update_model', {});
 
-    await apiSupabase.post('stock/insert_stock_date_batch', {
-      'table_name': TableNames.stockDate,
-      'stocks': [
-        {
-          'date': date.toUtc().toIso8601String(),
-          'type': Source.updateStockTechnicalForDate,
-        }
-      ],
-    });
+    try {
+      await apiSupabase.post('stock/insert_stock_date_batch', {
+        'table_name': TableNames.stockDate,
+        'stocks': [
+          {
+            'date': date.toUtc().toIso8601String(),
+            'type': Source.updateStockTechnicalForDate,
+          }
+        ],
+      });
+    } catch (ex) {
+      logger.e(ex);
+    }
+    await api.post('stock/update_model', {});
 
     try {
       List<ModelStock>? apiStocks = await fetchStocksFromApiMac(date.toUtc());
