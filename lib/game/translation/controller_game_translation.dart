@@ -39,12 +39,12 @@ class ControllerGameTranslation extends ChangeNotifier {
   final player = AudioPlayer();
 
   final Map<String, Uint8List> _audioCache = {};
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, String group, bool isQuestion) async {
     if (text.isEmpty) return;
 
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    //final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
-      await speakWeb(text);
+      await speakWeb(text, group: group, isQuestion: isQuestion);
       return;
     }
 
@@ -53,10 +53,15 @@ class ControllerGameTranslation extends ChangeNotifier {
       return;
     }
     String url = "";
-    if (containsChinese) {
+    if ((group.contains("中翻英") && isQuestion) || (group.contains("英翻中") && !isQuestion) || 
+        (group.contains("日翻中") && !isQuestion) || (group.contains("中翻日") && isQuestion)) {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else {
+    } else if ((group.contains("中翻日") && !isQuestion) || (group.contains("日翻中") && isQuestion)) {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=ja&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    }
+    else{
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
@@ -90,7 +95,7 @@ class ControllerGameTranslation extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
-    speak(currentQuestion!.question);
+    speak(currentQuestion!.question, currentQuestion!.group, true); // 自動播放題目
   }
 
   Map<String, Set<String>> synonyms = {};

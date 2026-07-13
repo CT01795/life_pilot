@@ -1,6 +1,7 @@
 class ModelGameTranslation {
   final String questionId;
   final String question;
+  final String group; 
   final List<String> options; // 3 個答案
   final String correctAnswer;
   bool? isRight;
@@ -8,6 +9,7 @@ class ModelGameTranslation {
   ModelGameTranslation({
     required this.questionId,
     required this.question,
+    required this.group,
     required this.options,
     required this.correctAnswer,
     this.isRight,

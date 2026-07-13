@@ -280,11 +280,12 @@ class ServiceGame {
     return ModelGameTranslation(
         questionId: data['id'],
         question: data['question'],
+        group: data['group'],
         correctAnswer: data['correct_answer'],
         options: [
           data['correct_answer'],
-          data['wrong1'],
-          data['wrong2'],
+          data['wrong1'] ?? '',
+          data['wrong2'] ?? '',
         ]..shuffle());
   }
 
