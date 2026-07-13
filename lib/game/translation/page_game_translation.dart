@@ -83,7 +83,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                       padding:
                           EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
                     ),
-                    onPressed: () => controller.speak(q.question),
+                    onPressed: () => controller.speak(q.question, q.group, true),
                     child: Row(
                       mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -92,7 +92,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                           scale: 4, // 放大，可自行調整
                           alignment: Alignment.centerLeft, // 左對齊
                           child: InkWell(
-                            onTap: () => controller.speak(q.question),
+                            onTap: () => controller.speak(q.question, q.group, true),
                             child:
                                 Icon(Icons.volume_up, color: Color(0xFF212121)),
                           ),
@@ -129,7 +129,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                         backgroundColor: buttonColor,
                       ),
                       onPressed: () => controller.speak(
-                          opt), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
+                          opt, q.group, false), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
                       child: Row(
                         mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                         mainAxisAlignment: MainAxisAlignment.start,
