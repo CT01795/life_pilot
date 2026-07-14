@@ -20,12 +20,14 @@ class PageGameTranslation extends StatefulWidget {
 class _PageGameTranslationState extends State<PageGameTranslation> {
   late final ControllerGameTranslation controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
-  double size = 32.0;
+  double questionSize = 32.0;
+  double answerSize = 32.0;
 
   @override
   void initState() {
     super.initState();
-
+    questionSize = widget.gameName.contains("日") || widget.gameName.contains("韓") ? 24.0 : questionSize;
+    answerSize = widget.gameName.contains("日") || widget.gameName.contains("韓") ? 24.0 : answerSize;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameTranslation(
       gameId: widget.gameId,
@@ -107,7 +109,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                           child: Text(
                             q.question,
                             style: TextStyle(
-                                fontSize: size, color: Color(0xFF212121)),
+                                fontSize: questionSize, color: Color(0xFF212121)),
                             textAlign: TextAlign.start,
                             softWrap: true, // 允許換行
                             overflow: TextOverflow.visible,
@@ -166,7 +168,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                             child: Text(
                               opt,
                               style: TextStyle(
-                                  fontSize: size, color: Color(0xFF212121)),
+                                  fontSize: answerSize, color: Color(0xFF212121)),
                               softWrap: true, // 允許自動換行
                               textAlign: TextAlign.start,
                             ),
