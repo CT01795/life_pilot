@@ -217,21 +217,6 @@ class _PageGameListState extends State<PageGameList> {
                         if (result == true) {
                           await _loadUserProgress();
                         }
-                      } else if (game.gameName.toLowerCase().contains(
-                          "translation".toLowerCase())) {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PageGameTranslation(
-                              gameId: game.id,
-                              gameLevel: game.level,
-                              gameName: game.gameName,
-                            ),
-                          ),
-                        );
-                        if (result == true) {
-                          await _loadUserProgress();
-                        }
                       } else if (game.gameName.toLowerCase() ==
                           "mario translation".toLowerCase()) {
                         final result = await Navigator.push(
@@ -437,6 +422,21 @@ class _PageGameListState extends State<PageGameList> {
                           MaterialPageRoute(
                             builder: (_) => PageGameWordSearch(
                                 gameId: game.id, gameLevel: game.level),
+                          ),
+                        );
+                        if (result == true) {
+                          await _loadUserProgress();
+                        }
+                      } else if (game.gameName.toLowerCase().contains(
+                          "translation".toLowerCase())) {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageGameTranslation(
+                              gameId: game.id,
+                              gameLevel: game.level,
+                              gameName: game.gameName,
+                            ),
                           ),
                         );
                         if (result == true) {
