@@ -233,6 +233,42 @@ def route_get_translation_with_options(payload: dict = Body(...)):
     )
 
 @router.post(
+      "/game/get_translationjp_with_options"
+      , summary="取得translation JP題目"
+      , description="""取得translation JP題目,
+          {'user_name': user_name,
+           'p_level': p_level,}""")     
+def route_get_translationjp_with_options(payload: dict = Body(...)):
+    return route_fetch_data_by_rpc(
+        """
+        SELECT row_to_json(t)
+        FROM get_translationjp_with_options(
+            :user_name,
+            :p_level
+        ) t
+        """,
+        payload
+    )
+
+@router.post(
+      "/game/get_translationkr_with_options"
+      , summary="取得translation KR題目"
+      , description="""取得translation KR題目,
+          {'user_name': user_name,
+           'p_level': p_level,}""")     
+def route_get_translationkr_with_options(payload: dict = Body(...)):
+    return route_fetch_data_by_rpc(
+        """
+        SELECT row_to_json(t)
+        FROM get_translationkr_with_options(
+            :user_name,
+            :p_level
+        ) t
+        """,
+        payload
+    )
+
+@router.post(
       "/game/get_next_word_question"
       , summary="取得Word Search題目"
       , description="""取得Word Search題目,
