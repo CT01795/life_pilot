@@ -268,9 +268,9 @@ class ServiceGame {
       String userName, int level, String gameName) async {
     String functionName = 'game/get_translation_with_options';
     if (gameName.contains("日")) {
-      functionName = 'game/get_translationJP_with_options';
+      functionName = 'game/get_translationjp_with_options';
     } else if (gameName.contains("韓")) {
-      functionName = 'game/get_translationKR_with_options';
+      functionName = 'game/get_translationkr_with_options';
     }
     final result = await apiSupabase.post(functionName, {
       'user_name': userName,
