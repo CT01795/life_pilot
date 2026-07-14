@@ -155916,8 +155916,8 @@ return B.l($async$PW,r)},
 Q7(a,b,c){return this.b5H(a,b,c)},
 b5H(a,b,c){var s=0,r=B.m(t.UT),q,p,o,n,m,l,k,j,i,h,g
 var $async$Q7=B.n(function(d,e){if(d===1)return B.j(e,r)
-while(true)switch(s){case 0:if(A.c.n(c,"\u65e5"))p="game/get_translationJP_with_options"
-else p=A.c.n(c,"\u97d3")?"game/get_translationKR_with_options":"game/get_translation_with_options"
+while(true)switch(s){case 0:if(A.c.n(c,"\u65e5"))p="game/get_translationjp_with_options"
+else p=A.c.n(c,"\u97d3")?"game/get_translationkr_with_options":"game/get_translation_with_options"
 s=3
 return B.d($.bH().aN(p,B.B(["user_name",a,"p_level",b],t.N,t.z)),$async$Q7)
 case 3:o=e
