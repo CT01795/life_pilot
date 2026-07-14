@@ -254,6 +254,7 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                       builder: (context) => PageGameTranslation(
                         gameId: widget.gameId,
                         gameLevel: -1, //widget.gameLevel,
+                        gameName: "",   
                       ),
                     ),
                   )

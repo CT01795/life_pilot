@@ -139,6 +139,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                               builder: (context) => PageGameTranslation(
                                 gameId: widget.gameId,
                                 gameLevel: -1, //widget.gameLevel,
+                                gameName: "",   
                               ),
                             ),
                           )

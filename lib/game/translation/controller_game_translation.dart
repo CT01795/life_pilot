@@ -17,6 +17,7 @@ class ControllerGameTranslation extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final String gameName;
 
   ModelGameTranslation? currentQuestion;
   int score = 0; // +1 / -1
@@ -34,6 +35,7 @@ class ControllerGameTranslation extends ChangeNotifier {
       required this.service,
       required this.gameId, // 初始化
       required this.gameLevel,
+      required this.gameName,
       required this.maxQuestions});
 
   final player = AudioPlayer();
@@ -54,14 +56,17 @@ class ControllerGameTranslation extends ChangeNotifier {
     }
     String url = "";
     if ((group.contains("中翻英") && isQuestion) || (group.contains("英翻中") && !isQuestion) || 
-        (group.contains("日翻中") && !isQuestion) || (group.contains("中翻日") && isQuestion)) {
+        (group.contains("日翻中") && !isQuestion) || (group.contains("中翻日") && isQuestion) || 
+        (group.contains("韓翻中") && !isQuestion) || (group.contains("中翻韓") && isQuestion)) {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     } else if ((group.contains("中翻日") && !isQuestion) || (group.contains("日翻中") && isQuestion)) {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=ja&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    }
-    else{
+    } else if ((group.contains("中翻韓") && !isQuestion) || (group.contains("韓翻中") && isQuestion)) {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    } else {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
@@ -91,7 +96,7 @@ class ControllerGameTranslation extends ChangeNotifier {
     notifyListeners();
 
     currentQuestion =
-        await service.fetchTranslationQuestion(userName, gameLevel);
+        await service.fetchTranslationQuestion(userName, gameLevel, gameName);
 
     isLoading = false;
     notifyListeners();

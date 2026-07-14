@@ -217,14 +217,15 @@ class _PageGameListState extends State<PageGameList> {
                         if (result == true) {
                           await _loadUserProgress();
                         }
-                      } else if (game.gameName.toLowerCase() ==
-                          "translation".toLowerCase()) {
+                      } else if (game.gameName.toLowerCase().contains(
+                          "translation".toLowerCase())) {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => PageGameTranslation(
                               gameId: game.id,
                               gameLevel: game.level,
+                              gameName: game.gameName,
                             ),
                           ),
                         );
