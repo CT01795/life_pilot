@@ -8,8 +8,10 @@ import 'package:provider/provider.dart';
 // ignore: must_be_immutable
 class PageGameTranslation extends StatefulWidget {
   final String gameId;
+  final String gameName;
   int gameLevel;
-  PageGameTranslation({super.key, required this.gameId, required this.gameLevel});
+  PageGameTranslation(
+      {super.key, required this.gameId, required this.gameLevel, required this.gameName});
 
   @override
   State<PageGameTranslation> createState() => _PageGameTranslationState();
@@ -28,6 +30,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
     controller = ControllerGameTranslation(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
+      gameName:widget.gameName,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
       maxQuestions: widget.gameLevel == -1 ? 10 : 999,
@@ -83,7 +86,8 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                       padding:
                           EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
                     ),
-                    onPressed: () => controller.speak(q.question, q.group, true),
+                    onPressed: () =>
+                        controller.speak(q.question, q.group, true),
                     child: Row(
                       mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -92,7 +96,8 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                           scale: 4, // 放大，可自行調整
                           alignment: Alignment.centerLeft, // 左對齊
                           child: InkWell(
-                            onTap: () => controller.speak(q.question, q.group, true),
+                            onTap: () =>
+                                controller.speak(q.question, q.group, true),
                             child:
                                 Icon(Icons.volume_up, color: Color(0xFF212121)),
                           ),
@@ -128,8 +133,8 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: buttonColor,
                       ),
-                      onPressed: () => controller.speak(
-                          opt, q.group, false), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
+                      onPressed: () => controller.speak(opt, q.group,
+                          false), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
                       child: Row(
                         mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                         mainAxisAlignment: MainAxisAlignment.start,

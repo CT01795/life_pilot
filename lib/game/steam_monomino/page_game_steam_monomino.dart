@@ -81,6 +81,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                                   builder: (context) => PageGameTranslation(
                                     gameId: widget.gameId,
                                     gameLevel: -1, //widget.gameLevel,
+                                    gameName: "",   
                                   ),
                                 ),
                               )

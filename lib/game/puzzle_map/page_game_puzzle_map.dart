@@ -423,7 +423,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                                 MaterialPageRoute(
                                   builder: (context) => PageGameTranslation(
                                     gameId: widget.gameId,
-                                    gameLevel: -1, //widget.gameLevel,
+                                    gameLevel: -1, 
+                                    gameName: "",     //widget.gameLevel
                                   ),
                                 ),
                               )
