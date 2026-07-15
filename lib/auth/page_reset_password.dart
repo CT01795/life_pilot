@@ -50,7 +50,10 @@ class _PageResetPasswordState extends State<PageResetPassword> {
       return;
     }
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = Supabase.instance.client.auth.currentSession?.user;
+    logger.i(
+      'Reset target=${user?.email}',
+    );
     if (user == null) {
       AppNavigator.showErrorBar(
           _authView.showLoginError(message: ErrorFields.noRecoverySession, loc: loc));
@@ -63,7 +66,6 @@ class _PageResetPasswordState extends State<PageResetPassword> {
           password: password,
         ),
       );
-      await Supabase.instance.client.auth.signOut();
       if (!mounted) {
         return;
       }

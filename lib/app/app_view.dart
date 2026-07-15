@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/config_app.dart';
-import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/theme.dart';
 import 'package:life_pilot/auth/page_auth_check.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
@@ -28,11 +28,8 @@ class _AppViewState extends State<AppView> {
   }
 
   void _initDeepLink() {
-    _appLinks.uriLinkStream.listen((uri) {
-      if (uri.scheme == 'lifepilot' && uri.host == 'reset-password') {
-        final auth = context.read<ModelAuthView>();
-        auth.goToResetPassword(null, null);
-      }
+    _appLinks.uriLinkStream.listen((uri) async {
+      logger.i('DeepLink received: $uri');
     });
   }
 
