@@ -60,7 +60,7 @@ class _PageLoginState extends State<PageLogin> {
   }
 
   // 🔹 嘗試登入或匿名登入
-  Future<void> _tryLogin({required bool isAnonymously}) async {
+  Future<void> _tryLogin() async {
     if (!mounted) return;
     final controllerPageMain = context.read<ControllerPageMain>();
     controllerPageMain.changePage(PageType.personalEvent);
@@ -68,12 +68,10 @@ class _PageLoginState extends State<PageLogin> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    final error = !isAnonymously
-        ? await _authView.login(
+    final error = await _authView.login(
             email: email,
             password: password,
-          )
-        : await _authView.anonymousLogin();
+          );
 
     if (!mounted) return;
 
@@ -125,18 +123,13 @@ class _PageLoginState extends State<PageLogin> {
               obscureText: true,
               decoration: InputDecoration(labelText: loc.password),
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _tryLogin(isAnonymously: false),
+              onSubmitted: (_) => _tryLogin(),
             ),
             Gaps.h16,
             Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               ElevatedButton(
                 child: Text(loc.login),
-                onPressed: () => _tryLogin(isAnonymously: false),
-              ),
-              Gaps.w16,
-              ElevatedButton(
-                child: Text(loc.loginAnonymously),
-                onPressed: () => _tryLogin(isAnonymously: true),
+                onPressed: () => _tryLogin(),
               ),
             ]),
             Gaps.h16,

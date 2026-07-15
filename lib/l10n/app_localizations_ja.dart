@@ -48,6 +48,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wrongUserPassword => 'メールかパスワードが正しくありません';
 
   @override
+  String get emailNotConfirmed => 'メールアドレスが確認されていません';
+
+  @override
   String get tooManyRequests => 'リクエストが多すぎます';
 
   @override
@@ -61,6 +64,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get register => '  登録  ';
+
+  @override
+  String get updatePassword => 'パスワード更新';
 
   @override
   String get back => '戻る';

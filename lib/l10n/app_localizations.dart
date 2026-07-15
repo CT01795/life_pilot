@@ -180,6 +180,12 @@ abstract class AppLocalizations {
   /// Label for login error
   ///
   /// In en, this message translates to:
+  /// **'Email not confirmed'**
+  String get emailNotConfirmed;
+
+  /// Label for login error
+  ///
+  /// In en, this message translates to:
   /// **'Too many requests'**
   String get tooManyRequests;
 
@@ -206,6 +212,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'  Register  '**
   String get register;
+
+  /// Label for update password
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get updatePassword;
 
   /// Label for back
   ///

@@ -48,6 +48,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get wrongUserPassword => '이메일 또는 비밀번호가 잘못되었습니다';
 
   @override
+  String get emailNotConfirmed => '이메일이 확인되지 않았습니다';
+
+  @override
   String get tooManyRequests => '요청이 너무 많습니다';
 
   @override
@@ -61,6 +64,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get register => '  회원가입  ';
+
+  @override
+  String get updatePassword => '비밀번호 변경';
 
   @override
   String get back => '뒤로';

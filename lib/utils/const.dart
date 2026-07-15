@@ -227,6 +227,8 @@ enum MSG {
 
 // -------------------- Error Fields --------------------
 class ErrorFields {
+  static const String wrongUserPassword = 'wrongUserPassword';
+  static const String emailNotConfirmed = 'emailNotConfirmed';
   static const String loginError = 'loginError';
   static const String registerError = 'registerError';
   static const String logoutError = 'logoutError';
@@ -234,12 +236,11 @@ class ErrorFields {
   static const String noPasswordError = 'noPasswordError';
   static const String unexpectedError = 'Unexpected error';
 
-  // 🔹 Firebase Auth 常見錯誤代碼
+  //常見錯誤代碼
   static const String authError = 'Auth Error';
   static const String userNotFoundError = 'user-not-found';
   static const String wrongPasswordError = 'wrong-password';
   static const String invalidCredentialError = 'invalid-credential';
-  static const String wrongUserPassword = 'wrongUserPassword';
   static const String tooManyRequestsError = 'too-many-requests';
   static const String networkRequestFailedError = 'network-request-failed';
   static const String invalidEmailError = 'invalid-email';
