@@ -42,6 +42,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noPasswordError => 'パスワードを入力してください';
 
   @override
+  String get noRecoverySession => 'システムは有効な「検証用資格情報」を見つけられないか、その資格情報の有効期限が切れています';
+
+  @override
+  String get resetPasswordError => 'パスワードのリセットに失敗しました。もう一度お試しください。';
+
+  @override
   String get resetPasswordEmailNotFound => '登録されていないメールアドレスです';
 
   @override

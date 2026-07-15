@@ -42,6 +42,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPasswordError => 'Please enter your password.';
 
   @override
+  String get noRecoverySession => 'The system cannot find a valid [verification credential], or the credential has expired.';
+
+  @override
+  String get resetPasswordError => 'Reset password failed. Please try again.';
+
+  @override
   String get resetPasswordEmailNotFound => 'Account not found';
 
   @override

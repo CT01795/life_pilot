@@ -168,6 +168,18 @@ abstract class AppLocalizations {
   /// Label for reset password error
   ///
   /// In en, this message translates to:
+  /// **'The system cannot find a valid [verification credential], or the credential has expired.'**
+  String get noRecoverySession;
+
+  /// Label for reset password error
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password failed. Please try again.'**
+  String get resetPasswordError;
+
+  /// Label for reset password error
+  ///
+  /// In en, this message translates to:
   /// **'Account not found'**
   String get resetPasswordEmailNotFound;
 

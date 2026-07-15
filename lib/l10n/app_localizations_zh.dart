@@ -42,6 +42,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPasswordError => '請輸入密碼';
 
   @override
+  String get noRecoverySession => '系統找不到有效的「驗證憑證」或該憑證已經過期';
+
+  @override
+  String get resetPasswordError => '重設密碼失敗，請再試一次。';
+
+  @override
   String get resetPasswordEmailNotFound => '帳號未註冊';
 
   @override
