@@ -60,9 +60,15 @@ class ControllerGameTranslation extends ChangeNotifier {
         (group.contains("韓翻中") && !isQuestion) || (group.contains("中翻韓") && isQuestion)) {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    } else if ((group.contains("中翻日英") && !isQuestion) || (group.contains("日翻中英") && isQuestion)) {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     } else if ((group.contains("中翻日") && !isQuestion) || (group.contains("日翻中") && isQuestion)) {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=ja&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    } else if ((group.contains("中翻韓英") && !isQuestion) || (group.contains("韓翻中英") && isQuestion)) {
+      url =
+          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     } else if ((group.contains("中翻韓") && !isQuestion) || (group.contains("韓翻中") && isQuestion)) {
       url =
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
