@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app_initializer.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/auth/page_reset_password.dart';
 import 'package:life_pilot/feedback/controller_feedback.dart';
 import 'package:life_pilot/app/controller_page_main.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -34,7 +35,9 @@ class _PageAuthCheckState extends State<PageAuthCheck> {
       if (!mounted) return;
       await AppInitializer.init(); 
       if (!mounted) return;
-      context.read<ModelAuthView>().checkLoginStatus();
+      final auth = context.read<ModelAuthView>();
+      await auth.initialize();
+      await auth.checkLoginStatus();
     });
   }
 
@@ -100,7 +103,10 @@ class _AuthBodySwitcher extends StatelessWidget {
               password: auth.getRegisterPassword(),
               onBack: (email, password) => auth.goBackToLogin(email, password),
             );
-
+          case AuthPage.resetPassword:
+            return PageResetPassword(
+              onBack: ()=> auth.goBackToLogin('', ''),
+            );
           case AuthPage.pageMain:
             return const PageMain();
         }

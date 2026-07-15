@@ -1,14 +1,14 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceAuth {
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final SupabaseClient _client = Supabase.instance.client;
 
   // 🔐 Check if user is logged in
-  static bool isLoggedIn() => _auth.currentUser != null;
+  static bool isLoggedIn() => _client.auth.currentUser != null;
 
-  static String? currentAccount() => _auth.currentUser?.email;
+  static String? currentAccount() => _client.auth.currentUser?.email;
 
   // 🔑 Login with email/password
   static Future<String?> login(
@@ -19,14 +19,7 @@ class ServiceAuth {
     }
 
     return _handle(() async {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-    }, defaultError: ErrorFields.loginError);
-  }
-
-  // 🧑‍🦯 Login anonymously
-  static Future<String?> anonymousLogin() async {
-    return _handle(() async {
-      await _auth.signInAnonymously();
+      await _client.auth.signInWithPassword(email: email, password: password);
     }, defaultError: ErrorFields.loginError);
   }
 
@@ -38,11 +31,10 @@ class ServiceAuth {
     }
 
     return _handle(() async {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
+      await _client.auth.signUp(
         email: email,
         password: password,
       );
-      await userCredential.user?.sendEmailVerification();
     }, defaultError: ErrorFields.registerError);
   }
 
@@ -53,14 +45,17 @@ class ServiceAuth {
     }
 
     return _handle(() async {
-      await _auth.sendPasswordResetEmail(email: email);
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'https://ct01795.github.io/life_pilot/', //TODO
+      );
     }, defaultError: ErrorFields.loginError);
   }
 
   // 🚪 Sign out
   static Future<String?> logout() async {
     return _handle(() async {
-      await _auth.signOut();
+      await _client.auth.signOut();
     }, defaultError: ErrorFields.logoutError);
   }
 
@@ -85,32 +80,23 @@ class ServiceAuth {
     try {
       await action();
       return null;
-    } on FirebaseAuthException catch (e) {
-      return _mapFirebaseAuthError(e, defaultError);
+    } on AuthException catch (e) {
+      logger.e("Supabase Auth Error: ${e.message}");
+      return _mapSupabaseError(e, defaultError);
     } catch (e) {
       logger.e("${ErrorFields.unexpectedError}: $e");
       return defaultError;
     }
   }
 
-  static String _mapFirebaseAuthError(
-      FirebaseAuthException e, String defaultError) {
-    logger.d("${ErrorFields.authError}: ${e.code}");
-
-    switch (e.code) {
-      case ErrorFields.userNotFoundError:
-      case ErrorFields.wrongPasswordError:
-      case ErrorFields.invalidCredentialError:
-        return ErrorFields.wrongUserPassword; // 帳號密碼錯誤
-      case ErrorFields.tooManyRequestsError: // 登入過於頻繁
-      case ErrorFields.networkRequestFailedError: //網路錯誤
-      case ErrorFields.invalidEmailError: // 帳號格式錯誤
-      case ErrorFields.emailAlreadyInUseError: // 帳號已經被人註冊
-      case ErrorFields
-            .weakPasswordError: // Password should be at least 6 characters
-        return e.code;
-      default:
-        return defaultError; // 其他錯誤
+  static String _mapSupabaseError(AuthException e, String defaultError) {
+    final message = e.message.toLowerCase();
+    if (message.contains("invalid login credentials")) {
+      return ErrorFields.wrongUserPassword;
     }
+    if (message.contains("email not confirmed")) {
+      return ErrorFields.emailNotConfirmed;
+    }
+    return defaultError;
   }
 }

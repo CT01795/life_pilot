@@ -26,11 +26,11 @@ class ModelAuthView extends ChangeNotifier {
   String? getRegisterEmail() => _auth.registerMap[AuthConstants.email];
   String? getRegisterPassword() => _auth.registerMap[AuthConstants.password];
 
+  Future<void> initialize() => _auth.initialize();
   Future<void> checkLoginStatus() => _auth.checkLoginStatus();
   Future<void> logout() => _auth.logout();
   Future<String?> login({required String email, required String password}) =>
       _auth.login(email: email, password: password);
-  Future<String?> anonymousLogin() => _auth.anonymousLogin();
 
   Future<String?> resetPassword({required String email}) =>
       _auth.resetPassword(email: email);
@@ -39,7 +39,8 @@ class ModelAuthView extends ChangeNotifier {
 
   void goToRegister(String? email, String? password) =>
       _auth.goToRegister(email: email, password: password);
-
+  void goToResetPassword(String? email, String? password) =>
+      _auth.goToResetPassword(email: email, password: password);
   void goBackToLogin(String email, String password) =>
       _auth.goBackToLogin(email: email, password: password);
 
@@ -48,6 +49,7 @@ class ModelAuthView extends ChangeNotifier {
       {required String message, required AppLocalizations loc}) {
     final errorMap = {
       ErrorFields.wrongUserPassword: loc.wrongUserPassword,
+      ErrorFields.emailNotConfirmed: loc.emailNotConfirmed,
       ErrorFields.tooManyRequestsError: loc.tooManyRequests,
       ErrorFields.networkRequestFailedError: loc.networkError,
       ErrorFields.invalidEmailError: loc.invalidEmail,

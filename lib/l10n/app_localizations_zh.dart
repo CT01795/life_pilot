@@ -48,6 +48,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wrongUserPassword => '帳號密碼錯誤';
 
   @override
+  String get emailNotConfirmed => '帳號尚未驗證';
+
+  @override
   String get tooManyRequests => '登入過於頻繁';
 
   @override
@@ -61,6 +64,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get register => '  註冊  ';
+
+  @override
+  String get updatePassword => '更新密碼';
 
   @override
   String get back => '返回';

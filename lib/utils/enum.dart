@@ -1,4 +1,4 @@
-enum AuthPage { login, register, pageMain }
+enum AuthPage { login, register, resetPassword, pageMain }
 
 enum PageType {
   personalEvent,

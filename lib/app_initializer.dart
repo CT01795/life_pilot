@@ -1,6 +1,5 @@
-import 'package:firebase_core/firebase_core.dart';
+
 import 'package:life_pilot/app/config_app.dart';
-import 'package:life_pilot/firebase_options.dart';
 import 'package:life_pilot/utils/service/service_timezone.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,11 +14,7 @@ class AppInitializer {
     CalendarConfig.tzLocation =
         await ServiceTimezone().setTimezoneFromDevice(); // ✅ 自動偵測並設定時區
 
-    // ✅ 初始化 Firebase、Supabase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
+    // ✅ 初始化 Supabase
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
