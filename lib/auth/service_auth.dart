@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -45,9 +46,13 @@ class ServiceAuth {
     }
 
     return _handle(() async {
+      final redirectTo = kIsWeb
+        ? 'https://ct01795.github.io/life_pilot/'
+        : 'lifepilot://reset-password';
+
       await _client.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'https://ct01795.github.io/life_pilot/', //TODO
+        redirectTo: redirectTo,
       );
     }, defaultError: ErrorFields.loginError);
   }

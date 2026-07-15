@@ -42,6 +42,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get noPasswordError => '비밀번호를 입력해 주세요';
 
   @override
+  String get noRecoverySession => '시스템이 유효한 [확인 자격 증명] 을 찾을 수 없거나, 해당 자격 증명이 만료되었습니다.';
+
+  @override
+  String get resetPasswordError => '비밀번호 재설정에 실패했습니다. 다시 시도해 주세요.';
+
+  @override
   String get resetPasswordEmailNotFound => '등록되지 않은 이메일입니다';
 
   @override

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/theme.dart';
 import 'package:life_pilot/auth/page_auth_check.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:provider/provider.dart';
+import 'package:app_links/app_links.dart';
 
 class AppView extends StatefulWidget {
   const AppView({super.key});
@@ -13,12 +15,25 @@ class AppView extends StatefulWidget {
   State<AppView> createState() => _AppViewState();
 }
 
-class _AppViewState extends State<AppView> {  
+class _AppViewState extends State<AppView> {
+  final AppLinks _appLinks = AppLinks();
+
   @override
   void initState() {
     super.initState();
     // ✅ 僅初始化一次全域錯誤處理
     app_navigator.AppNavigator.initErrorHandling();
+    // ✅ Deep Link
+    _initDeepLink();
+  }
+
+  void _initDeepLink() {
+    _appLinks.uriLinkStream.listen((uri) {
+      if (uri.scheme == 'lifepilot' && uri.host == 'reset-password') {
+        final auth = context.read<ModelAuthView>();
+        auth.goToResetPassword(null, null);
+      }
+    });
   }
 
   @override
@@ -43,7 +58,8 @@ class _AppViewState extends State<AppView> {
 
               return MediaQuery(
                 data: mediaQuery.copyWith(textScaler: TextScaler.linear(1.5)),
-                child: child ?? const SizedBox.shrink(), //避免 child 為 null 時 crash，防禦性寫法。
+                child: child ??
+                    const SizedBox.shrink(), //避免 child 為 null 時 crash，防禦性寫法。
               );
             },
             debugShowCheckedModeBanner: false,

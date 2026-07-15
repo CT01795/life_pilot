@@ -48,6 +48,8 @@ class ModelAuthView extends ChangeNotifier {
   String showLoginError(
       {required String message, required AppLocalizations loc}) {
     final errorMap = {
+      ErrorFields.noRecoverySession: loc.noRecoverySession,
+      ErrorFields.resetPasswordError: loc.resetPasswordError,
       ErrorFields.wrongUserPassword: loc.wrongUserPassword,
       ErrorFields.emailNotConfirmed: loc.emailNotConfirmed,
       ErrorFields.tooManyRequestsError: loc.tooManyRequests,
