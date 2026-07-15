@@ -25,8 +25,14 @@ class ControllerAuth extends ChangeNotifier {
   void _listenAuthState() {
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final event = data.event;
-      if (event == AuthChangeEvent.passwordRecovery) {
+      logger.i('Auth Event: ${data.event}');
+      logger.i(
+        'Recovery User: ${data.session?.user.email}',
+      );
+      logger.i(
+        'Current User: ${Supabase.instance.client.auth.currentUser?.email}',
+      );
+      if (data.event == AuthChangeEvent.passwordRecovery) {
         _update(() {
           _currentPage = AuthPage.resetPassword;
         });
