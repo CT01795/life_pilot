@@ -45820,12 +45820,15 @@ o=window.speechSynthesis
 if(o!=null)o.speak(n)
 s=1
 break}p=!0
-if(!(A.c.n(b,"\u4e2d\u7ffb\u82f1")&&c))if(!(A.c.n(b,"\u82f1\u7ffb\u4e2d")&&!c))if(!(A.c.n(b,"\u65e5\u7ffb\u4e2d")&&!c))p=A.c.n(b,"\u4e2d\u7ffb\u65e5")&&c
+if(!(A.c.n(b,"\u4e2d\u7ffb\u82f1")&&c))if(!(A.c.n(b,"\u82f1\u7ffb\u4e2d")&&!c))if(!(A.c.n(b,"\u65e5\u7ffb\u4e2d")&&!c))if(!(A.c.n(b,"\u4e2d\u7ffb\u65e5")&&c))if(!(A.c.n(b,"\u97d3\u7ffb\u4e2d")&&!c))p=A.c.n(b,"\u4e2d\u7ffb\u97d3")&&c
 if(p)n.lang="zh-TW"
 else{if(!(A.c.n(b,"\u4e2d\u7ffb\u65e5")&&!c))p=A.c.n(b,"\u65e5\u7ffb\u4e2d")&&c
 else p=!0
 if(p)n.lang="ja-JP"
-else n.lang="en-US"}p=window.speechSynthesis
+else{if(!(A.c.n(b,"\u4e2d\u7ffb\u97d3")&&!c))p=A.c.n(b,"\u97d3\u7ffb\u4e2d")&&c
+else p=!0
+if(p)n.lang="ko-KR"
+else n.lang="en-US"}}p=window.speechSynthesis
 if(p!=null)p.speak(n)
 case 1:return B.k(q,r)}})
 return B.l($async$z9,r)},
