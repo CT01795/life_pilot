@@ -117,7 +117,7 @@ class ControllerEvent extends ChangeNotifier {
     event.isDislike = event.isLike == true ? false : event.isDislike;
     await _serviceEvent.updateLikeEvent(
         event: event, account: auth.currentAccount!);
-    if (_tableName == TableNames.recommendedEvents ||
+    if (_tableName == TableNames.recommendEvents ||
         _tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
@@ -142,7 +142,7 @@ class ControllerEvent extends ChangeNotifier {
     event.isLike = event.isDislike == true ? false : event.isLike;
     await _serviceEvent.updateLikeEvent(
         event: event, account: auth.currentAccount!);
-    if (_tableName == TableNames.recommendedEvents ||
+    if (_tableName == TableNames.recommendEvents ||
         _tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
@@ -302,7 +302,7 @@ class ControllerEvent extends ChangeNotifier {
 
   // 判斷日期是否要顯示
   bool showDate() {
-    return _tableName != TableNames.recommendedAttractions;
+    return _tableName != TableNames.recommendPlaces;
   }
 
   List<EventViewModel>? _cachedViewModels;

@@ -102,22 +102,49 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings => '設定';
 
   @override
+  String get pageSelectorTooltip => '機能メニュー';
+
+  @override
+  String get userMenuButton => 'ユーザー選択';
+
+  @override
+  String get home => 'ホーム';
+
+  @override
+  String get completeEventTitle => '旅程を完成させてください';
+
+  @override
+  String get completeEventMessage => '完了すると、この旅行は本日のリストから消えます。';
+
+  @override
+  String get noInfoAvailable => '利用可能な情報はありません。';
+
+  @override
+  String get openMap => 'ナビゲーション';
+
+  @override
+  String get selectCity => '都市を選択';
+
+  @override
+  String get selectAccount => 'アカウントを選択';
+
+  @override
   String get personalEvent => '個人のイベント';
 
   @override
   String get stock => 'ストック';
 
   @override
-  String get recommendedEvent => 'おすすめイベント';
+  String get recommendEvent => 'おすすめイベント';
 
   @override
-  String get recommendedEventZero => '現在おすすめイベントはありません';
+  String get recommendEventZero => '現在おすすめイベントはありません';
 
   @override
-  String get recommendedAttractions => 'おすすめの観光地';
+  String get recommendPlaces => 'おすすめの観光地';
 
   @override
-  String get recommendedAttractionsZero => '現在、おすすめのスポットはありません';
+  String get recommendPlacesZero => '現在、おすすめのスポットはありません';
 
   @override
   String get memoryTrace => '思い出の回廊';
@@ -138,6 +165,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountRecords => '収支記録';
 
   @override
+  String get todayIncomeExpense => '本日の収支';
+
+  @override
+  String get todayPoints => '今日のポイント';
+
+  @override
   String get pointsRecord => 'ポイント記録';
 
   @override
@@ -147,13 +180,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ai => 'AIアシスタント';
 
   @override
-  String get feedback => 'Feedback';
+  String get feedback => 'フィードバック';
 
   @override
   String get businessPlan => 'Business Plan';
 
   @override
-  String get pageRecommendedEvent => 'pageRecommendedEvent';
+  String get pageRecommendEvent => 'pageRecommendEvent';
 
   @override
   String get search => '検索';
@@ -403,6 +436,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deleteError => '❌ 削除失敗';
+
+  @override
+  String get todaySchedule => '本日の予定';
+
+  @override
+  String get upcomingSchedule => '今後の予定';
+
+  @override
+  String get addToSchedule => '旅程に追加する';
 
   @override
   String get clickHereToSeeMore => 'もっと見る';

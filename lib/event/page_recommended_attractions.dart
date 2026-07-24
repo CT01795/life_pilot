@@ -13,16 +13,16 @@ import 'package:provider/provider.dart';
 
 import 'widgets_event_list.dart';
 
-class PageRecommendedAttractions extends StatefulWidget {
-  const PageRecommendedAttractions({super.key});
+class PageRecommendPlaces extends StatefulWidget {
+  const PageRecommendPlaces({super.key});
 
   @override
-  State<PageRecommendedAttractions> createState() =>
-      _PageRecommendedAttractionsState();
+  State<PageRecommendPlaces> createState() =>
+      _PageRecommendPlacesState();
 }
 
-class _PageRecommendedAttractionsState
-    extends State<PageRecommendedAttractions> {
+class _PageRecommendPlacesState
+    extends State<PageRecommendPlaces> {
   late final ControllerEvent _controllerEvent;
 
   @override
@@ -33,7 +33,7 @@ class _PageRecommendedAttractionsState
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
       serviceWeather: context.read<ServiceWeather>(),
-      tableName: TableNames.recommendedAttractions,
+      tableName: TableNames.recommendPlaces,
       toTableName: TableNames.calendarEvents,
       modelEvent: ModelEvent(),
     );
@@ -55,8 +55,8 @@ class _PageRecommendedAttractionsState
         child: GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,
-          title: loc.recommendedAttractions,
-          emptyText: loc.recommendedAttractionsZero,
+          title: loc.recommendPlaces,
+          emptyText: loc.recommendPlacesZero,
           searchPanelBuilder: widgetsSearchPanel,
           listBuilder: ({
             required List<EventItem> filteredEvents,

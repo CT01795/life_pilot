@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
-import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
 
 class PageRegister extends StatefulWidget {
-  final String? email;
-  final String? password;
-  final void Function(String email, String password) onBack;
-  const PageRegister(
-      {super.key, this.email, this.password, required this.onBack});
+  const PageRegister({super.key});
 
   @override
   State<PageRegister> createState() => _PageRegisterState();
@@ -27,17 +23,23 @@ class _PageRegisterState extends State<PageRegister> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(text: widget.email ?? '');
-    _passwordController =
-        TextEditingController(text: widget.password ?? '');
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
     _emailFocusNode = FocusNode();
     _passwordFocusNode = FocusNode();
   }
+
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _authView = context.read<ModelAuthView>(); // ✅ 使用 Model 來統一處理狀態
+    if (!_initialized) {
+      _emailController.text = _authView.getRegisterEmail() ?? '';
+      _passwordController.text = _authView.getRegisterPassword() ?? '';
+      _initialized = true;
+    }
   }
 
   @override
@@ -65,7 +67,7 @@ class _PageRegisterState extends State<PageRegister> {
   }
 
   void _goBack() {
-    widget.onBack(
+    _authView.goBackToLogin(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
@@ -73,11 +75,15 @@ class _PageRegisterState extends State<PageRegister> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 只監聽 ProviderLocale 的變化
-    return Consumer<ProviderLocale>(builder: (context, localeProvider, _) {
-      final loc = AppLocalizations.of(context)!;
-
-      return SingleChildScrollView(
+    final loc = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.appTitle), actions: [
+        Tooltip(
+          message: loc.language,
+          child: LanguageToggleDropdown(),
+        ),
+      ]),
+      body: SingleChildScrollView(
         padding: Insets.all12,
         child: Column(
           children: [
@@ -122,7 +128,7 @@ class _PageRegisterState extends State<PageRegister> {
             ),
           ],
         ),
-      );
-    });
+      ),
+    );
   }
 }

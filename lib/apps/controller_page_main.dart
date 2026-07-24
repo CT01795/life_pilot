@@ -6,7 +6,6 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/app/service_module.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ControllerPageMain extends ChangeNotifier {
@@ -25,14 +24,8 @@ class ControllerPageMain extends ChangeNotifier {
   })  : _auth = auth,
         _loc = loc,
         _locale = initialLocale,
-        _selectedPage = auth.isAnonymous
-            ? PageType.recommendedEvent
-            : PageType.personalEvent {
-    if (_auth.isLoggedIn) {
-      loadModulesFromServer();
-    }
-  }
-
+        _selectedPage = PageType.home;
+        
   // 📘 Getter 區
   ControllerAuth get auth => _auth;
   AppLocalizations get loc => _loc;
@@ -41,21 +34,13 @@ class ControllerPageMain extends ChangeNotifier {
 
   // ✅ 取得目前登入狀態下可使用的頁面
   List<PageType> get availablePages {
-    if (_auth.isAnonymous) {
-      return const [
-        PageType.recommendedEvent,
-        PageType.recommendedAttractions,
-        PageType.game,
-        PageType.ai,
-      ];
-    }
-
-    // ⭐ 已登入 → 基本 4 頁
+    // ⭐ 已登入 → 基本
     List<PageType> pages = [
+      PageType.home,
       PageType.personalEvent,
       PageType.stock,
-      PageType.recommendedEvent,
-      PageType.recommendedAttractions,
+      PageType.recommendEvent,
+      PageType.recommendPlaces,
       PageType.memoryTrace,
       PageType.accountRecords,
       PageType.pointsRecord,
@@ -66,16 +51,7 @@ class ControllerPageMain extends ChangeNotifier {
     if (auth.currentAccount != AuthConstants.sysAdminEmail) {
       pages.remove(PageType.stock);
     }
-    // ⭐ optional 功能（依 DB 開放）
-    const optionalMap = {
-      "memoryTrace": PageType.memoryTrace,
-      "accountRecords": PageType.accountRecords,
-      "pointsRecord": PageType.pointsRecord,
-    };
 
-    if (dbPages.isNotEmpty) {
-      dbPages.removeWhere((key) => !optionalMap.containsKey(key));
-    }
     // 最後加遊戲頁
     if (auth.currentAccount == AuthConstants.sysAdminEmail) {
       pages.add(PageType.businessPlan);
@@ -127,19 +103,8 @@ class ControllerPageMain extends ChangeNotifier {
       changed = true;
     }
     if (changed) {
-      if (_auth.isLoggedIn) {
-        loadModulesFromServer();
-      }
       _notifyDebounced();
     }
-  }
-
-  // ✅ 確保 selectedPage 在合法頁面範圍內
-  Future<void> loadModulesFromServer() async {
-    dbPages =
-        await ServiceModule().loadModulesFromServer(_auth.currentAccount!);
-    _validateSelectedPage();
-    notifyListeners();
   }
 
   // ✅ 確保 selectedPage 在合法頁面範圍內

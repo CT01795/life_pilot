@@ -102,22 +102,49 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings => '設定';
 
   @override
+  String get pageSelectorTooltip => '功能選單';
+
+  @override
+  String get userMenuButton => '使用者選單';
+
+  @override
+  String get home => '首頁';
+
+  @override
+  String get completeEventTitle => '完成行程';
+
+  @override
+  String get completeEventMessage => '完成後此行程會從今日列表消失';
+
+  @override
+  String get noInfoAvailable => '沒有資料';
+
+  @override
+  String get openMap => '導航';
+
+  @override
+  String get selectCity => '選擇城市';
+
+  @override
+  String get selectAccount => '選擇帳號';
+
+  @override
   String get personalEvent => '行事曆';
 
   @override
   String get stock => '股票';
 
   @override
-  String get recommendedEvent => '推薦活動';
+  String get recommendEvent => '推薦活動';
 
   @override
-  String get recommendedEventZero => '目前沒有推薦活動';
+  String get recommendEventZero => '目前沒有推薦活動';
 
   @override
-  String get recommendedAttractions => '推薦景點';
+  String get recommendPlaces => '推薦景點';
 
   @override
-  String get recommendedAttractionsZero => '目前沒有推薦景點';
+  String get recommendPlacesZero => '目前沒有推薦景點';
 
   @override
   String get memoryTrace => '回憶走廊';
@@ -138,6 +165,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountRecords => '記帳';
 
   @override
+  String get todayIncomeExpense => '今日收支';
+
+  @override
+  String get todayPoints => '今日積分';
+
+  @override
   String get pointsRecord => '積分';
 
   @override
@@ -147,13 +180,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ai => 'AI助理';
 
   @override
-  String get feedback => 'Feedback';
+  String get feedback => '意見回饋';
 
   @override
   String get businessPlan => 'Business Plan';
 
   @override
-  String get pageRecommendedEvent => 'pageRecommendedEvent';
+  String get pageRecommendEvent => 'pageRecommendEvent';
 
   @override
   String get search => '搜尋';
@@ -403,6 +436,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteError => '❌ 刪除失敗';
+
+  @override
+  String get todaySchedule => '今日行程';
+
+  @override
+  String get upcomingSchedule => '近日行程';
+
+  @override
+  String get addToSchedule => '加入行程';
 
   @override
   String get clickHereToSeeMore => '點我看更多';

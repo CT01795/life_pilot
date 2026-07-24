@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
-import 'package:life_pilot/app/app_view.dart';
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/app_view.dart';
+import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
 import 'package:life_pilot/event/model_event.dart';
-import 'package:life_pilot/app/controller_page_main.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_setting.dart';
+import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
+import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
+import 'package:life_pilot/point_record/controller_point_record_list.dart';
+import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -54,6 +60,16 @@ void main() async {
           create: (_) => ProviderLocale(locale: const Locale(Locales.zh)),
         ),
         ChangeNotifierProvider(
+          create: (_) => ModelDashboard(repository: DashboardRepository(),),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ModelDashboardSetting(),
+        ),
+        Provider<EventTrackingService>(
+          create: (_) =>
+            EventTrackingService(),
+        ),
+        ChangeNotifierProvider(
           create: (_) => ControllerAuth(),
         ),
         //-------------- Weather --------------
@@ -65,6 +81,25 @@ void main() async {
         ChangeNotifierProxyProvider<ControllerAuth, ModelAuthView>(
           create: (context) => ModelAuthView(context.read<ControllerAuth>()),
           update: (_, auth, model) => model ?? ModelAuthView(auth),
+        ),
+        //-------------- point record --------------
+        Provider<ServicePointRecord>(
+          create: (_) => ServicePointRecord(),
+        ),
+        ChangeNotifierProxyProvider2<ServicePointRecord, ControllerAuth,
+            ControllerPointRecordList>(
+          create: (context) => ControllerPointRecordList(
+            service: context.read<ServicePointRecord>(),
+            auth: context.read<ControllerAuth>(),
+          ),
+          update: (_, service, auth, controller) {
+            controller ??= ControllerPointRecordList(
+              service: service,
+              auth: auth,
+            );
+            controller.auth = auth;
+            return controller;
+          },
         ),
         //-------------- accounting--------------
         Provider<ServiceAccounting>(

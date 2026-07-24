@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';

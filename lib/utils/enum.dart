@@ -1,11 +1,12 @@
 enum AuthPage { login, register, resetPassword, pageMain }
 
 enum PageType {
+  home,  
   personalEvent,
   stock,
   settings,
-  recommendedEvent,
-  recommendedAttractions,
+  recommendEvent,
+  recommendPlaces,
   memoryTrace,
   accountRecords,
   pointsRecord,

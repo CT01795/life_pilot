@@ -33,7 +33,7 @@ class ServiceWeather {
     }
     final now = DateTime.now();
     final today = DateTimeFormatter.dateOnly(now);
-    if (tableName == TableNames.recommendedAttractions) {
+    if (tableName == TableNames.recommendPlaces) {
     } else if (locationDisplay.isEmpty ||
         (startDate != null &&
             ((today.add(Duration(days: 7))).isBefore(startDate) ||

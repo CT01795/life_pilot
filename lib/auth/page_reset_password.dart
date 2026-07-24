@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
-import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../utils/logger.dart';
 
 class PageResetPassword extends StatefulWidget {
-  final VoidCallback onBack;
-  const PageResetPassword({super.key, required this.onBack});
+  const PageResetPassword({super.key});
 
   @override
   State<PageResetPassword> createState() => _PageResetPasswordState();
@@ -45,8 +44,8 @@ class _PageResetPasswordState extends State<PageResetPassword> {
   Future<void> _updatePassword(AppLocalizations loc) async {
     final password = _passwordController.text.trim();
     if (password.isEmpty) {
-      AppNavigator.showErrorBar(
-          _authView.showLoginError(message: ErrorFields.noPasswordError, loc: loc));
+      AppNavigator.showErrorBar(_authView.showLoginError(
+          message: ErrorFields.noPasswordError, loc: loc));
       return;
     }
 
@@ -55,8 +54,8 @@ class _PageResetPasswordState extends State<PageResetPassword> {
       'Reset target=${user?.email}',
     );
     if (user == null) {
-      AppNavigator.showErrorBar(
-          _authView.showLoginError(message: ErrorFields.noRecoverySession, loc: loc));
+      AppNavigator.showErrorBar(_authView.showLoginError(
+          message: ErrorFields.noRecoverySession, loc: loc));
       return;
     }
 
@@ -69,25 +68,30 @@ class _PageResetPasswordState extends State<PageResetPassword> {
       if (!mounted) {
         return;
       }
-      widget.onBack();
+      _authView.goBackToLogin('', '');
     } catch (e) {
       logger.e('Reset Password Error: $e');
-      AppNavigator.showErrorBar(
-        _authView.showLoginError(message: ErrorFields.resetPasswordError, loc: loc));
+      AppNavigator.showErrorBar(_authView.showLoginError(
+          message: ErrorFields.resetPasswordError, loc: loc));
       return;
     }
   }
 
   void _goBack() {
-    widget.onBack();
+    _authView.goBackToLogin('', '');
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 只監聽 ProviderLocale 的變化
-    return Consumer<ProviderLocale>(builder: (context, localeProvider, _) {
-      final loc = AppLocalizations.of(context)!;
-      return SingleChildScrollView(
+    final loc = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.appTitle), actions: [
+        Tooltip(
+          message: loc.language,
+          child: LanguageToggleDropdown(),
+        ),
+      ]),
+      body: SingleChildScrollView(
         padding: Insets.all12,
         child: Column(
           children: [
@@ -119,7 +123,7 @@ class _PageResetPasswordState extends State<PageResetPassword> {
             ),
           ],
         ),
-      );
-    });
+      ),
+    );
   }
 }

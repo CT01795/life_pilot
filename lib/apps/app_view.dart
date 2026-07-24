@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/theme.dart';
@@ -60,7 +60,7 @@ class _AppViewState extends State<AppView> {
               );
             },
             debugShowCheckedModeBanner: false,
-            home: const _AppHome(),
+            home: _AppHome(),
           );
         },
       ),

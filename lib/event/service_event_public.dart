@@ -34,7 +34,7 @@ class ServiceEventPublic {
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
     final res = await apiSupabase.post('event/select_event_url', {
-      'table_name': TableNames.recommendedEventUrl,
+      'table_name': TableNames.recommendEventUrl,
       'start_date': today.toIso8601String(),
       'master_url': url,
     });
@@ -50,7 +50,7 @@ class ServiceEventPublic {
 
     try {
       await apiSupabase.post('event/insert_event_url', {
-        'table_name': TableNames.recommendedEventUrl,
+        'table_name': TableNames.recommendEventUrl,
         'event_url': {'master_url': url, 'start_date': today.toIso8601String()},
       });
       return true;
@@ -92,7 +92,7 @@ class ServiceEventPublic {
     if (newEvents.isNotEmpty) {
       try {
         await apiSupabase.post('event/insert', {
-          'table_name': TableNames.recommendedEvents,
+          'table_name': TableNames.recommendEvents,
           'events': newEvents.map((e) => e.toJson()).toList(),
         });
       } on Exception catch (ex) {
@@ -370,12 +370,12 @@ class ServiceEventPublic {
   Future<void> fetchAndSaveAllEvents() async {
     //==================================== 取得目前資料庫事件 ====================================
     List<EventItem> historyList = (await ServiceEvent().getEvents(
-          tableName: TableNames.recommendedEvents,
+          tableName: TableNames.recommendEvents,
           inputUser: AuthConstants.sysAdminEmail,
         ) ??
         []);
     final res = await apiSupabase.post('event/select_events_deleted', {
-      'table_name': TableNames.recommendedEventsDeleted,
+      'table_name': TableNames.recommendEventsDeleted,
     });
     final deletedList = (res as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))

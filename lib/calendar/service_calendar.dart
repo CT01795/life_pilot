@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/holidays.dart';

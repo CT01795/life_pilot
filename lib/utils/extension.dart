@@ -15,19 +15,20 @@ extension PageTypeExtension on PageType {
   //fromKey 改寫成 Map 快取（優化搜尋效率）
   //目前 fromKey 會用 firstWhere 遍歷所有值，當 enum 值很多時效率會下降。可以用一個靜態 Map 快取字串到 enum 的對應關係：
   static PageType fromKey(String key) =>
-      _keyMap[key] ?? PageType.recommendedEvent;
+      _keyMap[key] ?? PageType.recommendEvent;
 
   String title({required AppLocalizations loc}) {
     final map = _titlesForLocale(loc);
-    return map[this]!;
+    return map[this] ?? name;
   }
 
   static Map<PageType, String> _titlesForLocale(AppLocalizations loc) => {
+    PageType.home: loc.home,
     PageType.personalEvent: loc.personalEvent,
     PageType.stock: loc.stock,
     PageType.settings: loc.settings,
-    PageType.recommendedEvent: loc.recommendedEvent,
-    PageType.recommendedAttractions: loc.recommendedAttractions,
+    PageType.recommendEvent: loc.recommendEvent,
+    PageType.recommendPlaces: loc.recommendPlaces,
     PageType.memoryTrace: loc.memoryTrace,
     PageType.accountRecords: loc.accountRecords,
     PageType.pointsRecord: loc.pointsRecord,

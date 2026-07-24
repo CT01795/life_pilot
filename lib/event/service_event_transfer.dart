@@ -42,7 +42,7 @@ class ServiceEventTransfer {
     if (isChecked != true) return null;
 
     final now = DateUtils.dateOnly(DateTime.now());
-    if (!isAlreadyAdded || fromTableName == TableNames.recommendedAttractions) {
+    if (!isAlreadyAdded || fromTableName == TableNames.recommendPlaces) {
       return _transferNewEvent(event, toTableName, now, fromTableName);
     }
 
@@ -70,7 +70,7 @@ class ServiceEventTransfer {
     }
     event.account = currentAccount;
 
-    if (fromTableName == TableNames.recommendedAttractions) {
+    if (fromTableName == TableNames.recommendPlaces) {
       event.id = Uuid().v4();
       event.endDate = event.startDate;
     }

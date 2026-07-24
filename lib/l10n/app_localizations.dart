@@ -285,6 +285,60 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// Label for pageSelectorTooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Function menu'**
+  String get pageSelectorTooltip;
+
+  /// Label for userMenuButton
+  ///
+  /// In en, this message translates to:
+  /// **'User Menu'**
+  String get userMenuButton;
+
+  /// Label for Home
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// Label for completeEventTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the schedule'**
+  String get completeEventTitle;
+
+  /// Label for completeEventMessage
+  ///
+  /// In en, this message translates to:
+  /// **'Once completed, this trip will disappear from today\'s list.'**
+  String get completeEventMessage;
+
+  /// Label for noInfoAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'No information available.'**
+  String get noInfoAvailable;
+
+  /// Label for openMap
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get openMap;
+
+  /// Label for selectCity
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get selectCity;
+
+  /// Label for selectAccount
+  ///
+  /// In en, this message translates to:
+  /// **'Select account'**
+  String get selectAccount;
+
   /// Label for personalEvent
   ///
   /// In en, this message translates to:
@@ -297,29 +351,29 @@ abstract class AppLocalizations {
   /// **'Stock'**
   String get stock;
 
-  /// Label for recommendedEvent
+  /// Label for recommendEvent
   ///
   /// In en, this message translates to:
   /// **'Event'**
-  String get recommendedEvent;
+  String get recommendEvent;
 
-  /// Label for recommendedEventZero
+  /// Label for recommendEventZero
   ///
   /// In en, this message translates to:
   /// **'No event'**
-  String get recommendedEventZero;
+  String get recommendEventZero;
 
-  /// Label for recommendedAttractions
+  /// Label for recommendPlaces
   ///
   /// In en, this message translates to:
   /// **'Attractions'**
-  String get recommendedAttractions;
+  String get recommendPlaces;
 
-  /// Label for recommendedAttractionsZero
+  /// Label for recommendPlacesZero
   ///
   /// In en, this message translates to:
   /// **'No recommended places at the moment'**
-  String get recommendedAttractionsZero;
+  String get recommendPlacesZero;
 
   /// Label for memoryTrace
   ///
@@ -357,6 +411,18 @@ abstract class AppLocalizations {
   /// **'Account Records'**
   String get accountRecords;
 
+  /// Label for todayIncomeExpense
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Income and Expenses'**
+  String get todayIncomeExpense;
+
+  /// Label for todayPoints
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Points'**
+  String get todayPoints;
+
   /// Label for PointsRecord
   ///
   /// In en, this message translates to:
@@ -390,8 +456,8 @@ abstract class AppLocalizations {
   /// ==========================================================================
   ///
   /// In en, this message translates to:
-  /// **'pageRecommendedEvent'**
-  String get pageRecommendedEvent;
+  /// **'pageRecommendEvent'**
+  String get pageRecommendEvent;
 
   /// Label for search
   ///
@@ -890,6 +956,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'❌ Delete failed'**
   String get deleteError;
+
+  /// Label for todaySchedule
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s schedule'**
+  String get todaySchedule;
+
+  /// Label for upcomingSchedule
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Schedule'**
+  String get upcomingSchedule;
+
+  /// Label for addToSchedule
+  ///
+  /// In en, this message translates to:
+  /// **'Add to schedule'**
+  String get addToSchedule;
 
   /// Label for clickHereToSeeMore
   ///

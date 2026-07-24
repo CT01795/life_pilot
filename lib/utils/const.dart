@@ -52,11 +52,11 @@ class Source {
 class TableNames {
   static const userModule = "user_module";
   static const calendarEvents = "calendar_events";
-  static const recommendedEvents = "recommended_events";
-  static const recommendedEventsDeleted = "recommended_events_deleted";
-  static const recommendedEventsFavor = "recommended_events_favor";
-  static const recommendedEventUrl = "recommended_event_url";
-  static const recommendedAttractions = "recommended_attractions";
+  static const recommendEvents = "recommended_events";
+  static const recommendEventsDeleted = "recommended_events_deleted";
+  static const recommendEventsFavor = "recommended_events_favor";
+  static const recommendEventUrl = "recommended_event_url";
+  static const recommendPlaces = "recommended_attractions";
   static const memoryTrace = "memory_trace";
 
   static const stockDailyPrice = "stock_daily_price";

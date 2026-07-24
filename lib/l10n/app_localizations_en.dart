@@ -102,22 +102,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get pageSelectorTooltip => 'Function menu';
+
+  @override
+  String get userMenuButton => 'User Menu';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get completeEventTitle => 'Complete the schedule';
+
+  @override
+  String get completeEventMessage => 'Once completed, this trip will disappear from today\'s list.';
+
+  @override
+  String get noInfoAvailable => 'No information available.';
+
+  @override
+  String get openMap => 'Navigation';
+
+  @override
+  String get selectCity => 'Select city';
+
+  @override
+  String get selectAccount => 'Select account';
+
+  @override
   String get personalEvent => 'Personal';
 
   @override
   String get stock => 'Stock';
 
   @override
-  String get recommendedEvent => 'Event';
+  String get recommendEvent => 'Event';
 
   @override
-  String get recommendedEventZero => 'No event';
+  String get recommendEventZero => 'No event';
 
   @override
-  String get recommendedAttractions => 'Attractions';
+  String get recommendPlaces => 'Attractions';
 
   @override
-  String get recommendedAttractionsZero => 'No recommended places at the moment';
+  String get recommendPlacesZero => 'No recommended places at the moment';
 
   @override
   String get memoryTrace => 'Memory Trace';
@@ -138,6 +165,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountRecords => 'Account Records';
 
   @override
+  String get todayIncomeExpense => 'Today\'s Income and Expenses';
+
+  @override
+  String get todayPoints => 'Today\'s Points';
+
+  @override
   String get pointsRecord => 'Points Record';
 
   @override
@@ -153,7 +186,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get businessPlan => 'Business Plan';
 
   @override
-  String get pageRecommendedEvent => 'pageRecommendedEvent';
+  String get pageRecommendEvent => 'pageRecommendEvent';
 
   @override
   String get search => 'Search';
@@ -403,6 +436,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteError => '❌ Delete failed';
+
+  @override
+  String get todaySchedule => 'Today\'s schedule';
+
+  @override
+  String get upcomingSchedule => 'Upcoming Schedule';
+
+  @override
+  String get addToSchedule => 'Add to schedule';
 
   @override
   String get clickHereToSeeMore => 'See more...';
