@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
-import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/enum.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
+import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PageAccountingList extends StatefulWidget {
@@ -65,8 +66,7 @@ class _PageAccountingListState extends State<PageAccountingList>
           controller.category != AccountCategory.personal.name) {
         await controller.setCategory(AccountCategory.personal.name);
       }
-      await controller.askMainCurrency(
-          context: context);
+      await controller.askMainCurrency(context: context);
     });
   }
 
@@ -80,9 +80,9 @@ class _PageAccountingListState extends State<PageAccountingList>
         child: SafeArea(
           child: TabBar(
             controller: _tabController,
-            labelColor: Colors.white,          // 選中顏色
+            labelColor: Colors.white, // 選中顏色
             unselectedLabelColor: Colors.white70, // 未選中顏色
-            indicatorColor: Colors.white,      // 底線顏色
+            indicatorColor: Colors.white, // 底線顏色
             tabs: [
               Tab(text: loc.accountPersonal),
               Tab(text: loc.accountProject),
@@ -108,8 +108,7 @@ class _PageAccountingListState extends State<PageAccountingList>
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<ControllerAccountingList,
-                List<ModelAccountingAccount>>(
+        return Selector<ControllerAccountingList, List<ModelAccountingAccount>>(
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
               if (accounts.isEmpty) {
@@ -151,8 +150,7 @@ class _PageAccountingListState extends State<PageAccountingList>
           ElevatedButton(
             onPressed: () async {
               try {
-                await controller.createAccount(
-                    name: textController.text);
+                await controller.createAccount(name: textController.text);
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -179,13 +177,14 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.read<ControllerAccountingList>();
+    final auth = context.watch<ModelAuthView>();
     return Selector<ControllerAccountingList, ModelAccountingAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
         return prev.balance != next.balance ||
-          prev.masterGraphUrl != next.masterGraphUrl;
+            prev.masterGraphUrl != next.masterGraphUrl;
       },
       builder: (context, account, _) {
         if (account == null) {
@@ -274,7 +273,9 @@ class _AccountCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          account.accountName,
+                          account.accountName == auth.account
+                              ? 'Default'
+                              : account.accountName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -330,8 +331,7 @@ class _AccountCard extends StatelessWidget {
 
                             if (selected != null) {
                               await controller.changeMainCurrency(
-                                  accountId: account.id,
-                                  currency: selected);
+                                  accountId: account.id, currency: selected);
                             }
                           },
                         ),

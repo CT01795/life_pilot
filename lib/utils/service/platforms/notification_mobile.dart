@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/calendar/service_reminder.dart';
 import 'package:life_pilot/utils/const.dart';

@@ -1,5 +1,5 @@
 
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/utils/service/service_timezone.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

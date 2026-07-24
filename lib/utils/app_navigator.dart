@@ -38,7 +38,11 @@ class AppNavigator {
   // ---------------- 錯誤攔截 ----------------
   static void initErrorHandling() {
     FlutterError.onError = (FlutterErrorDetails details) {
-      logger.e('❌ Flutter Framework Error: ${details.exceptionAsString()}');
+      logger.e(
+        '❌ Flutter Framework Error: ${details.exceptionAsString()}',
+        error: details.exception,
+        stackTrace: details.stack,
+      );
       if (details.exceptionAsString().contains('RenderFlex overflowed')) {
         debugPrint('⚠️ RenderFlex overflow 發生在：${details.library}');
         if (details.stack != null) debugPrintStack(stackTrace: details.stack);

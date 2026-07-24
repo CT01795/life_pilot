@@ -1,0 +1,75 @@
+import 'package:flutter/material.dart';
+import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/point_record/service_point_record.dart';
+import 'package:life_pilot/utils/enum.dart';
+import 'package:provider/provider.dart';
+
+class PointSelectorButton extends StatelessWidget {
+  const PointSelectorButton({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final dashboard = context.watch<ModelDashboard>();
+    final auth = context.read<ModelAuthView>();
+
+    return Tooltip(
+      message: loc.selectAccount,
+      child: ActionChip(
+        avatar: const Icon(
+          Icons.stars,
+        ),
+        label: Text(
+          dashboard.setting.pointAccountName ?? loc.selectAccount,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onPressed: () async {
+          final accounts =
+              await context.read<ServicePointRecord>().fetchAccounts(user: auth.account ?? '', category: AccountCategory.personal.name);
+
+          final selected = await showDialog<Map<String,String>>(
+            context: context,
+            builder: (_) {
+              return SimpleDialog(
+                title: Text(
+                  loc.selectAccount,
+                ),
+                children: accounts.map((a) {
+                  return SimpleDialogOption(
+                    child: Text(
+                      a.accountName,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(
+                        context,
+                        {
+                          'id': a.id,
+                          'name': a.accountName,
+                        },
+                      );
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          );
+
+          if (selected == null || auth.account == null) {
+            return;
+          }
+
+          await dashboard.changePointAccount(
+            account: auth.account!,
+            accountId: selected['id']!,
+            accountName: selected['name']!,         
+          );
+        },
+      ),
+    );
+  }
+}

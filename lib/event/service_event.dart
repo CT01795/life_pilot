@@ -31,7 +31,7 @@ class ServiceEvent {
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
-    if (tableName == TableNames.recommendedEvents && today.weekday == 3) {
+    if (tableName == TableNames.recommendEvents && today.weekday == 3) {
       await apiSupabase.post('event/cleanup_recommended_events',
           {'cutoff': cutoffDate.toIso8601String()});
     }
@@ -128,9 +128,9 @@ class ServiceEvent {
       required EventItem event,
       required String tableName}) async {
     try {
-      if (tableName == TableNames.recommendedEvents) {
+      if (tableName == TableNames.recommendEvents) {
         await apiSupabase.post('event/insert', {
-          'table_name': TableNames.recommendedEventsDeleted,
+          'table_name': TableNames.recommendEventsDeleted,
           'events': [event.toJson()],
         });
       }
@@ -165,13 +165,13 @@ class ServiceEvent {
     };
     try {
       await apiSupabase.post('event/insert', {
-        'table_name': TableNames.recommendedEventsFavor,
+        'table_name': TableNames.recommendEventsFavor,
         'events': [data],
       });
     } catch (ex) {
       try {
         await apiSupabase.post('event/update', {
-          'table_name': TableNames.recommendedEventsFavor,
+          'table_name': TableNames.recommendEventsFavor,
           'event': data,
         });
       } catch (ex) {

@@ -516,10 +516,10 @@ class EventViewModel {
       event: event,
       id: event.id,
       name: event.name,
-      showDate: tableName != TableNames.recommendedAttractions,
+      showDate: tableName != TableNames.recommendPlaces,
       startDate: event.startDate,
       endDate: event.endDate,
-      dateRange: tableName != TableNames.recommendedAttractions
+      dateRange: tableName != TableNames.recommendPlaces
           ? '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.startToS)}'
               '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.endToE)}'
           : '',

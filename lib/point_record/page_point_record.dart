@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -209,6 +210,7 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.read<ControllerPointRecordList>();
+    final auth = context.watch<ModelAuthView>();
     return Selector<ControllerPointRecordList, ModelPointRecordAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
@@ -305,7 +307,7 @@ class _AccountCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          account.accountName,
+                          account.accountName == auth.account ? 'Default' : account.accountName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,

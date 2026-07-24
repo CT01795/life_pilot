@@ -102,22 +102,49 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings => '설정';
 
   @override
+  String get pageSelectorTooltip => '기능 메뉴';
+
+  @override
+  String get userMenuButton => '사용자 메뉴';
+
+  @override
+  String get home => '홈';
+
+  @override
+  String get completeEventTitle => '여행 일정을 완성하세요';
+
+  @override
+  String get completeEventMessage => '이 여정이 완료되면 오늘의 목록에서 사라집니다.';
+
+  @override
+  String get noInfoAvailable => '이용 가능한 정보가 없습니다.';
+
+  @override
+  String get openMap => '내비게이션';
+
+  @override
+  String get selectCity => '도시 선택';
+
+  @override
+  String get selectAccount => '계정 선택';
+
+  @override
   String get personalEvent => '개인 일정';
 
   @override
   String get stock => '재고';
 
   @override
-  String get recommendedEvent => '추천 이벤트';
+  String get recommendEvent => '추천 이벤트';
 
   @override
-  String get recommendedEventZero => '현재 추천 이벤트가 없습니다';
+  String get recommendEventZero => '현재 추천 이벤트가 없습니다';
 
   @override
-  String get recommendedAttractions => '추천 명소';
+  String get recommendPlaces => '추천 명소';
 
   @override
-  String get recommendedAttractionsZero => '현재 추천할 장소가 없습니다';
+  String get recommendPlacesZero => '현재 추천할 장소가 없습니다';
 
   @override
   String get memoryTrace => '추억의 회랑';
@@ -138,6 +165,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountRecords => '가계부 기록';
 
   @override
+  String get todayIncomeExpense => '오늘의 수입과 지출';
+
+  @override
+  String get todayPoints => '오늘의 핵심 포인트';
+
+  @override
   String get pointsRecord => '포인트 기록';
 
   @override
@@ -147,13 +180,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ai => 'AI 도우미';
 
   @override
-  String get feedback => 'Feedback';
+  String get feedback => '피드백';
 
   @override
   String get businessPlan => 'Business Plan';
 
   @override
-  String get pageRecommendedEvent => 'pageRecommendedEvent';
+  String get pageRecommendEvent => 'pageRecommendEvent';
 
   @override
   String get search => '검색';
@@ -403,6 +436,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get deleteError => '❌ 삭제 실패';
+
+  @override
+  String get todaySchedule => '오늘의 일정';
+
+  @override
+  String get upcomingSchedule => '향후 일정';
+
+  @override
+  String get addToSchedule => '일정에 추가';
 
   @override
   String get clickHereToSeeMore => '더 보기 클릭';

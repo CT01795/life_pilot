@@ -1,6 +1,6 @@
 // -------------------- Calendar --------------------
 // 🏮 節日工具類（用於連假判定與 Calendar ID）
-import 'package:life_pilot/app/config_app.dart';
+import 'package:life_pilot/apps/config_app.dart';
 
 class Holidays {
   // 📌 關鍵字：哪些節日要被合併成連假

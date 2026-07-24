@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/app/controller_page_main.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/enum.dart';
-import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
 
 class PageLogin extends StatefulWidget {
-  final String? email;
-  final String? password;
-  final void Function(String? email, String? password)? onNavigateToRegister;
-  const PageLogin(
-      {super.key, this.email, this.password, this.onNavigateToRegister});
+  const PageLogin({super.key});
 
   @override
   State<PageLogin> createState() => _PageLoginState();
@@ -29,17 +25,23 @@ class _PageLoginState extends State<PageLogin> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(text: widget.email ?? '');
-    _passwordController =
-        TextEditingController(text: widget.password ?? '');
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
     _emailFocusNode = FocusNode();
     _passwordFocusNode = FocusNode();
   }
+
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _authView = context.read<ModelAuthView>();
+    if (!_initialized) {
+      _emailController.text = _authView.getRegisterEmail() ?? '';
+      _passwordController.text = _authView.getRegisterPassword() ?? '';
+      _initialized = true;
+    }
   }
 
   @override
@@ -53,7 +55,7 @@ class _PageLoginState extends State<PageLogin> {
 
   // 🔁 導航到註冊頁
   void _navigateToRegister() {
-    widget.onNavigateToRegister?.call(
+    _authView.goToRegister(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
@@ -69,9 +71,9 @@ class _PageLoginState extends State<PageLogin> {
     final password = _passwordController.text.trim();
 
     final error = await _authView.login(
-            email: email,
-            password: password,
-          );
+      email: email,
+      password: password,
+    );
 
     if (!mounted) return;
 
@@ -100,11 +102,16 @@ class _PageLoginState extends State<PageLogin> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!; // ✅ 每次 build 都取最新
     // ✅ 讓語言變化時自動重建整個登入 UI
-    return Consumer<ProviderLocale>(builder: (context, localeProvider, _) {
-      final loc = AppLocalizations.of(context)!;
-
-      return SingleChildScrollView(
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.appTitle), actions: [
+        Tooltip(
+          message: loc.language,
+          child: LanguageToggleDropdown(),
+        ),
+      ]),
+      body: SingleChildScrollView(
         padding: Insets.all12,
         child: Column(
           children: [
@@ -147,7 +154,7 @@ class _PageLoginState extends State<PageLogin> {
             Gaps.h16,
           ],
         ),
-      );
-    });
+      ),
+    );
   }
 }
