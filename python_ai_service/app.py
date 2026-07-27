@@ -29,13 +29,13 @@ logging.basicConfig(
 )
 
 
-@app.get("/health")
-@app.head("/health")
-def health():
-    return {
-        "status": "ok",
-        "time": datetime.now().isoformat()
-    }
+#@app.get("/health")
+#@app.head("/health")
+#def health():
+#    return {
+#        "status": "ok",
+#        "time": datetime.now().isoformat()
+#    }
 
 @app.get("/", summary="根節點", description="根節點，相當於網址 http://127.0.0.1:8000/ 的畫面訊息")
 def root():
