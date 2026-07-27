@@ -1,14 +1,13 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 class ServicePointRecord {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -110,16 +109,47 @@ class ServicePointRecord {
       required String category,
       String? eventId}) async {
     try {
-      Map res = {
-        "id": eventId,
-        "account": name,
-        "created_by": user,
-        "category": category,
-      };
-      final response = await apiSupabase.post('point_record/create_account', {
-        "table_name": TableNames.pointRecordAccount,
-        "data": res,
-      });
+      // 查詢是否已存在
+      final exist = await _supabase
+          .from(TableNames.pointRecordAccount)
+          .select()
+          .eq('created_by', user)
+          .eq('account', name)
+          .eq('category', category)
+          .maybeSingle();
+
+      Map<String, dynamic> response;
+
+      if (exist != null) {
+        // 已存在但被刪除 -> 恢復
+        if (exist['is_valid'] != true) {
+          response = await _supabase
+              .from(TableNames.pointRecordAccount)
+              .update({
+                'is_valid': true,
+              })
+              .eq('id', exist['id'])
+              .select()
+              .single();
+        } else {
+          throw Exception('Account already exists');
+        }
+      } else {
+        // 新增帳戶
+        response = await _supabase
+            .from(TableNames.pointRecordAccount)
+            .insert({
+              'id': eventId ?? const Uuid().v4(),
+              'account': name,
+              'created_by': user,
+              'category': category,
+              'points': 0,
+              'is_valid': true,
+            })
+            .select()
+            .single();
+      }
+
       final bytes = parseMasterGraph(response['master_graph_url']);
       return ModelPointRecordAccount(
         id: response['id'],

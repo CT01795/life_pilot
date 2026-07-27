@@ -1,15 +1,16 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
+
+import '../../utils/logger.dart';
 
 class ControllerGameMarioTranslation extends ChangeNotifier {
   final String userName;
@@ -59,13 +60,35 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
           "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
     }
     // 用 http.get 先取得 bytes，並加上 User-Agent
-    final response = await apiSupabase.post('event/get_url_data',
-        {'url': url, 'method': 'GET', "data_type": "audio"});
-    if (response['status'] == 'ok') {
-      final bytes = base64Decode(response['data']);
-      _audioCache[text] = bytes;
-      await player.play(BytesSource(bytes));
-      await player.play(BytesSource(_audioCache[text]!));
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+              "AppleWebKit/537.36 Chrome/115 Safari/537.36",
+          "Referer": url,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final bytes = response.bodyBytes;
+
+        _audioCache[text] = bytes;
+
+        await player.play(BytesSource(bytes),);
+        await player.play(BytesSource(_audioCache[text]!));
+      } else {
+        logger.e(
+          "Google TTS error: ${response.statusCode}",
+        );
+      }
+    } catch (e, st) {
+      logger.e(
+        "speak failed",
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 

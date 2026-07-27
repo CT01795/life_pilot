@@ -11,7 +11,6 @@ from fastapi import APIRouter, BackgroundTasks, Body
 from config import engine, SessionLocal
 from stock.model_stock_institutional import create_stock_institutional_model
 from stock.model_futures_institutional import create_futures_institutional_model
-from utils_service.utils import model_to_dict
 from stock.train_model import train_and_save_model
 from stock.model_stock_predicted import create_stock_predicted_model
 from stock.model_stock import create_stock_model
@@ -115,29 +114,6 @@ def route_select_stock_institutional(payload: dict = Body(...)):
             text("""
                 SELECT *
                 FROM get_stock_institutional_candidates(:date)
-            """),
-            {"date": date}
-        ).mappings().all()
-        return [dict(row) for row in rows]
-    finally:
-        db.close()
-
-@router.post("/stock/select_stock_institutional_by_table"
-            , summary="查询三大法人股票數據"
-            , description="""查询三大法人股票數據, 參數
-              { 'date': date,}""")
-def route_select_stock_institutional_by_table(payload: dict = Body(...)):
-    date = datetime.strptime(
-        payload.get("date"),
-        "%Y-%m-%d"
-    ).date()
-    db: Session = SessionLocal()
-    try:
-        rows = db.execute(
-            text("""
-                SELECT *
-                FROM stock_institutional
-                WHERE date = :date
             """),
             {"date": date}
         ).mappings().all()
@@ -334,6 +310,12 @@ def route_select_stock_daily_price_by_date(payload: dict = Body(...)):
     finally:
       db.close()
 
+def model_to_dict(obj):
+    return {
+        c.name: getattr(obj, c.name)
+        for c in obj.__table__.columns
+    }
+
 @router.post(
       "/stock/select_latest_stock_date"
       , summary="查詢最新股票日期"
@@ -382,31 +364,6 @@ def route_select_stock_predicted(payload: dict = Body(...)):
       return stockPredicted
     finally:
       db.close()
-
-@router.post(
-      "/stock/insert_stock_predicted"
-      , summary="新增模型預測結果"
-      , description="""新增模型預測結果, 參數
-        { 'table_name': table_name
-        , 'date': date}""")   
-def route_insert_stock_predicted(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
-    stocks = payload.get("stocks")
-    db: Session = SessionLocal()
-    print("route_insert_stock_predicted DB_URL =", engine.url)
-    try:
-        StockPredictedModel = create_stock_predicted_model(table_name)
-        row = StockPredictedModel(
-            date=date,
-            data=stocks,
-            created_at=datetime.now()
-        )
-        db.add(row)
-        db.commit()
-        return {"status": "ok"}
-    finally:
-        db.close()
 
 @router.post(
       "/stock/select_stock_quantitative_count"

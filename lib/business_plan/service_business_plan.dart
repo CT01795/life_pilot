@@ -4,19 +4,21 @@ import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_section.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceBusinessPlan {
+  final SupabaseClient _supabase = Supabase.instance.client;
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
-      final res = await apiSupabase.post('business_plan/fetch_templates',
-          {"table_name": TableNames.businessPlanTemplate});
-
-      if (res == null) return [];
+      final res = await _supabase
+        .from(TableNames.businessPlanTemplate)
+        .select()
+        .eq('is_valid', true)
+        .order('created_at', ascending: true);
 
       return (res as List)
           .map((e) => ModelPlanTemplate(
@@ -40,53 +42,73 @@ class ServiceBusinessPlan {
     required String templateId,
   }) async {
     List<String> sectionIdList = [];
-    List<String> questionIdList = [];
     try {
-      await apiSupabase.post('business_plan/create_plan_from_template', {
-        "table_name": TableNames.businessPlan,
-        "user": user,
-        "planId": planId,
-        "title": title,
-        "templateId": templateId,
-      });
+      // 1. 查詢
+      final exist = await _supabase
+          .from(TableNames.businessPlan)
+          .select()
+          .eq('created_by', user)
+          .eq('title', title)
+          .maybeSingle();
+
+      if (exist != null) {
+        if (exist['is_valid'] == false) {
+          await _supabase
+              .from(TableNames.businessPlan)
+              .update({'is_valid': true})
+              .eq('id', exist['id']);
+        } else {
+          throw Exception('Plan name already exists');
+        }
+      } else {
+        await _supabase.from(TableNames.businessPlan).insert({
+          'id': planId,
+          'title': title,
+          'template_id': templateId,
+          'created_by': user,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'is_valid': true,
+        });
+      }
 
       // 2️⃣ 取得模板 sections
-      List responseSectionsTemplate =
-          await apiSupabase.post('business_plan/get_sections_from_template', {
-        "table_name": TableNames.businessPlanTemplateSection,
-        "templateId": templateId,
-      });
+      List responseSectionsTemplate = await _supabase
+        .from(TableNames.businessPlanTemplateSection)
+        .select()
+        .eq('plan_id', templateId)
+        .order('sort_order', ascending: true);
+
       int i = 0;
-      int j = 0;
       for (final s in responseSectionsTemplate) {
         sectionIdList.add(const Uuid().v4());
 
         // 3️⃣ 建立 section
-        await apiSupabase.post('business_plan/insert_plan_sections', {
-          "table_name": TableNames.businessPlanSection,
-          "id": sectionIdList[i],
-          "plan_id": planId,
-          "title": s['title'],
-          "sort_order": s['sort_order'],
+        await _supabase.from(TableNames.businessPlanSection).insert({
+          'id': sectionIdList[i],
+          'plan_id': planId,
+          'title': s['title'],
+          'sort_order': s['sort_order'],
         });
 
         // 4️⃣ 建立題目
-        List responseQuestionsTemplate = await apiSupabase
-            .post('business_plan/get_questions_from_template', {
-          "table_name": TableNames.businessPlanTemplateQuestion,
-          "section_id": s['id'],
-        });
-        for (final q in responseQuestionsTemplate) {
-          questionIdList.add(const Uuid().v4());
-          await apiSupabase.post('business_plan/insert_plan_questions', {
-            "table_name": TableNames.businessPlanQuestion,
-            "id": questionIdList[j],
-            "section_id": sectionIdList[i],
-            "prompt": q['prompt'],
-            "sort_order": q['sort_order'],
-          });
-          j++;
-        }
+        List responseQuestionsTemplate = await _supabase
+          .from(TableNames.businessPlanTemplateQuestion)
+          .select()
+          .eq('section_id', s['id'])
+          .order('sort_order', ascending: true);
+
+        final questionRows = responseQuestionsTemplate.map((q) {
+          return {
+            'id': const Uuid().v4(),
+            'section_id': sectionIdList[i],
+            'prompt': q['prompt'],
+            'sort_order': q['sort_order'],
+          };
+        }).toList();
+
+        await _supabase
+            .from(TableNames.businessPlanQuestion)
+            .insert(questionRows);
         i++;
       }
     } on Exception catch (exception, st) {
@@ -100,14 +122,14 @@ class ServiceBusinessPlan {
     required String title,
   }) async {
     try {
-      // 1️⃣ 建立 plan
-      await apiSupabase.post('business_plan/update_plan_title', {
-        "table_name": TableNames.businessPlan,
-        "planId": planId,
-        "title": title,
-      });
-    } on Exception catch (exception) {
-      logger.e(exception);
+      await _supabase
+          .from(TableNames.businessPlan)
+          .update({
+            'title': title,
+          })
+          .eq('id', planId);
+    } catch (e) {
+      logger.e(e);
       rethrow;
     }
   }
@@ -120,13 +142,18 @@ class ServiceBusinessPlan {
   }) async {
     try {
       // 插入新的
-      await apiSupabase.post('business_plan/update_answer', {
-        "table_name": TableNames.businessPlanAnswer,
-        "planId": planId,
-        "sectionId": sectionId,
-        "questionId": questionId,
-        "answer": answer,
-      });
+      await _supabase
+        .from(TableNames.businessPlanAnswer)
+        .upsert(
+          {
+            'plan_id': planId,
+            'section_id': sectionId,
+            'question_id': questionId,
+            'answer': answer,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          },
+          onConflict: 'plan_id,section_id,question_id',
+        );
     } on Exception catch (exception) {
       logger.e(exception);
       rethrow;
@@ -135,13 +162,11 @@ class ServiceBusinessPlan {
 
   Future<List<ModelBusinessPlan>> fetchPlans({required String user}) async {
     try {
-      final res = await apiSupabase.post('business_plan/fetch_plans', {
-        "table_name": TableNames.businessPlan,
-        "user": user,
-      });
-
-      if (res.isEmpty) return [];
-
+      final res = await _supabase
+        .from(TableNames.businessPlan)
+        .select()
+        .eq('created_by', user)
+        .order('created_at', ascending: true);
       return (res as List).map((e) {
         return ModelBusinessPlan(
           id: e['id'],
@@ -158,11 +183,13 @@ class ServiceBusinessPlan {
 
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
     try {
-      final res = await apiSupabase.post('business_plan/fetch_plan_detail', {
-        "p_plan_id": planId,
-      });
-
-      final data = res as Map<String, dynamic>;
+      final data = await _supabase
+        .rpc(
+          'get_business_plan_detail',
+          params: {
+            'p_plan_id': planId,
+          },
+        );
 
       return ModelBusinessPlan(
         id: data['id'],

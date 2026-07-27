@@ -1,17 +1,10 @@
 import base64
-from datetime import datetime
-
-from sqlalchemy.orm import Session
 import logging
 import sys
-from sqlalchemy import text
 from fastapi import APIRouter, Body
 import requests
 from fastapi.responses import JSONResponse
-from config import engine, SessionLocal
 import urllib3
-
-from utils_service.utils import model_to_dict
 
 # 關掉 SSL warning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -23,7 +16,6 @@ logging.basicConfig(
 )
 
 router = APIRouter()
-
 @router.post(
       "/event/get_url_data"
       , summary="代理取得URL資料"
@@ -50,7 +42,6 @@ def get_url_data(payload: dict = Body(...)):
                 url,timeout=(10, 180),headers=headers,
                 verify=False,
             )
-
         # 🔥 自動處理 big5 / utf8
         res.encoding = res.encoding or "utf-8"
 
@@ -60,7 +51,6 @@ def get_url_data(payload: dict = Body(...)):
             if data_type == "audio"
             else res.text
         )
-
         return JSONResponse(content={
             "status": "ok",
             "data": result_data

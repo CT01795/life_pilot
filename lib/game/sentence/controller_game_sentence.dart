@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../utils/logger.dart';
 
 class ControllerGameSentence extends ChangeNotifier {
   final String userName;
@@ -90,12 +91,34 @@ class ControllerGameSentence extends ChangeNotifier {
     }
 
     // 用 http.get 先取得 bytes，並加上 User-Agent
-    final response = await apiSupabase.post('event/get_url_data',
-        {'url': url, 'method': 'GET', "data_type": "audio"});
-    if (response['status'] == 'ok') {
-      final bytes = base64Decode(response['data']);
-      audioCache[text] = bytes;
-      await player.play(BytesSource(bytes));
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+              "AppleWebKit/537.36 Chrome/115 Safari/537.36",
+          "Referer": url,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final bytes = response.bodyBytes;
+
+        audioCache[text] = bytes;
+
+        await player.play(BytesSource(bytes),);
+      } else {
+        logger.e(
+          "Google TTS error: ${response.statusCode}",
+        );
+      }
+    } catch (e, st) {
+      logger.e(
+        "speak failed",
+        error: e,
+        stackTrace: st,
+      );
     }
     return;
   }

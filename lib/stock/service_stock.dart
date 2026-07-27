@@ -7,8 +7,10 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceStock {
+  final SupabaseClient _supabase = Supabase.instance.client;
   List<ModelStock> stocks = [];
   int? stocksLength;
   Future<void> loadRawData() async {
@@ -370,13 +372,27 @@ class ServiceStock {
 
   Future<List<ModelInstitutional>> selectStockInstitutional(
       DateTime date) async {
-    final result =
-        await apiSupabase.post('stock/select_stock_institutional_by_table', {
-      'date': DateFormat('yyyy-MM-dd').format(date),
-    });
-    return result
-        .map<ModelInstitutional>((e) => ModelInstitutional.fromJson(e))
-        .toList();
+    try {
+      final result = await _supabase
+          .from(TableNames.stockInstitutional)
+          .select()
+          .eq(
+            'date',
+            DateFormat('yyyy-MM-dd').format(date),
+          );
+
+      return (result as List)
+          .map<ModelInstitutional>(
+            (e) => ModelInstitutional.fromJson(e),
+          )
+          .toList();
+    } catch (e, st) {
+      logger.e(
+        'selectStockInstitutional failed: $e',
+        stackTrace: st,
+      );
+      return [];
+    }
   }
 
   Future<void> loadFuturesInstitutional(DateTime date) async {
@@ -774,11 +790,18 @@ class ServiceStock {
     if (existing["data"] != null) {
       return;
     }
-    await apiSupabase.post('stock/insert_stock_predicted', {
-      'table_name': TableNames.stockPredicted,
-      'date': date.toUtc().toIso8601String(),
-      'stocks': stocks.map((stock) => stock.toJsonPred()).toList()
-    });
+
+    await _supabase
+      .from(TableNames.stockPredicted)
+      .insert({
+        'date': date.toUtc().toIso8601String(),
+        'data': stocks
+            .map((stock) => stock.toJsonPred())
+            .toList(),
+        'created_at': DateTime.now()
+            .toUtc()
+            .toIso8601String(),
+      });
   }
 }
 

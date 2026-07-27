@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:life_pilot/feedback/model_feedback.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/logger.dart';
 
 class ServiceFeedback {
+  final SupabaseClient _supabase = Supabase.instance.client;
   Future<void> sendFeedback({
     required String account,
     required String subject,
@@ -15,36 +16,45 @@ class ServiceFeedback {
   }) async {
     final screenshotBase64 =
         screenshots?.map((bytes) => base64Encode(bytes)).toList();
-    await apiSupabase.post('feedback/insert', {
-      'table_name': TableNames.feedback,
-      'feedback_data': {
+    await _supabase
+      .from(TableNames.feedback)
+      .insert({
         'subject': subject,
         'content': content,
-        // PostgreSQL text[]
-        'cc': cc,
-        // PostgreSQL text[]
-        // bytea[]：Uint8List → base64 → List<String>
-        // 將 Uint8List 轉成 Base64 存入 DB
-        'screenshot': screenshotBase64,
+        'cc': cc,                       // text[]
+        'screenshot': screenshotBase64, // text[] 或 bytea[]，依你的 schema
         'created_by': account,
         'created_at': DateTime.now().toUtc().toIso8601String(),
         'is_ok': false,
-      }
-    });
+      });
   }
 
   Future<List<dynamic>> loadFeedback() async {
-    return await apiSupabase.post('feedback/select', {
-      'table_name': TableNames.feedback,
-    });
+    try {
+      final response = await _supabase
+          .from(TableNames.feedback)
+          .select()
+          .order('is_ok', ascending: true)
+          .order('created_at', ascending: true);
+
+      return response;
+    } catch (e, st) {
+      logger.e('loadFeedback failed $e', stackTrace: st);
+      return [];
+    }
   }
 
   Future<void> updateFeedback({
     required ModelFeedback feedback,
   }) async {
-    await apiSupabase.post('feedback/update', {
-      'table_name': TableNames.feedback,
-      'update_data': feedback.toMap(),
-    });
+    final data = feedback.toMap();
+    await _supabase
+      .from(TableNames.feedback)
+      .update({
+        'is_ok': data['is_ok'],
+        'deal_by': data['deal_by'],
+        'deal_at': data['deal_at'],
+      })
+      .eq('id', data['id']);
   }
 }

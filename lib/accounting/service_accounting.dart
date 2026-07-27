@@ -1,10 +1,8 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -110,29 +108,61 @@ class ServiceAccounting {
       required String? currency,
       required String category,
       String? eventId}) async {
-    Map map = {
-      "id": eventId ?? const Uuid().v4(),
-      "account": name,
-      "created_by": user,
-      "category": category,
-      "main_currency": currency,
-    };
-
     try {
-      final result = await apiSupabase.post('accounting/create_account', {
-        "table_name": TableNames.accountingAccount,
-        "data": map,
-      });
+      // 1. 查詢是否已存在
+      final exist = await _supabase
+          .from(TableNames.accountingAccount)
+          .select()
+          .eq('created_by', user)
+          .eq('account', name)
+          .eq('category', category)
+          .maybeSingle();
+
+      Map<String, dynamic> result;
+
+      if (exist != null) {
+        // 2. 已存在但無效 -> 恢復
+        if (exist['is_valid'] != true) {
+          result = await _supabase
+              .from(TableNames.accountingAccount)
+              .update({
+                'is_valid': true,
+              })
+              .eq('id', exist['id'])
+              .select()
+              .single();
+        } else {
+          throw Exception('Account already exists');
+        }
+      } else {
+        // 3. 新增
+        result = await _supabase
+            .from(TableNames.accountingAccount)
+            .insert({
+              'id': eventId ?? const Uuid().v4(),
+              'account': name,
+              'created_by': user,
+              'category': category,
+              'main_currency': currency,
+              'balance': 0,
+              'exchange_rate': null,
+              'is_valid': true,
+            })
+            .select()
+            .single();
+      }
 
       final bytes = parseMasterGraph(result['master_graph_url']);
+
       return ModelAccountingAccount(
-          id: result['id'],
-          accountName: result['account'],
-          category: result['category'],
-          masterGraphUrl: bytes,
-          balance: (result['balance'] ?? 0).toInt(),
-          currency: result['main_currency'],
-          exchangeRate: result['exchange_rate']);
+        id: result['id'],
+        accountName: result['account'],
+        category: result['category'],
+        masterGraphUrl: bytes,
+        balance: (result['balance'] ?? 0).toInt(),
+        currency: result['main_currency'],
+        exchangeRate: result['exchange_rate'],
+      );
     } catch (e, st) {
       logger.e('createAccount failed $e,$st');
       rethrow;
