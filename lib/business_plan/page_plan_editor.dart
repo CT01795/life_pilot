@@ -38,9 +38,14 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
     });
   }
 
-  void goToRoot() {
+  Future<void> goToRoot() async {
+    final c = context.read<ControllerBusinessPlan>();
+
+    await c.loadPlans();
+
+    if (!mounted) return;
+
     Navigator.pop(context);
-    
     /*Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const PageBusinessPlan()),
       (route) => false,
