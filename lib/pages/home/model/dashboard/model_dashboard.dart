@@ -65,10 +65,8 @@ class ModelDashboard extends ChangeNotifier {
         repository.loadTodayEvents(account),
         repository.loadRecommendEvents(account, _setting.recommendEventCity),
         repository.loadRecommendPlaces(account, _setting.recommendPlaceCity),
-        repository.loadTodayIncomeExpense(
-          _setting.accountingAccountName ?? account,
-        ),
-        repository.loadPoints(_setting.pointAccountName ?? account),
+        repository.loadTodayIncomeExpense(accountId: _setting.accountingAccountId ?? ''),
+        repository.loadPoints(accountId: _setting.pointAccountId ?? ''),
       ]);
 
       _state = DashboardState(
@@ -117,11 +115,12 @@ class ModelDashboard extends ChangeNotifier {
         account: account,
       );
 
-      final recommendedEvents =
-          await repository.loadRecommendEvents(account, _setting.recommendEventCity);
+      final recommendedEvents = await repository.loadRecommendEvents(
+          account, _setting.recommendEventCity);
 
       _state = _state.copyWith(
-          recommendEvents: recommendedEvents,);
+        recommendEvents: recommendedEvents,
+      );
     } finally {
       _loading = false;
       notifyListeners();
@@ -139,11 +138,12 @@ class ModelDashboard extends ChangeNotifier {
         account: account,
       );
 
-      final recommendedPlaces =
-          await repository.loadRecommendPlaces(account, _setting.recommendPlaceCity);
+      final recommendedPlaces = await repository.loadRecommendPlaces(
+          account, _setting.recommendPlaceCity);
 
       _state = _state.copyWith(
-          recommendPlaces: recommendedPlaces,);
+        recommendPlaces: recommendedPlaces,
+      );
     } finally {
       _loading = false;
       notifyListeners();
@@ -151,18 +151,14 @@ class ModelDashboard extends ChangeNotifier {
   }
 
   Future<void> refreshAccounting({
-    required String account,
+    required String accountId,
   }) async {
     _loading = true;
     notifyListeners();
 
     try {
-      _setting = await repository.loadDashboardSetting(
-        account: account,
-      );
-
       final todayIncomeExpense = await repository.loadTodayIncomeExpense(
-        _setting.accountingAccountId ?? account,
+        accountId: accountId,
       );
 
       _state = _state.copyWith(todayIncomeExpense: todayIncomeExpense);
@@ -173,21 +169,17 @@ class ModelDashboard extends ChangeNotifier {
   }
 
   Future<void> refreshPoints({
-    required String account,
+    required String accountId,
   }) async {
     _loading = true;
     notifyListeners();
 
     try {
-      _setting = await repository.loadDashboardSetting(
-        account: account,
+      final todayPoints = await repository.loadPoints(
+        accountId: accountId
       );
 
-      final todayPoints =
-          await repository.loadPoints(_setting.pointAccountId ?? account);
-
       _state = _state.copyWith(todayPoints: todayPoints);
-      
     } finally {
       _loading = false;
       notifyListeners();
@@ -278,7 +270,7 @@ class ModelDashboard extends ChangeNotifier {
     );
 
     await refreshAccounting(
-      account: account,
+      accountId: accountId,
     );
 
     notifyListeners();
@@ -300,7 +292,7 @@ class ModelDashboard extends ChangeNotifier {
     );
 
     await refreshPoints(
-      account: account,
+      accountId: accountId,
     );
 
     notifyListeners();

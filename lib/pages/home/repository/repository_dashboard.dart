@@ -194,20 +194,20 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense(String account) async {
+  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense({required String accountId}) async {
     final accountResult = await _supabase
         .from('accounting_account')
         .select('id,main_currency')
         .eq(
-          'account',
-          account,
+          'id',
+          accountId,
         )
         .maybeSingle();
 
     if (accountResult == null) {
       return [];
     }
-    final accountId = accountResult['id'];
+    //final accountId = accountResult['id'];
     final currency = accountResult['main_currency'];
     final now = DateTime.now();
     final start = DateTime(
@@ -243,20 +243,20 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<PointRecordItem>> loadPoints(String account) async {
+  Future<List<PointRecordItem>> loadPoints({required String accountId}) async {
     final accountResult = await _supabase
         .from('point_record_account')
         .select('id')
         .eq(
-          'account',
-          account,
+          'id',
+          accountId,
         )
         .maybeSingle();
 
     if (accountResult == null) {
       return [];
     }
-    final accountId = accountResult['id'];
+    //final accountId = accountResult['id'];
     final now = DateTime.now();
     final start = DateTime(
       now.year,

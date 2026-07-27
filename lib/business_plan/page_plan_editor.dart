@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:html_editor_enhanced/html_editor.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
-import 'package:life_pilot/business_plan/page_business_plan.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
@@ -40,10 +39,12 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
   }
 
   void goToRoot() {
-    Navigator.of(context).pushAndRemoveUntil(
+    Navigator.pop(context);
+    
+    /*Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const PageBusinessPlan()),
       (route) => false,
-    );
+    );*/
   }
 
   @override
