@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:html/parser.dart' show parse;
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
@@ -12,9 +13,11 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceEventPublic {
+  final SupabaseClient _supabase = Supabase.instance.client;
   final Duration perEventDelay;
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
 
@@ -33,12 +36,20 @@ class ServiceEventPublic {
       : '';
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
-    final res = await apiSupabase.post('event/select_event_url', {
-      'table_name': TableNames.recommendEventUrl,
-      'start_date': today.toIso8601String(),
-      'master_url': url,
-    });
-    return res['is_exists'] == true;
+    try {
+      final response = await _supabase
+          .from(TableNames.recommendEventUrl)
+          .select()
+          .eq('master_url', url)
+          .eq('start_date', today.toUtc().toIso8601String())
+          .limit(1)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e, st) {
+      logger.e('checkIfUrlExists failed $e\n$st');
+      return false;
+    }
   }
 
   Future<bool> checkEventsUrl(String url, DateTime today) async {
@@ -49,9 +60,9 @@ class ServiceEventPublic {
     }
 
     try {
-      await apiSupabase.post('event/insert_event_url', {
-        'table_name': TableNames.recommendEventUrl,
-        'event_url': {'master_url': url, 'start_date': today.toIso8601String()},
+      await _supabase.from(TableNames.recommendEventUrl).insert({
+        'master_url': url,
+        'start_date': today.toUtc().toIso8601String(),
       });
       return true;
     } on Exception catch (ex) {
@@ -91,10 +102,9 @@ class ServiceEventPublic {
 
     if (newEvents.isNotEmpty) {
       try {
-        await apiSupabase.post('event/insert', {
-          'table_name': TableNames.recommendEvents,
-          'events': newEvents.map((e) => e.toJson()).toList(),
-        });
+        await _supabase.from(TableNames.recommendEvents).insert(
+              newEvents.map((e) => e.toJson()).toList(),
+            );
       } on Exception catch (ex) {
         logger.e(ex);
         rethrow;
@@ -374,9 +384,8 @@ class ServiceEventPublic {
           inputUser: AuthConstants.sysAdminEmail,
         ) ??
         []);
-    final res = await apiSupabase.post('event/select_events_deleted', {
-      'table_name': TableNames.recommendEventsDeleted,
-    });
+    final res =
+        await _supabase.from(TableNames.recommendEventsDeleted).select();
     final deletedList = (res as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList()
@@ -431,14 +440,9 @@ class ServiceEventPublic {
     String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
     if (await checkEventsUrl(strolltimesEventsUrl, today)) {
       try {
-        final res = await apiSupabase.post('event/get_url_data', {
-          'url': strolltimesEventsUrl,
-          'method': 'GET',
-        });
-        if (res['status'] == 'ok') {
-          String csv;
-          csv =
-              res['data'] as String; //res.bodyBytes //utf8.decode(res['data']);
+        final res = await http.get(Uri.parse(strolltimesEventsUrl));
+        if (res.statusCode == 200) {
+          String csv = res.body; //res.bodyBytes //utf8.decode(res['data']);
           List<EventItem> strolltimesList =
               parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
           //==================================== strolltimesList事件寫入 ====================================
@@ -604,14 +608,14 @@ class ServiceEventPublic {
   Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
       String url, DateTime today, String source) async {
     //final uri = Uri.parse(url);
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
+    final res = await http.get(
+      Uri.parse(url),
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
 
-    if (res['status'] != 'ok') return [];
-
-    final List data = json.decode(res["data"]); //utf8.decode(res.bodyBytes)
+    final List data = json.decode(res.body); //utf8.decode(res.bodyBytes)
 
     final uuid = const Uuid();
     List<EventItem> events = [];
@@ -666,16 +670,25 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsNtpc(
       String url, DateTime today, String source) async {
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': url,
-      'method': 'POST',
-      'body': {
+    final res = await http.post(
+      Uri.parse(url),
+      headers: {
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 Chrome/115.0.0.0 Safari/537.36",
+        "Referer": url,
+      },
+      body: {
         "id": "2d113acd09f81b46",
-        "page": "1", "intpage": "1", "pagesize": "110" // 🔥 一次全抓
-      }
-    });
-    if (res['status'] != 'ok') return [];
-    final document = parse(res["data"]); //res.body
+        "page": "1",
+        "intpage": "1",
+        "pagesize": "110",
+      },
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
+    final document = parse(res.body); //res.body
     final items = document.querySelectorAll(".article");
 
     final uuid = const Uuid();
@@ -788,14 +801,13 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 文化局 ====================================
   Future<List<EventItem>?> fetchPageEventsMoc(
       String url, DateTime today, String source) async {
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-
-    if (res['status'] != 'ok') return [];
-
-    final document = parse(res["data"]); //res.body
+    final res = await http.get(
+      Uri.parse(url),
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
+    final document = parse(res.body); //res.body
     final events = <EventItem>[];
     final uuid = const Uuid();
 
@@ -885,10 +897,13 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
       String url, DateTime today, String source) async {
-    final res = await apiSupabase
-        .post('event/get_url_data', {'url': url, 'method': 'GET'});
-    if (res['status'] != 'ok') return [];
-    final document = parse(res["data"]); //res.body
+    final res = await apiSupabase.post('event/get_url_data',
+        {'url': url, 'method': 'GET'});
+    if (res['status'] != 'ok') {
+      return [];
+    }
+
+    final document = parse(res['data']); //res.body
     final events = <EventItem>[];
     final uuid = const Uuid();
 
@@ -974,12 +989,10 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          final detailRes = await apiSupabase.post('event/get_url_data', {
-            'url': masterUrl,
-            'method': 'GET',
-          });
-          if (detailRes["status"] == 'ok') {
-            final detailDoc = parse(detailRes["data"]); //detailRes.body
+          final detailRes = await apiSupabase.post('event/get_url_data',
+              {'url': masterUrl, 'method': 'GET'});
+          if (detailRes['status'] == 'ok') {
+            final detailDoc = parse(detailRes.body); //detailRes.body
             final infoTable = detailDoc.querySelector("dl.info-table");
             if (infoTable != null) {
               // 取所有 dt 元素
@@ -1031,12 +1044,13 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 PaperWindmill ====================================
   Future<List<EventItem>?> fetchPageEventsPaperWindmill(
       String url, DateTime today, String source) async {
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-    if (res['status'] != 'ok') return [];
-    final document = parse(res["data"]); //res.body
+    final res = await http.get(
+      Uri.parse(url),
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
+    final document = parse(res.body); //res.body
 
     final cards = document.querySelectorAll(".schedule-card");
 
@@ -1054,6 +1068,7 @@ class ServiceEventPublic {
         }
 
         final spans = row.querySelectorAll('span');
+
         /// 日期時間 範例: 2026.05.29 (五) 19:30
         final dateText = spans[0].text.trim();
         final dateMatch = RegExp(
@@ -1137,12 +1152,13 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsAccupass(
       String inUrl, DateTime today, String source) async {
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': inUrl,
-      'method': 'GET',
-    });
-    if (res['status'] != 'ok') return [];
-    final html = res["data"]; //res.body
+    final res = await http.get(
+      Uri.parse(inUrl),
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
+    final html = res.body; //res.body
 
     // 1️⃣ 抓所有 <script> 標籤
     final scriptRegex = RegExp(r'<script.*?>(.*?)<\/script>', dotAll: true);
@@ -1320,13 +1336,13 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 cloud.Culture ====================================
   Future<List<EventItem>?> fetchPageEventsCloudCulture(
       String url, DateTime today, String source) async {
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': url,
-      'method': 'GET',
-    });
-
-    if (res['status'] != 'ok') return [];
-    final List<dynamic> data = jsonDecode(res['data']); //res.body
+    final res = await http.get(
+      Uri.parse(url),
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
+    final List<dynamic> data = jsonDecode(res.body); //res.body
     Set<String> tmpSet = {};
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
@@ -1430,12 +1446,13 @@ class ServiceEventPublic {
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
       String inUrl, DateTime today, String source) async {
     //final url = Uri.parse(inUrl);
-    final res = await apiSupabase.post('event/get_url_data', {
-      'url': inUrl,
-      'method': 'GET',
-    });
-    if (res['status'] != 'ok') return [];
-    final List<dynamic> data = jsonDecode(res['data']); //res.body
+    final res = await http.get(
+      Uri.parse(inUrl),
+    );
+    if (res.statusCode != 200) {
+      return [];
+    }
+    final List<dynamic> data = jsonDecode(res.body); //res.body
     List<dynamic> links =
         data.take(2).map((e) => 'https://strolltimes.com${e['link']}').toList();
     if (links.isEmpty) return [];
@@ -1444,12 +1461,13 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     for (int i = 1; i < links.length; i++) {
-      final res2 = await apiSupabase.post('event/get_url_data', {
-        'url': links[i],
-        'method': 'GET',
-      });
-      if (res2['status'] != 'ok') return [];
-      final document2 = parse(res2["data"]); //res2.body
+      final res2 = await http.get(
+        Uri.parse(links[i]),
+      );
+      if (res2.statusCode != 200) {
+        return [];
+      }
+      final document2 = parse(res2.body); //res2.body
 
       // 找到所有 <h2> 標題
       final h2List = document2.querySelectorAll('h2');

@@ -11,6 +11,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -26,6 +27,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends ChangeNotifier {
+  final tracting = EventTrackingService();
   late String _googleApiKey;
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
@@ -136,7 +138,7 @@ class ControllerCalendar extends ChangeNotifier {
       googleApiKey: _googleApiKey,
     );
 
-    // ✅ STOP: UI card 不再觸發 weather
+    // ✅ STOP UI card 不再觸發 weather
     _warmUpWeather(result);
 
     // ❗只允許最新請求寫入 model
@@ -705,7 +707,7 @@ class ControllerCalendar extends ChangeNotifier {
   /// 統一事件計數
   Future<void> _incrementCounter(EventViewModel event, String column) async {
     try {
-      await _serviceEvent.incrementEventCounter(
+      await tracting.incrementEventCounter(
         eventId: event.id,
         eventName: event.name,
         column: column,

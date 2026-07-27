@@ -8,8 +8,10 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServicePointRecord {
+  final SupabaseClient _supabase = Supabase.instance.client;
   String currentTable = TableNames.pointRecordAccount;
   ServicePointRecord();
 
@@ -31,12 +33,17 @@ class ServicePointRecord {
   Future<ModelPointRecordAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
     try {
-      final response =
-          await apiSupabase.post('point_record/find_account_by_id', {
-        'table_name': currentTable,
-        'id': eventId,
-        'user': user,
-      });
+      final response = await _supabase
+        .from(currentTable)
+        .select()
+        .eq('id', eventId)
+        .eq('created_by', user)
+        .eq('is_valid', true)
+        .maybeSingle();
+
+      if (response == null) {
+        return null;
+      }
 
       Uint8List? bytes;
       if (response['master_graph_url'] != null) {
@@ -64,12 +71,17 @@ class ServicePointRecord {
     required String category, // personal / project
   }) async {
     try {
-      final response = await apiSupabase.post('point_record/fetch_accounts', {
-        "table_name": TableNames.pointRecordAccount,
-        "category": category,
-        "user": user,
-      });
-      if (response == null) return [];
+      final response = await _supabase
+        .from(TableNames.pointRecordAccount)
+        .select()
+        .eq('created_by', user)
+        .eq('category', category)
+        .eq('is_valid', true)
+        .order('account', ascending: true);
+
+      if (response.isEmpty) {
+        return [];
+      }
 
       final list = (response as List);
       return Future.wait(list.map((e) async {
@@ -123,10 +135,26 @@ class ServicePointRecord {
   }
 
   Future<void> deleteAccount({required String accountId}) async {
-    await apiSupabase.post('point_record/delete_account', {
-      "table_name": TableNames.pointRecordAccount,
-      "id": accountId,
-    });
+    try {
+      final result = await _supabase
+          .from(TableNames.pointRecordAccount)
+          .update({
+            'is_valid': false,
+          })
+          .eq('id', accountId)
+          .select();
+
+      if (result.isEmpty) {
+        throw Exception("account not found");
+      }
+    } catch (e, stacktrace) {
+      logger.e(
+        "deleteAccount error",
+        error: e,
+        stackTrace: stacktrace,
+      );
+      rethrow;
+    }
   }
 
   Future<Uint8List> uploadAccountImageBytesDirect(
@@ -134,11 +162,18 @@ class ServicePointRecord {
     try {
       // 不管 Web / Mobile 都轉 base64
       // Mobile / Web 統一存 bytea (Uint8List)
-      await apiSupabase.post('point_record/upload_account_image_bytes_direct', {
-        "table_name": TableNames.pointRecordAccount,
-        "id": accountId,
-        "master_graph_url": base64Encode(imageBytes),
-      });
+      final result = await Supabase.instance.client
+        .from(TableNames.pointRecordAccount)
+        .update({
+          'master_graph_url': base64Encode(imageBytes),
+        })
+        .eq('id', accountId)
+        .eq('is_valid', true)
+        .select();
+
+      if (result.isEmpty) {
+        throw Exception("account not found or invalid");
+      }
       return imageBytes;
     } catch (e, st) {
       logger.e('uploadAccountImageBytesDirect failed $e,$st');
@@ -150,16 +185,20 @@ class ServicePointRecord {
   Future<List<ModelPointRecordDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
     try {
-      final res = await apiSupabase.post('point_record/fetch_today_records', {
-        "p_account_id": accountId,
-        "p_type": type,
-      });
+      final res = await _supabase.rpc(
+        'fetch_today_point_records',
+        params: {
+          'p_account_id': accountId,
+          'p_type': type,
+        },
+      );
+
       if (res == null || res is! List) {
         logger.e('fetchTodayRecords invalid response: $res');
         return [];
       }
 
-      return res.map((e) {
+      return res.map<ModelPointRecordDetail>((e) {
         final rawDetail = e['detail'];
 
         // 🔥 強制轉 Map（關鍵）
@@ -190,18 +229,25 @@ class ServicePointRecord {
       required String type,
       required List<PointRecordPreview> records}) async {
     try {
-      await apiSupabase.post('point_record/insert_records_batch', {
-        "p_account_id": accountId,
-        "p_type": type,
-        "p_records": records
-            .map((r) => {
-                  'description': r.description,
-                  'value': r.value,
-                })
-            .toList(),
-      });
+      await _supabase.rpc(
+        'add_point_records_batch',
+        params: {
+          'p_account_id': accountId,
+          'p_type': type,
+          'p_records': records
+              .map((r) => {
+                    'description': r.description,
+                    'value': r.value,
+                  })
+              .toList(),
+        },
+      );
     } catch (e, st) {
-      logger.e('insertRecordsBatch failed $e,$st');
+      logger.e(
+        'insertRecordsBatch failed',
+        error: e,
+        stackTrace: st,
+      );
       rethrow;
     }
   }

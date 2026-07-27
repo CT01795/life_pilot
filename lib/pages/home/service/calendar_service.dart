@@ -31,7 +31,7 @@ class CalendarService {
             .eq(
               'start_date',
               event.startDate!
-                  .toIso8601String(),
+                  .toUtc().toIso8601String(),
             )
             .maybeSingle();
 
@@ -67,12 +67,12 @@ class CalendarService {
 
           'start_date':
               event.startDate
-                  ?.toIso8601String(),
+                  ?.toUtc().toIso8601String(),
 
 
           'end_date':
               event.endDate
-                  ?.toIso8601String(),
+                  ?.toUtc().toIso8601String(),
 
 
           'start_time':

@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceEvent {
+  final SupabaseClient _supabase = Supabase.instance.client;
   ServiceEvent();
 
   Future<String> getKey({required String keyName}) async {
     try {
-      final response =
-          await apiSupabase.post('event/get_api_key', {'p_key_name': keyName});
-      return response['value'];
-    } catch (e) {
-      logger.e('Error fetching key: $e');
+      final response = await _supabase.rpc(
+        'get_key',
+        params: {
+          'p_key_name': keyName,
+        },
+      );
+      return response?.toString() ?? '';
+    } catch (e, st) {
+      logger.e('getKey failed $e\n$st');
       return '';
     }
   }
@@ -32,8 +37,12 @@ class ServiceEvent {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
     if (tableName == TableNames.recommendEvents && today.weekday == 3) {
-      await apiSupabase.post('event/cleanup_recommended_events',
-          {'cutoff': cutoffDate.toIso8601String()});
+      await _supabase.rpc(
+        'cleanup_recommended_events',
+        params: {
+          'cutoff': cutoffDate.toUtc().toIso8601String(),
+        },
+      );
     }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace
@@ -46,13 +55,18 @@ class ServiceEvent {
             .formatDateString();
 
     try {
-      final response = await apiSupabase.post('event/get_filtered', {
-        'table_name': tableName,
-        'inputid': id,
-        'inputdates': inputDateS,
-        'inputdatee': inputDateE,
-        'inputuser': inputUser,
-      });
+      final response = await _supabase.rpc(
+        'get_filtered_$tableName',
+        params: {
+          'payload': {
+            'table_name': tableName,
+            'inputid': id,
+            'inputdates': inputDateS,
+            'inputdatee': inputDateE,
+            'inputuser': inputUser,
+          }
+        },
+      );
 
       final events = (response as List)
           .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
@@ -105,16 +119,25 @@ class ServiceEvent {
       event.isApproved = false;
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
-        await apiSupabase.post('event/insert', {
-          'table_name': tableName,
-          'events': [event.toJson()],
-        });
+        await _supabase
+          .from(tableName)
+          .insert([
+            event.toJson(),
+          ]);
       } else {
-        await apiSupabase.post('event/update', {
-          'table_name': tableName,
-          'current_account': currentAccount,
-          'event': event.toJson(),
-        });
+        final data = event.toJson();
+        var query = _supabase
+            .from(tableName)
+            .update(data)
+            .eq('id', data['id']);
+
+        // 非系統管理員只能更新自己的事件
+        if (currentAccount != "minavi@alumni.nccu.edu.tw" &&
+            data['account'] != null) {
+          query = query.eq('account', data['account']);
+        }
+
+        await query;
       }
     } catch (ex, stacktrace) {
       logger.e("saveEvent error", error: ex, stackTrace: stacktrace);
@@ -128,17 +151,31 @@ class ServiceEvent {
       required EventItem event,
       required String tableName}) async {
     try {
+      final data = event.toJson();
       if (tableName == TableNames.recommendEvents) {
-        await apiSupabase.post('event/insert', {
-          'table_name': TableNames.recommendEventsDeleted,
-          'events': [event.toJson()],
-        });
+        await _supabase
+          .from(TableNames.recommendEventsDeleted)
+          .insert([data]);
       }
-      await apiSupabase.post('event/delete', {
-        'table_name': tableName,
-        'current_account': currentAccount,
-        'event': event.toJson(),
-      });
+
+      var query = _supabase
+        .from(tableName)
+        .delete()
+        .eq('id', data['id']);
+
+      // 非系統管理員只能刪自己的事件
+      if (currentAccount != "minavi@alumni.nccu.edu.tw") {
+        query = query.eq(
+          'account',
+          currentAccount,
+        );
+      }
+
+      final result = await query.select();
+
+      if (result.isEmpty) {
+        throw Exception("event not found");
+      }
     } catch (ex, stacktrace) {
       logger.e("deleteEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
@@ -148,11 +185,13 @@ class ServiceEvent {
   // ✅ 核准事件 (由管理者)
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
-    await apiSupabase.post('event/update', {
-      'table_name': tableName,
-      'current_account': AuthConstants.sysAdminEmail,
-      'event': event.toJson(),
-    });
+    final data = event.toJson();
+    var query = _supabase
+        .from(tableName)
+        .update(data)
+        .eq('id', data['id']);
+
+    await query;
   }
 
   Future<void> updateLikeEvent(
@@ -164,37 +203,20 @@ class ServiceEvent {
       "account": account
     };
     try {
-      await apiSupabase.post('event/insert', {
-        'table_name': TableNames.recommendEventsFavor,
-        'events': [data],
-      });
+      await _supabase
+        .from(TableNames.recommendEventsFavor)
+        .insert([data]);
     } catch (ex) {
       try {
-        await apiSupabase.post('event/update', {
-          'table_name': TableNames.recommendEventsFavor,
-          'event': data,
-        });
+        var query = _supabase
+            .from(TableNames.recommendEventsFavor)
+            .update(data)
+            .eq('id', data['id']);
+
+        await query;
       } catch (ex) {
         logger.e(ex);
       }
-    }
-  }
-
-  Future<void> incrementEventCounter({
-    required String? eventId,
-    required String? eventName,
-    required String column,
-    required String account,
-  }) async {
-    try {
-      await apiSupabase.post('event/increment_event_counter', {
-        'p_event_id': eventId,
-        'p_event_name': eventName,
-        'p_column': column,
-        'p_account': account,
-      });
-    } catch (e) {
-      logger.e('Error incrementEventCounter $column: $e');
     }
   }
 

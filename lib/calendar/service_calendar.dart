@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/holidays.dart';
 import 'package:uuid/uuid.dart';
 
@@ -26,17 +26,16 @@ class ServiceCalendar {
     //);
 
     try {
-      final response = await apiSupabase.post('event/get_url_data', {
-        'url': url,
-        'method': 'GET',
-      });
-      if (response['status'] != 'ok') {
-        //final response = await http.get(url);
-        //if (response.statusCode != 200) {
-        throw Exception('Failed to load holidays: ${response['message']}');
+      final response = await http.get(
+        Uri.parse(url),
+      );
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to load holidays: ${response.body}',
+        );
       }
 
-      final data = json.decode(response["data"]);
+      final data = json.decode(response.body);
       final List items = data['items'] ?? [];
 
       EventItem? lastMergedHoliday;

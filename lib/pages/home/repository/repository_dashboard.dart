@@ -27,11 +27,11 @@ class DashboardRepository {
         .eq('account', account)
         .gte(
           'start_date',
-          today.toIso8601String(),
+          today.toUtc().toIso8601String(),
         )
         .lt(
           'start_date',
-          tomorrow.toIso8601String(),
+          tomorrow.toUtc().toIso8601String(),
         )
         .order(
           'start_date',
@@ -228,11 +228,11 @@ class DashboardRepository {
         .eq('currency', currency)
         .gte(
           'date',
-          start.toIso8601String(),
+          start.toUtc().toIso8601String(),
         )
         .lt(
           'date',
-          end.toIso8601String(),
+          end.toUtc().toIso8601String(),
         )
         .order('date', ascending: false);
 
@@ -275,11 +275,11 @@ class DashboardRepository {
         )
         .gte(
           'date',
-          start.toIso8601String(),
+          start.toUtc().toIso8601String(),
         )
         .lt(
           'date',
-          end.toIso8601String(),
+          end.toUtc().toIso8601String(),
         )
         .order('date', ascending: false);
 

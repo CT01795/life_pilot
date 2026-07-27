@@ -1,25 +1,27 @@
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceModule {
+  final SupabaseClient _supabase = Supabase.instance.client;
   ServiceModule();
 
   Future<List<String>> loadModulesFromServer(String account) async {
     try {
-      final response =
-          await apiSupabase.post('module/load_modules_from_server', {
-        "table_name": TableNames.userModule,
-        "account": account,
-      });
+      final now = DateTime.now().toUtc().toIso8601String();
 
-      if (response == null) return [];
+      final response = await _supabase
+          .from(TableNames.userModule)
+          .select('module_key')
+          .eq('account', account)
+          .or('stop_at.is.null,stop_at.gt.$now');
 
-      final list = (response as List).map((e) => e.toString()).toList();
+      return (response as List)
+          .map((e) => e['module_key'].toString())
+          .toList();
 
-      return list;
-    } on Exception catch (exception) {
-      logger.e(exception);
+    } catch (e, st) {
+      logger.e('loadModulesFromServer failed $e\n$st');
       return [];
     }
   }

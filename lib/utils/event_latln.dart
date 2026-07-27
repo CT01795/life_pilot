@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'dart:core';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ClusterItem {
   final String id;
@@ -171,16 +172,17 @@ class ClusterItem {
           ? tmpLocationDisplay[1]
           : tmpLocationDisplay[0];
       try {
-        final result = await apiSupabase.post('event/search_lat_lng', {
-          "city_like": cityLike,
-          "location_like": locationLike,
-          "country_like": null, // 反向比對用
-        });
-        if (result != null) {
-          return {
-            "lat": result['lat'],
-            "lng": result['lng'],
-          };
+        final result = await Supabase.instance.client.rpc(
+          'search_lat_lng',
+          params: {
+            'city_like': cityLike,
+            'location_like': locationLike,
+            'country_like': null,
+          },
+        );
+        if (result is List && result.isNotEmpty) {
+          final loc = result[0];
+          return {"lat": (loc['lat'] as num).toDouble(), "lng": (loc['lng'] as num).toDouble(),};
         }
       } catch (e) {
         logger.e('Error search_lat_lng: $e');
@@ -198,15 +200,14 @@ class ClusterItem {
         'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey',
       );*/
 
-      final response = await apiSupabase.post('event/get_url_data', {
-        'url': geoUrl,
-        'method': 'GET',
-      });
-      if (response['status'] == 'ok') {
-        final geoData = json.decode(response["data"]);
+      final response = await http.get(
+        Uri.parse(geoUrl),
+      );
+      if (response.statusCode == 200) {
+        final geoData = json.decode(response.body);
         if (geoData is List && geoData.isNotEmpty) {
           final loc = geoData[0];
-          return {"lat": loc['lat'], "lng": loc['lon']};
+          return {"lat": (loc['lat'] as num).toDouble(), "lng": (loc['lon'] as num).toDouble(),};
         }
       }
       return {};

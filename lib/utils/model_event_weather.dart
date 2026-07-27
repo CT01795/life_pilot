@@ -42,7 +42,7 @@ class EventWeather {
   }
 
   Map<String, dynamic> toJson() => {
-        'date': date.toIso8601String(),
+        'date': date.toUtc().toIso8601String(),
         'main': main,
         'description': description,
         'icon': icon,

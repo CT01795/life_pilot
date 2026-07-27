@@ -9,6 +9,7 @@ import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -26,6 +27,7 @@ class ControllerEvent extends ChangeNotifier {
   final String _tableName;
   final String? _toTableName;
   final ServiceEventTransfer _serviceEventTransfer;
+  final tracking = EventTrackingService();
   final Future<void> Function()? onCalendarReload;
 
   ControllerEvent(
@@ -121,7 +123,7 @@ class ControllerEvent extends ChangeNotifier {
         _tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
-      await _serviceEvent.incrementEventCounter(
+      await tracking.incrementEventCounter(
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
           column: event.isLike == true ? 'like_counts' : 'card_clicks',
@@ -146,7 +148,7 @@ class ControllerEvent extends ChangeNotifier {
         _tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       // 🔹 呼叫 function 更新資料庫
-      await _serviceEvent.incrementEventCounter(
+      await tracking.incrementEventCounter(
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
           column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
@@ -218,7 +220,7 @@ class ControllerEvent extends ChangeNotifier {
     _modelEvent.toggleEventSelection(event.id, targetEvent != null);
     if (targetEvent != null && _toTableName == TableNames.calendarEvents) {
       // 🔹 呼叫 function 更新資料庫
-      await _serviceEvent.incrementEventCounter(
+      await tracking.incrementEventCounter(
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
           column: 'saves', //收藏到行事曆
@@ -348,7 +350,7 @@ class ControllerEvent extends ChangeNotifier {
     );
     _modelEvent.setEvents(list ?? []);
 
-    // ✅ STOP: UI card 不再觸發 weather
+    // ✅ STOP UI card 不再觸發 weather
     _warmUpWeather(list ?? []);
 
     _invalidateViewModelCache();
@@ -438,7 +440,7 @@ class ControllerEvent extends ChangeNotifier {
   /// 統一事件計數
   Future<void> _incrementCounter(EventViewModel event, String column) async {
     try {
-      await _serviceEvent.incrementEventCounter(
+      await tracking.incrementEventCounter(
         eventId: event.id,
         eventName: event.name,
         column: column,

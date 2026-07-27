@@ -8,9 +8,11 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceAccounting {
+  final SupabaseClient _supabase = Supabase.instance.client;
   String currentTable = TableNames.accountingAccount;
   ServiceAccounting();
 
@@ -32,12 +34,16 @@ class ServiceAccounting {
   Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
     try {
-      
-      final response = await apiSupabase.post('accounting/find_account_by_id', {
-        "table_name": TableNames.accountingAccount,
-        "id": eventId,
-        "user": user,
-      });
+      final response = await _supabase
+          .from(TableNames.accountingAccount)
+          .select()
+          .eq('id', eventId)
+          .eq('created_by', user)
+          .eq('is_valid', true)
+          .maybeSingle();
+
+      if (response == null) return null;
+
       Uint8List? bytes;
       if (response['master_graph_url'] != null) {
         bytes = await compute<String?, Uint8List?>(
@@ -65,13 +71,14 @@ class ServiceAccounting {
     required String category, // personal / project
   }) async {
     try {
-      
-      final response = await apiSupabase.post('accounting/fetch_accounts', {
-        "table_name": TableNames.accountingAccount,
-        "category": category,
-        "user": user,
-      });
-      if (response == null) return [];
+      final response = await _supabase
+          .from(TableNames.accountingAccount)
+          .select()
+          .eq('category', category)
+          .eq('created_by', user)
+          .eq('is_valid', true)
+          .order('account', ascending: true);
+
       final list = (response as List);
       return Future.wait(
         list.map((e) async {
@@ -134,12 +141,11 @@ class ServiceAccounting {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      await apiSupabase.post('accounting/delete_account', {
-        "table_name": TableNames.accountingAccount,
-        "id": accountId,
-      });
+      await _supabase.from(TableNames.accountingAccount).update({
+        'is_valid': false,
+      }).eq('id', accountId);
     } catch (e, st) {
-      logger.e('deleteAccount failed $e,$st');
+      logger.e('deleteAccount failed $e\n$st');
       rethrow;
     }
   }
@@ -149,14 +155,21 @@ class ServiceAccounting {
     // 不管 Web / Mobile 都轉 base64
     // Mobile / Web 統一存 bytea (Uint8List)
     try {
-      await apiSupabase.post('accounting/upload_account_image_bytes_direct', {
-        "table_name": TableNames.accountingAccount,
-        "id": accountId,
-        "master_graph_url": base64Encode(imageBytes),
-      });
+      final result = await _supabase
+          .from(TableNames.accountingAccount)
+          .update({
+            'master_graph_url': base64Encode(imageBytes),
+          })
+          .eq('id', accountId)
+          .eq('is_valid', true)
+          .select();
+
+      if ((result as List).isEmpty) {
+        throw Exception('Account not found');
+      }
       return imageBytes;
     } catch (e, st) {
-      logger.e('uploadAccountImageBytesDirect failed $e,$st');
+      logger.e('uploadAccountImageBytesDirect failed $e\n$st');
       rethrow;
     }
   }
@@ -164,34 +177,33 @@ class ServiceAccounting {
   // ===== 明細 =====
   Future<List<ModelAccountingDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
-    final res = await apiSupabase.post('accounting/fetch_today_records', {
-      "p_account_id": accountId,
-      "p_type": type,
-    });
-    
+    final res = await _supabase.rpc(
+      'fetch_today_accountings',
+      params: {
+        'p_account_id': accountId,
+        'p_type': type,
+      },
+    );
+
     if (res == null || res is! List) {
       logger.e('fetchTodayRecords invalid response: $res');
       return [];
     }
+
     return res.map((e) {
-      final rawDetail = e['detail'];
-      // 🔥 強制轉 Map（關鍵）
-      final detail = (rawDetail is Map) ? rawDetail : <String, dynamic>{};
+      final detail = (e['detail'] as Map?) ?? {};
+
       return ModelAccountingDetail(
         id: detail['id']?.toString() ?? '',
         accountId: detail['account_id']?.toString() ?? '',
-        createdAt: DateTime.tryParse(detail['created_at']?.toString() ?? '') ??
-            DateTime.now(),
-        description: detail['description']?.toString() ?? '',
-        type: detail['type']?.toString() ?? '',
-        value: detail['value'] is int
-            ? detail['value']
-            : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
-        currency: detail.containsKey('currency') ? detail['currency'] : '',
-        exchangeRate: detail.containsKey('exchange_rate')
-            ? detail['exchange_rate']
-            : null,
-        balance: (e['balance'] ?? 0) as int,
+        createdAt:
+            DateTime.tryParse(detail['created_at'] ?? '') ?? DateTime.now(),
+        description: detail['description'] ?? '',
+        type: detail['type'] ?? '',
+        value: detail['value'] ?? 0,
+        currency: detail['currency'] ?? '',
+        exchangeRate: detail['exchange_rate'],
+        balance: e['balance'] ?? 0,
       );
     }).toList();
   }
@@ -201,22 +213,26 @@ class ServiceAccounting {
       required String type,
       required List<AccountingPreview> records,
       required String? currency}) async {
-    List<Map> recordsMap = records
-      .map((r) => {
-            'id': const Uuid().v4(),
-            'description': r.description,
-            'value': r.value,
-            'currency': r.currency ?? currency,
-          })
-      .toList();
+    final recordsMap = records
+        .map((r) => {
+              'id': const Uuid().v4(),
+              'description': r.description,
+              'value': r.value,
+              'currency': r.currency ?? currency,
+            })
+        .toList();
+
     try {
-      await apiSupabase.post('accounting/insert_records_batch', {
-        "p_account_id": accountId,
-        "p_type": type,
-        "p_records": recordsMap,
-      });
+      await _supabase.rpc(
+        'add_accountings_batch2',
+        params: {
+          'p_account_id': accountId,
+          'p_type': type,
+          'p_records': recordsMap,
+        },
+      );
     } catch (e, st) {
-      logger.e('insertRecordsBatch failed $e,$st');
+      logger.e('insertRecordsBatch failed $e\n$st');
       rethrow;
     }
   }
@@ -228,14 +244,17 @@ class ServiceAccounting {
     required String newDescription,
   }) async {
     try {
-      await apiSupabase.post('accounting/update_accounting_detail', {
-        "p_detail_id": detailId,
-        "p_new_value": newValue,
-        "p_new_currency": newCurrency,
-        "p_new_description": newDescription,
-      });
+      await _supabase.rpc(
+        'update_accounting_detail',
+        params: {
+          'p_detail_id': detailId,
+          'p_new_value': newValue,
+          'p_new_currency': newCurrency,
+          'p_new_description': newDescription,
+        },
+      );
     } catch (e, st) {
-      logger.e('updateAccountingDetail failed $e,$st');
+      logger.e('updateAccountingDetail failed $e\n$st');
       rethrow;
     }
   }
@@ -245,16 +264,20 @@ class ServiceAccounting {
     required String category,
   }) async {
     try {
-      final res = await apiSupabase.post('accounting/fetch_latest_account', {
-        "table_name": TableNames.accountingAccount,
-        "category": category,
-        "user": user,
-      });
-      
-      return res?['main_currency'];
-    } on Exception catch (exception) {
-      logger.e(exception);
-      return "";
+      final response = await _supabase
+          .from(TableNames.accountingAccount)
+          .select('main_currency')
+          .eq('created_by', user)
+          .eq('category', category)
+          .eq('is_valid', true)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      return response?['main_currency'] ?? 'TWD';
+    } catch (e, st) {
+      logger.e('fetchLatestAccount failed $e\n$st');
+      return 'TWD';
     }
   }
 
@@ -263,12 +286,15 @@ class ServiceAccounting {
     required String currency,
   }) async {
     try {
-      await apiSupabase.post('accounting/switch_main_currency', {
-        "p_account_id": accountId,
-        "p_currency": currency,
-      });
+      await _supabase.rpc(
+        'switch_main_currency',
+        params: {
+          'p_account_id': accountId,
+          'p_currency': currency,
+        },
+      );
     } catch (e, st) {
-      logger.e('switchMainCurrency failed $e,$st');
+      logger.e('switchMainCurrency failed $e\n$st');
       rethrow;
     }
   }

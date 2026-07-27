@@ -2,16 +2,18 @@
 
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceWeather {
+  final SupabaseClient _supabase = Supabase.instance.client;
   String? _apiKey;
   final cacheStore = WeatherCacheStore.I;
   List<EventWeather>? getForecast({required String locationDisplay}) {
@@ -80,19 +82,36 @@ class ServiceWeather {
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
     try {
       if (today.weekday == 3) {
-        await apiSupabase.post('utils_service/delete_weather_forecast', {
-          'table_name': TableNames.weatherForecast,
-        });
+        await _supabase.from(TableNames.weatherForecast).delete().lte(
+              'date',
+              DateTime.now()
+                  .subtract(const Duration(days: 1))
+                  .toUtc().toIso8601String(),
+            );
       }
 
       /// 1️⃣ 查 DB
-      final dbRes =
-          await apiSupabase.post('utils_service/select_weather_forecast', {
-        'table_name': TableNames.weatherForecast,
-        'location': event.locationDisplay,
-        'date': resultStartDate.add(Duration(hours: -3)).toIso8601String(),
-        'created_at': todayDate.toIso8601String(),
-      });
+      final dbRes = await _supabase
+        .from(TableNames.weatherForecast)
+        .select('weather')
+        .eq(
+          'location',
+          event.locationDisplay,
+        )
+        .gte(
+          'date',
+          resultStartDate
+              .subtract(const Duration(hours: 3))
+              .toUtc().toIso8601String(),
+        )
+        .gte(
+          'created_at',
+          todayDate.toUtc().toIso8601String(),
+        )
+        .order(
+          'date',
+          ascending: true,
+        );
 
       if (dbRes.isNotEmpty) {
         return dbRes
@@ -112,11 +131,10 @@ class ServiceWeather {
         final url =
             'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$_apiKey&units=metric';
 
-        final response = await apiSupabase.post('event/get_url_data', {
-          'url': url,
-          'method': 'GET',
-        });
-        final data = json.decode(response["data"]);
+        final response = await http.get(
+          Uri.parse(url),
+        );
+        final data = json.decode(response.body);
 
         final List<EventWeather> days = [];
 
@@ -137,21 +155,23 @@ class ServiceWeather {
             ),
           );
         }
-        await apiSupabase.post('utils_service/insert_weather_forecast', {
-          'table_name': TableNames.weatherForecast,
-          'items': days
-              .map((day) => {
-                    'location': event.locationDisplay,
-                    'date': day.date.toIso8601String(),
-                    'weather': day.toJson(),
-                    'created_at': todayDate.toIso8601String(),
-                    'lat': lat,
-                    'lon': lon,
-                    'country': country,
-                    'name': event.locationDisplay
-                  })
-              .toList(),
-        });
+
+        await _supabase
+          .from(TableNames.weatherForecast)
+          .insert(
+            days.map((day) {
+              return {
+                'location': event.locationDisplay,
+                'date': day.date.toUtc().toIso8601String(),
+                'weather': day.toJson(),
+                'created_at': todayDate.toUtc().toIso8601String(),
+                'lat': lat,
+                'lon': lon,
+                'country': country,
+                'name': event.locationDisplay,
+              };
+            }).toList(),
+          );
         return days;
       }
       return [];
