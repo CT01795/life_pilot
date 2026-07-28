@@ -105,6 +105,11 @@ class RecommendPlaceCard extends StatelessWidget {
                                           content: Text(loc.eventAddOk)));
                                 }
                               }
+                              await tracking.incrementEventCounter(
+                                  eventId: e.id,
+                                  eventName: e.name, // 或者用 eventViewModel.name
+                                  column: 'saves', //收藏到行事曆
+                                  account: auth.account ?? AuthConstants.guest);
                             } catch (e) {
                               logger.e(e);
                             }
