@@ -4,6 +4,7 @@ import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
+import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/place_selector_button.dart';
@@ -11,6 +12,8 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:provider/provider.dart';
+
+import '../../../../utils/logger.dart';
 
 class RecommendPlaceCard extends StatelessWidget {
   const RecommendPlaceCard({
@@ -53,8 +56,59 @@ class RecommendPlaceCard extends StatelessWidget {
                         scale: 1.5, // 放大倍率
                         child: Checkbox(
                           value: false,
-                          onChanged: null, //TODO 接行事曆
-                        ),
+                          onChanged: (value) async {
+                            if (value != true) {
+                              return;
+                            }
+                            final calendar = context.read<CalendarService>();
+                            try {
+                              bool isExist =
+                                  await calendar.existsRecommendedPlaceToCal(
+                                      account: auth.account!, place: e);
+                              if (!isExist) {
+                                await calendar.addRecommendedPlaceToCal(
+                                    account: auth.account!,
+                                    place: e,
+                                    id: null);
+                                context.read<ModelDashboard>().refreshTodaySchedule(account: auth.account!);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(loc.eventAddOk)));
+                              } else {
+                                final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                          content: Text('「${e.name}」${loc.eventAddError}'),
+                                          actions: [
+                                            TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(
+                                                      context, false);
+                                                },
+                                                child: Text(loc.cancel)),
+                                            TextButton(
+                                                onPressed: () async {
+                                                  Navigator.pop(
+                                                      context, true);
+                                                },
+                                                child: Text(loc.confirm))
+                                          ],
+                                        ));
+                                if (confirm == true) {
+                                  await calendar.addRecommendedPlaceToCal(
+                                      account: auth.account!,
+                                      place: e,
+                                      id: null);
+                                  context.read<ModelDashboard>().refreshTodaySchedule(account: auth.account!);
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                          content: Text(loc.eventAddOk)));
+                                }
+                              }
+                            } catch (e) {
+                              logger.e(e);
+                            }
+                          }),
                       ),
                     ),
                     title: Tooltip(

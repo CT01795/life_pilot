@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/const.dart';
+
 class PointRecordItem {
   final String description;
   final String type;
@@ -22,9 +24,9 @@ class PointRecordItem {
       description: json['description'] ?? '',
       type: json['type'] ?? '',
       value: (json['value'] ?? 0) as int,
-      createdAt: json['created_at'] != null
+      createdAt: json[Fields.createdAt] != null
           ? DateTime.parse(
-              json['created_at'],
+              json[Fields.createdAt],
             )
           : null,
       date: json['date'] != null

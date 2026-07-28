@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -49,7 +50,7 @@ class _PageResetPasswordState extends State<PageResetPassword> {
       return;
     }
 
-    final user = Supabase.instance.client.auth.currentSession?.user;
+    final user = supabase.auth.currentSession?.user;
     logger.i(
       'Reset target=${user?.email}',
     );
@@ -60,7 +61,7 @@ class _PageResetPasswordState extends State<PageResetPassword> {
     }
 
     try {
-      await Supabase.instance.client.auth.updateUser(
+      await supabase.auth.updateUser(
         UserAttributes(
           password: password,
         ),

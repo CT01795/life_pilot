@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class ModelFeedback {
   final int id;
@@ -30,15 +31,15 @@ class ModelFeedback {
 
   factory ModelFeedback.fromMap(Map<String, dynamic> map) {
     return ModelFeedback(
-      id: int.parse(map['id'].toString()),
+      id: int.parse(map[Fields.id].toString()),
       subject: map['subject'] as String,
       content: map['content'] as String,
       cc: (map['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       screenshot: (map['screenshot'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList(),
-      createdBy: map['created_by'] as String?,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdBy: map[Fields.createdBy] as String?,
+      createdAt: DateTime.parse(map[Fields.createdAt] as String),
       isOk: map['is_ok'] is bool
           ? map['is_ok']
           : map['is_ok']?.toString() == 'true',
@@ -50,10 +51,10 @@ class ModelFeedback {
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
+        Fields.id: id,
         'is_ok': isOk ?? false,
         'deal_by': dealBy,
-        'deal_at': dealAt?.toIso8601String(),
+        'deal_at': dealAt?.toUtc().toIso8601String(),
       };
 
   // 💡 懶加載 decode，第一次用時才 decode，之後 cache

@@ -13,11 +13,9 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceEventPublic {
-  final SupabaseClient _supabase = Supabase.instance.client;
   final Duration perEventDelay;
   ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
 
@@ -37,7 +35,7 @@ class ServiceEventPublic {
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
     try {
-      final response = await _supabase
+      final response = await supabase
           .from(TableNames.recommendEventUrl)
           .select()
           .eq('master_url', url)
@@ -60,7 +58,7 @@ class ServiceEventPublic {
     }
 
     try {
-      await _supabase.from(TableNames.recommendEventUrl).insert({
+      await supabase.from(TableNames.recommendEventUrl).insert({
         'master_url': url,
         'start_date': today.toUtc().toIso8601String(),
       });
@@ -102,7 +100,7 @@ class ServiceEventPublic {
 
     if (newEvents.isNotEmpty) {
       try {
-        await _supabase.from(TableNames.recommendEvents).insert(
+        await supabase.from(TableNames.recommendEvents).insert(
               newEvents.map((e) => e.toJson()).toList(),
             );
       } on Exception catch (ex) {
@@ -385,7 +383,7 @@ class ServiceEventPublic {
         ) ??
         []);
     final res =
-        await _supabase.from(TableNames.recommendEventsDeleted).select();
+        await supabase.from(TableNames.recommendEventsDeleted).select();
     final deletedList = (res as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList()

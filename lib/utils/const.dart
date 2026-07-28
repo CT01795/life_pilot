@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 String? weatherApiKey;
 double zoolLevel = 8;
 
-final String dbMacUrl = "http://100.76.202.70:8000"; 
-final String dbSupabaseUrl = "https://life-pilot.onrender.com";//"https://life-pilot.onrender.com"; //"http://100.69.90.77:8000", "http://127.0.0.1:8000";
+final String dbMacUrl = "http://100.76.202.70:8000";
+final String dbSupabaseUrl =
+    "https://life-pilot.onrender.com"; //"https://life-pilot.onrender.com"; //"http://100.69.90.77:8000", "http://127.0.0.1:8000";
 final List<String> currencyList = [
   'TWD',
   'USD',
@@ -50,6 +51,7 @@ class Source {
 
 // -------------------- Tables --------------------
 class TableNames {
+  static const dashboardSetting = "dashboard_setting";
   static const userModule = "user_module";
   static const calendarEvents = "calendar_events";
   static const recommendEvents = "recommended_events";
@@ -66,7 +68,9 @@ class TableNames {
   static const stockPredicted = "stock_predicted";
 
   static const accountingAccount = "accounting_account";
+  static const accountingDetail = "accounting_detail";
   static const pointRecordAccount = "point_record_account";
+  static const pointRecordDetail = "point_record_detail";
 
   static const businessPlan = "business_plan";
   static const businessPlanSection = "business_plan_section";
@@ -75,7 +79,7 @@ class TableNames {
   static const businessPlanTemplate = "business_plan_template";
   static const businessPlanTemplateQuestion = "business_plan_template_question";
   static const businessPlanTemplateSection = "business_plan_template_section";
-  
+
   static const feedback = "feedback";
 
   static const weatherForecast = "weather_forecast";
@@ -133,7 +137,6 @@ class CalendarMisc {
 
 // -------------------- Event Fields --------------------
 class EventFields {
-  static const String id = 'id';
   static const String masterGraphUrl = 'master_graph_url';
   static const String masterUrl = 'master_url';
   static const String startDate = 'start_date';
@@ -148,7 +151,6 @@ class EventFields {
   //static const String fee = 'fee';
   static const String unit = 'unit';
   static const String subEvents = 'sub_events';
-  static const String account = 'account';
   static const String repeatOptions = 'repeat_options';
   static const String reminderOptions = 'reminder_options';
   static const String isHoliday = "is_holiday";
@@ -171,6 +173,14 @@ class EventFields {
   static const String source = "source";
   static const String lat = "lat";
   static const String lng = "lng";
+}
+
+class Fields {
+  static const String id = "id";
+  static const String createdBy = "created_by";
+  static const String createdAt = "created_at";
+  static const String account = 'account';
+  static const String isValid = "is_valid";
 }
 
 // -------------------- Gap --------------------

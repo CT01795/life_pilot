@@ -3,14 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceAccounting {
-  final SupabaseClient _supabase = Supabase.instance.client;
   String currentTable = TableNames.accountingAccount;
   ServiceAccounting();
 
@@ -32,12 +31,12 @@ class ServiceAccounting {
   Future<ModelAccountingAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
     try {
-      final response = await _supabase
+      final response = await supabase
           .from(TableNames.accountingAccount)
           .select()
-          .eq('id', eventId)
-          .eq('created_by', user)
-          .eq('is_valid', true)
+          .eq(Fields.id, eventId)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.isValid, true)
           .maybeSingle();
 
       if (response == null) return null;
@@ -51,8 +50,8 @@ class ServiceAccounting {
       }
 
       return ModelAccountingAccount(
-        id: response['id'],
-        accountName: response['account'],
+        id: response[Fields.id],
+        accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
         balance: (response['balance'] ?? 0).toInt(),
@@ -69,13 +68,13 @@ class ServiceAccounting {
     required String category, // personal / project
   }) async {
     try {
-      final response = await _supabase
+      final response = await supabase
           .from(TableNames.accountingAccount)
           .select()
           .eq('category', category)
-          .eq('created_by', user)
-          .eq('is_valid', true)
-          .order('account', ascending: true);
+          .eq(Fields.createdBy, user)
+          .eq(Fields.isValid, true)
+          .order(Fields.account, ascending: true);
 
       final list = (response as List);
       return Future.wait(
@@ -86,8 +85,8 @@ class ServiceAccounting {
           );
 
           return ModelAccountingAccount(
-            id: e['id'],
-            accountName: e['account'],
+            id: e[Fields.id],
+            accountName: e[Fields.account],
             category: e['category'],
             masterGraphUrl: bytes,
             balance: (e['balance'] ?? 0).toInt(),
@@ -110,11 +109,11 @@ class ServiceAccounting {
       String? eventId}) async {
     try {
       // 1. 查詢是否已存在
-      final exist = await _supabase
+      final exist = await supabase
           .from(TableNames.accountingAccount)
           .select()
-          .eq('created_by', user)
-          .eq('account', name)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.account, name)
           .eq('category', category)
           .maybeSingle();
 
@@ -122,13 +121,11 @@ class ServiceAccounting {
 
       if (exist != null) {
         // 2. 已存在但無效 -> 恢復
-        if (exist['is_valid'] != true) {
-          result = await _supabase
+        if (exist[Fields.isValid] != true) {
+          result = await supabase
               .from(TableNames.accountingAccount)
-              .update({
-                'is_valid': true,
-              })
-              .eq('id', exist['id'])
+              .update({Fields.isValid: true,})
+              .eq(Fields.id, exist[Fields.id])
               .select()
               .single();
         } else {
@@ -136,17 +133,17 @@ class ServiceAccounting {
         }
       } else {
         // 3. 新增
-        result = await _supabase
+        result = await supabase
             .from(TableNames.accountingAccount)
             .insert({
-              'id': eventId ?? const Uuid().v4(),
-              'account': name,
-              'created_by': user,
+              Fields.id: eventId ?? const Uuid().v4(),
+              Fields.account: name,
+              Fields.createdBy: user,
               'category': category,
               'main_currency': currency,
               'balance': 0,
               'exchange_rate': null,
-              'is_valid': true,
+              Fields.isValid: true,
             })
             .select()
             .single();
@@ -155,8 +152,8 @@ class ServiceAccounting {
       final bytes = parseMasterGraph(result['master_graph_url']);
 
       return ModelAccountingAccount(
-        id: result['id'],
-        accountName: result['account'],
+        id: result[Fields.id],
+        accountName: result[Fields.account],
         category: result['category'],
         masterGraphUrl: bytes,
         balance: (result['balance'] ?? 0).toInt(),
@@ -171,9 +168,9 @@ class ServiceAccounting {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      await _supabase.from(TableNames.accountingAccount).update({
-        'is_valid': false,
-      }).eq('id', accountId);
+      await supabase.from(TableNames.accountingAccount).update({
+        Fields.isValid: false,
+      }).eq(Fields.id, accountId);
     } catch (e, st) {
       logger.e('deleteAccount failed $e\n$st');
       rethrow;
@@ -185,13 +182,13 @@ class ServiceAccounting {
     // 不管 Web / Mobile 都轉 base64
     // Mobile / Web 統一存 bytea (Uint8List)
     try {
-      final result = await _supabase
+      final result = await supabase
           .from(TableNames.accountingAccount)
           .update({
             'master_graph_url': base64Encode(imageBytes),
           })
-          .eq('id', accountId)
-          .eq('is_valid', true)
+          .eq(Fields.id, accountId)
+          .eq(Fields.isValid, true)
           .select();
 
       if ((result as List).isEmpty) {
@@ -207,7 +204,7 @@ class ServiceAccounting {
   // ===== 明細 =====
   Future<List<ModelAccountingDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
-    final res = await _supabase.rpc(
+    final res = await supabase.rpc(
       'fetch_today_accountings',
       params: {
         'p_account_id': accountId,
@@ -224,10 +221,10 @@ class ServiceAccounting {
       final detail = (e['detail'] as Map?) ?? {};
 
       return ModelAccountingDetail(
-        id: detail['id']?.toString() ?? '',
+        id: detail[Fields.id]?.toString() ?? '',
         accountId: detail['account_id']?.toString() ?? '',
         createdAt:
-            DateTime.tryParse(detail['created_at'] ?? '') ?? DateTime.now(),
+            DateTime.tryParse(detail[Fields.createdAt] ?? '') ?? DateTime.now(),
         description: detail['description'] ?? '',
         type: detail['type'] ?? '',
         value: detail['value'] ?? 0,
@@ -245,7 +242,7 @@ class ServiceAccounting {
       required String? currency}) async {
     final recordsMap = records
         .map((r) => {
-              'id': const Uuid().v4(),
+              Fields.id: const Uuid().v4(),
               'description': r.description,
               'value': r.value,
               'currency': r.currency ?? currency,
@@ -253,7 +250,7 @@ class ServiceAccounting {
         .toList();
 
     try {
-      await _supabase.rpc(
+      await supabase.rpc(
         'add_accountings_batch2',
         params: {
           'p_account_id': accountId,
@@ -274,7 +271,7 @@ class ServiceAccounting {
     required String newDescription,
   }) async {
     try {
-      await _supabase.rpc(
+      await supabase.rpc(
         'update_accounting_detail',
         params: {
           'p_detail_id': detailId,
@@ -294,13 +291,13 @@ class ServiceAccounting {
     required String category,
   }) async {
     try {
-      final response = await _supabase
+      final response = await supabase
           .from(TableNames.accountingAccount)
           .select('main_currency')
-          .eq('created_by', user)
+          .eq(Fields.createdBy, user)
           .eq('category', category)
-          .eq('is_valid', true)
-          .order('created_at', ascending: false)
+          .eq(Fields.isValid, true)
+          .order(Fields.createdAt, ascending: false)
           .limit(1)
           .maybeSingle();
 
@@ -316,7 +313,7 @@ class ServiceAccounting {
     required String currency,
   }) async {
     try {
-      await _supabase.rpc(
+      await supabase.rpc(
         'switch_main_currency',
         params: {
           'p_account_id': accountId,

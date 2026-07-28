@@ -5,8 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ClusterItem {
   final String id;
@@ -172,7 +172,7 @@ class ClusterItem {
           ? tmpLocationDisplay[1]
           : tmpLocationDisplay[0];
       try {
-        final result = await Supabase.instance.client.rpc(
+        final result = await supabase.rpc(
           'search_lat_lng',
           params: {
             'city_like': cityLike,

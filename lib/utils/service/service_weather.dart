@@ -4,16 +4,15 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceWeather {
-  final SupabaseClient _supabase = Supabase.instance.client;
   String? _apiKey;
   final cacheStore = WeatherCacheStore.I;
   List<EventWeather>? getForecast({required String locationDisplay}) {
@@ -82,7 +81,7 @@ class ServiceWeather {
     final todayDate = DateTime(today.year, today.month, today.day, today.hour);
     try {
       if (today.weekday == 3) {
-        await _supabase.from(TableNames.weatherForecast).delete().lte(
+        await supabase.from(TableNames.weatherForecast).delete().lte(
               'date',
               DateTime.now()
                   .subtract(const Duration(days: 1))
@@ -91,7 +90,7 @@ class ServiceWeather {
       }
 
       /// 1️⃣ 查 DB
-      final dbRes = await _supabase
+      final dbRes = await supabase
         .from(TableNames.weatherForecast)
         .select('weather')
         .eq(
@@ -105,7 +104,7 @@ class ServiceWeather {
               .toUtc().toIso8601String(),
         )
         .gte(
-          'created_at',
+          Fields.createdAt,
           todayDate.toUtc().toIso8601String(),
         )
         .order(
@@ -156,7 +155,7 @@ class ServiceWeather {
           );
         }
 
-        await _supabase
+        await supabase
           .from(TableNames.weatherForecast)
           .insert(
             days.map((day) {
@@ -164,7 +163,7 @@ class ServiceWeather {
                 'location': event.locationDisplay,
                 'date': day.date.toUtc().toIso8601String(),
                 'weather': day.toJson(),
-                'created_at': todayDate.toUtc().toIso8601String(),
+                Fields.createdAt: todayDate.toUtc().toIso8601String(),
                 'lat': lat,
                 'lon': lon,
                 'country': country,

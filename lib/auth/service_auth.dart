@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceAuth {
-  static final SupabaseClient _client = Supabase.instance.client;
-
   // 🔐 Check if user is logged in
-  static bool isLoggedIn() => _client.auth.currentUser != null;
+  static bool isLoggedIn() => supabase.auth.currentUser != null;
 
-  static String? currentAccount() => _client.auth.currentUser?.email;
+  static String? currentAccount() => supabase.auth.currentUser?.email;
 
   // 🔑 Login with email/password
   static Future<String?> login(
@@ -20,7 +19,7 @@ class ServiceAuth {
     }
 
     return _handle(() async {
-      await _client.auth.signInWithPassword(email: email, password: password);
+      await supabase.auth.signInWithPassword(email: email, password: password);
     }, defaultError: ErrorFields.loginError);
   }
 
@@ -32,7 +31,7 @@ class ServiceAuth {
     }
 
     return _handle(() async {
-      await _client.auth.signUp(
+      await supabase.auth.signUp(
         email: email,
         password: password,
       );
@@ -50,7 +49,7 @@ class ServiceAuth {
         ? 'https://ct01795.github.io/life_pilot/'
         : 'lifepilot://reset-password';
 
-      await _client.auth.resetPasswordForEmail(
+      await supabase.auth.resetPasswordForEmail(
         email,
         redirectTo: redirectTo,
       );
@@ -60,7 +59,7 @@ class ServiceAuth {
   // 🚪 Sign out
   static Future<String?> logout() async {
     return _handle(() async {
-      await _client.auth.signOut();
+      await supabase.auth.signOut();
     }, defaultError: ErrorFields.logoutError);
   }
 

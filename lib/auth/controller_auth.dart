@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/auth/service_auth.dart';
@@ -24,13 +25,13 @@ class ControllerAuth extends ChangeNotifier {
 
   void _listenAuthState() {
     _authSubscription =
-        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        supabase.auth.onAuthStateChange.listen((data) {
       logger.i('Auth Event: ${data.event}');
       logger.i(
         'Recovery User: ${data.session?.user.email}',
       );
       logger.i(
-        'Current User: ${Supabase.instance.client.auth.currentUser?.email}',
+        'Current User: ${supabase.auth.currentUser?.email}',
       );
       if (data.event == AuthChangeEvent.passwordRecovery) {
         _update(() {
@@ -72,7 +73,7 @@ class ControllerAuth extends ChangeNotifier {
   Future<void> checkLoginStatus() async {
     _update(() => _isLoading = true, notify: false);
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = supabase.auth.currentUser;
     final oldAccount = _currentAccount; // 👈 比對用
 
     // 有時在剛登入／註冊完畢會延遲更新；

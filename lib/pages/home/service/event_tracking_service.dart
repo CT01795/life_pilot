@@ -1,9 +1,8 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/logger.dart';
 
 class EventTrackingService {
-  final SupabaseClient _supabase = Supabase.instance.client;
   Future<void> launchUrlLink(String? url) async {
     if (url == null) {
       return;
@@ -21,7 +20,7 @@ class EventTrackingService {
     required String? account,
   }) async {
     try {
-      await _supabase.rpc(
+      await supabase.rpc(
         'increment_event_counter',
         params: {
           'p_event_id': eventId,

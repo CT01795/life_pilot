@@ -5,10 +5,10 @@ import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class DashboardRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
     final now = DateTime.now();
     final today = DateTime(
@@ -21,10 +21,10 @@ class DashboardRepository {
       const Duration(days: 3),
     );
 
-    final result = await _supabase
-        .from('calendar_events')
+    final result = await supabase
+        .from(TableNames.calendarEvents)
         .select()
-        .eq('account', account)
+        .eq(Fields.account, account)
         .gte(
           'start_date',
           today.toUtc().toIso8601String(),
@@ -53,11 +53,11 @@ class DashboardRepository {
     String eventId,
     String account,
   ) async {
-    final result = await _supabase
-        .from('calendar_events')
+    final result = await supabase
+        .from(TableNames.calendarEvents)
         .select()
-        .eq('account', account)
-        .eq('id', eventId)
+        .eq(Fields.account, account)
+        .eq(Fields.id, eventId)
         .order(
           'start_date',
           ascending: true,
@@ -78,17 +78,15 @@ class DashboardRepository {
     required String id,
     required String account,
   }) async {
-    await _supabase
-        .from('calendar_events')
+    await supabase
+        .from(TableNames.calendarEvents)
         .update({
           'is_completed': true,
         })
-        .eq(
-          'id',
+        .eq(Fields.id,
           id,
         )
-        .eq(
-          'account',
+        .eq(Fields.account,
           account,
         );
   }
@@ -97,18 +95,18 @@ class DashboardRepository {
   Future<DashboardSetting> loadDashboardSetting({
     required String account,
   }) async {
-    final result = await _supabase
-        .from('dashboard_setting')
+    final result = await supabase
+        .from(TableNames.dashboardSetting)
         .select()
-        .eq('account', account)
+        .eq(Fields.account, account)
         .maybeSingle();
 
     if (result == null) {
       final setting = DashboardSetting(
           recommendEventCity: '台北', recommendPlaceCity: '台北', language: 'zh');
 
-      await _supabase.from('dashboard_setting').insert({
-        'account': account,
+      await supabase.from('dashboard_setting').insert({
+        Fields.account: account,
         ...setting.toJson(),
       });
 
@@ -122,14 +120,14 @@ class DashboardRepository {
     required String account,
     required DashboardSetting setting,
   }) async {
-    await _supabase.from('dashboard_setting').upsert({
-      'account': account,
+    await supabase.from(TableNames.dashboardSetting).upsert({
+      Fields.account: account,
       ...setting.toJson(),
     });
   }
 
   Future<List<DashboardCity>> loadEventCities(String account) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_event_city_counts',
       params: {
         'input_account': account,
@@ -145,7 +143,7 @@ class DashboardRepository {
 
   Future<List<RecommendedEvent>> loadRecommendEvents(
       String account, String city) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_home_recommended_events',
       params: {
         'p_account': account,
@@ -162,7 +160,7 @@ class DashboardRepository {
   }
 
   Future<List<DashboardCity>> loadPlaceCities(String account) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_place_city_counts',
       params: {
         'input_account': account,
@@ -178,7 +176,7 @@ class DashboardRepository {
 
   Future<List<RecommendedPlace>> loadRecommendPlaces(
       String account, String city) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_home_recommended_places',
       params: {
         'p_account': account,
@@ -194,12 +192,13 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense({required String accountId}) async {
-    final accountResult = await _supabase
-        .from('accounting_account')
+  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense(
+      {required String accountId}) async {
+    final accountResult = await supabase
+        .from(TableNames.accountingAccount)
         .select('id,main_currency')
         .eq(
-          'id',
+          Fields.id,
           accountId,
         )
         .maybeSingle();
@@ -207,7 +206,7 @@ class DashboardRepository {
     if (accountResult == null) {
       return [];
     }
-    //final accountId = accountResult['id'];
+    //final accountId = accountResult[Fields.id];
     final currency = accountResult['main_currency'];
     final now = DateTime.now();
     final start = DateTime(
@@ -218,8 +217,8 @@ class DashboardRepository {
     final end = start.add(
       const Duration(days: 1),
     );
-    final result = await _supabase
-        .from('accounting_detail')
+    final result = await supabase
+        .from(TableNames.accountingDetail)
         .select()
         .eq(
           'account_id',
@@ -244,11 +243,11 @@ class DashboardRepository {
   }
 
   Future<List<PointRecordItem>> loadPoints({required String accountId}) async {
-    final accountResult = await _supabase
-        .from('point_record_account')
-        .select('id')
+    final accountResult = await supabase
+        .from(TableNames.pointRecordAccount)
+        .select(Fields.id)
         .eq(
-          'id',
+          Fields.id,
           accountId,
         )
         .maybeSingle();
@@ -256,7 +255,7 @@ class DashboardRepository {
     if (accountResult == null) {
       return [];
     }
-    //final accountId = accountResult['id'];
+    //final accountId = accountResult[Fields.id];
     final now = DateTime.now();
     final start = DateTime(
       now.year,
@@ -266,8 +265,8 @@ class DashboardRepository {
     final end = start.add(
       const Duration(days: 1),
     );
-    final result = await _supabase
-        .from('point_record_detail')
+    final result = await supabase
+        .from(TableNames.pointRecordDetail)
         .select()
         .eq(
           'account_id',

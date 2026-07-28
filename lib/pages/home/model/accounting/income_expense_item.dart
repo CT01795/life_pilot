@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/const.dart';
+
 class IncomeExpenseItem {
   final String description;
   final int value;
@@ -22,9 +24,9 @@ class IncomeExpenseItem {
       description: json['description'] ?? '',
       value: (json['value'] ?? 0) as int,
       currency: json['currency'],
-      createdAt: json['created_at'] != null
+      createdAt: json[Fields.createdAt] != null
           ? DateTime.parse(
-              json['created_at'],
+              json[Fields.createdAt],
             )
           : null,
       date: json['date'] != null

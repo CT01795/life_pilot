@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/const.dart';
+
 class ModelGameItem {
   final String id;
   final String gameType;
@@ -13,7 +15,7 @@ class ModelGameItem {
 
   factory ModelGameItem.fromMap(Map<String, dynamic> map) {
     return ModelGameItem(
-      id: map['id'],
+      id: map[Fields.id],
       gameType: map['game_type'],
       gameName: map['game_name'],
       level: map['level'] ?? 0,

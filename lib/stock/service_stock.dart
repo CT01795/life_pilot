@@ -7,10 +7,8 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceStock {
-  final SupabaseClient _supabase = Supabase.instance.client;
   List<ModelStock> stocks = [];
   int? stocksLength;
   Future<void> loadRawData() async {
@@ -18,11 +16,11 @@ class ServiceStock {
     final cutoffDate = today.subtract(Duration(days: 370));
     await api.post('stock/delete_stock_daily_price', {
       'table_name': TableNames.stockDailyPrice,
-      'date': cutoffDate.toIso8601String(),
+      'date': cutoffDate.toUtc().toIso8601String(),
     });
     await api.post('stock/delete_stock_date', {
       'table_name': TableNames.stockDate,
-      'date': cutoffDate.toIso8601String(),
+      'date': cutoffDate.toUtc().toIso8601String(),
     });
     int checkDates = 2;
     int minDayValue = 1;
@@ -373,7 +371,7 @@ class ServiceStock {
   Future<List<ModelInstitutional>> selectStockInstitutional(
       DateTime date) async {
     try {
-      final result = await _supabase
+      final result = await supabase
           .from(TableNames.stockInstitutional)
           .select()
           .eq(
@@ -519,7 +517,7 @@ class ServiceStock {
   Future<bool> isDataExist(DateTime date, String type) async {
     final result = await api.post('stock/check_stock_date', {
       'table_name': TableNames.stockDate,
-      'date': date.toIso8601String(),
+      'date': date.toUtc().toIso8601String(),
       'type': type,
     });
     return result["status"] == true;
@@ -528,7 +526,7 @@ class ServiceStock {
   Future<List<ModelStock>> getByDate(DateTime date) async {
     final result = await api.post('stock/select_stock_daily_price_by_date', {
       'table_name': TableNames.stockDailyPrice,
-      'date': date.toIso8601String(),
+      'date': date.toUtc().toIso8601String(),
       'traded_number': 20000000,
     });
 
@@ -637,7 +635,7 @@ class ServiceStock {
     // 檢查同一天是否已經有資料
     final existing = await api.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
-      'date': date.toIso8601String()
+      'date': date.toUtc().toIso8601String()
     });
     dynamic tmp;
     if (existing["data"] == null) {
@@ -655,7 +653,7 @@ class ServiceStock {
     // 檢查同一天是否已經有資料
     final existing = await apiSupabase.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
-      'date': date.toIso8601String()
+      'date': date.toUtc().toIso8601String()
     });
     dynamic tmp;
     if (existing["data"] == null || existing["data"].length == 0) {
@@ -791,16 +789,15 @@ class ServiceStock {
       return;
     }
 
-    await _supabase
+    await supabase
       .from(TableNames.stockPredicted)
       .insert({
         'date': date.toUtc().toIso8601String(),
         'data': stocks
             .map((stock) => stock.toJsonPred())
             .toList(),
-        'created_at': DateTime.now()
-            .toUtc()
-            .toIso8601String(),
+        Fields.createdAt: DateTime.now()
+            .toUtc().toIso8601String(),
       });
   }
 }

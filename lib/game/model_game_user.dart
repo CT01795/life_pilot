@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/const.dart';
+
 class ModelGameUser {
   String? id = '';
   String? userName;
@@ -22,12 +24,12 @@ class ModelGameUser {
 
   factory ModelGameUser.fromMap(Map<String, dynamic> map) {
     return ModelGameUser(
-      id: map['id'] ?? '',
+      id: map[Fields.id] ?? '',
       userName: map['name'] ?? '',
       gameId: map['game_id'] ?? '',
       score: (map['score'] ?? 0).toDouble(),
       createdAt:
-          map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
+          map[Fields.createdAt] != null ? DateTime.parse(map[Fields.createdAt]) : null,
       gameType: map['game_type'] ?? '',
       gameName: map['game_name'] ?? '',
       level: map['level'] is int

@@ -12,6 +12,7 @@ import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard_setting.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
+import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
@@ -68,6 +69,10 @@ void main() async {
         Provider<EventTrackingService>(
           create: (_) =>
             EventTrackingService(),
+        ),
+        Provider<CalendarService>(
+          create: (_) =>
+            CalendarService(),
         ),
         ChangeNotifierProvider(
           create: (_) => ControllerAuth(),

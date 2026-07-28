@@ -7,12 +7,11 @@ import 'package:life_pilot/game/social/model_game_social.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceGame {
   //------------------------- 共用 -------------------------
-  final SupabaseClient _supabase = Supabase.instance.client;
   Future<void> saveUserGameScore(
       {required String newUserName,
       required double newScore,
@@ -22,19 +21,19 @@ class ServiceGame {
       //不紀錄0分
       return;
     }
-    await _supabase
+    await supabase
       .from(TableNames.gameUser)
       .insert({
         'game_id': newGameId,
         'score': newScore,
         'name': newUserName,
         'is_pass': newIsPass,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 
   Future<List<ModelGameItem>> fetchGames() async {
-    final data = await _supabase
+    final data = await supabase
       .from(TableNames.gameList)
       .select()
       .order('game_type', ascending: true)
@@ -45,7 +44,7 @@ class ServiceGame {
     return (data as List<dynamic>).map((e) {
       final map = e as Map<String, dynamic>;
       return ModelGameItem(
-        id: map['id'] as String,
+        id: map[Fields.id] as String,
         gameType: map['game_type'] as String,
         gameName: map['game_name'] as String,
         level: int.tryParse(map['level']?.toString() ?? '') ?? 1,
@@ -56,7 +55,7 @@ class ServiceGame {
   // 查詢目前使用者的分數紀錄
   Future<List<ModelGameUser>> fetchUserProgress(
       String userName, String gameType, String gameName) async {
-    final response = await _supabase.rpc(
+    final response = await supabase.rpc(
       'fetch_user_progress',
       params: {
         'p_name': userName,
@@ -76,7 +75,7 @@ class ServiceGame {
   //------------------------- Grammar -------------------------
   Future<ModelGameGrammarQuestion> fetchGrammarQuestion(
       String userName, int level) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_grammar_question',
       params: {
         'user_name': userName,
@@ -90,7 +89,7 @@ class ServiceGame {
 
     final data = result[0];
     return ModelGameGrammarQuestion(
-        questionId: data['id'],
+        questionId: data[Fields.id],
         question: data['question'],
         correctAnswer: data['correct_answer'],
         type: data['type'],
@@ -104,21 +103,21 @@ class ServiceGame {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await _supabase
+    await supabase
       .from(TableNames.gameGrammarUser)
       .insert({
         'user': userName,
         'question_id': questionId,
         'answer': answer,
         'is_right': isRightAnswer,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 
   //------------------------- Sentence -------------------------
   Future<ModelGameSentence> fetchSentenceQuestion(
       String userName, int level) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_sentence_question',
       params: {
         'user_name': userName,
@@ -131,7 +130,7 @@ class ServiceGame {
     }
     final data = result[0];
     return ModelGameSentence(
-        questionId: data['id'],
+        questionId: data[Fields.id],
         question: data['question'],
         correctAnswer: data['correct_answer'],
         type: data['type'],
@@ -145,21 +144,21 @@ class ServiceGame {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await _supabase
+    await supabase
       .from(TableNames.gameSentenceUser)
       .insert({
         'user': userName,
         'question_id': questionId,
         'answer': answer,
         'is_right': isRightAnswer,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 
   //------------------------- Speaking -------------------------
   Future<ModelGameSpeaking> fetchSpeakingQuestion(
       String userName, int level) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_speaking_question',
       params: {
         'user_name': userName,
@@ -173,7 +172,7 @@ class ServiceGame {
 
     final data = result[0];
     return ModelGameSpeaking(
-      questionId: data['id'],
+      questionId: data[Fields.id],
       question: data['question'],
       correctAnswer: data['correct_answer'],
       type: data['type'],
@@ -187,21 +186,21 @@ class ServiceGame {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await Supabase.instance.client
+    await supabase
       .from(TableNames.gameSpeakingUser)
       .insert({
         'user': userName,
         'question_id': questionId,
         'answer': answer,
         'is_right': isRightAnswer,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 
   //------------------------- Social -------------------------
   Future<ModelGameSocial> fetchSocialQuestion(
       String userName, int level) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_social_with_options',
       params: {
         'user_name': userName,
@@ -230,7 +229,7 @@ class ServiceGame {
       tmpMap[options[2]]
     ];
     return ModelGameSocial(
-        id: data['id'],
+        id: data[Fields.id],
         scene: data['scene'],
         correctAnswer: data['answer1'],
         options: options,
@@ -244,21 +243,21 @@ class ServiceGame {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await _supabase
+    await supabase
       .from(TableNames.gameSocialUser)
       .insert({
         'user': userName,
         'question_id': questionId,
         'answer': answer,
         'is_right': isRightAnswer,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 
   //------------------------- Mario Translation -------------------------
   Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(
       String userName, int level) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_translation_with_options',
       params: {
         'user_name': userName,
@@ -273,7 +272,7 @@ class ServiceGame {
     final data = result[0];
 
     return ModelGameMarioTranslation(
-        questionId: data['id'],
+        questionId: data[Fields.id],
         question: data['question'],
         correctAnswer: data['correct_answer'],
         options: [
@@ -293,7 +292,7 @@ class ServiceGame {
       functionName = 'get_translationkr_with_options';
     }
 
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       functionName,
       params: {
         'user_name': userName,
@@ -308,7 +307,7 @@ class ServiceGame {
     final data = result[0];
 
     return ModelGameTranslation(
-        questionId: data['id'],
+        questionId: data[Fields.id],
         question: data['question'],
         group: data['group'],
         correctAnswer: data['correct_answer'],
@@ -320,7 +319,7 @@ class ServiceGame {
   }
 
   Future<Map<String, Set<String>>> getSynonyms() async {
-    final response = await _supabase
+    final response = await supabase
       .from(TableNames.gameTranslationSynonyms)
       .select();
 
@@ -343,21 +342,21 @@ class ServiceGame {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await _supabase
+    await supabase
       .from(TableNames.gameTranslationUser)
       .insert({
         'user': userName,
         'question_id': questionId,
         'answer': answer,
         'is_right': isRightAnswer,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 
   //------------------------- Word Search -------------------------
   Future<ModelGameWordSearch> fetchWordSearchQuestion(
       String userName, int level) async {
-    final result = await _supabase.rpc(
+    final result = await supabase.rpc(
       'get_next_word_question',
       params: {
         'user_name': userName,
@@ -370,7 +369,7 @@ class ServiceGame {
     }
     final data = result[0];
     return ModelGameWordSearch(
-        questionId: data['id'], question: data['question'], found: false);
+        questionId: data[Fields.id], question: data['question'], found: false);
   }
 
   // 寫入使用者答題紀錄
@@ -380,14 +379,14 @@ class ServiceGame {
     required String answer,
     required bool isRightAnswer,
   }) async {
-    await _supabase
+    await supabase
       .from(TableNames.gameWordSearchUser)
       .insert({
         'user': userName,
         'question_id': questionId,
         'answer': answer,
         'is_right': isRightAnswer,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
       });
   }
 }

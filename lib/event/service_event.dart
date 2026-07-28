@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceEvent {
-  final SupabaseClient _supabase = Supabase.instance.client;
   ServiceEvent();
 
   Future<String> getKey({required String keyName}) async {
     try {
-      final response = await _supabase.rpc(
+      final response = await supabase.rpc(
         'get_key',
         params: {
           'p_key_name': keyName,
@@ -37,7 +36,7 @@ class ServiceEvent {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final cutoffDate = today.subtract(Duration(days: 2));
     if (tableName == TableNames.recommendEvents && today.weekday == 3) {
-      await _supabase.rpc(
+      await supabase.rpc(
         'cleanup_recommended_events',
         params: {
           'cutoff': cutoffDate.toUtc().toIso8601String(),
@@ -55,7 +54,7 @@ class ServiceEvent {
             .formatDateString();
 
     try {
-      final response = await _supabase.rpc(
+      final response = await supabase.rpc(
         'get_filtered_$tableName',
         params: {
           'payload': {
@@ -119,22 +118,22 @@ class ServiceEvent {
       event.isApproved = false;
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
-        await _supabase
+        await supabase
           .from(tableName)
           .insert([
             event.toJson(),
           ]);
       } else {
         final data = event.toJson();
-        var query = _supabase
+        var query = supabase
             .from(tableName)
             .update(data)
-            .eq('id', data['id']);
+            .eq(Fields.id, data[Fields.id]);
 
         // 非系統管理員只能更新自己的事件
         if (currentAccount != "minavi@alumni.nccu.edu.tw" &&
-            data['account'] != null) {
-          query = query.eq('account', data['account']);
+            data[Fields.account] != null) {
+          query = query.eq(Fields.account, data[Fields.account]);
         }
 
         await query;
@@ -153,20 +152,20 @@ class ServiceEvent {
     try {
       final data = event.toJson();
       if (tableName == TableNames.recommendEvents) {
-        await _supabase
+        await supabase
           .from(TableNames.recommendEventsDeleted)
           .insert([data]);
       }
 
-      var query = _supabase
+      var query = supabase
         .from(tableName)
         .delete()
-        .eq('id', data['id']);
+        .eq(Fields.id, data[Fields.id]);
 
       // 非系統管理員只能刪自己的事件
       if (currentAccount != "minavi@alumni.nccu.edu.tw") {
         query = query.eq(
-          'account',
+          Fields.account,
           currentAccount,
         );
       }
@@ -186,10 +185,10 @@ class ServiceEvent {
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
     final data = event.toJson();
-    var query = _supabase
+    var query = supabase
         .from(tableName)
         .update(data)
-        .eq('id', data['id']);
+        .eq(Fields.id, data[Fields.id]);
 
     await query;
   }
@@ -203,15 +202,15 @@ class ServiceEvent {
       "account": account
     };
     try {
-      await _supabase
+      await supabase
         .from(TableNames.recommendEventsFavor)
         .insert([data]);
     } catch (ex) {
       try {
-        var query = _supabase
+        var query = supabase
             .from(TableNames.recommendEventsFavor)
             .update(data)
-            .eq('id', data['id']);
+            .eq(Fields.id, data[Fields.id]);
 
         await query;
       } catch (ex) {

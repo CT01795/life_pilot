@@ -3,14 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServicePointRecord {
-  final SupabaseClient _supabase = Supabase.instance.client;
   String currentTable = TableNames.pointRecordAccount;
   ServicePointRecord();
 
@@ -32,12 +31,12 @@ class ServicePointRecord {
   Future<ModelPointRecordAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
     try {
-      final response = await _supabase
+      final response = await supabase
         .from(currentTable)
         .select()
-        .eq('id', eventId)
-        .eq('created_by', user)
-        .eq('is_valid', true)
+        .eq(Fields.id, eventId)
+        .eq(Fields.createdBy, user)
+        .eq(Fields.isValid, true)
         .maybeSingle();
 
       if (response == null) {
@@ -53,8 +52,8 @@ class ServicePointRecord {
       }
 
       return ModelPointRecordAccount(
-        id: response['id'],
-        accountName: response['account'],
+        id: response[Fields.id],
+        accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
         points: (response['points'] ?? 0).toInt(),
@@ -70,13 +69,13 @@ class ServicePointRecord {
     required String category, // personal / project
   }) async {
     try {
-      final response = await _supabase
+      final response = await supabase
         .from(TableNames.pointRecordAccount)
         .select()
-        .eq('created_by', user)
+        .eq(Fields.createdBy, user)
         .eq('category', category)
-        .eq('is_valid', true)
-        .order('account', ascending: true);
+        .eq(Fields.isValid, true)
+        .order(Fields.account, ascending: true);
 
       if (response.isEmpty) {
         return [];
@@ -89,8 +88,8 @@ class ServicePointRecord {
           e['master_graph_url'],
         );
         return ModelPointRecordAccount(
-          id: e['id'],
-          accountName: e['account'],
+          id: e[Fields.id],
+          accountName: e[Fields.account],
           category: e['category'],
           masterGraphUrl: bytes,
           points: (e['points'] ?? 0).toInt(),
@@ -110,11 +109,11 @@ class ServicePointRecord {
       String? eventId}) async {
     try {
       // 查詢是否已存在
-      final exist = await _supabase
+      final exist = await supabase
           .from(TableNames.pointRecordAccount)
           .select()
-          .eq('created_by', user)
-          .eq('account', name)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.account, name)
           .eq('category', category)
           .maybeSingle();
 
@@ -122,13 +121,13 @@ class ServicePointRecord {
 
       if (exist != null) {
         // 已存在但被刪除 -> 恢復
-        if (exist['is_valid'] != true) {
-          response = await _supabase
+        if (exist[Fields.isValid] != true) {
+          response = await supabase
               .from(TableNames.pointRecordAccount)
               .update({
-                'is_valid': true,
+                Fields.isValid: true,
               })
-              .eq('id', exist['id'])
+              .eq(Fields.id, exist[Fields.id])
               .select()
               .single();
         } else {
@@ -136,15 +135,15 @@ class ServicePointRecord {
         }
       } else {
         // 新增帳戶
-        response = await _supabase
+        response = await supabase
             .from(TableNames.pointRecordAccount)
             .insert({
-              'id': eventId ?? const Uuid().v4(),
-              'account': name,
-              'created_by': user,
+              Fields.id: eventId ?? const Uuid().v4(),
+              Fields.account: name,
+              Fields.createdBy: user,
               'category': category,
               'points': 0,
-              'is_valid': true,
+              Fields.isValid: true,
             })
             .select()
             .single();
@@ -152,8 +151,8 @@ class ServicePointRecord {
 
       final bytes = parseMasterGraph(response['master_graph_url']);
       return ModelPointRecordAccount(
-        id: response['id'],
-        accountName: response['account'],
+        id: response[Fields.id],
+        accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
         points: (response['points'] ?? 0).toInt(),
@@ -166,12 +165,12 @@ class ServicePointRecord {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      final result = await _supabase
+      final result = await supabase
           .from(TableNames.pointRecordAccount)
           .update({
-            'is_valid': false,
+            Fields.isValid: false,
           })
-          .eq('id', accountId)
+          .eq(Fields.id, accountId)
           .select();
 
       if (result.isEmpty) {
@@ -192,13 +191,13 @@ class ServicePointRecord {
     try {
       // 不管 Web / Mobile 都轉 base64
       // Mobile / Web 統一存 bytea (Uint8List)
-      final result = await Supabase.instance.client
+      final result = await supabase
         .from(TableNames.pointRecordAccount)
         .update({
           'master_graph_url': base64Encode(imageBytes),
         })
-        .eq('id', accountId)
-        .eq('is_valid', true)
+        .eq(Fields.id, accountId)
+        .eq(Fields.isValid, true)
         .select();
 
       if (result.isEmpty) {
@@ -215,7 +214,7 @@ class ServicePointRecord {
   Future<List<ModelPointRecordDetail>> fetchTodayRecords(
       {required String accountId, required String type}) async {
     try {
-      final res = await _supabase.rpc(
+      final res = await supabase.rpc(
         'fetch_today_point_records',
         params: {
           'p_account_id': accountId,
@@ -235,10 +234,10 @@ class ServicePointRecord {
         final detail = (rawDetail is Map) ? rawDetail : <String, dynamic>{};
 
         return ModelPointRecordDetail(
-          id: detail['id']?.toString() ?? '',
+          id: detail[Fields.id]?.toString() ?? '',
           accountId: detail['account_id']?.toString() ?? '',
           createdAt:
-              DateTime.tryParse(detail['created_at']?.toString() ?? '') ??
+              DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
                   DateTime.now(),
           description: detail['description']?.toString() ?? '',
           type: detail['type']?.toString() ?? '',
@@ -259,7 +258,7 @@ class ServicePointRecord {
       required String type,
       required List<PointRecordPreview> records}) async {
     try {
-      await _supabase.rpc(
+      await supabase.rpc(
         'add_point_records_batch',
         params: {
           'p_account_id': accountId,

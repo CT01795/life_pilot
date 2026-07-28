@@ -3,6 +3,7 @@ import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
@@ -48,7 +49,7 @@ class PointSelectorButton extends StatelessWidget {
                       Navigator.pop(
                         context,
                         {
-                          'id': a.id,
+                          Fields.id: a.id,
                           'name': a.accountName,
                         },
                       );
@@ -65,7 +66,7 @@ class PointSelectorButton extends StatelessWidget {
 
           await dashboard.changePointAccount(
             account: auth.account!,
-            accountId: selected['id']!,
+            accountId: selected[Fields.id]!,
             accountName: selected['name']!,         
           );
         },

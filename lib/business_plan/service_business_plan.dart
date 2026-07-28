@@ -4,25 +4,24 @@ import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_section.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceBusinessPlan {
-  final SupabaseClient _supabase = Supabase.instance.client;
   // 1️⃣ 拉模板清單（給使用者選）
   Future<List<ModelPlanTemplate>> fetchTemplates() async {
     try {
-      final res = await _supabase
+      final res = await supabase
         .from(TableNames.businessPlanTemplate)
         .select()
-        .eq('is_valid', true)
-        .order('created_at', ascending: true);
+        .eq(Fields.isValid, true)
+        .order(Fields.createdAt, ascending: true);
 
       return (res as List)
           .map((e) => ModelPlanTemplate(
-                id: e['id'],
+                id: e[Fields.id],
                 title: e['title'],
                 description: e['description'] ?? '',
               ))
@@ -44,35 +43,35 @@ class ServiceBusinessPlan {
     List<String> sectionIdList = [];
     try {
       // 1. 查詢
-      final exist = await _supabase
+      final exist = await supabase
           .from(TableNames.businessPlan)
           .select()
-          .eq('created_by', user)
+          .eq(Fields.createdBy, user)
           .eq('title', title)
           .maybeSingle();
 
       if (exist != null) {
-        if (exist['is_valid'] == false) {
-          await _supabase
+        if (exist[Fields.isValid] == false) {
+          await supabase
               .from(TableNames.businessPlan)
-              .update({'is_valid': true})
-              .eq('id', exist['id']);
+              .update({Fields.isValid: true})
+              .eq(Fields.id, exist[Fields.id]);
         } else {
           throw Exception('Plan name already exists');
         }
       } else {
-        await _supabase.from(TableNames.businessPlan).insert({
-          'id': planId,
+        await supabase.from(TableNames.businessPlan).insert({
+          Fields.id: planId,
           'title': title,
           'template_id': templateId,
-          'created_by': user,
-          'created_at': DateTime.now().toUtc().toIso8601String(),
-          'is_valid': true,
+          Fields.createdBy: user,
+          Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
+          Fields.isValid: true,
         });
       }
 
       // 2️⃣ 取得模板 sections
-      List responseSectionsTemplate = await _supabase
+      List responseSectionsTemplate = await supabase
         .from(TableNames.businessPlanTemplateSection)
         .select()
         .eq('plan_id', templateId)
@@ -83,30 +82,30 @@ class ServiceBusinessPlan {
         sectionIdList.add(const Uuid().v4());
 
         // 3️⃣ 建立 section
-        await _supabase.from(TableNames.businessPlanSection).insert({
-          'id': sectionIdList[i],
+        await supabase.from(TableNames.businessPlanSection).insert({
+          Fields.id: sectionIdList[i],
           'plan_id': planId,
           'title': s['title'],
           'sort_order': s['sort_order'],
         });
 
         // 4️⃣ 建立題目
-        List responseQuestionsTemplate = await _supabase
+        List responseQuestionsTemplate = await supabase
           .from(TableNames.businessPlanTemplateQuestion)
           .select()
-          .eq('section_id', s['id'])
+          .eq('section_id', s[Fields.id])
           .order('sort_order', ascending: true);
 
         final questionRows = responseQuestionsTemplate.map((q) {
           return {
-            'id': const Uuid().v4(),
+            Fields.id: const Uuid().v4(),
             'section_id': sectionIdList[i],
             'prompt': q['prompt'],
             'sort_order': q['sort_order'],
           };
         }).toList();
 
-        await _supabase
+        await supabase
             .from(TableNames.businessPlanQuestion)
             .insert(questionRows);
         i++;
@@ -122,12 +121,12 @@ class ServiceBusinessPlan {
     required String title,
   }) async {
     try {
-      await _supabase
+      await supabase
           .from(TableNames.businessPlan)
           .update({
             'title': title,
           })
-          .eq('id', planId);
+          .eq(Fields.id, planId);
     } catch (e) {
       logger.e(e);
       rethrow;
@@ -142,7 +141,7 @@ class ServiceBusinessPlan {
   }) async {
     try {
       // 插入新的
-      await _supabase
+      await supabase
         .from(TableNames.businessPlanAnswer)
         .upsert(
           {
@@ -162,16 +161,16 @@ class ServiceBusinessPlan {
 
   Future<List<ModelBusinessPlan>> fetchPlans({required String user}) async {
     try {
-      final res = await _supabase
+      final res = await supabase
         .from(TableNames.businessPlan)
         .select()
-        .eq('created_by', user)
-        .order('created_at', ascending: true);
+        .eq(Fields.createdBy, user)
+        .order(Fields.createdAt, ascending: true);
       return (res as List).map((e) {
         return ModelBusinessPlan(
-          id: e['id'],
+          id: e[Fields.id],
           title: e['title'],
-          createdAt: DateTime.parse(e['created_at']),
+          createdAt: DateTime.parse(e[Fields.createdAt]),
           sections: [], // 只用來顯示 list，實際 editor 再拉 detail
         );
       }).toList();
@@ -183,7 +182,7 @@ class ServiceBusinessPlan {
 
   Future<ModelBusinessPlan> fetchPlanDetail({required String planId}) async {
     try {
-      final data = await _supabase
+      final data = await supabase
         .rpc(
           'get_business_plan_detail',
           params: {
@@ -192,17 +191,17 @@ class ServiceBusinessPlan {
         );
 
       return ModelBusinessPlan(
-        id: data['id'],
+        id: data[Fields.id],
         title: data['title'],
-        createdAt: DateTime.parse(data['created_at']),
+        createdAt: DateTime.parse(data[Fields.createdAt]),
         sections: (data['sections'] as List)
             .map((s) => ModelPlanSection(
-                  id: s['id'],
+                  id: s[Fields.id],
                   title: s['title'],
                   sortOrder: s['sort_order'],
                   questions: (s['questions'] as List)
                       .map((q) => ModelPlanQuestion(
-                            id: q['id'],
+                            id: q[Fields.id],
                             prompt: q['prompt'],
                             answer: q['answer'] ?? '',
                             sortOrder: q['sort_order'],

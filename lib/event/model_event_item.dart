@@ -184,7 +184,7 @@ class EventItem implements EventBase {
   @override
   Map<String, dynamic> toJson() {
     return {
-      EventFields.id: id,
+      Fields.id: id,
       EventFields.masterGraphUrl: masterGraphUrl,
       EventFields.masterUrl: masterUrl,
       EventFields.startDate: startDate?.formatDateString(),
@@ -198,7 +198,7 @@ class EventItem implements EventBase {
       EventFields.description: description,
       //EventFields.fee: fee,
       EventFields.unit: unit,
-      EventFields.account: account,
+      Fields.account: account,
       EventFields.repeatOptions: repeatOptions.key,
       EventFields.reminderOptions: reminderOptions
           .map((e) => CalendarReminderMapper.toKey(reminderOption: e))
@@ -231,7 +231,7 @@ class EventItem implements EventBase {
     final subEventsJson = json[EventFields.subEvents];
 
     return EventItem(
-      id: json[EventFields.id] ?? _uuid.v4(),
+      id: json[Fields.id] ?? _uuid.v4(),
       masterGraphUrl: json[EventFields.masterGraphUrl],
       masterUrl: json[EventFields.masterUrl],
       startDate: fromStringOrNull(json[EventFields.startDate]),
@@ -244,7 +244,7 @@ class EventItem implements EventBase {
       type: json[EventFields.type] ?? '',
       description: json[EventFields.description] ?? '',
       unit: json[EventFields.unit] ?? '',
-      account: json[EventFields.account],
+      account: json[Fields.account],
       repeatOptions:
           CalendarRepeatRuleExtension.fromKey(json[EventFields.repeatOptions]),
       reminderOptions: EventItem.parseReminderOptions(
