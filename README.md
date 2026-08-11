@@ -1,17 +1,26 @@
-# life_pilot
+# Life Pilot
 
-A new Flutter project.
+Life Pilot 是一個個人生活規劃工具，協助使用者管理行程、探索活動與景點，並掌握日常支出與集點紀錄。
 
-## Getting Started
+## 核心功能
 
-This project is a starting point for a Flutter application.
+- 今日行程與提醒
+- 活動與景點推薦
+- 個人記帳與支出摘要
+- 集點與回憶紀錄
+- 多語系介面：繁體中文、英文、日文、韓文
 
-A few resources to get you started if this is your first Flutter project:
+## 開發環境
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Flutter / Dart
+- Supabase（帳號與資料）
+- FastAPI / Python（資料服務）
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-"🔁 Force deploy" 
+## 開始開發
+
+```bash
+flutter pub get
+flutter run
+```
+
+Python 服務位於 `python_ai_service/`。請以環境變數設定資料庫連線，勿將密碼或 API 金鑰提交至版本控制。
