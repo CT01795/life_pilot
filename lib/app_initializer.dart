@@ -1,4 +1,5 @@
 
+import 'package:flutter/foundation.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/utils/service/service_timezone.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,7 +9,6 @@ class AppInitializer {
 
   static Future<void> init() async {
     if (_initialized) return;
-    _initialized = true;
 
     // ✅ 初始化時區
     CalendarConfig.tzLocation =
@@ -18,7 +18,8 @@ class AppInitializer {
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
-      debug: true, // 可選，用於除錯
+      debug: kDebugMode,
     );
+    _initialized = true;
   }
 }

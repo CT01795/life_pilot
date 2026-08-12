@@ -1,29 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_pilot/apps/app_view.dart';
+import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/utils/service/service_api.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const AppView());
+  test('AppConfig exposes the Life Pilot product configuration', () {
+    expect(AppConfig.appTitle, 'Life Pilot');
+    expect(AppConfig.supportedLocales, contains(const Locale('zh')));
+    expect(AppConfig.supportedLocales, contains(const Locale('en')));
+    expect(AppConfig.supportedLocales, contains(const Locale('ja')));
+    expect(AppConfig.supportedLocales, contains(const Locale('ko')));
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  test('ServiceApi applies a default request timeout', () {
+    final api = ServiceApi('https://example.com');
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(api.timeout, const Duration(seconds: 20));
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('ServiceApi normalizes API URLs', () {
+    final api = ServiceApi('https://example.com/');
+
+    expect(
+      api.buildUri('/stock/select_latest_stock_date').toString(),
+      'https://example.com/stock/select_latest_stock_date',
+    );
+  });
+
+  test('ServiceApiException includes request context', () {
+    const exception = ServiceApiException(
+      path: 'stock/select_latest_stock_date',
+      statusCode: 500,
+      message: 'Internal Server Error',
+    );
+
+    expect(exception.toString(), contains('HTTP 500'));
+    expect(exception.toString(), contains('stock/select_latest_stock_date'));
   });
 }

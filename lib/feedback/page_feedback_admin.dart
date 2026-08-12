@@ -12,9 +12,17 @@ class PageFeedbackAdmin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<ControllerAuth>();
+
+    if (!auth.isSysAdmin) {
+      return const Scaffold(
+        body: Center(child: Text('Access denied')),
+      );
+    }
+
     return ChangeNotifierProvider(
       create: (_) => ControllerFeedbackAdmin(
-          ServiceFeedback(), context.read<ControllerAuth>())
+          ServiceFeedback(), auth)
         ..loadFeedback(),
       child: Consumer<ControllerFeedbackAdmin>(
         builder: (context, controller, _) {
@@ -38,7 +46,8 @@ class PageFeedbackAdmin extends StatelessWidget {
                                   : ElevatedButton(
                                       onPressed: () => controller.markAsDone(
                                           feedback,
-                                          AuthConstants.sysAdminEmail),
+                                          auth.currentAccount ??
+                                              AuthConstants.guest),
                                       child: const Text('Mark Done'),
                                     ),
                               onTap: () async {

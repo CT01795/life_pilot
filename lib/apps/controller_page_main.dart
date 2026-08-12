@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -48,12 +47,12 @@ class ControllerPageMain extends ChangeNotifier {
       PageType.ai,
     ];
 
-    if (auth.currentAccount != AuthConstants.sysAdminEmail) {
+    if (!auth.isSysAdmin) {
       pages.remove(PageType.stock);
     }
 
     // 最後加遊戲頁
-    if (auth.currentAccount == AuthConstants.sysAdminEmail) {
+    if (auth.isSysAdmin) {
       pages.add(PageType.businessPlan);
       pages.add(PageType.feedbackAdmin);
     }

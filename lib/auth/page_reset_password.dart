@@ -52,7 +52,7 @@ class _PageResetPasswordState extends State<PageResetPassword> {
 
     final user = supabase.auth.currentSession?.user;
     logger.i(
-      'Reset target=${user?.email}',
+      'Reset target present: ${user != null}',
     );
     if (user == null) {
       AppNavigator.showErrorBar(_authView.showLoginError(

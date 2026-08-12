@@ -28,10 +28,10 @@ class ControllerAuth extends ChangeNotifier {
         supabase.auth.onAuthStateChange.listen((data) {
       logger.i('Auth Event: ${data.event}');
       logger.i(
-        'Recovery User: ${data.session?.user.email}',
+        'Recovery User Present: ${data.session?.user != null}',
       );
       logger.i(
-        'Current User: ${supabase.auth.currentUser?.email}',
+        'Current User Present: ${supabase.auth.currentUser != null}',
       );
       if (data.event == AuthChangeEvent.passwordRecovery) {
         _update(() {
@@ -52,6 +52,7 @@ class ControllerAuth extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isAnonymous => _isAnonymous;
   String? get currentAccount => _currentAccount;
+  bool get isSysAdmin => _currentAccount == AuthConstants.sysAdminEmail;
   AuthPage get currentPage => _currentPage;
 
   final Map<String, String> _registerMap = {

@@ -1,12 +1,12 @@
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/auth/page_auth_check.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/theme.dart';
-import 'package:life_pilot/auth/page_auth_check.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
+import 'package:life_pilot/utils/theme.dart';
 import 'package:provider/provider.dart';
-import 'package:app_links/app_links.dart';
 
 class AppView extends StatefulWidget {
   const AppView({super.key});
@@ -21,23 +21,21 @@ class _AppViewState extends State<AppView> {
   @override
   void initState() {
     super.initState();
-    // ✅ 僅初始化一次全域錯誤處理
     app_navigator.AppNavigator.initErrorHandling();
-    // ✅ Deep Link
     _initDeepLink();
   }
 
   void _initDeepLink() {
     _appLinks.uriLinkStream.listen((uri) async {
-      logger.i('DeepLink received: $uri');
+      final sanitizedUri = uri.replace(query: null, fragment: null);
+      logger.i('DeepLink received: $sanitizedUri');
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 只監聽 locale，不重建整個 MaterialApp
     return RepaintBoundary(
-      key: app_navigator.rootRepaintBoundaryKey, // 🌟 全局 RepaintBoundary
+      key: app_navigator.rootRepaintBoundaryKey,
       child: Selector<ProviderLocale, Locale>(
         selector: (_, provider) => provider.locale,
         builder: (_, locale, __) {
@@ -49,18 +47,8 @@ class _AppViewState extends State<AppView> {
             localizationsDelegates: AppConfig.localizationDelegates,
             theme: AppTheme.lightTheme,
             title: AppConfig.appTitle,
-            builder: (context, child) {
-              // ⚙️ 允許自動調整但限制最大字體放大倍率
-              final mediaQuery = MediaQuery.of(context);
-
-              return MediaQuery(
-                data: mediaQuery.copyWith(textScaler: TextScaler.linear(1.5)),
-                child: child ??
-                    const SizedBox.shrink(), //避免 child 為 null 時 crash，防禦性寫法。
-              );
-            },
             debugShowCheckedModeBanner: false,
-            home: _AppHome(),
+            home: const _AppHome(),
           );
         },
       ),
@@ -68,7 +56,6 @@ class _AppViewState extends State<AppView> {
   }
 }
 
-// ✅ 把 home 包出去，減少 rebuild 開銷
 class _AppHome extends StatelessWidget {
   const _AppHome();
 

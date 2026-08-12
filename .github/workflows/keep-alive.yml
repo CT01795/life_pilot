@@ -1,15 +1,13 @@
-name: keep-alive
+name: Manual API health check
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
-  ping:
+  health-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Call health endpoint
+      - name: Call API health endpoint
         run: |
           echo "Ping start"
           curl -fsS --connect-timeout 5 --max-time 20 https://life-pilot.onrender.com/health || echo "fail"
