@@ -1274,6 +1274,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Terms of Service'**
   String get termsOfService;
+
+  /// Label for account deletion request
+  ///
+  /// In en, this message translates to:
+  /// **'Request account deletion'**
+  String get requestAccountDeletion;
+
+  /// Account deletion request explanation
+  ///
+  /// In en, this message translates to:
+  /// **'We will open an email draft to submit your account deletion request. Your account and data will not be deleted immediately.'**
+  String get accountDeletionRequestDescription;
+
+  /// Label for continuing an action
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueLabel;
+
+  /// Account deletion email fallback message
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.'**
+  String get accountDeletionEmailUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

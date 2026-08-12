@@ -9,6 +9,7 @@ import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserMenuButton extends StatelessWidget {
   const UserMenuButton({
@@ -48,6 +49,9 @@ class UserMenuButton extends StatelessWidget {
               title: loc.termsOfService,
               assetPath: 'web/terms.html',
             );
+            break;
+          case "requestAccountDeletion":
+            _requestAccountDeletion(context, auth.account!, loc);
             break;
           case "logout":
             auth.logout.call();
@@ -122,6 +126,20 @@ class UserMenuButton extends StatelessWidget {
         ),
         const PopupMenuDivider(),
         PopupMenuItem(
+          value: "requestAccountDeletion",
+          child: Row(
+            children: [
+              const Icon(Icons.person_remove_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.requestAccountDeletion,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
           value: "logout",
           child: Row(
             children: [
@@ -148,6 +166,49 @@ class UserMenuButton extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => LegalDocumentDialog(title: title, assetPath: assetPath),
+    );
+  }
+
+  Future<void> _requestAccountDeletion(
+    BuildContext context,
+    String account,
+    AppLocalizations loc,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.requestAccountDeletion),
+        content: Text(loc.accountDeletionRequestDescription),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(loc.continueLabel),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final mailto = Uri(
+      scheme: 'mailto',
+      path: 'minavi@alumni.nccu.edu.tw',
+      queryParameters: {
+        'subject': 'Life Pilot account deletion request',
+        'body': 'Please delete my Life Pilot account and associated data.\n\n'
+            'Account email: $account',
+      },
+    );
+
+    if (await launchUrl(mailto)) return;
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(loc.accountDeletionEmailUnavailable)),
     );
   }
 

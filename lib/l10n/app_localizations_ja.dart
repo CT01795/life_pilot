@@ -595,4 +595,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get termsOfService => '利用規約';
+
+  @override
+  String get requestAccountDeletion => 'アカウント削除を申請';
+
+  @override
+  String get accountDeletionRequestDescription => 'アカウント削除申請用のメール下書きを開きます。アカウントとデータは直ちに削除されません。';
+
+  @override
+  String get continueLabel => '続行';
+
+  @override
+  String get accountDeletionEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
 }

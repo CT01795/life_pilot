@@ -396,5 +396,13 @@
   "privacyPolicy": "개인정보 처리방침",
   "@privacyPolicy": {"description": "Label for privacy policy"},
   "termsOfService": "서비스 약관",
-  "@termsOfService": {"description": "Label for terms of service"}
+  "@termsOfService": {"description": "Label for terms of service"},
+  "requestAccountDeletion": "계정 삭제 요청",
+  "@requestAccountDeletion": {"description": "Label for account deletion request"},
+  "accountDeletionRequestDescription": "계정 삭제 요청을 위한 이메일 초안을 엽니다. 계정과 데이터는 즉시 삭제되지 않습니다.",
+  "@accountDeletionRequestDescription": {"description": "Account deletion request explanation"},
+  "continueLabel": "계속",
+  "@continueLabel": {"description": "Label for continuing an action"},
+  "accountDeletionEmailUnavailable": "이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.",
+  "@accountDeletionEmailUnavailable": {"description": "Account deletion email fallback message"}
 }

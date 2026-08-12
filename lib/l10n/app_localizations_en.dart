@@ -595,4 +595,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsOfService => 'Terms of Service';
+
+  @override
+  String get requestAccountDeletion => 'Request account deletion';
+
+  @override
+  String get accountDeletionRequestDescription => 'We will open an email draft to submit your account deletion request. Your account and data will not be deleted immediately.';
+
+  @override
+  String get continueLabel => 'Continue';
+
+  @override
+  String get accountDeletionEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
 }

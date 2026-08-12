@@ -595,4 +595,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get termsOfService => '服務條款';
+
+  @override
+  String get requestAccountDeletion => '申請刪除帳號';
+
+  @override
+  String get accountDeletionRequestDescription => '系統將開啟電子郵件草稿，讓您提交刪除帳號申請。帳號與資料不會立即刪除。';
+
+  @override
+  String get continueLabel => '繼續';
+
+  @override
+  String get accountDeletionEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
 }

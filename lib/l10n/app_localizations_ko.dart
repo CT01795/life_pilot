@@ -595,4 +595,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get termsOfService => '서비스 약관';
+
+  @override
+  String get requestAccountDeletion => '계정 삭제 요청';
+
+  @override
+  String get accountDeletionRequestDescription => '계정 삭제 요청을 위한 이메일 초안을 엽니다. 계정과 데이터는 즉시 삭제되지 않습니다.';
+
+  @override
+  String get continueLabel => '계속';
+
+  @override
+  String get accountDeletionEmailUnavailable => '이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.';
 }
