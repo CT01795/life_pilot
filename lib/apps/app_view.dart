@@ -47,6 +47,18 @@ class _AppViewState extends State<AppView> {
             localizationsDelegates: AppConfig.localizationDelegates,
             theme: AppTheme.lightTheme,
             title: AppConfig.appTitle,
+            builder: (context, child) {
+              final mediaQuery = MediaQuery.of(context);
+              final scaleFactor =
+                  mediaQuery.textScaler.scale(1).clamp(1.5, 2.0).toDouble();
+
+              return MediaQuery(
+                data: mediaQuery.copyWith(
+                  textScaler: TextScaler.linear(scaleFactor),
+                ),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             debugShowCheckedModeBanner: false,
             home: const _AppHome(),
           );
