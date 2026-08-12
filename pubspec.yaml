@@ -100,6 +100,8 @@ flutter:
   generate: true   # 這裡確定是2個空格縮排
 
   assets:
+    - web/privacy.html
+    - web/terms.html
     - assets/blockly/
     - assets/blockly/msg/js/
     - blockly/
