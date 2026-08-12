@@ -8,11 +8,19 @@ import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserMenuButton extends StatelessWidget {
   const UserMenuButton({
     super.key,
   });
+
+  static final Uri _privacyPolicyUrl = Uri.parse(
+    'https://github.com/CT01795/life_pilot/blob/master/PRIVACY.md',
+  );
+  static final Uri _termsOfServiceUrl = Uri.parse(
+    'https://github.com/CT01795/life_pilot/blob/master/TERMS.md',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +42,12 @@ class UserMenuButton extends StatelessWidget {
           case "feedback":
             _openFeedback(context);
             break;
+          case "privacyPolicy":
+            _openLink(context, _privacyPolicyUrl);
+            break;
+          case "termsOfService":
+            _openLink(context, _termsOfServiceUrl);
+            break;
           case "logout":
             auth.logout.call();
             break;
@@ -46,7 +60,9 @@ class UserMenuButton extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                auth.account!.contains('@') ? auth.account!.split('@')[0] : auth.account!,
+                auth.account!.contains('@')
+                    ? auth.account!.split('@')[0]
+                    : auth.account!,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -76,14 +92,39 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: "privacyPolicy",
+          child: Row(
+            children: [
+              const Icon(Icons.privacy_tip_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.privacyPolicy,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: "termsOfService",
+          child: Row(
+            children: [
+              const Icon(Icons.description_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.termsOfService,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem(
           value: "logout",
           child: Row(
             children: [
-              const Icon(
-                Icons.exit_to_app,
-                color: Colors.white
-              ),
+              const Icon(Icons.exit_to_app, color: Colors.white),
               Gaps.w8,
               Text(
                 loc.logout,
@@ -95,6 +136,16 @@ class UserMenuButton extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _openLink(BuildContext context, Uri url) async {
+    if (await launchUrl(url, mode: LaunchMode.externalApplication)) return;
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Unable to open the link. Please try again.')),
     );
   }
 

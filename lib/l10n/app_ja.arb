@@ -392,5 +392,9 @@
   "eventReminder": "イベント通知",
   "@eventReminder": {"description": "Label for eventReminder"},
   "eventReminderDesc": "間もなく開始するイベントをお知らせします",
-  "@eventReminderDesc": {"description": "Label for eventReminderDesc"}
+  "@eventReminderDesc": {"description": "Label for eventReminderDesc"},
+  "privacyPolicy": "プライバシーポリシー",
+  "@privacyPolicy": {"description": "Label for privacy policy"},
+  "termsOfService": "利用規約",
+  "@termsOfService": {"description": "Label for terms of service"}
 }

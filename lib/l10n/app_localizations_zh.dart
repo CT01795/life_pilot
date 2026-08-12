@@ -589,4 +589,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get eventReminderDesc => '提醒你即將開始的活動';
+
+  @override
+  String get privacyPolicy => '隱私權政策';
+
+  @override
+  String get termsOfService => '服務條款';
 }

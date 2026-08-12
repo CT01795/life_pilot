@@ -589,4 +589,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventReminderDesc => 'Remind you of upcoming events';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get termsOfService => 'Terms of Service';
 }

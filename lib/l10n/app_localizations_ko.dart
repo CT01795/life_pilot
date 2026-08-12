@@ -589,4 +589,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventReminderDesc => '곧 시작될 이벤트를 알려드립니다';
+
+  @override
+  String get privacyPolicy => '개인정보 처리방침';
+
+  @override
+  String get termsOfService => '서비스 약관';
 }

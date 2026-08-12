@@ -1262,6 +1262,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remind you of upcoming events'**
   String get eventReminderDesc;
+
+  /// Label for privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// Label for terms of service
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

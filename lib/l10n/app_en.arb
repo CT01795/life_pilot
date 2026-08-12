@@ -392,5 +392,9 @@
   "eventReminderToday": "Today event reminder",
   "@eventReminderToday": {"description": "Label for eventReminderToday"},
   "eventReminderDesc": "Remind you of upcoming events",
-  "@eventReminderDesc": {"description": "Label for eventReminderDesc"}
+  "@eventReminderDesc": {"description": "Label for eventReminderDesc"},
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {"description": "Label for privacy policy"},
+  "termsOfService": "Terms of Service",
+  "@termsOfService": {"description": "Label for terms of service"}
 }

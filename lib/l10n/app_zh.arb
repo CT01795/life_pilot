@@ -392,5 +392,9 @@
   "eventReminder": "活動提醒",
   "@eventReminder": {"description": "Label for eventReminder"},
   "eventReminderDesc": "提醒你即將開始的活動",
-  "@eventReminderDesc": {"description": "Label for eventReminderDesc"}
+  "@eventReminderDesc": {"description": "Label for eventReminderDesc"},
+  "privacyPolicy": "隱私權政策",
+  "@privacyPolicy": {"description": "Label for privacy policy"},
+  "termsOfService": "服務條款",
+  "@termsOfService": {"description": "Label for terms of service"}
 }

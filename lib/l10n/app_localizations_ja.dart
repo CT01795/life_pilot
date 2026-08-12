@@ -589,4 +589,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eventReminderDesc => '間もなく開始するイベントをお知らせします';
+
+  @override
+  String get privacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String get termsOfService => '利用規約';
 }
