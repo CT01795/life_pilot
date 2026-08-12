@@ -410,5 +410,15 @@
   "dataExportRequestDescription": "We will open an email draft to submit your personal data export request. The export will be prepared after we verify the request.",
   "@dataExportRequestDescription": {"description": "Personal data export request explanation"},
   "dataExportEmailUnavailable": "Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.",
-  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"}
+  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"},
+  "agreeToLegalTermsPrefix": "I have read and agree to the ",
+  "@agreeToLegalTermsPrefix": {"description": "Registration legal agreement prefix"},
+  "acceptLegalTermsRequired": "Please agree to the Privacy Policy and Terms of Service before registering.",
+  "@acceptLegalTermsRequired": {"description": "Registration legal agreement required message"},
+  "legalTermsConnector": " and ",
+  "@legalTermsConnector": {"description": "Connector between privacy policy and terms of service"},
+  "accountMenuDataExport": "Export data",
+  "@accountMenuDataExport": {"description": "Short account menu label for data export"},
+  "accountMenuAccountDeletion": "Delete account",
+  "@accountMenuAccountDeletion": {"description": "Short account menu label for account deletion"}
 }

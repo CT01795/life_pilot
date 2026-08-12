@@ -1316,6 +1316,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.'**
   String get dataExportEmailUnavailable;
+
+  /// Registration legal agreement prefix
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and agree to the '**
+  String get agreeToLegalTermsPrefix;
+
+  /// Registration legal agreement required message
+  ///
+  /// In en, this message translates to:
+  /// **'Please agree to the Privacy Policy and Terms of Service before registering.'**
+  String get acceptLegalTermsRequired;
+
+  /// Connector between privacy policy and terms of service
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get legalTermsConnector;
+
+  /// Short account menu label for data export
+  ///
+  /// In en, this message translates to:
+  /// **'Export data'**
+  String get accountMenuDataExport;
+
+  /// Short account menu label for account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountMenuAccountDeletion;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

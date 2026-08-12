@@ -616,4 +616,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dataExportEmailUnavailable => '이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.';
+
+  @override
+  String get agreeToLegalTermsPrefix => '다음을 읽고 동의합니다: ';
+
+  @override
+  String get acceptLegalTermsRequired => '등록하기 전에 개인정보 처리방침 및 서비스 약관에 동의해 주세요.';
+
+  @override
+  String get legalTermsConnector => ' 및 ';
+
+  @override
+  String get accountMenuDataExport => '데이터 내보내기';
+
+  @override
+  String get accountMenuAccountDeletion => '계정 삭제';
 }

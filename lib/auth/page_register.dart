@@ -3,6 +3,7 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/pages/home/widgets/dialogs/legal_document_dialog.dart';
 import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,7 @@ class _PageRegisterState extends State<PageRegister> {
   }
 
   bool _initialized = false;
+  bool _hasAcceptedLegalTerms = false;
 
   @override
   void didChangeDependencies() {
@@ -54,6 +56,10 @@ class _PageRegisterState extends State<PageRegister> {
   Future<void> _tryRegister(AppLocalizations loc) async {
     if (!mounted) return;
     FocusScope.of(context).unfocus();
+    if (!_hasAcceptedLegalTerms) {
+      AppNavigator.showErrorBar(loc.acceptLegalTermsRequired);
+      return;
+    }
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final error = await _authView.register(email: email, password: password);
@@ -70,6 +76,13 @@ class _PageRegisterState extends State<PageRegister> {
     _authView.goBackToLogin(
       _emailController.text.trim(),
       _passwordController.text.trim(),
+    );
+  }
+
+  void _openLegalDocument(String assetPath) {
+    showDialog(
+      context: context,
+      builder: (_) => LegalDocumentDialog(assetPath: assetPath),
     );
   }
 
@@ -109,6 +122,39 @@ class _PageRegisterState extends State<PageRegister> {
               onSubmitted: (_) async {
                 await _tryRegister(loc);
               },
+            ),
+            Gaps.h16,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: _hasAcceptedLegalTerms,
+                  onChanged: (value) {
+                    setState(() => _hasAcceptedLegalTerms = value ?? false);
+                  },
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(loc.agreeToLegalTermsPrefix),
+                        TextButton(
+                          onPressed: () =>
+                              _openLegalDocument('web/privacy.html'),
+                          child: Text(loc.privacyPolicy),
+                        ),
+                        Text(loc.legalTermsConnector),
+                        TextButton(
+                          onPressed: () => _openLegalDocument('web/terms.html'),
+                          child: Text(loc.termsOfService),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             Gaps.h16,
             Row(

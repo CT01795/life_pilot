@@ -410,5 +410,15 @@
   "dataExportRequestDescription": "系統將開啟電子郵件草稿，讓您提交個人資料匯出申請。完成身分核對後，我們會準備匯出資料。",
   "@dataExportRequestDescription": {"description": "Personal data export request explanation"},
   "dataExportEmailUnavailable": "無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。",
-  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"}
+  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"},
+  "agreeToLegalTermsPrefix": "我已閱讀並同意",
+  "@agreeToLegalTermsPrefix": {"description": "Registration legal agreement prefix"},
+  "acceptLegalTermsRequired": "請先同意隱私權政策與服務條款，再進行註冊。",
+  "@acceptLegalTermsRequired": {"description": "Registration legal agreement required message"},
+  "legalTermsConnector": "與",
+  "@legalTermsConnector": {"description": "Connector between privacy policy and terms of service"},
+  "accountMenuDataExport": "資料匯出",
+  "@accountMenuDataExport": {"description": "Short account menu label for data export"},
+  "accountMenuAccountDeletion": "刪除帳號",
+  "@accountMenuAccountDeletion": {"description": "Short account menu label for account deletion"}
 }

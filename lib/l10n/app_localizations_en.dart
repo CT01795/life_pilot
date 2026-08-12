@@ -616,4 +616,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataExportEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
+
+  @override
+  String get agreeToLegalTermsPrefix => 'I have read and agree to the ';
+
+  @override
+  String get acceptLegalTermsRequired => 'Please agree to the Privacy Policy and Terms of Service before registering.';
+
+  @override
+  String get legalTermsConnector => ' and ';
+
+  @override
+  String get accountMenuDataExport => 'Export data';
+
+  @override
+  String get accountMenuAccountDeletion => 'Delete account';
 }

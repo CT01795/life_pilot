@@ -616,4 +616,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dataExportEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
+
+  @override
+  String get agreeToLegalTermsPrefix => '次の内容を読み、同意します：';
+
+  @override
+  String get acceptLegalTermsRequired => '登録する前に、プライバシーポリシーと利用規約に同意してください。';
+
+  @override
+  String get legalTermsConnector => 'と';
+
+  @override
+  String get accountMenuDataExport => 'データを出力';
+
+  @override
+  String get accountMenuAccountDeletion => 'アカウントを削除';
 }

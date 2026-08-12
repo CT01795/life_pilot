@@ -410,5 +410,15 @@
   "dataExportRequestDescription": "個人データのエクスポート申請用のメール下書きを開きます。本人確認後、データを準備します。",
   "@dataExportRequestDescription": {"description": "Personal data export request explanation"},
   "dataExportEmailUnavailable": "メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。",
-  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"}
+  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"},
+  "agreeToLegalTermsPrefix": "次の内容を読み、同意します：",
+  "@agreeToLegalTermsPrefix": {"description": "Registration legal agreement prefix"},
+  "acceptLegalTermsRequired": "登録する前に、プライバシーポリシーと利用規約に同意してください。",
+  "@acceptLegalTermsRequired": {"description": "Registration legal agreement required message"},
+  "legalTermsConnector": "と",
+  "@legalTermsConnector": {"description": "Connector between privacy policy and terms of service"},
+  "accountMenuDataExport": "データを出力",
+  "@accountMenuDataExport": {"description": "Short account menu label for data export"},
+  "accountMenuAccountDeletion": "アカウントを削除",
+  "@accountMenuAccountDeletion": {"description": "Short account menu label for account deletion"}
 }

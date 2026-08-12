@@ -31,6 +31,7 @@ class UserMenuButton extends StatelessWidget {
       ),
       tooltip: loc.userMenuButton,
       color: const Color(0xFF0066CC), // 改成跟 LanguageToggleDropdown 一樣
+      constraints: const BoxConstraints(minWidth: 320, maxWidth: 360),
       onSelected: (value) {
         switch (value) {
           case "feedback":
@@ -132,9 +133,15 @@ class UserMenuButton extends StatelessWidget {
             children: [
               const Icon(Icons.file_download_outlined, color: Colors.white),
               Gaps.w8,
-              Text(
-                loc.requestDataExport,
-                style: const TextStyle(color: Colors.white),
+              Expanded(
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    loc.accountMenuDataExport,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
               ),
             ],
           ),
@@ -145,9 +152,15 @@ class UserMenuButton extends StatelessWidget {
             children: [
               const Icon(Icons.person_remove_outlined, color: Colors.white),
               Gaps.w8,
-              Text(
-                loc.requestAccountDeletion,
-                style: const TextStyle(color: Colors.white),
+              Expanded(
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    loc.accountMenuAccountDeletion,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
               ),
             ],
           ),

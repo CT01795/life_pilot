@@ -616,4 +616,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataExportEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
+
+  @override
+  String get agreeToLegalTermsPrefix => '我已閱讀並同意';
+
+  @override
+  String get acceptLegalTermsRequired => '請先同意隱私權政策與服務條款，再進行註冊。';
+
+  @override
+  String get legalTermsConnector => '與';
+
+  @override
+  String get accountMenuDataExport => '資料匯出';
+
+  @override
+  String get accountMenuAccountDeletion => '刪除帳號';
 }

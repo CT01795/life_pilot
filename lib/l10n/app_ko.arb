@@ -410,5 +410,15 @@
   "dataExportRequestDescription": "개인 데이터 내보내기 요청을 위한 이메일 초안을 엽니다. 본인 확인 후 데이터를 준비합니다.",
   "@dataExportRequestDescription": {"description": "Personal data export request explanation"},
   "dataExportEmailUnavailable": "이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.",
-  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"}
+  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"},
+  "agreeToLegalTermsPrefix": "다음을 읽고 동의합니다: ",
+  "@agreeToLegalTermsPrefix": {"description": "Registration legal agreement prefix"},
+  "acceptLegalTermsRequired": "등록하기 전에 개인정보 처리방침 및 서비스 약관에 동의해 주세요.",
+  "@acceptLegalTermsRequired": {"description": "Registration legal agreement required message"},
+  "legalTermsConnector": " 및 ",
+  "@legalTermsConnector": {"description": "Connector between privacy policy and terms of service"},
+  "accountMenuDataExport": "데이터 내보내기",
+  "@accountMenuDataExport": {"description": "Short account menu label for data export"},
+  "accountMenuAccountDeletion": "계정 삭제",
+  "@accountMenuAccountDeletion": {"description": "Short account menu label for account deletion"}
 }
