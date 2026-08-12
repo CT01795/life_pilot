@@ -39,14 +39,12 @@ class UserMenuButton extends StatelessWidget {
           case "privacyPolicy":
             _openLegalDocument(
               context,
-              title: loc.privacyPolicy,
               assetPath: 'web/privacy.html',
             );
             break;
           case "termsOfService":
             _openLegalDocument(
               context,
-              title: loc.termsOfService,
               assetPath: 'web/terms.html',
             );
             break;
@@ -160,12 +158,11 @@ class UserMenuButton extends StatelessWidget {
 
   void _openLegalDocument(
     BuildContext context, {
-    required String title,
     required String assetPath,
   }) {
     showDialog(
       context: context,
-      builder: (_) => LegalDocumentDialog(title: title, assetPath: assetPath),
+      builder: (_) => LegalDocumentDialog(assetPath: assetPath),
     );
   }
 

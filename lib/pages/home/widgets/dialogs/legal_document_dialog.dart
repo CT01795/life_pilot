@@ -6,11 +6,9 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 class LegalDocumentDialog extends StatelessWidget {
   const LegalDocumentDialog({
     super.key,
-    required this.title,
     required this.assetPath,
   });
 
-  final String title;
   final String assetPath;
 
   @override
@@ -18,16 +16,14 @@ class LegalDocumentDialog extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
-      titlePadding: const EdgeInsets.fromLTRB(24, 16, 8, 0),
-      title: Row(
-        children: [
-          Expanded(child: Text(title)),
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: loc.close,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
+      titlePadding: const EdgeInsets.fromLTRB(24, 8, 8, 0),
+      title: Align(
+        alignment: Alignment.centerRight,
+        child: IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: loc.close,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720, maxHeight: 520),
