@@ -16,10 +16,10 @@ class UserMenuButton extends StatelessWidget {
   });
 
   static final Uri _privacyPolicyUrl = Uri.parse(
-    'https://github.com/CT01795/life_pilot/blob/master/PRIVACY.md',
+    'https://ct01795.github.io/life_pilot/privacy.html',
   );
   static final Uri _termsOfServiceUrl = Uri.parse(
-    'https://github.com/CT01795/life_pilot/blob/master/TERMS.md',
+    'https://ct01795.github.io/life_pilot/terms.html',
   );
 
   @override
