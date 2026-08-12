@@ -49,6 +49,15 @@ app.*.map.json
 .env.*
 !.env.example
 
+# Python virtual environments, caches, and test reports
+__pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+
 # Secrets and service credentials
 *.pem
 *.p8
