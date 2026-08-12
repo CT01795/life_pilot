@@ -404,5 +404,11 @@
   "continueLabel": "繼續",
   "@continueLabel": {"description": "Label for continuing an action"},
   "accountDeletionEmailUnavailable": "無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。",
-  "@accountDeletionEmailUnavailable": {"description": "Account deletion email fallback message"}
+  "@accountDeletionEmailUnavailable": {"description": "Account deletion email fallback message"},
+  "requestDataExport": "申請匯出個人資料",
+  "@requestDataExport": {"description": "Label for personal data export request"},
+  "dataExportRequestDescription": "系統將開啟電子郵件草稿，讓您提交個人資料匯出申請。完成身分核對後，我們會準備匯出資料。",
+  "@dataExportRequestDescription": {"description": "Personal data export request explanation"},
+  "dataExportEmailUnavailable": "無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。",
+  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"}
 }

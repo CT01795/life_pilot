@@ -404,5 +404,11 @@
   "continueLabel": "Continue",
   "@continueLabel": {"description": "Label for continuing an action"},
   "accountDeletionEmailUnavailable": "Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.",
-  "@accountDeletionEmailUnavailable": {"description": "Account deletion email fallback message"}
+  "@accountDeletionEmailUnavailable": {"description": "Account deletion email fallback message"},
+  "requestDataExport": "Request personal data export",
+  "@requestDataExport": {"description": "Label for personal data export request"},
+  "dataExportRequestDescription": "We will open an email draft to submit your personal data export request. The export will be prepared after we verify the request.",
+  "@dataExportRequestDescription": {"description": "Personal data export request explanation"},
+  "dataExportEmailUnavailable": "Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.",
+  "@dataExportEmailUnavailable": {"description": "Personal data export email fallback message"}
 }

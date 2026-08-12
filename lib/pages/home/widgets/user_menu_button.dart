@@ -51,6 +51,9 @@ class UserMenuButton extends StatelessWidget {
           case "requestAccountDeletion":
             _requestAccountDeletion(context, auth.account!, loc);
             break;
+          case "requestDataExport":
+            _requestDataExport(context, auth.account!, loc);
+            break;
           case "logout":
             auth.logout.call();
             break;
@@ -123,6 +126,19 @@ class UserMenuButton extends StatelessWidget {
           ),
         ),
         const PopupMenuDivider(),
+        PopupMenuItem(
+          value: "requestDataExport",
+          child: Row(
+            children: [
+              const Icon(Icons.file_download_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.requestDataExport,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
         PopupMenuItem(
           value: "requestAccountDeletion",
           child: Row(
@@ -206,6 +222,49 @@ class UserMenuButton extends StatelessWidget {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(loc.accountDeletionEmailUnavailable)),
+    );
+  }
+
+  Future<void> _requestDataExport(
+    BuildContext context,
+    String account,
+    AppLocalizations loc,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.requestDataExport),
+        content: Text(loc.dataExportRequestDescription),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(loc.continueLabel),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final mailto = Uri(
+      scheme: 'mailto',
+      path: 'minavi@alumni.nccu.edu.tw',
+      queryParameters: {
+        'subject': 'Life Pilot personal data export request',
+        'body': 'Please provide an export of my Life Pilot personal data.\n\n'
+            'Account email: $account',
+      },
+    );
+
+    if (await launchUrl(mailto)) return;
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(loc.dataExportEmailUnavailable)),
     );
   }
 

@@ -607,4 +607,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get accountDeletionEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
+
+  @override
+  String get requestDataExport => '申請匯出個人資料';
+
+  @override
+  String get dataExportRequestDescription => '系統將開啟電子郵件草稿，讓您提交個人資料匯出申請。完成身分核對後，我們會準備匯出資料。';
+
+  @override
+  String get dataExportEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
 }
