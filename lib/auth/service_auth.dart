@@ -34,6 +34,10 @@ class ServiceAuth {
       await supabase.auth.signUp(
         email: email,
         password: password,
+        data: const {
+          'privacy_policy_version': '2026-08-12',
+          'terms_of_service_version': '2026-08-12',
+        },
       );
     }, defaultError: ErrorFields.registerError);
   }
@@ -46,8 +50,8 @@ class ServiceAuth {
 
     return _handle(() async {
       final redirectTo = kIsWeb
-        ? 'https://ct01795.github.io/life_pilot/'
-        : 'lifepilot://reset-password';
+          ? 'https://ct01795.github.io/life_pilot/'
+          : 'lifepilot://reset-password';
 
       await supabase.auth.resetPasswordForEmail(
         email,
