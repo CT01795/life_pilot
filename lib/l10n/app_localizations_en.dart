@@ -33,6 +33,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPasswordEmail => 'Password reset email sent. Please check your inbox.';
 
   @override
+  String resetPasswordCooldown(int seconds) {
+    return 'Retry in ${seconds}s';
+  }
+
+  @override
   String get noEmailError => 'Please enter your email address.';
 
   @override
@@ -57,10 +62,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailNotConfirmed => 'Email not confirmed';
 
   @override
-  String get tooManyRequests => 'Too many requests';
+  String get tooManyRequests => 'Too many requests. Please try again later.';
 
   @override
-  String get networkError => 'Network error';
+  String get emailRateLimitExceeded => 'Too many verification emails have been requested. Please try again later.';
+
+  @override
+  String get networkError => 'Unable to connect. Check your network and try again.';
 
   @override
   String get email => 'Email';
@@ -90,7 +98,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailAlreadyInUse => 'Email already in uUse.';
 
   @override
-  String get weakPassword => 'Password should be at least 6 characters';
+  String get weakPassword => 'Password must be at least 8 characters.';
 
   @override
   String get unknownError => 'Unknown error';
@@ -631,4 +639,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountMenuAccountDeletion => 'Delete account';
+
+  @override
+  String get readLegalTermsRequired => 'Please read both the Privacy Policy and Terms of Service before agreeing.';
+
+  @override
+  String get legalDocumentReadComplete => 'Reading complete';
+
+  @override
+  String get legalDocumentRead => 'Read';
+
+  @override
+  String get registrationSuccessful => 'Registration successful.';
+
+  @override
+  String get registrationVerificationRequired => 'Registration successful. Please verify your email before signing in.';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get passwordMismatch => 'Passwords do not match.';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get passwordUpdateSuccessful => 'Password updated. Please sign in with your new password.';
 }

@@ -24,7 +24,6 @@ class ModelAuthView extends ChangeNotifier {
   AuthPage get currentPage => _auth.currentPage;
 
   String? getRegisterEmail() => _auth.registerMap[AuthConstants.email];
-  String? getRegisterPassword() => _auth.registerMap[AuthConstants.password];
 
   Future<void> initialize() => _auth.initialize();
   Future<void> checkLoginStatus() => _auth.checkLoginStatus();
@@ -37,12 +36,10 @@ class ModelAuthView extends ChangeNotifier {
   Future<String?> register({required String email, required String password}) =>
       _auth.register(email: email, password: password);
 
-  void goToRegister(String? email, String? password) =>
-      _auth.goToRegister(email: email, password: password);
-  void goToResetPassword(String? email, String? password) =>
-      _auth.goToResetPassword(email: email, password: password);
-  void goBackToLogin(String email, String password) =>
-      _auth.goBackToLogin(email: email, password: password);
+  void goToRegister(String? email) => _auth.goToRegister(email: email);
+  void goToResetPassword(String? email) =>
+      _auth.goToResetPassword(email: email);
+  void goBackToLogin(String email) => _auth.goBackToLogin(email: email);
 
   // 登入錯誤顯示
   String showLoginError(
@@ -53,6 +50,7 @@ class ModelAuthView extends ChangeNotifier {
       ErrorFields.wrongUserPassword: loc.wrongUserPassword,
       ErrorFields.emailNotConfirmed: loc.emailNotConfirmed,
       ErrorFields.tooManyRequestsError: loc.tooManyRequests,
+      ErrorFields.emailRateLimitExceededError: loc.emailRateLimitExceeded,
       ErrorFields.networkRequestFailedError: loc.networkError,
       ErrorFields.invalidEmailError: loc.invalidEmail,
       ErrorFields.noEmailError: loc.noEmailError,
@@ -69,4 +67,3 @@ class ModelAuthView extends ChangeNotifier {
     return errorMessage;
   }
 }
-

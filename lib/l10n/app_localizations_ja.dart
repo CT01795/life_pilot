@@ -33,6 +33,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get resetPasswordEmail => 'パスワード再設定メールを送信しました。メールを確認してください。';
 
   @override
+  String resetPasswordCooldown(int seconds) {
+    return '$seconds秒後に再送信できます';
+  }
+
+  @override
   String get noEmailError => 'メールアドレスを入力してください';
 
   @override
@@ -57,10 +62,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get emailNotConfirmed => 'メールアドレスが確認されていません';
 
   @override
-  String get tooManyRequests => 'リクエストが多すぎます';
+  String get tooManyRequests => '操作が多すぎます。しばらくしてからもう一度お試しください。';
 
   @override
-  String get networkError => 'ネットワークエラー';
+  String get emailRateLimitExceeded => '確認メールの送信回数が多すぎます。しばらくしてからもう一度お試しください。';
+
+  @override
+  String get networkError => '接続できません。ネットワークを確認してもう一度お試しください。';
 
   @override
   String get email => 'メールアドレス';
@@ -90,7 +98,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get emailAlreadyInUse => 'このメールアドレスは既に登録されています。';
 
   @override
-  String get weakPassword => 'パスワードは少なくとも6文字必要です';
+  String get weakPassword => 'パスワードは8文字以上で入力してください。';
 
   @override
   String get unknownError => '不明なエラーです';
@@ -631,4 +639,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get accountMenuAccountDeletion => 'アカウントを削除';
+
+  @override
+  String get readLegalTermsRequired => '同意する前に、プライバシーポリシーと利用規約を最後までお読みください。';
+
+  @override
+  String get legalDocumentReadComplete => '閲覧が完了しました';
+
+  @override
+  String get legalDocumentRead => '閲覧済み';
+
+  @override
+  String get registrationSuccessful => '登録が完了しました。';
+
+  @override
+  String get registrationVerificationRequired => '登録が完了しました。メール認証後にログインしてください。';
+
+  @override
+  String get confirmPassword => 'パスワードを確認';
+
+  @override
+  String get passwordMismatch => 'パスワードが一致しません。';
+
+  @override
+  String get showPassword => 'パスワードを表示';
+
+  @override
+  String get hidePassword => 'パスワードを非表示';
+
+  @override
+  String get passwordUpdateSuccessful => 'パスワードを更新しました。新しいパスワードでログインしてください。';
 }

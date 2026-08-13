@@ -33,6 +33,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get resetPasswordEmail => '비밀번호 재설정 메일이 전송되었습니다. 메일함을 확인해 주세요.';
 
   @override
+  String resetPasswordCooldown(int seconds) {
+    return '$seconds초 후 재전송 가능';
+  }
+
+  @override
   String get noEmailError => '이메일을 입력해 주세요';
 
   @override
@@ -57,10 +62,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get emailNotConfirmed => '이메일이 확인되지 않았습니다';
 
   @override
-  String get tooManyRequests => '요청이 너무 많습니다';
+  String get tooManyRequests => '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 
   @override
-  String get networkError => '네트워크 오류';
+  String get emailRateLimitExceeded => '인증 이메일 전송 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get networkError => '연결할 수 없습니다. 네트워크를 확인한 후 다시 시도해 주세요.';
 
   @override
   String get email => '이메일';
@@ -90,7 +98,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get emailAlreadyInUse => '이미 사용 중인 이메일입니다.';
 
   @override
-  String get weakPassword => '비밀번호는 최소 6자 이상이어야 합니다';
+  String get weakPassword => '비밀번호는 8자 이상이어야 합니다.';
 
   @override
   String get unknownError => '알 수 없는 오류입니다';
@@ -631,4 +639,34 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get accountMenuAccountDeletion => '계정 삭제';
+
+  @override
+  String get readLegalTermsRequired => '동의하기 전에 개인정보 처리방침과 서비스 약관을 끝까지 읽어 주세요.';
+
+  @override
+  String get legalDocumentReadComplete => '읽기를 완료했습니다';
+
+  @override
+  String get legalDocumentRead => '읽음';
+
+  @override
+  String get registrationSuccessful => '가입이 완료되었습니다.';
+
+  @override
+  String get registrationVerificationRequired => '가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.';
+
+  @override
+  String get confirmPassword => '비밀번호 확인';
+
+  @override
+  String get passwordMismatch => '비밀번호가 일치하지 않습니다.';
+
+  @override
+  String get showPassword => '비밀번호 표시';
+
+  @override
+  String get hidePassword => '비밀번호 숨기기';
+
+  @override
+  String get passwordUpdateSuccessful => '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.';
 }

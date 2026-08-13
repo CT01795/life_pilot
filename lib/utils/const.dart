@@ -30,9 +30,12 @@ final List<String> currencyList = [
 // -------------------- Auth --------------------
 class AuthConstants {
   static const guest = 'Guest';
-  static const sysAdminEmail = 'minavi@alumni.nccu.edu.tw';
+  static const systemEventOwnerEmail = 'minavi@alumni.nccu.edu.tw';
+  static const adminRole = 'admin';
   static const email = 'email';
-  static const password = 'password';
+  static const minimumPasswordLength = 8;
+  static const privacyPolicyVersion = '2026-08-12';
+  static const termsOfServiceVersion = '2026-08-12';
 }
 
 // -------------------- Source --------------------
@@ -252,6 +255,7 @@ class ErrorFields {
 
   //常見錯誤代碼
   static const String tooManyRequestsError = 'too-many-requests';
+  static const String emailRateLimitExceededError = 'email-rate-limit-exceeded';
   static const String networkRequestFailedError = 'network-request-failed';
   static const String invalidEmailError = 'invalid-email';
   static const String emailAlreadyInUseError = 'email-already-in-use';

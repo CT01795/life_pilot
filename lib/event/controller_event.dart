@@ -97,7 +97,7 @@ class ControllerEvent extends ChangeNotifier {
 
   Future<void> approveEvent({required EventItem event}) async {
     event.isApproved = true;
-    event.account = AuthConstants.sysAdminEmail;
+    event.account = AuthConstants.systemEventOwnerEmail;
     await _serviceEvent.approvalEvent(event: event, tableName: _tableName);
     _invalidateViewModelCache();
     if (!_disposed) notifyListeners();
@@ -110,8 +110,7 @@ class ControllerEvent extends ChangeNotifier {
 
   bool canDelete({required String account}) {
     return auth.currentAccount == account ||
-        (auth.currentAccount == AuthConstants.sysAdminEmail &&
-            _tableName != TableNames.memoryTrace);
+        (auth.isSysAdmin && _tableName != TableNames.memoryTrace);
   }
 
   Future<void> likeEvent(EventItem event) async {

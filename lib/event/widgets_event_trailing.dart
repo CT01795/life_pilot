@@ -55,7 +55,7 @@ Widget widgetsEventTrailing({
           builder: (_, isApproved, __) {
             if (controllerEvent.fromTableName != TableNames.memoryTrace &&
                 !isApproved &&
-                auth.currentAccount == AuthConstants.sysAdminEmail) {
+                auth.isSysAdmin) {
               return IconButton(
                 icon: const Icon(Icons.task_alt),
                 tooltip: loc.review,

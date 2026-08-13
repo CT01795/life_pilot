@@ -379,11 +379,10 @@ class ServiceEventPublic {
     //==================================== 取得目前資料庫事件 ====================================
     List<EventItem> historyList = (await ServiceEvent().getEvents(
           tableName: TableNames.recommendEvents,
-          inputUser: AuthConstants.sysAdminEmail,
+          inputUser: AuthConstants.systemEventOwnerEmail,
         ) ??
         []);
-    final res =
-        await supabase.from(TableNames.recommendEventsDeleted).select();
+    final res = await supabase.from(TableNames.recommendEventsDeleted).select();
     final deletedList = (res as List)
         .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
         .toList()
@@ -658,7 +657,7 @@ class ServiceEventPublic {
         unit: e["Company"] ?? "",
         description: (e["Introduction"] ?? "") + "\n",
         source: source,
-        account: AuthConstants.sysAdminEmail,
+        account: AuthConstants.systemEventOwnerEmail,
         type: category, // 👉 直接用 Category
       ));
     }
@@ -671,8 +670,7 @@ class ServiceEventPublic {
     final res = await http.post(
       Uri.parse(url),
       headers: {
-        "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 Chrome/115.0.0.0 Safari/537.36",
         "Referer": url,
       },
@@ -761,7 +759,7 @@ class ServiceEventPublic {
         city: "新北市",
         location: tmp["location"]!,
         unit: unit,
-        account: AuthConstants.sysAdminEmail,
+        account: AuthConstants.systemEventOwnerEmail,
         source: source,
       ));
     }
@@ -879,7 +877,7 @@ class ServiceEventPublic {
           city: city,
           location: location,
           name: title,
-          account: AuthConstants.sysAdminEmail,
+          account: AuthConstants.systemEventOwnerEmail,
           type: type,
           description: "",
           source: source,
@@ -895,8 +893,8 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
       String url, DateTime today, String source) async {
-    final res = await apiSupabase.post('event/get_url_data',
-        {'url': url, 'method': 'GET'});
+    final res = await apiSupabase
+        .post('event/get_url_data', {'url': url, 'method': 'GET'});
     if (res['status'] != 'ok') {
       return [];
     }
@@ -987,8 +985,8 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          final detailRes = await apiSupabase.post('event/get_url_data',
-              {'url': masterUrl, 'method': 'GET'});
+          final detailRes = await apiSupabase
+              .post('event/get_url_data', {'url': masterUrl, 'method': 'GET'});
           if (detailRes['status'] == 'ok') {
             final detailDoc = parse(detailRes.body); //detailRes.body
             final infoTable = detailDoc.querySelector("dl.info-table");
@@ -1029,7 +1027,7 @@ class ServiceEventPublic {
         city: city,
         location: location,
         name: title,
-        account: AuthConstants.sysAdminEmail,
+        account: AuthConstants.systemEventOwnerEmail,
         description: description,
         unit: organizer ?? '',
         source: source,
@@ -1135,7 +1133,7 @@ class ServiceEventPublic {
             name: eventName,
             description: '$subtitle\n',
             type: "紙風車",
-            account: AuthConstants.sysAdminEmail,
+            account: AuthConstants.systemEventOwnerEmail,
             source: source,
           ),
         );
@@ -1233,7 +1231,7 @@ class ServiceEventPublic {
             city: city,
             location: location,
             name: map["name"],
-            account: AuthConstants.sysAdminEmail,
+            account: AuthConstants.systemEventOwnerEmail,
             source: source,
           ));
         }
@@ -1324,7 +1322,7 @@ class ServiceEventPublic {
               "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}\n",
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
-          account: AuthConstants.sysAdminEmail,
+          account: AuthConstants.systemEventOwnerEmail,
           source: source,
           subEvents: []));
     }
@@ -1399,7 +1397,7 @@ class ServiceEventPublic {
           location: "$locationName0(${safeAddress(location0)})",
           name: eventName,
           subEvents: subEvents.length <= 1 ? [] : subEvents,
-          account: AuthConstants.sysAdminEmail,
+          account: AuthConstants.systemEventOwnerEmail,
           source: source,
         ));
         tmpSet.add(eventName);
@@ -1434,7 +1432,7 @@ class ServiceEventPublic {
         city: safeCity(location),
         location: locationName,
         name: eventName,
-        account: AuthConstants.sysAdminEmail,
+        account: AuthConstants.systemEventOwnerEmail,
       ));
     }
     return subEvents;
@@ -1504,7 +1502,7 @@ class ServiceEventPublic {
                   city: title,
                   location: location,
                   name: eventName,
-                  account: AuthConstants.sysAdminEmail,
+                  account: AuthConstants.systemEventOwnerEmail,
                   source: source,
                 ));
                 tmpSet.add(eventName);

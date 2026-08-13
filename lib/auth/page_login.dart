@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -16,10 +18,20 @@ class PageLogin extends StatefulWidget {
 }
 
 class _PageLoginState extends State<PageLogin> {
+  static final RegExp _emailPattern = RegExp(
+    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+  );
+
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final FocusNode _emailFocusNode;
   late final FocusNode _passwordFocusNode;
+  bool _isSubmitting = false;
+  bool _isSendingResetEmail = false;
+  int _resetEmailCooldownSeconds = 0;
+  Timer? _resetEmailCooldownTimer;
+  bool _obscurePassword = true;
   late final ModelAuthView _authView; // ✅ 改成 Model 層，而非 Controller 直接呼叫
 
   @override
@@ -36,16 +48,16 @@ class _PageLoginState extends State<PageLogin> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _authView = context.read<ModelAuthView>();
     if (!_initialized) {
+      _authView = context.read<ModelAuthView>();
       _emailController.text = _authView.getRegisterEmail() ?? '';
-      _passwordController.text = _authView.getRegisterPassword() ?? '';
       _initialized = true;
     }
   }
 
   @override
   void dispose() {
+    _resetEmailCooldownTimer?.cancel();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     _emailController.dispose();
@@ -55,25 +67,32 @@ class _PageLoginState extends State<PageLogin> {
 
   // 🔁 導航到註冊頁
   void _navigateToRegister() {
-    _authView.goToRegister(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    _authView.goToRegister(_emailController.text.trim());
   }
 
   // 🔹 嘗試登入或匿名登入
   Future<void> _tryLogin() async {
-    if (!mounted) return;
+    if (!mounted || _isSubmitting || _isSendingResetEmail) return;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    setState(() => _isSubmitting = true);
     final controllerPageMain = context.read<ControllerPageMain>();
     controllerPageMain.changePage(PageType.personalEvent);
 
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    final error = await _authView.login(
-      email: email,
-      password: password,
-    );
+    String? error;
+    try {
+      error = await _authView.login(
+        email: email,
+        password: password,
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
 
     if (!mounted) return;
 
@@ -87,17 +106,53 @@ class _PageLoginState extends State<PageLogin> {
 
   // 🔹 重設密碼流程
   Future<void> _handleResetPassword() async {
+    if (!mounted ||
+        _isSubmitting ||
+        _isSendingResetEmail ||
+        _resetEmailCooldownSeconds > 0) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
-    final error = await _authView.resetPassword(email: email);
+    setState(() => _isSendingResetEmail = true);
+
+    String? error;
+    try {
+      error = await _authView.resetPassword(email: email);
+    } finally {
+      if (mounted) setState(() => _isSendingResetEmail = false);
+    }
+
+    if (!mounted) return;
     final loc = AppLocalizations.of(context)!; // ✅ 每次 build 都取最新
     if (error?.isNotEmpty ?? false) {
       AppNavigator.showErrorBar(
         _authView.showLoginError(message: error!, loc: loc),
       );
     } else {
+      _startResetEmailCooldown();
       AppNavigator.showSnackBar(loc.resetPasswordEmail);
     }
+  }
+
+  void _startResetEmailCooldown() {
+    _resetEmailCooldownTimer?.cancel();
+    setState(() => _resetEmailCooldownSeconds = 60);
+    _resetEmailCooldownTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        if (_resetEmailCooldownSeconds <= 1) {
+          timer.cancel();
+          setState(() => _resetEmailCooldownSeconds = 0);
+          return;
+        }
+        setState(() => _resetEmailCooldownSeconds--);
+      },
+    );
   }
 
   @override
@@ -113,46 +168,121 @@ class _PageLoginState extends State<PageLogin> {
       ]),
       body: SingleChildScrollView(
         padding: Insets.all12,
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              focusNode: _emailFocusNode,
-              obscureText: false,
-              decoration: InputDecoration(labelText: loc.email),
-              textInputAction: TextInputAction.next,
-              onSubmitted: (_) => _passwordFocusNode.requestFocus(), // 跳到下一個輸入欄
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: AutofillGroup(
+              child: Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      focusNode: _emailFocusNode,
+                      autofillHints: const [AutofillHints.email],
+                      autocorrect: false,
+                      obscureText: false,
+                      decoration: InputDecoration(
+                        labelText: loc.email,
+                      ),
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+                        if (email.isEmpty) return loc.noEmailError;
+                        if (!_emailPattern.hasMatch(email)) {
+                          return loc.invalidEmail;
+                        }
+                        return null;
+                      },
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          _passwordFocusNode.requestFocus(), // 跳到下一個輸入欄
+                    ),
+                    Gaps.h16,
+                    TextFormField(
+                      controller: _passwordController,
+                      focusNode: _passwordFocusNode,
+                      autofillHints: const [AutofillHints.password],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: loc.password,
+                        suffixIcon: IconButton(
+                          tooltip: _obscurePassword
+                              ? loc.showPassword
+                              : loc.hidePassword,
+                          onPressed: () {
+                            setState(
+                                () => _obscurePassword = !_obscurePassword);
+                          },
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').isEmpty) {
+                          return loc.noPasswordError;
+                        }
+                        return null;
+                      },
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _tryLogin(),
+                    ),
+                    Gaps.h16,
+                    Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                      ElevatedButton(
+                        onPressed: _isSubmitting || _isSendingResetEmail
+                            ? null
+                            : _tryLogin,
+                        child: _isSubmitting
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(loc.login),
+                      ),
+                    ]),
+                    Gaps.h16,
+                    Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                      TextButton(
+                        onPressed: _isSubmitting ||
+                                _isSendingResetEmail ||
+                                _resetEmailCooldownSeconds > 0
+                            ? null
+                            : _handleResetPassword,
+                        child: _isSendingResetEmail
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(
+                                _resetEmailCooldownSeconds > 0
+                                    ? loc.resetPasswordCooldown(
+                                        _resetEmailCooldownSeconds,
+                                      )
+                                    : loc.resetPassword,
+                              ),
+                      ),
+                      Gaps.w16,
+                      TextButton(
+                        onPressed: _isSubmitting || _isSendingResetEmail
+                            ? null
+                            : _navigateToRegister,
+                        child: Text(loc.register),
+                      ),
+                    ]),
+                    Gaps.h16,
+                  ],
+                ),
+              ),
             ),
-            Gaps.h16,
-            TextField(
-              controller: _passwordController,
-              focusNode: _passwordFocusNode,
-              obscureText: true,
-              decoration: InputDecoration(labelText: loc.password),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _tryLogin(),
-            ),
-            Gaps.h16,
-            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-              ElevatedButton(
-                child: Text(loc.login),
-                onPressed: () => _tryLogin(),
-              ),
-            ]),
-            Gaps.h16,
-            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-              TextButton(
-                onPressed: _handleResetPassword,
-                child: Text(loc.resetPassword),
-              ),
-              Gaps.w16,
-              TextButton(
-                onPressed: _navigateToRegister,
-                child: Text(loc.register),
-              ),
-            ]),
-            Gaps.h16,
-          ],
+          ),
         ),
       ),
     );

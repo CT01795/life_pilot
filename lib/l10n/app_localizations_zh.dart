@@ -33,6 +33,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetPasswordEmail => '重設密碼信已寄出，請檢查信箱。';
 
   @override
+  String resetPasswordCooldown(int seconds) {
+    return '$seconds 秒後可重寄';
+  }
+
+  @override
   String get noEmailError => '請輸入帳號';
 
   @override
@@ -57,10 +62,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emailNotConfirmed => '帳號尚未驗證';
 
   @override
-  String get tooManyRequests => '登入過於頻繁';
+  String get tooManyRequests => '操作過於頻繁，請稍後再試。';
 
   @override
-  String get networkError => '網路錯誤';
+  String get emailRateLimitExceeded => '驗證信寄送次數過多，請稍後再試。';
+
+  @override
+  String get networkError => '無法連線，請檢查網路後再試。';
 
   @override
   String get email => '電子郵件';
@@ -90,7 +98,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emailAlreadyInUse => '帳號已經被人註冊。';
 
   @override
-  String get weakPassword => '密碼長度必須至少為 6 個字元';
+  String get weakPassword => '密碼長度必須至少為 8 個字元';
 
   @override
   String get unknownError => '未知的錯誤';
@@ -631,4 +639,34 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get accountMenuAccountDeletion => '刪除帳號';
+
+  @override
+  String get readLegalTermsRequired => '請先閱讀完隱私權政策與服務條款，再勾選同意。';
+
+  @override
+  String get legalDocumentReadComplete => '已閱讀完畢';
+
+  @override
+  String get legalDocumentRead => '已讀';
+
+  @override
+  String get registrationSuccessful => '註冊成功。';
+
+  @override
+  String get registrationVerificationRequired => '註冊成功，請前往信箱完成驗證後再登入。';
+
+  @override
+  String get confirmPassword => '確認密碼';
+
+  @override
+  String get passwordMismatch => '兩次輸入的密碼不一致。';
+
+  @override
+  String get showPassword => '顯示密碼';
+
+  @override
+  String get hidePassword => '隱藏密碼';
+
+  @override
+  String get passwordUpdateSuccessful => '密碼已更新，請使用新密碼登入。';
 }

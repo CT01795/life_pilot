@@ -147,6 +147,12 @@ abstract class AppLocalizations {
   /// **'Password reset email sent. Please check your inbox.'**
   String get resetPasswordEmail;
 
+  /// Password reset email resend countdown
+  ///
+  /// In en, this message translates to:
+  /// **'Retry in {seconds}s'**
+  String resetPasswordCooldown(int seconds);
+
   /// Label for email error
   ///
   /// In en, this message translates to:
@@ -198,13 +204,19 @@ abstract class AppLocalizations {
   /// Label for login error
   ///
   /// In en, this message translates to:
-  /// **'Too many requests'**
+  /// **'Too many requests. Please try again later.'**
   String get tooManyRequests;
+
+  /// Email verification rate limit error
+  ///
+  /// In en, this message translates to:
+  /// **'Too many verification emails have been requested. Please try again later.'**
+  String get emailRateLimitExceeded;
 
   /// Label for login error
   ///
   /// In en, this message translates to:
-  /// **'Network error'**
+  /// **'Unable to connect. Check your network and try again.'**
   String get networkError;
 
   /// Label for email
@@ -264,7 +276,7 @@ abstract class AppLocalizations {
   /// Label for register error
   ///
   /// In en, this message translates to:
-  /// **'Password should be at least 6 characters'**
+  /// **'Password must be at least 8 characters.'**
   String get weakPassword;
 
   /// Label for unknown error
@@ -1346,6 +1358,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete account'**
   String get accountMenuAccountDeletion;
+
+  /// Message shown when both legal documents have not been read
+  ///
+  /// In en, this message translates to:
+  /// **'Please read both the Privacy Policy and Terms of Service before agreeing.'**
+  String get readLegalTermsRequired;
+
+  /// Confirmation shown when a legal document has been read
+  ///
+  /// In en, this message translates to:
+  /// **'Reading complete'**
+  String get legalDocumentReadComplete;
+
+  /// Short status shown beside a legal document link after reading
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get legalDocumentRead;
+
+  /// Registration success message
+  ///
+  /// In en, this message translates to:
+  /// **'Registration successful.'**
+  String get registrationSuccessful;
+
+  /// Registration success message when email verification is required
+  ///
+  /// In en, this message translates to:
+  /// **'Registration successful. Please verify your email before signing in.'**
+  String get registrationVerificationRequired;
+
+  /// Confirm password field label
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmPassword;
+
+  /// Password confirmation mismatch error
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get passwordMismatch;
+
+  /// Tooltip for showing a password
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// Tooltip for hiding a password
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// Message shown after a successful password update
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated. Please sign in with your new password.'**
+  String get passwordUpdateSuccessful;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -16,7 +16,7 @@ class ControllerAuth extends ChangeNotifier {
   bool _initialized = false;
 
   Future<void> initialize() async {
-    if(_initialized){
+    if (_initialized) {
       return;
     }
     _initialized = true;
@@ -24,8 +24,7 @@ class ControllerAuth extends ChangeNotifier {
   }
 
   void _listenAuthState() {
-    _authSubscription =
-        supabase.auth.onAuthStateChange.listen((data) {
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
       logger.i('Auth Event: ${data.event}');
       logger.i(
         'Recovery User Present: ${data.session?.user != null}',
@@ -52,12 +51,13 @@ class ControllerAuth extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isAnonymous => _isAnonymous;
   String? get currentAccount => _currentAccount;
-  bool get isSysAdmin => _currentAccount == AuthConstants.sysAdminEmail;
+  bool get hasServerAdminRole =>
+      supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
+  bool get isSysAdmin => hasServerAdminRole;
   AuthPage get currentPage => _currentPage;
 
   final Map<String, String> _registerMap = {
     AuthConstants.email: '',
-    AuthConstants.password: '',
   };
 
   Map<String, String> get registerMap => Map.unmodifiable(_registerMap);
@@ -113,7 +113,7 @@ class ControllerAuth extends ChangeNotifier {
       logger.e('Auth Error: $e\n$st');
       return ErrorFields.loginError;
     } finally {
-      _update(() => _isLoading = false);
+      _update(() => _isLoading = false, notify: false);
     }
   }
 
@@ -153,20 +153,18 @@ class ControllerAuth extends ChangeNotifier {
       ServiceAuth.resetPassword(email: email);
 
   // -------------------- 頁面切換 --------------------
-  void goToPage(AuthPage page, {String? email, String? password}) {
+  void goToPage(AuthPage page, {String? email}) {
     _update(() {
       if (email != null) _registerMap[AuthConstants.email] = email;
-      if (password != null) _registerMap[AuthConstants.password] = password;
       _currentPage = page;
     });
   }
 
-  void goToRegister({String? email, String? password}) =>
-      goToPage(AuthPage.register, email: email, password: password);
-  void goToResetPassword({String? email, String? password}) =>
-      goToPage(AuthPage.resetPassword, email: email, password: password);
-  void goBackToLogin({String? email, String? password}) =>
-      goToPage(AuthPage.login, email: email, password: password);
+  void goToRegister({String? email}) =>
+      goToPage(AuthPage.register, email: email);
+  void goToResetPassword({String? email}) =>
+      goToPage(AuthPage.resetPassword, email: email);
+  void goBackToLogin({String? email}) => goToPage(AuthPage.login, email: email);
 
   @override
   void dispose() {

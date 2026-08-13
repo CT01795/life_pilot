@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
@@ -115,8 +114,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
         appBar: widgetsWhiteAppBar(
           title: widget.title,
           enableSearchAndExport: true,
-          enableUpload:
-              widget.auth.currentAccount == AuthConstants.sysAdminEmail,
+          enableUpload: widget.auth.isSysAdmin,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
           loc: loc,

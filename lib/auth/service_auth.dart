@@ -5,6 +5,10 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceAuth {
+  static final RegExp _emailPattern = RegExp(
+    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+  );
+
   // 🔐 Check if user is logged in
   static bool isLoggedIn() => supabase.auth.currentUser != null;
 
@@ -25,20 +29,26 @@ class ServiceAuth {
 
   static Future<String?> register(
       {required String email, required String password}) async {
-    final error = _checkEmptyFields(email: email, password: password);
+    final error = _checkRegistrationFields(
+      email: email,
+      password: password,
+    );
     if (error != null) {
       return error;
     }
 
     return _handle(() async {
-      await supabase.auth.signUp(
+      final response = await supabase.auth.signUp(
         email: email,
         password: password,
         data: const {
-          'privacy_policy_version': '2026-08-12',
-          'terms_of_service_version': '2026-08-12',
+          'privacy_policy_version': AuthConstants.privacyPolicyVersion,
+          'terms_of_service_version': AuthConstants.termsOfServiceVersion,
         },
       );
+      if (response.user?.identities?.isEmpty == true) {
+        throw const AuthException('User already registered');
+      }
     }, defaultError: ErrorFields.registerError);
   }
 
@@ -46,6 +56,9 @@ class ServiceAuth {
   static Future<String?> resetPassword({required String email}) async {
     if (email.isEmpty) {
       return ErrorFields.noEmailError;
+    }
+    if (!_emailPattern.hasMatch(email)) {
+      return ErrorFields.invalidEmailError;
     }
 
     return _handle(() async {
@@ -57,7 +70,7 @@ class ServiceAuth {
         email,
         redirectTo: redirectTo,
       );
-    }, defaultError: ErrorFields.loginError);
+    }, defaultError: ErrorFields.resetPasswordError);
   }
 
   // 🚪 Sign out
@@ -81,6 +94,24 @@ class ServiceAuth {
     return null;
   }
 
+  static String? _checkRegistrationFields({
+    required String email,
+    required String password,
+  }) {
+    final emptyFieldError = _checkEmptyFields(
+      email: email,
+      password: password,
+    );
+    if (emptyFieldError != null) return emptyFieldError;
+    if (!_emailPattern.hasMatch(email)) {
+      return ErrorFields.invalidEmailError;
+    }
+    if (password.length < AuthConstants.minimumPasswordLength) {
+      return ErrorFields.weakPasswordError;
+    }
+    return null;
+  }
+
   static Future<String?> _handle(
     Future<void> Function() action, {
     required String defaultError,
@@ -93,18 +124,56 @@ class ServiceAuth {
       return _mapSupabaseError(e, defaultError);
     } catch (e) {
       logger.e("${ErrorFields.unexpectedError}: $e");
-      return defaultError;
+      return _mapTransportError(e.toString()) ?? defaultError;
     }
   }
 
   static String _mapSupabaseError(AuthException e, String defaultError) {
     final message = e.message.toLowerCase();
+    if (e.code == 'over_email_send_rate_limit' ||
+        message.contains('email rate limit exceeded')) {
+      return ErrorFields.emailRateLimitExceededError;
+    }
+    final transportError = _mapTransportError(message);
+    if (transportError != null) return transportError;
+    if (e.code == 'weak_password' || message.contains('weak password')) {
+      return ErrorFields.weakPasswordError;
+    }
+    if (message.contains('invalid email')) {
+      return ErrorFields.invalidEmailError;
+    }
     if (message.contains("invalid login credentials")) {
       return ErrorFields.wrongUserPassword;
     }
     if (message.contains("email not confirmed")) {
       return ErrorFields.emailNotConfirmed;
     }
+    if (e.code == 'email_exists' ||
+        e.code == 'user_already_exists' ||
+        message.contains("user already registered") ||
+        message.contains("already been registered")) {
+      return ErrorFields.emailAlreadyInUseError;
+    }
     return defaultError;
+  }
+
+  static String? _mapTransportError(String rawMessage) {
+    final message = rawMessage.toLowerCase();
+    if (message.contains('too many requests') ||
+        message.contains('status code 429') ||
+        message.contains('statuscode: 429') ||
+        message.contains('over_request_rate_limit')) {
+      return ErrorFields.tooManyRequestsError;
+    }
+    if (message.contains('network request failed') ||
+        message.contains('failed to fetch') ||
+        message.contains('clientexception') ||
+        message.contains('socketexception') ||
+        message.contains('failed host lookup') ||
+        message.contains('connection refused') ||
+        message.contains('connection reset')) {
+      return ErrorFields.networkRequestFailedError;
+    }
+    return null;
   }
 }

@@ -10,6 +10,9 @@ import 'package:life_pilot/utils/logger.dart';
 class ServiceEvent {
   ServiceEvent();
 
+  bool get _isCurrentUserAdmin =>
+      supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
+
   Future<String> getKey({required String keyName}) async {
     try {
       final response = await supabase.rpc(
@@ -118,11 +121,9 @@ class ServiceEvent {
       event.isApproved = false;
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
-        await supabase
-          .from(tableName)
-          .insert([
-            event.toJson(),
-          ]);
+        await supabase.from(tableName).insert([
+          event.toJson(),
+        ]);
       } else {
         final data = event.toJson();
         var query = supabase
@@ -131,8 +132,7 @@ class ServiceEvent {
             .eq(Fields.id, data[Fields.id]);
 
         // 非系統管理員只能更新自己的事件
-        if (currentAccount != "minavi@alumni.nccu.edu.tw" &&
-            data[Fields.account] != null) {
+        if (!_isCurrentUserAdmin && data[Fields.account] != null) {
           query = query.eq(Fields.account, data[Fields.account]);
         }
 
@@ -152,18 +152,14 @@ class ServiceEvent {
     try {
       final data = event.toJson();
       if (tableName == TableNames.recommendEvents) {
-        await supabase
-          .from(TableNames.recommendEventsDeleted)
-          .insert([data]);
+        await supabase.from(TableNames.recommendEventsDeleted).insert([data]);
       }
 
-      var query = supabase
-        .from(tableName)
-        .delete()
-        .eq(Fields.id, data[Fields.id]);
+      var query =
+          supabase.from(tableName).delete().eq(Fields.id, data[Fields.id]);
 
       // 非系統管理員只能刪自己的事件
-      if (currentAccount != "minavi@alumni.nccu.edu.tw") {
+      if (!_isCurrentUserAdmin) {
         query = query.eq(
           Fields.account,
           currentAccount,
@@ -185,10 +181,8 @@ class ServiceEvent {
   Future<void> approvalEvent(
       {required EventItem event, required String tableName}) async {
     final data = event.toJson();
-    var query = supabase
-        .from(tableName)
-        .update(data)
-        .eq(Fields.id, data[Fields.id]);
+    var query =
+        supabase.from(tableName).update(data).eq(Fields.id, data[Fields.id]);
 
     await query;
   }
@@ -202,9 +196,7 @@ class ServiceEvent {
       "account": account
     };
     try {
-      await supabase
-        .from(TableNames.recommendEventsFavor)
-        .insert([data]);
+      await supabase.from(TableNames.recommendEventsFavor).insert([data]);
     } catch (ex) {
       try {
         var query = supabase

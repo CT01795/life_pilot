@@ -610,8 +610,7 @@ class ControllerCalendar extends ChangeNotifier {
       return false;
     }
     return auth!.currentAccount == account ||
-        (auth!.currentAccount == AuthConstants.sysAdminEmail &&
-            _tableName != TableNames.memoryTrace);
+        (auth!.isSysAdmin && _tableName != TableNames.memoryTrace);
   }
 
   // 移動到上一個月份
