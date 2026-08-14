@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from event.service_event import router as service_event_router
 from external.service_external import router as service_external_router
+from external.service_weather import router as service_weather_router
 from stock.service_stock import router as service_stock_router
 
 app = FastAPI()
@@ -24,6 +25,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 @app.get("/health")
@@ -42,4 +44,5 @@ def root():
 
 app.include_router(service_event_router)
 app.include_router(service_external_router)
+app.include_router(service_weather_router)
 app.include_router(service_stock_router)
