@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -10,8 +11,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ControllerAuth extends ChangeNotifier {
   final ControllerCalendar? controllerCalendar;
+  final ModelDashboard? modelDashboard;
   StreamSubscription<AuthState>? _authSubscription;
-  ControllerAuth({this.controllerCalendar});
+  ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
   bool _initialized = false;
 
@@ -92,8 +94,10 @@ class ControllerAuth extends ChangeNotifier {
     // 🧹 若帳號不同，清空並重新載入日曆資料
     if (!_isLoggedIn) {
       controllerCalendar?.clearAll();
+      modelDashboard?.switchAccount(null);
     } else if (_currentAccount != oldAccount) {
       controllerCalendar?.clearAll();
+      modelDashboard?.switchAccount(_currentAccount);
       await controllerCalendar?.loadCalendarEvents(month: DateTime.now());
     }
 
@@ -143,6 +147,7 @@ class ControllerAuth extends ChangeNotifier {
       _currentPage = AuthPage.login;
     }, notify: false);
 
+    modelDashboard?.switchAccount(null);
     controllerCalendar?.clearAll(); // 🧹 登出也清除資料
 
     _update(() => _isLoading = false);

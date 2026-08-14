@@ -9,12 +9,17 @@ import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
+import 'package:life_pilot/utils/provider_locale.dart';
 
 class ModelDashboard extends ChangeNotifier {
   final DashboardRepository repository;
+  final ProviderLocale localeProvider;
+  int _accountGeneration = 0;
+  String? _activeAccount;
 
   ModelDashboard({
     required this.repository,
+    required this.localeProvider,
   });
 
   bool _loading = false;
@@ -40,35 +45,71 @@ class ModelDashboard extends ChangeNotifier {
 
   List<DashboardCity> get placeCities => _placeCities;
 
+  void switchAccount(String? account) {
+    _accountGeneration++;
+    _activeAccount = account;
+    _loading = false;
+    _state = DashboardState.empty();
+    _setting = DashboardSetting(
+      recommendEventCity: '台北',
+      recommendPlaceCity: '台北',
+      language: localeProvider.locale.languageCode,
+    );
+    _eventCities = [];
+    _placeCities = [];
+    notifyListeners();
+  }
+
+  bool _isCurrentRequest(String account, int generation) =>
+      _activeAccount == account && _accountGeneration == generation;
+
   Future<void> loadEventCities(String account) async {
-    _eventCities = await repository.loadEventCities(account);
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    final eventCities = await repository.loadEventCities(account);
+    if (!_isCurrentRequest(account, generation)) return;
+    _eventCities = eventCities;
     notifyListeners();
   }
 
   Future<void> loadPlaceCities(String account) async {
-    _placeCities = await repository.loadPlaceCities(account);
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+    final placeCities = await repository.loadPlaceCities(account);
+    if (!_isCurrentRequest(account, generation)) return;
+    _placeCities = placeCities;
     notifyListeners();
   }
 
   Future<void> refreshAll({
     required String account,
   }) async {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
     _loading = true;
     notifyListeners();
 
     try {
-      _setting = await repository.loadDashboardSetting(
+      final loadedSetting = await repository.loadDashboardSetting(
         account: account,
+      );
+      if (!_isCurrentRequest(account, generation)) return;
+      final setting = loadedSetting.copyWith(
+        language: localeProvider.locale.languageCode,
       );
 
       final result = await Future.wait([
         repository.loadTodayEvents(account),
-        repository.loadRecommendEvents(account, _setting.recommendEventCity),
-        repository.loadRecommendPlaces(account, _setting.recommendPlaceCity),
-        repository.loadTodayIncomeExpense(accountId: _setting.accountingAccountId ?? ''),
-        repository.loadPoints(accountId: _setting.pointAccountId ?? ''),
+        repository.loadRecommendEvents(account, setting.recommendEventCity),
+        repository.loadRecommendPlaces(account, setting.recommendPlaceCity),
+        repository.loadTodayIncomeExpense(
+          accountId: setting.accountingAccountId ?? '',
+        ),
+        repository.loadPoints(accountId: setting.pointAccountId ?? ''),
       ]);
+      if (!_isCurrentRequest(account, generation)) return;
 
+      _setting = setting;
       _state = DashboardState(
         todayEvents: result[0] as List<CalendarEvent>,
         recommendEvents: result[1] as List<RecommendedEvent>,
@@ -77,8 +118,10 @@ class ModelDashboard extends ChangeNotifier {
         todayPoints: result[4] as List<PointRecordItem>,
       );
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (_isCurrentRequest(account, generation)) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -175,9 +218,7 @@ class ModelDashboard extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final todayPoints = await repository.loadPoints(
-        accountId: accountId
-      );
+      final todayPoints = await repository.loadPoints(accountId: accountId);
 
       _state = _state.copyWith(todayPoints: todayPoints);
     } finally {

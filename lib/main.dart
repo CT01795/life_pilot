@@ -61,21 +61,24 @@ void main() async {
           create: (_) => ProviderLocale(locale: const Locale(Locales.zh)),
         ),
         ChangeNotifierProvider(
-          create: (_) => ModelDashboard(repository: DashboardRepository(),),
+          create: (context) => ModelDashboard(
+            repository: DashboardRepository(),
+            localeProvider: context.read<ProviderLocale>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ModelDashboardSetting(),
         ),
         Provider<EventTrackingService>(
-          create: (_) =>
-            EventTrackingService(),
+          create: (_) => EventTrackingService(),
         ),
         Provider<CalendarService>(
-          create: (_) =>
-            CalendarService(),
+          create: (_) => CalendarService(),
         ),
         ChangeNotifierProvider(
-          create: (_) => ControllerAuth(),
+          create: (context) => ControllerAuth(
+            modelDashboard: context.read<ModelDashboard>(),
+          ),
         ),
         //-------------- Weather --------------
         Provider<ServiceWeather>(
@@ -153,13 +156,14 @@ void main() async {
               closeText: loc.close, // ✅ 使用當前語系
             );
           },
-          update: (context, modelCalendar, auth, serviceEvent, serviceWeather, 
+          update: (context, modelCalendar, auth, serviceEvent, serviceWeather,
               notification, locale, controller) {
             controller ??= context.read<ControllerCalendar>();
             // ✅ 更新 controller 裡的依賴，而不是 new 一個
             controller.auth = auth;
             // ✅ 更新 closeText
-            controller.updateLocalization(lookupAppLocalizations(locale.locale));
+            controller
+                .updateLocalization(lookupAppLocalizations(locale.locale));
 
             return controller;
           },
