@@ -80,6 +80,7 @@ _weather_global_rate_limiter = InMemoryRateLimiter(
     window_seconds=5 * 60,
 )
 _weather_cache: dict[str, tuple[float, WeatherResponse]] = {}
+_weather_in_flight: dict[str, asyncio.Task[WeatherResponse]] = {}
 
 
 def _weather_cache_key(lat: float, lng: float) -> str:
@@ -344,40 +345,13 @@ async def geocode(
     return result
 
 
-@router.post("/weather", response_model=WeatherResponse)
-async def weather_forecast(
+async def _fetch_weather_from_provider(
+    *,
     payload: WeatherRequest,
-    user: Annotated[dict[str, Any], Depends(require_supabase_user)],
+    user_id: str,
+    cache_key: str,
 ) -> WeatherResponse:
-    _weather_rate_limiter.check(str(user["id"]))
-    cache_key = _weather_cache_key(payload.lat, payload.lng)
-    cached_response = _get_cached_weather(cache_key)
-    if cached_response is not None:
-        return cached_response
-
-    persistent_cache: dict[str, Any] | None = None
-    try:
-        persistent_cache = await asyncio.to_thread(
-            get_weather_forecast_cache,
-            cache_key,
-        )
-    except (RuntimeError, SQLAlchemyError) as exception:
-        logger.warning(
-            "Weather cache read failed; using provider: %s",
-            type(exception).__name__,
-        )
-
-    persistent_response = _weather_response_from_persistent_cache(
-        persistent_cache
-    )
-    if persistent_response is not None and persistent_cache is not None:
-        _save_weather_cache(
-            cache_key,
-            persistent_response,
-            expires_at=persistent_cache.get("expires_at"),
-        )
-        return persistent_response
-
+    _weather_rate_limiter.check(user_id)
     api_key = _require_open_weather_api_key()
     _weather_global_rate_limiter.check("open_weather_forecast")
 
@@ -489,3 +463,66 @@ async def weather_forecast(
             type(exception).__name__,
         )
     return result
+
+
+def _finish_weather_in_flight(
+    cache_key: str,
+    task: asyncio.Task[WeatherResponse],
+) -> None:
+    if _weather_in_flight.get(cache_key) is task:
+        _weather_in_flight.pop(cache_key, None)
+    if not task.cancelled():
+        task.exception()
+
+
+@router.post("/weather", response_model=WeatherResponse)
+async def weather_forecast(
+    payload: WeatherRequest,
+    user: Annotated[dict[str, Any], Depends(require_supabase_user)],
+) -> WeatherResponse:
+    cache_key = _weather_cache_key(payload.lat, payload.lng)
+    cached_response = _get_cached_weather(cache_key)
+    if cached_response is not None:
+        return cached_response
+
+    persistent_cache: dict[str, Any] | None = None
+    try:
+        persistent_cache = await asyncio.to_thread(
+            get_weather_forecast_cache,
+            cache_key,
+        )
+    except (RuntimeError, SQLAlchemyError) as exception:
+        logger.warning(
+            "Weather cache read failed; using provider: %s",
+            type(exception).__name__,
+        )
+
+    persistent_response = _weather_response_from_persistent_cache(
+        persistent_cache
+    )
+    if persistent_response is not None and persistent_cache is not None:
+        _save_weather_cache(
+            cache_key,
+            persistent_response,
+            expires_at=persistent_cache.get("expires_at"),
+        )
+        return persistent_response
+
+    in_flight = _weather_in_flight.get(cache_key)
+    if in_flight is None:
+        in_flight = asyncio.create_task(
+            _fetch_weather_from_provider(
+                payload=payload,
+                user_id=str(user["id"]),
+                cache_key=cache_key,
+            )
+        )
+        _weather_in_flight[cache_key] = in_flight
+        in_flight.add_done_callback(
+            lambda completed, key=cache_key: _finish_weather_in_flight(
+                key,
+                completed,
+            )
+        )
+
+    return await asyncio.shield(in_flight)

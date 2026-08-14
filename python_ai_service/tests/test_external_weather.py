@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from datetime import timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,6 +12,7 @@ from external import service_weather
 class ExternalWeatherTest(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         service_weather._weather_cache.clear()
+        service_weather._weather_in_flight.clear()
 
     def _provider_context(self, response: MagicMock) -> MagicMock:
         client = AsyncMock()
@@ -99,7 +101,7 @@ class ExternalWeatherTest(unittest.IsolatedAsyncioTestCase):
             patch.object(
                 service_weather._weather_rate_limiter,
                 "check",
-            ),
+            ) as cached_user_limit,
             patch.object(
                 service_weather._weather_global_rate_limiter,
                 "check",
@@ -118,6 +120,7 @@ class ExternalWeatherTest(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cached, result)
+        cached_user_limit.assert_not_called()
         cached_global_limit.assert_not_called()
         cached_http_client.assert_not_called()
 
@@ -217,7 +220,10 @@ class ExternalWeatherTest(unittest.IsolatedAsyncioTestCase):
         }
 
         with (
-            patch.object(service_weather._weather_rate_limiter, "check"),
+            patch.object(
+                service_weather._weather_rate_limiter,
+                "check",
+            ) as user_limit,
             patch.object(
                 service_weather,
                 "get_weather_forecast_cache",
@@ -241,8 +247,104 @@ class ExternalWeatherTest(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result.items[0].main, "Clouds")
+        user_limit.assert_not_called()
         global_limit.assert_not_called()
         http_client.assert_not_called()
+
+    async def test_concurrent_users_share_one_provider_request(self):
+        provider_response = MagicMock(status_code=200)
+        provider_response.json.return_value = {
+            "city": {"timezone": 28800},
+            "list": [
+                {
+                    "dt": 1786665600,
+                    "weather": [
+                        {
+                            "main": "Clear",
+                            "description": "clear sky",
+                            "icon": "01d",
+                        }
+                    ],
+                    "main": {
+                        "temp": 28.5,
+                        "feels_like": 30.0,
+                        "temp_min": 27.0,
+                        "temp_max": 29.0,
+                        "pressure": 1008,
+                    },
+                }
+            ],
+        }
+        provider_started = asyncio.Event()
+        release_provider = asyncio.Event()
+
+        async def delayed_provider_request(*args, **kwargs):
+            provider_started.set()
+            await release_provider.wait()
+            return provider_response
+
+        client = AsyncMock()
+        client.get.side_effect = delayed_provider_request
+        provider_context = MagicMock()
+        provider_context.__aenter__ = AsyncMock(return_value=client)
+        provider_context.__aexit__ = AsyncMock(return_value=None)
+
+        with (
+            patch.object(
+                service_weather,
+                "_require_open_weather_api_key",
+                return_value="test-key",
+            ),
+            patch.object(
+                service_weather,
+                "get_weather_forecast_cache",
+                return_value=None,
+            ),
+            patch.object(service_weather, "save_weather_forecast_cache"),
+            patch.object(
+                service_weather._weather_rate_limiter,
+                "check",
+            ) as user_limit,
+            patch.object(
+                service_weather._weather_global_rate_limiter,
+                "check",
+            ) as global_limit,
+            patch.object(
+                service_weather.httpx,
+                "AsyncClient",
+                return_value=provider_context,
+            ),
+        ):
+            first_request = asyncio.create_task(
+                service_weather.weather_forecast(
+                    service_weather.WeatherRequest(
+                        lat=25.033,
+                        lng=121.5654,
+                    ),
+                    {"id": "first-user"},
+                )
+            )
+            await provider_started.wait()
+            second_request = asyncio.create_task(
+                service_weather.weather_forecast(
+                    service_weather.WeatherRequest(
+                        lat=25.0331,
+                        lng=121.5653,
+                    ),
+                    {"id": "second-user"},
+                )
+            )
+            await asyncio.sleep(0)
+            release_provider.set()
+            first_result, second_result = await asyncio.gather(
+                first_request,
+                second_request,
+            )
+
+        self.assertEqual(first_result, second_result)
+        client.get.assert_awaited_once()
+        user_limit.assert_called_once_with("first-user")
+        global_limit.assert_called_once_with("open_weather_forecast")
 
     def test_rejects_invalid_coordinates(self):
         with self.assertRaises(ValidationError):
