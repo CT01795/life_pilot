@@ -3,7 +3,8 @@ import hashlib
 import logging
 import os
 import unicodedata
-from datetime import datetime, timezone
+from datetime import datetime, time as datetime_time, timedelta, timezone
+from time import monotonic
 from typing import Annotated, Any
 
 import httpx
@@ -12,6 +13,10 @@ from external.repository_geocodes import (
     get_geocode_cache,
     mark_geocode_failed,
     save_geocode_result,
+)
+from external.repository_weather import (
+    get_weather_forecast_cache,
+    save_weather_forecast_cache,
 )
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -26,6 +31,8 @@ logger = logging.getLogger(__name__)
 OPEN_WEATHER_TIMEOUT_SECONDS = 10.0
 GEOCODE_SUCCESS_TTL_DAYS = 180
 GEOCODE_NOT_FOUND_TTL_DAYS = 7
+WEATHER_CACHE_TTL_SECONDS = 15 * 60
+WEATHER_CACHE_MAX_ENTRIES = 2_000
 
 
 class GeocodeRequest(BaseModel):
@@ -37,10 +44,130 @@ class GeocodeResponse(BaseModel):
     lng: float | None = None
 
 
+class WeatherRequest(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+
+
+class WeatherItem(BaseModel):
+    date: datetime
+    main: str
+    description: str
+    icon: str
+    temp: float
+    feels_like: float
+    temp_min: float
+    temp_max: float
+    pressure: float
+    sea_level: float
+    grnd_level: float
+
+
+class WeatherResponse(BaseModel):
+    items: list[WeatherItem]
+
+
 _geocode_rate_limiter = InMemoryRateLimiter(
     max_requests=30,
     window_seconds=5 * 60,
 )
+_weather_rate_limiter = InMemoryRateLimiter(
+    max_requests=30,
+    window_seconds=5 * 60,
+)
+_weather_global_rate_limiter = InMemoryRateLimiter(
+    max_requests=300,
+    window_seconds=5 * 60,
+)
+_weather_cache: dict[str, tuple[float, WeatherResponse]] = {}
+
+
+def _weather_cache_key(lat: float, lng: float) -> str:
+    coordinate_bucket = (
+        f"{round(lat * 1_000)}:{round(lng * 1_000)}"
+    )
+    return hashlib.sha256(coordinate_bucket.encode("ascii")).hexdigest()
+
+
+def _get_cached_weather(
+    cache_key: str,
+) -> WeatherResponse | None:
+    cached = _weather_cache.get(cache_key)
+    if cached is None:
+        return None
+
+    expires_at, response = cached
+    if expires_at <= monotonic():
+        _weather_cache.pop(cache_key, None)
+        return None
+    return response
+
+
+def _save_weather_cache(
+    cache_key: str,
+    response: WeatherResponse,
+    *,
+    expires_at: datetime | None = None,
+) -> None:
+    now = monotonic()
+    if len(_weather_cache) >= WEATHER_CACHE_MAX_ENTRIES:
+        expired_keys = [
+            key
+            for key, (expires_at, _) in _weather_cache.items()
+            if expires_at <= now
+        ]
+        for key in expired_keys:
+            _weather_cache.pop(key, None)
+
+    while len(_weather_cache) >= WEATHER_CACHE_MAX_ENTRIES:
+        oldest_key = next(iter(_weather_cache))
+        _weather_cache.pop(oldest_key, None)
+
+    ttl_seconds = WEATHER_CACHE_TTL_SECONDS
+    if expires_at is not None:
+        normalized_expiry = expires_at
+        if normalized_expiry.tzinfo is None:
+            normalized_expiry = normalized_expiry.replace(tzinfo=timezone.utc)
+        seconds_until_expiry = (
+            normalized_expiry - datetime.now(timezone.utc)
+        ).total_seconds()
+        ttl_seconds = min(ttl_seconds, max(0, seconds_until_expiry))
+
+    if ttl_seconds > 0:
+        _weather_cache[cache_key] = (now + ttl_seconds, response)
+
+
+def _weather_response_from_persistent_cache(
+    cached: dict[str, Any] | None,
+) -> WeatherResponse | None:
+    if cached is None or not isinstance(cached.get("forecast"), list):
+        return None
+
+    try:
+        items = [
+            WeatherItem.model_validate(item)
+            for item in cached["forecast"]
+            if isinstance(item, dict)
+        ]
+    except (TypeError, ValueError):
+        return None
+    if len(items) != len(cached["forecast"]):
+        return None
+    return WeatherResponse(items=items)
+
+
+def _next_location_midnight_utc(timezone_offset_seconds: int) -> datetime:
+    location_timezone = timezone(
+        timedelta(seconds=timezone_offset_seconds)
+    )
+    now_local = datetime.now(timezone.utc).astimezone(location_timezone)
+    tomorrow = now_local.date() + timedelta(days=1)
+    next_midnight = datetime.combine(
+        tomorrow,
+        datetime_time.min,
+        tzinfo=location_timezone,
+    )
+    return next_midnight.astimezone(timezone.utc)
 
 
 def _require_open_weather_api_key() -> str:
@@ -214,4 +341,151 @@ async def geocode(
         await _mark_geocode_failed_safely(cache_id, "database_error")
         raise _database_unavailable(exception) from exception
 
+    return result
+
+
+@router.post("/weather", response_model=WeatherResponse)
+async def weather_forecast(
+    payload: WeatherRequest,
+    user: Annotated[dict[str, Any], Depends(require_supabase_user)],
+) -> WeatherResponse:
+    _weather_rate_limiter.check(str(user["id"]))
+    cache_key = _weather_cache_key(payload.lat, payload.lng)
+    cached_response = _get_cached_weather(cache_key)
+    if cached_response is not None:
+        return cached_response
+
+    persistent_cache: dict[str, Any] | None = None
+    try:
+        persistent_cache = await asyncio.to_thread(
+            get_weather_forecast_cache,
+            cache_key,
+        )
+    except (RuntimeError, SQLAlchemyError) as exception:
+        logger.warning(
+            "Weather cache read failed; using provider: %s",
+            type(exception).__name__,
+        )
+
+    persistent_response = _weather_response_from_persistent_cache(
+        persistent_cache
+    )
+    if persistent_response is not None and persistent_cache is not None:
+        _save_weather_cache(
+            cache_key,
+            persistent_response,
+            expires_at=persistent_cache.get("expires_at"),
+        )
+        return persistent_response
+
+    api_key = _require_open_weather_api_key()
+    _weather_global_rate_limiter.check("open_weather_forecast")
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(OPEN_WEATHER_TIMEOUT_SECONDS, connect=5.0),
+        ) as client:
+            response = await client.get(
+                "https://api.openweathermap.org/data/2.5/forecast",
+                params={
+                    "lat": payload.lat,
+                    "lon": payload.lng,
+                    "appid": api_key,
+                    "units": "metric",
+                },
+            )
+    except httpx.HTTPError as exception:
+        logger.warning(
+            "OpenWeather forecast request failed: %s",
+            type(exception).__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Weather provider is temporarily unavailable",
+        ) from exception
+
+    if response.status_code != status.HTTP_200_OK:
+        logger.warning(
+            "OpenWeather forecast returned HTTP %s",
+            response.status_code,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Weather provider rejected the request",
+        )
+
+    try:
+        data = response.json()
+    except ValueError as exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Weather provider returned an invalid response",
+        ) from exception
+
+    raw_items = data.get("list") if isinstance(data, dict) else None
+    if not isinstance(raw_items, list):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Weather provider returned an invalid forecast",
+        )
+
+    raw_city = data.get("city") if isinstance(data, dict) else None
+    raw_timezone_offset = (
+        raw_city.get("timezone") if isinstance(raw_city, dict) else None
+    )
+    if (
+        not isinstance(raw_timezone_offset, int)
+        or isinstance(raw_timezone_offset, bool)
+        or not -64_800 <= raw_timezone_offset <= 64_800
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Weather provider returned an invalid location timezone",
+        )
+    expires_at = _next_location_midnight_utc(raw_timezone_offset)
+
+    items: list[WeatherItem] = []
+    try:
+        for raw_item in raw_items:
+            weather = raw_item["weather"][0]
+            main = raw_item["main"]
+            pressure = float(main["pressure"])
+            items.append(
+                WeatherItem(
+                    date=datetime.fromtimestamp(
+                        int(raw_item["dt"]),
+                        tz=timezone.utc,
+                    ),
+                    main=str(weather["main"]),
+                    description=str(weather["description"]),
+                    icon=str(weather["icon"]),
+                    temp=float(main["temp"]),
+                    feels_like=float(main["feels_like"]),
+                    temp_min=float(main["temp_min"]),
+                    temp_max=float(main["temp_max"]),
+                    pressure=pressure,
+                    sea_level=float(main.get("sea_level", pressure)),
+                    grnd_level=float(main.get("grnd_level", pressure)),
+                )
+            )
+    except (KeyError, IndexError, TypeError, ValueError) as exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Weather provider returned an invalid forecast item",
+        ) from exception
+
+    result = WeatherResponse(items=items)
+    _save_weather_cache(cache_key, result, expires_at=expires_at)
+    try:
+        await asyncio.to_thread(
+            save_weather_forecast_cache,
+            cache_key=cache_key,
+            forecast=[item.model_dump(mode="json") for item in result.items],
+            expires_at=expires_at,
+        )
+    except (RuntimeError, SQLAlchemyError) as exception:
+        logger.warning(
+            "Weather cache write failed; returning provider result: %s",
+            type(exception).__name__,
+        )
     return result

@@ -1,15 +1,15 @@
 class EventWeather {
   final DateTime date;
-  final String main;       // 天氣主描述 e.g., Rain, Clear
+  final String main; // 天氣主描述 e.g., Rain, Clear
   final String description; // 詳細描述 e.g., light rain
-  final double temp;       // 溫度 (Kelvin)
+  final double temp; // 溫度 (Kelvin)
   final double feelsLike; // 體感溫度
   final double tempMin; // 最低溫
   final double tempMax; // 最高溫
   final double pressure; // 氣壓
-  final double seaLevel; // 
-  final double grndLevel; // 
-  final String icon;       // OpenWeather 圖標代碼
+  final double seaLevel; //
+  final double grndLevel; //
+  final String icon; // OpenWeather 圖標代碼
 
   EventWeather({
     required this.date,
@@ -21,13 +21,13 @@ class EventWeather {
     required this.tempMin, // 最低溫
     required this.tempMax, // 最高溫
     required this.pressure, // 氣壓
-    required this.seaLevel, // 
-    required this.grndLevel, // 
+    required this.seaLevel, //
+    required this.grndLevel, //
   });
 
   factory EventWeather.fromJson(Map<String, dynamic> json) {
     return EventWeather(
-      date: DateTime.parse(json['date']),
+      date: DateTime.parse(json['date']).toLocal(),
       main: json['main'],
       description: json['description'],
       icon: json['icon'],

@@ -1,10 +1,7 @@
-import 'dart:convert';
 import 'dart:core';
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/logger.dart';
 
@@ -153,20 +150,14 @@ class ClusterItem {
       return ',CA'; //',Canada';
     }
 
-    return l; // ❗ 無法判斷 → 不加國家
-  }
-
-  static String? _apiKey;
-  static Future<String> getKey() async {
-    _apiKey ??= await ServiceEvent().getKey(keyName: "OPEN_WEATHER_API_KEY");
-    return _apiKey!;
+    return ''; // 無法判斷時不附加國家代碼
   }
 
   static Future<Map<String, double>> getLatLngFromAddressCommon(
       {required String locationDisplay}) async {
     try {
       final tmpLocationDisplay = locationDisplay.split("．");
-      // 1️⃣ 用 OpenWeather Geocoding API 取得經緯度
+      // 優先使用資料庫中既有的經緯度
       final cityLike = tmpLocationDisplay[0];
       final locationLike = tmpLocationDisplay.length > 1
           ? tmpLocationDisplay[1]
@@ -182,33 +173,38 @@ class ClusterItem {
         );
         if (result is List && result.isNotEmpty) {
           final loc = result[0];
-          return {"lat": (loc['lat'] as num).toDouble(), "lng": (loc['lng'] as num).toDouble(),};
+          return {
+            "lat": (loc['lat'] as num).toDouble(),
+            "lng": (loc['lng'] as num).toDouble(),
+          };
         }
       } catch (e) {
         logger.e('Error search_lat_lng: $e');
       }
 
-      String currentCountry = detectCountryHint(tmpLocationDisplay[0]);
-      final address = Uri.encodeComponent(tmpLocationDisplay[0]);
+      final currentCountry = detectCountryHint(tmpLocationDisplay[0]);
+      final address = tmpLocationDisplay[0].trim();
       if (address.isEmpty && currentCountry.isEmpty) {
         return {};
       }
-      await getKey();
-      final geoUrl =
-          'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey';
-      /*final geoUrl = Uri.parse(
-        'https://api.openweathermap.org/geo/1.0/direct?q=$address$currentCountry&limit=1&appid=$_apiKey',
-      );*/
+      final accessToken = supabase.auth.currentSession?.accessToken;
+      if (accessToken == null || accessToken.isEmpty) {
+        logger.w('Skip geocoding because the user session is unavailable');
+        return {};
+      }
 
-      final response = await http.get(
-        Uri.parse(geoUrl),
+      final response = await apiSupabase.post(
+        '/external/geocode',
+        {'query': '$address$currentCountry'},
+        bearerToken: accessToken,
       );
-      if (response.statusCode == 200) {
-        final geoData = json.decode(response.body);
-        if (geoData is List && geoData.isNotEmpty) {
-          final loc = geoData[0];
-          return {"lat": (loc['lat'] as num).toDouble(), "lng": (loc['lon'] as num).toDouble(),};
-        }
+      if (response is Map<String, dynamic> &&
+          response['lat'] is num &&
+          response['lng'] is num) {
+        return {
+          "lat": (response['lat'] as num).toDouble(),
+          "lng": (response['lng'] as num).toDouble(),
+        };
       }
       return {};
     } catch (e) {
