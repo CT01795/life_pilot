@@ -15,7 +15,6 @@ from external.repository_holidays import (
 )
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from security.rate_limit import InMemoryRateLimiter
 from security.supabase_auth import require_supabase_user
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -47,12 +46,6 @@ class HolidayItem(BaseModel):
 
 class HolidayResponse(BaseModel):
     items: list[HolidayItem]
-
-
-_holiday_rate_limiter = InMemoryRateLimiter(
-    max_requests=30,
-    window_seconds=5 * 60,
-)
 
 
 def _require_google_api_key() -> str:
@@ -194,8 +187,6 @@ async def get_holidays(
     payload: HolidayRequest,
     _user: Annotated[dict[str, Any], Depends(require_supabase_user)],
 ) -> HolidayResponse:
-    _holiday_rate_limiter.check(str(_user["id"]))
-
     start = _to_utc(payload.start)
     end = _to_utc(payload.end)
 
