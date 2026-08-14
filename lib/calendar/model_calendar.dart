@@ -9,7 +9,6 @@ import 'package:life_pilot/calendar/service_calendar.dart';
 import '../utils/logger.dart';
 
 class ModelCalendar {
-
   List<EventItem> _events = [];
   List<EventItem> get events => _events;
 
@@ -83,7 +82,6 @@ class ModelCalendar {
     required ControllerAuth? auth,
     required ProviderLocale localeProvider,
     required String tableName,
-    required String googleApiKey,
   }) async {
     if (isDisposed) return [];
     try {
@@ -100,14 +98,12 @@ class ModelCalendar {
       final holidays = await ServiceCalendar.fetchHolidays(
           start.subtract(Duration(days: 2)),
           end.add(Duration(days: 2)),
-          locale,
-          googleApiKey);
+          locale);
 
       if (isDisposed) return [];
 
       return [...?serverEvents, ...holidays]
         ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
-
     } catch (e, st) {
       if (!isDisposed) {
         logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
@@ -121,12 +117,14 @@ class ModelCalendar {
     final weeks = getWeeks(month);
     final tmp = groupEventsByWeekAndDay(weeks: weeks, inEvents: inEvents);
     cachedEvents[key] = tmp;
-    flatMonthEventsCache[key] = {for (var e in inEvents) e.id: e}.values.toList();
+    flatMonthEventsCache[key] =
+        {for (var e in inEvents) e.id: e}.values.toList();
   }
 
   // 依照週、日將事件分組
   Map<int, Map<int, List<EventItem>>> groupEventsByWeekAndDay(
-      {required List<List<DateTime>> weeks, required List<EventItem> inEvents}) {
+      {required List<List<DateTime>> weeks,
+      required List<EventItem> inEvents}) {
     final Map<int, Map<int, List<EventItem>>> result = {};
 
     for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {

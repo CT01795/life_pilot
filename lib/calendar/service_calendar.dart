@@ -1,57 +1,145 @@
-import 'dart:convert';
 import 'dart:ui';
 
-import 'package:http/http.dart' as http;
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/holidays.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/logger.dart';
 
+class _HolidayRecord {
+  final DateTime date;
+  final String summary;
+
+  const _HolidayRecord({required this.date, required this.summary});
+}
+
 class ServiceCalendar {
   static final Uuid _uuid = const Uuid();
+  static const Set<String> _supportedLanguages = {'zh', 'en', 'ja', 'ko'};
+  static final Map<String, Future<List<_HolidayRecord>>> _yearCache = {};
+  static DateTime? _cacheUtcDate;
+
   static Future<List<EventItem>> fetchHolidays(
-      DateTime start, DateTime end, Locale locale, String googleApiKey) async {
+      DateTime start, DateTime end, Locale locale) async {
     final List<EventItem> holidays = [];
-    final String calendarId = Holidays.getCalendarIdByLocale(
-        CalendarConfig.tzLocation, locale.languageCode.toLowerCase());
-    //final url = Uri.parse(
-    final url =
-        'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events?'
-        'key=$googleApiKey&'
-        'timeMin=${start.toUtc().toIso8601String()}&'
-        'timeMax=${end.toUtc().toIso8601String()}&'
-        'orderBy=startTime&singleEvents=true';
-    //);
+    final accessToken = supabase.auth.currentSession?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      logger.w('Skip holidays because the user session is unavailable');
+      return holidays;
+    }
+
+    final requestedLanguage = locale.languageCode.toLowerCase();
+    final languageCode = _supportedLanguages.contains(requestedLanguage)
+        ? requestedLanguage
+        : 'zh';
 
     try {
-      final response = await http.get(
-        Uri.parse(url),
-      );
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to load holidays: ${response.body}',
-        );
-      }
+      _clearCacheAfterUtcDateChange();
 
-      final data = json.decode(response.body);
-      final List items = data['items'] ?? [];
+      final startDate = DateTime(start.year, start.month, start.day);
+      final endDate = DateTime(end.year, end.month, end.day);
+      if (!endDate.isAfter(startDate)) return holidays;
+
+      final lastIncludedDate = endDate.subtract(const Duration(days: 1));
+      final records = <_HolidayRecord>[];
+      for (int year = startDate.year; year <= lastIncludedDate.year; year++) {
+        records.addAll(await _getHolidayYear(
+          year: year,
+          languageCode: languageCode,
+          accessToken: accessToken,
+        ));
+      }
+      records.sort((a, b) => a.date.compareTo(b.date));
 
       EventItem? lastMergedHoliday;
 
-      for (final item in items) {
-        final DateTime date = DateTime.parse(item['start']['date']).toLocal();
-        final String summary = item['summary'];
+      for (final record in records) {
+        if (record.date.isBefore(startDate) || !record.date.isBefore(endDate)) {
+          continue;
+        }
 
-        lastMergedHoliday =
-            _processHolidayItem(date, summary, lastMergedHoliday, holidays);
+        lastMergedHoliday = _processHolidayItem(
+            record.date, record.summary, lastMergedHoliday, holidays);
       }
       return holidays;
     } catch (e, stack) {
       logger.e('Fetch holidays failed', error: e, stackTrace: stack);
       return [];
     }
+  }
+
+  static void _clearCacheAfterUtcDateChange() {
+    final now = DateTime.now().toUtc();
+    final today = DateTime.utc(now.year, now.month, now.day);
+    if (_cacheUtcDate != today) {
+      _yearCache.clear();
+      _cacheUtcDate = today;
+    }
+  }
+
+  static Future<List<_HolidayRecord>> _getHolidayYear({
+    required int year,
+    required String languageCode,
+    required String accessToken,
+  }) async {
+    final cacheKey = '$languageCode:$year';
+    final request = _yearCache.putIfAbsent(
+      cacheKey,
+      () => _loadHolidayYear(
+        year: year,
+        languageCode: languageCode,
+        accessToken: accessToken,
+      ),
+    );
+
+    try {
+      return await request;
+    } catch (_) {
+      if (identical(_yearCache[cacheKey], request)) {
+        _yearCache.remove(cacheKey);
+      }
+      rethrow;
+    }
+  }
+
+  static Future<List<_HolidayRecord>> _loadHolidayYear({
+    required int year,
+    required String languageCode,
+    required String accessToken,
+  }) async {
+    final yearStart = DateTime.utc(year, 1, 1);
+    final yearEnd = DateTime.utc(year + 1, 1, 1);
+    final data = await apiSupabase.post(
+      '/external/holidays',
+      {
+        'start': yearStart.toIso8601String(),
+        'end': yearEnd.toIso8601String(),
+        'language_code': languageCode,
+      },
+      bearerToken: accessToken,
+    );
+    final items = data is Map<String, dynamic> && data['items'] is List
+        ? data['items'] as List
+        : const [];
+    final records = <_HolidayRecord>[];
+
+    for (final item in items) {
+      if (item is! Map<String, dynamic>) continue;
+      final rawDate = item['date'];
+      final rawSummary = item['summary'];
+      if (rawDate is! String || rawSummary is! String) continue;
+
+      final parsedDate = DateTime.tryParse(rawDate);
+      if (parsedDate == null) continue;
+      records.add(_HolidayRecord(
+        date: DateTime(parsedDate.year, parsedDate.month, parsedDate.day),
+        summary: rawSummary,
+      ));
+    }
+
+    return records;
   }
 
   // 處理單筆假日，若需合併連假則更新 lastMergedHoliday

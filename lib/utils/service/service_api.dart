@@ -36,13 +36,23 @@ class ServiceApi {
     return Uri.parse('$normalizedBaseUrl/$normalizedPath');
   }
 
-  Future<dynamic> post(String path, Map<String, dynamic> body) async {
+  Future<dynamic> post(
+    String path,
+    Map<String, dynamic> body, {
+    String? bearerToken,
+  }) async {
     late final http.Response res;
+    final normalizedToken = bearerToken?.trim();
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (normalizedToken != null && normalizedToken.isNotEmpty)
+        'Authorization': 'Bearer $normalizedToken',
+    };
 
     try {
       res = await http.post(
         buildUri(path),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode(body),
       ).timeout(timeout);
     } on TimeoutException {

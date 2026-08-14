@@ -28,7 +28,6 @@ import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends ChangeNotifier {
   final tracting = EventTrackingService();
-  late String _googleApiKey;
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
   late ControllerNotification _controllerNotification;
@@ -114,9 +113,6 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    _googleApiKey = await _serviceEvent.getKey(
-      keyName: "GOOGLE_API_KEY",
-    );
     _modelCalendar.isInitialized = true; // 提前鎖
     await goToMonth(month: currentMonth, notify: false);
     await checkAndGenerateNextEvents();
@@ -135,7 +131,6 @@ class ControllerCalendar extends ChangeNotifier {
       auth: auth,
       localeProvider: _localeProvider,
       tableName: _tableName,
-      googleApiKey: _googleApiKey,
     );
 
     // ✅ STOP UI card 不再觸發 weather
