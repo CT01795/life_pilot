@@ -369,15 +369,25 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
-    final futures = events.map((e) {
-      final vm = buildViewModel(
-          event: e,
-          loc:
-              AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!);
-      return _serviceWeather.preloadWeather([vm]);
-    });
+    final seenLocations = <String>{};
 
-    await Future.wait(futures);
+    for (final e in events) {
+      final vm = buildViewModel(
+        event: e,
+        loc: AppLocalizations.of(
+          app_navigator.navigatorKey.currentContext!,
+        )!,
+      );
+      if (!seenLocations.add(vm.locationDisplay)) continue;
+
+      final requested = await _serviceWeather.preloadWeather(
+        [vm],
+        tableName: _tableName,
+      );
+      if (requested) {
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
   }
 
   // ------------------ controller event card ------------------

@@ -9,10 +9,40 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
 
+class _WeatherResult {
+  final List<EventWeather> data;
+  final DateTime expiresAt;
+
+  const _WeatherResult({required this.data, required this.expiresAt});
+}
+
 class ServiceWeather {
   final cacheStore = WeatherCacheStore.I;
+
   List<EventWeather>? getForecast({required String locationDisplay}) {
-    return cacheStore.cache[locationDisplay]?.data;
+    return _getValidCache(locationDisplay)?.data;
+  }
+
+  WeatherCache? _getValidCache(String locationDisplay) {
+    final cache = cacheStore.cache[locationDisplay];
+    if (cache == null) return null;
+    if (cache.isValid) return cache;
+    cacheStore.cache.remove(locationDisplay);
+    return null;
+  }
+
+  bool _isWithinForecastWindow({
+    required DateTime? startDate,
+    required DateTime? endDate,
+  }) {
+    if (startDate == null) return false;
+
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    final rangeEndExclusive = today.add(const Duration(days: 7));
+    final eventStart = DateTimeFormatter.dateOnly(startDate);
+    final eventEnd = DateTimeFormatter.dateOnly(endDate ?? startDate);
+
+    return eventStart.isBefore(rangeEndExclusive) && !eventEnd.isBefore(today);
   }
 
   Future<List<EventWeather>?> loadWeather({
@@ -23,62 +53,52 @@ class ServiceWeather {
     required DateTime? endDate,
     required String tableName,
   }) async {
-    if (!hasLocation) return null;
-    //if (cacheStore.cache.containsKey(event.locationDisplay)) return;
+    if (!hasLocation || locationDisplay.isEmpty) return null;
     if (cacheStore.loading.contains(event.locationDisplay)) {
-      return cacheStore.cache[event.locationDisplay]?.data;
+      return _getValidCache(event.locationDisplay)?.data;
     }
-    final now = DateTime.now();
-    final today = DateTimeFormatter.dateOnly(now);
-    if (tableName == TableNames.recommendPlaces) {
-    } else if (locationDisplay.isEmpty ||
-        (startDate != null &&
-            ((today.add(Duration(days: 7))).isBefore(startDate) ||
-                (endDate != null && today.isAfter(endDate)) ||
-                (endDate == null && today.isAfter(startDate))))) {
+    if (tableName != TableNames.recommendPlaces &&
+        !_isWithinForecastWindow(
+          startDate: startDate,
+          endDate: endDate,
+        )) {
       return null;
     }
 
-    final cache = cacheStore.cache[event.locationDisplay];
-
-    if (cache != null) {
-      final diff = now.difference(cache.created);
-
-      // 8小時內不重新抓
-      if (diff.inMinutes < 480) {
-        return cache.data;
-      }
-    }
+    final cache = _getValidCache(event.locationDisplay);
+    if (cache != null) return cache.data;
 
     cacheStore.loading.add(event.locationDisplay);
 
     try {
-      final data = await getWeather(event: event);
+      final result = await _getWeather(event: event);
+      if (result == null) return null;
 
-      cacheStore.cache[event.locationDisplay] =
-          WeatherCache(data: data, created: now);
-      return data;
+      cacheStore.cache[event.locationDisplay] = WeatherCache(
+        data: result.data,
+        expiresAt: result.expiresAt,
+      );
+      return result.data;
     } catch (e, st) {
       logger.e('loadWeather failed for ${event.id}: $e\n$st');
-      cacheStore.cache[event.locationDisplay] =
-          WeatherCache(data: [], created: now);
+      cacheStore.cache.remove(event.locationDisplay);
       return null;
     } finally {
       cacheStore.loading.remove(event.locationDisplay);
     }
   }
 
-  Future<List<EventWeather>> getWeather({required EventViewModel event}) async {
+  Future<_WeatherResult?> _getWeather({required EventViewModel event}) async {
     try {
       event = await ClusterItem.getLatLngFromAddressView(event);
       if (event.lat == null || event.lng == null) {
-        return [];
+        return null;
       }
 
       final accessToken = supabase.auth.currentSession?.accessToken;
       if (accessToken == null || accessToken.isEmpty) {
         logger.w('Skip weather because the user session is unavailable');
-        return [];
+        return null;
       }
 
       final response = await apiSupabase.post(
@@ -93,44 +113,59 @@ class ServiceWeather {
           response is Map<String, dynamic> && response['items'] is List
               ? response['items'] as List
               : const [];
-      return items
+      final rawExpiresAt =
+          response is Map<String, dynamic> ? response['expires_at'] : null;
+      if (rawExpiresAt is! String) {
+        throw const FormatException('Missing weather cache expiry');
+      }
+      final expiresAt = DateTime.tryParse(rawExpiresAt);
+      if (expiresAt == null || !expiresAt.isAfter(DateTime.now())) {
+        throw const FormatException('Invalid weather cache expiry');
+      }
+      final data = items
           .whereType<Map<String, dynamic>>()
           .map(EventWeather.fromJson)
           .toList();
+      return _WeatherResult(data: data, expiresAt: expiresAt);
     } catch (ex, stacktrace) {
       logger.e("getWeather error", error: ex, stackTrace: stacktrace);
       rethrow;
     }
   }
 
-  Future<void> preloadWeather(List<EventViewModel> events) async {
+  Future<bool> preloadWeather(
+    List<EventViewModel> events, {
+    required String tableName,
+  }) async {
+    var requested = false;
     final DateTime today = DateTimeFormatter.dateOnly(DateTime.now());
-    final DateTime yesterday = today.add(Duration(days: -1));
-    final DateTime thisWeek = today.add(Duration(days: 6));
+    final DateTime rangeEndExclusive = today.add(const Duration(days: 7));
     for (final e in events) {
       if (e.endDate == null) {
-        if (!(thisWeek.compareTo(e.startDate!) == 1 &&
-            yesterday.compareTo(e.startDate!) == -1)) {
+        if (!(e.startDate!.isBefore(rangeEndExclusive) &&
+            !e.startDate!.isBefore(today))) {
           continue;
         }
       } else {
-        if (!(thisWeek.compareTo(e.startDate!) == 1 &&
-            yesterday.compareTo(e.endDate!) == -1)) {
+        if (!(e.startDate!.isBefore(rangeEndExclusive) &&
+            !e.endDate!.isBefore(today))) {
           continue;
         }
       } //當只有start date, 日期必須是今日或一周內才要看天氣
       //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
       if (!e.hasLocation) continue;
-      if (WeatherCacheStore.I.cache.containsKey(e.locationDisplay)) continue;
+      if (_getValidCache(e.locationDisplay) != null) continue;
 
       await loadWeather(
         event: e,
         hasLocation: e.hasLocation,
         locationDisplay: e.locationDisplay,
-        startDate: null,
-        endDate: null,
-        tableName: '',
+        startDate: e.startDate,
+        endDate: e.endDate,
+        tableName: tableName,
       );
+      requested = true;
     }
+    return requested;
   }
 }

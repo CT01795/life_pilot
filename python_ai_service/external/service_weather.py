@@ -65,6 +65,7 @@ class WeatherItem(BaseModel):
 
 class WeatherResponse(BaseModel):
     items: list[WeatherItem]
+    expires_at: datetime
 
 
 _geocode_rate_limiter = InMemoryRateLimiter(
@@ -72,7 +73,7 @@ _geocode_rate_limiter = InMemoryRateLimiter(
     window_seconds=5 * 60,
 )
 _weather_rate_limiter = InMemoryRateLimiter(
-    max_requests=30,
+    max_requests=300,
     window_seconds=5 * 60,
 )
 _weather_global_rate_limiter = InMemoryRateLimiter(
@@ -144,6 +145,14 @@ def _weather_response_from_persistent_cache(
     if cached is None or not isinstance(cached.get("forecast"), list):
         return None
 
+    expires_at = cached.get("expires_at")
+    if not isinstance(expires_at, datetime):
+        return None
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
+        return None
+
     try:
         items = [
             WeatherItem.model_validate(item)
@@ -154,7 +163,7 @@ def _weather_response_from_persistent_cache(
         return None
     if len(items) != len(cached["forecast"]):
         return None
-    return WeatherResponse(items=items)
+    return WeatherResponse(items=items, expires_at=expires_at)
 
 
 def _next_location_midnight_utc(timezone_offset_seconds: int) -> datetime:
@@ -448,7 +457,7 @@ async def _fetch_weather_from_provider(
             detail="Weather provider returned an invalid forecast item",
         ) from exception
 
-    result = WeatherResponse(items=items)
+    result = WeatherResponse(items=items, expires_at=expires_at)
     _save_weather_cache(cache_key, result, expires_at=expires_at)
     try:
         await asyncio.to_thread(

@@ -159,7 +159,10 @@ class ControllerCalendar extends ChangeNotifier {
         loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!,
       );
 
-      await _serviceWeather.preloadWeather([vm]);
+      await _serviceWeather.preloadWeather(
+        [vm],
+        tableName: _tableName,
+      );
 
       // 👉 每秒一個
       await Future.delayed(const Duration(seconds: 1));

@@ -57,11 +57,13 @@ class EventWeather {
 }
 
 class WeatherCache {
-  final DateTime created;
+  final DateTime expiresAt;
   final List<EventWeather> data;
 
   WeatherCache({
-    required this.created,
+    required this.expiresAt,
     required this.data,
   });
+
+  bool get isValid => DateTime.now().isBefore(expiresAt);
 }
