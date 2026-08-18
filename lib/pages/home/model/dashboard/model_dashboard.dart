@@ -33,6 +33,10 @@ class ModelDashboard extends ChangeNotifier {
 
   bool _loading = false;
   final Set<DashboardSection> _failedSections = {};
+  int _recommendEventRequest = 0;
+  int _recommendPlaceRequest = 0;
+  int _accountingRequest = 0;
+  int _pointsRequest = 0;
 
   bool get loading => _loading;
 
@@ -112,6 +116,10 @@ class ModelDashboard extends ChangeNotifier {
     required String account,
   }) async {
     final generation = _accountGeneration;
+    final recommendEventRequest = ++_recommendEventRequest;
+    final recommendPlaceRequest = ++_recommendPlaceRequest;
+    final accountingRequest = ++_accountingRequest;
+    final pointsRequest = ++_pointsRequest;
     if (!_isCurrentRequest(account, generation)) return;
     _loading = true;
     _failedSections.clear();
@@ -161,13 +169,18 @@ class ModelDashboard extends ChangeNotifier {
       _setting = setting;
       _state = DashboardState(
         todayEvents: result[0] as List<CalendarEvent>? ?? _state.todayEvents,
-        recommendEvents:
-            result[1] as List<RecommendedEvent>? ?? _state.recommendEvents,
-        recommendPlaces:
-            result[2] as List<RecommendedPlace>? ?? _state.recommendPlaces,
-        todayIncomeExpense:
-            result[3] as List<IncomeExpenseItem>? ?? _state.todayIncomeExpense,
-        todayPoints: result[4] as List<PointRecordItem>? ?? _state.todayPoints,
+        recommendEvents: recommendEventRequest == _recommendEventRequest
+            ? result[1] as List<RecommendedEvent>? ?? _state.recommendEvents
+            : _state.recommendEvents,
+        recommendPlaces: recommendPlaceRequest == _recommendPlaceRequest
+            ? result[2] as List<RecommendedPlace>? ?? _state.recommendPlaces
+            : _state.recommendPlaces,
+        todayIncomeExpense: accountingRequest == _accountingRequest
+            ? result[3] as List<IncomeExpenseItem>? ?? _state.todayIncomeExpense
+            : _state.todayIncomeExpense,
+        todayPoints: pointsRequest == _pointsRequest
+            ? result[4] as List<PointRecordItem>? ?? _state.todayPoints
+            : _state.todayPoints,
       );
     } finally {
       if (_isCurrentRequest(account, generation)) {
@@ -216,52 +229,65 @@ class ModelDashboard extends ChangeNotifier {
   Future<void> refreshRecommendEvent({
     required String account,
   }) async {
+    final request = ++_recommendEventRequest;
     _loading = true;
     notifyListeners();
 
     try {
-      _setting = await repository.loadDashboardSetting(
+      final setting = await repository.loadDashboardSetting(
         account: account,
       );
 
       final recommendedEvents = await repository.loadRecommendEvents(
-          account, _setting.recommendEventCity);
+          account, setting.recommendEventCity);
 
+      if (request != _recommendEventRequest) return;
+
+      _setting = setting;
       _state = _state.copyWith(
         recommendEvents: recommendedEvents,
       );
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (request == _recommendEventRequest) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> refreshRecommendPlace({
     required String account,
   }) async {
+    final request = ++_recommendPlaceRequest;
     _loading = true;
     notifyListeners();
 
     try {
-      _setting = await repository.loadDashboardSetting(
+      final setting = await repository.loadDashboardSetting(
         account: account,
       );
 
       final recommendedPlaces = await repository.loadRecommendPlaces(
-          account, _setting.recommendPlaceCity);
+          account, setting.recommendPlaceCity);
 
+      if (request != _recommendPlaceRequest) return;
+
+      _setting = setting;
       _state = _state.copyWith(
         recommendPlaces: recommendedPlaces,
       );
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (request == _recommendPlaceRequest) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> refreshAccounting({
     required String accountId,
   }) async {
+    final request = ++_accountingRequest;
     _loading = true;
     notifyListeners();
 
@@ -270,26 +296,35 @@ class ModelDashboard extends ChangeNotifier {
         accountId: accountId,
       );
 
+      if (request != _accountingRequest) return;
+
       _state = _state.copyWith(todayIncomeExpense: todayIncomeExpense);
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (request == _accountingRequest) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> refreshPoints({
     required String accountId,
   }) async {
+    final request = ++_pointsRequest;
     _loading = true;
     notifyListeners();
 
     try {
       final todayPoints = await repository.loadPoints(accountId: accountId);
 
+      if (request != _pointsRequest) return;
+
       _state = _state.copyWith(todayPoints: todayPoints);
     } finally {
-      _loading = false;
-      notifyListeners();
+      if (request == _pointsRequest) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 
