@@ -5,6 +5,7 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/auth/service_auth.dart';
+import 'package:life_pilot/auth/auth_session_sync.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,7 @@ class ControllerAuth extends ChangeNotifier {
   final ControllerCalendar? controllerCalendar;
   final ModelDashboard? modelDashboard;
   StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<void>? _externalSignedOutSubscription;
   ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
   bool _initialized = false;
@@ -23,6 +25,7 @@ class ControllerAuth extends ChangeNotifier {
     }
     _initialized = true;
     _listenAuthState();
+    _listenExternalSignedOut();
   }
 
   void _listenAuthState() {
@@ -38,6 +41,17 @@ class ControllerAuth extends ChangeNotifier {
         _update(() {
           _currentPage = AuthPage.resetPassword;
         });
+      } else if (data.event == AuthChangeEvent.signedOut) {
+        _handleSignedOut();
+      }
+    });
+  }
+
+  void _listenExternalSignedOut() {
+    _externalSignedOutSubscription = externalSignedOutEvents.listen((_) {
+      if (_isLoggedIn) {
+        logger.i('Session was signed out from another browser tab.');
+        _handleSignedOut();
       }
     });
   }
@@ -69,6 +83,24 @@ class ControllerAuth extends ChangeNotifier {
   void _update(VoidCallback fn, {bool notify = true}) {
     fn();
     if (notify) notifyListeners();
+  }
+
+  void _handleSignedOut() {
+    if (_currentAccount != null && !_isAnonymous) {
+      _registerMap[AuthConstants.email] = _currentAccount!;
+    }
+
+    _update(() {
+      _isLoading = false;
+      _isLoggedIn = false;
+      _isAnonymous = false;
+      _currentAccount = null;
+      _currentPage = AuthPage.login;
+    }, notify: false);
+
+    modelDashboard?.switchAccount(null);
+    controllerCalendar?.clearAll();
+    notifyListeners();
   }
 
   // =========================================================
@@ -179,6 +211,7 @@ class ControllerAuth extends ChangeNotifier {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _externalSignedOutSubscription?.cancel();
     super.dispose();
   }
 }
