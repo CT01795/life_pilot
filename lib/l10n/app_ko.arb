@@ -275,6 +275,8 @@
   "@retry": {"description": "Retry button label"},
   "externalLinkOpenFailed": "링크를 열 수 없습니다. 잠시 후 다시 시도해 주세요",
   "@externalLinkOpenFailed": {"description": "Shown when an external website or map cannot be opened"},
+  "dashboardSettingSaveFailed": "설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요",
+  "@dashboardSettingSaveFailed": {"description": "Shown when a dashboard selection cannot be saved"},
   "unsavedChangesPrompt": "변경 사항이 저장되지 않았습니다. 취소하시겠습니까?",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "변경 사항 취소",

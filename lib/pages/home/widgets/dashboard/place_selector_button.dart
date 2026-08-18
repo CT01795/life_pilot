@@ -47,14 +47,18 @@ class PlaceCitySelectorButton extends StatelessWidget {
             return;
           }
 
-          await dashboard.changePlaceCity(
-            account: auth.account!,
-            city: city,
-          );
-
-          await dashboard.refreshRecommendPlace(
-            account: auth.account!,
-          );
+          try {
+            await dashboard.changePlaceCity(
+              account: auth.account!,
+              city: city,
+            );
+          } catch (_) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+              );
+            }
+          }
         },
       ),
     );

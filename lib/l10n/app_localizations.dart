@@ -903,6 +903,12 @@ abstract class AppLocalizations {
   /// **'Could not open the link. Please try again later'**
   String get externalLinkOpenFailed;
 
+  /// Shown when a dashboard selection cannot be saved
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the setting. Please try again later'**
+  String get dashboardSettingSaveFailed;
+
   /// Confirmation shown before leaving an edited form
   ///
   /// In en, this message translates to:

@@ -47,14 +47,18 @@ class EventCitySelectorButton extends StatelessWidget {
             return;
           }
 
-          await dashboard.changeEventCity(
-            account: auth.account!,
-            city: city,
-          );
-
-          await dashboard.refreshRecommendEvent(
-            account: auth.account!,
-          );
+          try {
+            await dashboard.changeEventCity(
+              account: auth.account!,
+              city: city,
+            );
+          } catch (_) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+              );
+            }
+          }
         },
       ),
     );

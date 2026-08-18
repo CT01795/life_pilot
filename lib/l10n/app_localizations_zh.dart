@@ -413,6 +413,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get externalLinkOpenFailed => '無法開啟連結，請稍後再試';
 
   @override
+  String get dashboardSettingSaveFailed => '設定儲存失敗，請稍後再試';
+
+  @override
   String get unsavedChangesPrompt => '變更尚未儲存，確定要捨棄嗎？';
 
   @override

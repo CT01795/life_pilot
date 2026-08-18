@@ -311,14 +311,17 @@ class ModelDashboard extends ChangeNotifier {
     required String account,
     required String city,
   }) async {
-    _setting = _setting.copyWith(
+    final updatedSetting = _setting.copyWith(
       recommendEventCity: city,
     );
 
     await repository.saveDashboardSetting(
       account: account,
-      setting: _setting,
+      setting: updatedSetting,
     );
+
+    _setting = updatedSetting;
+    notifyListeners();
 
     await refreshRecommendEvent(
       account: account,
@@ -329,14 +332,17 @@ class ModelDashboard extends ChangeNotifier {
     required String account,
     required String city,
   }) async {
-    _setting = _setting.copyWith(
+    final updatedSetting = _setting.copyWith(
       recommendPlaceCity: city,
     );
 
     await repository.saveDashboardSetting(
       account: account,
-      setting: _setting,
+      setting: updatedSetting,
     );
+
+    _setting = updatedSetting;
+    notifyListeners();
 
     await refreshRecommendPlace(
       account: account,
@@ -366,21 +372,23 @@ class ModelDashboard extends ChangeNotifier {
     required String accountId,
     required String accountName,
   }) async {
-    _setting = _setting.copyWith(
+    final updatedSetting = _setting.copyWith(
       accountingAccountId: accountId,
       accountingAccountName: accountName,
     );
 
     await repository.saveDashboardSetting(
       account: account,
-      setting: _setting,
+      setting: updatedSetting,
     );
+
+    _setting = updatedSetting;
+    notifyListeners();
 
     await refreshAccounting(
       accountId: accountId,
     );
 
-    notifyListeners();
   }
 
   Future<void> changePointAccount({
@@ -388,20 +396,22 @@ class ModelDashboard extends ChangeNotifier {
     required String accountId,
     required String accountName,
   }) async {
-    _setting = _setting.copyWith(
+    final updatedSetting = _setting.copyWith(
       pointAccountId: accountId,
       pointAccountName: accountName,
     );
 
     await repository.saveDashboardSetting(
       account: account,
-      setting: _setting,
+      setting: updatedSetting,
     );
+
+    _setting = updatedSetting;
+    notifyListeners();
 
     await refreshPoints(
       accountId: accountId,
     );
 
-    notifyListeners();
   }
 }

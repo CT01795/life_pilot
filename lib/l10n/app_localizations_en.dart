@@ -413,6 +413,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get externalLinkOpenFailed => 'Could not open the link. Please try again later';
 
   @override
+  String get dashboardSettingSaveFailed => 'Could not save the setting. Please try again later';
+
+  @override
   String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
 
   @override

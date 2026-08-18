@@ -64,11 +64,19 @@ class PointSelectorButton extends StatelessWidget {
             return;
           }
 
-          await dashboard.changePointAccount(
-            account: auth.account!,
-            accountId: selected[Fields.id]!,
-            accountName: selected['name']!,         
-          );
+          try {
+            await dashboard.changePointAccount(
+              account: auth.account!,
+              accountId: selected[Fields.id]!,
+              accountName: selected['name']!,
+            );
+          } catch (_) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+              );
+            }
+          }
         },
       ),
     );
