@@ -404,6 +404,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventSaveFailed => 'イベントを保存できませんでした。しばらくしてからもう一度お試しください';
 
   @override
+  String get dashboardLoadFailed => '情報を読み込めませんでした。しばらくしてからもう一度お試しください';
+
+  @override
+  String get retry => '再試行';
+
+  @override
   String get unsavedChangesPrompt => '変更が保存されていません。破棄しますか？';
 
   @override

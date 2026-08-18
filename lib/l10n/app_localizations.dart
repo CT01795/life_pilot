@@ -885,6 +885,18 @@ abstract class AppLocalizations {
   /// **'Could not save the event. Please try again later'**
   String get eventSaveFailed;
 
+  /// Shown when a dashboard section cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this information. Please try again later'**
+  String get dashboardLoadFailed;
+
+  /// Retry button label
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
   /// Confirmation shown before leaving an edited form
   ///
   /// In en, this message translates to:

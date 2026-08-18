@@ -404,6 +404,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventSaveFailed => 'Could not save the event. Please try again later';
 
   @override
+  String get dashboardLoadFailed => 'Could not load this information. Please try again later';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
   String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
 
   @override

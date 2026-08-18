@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/place_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -29,6 +30,9 @@ class RecommendPlaceCard extends StatelessWidget {
     final places = context.select<ModelDashboard, List<RecommendedPlace>>(
       (m) => m.state.recommendPlaces,
     );
+    final hasLoadFailed = context.select<ModelDashboard, bool>(
+      (m) => m.hasFailed(DashboardSection.recommendPlaces),
+    );
 
     return Card(
       color: Color(0xFFD9E8D5),
@@ -43,7 +47,13 @@ class RecommendPlaceCard extends StatelessWidget {
               trailing: PlaceCitySelectorButton(),
             ),
             Gaps.h16,
-            if (places.isEmpty)
+            if (hasLoadFailed)
+              DashboardLoadFailure(
+                onRetry: () => context.read<ModelDashboard>().refreshAll(
+                      account: auth.account!,
+                    ),
+              )
+            else if (places.isEmpty)
               ListTile(
                 leading: Icon(Icons.info_outline),
                  title: Text(loc.noInfoAvailable),

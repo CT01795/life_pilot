@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/point_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -18,6 +20,9 @@ class PointSummaryCard extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final records = context.select<ModelDashboard, List<PointRecordItem>>(
       (m) => m.state.todayPoints,
+    );
+    final hasLoadFailed = context.select<ModelDashboard, bool>(
+      (m) => m.hasFailed(DashboardSection.points),
     );
 
     final total = records.fold<int>(
@@ -56,7 +61,13 @@ class PointSummaryCard extends StatelessWidget {
             ),
             const Divider(),
 
-            if (records.isEmpty)
+            if (hasLoadFailed)
+              DashboardLoadFailure(
+                onRetry: () => context.read<ModelDashboard>().refreshAll(
+                      account: context.read<ModelAuthView>().account!,
+                    ),
+              )
+            else if (records.isEmpty)
               ListTile(
                 leading: Icon(Icons.info_outline),
                  title: Text(loc.noInfoAvailable),

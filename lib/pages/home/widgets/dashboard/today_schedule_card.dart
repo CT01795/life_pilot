@@ -7,6 +7,7 @@ import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -31,6 +32,9 @@ class TodayScheduleCard extends StatelessWidget {
           )
           .toList(),
     );
+    final hasLoadFailed = context.select<ModelDashboard, bool>(
+      (m) => m.hasFailed(DashboardSection.todaySchedule),
+    );
 
     return Card(
       color: Color(0xFFD6E4F0),
@@ -48,7 +52,13 @@ class TodayScheduleCard extends StatelessWidget {
               ),
             ]),
             Gaps.h16,
-            if (events.isEmpty)
+            if (hasLoadFailed)
+              DashboardLoadFailure(
+                onRetry: () => context.read<ModelDashboard>().refreshAll(
+                      account: auth.account!,
+                    ),
+              )
+            else if (events.isEmpty)
               ListTile(
                 leading: Icon(Icons.info_outline),
                 title: Text(loc.noInfoAvailable),

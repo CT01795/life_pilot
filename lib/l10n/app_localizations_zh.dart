@@ -404,6 +404,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventSaveFailed => '活動儲存失敗，請稍後再試';
 
   @override
+  String get dashboardLoadFailed => '資料載入失敗，請稍後再試';
+
+  @override
+  String get retry => '重試';
+
+  @override
   String get unsavedChangesPrompt => '變更尚未儲存，確定要捨棄嗎？';
 
   @override

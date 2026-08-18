@@ -10,6 +10,15 @@ import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
+import 'package:life_pilot/utils/logger.dart';
+
+enum DashboardSection {
+  todaySchedule,
+  recommendEvents,
+  recommendPlaces,
+  accounting,
+  points,
+}
 
 class ModelDashboard extends ChangeNotifier {
   final DashboardRepository repository;
@@ -23,8 +32,11 @@ class ModelDashboard extends ChangeNotifier {
   });
 
   bool _loading = false;
+  final Set<DashboardSection> _failedSections = {};
 
   bool get loading => _loading;
+
+  bool hasFailed(DashboardSection section) => _failedSections.contains(section);
 
   DashboardState _state = DashboardState.empty();
   DashboardState get state => _state;
@@ -57,6 +69,7 @@ class ModelDashboard extends ChangeNotifier {
     );
     _eventCities = [];
     _placeCities = [];
+    _failedSections.clear();
     notifyListeners();
   }
 
@@ -66,7 +79,14 @@ class ModelDashboard extends ChangeNotifier {
   Future<void> loadEventCities(String account) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
-    final eventCities = await repository.loadEventCities(account);
+    List<DashboardCity> eventCities;
+    try {
+      eventCities = await repository.loadEventCities(account);
+    } catch (error, stackTrace) {
+      logger.e('Could not load recommended event cities.',
+          error: error, stackTrace: stackTrace);
+      return;
+    }
     if (!_isCurrentRequest(account, generation)) return;
     _eventCities = eventCities;
     notifyListeners();
@@ -75,7 +95,14 @@ class ModelDashboard extends ChangeNotifier {
   Future<void> loadPlaceCities(String account) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
-    final placeCities = await repository.loadPlaceCities(account);
+    List<DashboardCity> placeCities;
+    try {
+      placeCities = await repository.loadPlaceCities(account);
+    } catch (error, stackTrace) {
+      logger.e('Could not load recommended place cities.',
+          error: error, stackTrace: stackTrace);
+      return;
+    }
     if (!_isCurrentRequest(account, generation)) return;
     _placeCities = placeCities;
     notifyListeners();
@@ -87,41 +114,80 @@ class ModelDashboard extends ChangeNotifier {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     _loading = true;
+    _failedSections.clear();
     notifyListeners();
 
     try {
-      final loadedSetting = await repository.loadDashboardSetting(
-        account: account,
-      );
+      DashboardSetting setting = _setting;
+      try {
+        final loadedSetting = await repository.loadDashboardSetting(
+          account: account,
+        );
+        setting = loadedSetting.copyWith(
+          language: localeProvider.locale.languageCode,
+        );
+      } catch (error, stackTrace) {
+        logger.e('Could not load dashboard settings.',
+            error: error, stackTrace: stackTrace);
+      }
       if (!_isCurrentRequest(account, generation)) return;
-      final setting = loadedSetting.copyWith(
-        language: localeProvider.locale.languageCode,
-      );
 
       final result = await Future.wait([
-        repository.loadTodayEvents(account),
-        repository.loadRecommendEvents(account, setting.recommendEventCity),
-        repository.loadRecommendPlaces(account, setting.recommendPlaceCity),
-        repository.loadTodayIncomeExpense(
-          accountId: setting.accountingAccountId ?? '',
+        _loadSection(
+          DashboardSection.todaySchedule,
+          () => repository.loadTodayEvents(account),
         ),
-        repository.loadPoints(accountId: setting.pointAccountId ?? ''),
+        _loadSection(
+          DashboardSection.recommendEvents,
+          () => repository.loadRecommendEvents(account, setting.recommendEventCity),
+        ),
+        _loadSection(
+          DashboardSection.recommendPlaces,
+          () => repository.loadRecommendPlaces(account, setting.recommendPlaceCity),
+        ),
+        _loadSection(
+          DashboardSection.accounting,
+          () => repository.loadTodayIncomeExpense(
+            accountId: setting.accountingAccountId ?? '',
+          ),
+        ),
+        _loadSection(
+          DashboardSection.points,
+          () => repository.loadPoints(accountId: setting.pointAccountId ?? ''),
+        ),
       ]);
       if (!_isCurrentRequest(account, generation)) return;
 
       _setting = setting;
       _state = DashboardState(
-        todayEvents: result[0] as List<CalendarEvent>,
-        recommendEvents: result[1] as List<RecommendedEvent>,
-        recommendPlaces: result[2] as List<RecommendedPlace>,
-        todayIncomeExpense: result[3] as List<IncomeExpenseItem>,
-        todayPoints: result[4] as List<PointRecordItem>,
+        todayEvents: result[0] as List<CalendarEvent>? ?? _state.todayEvents,
+        recommendEvents:
+            result[1] as List<RecommendedEvent>? ?? _state.recommendEvents,
+        recommendPlaces:
+            result[2] as List<RecommendedPlace>? ?? _state.recommendPlaces,
+        todayIncomeExpense:
+            result[3] as List<IncomeExpenseItem>? ?? _state.todayIncomeExpense,
+        todayPoints: result[4] as List<PointRecordItem>? ?? _state.todayPoints,
       );
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _loading = false;
         notifyListeners();
       }
+    }
+  }
+
+  Future<T?> _loadSection<T>(
+    DashboardSection section,
+    Future<T> Function() loader,
+  ) async {
+    try {
+      return await loader();
+    } catch (error, stackTrace) {
+      logger.e('Could not load dashboard section: $section.',
+          error: error, stackTrace: stackTrace);
+      _failedSections.add(section);
+      return null;
     }
   }
 
