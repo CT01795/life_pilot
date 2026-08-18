@@ -1,4 +1,6 @@
+import hashlib
 import os
+import time
 from typing import Annotated, Any
 
 import httpx
@@ -8,6 +10,50 @@ from fastapi import Depends, Header, HTTPException, status
 AUTH_TIMEOUT_SECONDS = 8.0
 MAX_AUTHORIZATION_LENGTH = 4096
 ADMIN_ROLE = "admin"
+AUTH_CACHE_TTL_SECONDS = 60.0
+AUTH_CACHE_MAX_ENTRIES = 256
+_auth_user_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+
+
+def _authorization_cache_key(authorization: str) -> str:
+    return hashlib.sha256(authorization.encode("utf-8")).hexdigest()
+
+
+def _get_cached_user(authorization: str) -> dict[str, Any] | None:
+    cache_key = _authorization_cache_key(authorization)
+    cached = _auth_user_cache.get(cache_key)
+    if cached is None:
+        return None
+
+    expires_at, user = cached
+    if expires_at <= time.monotonic():
+        _auth_user_cache.pop(cache_key, None)
+        return None
+
+    return user
+
+
+def _cache_user(authorization: str, user: dict[str, Any]) -> None:
+    now = time.monotonic()
+    expired_keys = [
+        cache_key
+        for cache_key, (expires_at, _) in _auth_user_cache.items()
+        if expires_at <= now
+    ]
+    for cache_key in expired_keys:
+        _auth_user_cache.pop(cache_key, None)
+
+    while len(_auth_user_cache) >= AUTH_CACHE_MAX_ENTRIES:
+        _auth_user_cache.pop(next(iter(_auth_user_cache)))
+
+    _auth_user_cache[_authorization_cache_key(authorization)] = (
+        now + AUTH_CACHE_TTL_SECONDS,
+        user,
+    )
+
+
+def _clear_auth_cache() -> None:
+    _auth_user_cache.clear()
 
 
 def _get_supabase_config() -> tuple[str, str]:
@@ -42,6 +88,10 @@ async def require_supabase_user(
     ):
         raise _unauthorized()
 
+    cached_user = _get_cached_user(authorization)
+    if cached_user is not None:
+        return cached_user
+
     supabase_url, supabase_anon_key = _get_supabase_config()
 
     try:
@@ -73,6 +123,7 @@ async def require_supabase_user(
     if not isinstance(user, dict) or not user.get("id"):
         raise _unauthorized()
 
+    _cache_user(authorization, user)
     return user
 
 
