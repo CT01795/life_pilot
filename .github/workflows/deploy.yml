@@ -24,7 +24,7 @@ jobs:
         run: flutter build web --base-href "/life_pilot/" --release --dart-define=API_BASE_URL=https://life-pilot.onrender.com
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.LIFT_PILOT_TOKEN }}
           publish_dir: build/web
