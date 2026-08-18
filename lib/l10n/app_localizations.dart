@@ -885,6 +885,18 @@ abstract class AppLocalizations {
   /// **'Could not save the event. Please try again later'**
   String get eventSaveFailed;
 
+  /// Confirmation shown before leaving an edited form
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes have not been saved. Discard them?'**
+  String get unsavedChangesPrompt;
+
+  /// Button that discards unsaved form changes
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get discardChanges;
+
   /// Label for eventAddEdit
   ///
   /// In en, this message translates to:

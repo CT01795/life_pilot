@@ -34,6 +34,9 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
   final _scrollController = ScrollController();
   final Map<String, FocusNode> _focusNodes = {};
   bool _isSaving = false;
+  bool _hasUnsavedChanges = false;
+  bool _allowPop = false;
+  bool _discardDialogVisible = false;
 
   @override
   void initState() {
@@ -42,16 +45,42 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
       existingEvent: widget.existingEvent,
       initialDate: widget.initialDate,
     );
+    for (final controller in controllerAdd.controllerMap.values) {
+      controller.addListener(_markUnsavedChanges);
+    }
+    controllerAdd.onContentChanged = _markUnsavedChanges;
   }
 
   @override
   void dispose() {
+    controllerAdd.onContentChanged = null;
     _scrollController.dispose();
     controllerAdd.dispose();
     for (var node in _focusNodes.values) {
       node.dispose();
     }
     super.dispose();
+  }
+
+  void _markUnsavedChanges() {
+    if (!mounted || _hasUnsavedChanges) return;
+    setState(() => _hasUnsavedChanges = true);
+  }
+
+  Future<void> _confirmDiscardChanges(AppLocalizations loc) async {
+    if (_discardDialogVisible) return;
+    _discardDialogVisible = true;
+    final shouldDiscard = await showConfirmationDialog(
+      content: loc.unsavedChangesPrompt,
+      confirmText: loc.discardChanges,
+      cancelText: loc.cancel,
+    );
+    _discardDialogVisible = false;
+    if (!shouldDiscard || !mounted) return;
+
+    setState(() => _allowPop = true);
+    await Future<void>.delayed(Duration.zero);
+    if (mounted) Navigator.of(context).pop();
   }
 
   FocusNode getFocusNode(String key) {
@@ -89,7 +118,14 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
       );
 
       AppNavigator.showSnackBar(loc.eventSaved);
-      if (context.mounted) Navigator.pop(context, event);
+      if (context.mounted) {
+        setState(() {
+          _hasUnsavedChanges = false;
+          _allowPop = true;
+        });
+        await Future<void>.delayed(Duration.zero);
+        if (context.mounted) Navigator.pop(context, event);
+      }
     } on EventSaveException catch (error) {
       final message = switch (error.error) {
         EventSaveError.missingName => loc.eventSaveError,
@@ -120,21 +156,27 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
           appBar: AppBar(
             title: Text(loc.eventAddEdit),
             actions: [
-              TextButton(
-                onPressed: _isSaving ? null : () => _saveEvent(loc),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  disabledForegroundColor: Colors.white70,
+              PopScope(
+                canPop: _allowPop || !_hasUnsavedChanges,
+                onPopInvokedWithResult: (didPop, _) {
+                  if (!didPop) _confirmDiscardChanges(loc);
+                },
+                child: TextButton(
+                  onPressed: _isSaving ? null : () => _saveEvent(loc),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: Colors.white70,
+                  ),
+                  child: _isSaving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(loc.save),
                 ),
-                child: _isSaving
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(loc.save),
               ),
             ],
           ),

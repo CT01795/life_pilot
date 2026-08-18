@@ -40,6 +40,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
 
   // --- 控制器管理 ---
   final Map<String, TextEditingController> controllerMap = {};
+  VoidCallback? onContentChanged;
 
   ControllerPageCalendarAdd({
     required this.auth,
@@ -280,6 +281,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
 
     _initSubControllers(newSub);
 
+    onContentChanged?.call();
     notifyListeners();
   }
 
@@ -307,6 +309,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
       if (shouldRemove) controller.dispose();
       return shouldRemove;
     });
+    onContentChanged?.call();
     notifyListeners();
   }
 
@@ -329,6 +332,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
         subEvents[index].endDate = subEvents[index].startDate;
       }
     }
+    onContentChanged?.call();
     notifyListeners();
   }
 
@@ -353,6 +357,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
         subEvents[index].endTime = subEvents[index].startTime;
       }
     }
+    onContentChanged?.call();
     notifyListeners();
   }
 

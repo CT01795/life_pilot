@@ -404,6 +404,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventSaveFailed => 'Could not save the event. Please try again later';
 
   @override
+  String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
+
+  @override
+  String get discardChanges => 'Discard changes';
+
+  @override
   String get eventAddEdit => 'Add/Edit';
 
   @override

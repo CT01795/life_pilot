@@ -61,6 +61,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
 
   // --- 控制器管理 ---
   final Map<String, TextEditingController> controllerMap = {};
+  VoidCallback? onContentChanged;
 
   ControllerPageEventAdd({
     required this.auth,
@@ -585,6 +586,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
 
     _initSubControllers(newSub);
 
+    onContentChanged?.call();
     notifyListeners();
   }
 
@@ -613,6 +615,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
       if (shouldRemove) controller.dispose();
       return shouldRemove;
     });
+    onContentChanged?.call();
     notifyListeners();
   }
 
@@ -635,6 +638,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
         subEvents[index].endDate = subEvents[index].startDate;
       }
     }
+    onContentChanged?.call();
     notifyListeners();
   }
 
@@ -659,6 +663,7 @@ class ControllerPageEventAdd extends ChangeNotifier {
         subEvents[index].endTime = subEvents[index].startTime;
       }
     }
+    onContentChanged?.call();
     notifyListeners();
   }
 

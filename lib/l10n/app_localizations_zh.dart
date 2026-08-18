@@ -404,6 +404,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventSaveFailed => '活動儲存失敗，請稍後再試';
 
   @override
+  String get unsavedChangesPrompt => '變更尚未儲存，確定要捨棄嗎？';
+
+  @override
+  String get discardChanges => '捨棄變更';
+
+  @override
   String get eventAddEdit => '新增／編輯活動';
 
   @override
