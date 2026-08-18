@@ -7,12 +7,17 @@ import 'package:flutter/material.dart' hide Element;
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:life_pilot/event/event_deduplication_key.dart';
+import 'package:life_pilot/event/event_import_validator.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/duplicate_tolerant_batch_writer.dart';
 import 'package:life_pilot/utils/event_latln.dart';
+import 'package:life_pilot/utils/event_city_normalizer.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ServiceEventPublic {
@@ -74,12 +79,20 @@ class ServiceEventPublic {
     final List<EventItem> newEvents = [];
 
     for (final e in events) {
-      final tmpName = e.name.replaceAll(" ", "").replaceAll("_", "") +
-          DateFormat('yyyy-MM-dd').format(e.startDate!) +
-          e.location;
+      final rejectionReason = EventImportValidator.rejectionReason(
+        event: e,
+        checkedAt: checkedAt,
+      );
+      if (rejectionReason != null) {
+        logger.w(
+          'Skipped invalid imported event: $rejectionReason (${e.name})',
+        );
+        continue;
+      }
 
-      final tmpId =
-          e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location;
+      e.city = EventCityNormalizer.normalize(e.city);
+      final tmpName = EventDeduplicationKey.byName(e);
+      final tmpId = EventDeduplicationKey.byId(e);
 
       if (dbNameDateSet.contains(tmpName) || dbNameDateSet.contains(tmpId)) {
         continue;
@@ -96,9 +109,21 @@ class ServiceEventPublic {
 
     if (newEvents.isNotEmpty) {
       try {
-        await supabase.from(TableNames.recommendEvents).insert(
-              newEvents.map((e) => e.toJson()).toList(),
-            );
+        final rows = newEvents.map((e) => e.toJson()).toList();
+        await DuplicateTolerantBatchWriter.write(
+          items: rows,
+          writeBatch: (items) async {
+            await supabase.from(TableNames.recommendEvents).insert(items);
+          },
+          writeOne: (item) async {
+            await supabase.from(TableNames.recommendEvents).insert(item);
+          },
+          isDuplicateError: (error) =>
+              error is PostgrestException && error.code == '23505',
+          onDuplicate: (item) {
+            logger.i('Skipped duplicate imported event: ${item[Fields.id]}');
+          },
+        );
       } on Exception catch (ex) {
         logger.e(ex);
         rethrow;
@@ -398,27 +423,19 @@ class ServiceEventPublic {
     }).toList();
 
     Set<String> dbNameDateSet = historyList
-        .map((e) =>
-            e.name.replaceAll(" ", "").replaceAll("_", "") +
-            DateFormat('yyyy-MM-dd').format(e.startDate!) +
-            e.location)
+        .map(EventDeduplicationKey.byName)
         .where((name) => name.isNotEmpty)
         .toSet();
     dbNameDateSet.addAll(historyList
-        .map((e) =>
-            e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
+        .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList
-        .map((e) =>
-            e.name.replaceAll(" ", "").replaceAll("_", "") +
-            DateFormat('yyyy-MM-dd').format(e.startDate!) +
-            e.location)
+        .map(EventDeduplicationKey.byName)
         .where((name) => name.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList
-        .map((e) =>
-            e.id + DateFormat('yyyy-MM-dd').format(e.startDate!) + e.location)
+        .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
         .toSet());
     DateTime today = DateUtils.dateOnly(DateTime.now());

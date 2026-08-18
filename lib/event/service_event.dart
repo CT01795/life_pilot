@@ -4,6 +4,7 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
+import 'package:life_pilot/utils/event_city_normalizer.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 
@@ -78,6 +79,12 @@ class ServiceEvent {
       required String tableName}) async {
     try {
       _validateEvent(event: event);
+      if (tableName == TableNames.recommendEvents) {
+        event.city = EventCityNormalizer.normalize(event.city);
+        for (final subEvent in event.subEvents) {
+          subEvent.city = EventCityNormalizer.normalize(subEvent.city);
+        }
+      }
       if ((isNew || event.reminderOptions.isEmpty) &&
           tableName == TableNames.calendarEvents) {
         event.reminderOptions = [
