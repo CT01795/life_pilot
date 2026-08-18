@@ -1418,6 +1418,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password updated. Please sign in with your new password.'**
   String get passwordUpdateSuccessful;
+
+  /// Stock page background update status
+  ///
+  /// In en, this message translates to:
+  /// **'Stock data and model are updating. New results will appear automatically.'**
+  String get stockUpdateInProgress;
+
+  /// Stock page background update success status
+  ///
+  /// In en, this message translates to:
+  /// **'Stock data and model update completed.'**
+  String get stockUpdateSucceeded;
+
+  /// Stock page background update failure status
+  ///
+  /// In en, this message translates to:
+  /// **'The stock update failed. The last available data is still displayed.'**
+  String get stockUpdateFailed;
+
+  /// Stock page empty state
+  ///
+  /// In en, this message translates to:
+  /// **'No stock data is currently available.'**
+  String get stockNoData;
+
+  /// Stock page initial load failure
+  ///
+  /// In en, this message translates to:
+  /// **'Stock data could not be loaded. Please try again.'**
+  String get stockLoadFailed;
+
+  /// Stock page retry button
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get stockRetry;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

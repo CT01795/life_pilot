@@ -669,4 +669,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordUpdateSuccessful => 'Password updated. Please sign in with your new password.';
+
+  @override
+  String get stockUpdateInProgress => 'Stock data and model are updating. New results will appear automatically.';
+
+  @override
+  String get stockUpdateSucceeded => 'Stock data and model update completed.';
+
+  @override
+  String get stockUpdateFailed => 'The stock update failed. The last available data is still displayed.';
+
+  @override
+  String get stockNoData => 'No stock data is currently available.';
+
+  @override
+  String get stockLoadFailed => 'Stock data could not be loaded. Please try again.';
+
+  @override
+  String get stockRetry => 'Try again';
 }

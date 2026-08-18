@@ -669,4 +669,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get passwordUpdateSuccessful => '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.';
+
+  @override
+  String get stockUpdateInProgress => '주식 데이터와 모델을 업데이트하고 있습니다. 완료되면 새 결과가 자동으로 표시됩니다.';
+
+  @override
+  String get stockUpdateSucceeded => '주식 데이터와 모델 업데이트가 완료되었습니다.';
+
+  @override
+  String get stockUpdateFailed => '주식 업데이트에 실패했습니다. 마지막으로 사용 가능한 데이터를 계속 표시합니다.';
+
+  @override
+  String get stockNoData => '현재 표시할 수 있는 주식 데이터가 없습니다.';
+
+  @override
+  String get stockLoadFailed => '주식 데이터를 불러오지 못했습니다. 다시 시도해 주세요.';
+
+  @override
+  String get stockRetry => '다시 불러오기';
 }

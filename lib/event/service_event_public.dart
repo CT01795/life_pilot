@@ -51,28 +51,24 @@ class ServiceEventPublic {
   }
 
   Future<bool> checkEventsUrl(String url, DateTime today) async {
-    // 檢查今日是否已經檢視過
-    bool exists = await checkIfUrlExists(url, today);
-    if (exists) {
-      return false;
-    }
+    return !await checkIfUrlExists(url, today);
+  }
 
-    try {
-      await supabase.from(TableNames.recommendEventUrl).insert({
+  Future<void> _markEventsUrlCompleted(String url, DateTime today) async {
+    await supabase.from(TableNames.recommendEventUrl).upsert(
+      {
         'master_url': url,
         'start_date': today.toUtc().toIso8601String(),
-      });
-      return true;
-    } on Exception catch (ex) {
-      logger.e(ex);
-      return false;
-    }
+      },
+      onConflict: 'master_url,start_date',
+    );
   }
 
   Future<Set<String>> _insertIfNotExists(
     List<EventItem> events,
     Set<String> dbNameDateSet,
     String url,
+    DateTime checkedAt,
   ) async {
     if (events.isEmpty) return dbNameDateSet;
     final List<EventItem> newEvents = [];
@@ -108,6 +104,7 @@ class ServiceEventPublic {
         rethrow;
       }
     }
+    await _markEventsUrlCompleted(url, checkedAt);
     return dbNameDateSet;
   }
 
@@ -436,7 +433,7 @@ class ServiceEventPublic {
 
         //==================================== strolltimesList事件寫入 ====================================
         dbNameDateSet = await _insertIfNotExists(
-            strolltimesList, dbNameDateSet, strolltimesWeekendUrl);
+            strolltimesList, dbNameDateSet, strolltimesWeekendUrl, today);
       } on Exception catch (ex) {
         logger.e(ex);
       }
@@ -452,7 +449,7 @@ class ServiceEventPublic {
               parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
           //==================================== strolltimesList事件寫入 ====================================
           dbNameDateSet = await _insertIfNotExists(
-              strolltimesList, dbNameDateSet, strolltimesEventsUrl);
+              strolltimesList, dbNameDateSet, strolltimesEventsUrl, today);
         }
       } on Exception catch (ex) {
         logger.e(ex);
@@ -488,7 +485,7 @@ class ServiceEventPublic {
 
           //==================================== cloud.culture.tw事件寫入 ====================================
           dbNameDateSet = await _insertIfNotExists(
-              cloudCultureList, dbNameDateSet, cloudCultureUrl);
+              cloudCultureList, dbNameDateSet, cloudCultureUrl, today);
         } on Exception catch (ex) {
           logger.e(ex);
         }
@@ -505,8 +502,8 @@ class ServiceEventPublic {
                 accupassUrl, today, Source.accupass) ??
             [];
 
-        dbNameDateSet =
-            await _insertIfNotExists(accupassList, dbNameDateSet, accupassUrl);
+        dbNameDateSet = await _insertIfNotExists(
+            accupassList, dbNameDateSet, accupassUrl, today);
       } catch (ex) {
         logger.e(ex);
       }
@@ -524,7 +521,7 @@ class ServiceEventPublic {
                   [];
 
           dbNameDateSet = await _insertIfNotExists(
-              paperWindmillList, dbNameDateSet, paperWindmillUrl);
+              paperWindmillList, dbNameDateSet, paperWindmillUrl, today);
         } catch (ex) {
           logger.e(ex);
         }
@@ -542,8 +539,8 @@ class ServiceEventPublic {
           List<EventItem> moclUrlList =
               await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];
 
-          dbNameDateSet =
-              await _insertIfNotExists(moclUrlList, dbNameDateSet, moclUrl);
+          dbNameDateSet = await _insertIfNotExists(
+              moclUrlList, dbNameDateSet, moclUrl, today);
         } catch (ex) {
           logger.e(ex);
         }
@@ -564,7 +561,7 @@ class ServiceEventPublic {
               [];
 
           dbNameDateSet = await _insertIfNotExists(
-              taiwanNetList, dbNameDateSet, taiwanNetUrl);
+              taiwanNetList, dbNameDateSet, taiwanNetUrl, today);
           pageIndex = pageIndex + 1;
           isBreakTime = taiwanNetList.isEmpty && pageIndex >= 15;
         } catch (ex) {
@@ -584,8 +581,8 @@ class ServiceEventPublic {
         List<EventItem> ntpcList =
             await fetchPageEventsNtpc(ntpcUrl, today, Source.ntpc) ?? [];
 
-        dbNameDateSet =
-            await _insertIfNotExists(ntpcList, dbNameDateSet, ntpcUrl);
+        dbNameDateSet = await _insertIfNotExists(
+            ntpcList, dbNameDateSet, ntpcUrl, today);
       } catch (ex) {
         logger.e(ex);
       }
@@ -603,7 +600,7 @@ class ServiceEventPublic {
                 [];
 
         dbNameDateSet = await _insertIfNotExists(
-            taipeiOpenDataList, dbNameDateSet, taipeiOpenDataUrl);
+            taipeiOpenDataList, dbNameDateSet, taipeiOpenDataUrl, today);
       } catch (ex) {
         logger.e(ex);
       }
@@ -612,7 +609,6 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
       String url, DateTime today, String source) async {
-    //final uri = Uri.parse(url);
     final res = await http.get(
       Uri.parse(url),
     );
@@ -620,7 +616,7 @@ class ServiceEventPublic {
       return [];
     }
 
-    final List data = json.decode(res.body); //utf8.decode(res.bodyBytes)
+    final List data = json.decode(res.body);
 
     final uuid = const Uuid();
     List<EventItem> events = [];
@@ -996,7 +992,7 @@ class ServiceEventPublic {
           final detailRes = await apiSupabase
               .post('event/get_url_data', {'url': masterUrl, 'method': 'GET'});
           if (detailRes['status'] == 'ok') {
-            final detailDoc = parse(detailRes.body); //detailRes.body
+            final detailDoc = parse(detailRes['data']);
             final infoTable = detailDoc.querySelector("dl.info-table");
             if (infoTable != null) {
               // 取所有 dt 元素

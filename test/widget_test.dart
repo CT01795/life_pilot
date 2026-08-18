@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/stock/controller_stock.dart';
+import 'package:life_pilot/stock/model_stock.dart';
+import 'package:life_pilot/stock/service_stock.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
 
 void main() {
@@ -37,4 +42,108 @@ void main() {
     expect(exception.toString(), contains('HTTP 500'));
     expect(exception.toString(), contains('stock/select_latest_stock_date'));
   });
+
+  test('ServiceApi sends the token supplied by its session provider', () async {
+    String? authorizationHeader;
+    final client = MockClient((request) async {
+      authorizationHeader = request.headers['Authorization'];
+      return http.Response('{}', 200);
+    });
+    final api = ServiceApi(
+      'https://example.com',
+      accessTokenProvider: () => 'session-token',
+      client: client,
+    );
+
+    await api.post('/stock/predict', {});
+
+    expect(authorizationHeader, 'Bearer session-token');
+  });
+
+  test('ServiceApi prefers an explicitly supplied token', () async {
+    String? authorizationHeader;
+    final client = MockClient((request) async {
+      authorizationHeader = request.headers['Authorization'];
+      return http.Response('{}', 200);
+    });
+    final api = ServiceApi(
+      'https://example.com',
+      accessTokenProvider: () => 'session-token',
+      client: client,
+    );
+
+    await api.post(
+      '/external/weather',
+      {},
+      bearerToken: 'explicit-token',
+    );
+
+    expect(authorizationHeader, 'Bearer explicit-token');
+  });
+
+  test('ServiceApi GET sends the session token', () async {
+    String? requestMethod;
+    String? authorizationHeader;
+    final client = MockClient((request) async {
+      requestMethod = request.method;
+      authorizationHeader = request.headers['Authorization'];
+      return http.Response('{"status":"training"}', 200);
+    });
+    final api = ServiceApi(
+      'https://example.com',
+      accessTokenProvider: () => 'session-token',
+      client: client,
+    );
+
+    final response = await api.get('/stock/model_training_status');
+
+    expect(requestMethod, 'GET');
+    expect(authorizationHeader, 'Bearer session-token');
+    expect(response['status'], 'training');
+  });
+
+  test('ControllerStock handles an empty stock response', () async {
+    final controller = ControllerStock(_EmptyStockService());
+
+    await controller.load();
+
+    expect(controller.loading, isFalse);
+    expect(controller.stocks, isEmpty);
+    expect(controller.updateStatus, StockUpdateStatus.succeeded);
+  });
+
+  test('ControllerStock exposes a retry state when initial sources fail',
+      () async {
+    final controller = ControllerStock(_FailingStockService());
+
+    await controller.load();
+
+    expect(controller.loading, isFalse);
+    expect(controller.loadFailed, isTrue);
+    expect(controller.stocks, isEmpty);
+    expect(controller.updateStatus, StockUpdateStatus.idle);
+  });
+}
+
+class _EmptyStockService extends ServiceStock {
+  @override
+  Future<List<ModelStock>> getSimpleStrategy(String level) async => [];
+
+  @override
+  Future<List<ModelStock>> getSimpleStrategySupabase(String level) async => [];
+
+  @override
+  Future<void> loadRawData() async {}
+}
+
+class _FailingStockService extends ServiceStock {
+  @override
+  Future<List<ModelStock>> getSimpleStrategy(String level) async {
+    throw StateError('local source unavailable');
+  }
+
+  @override
+  Future<List<ModelStock>> getSimpleStrategySupabase(String level) async {
+    throw StateError('remote source unavailable');
+  }
 }

@@ -3,6 +3,8 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
 import 'package:life_pilot/utils/logger.dart';
 
+enum StockUpdateStatus { idle, updating, succeeded, failed }
+
 class ControllerStock extends ChangeNotifier {
   final ServiceStock service;
 
@@ -12,36 +14,73 @@ class ControllerStock extends ChangeNotifier {
   List<ModelInstitutional> foreignBuyTop30 = [];
   List<ModelInstitutional> foreignSellTop30 = [];
   bool loading = true;
+  bool loadFailed = false;
+  StockUpdateStatus updateStatus = StockUpdateStatus.idle;
 
   ControllerStock(this.service);
 
   Future<void> load() async {
     loading = true;
+    loadFailed = false;
+    updateStatus = StockUpdateStatus.idle;
     notifyListeners();
 
-    // 1️⃣ 先顯示現有資料（快速）
-    stocks = await service.getSimpleStrategySupabase("From Supabase 1");
-    await buildDashboard(stocks[0].date);
-    loading = false;
-    notifyListeners();
+    var initialSourceLoaded = false;
 
     // 1️⃣ 先顯示現有資料（快速）
-    stocks = await service.getSimpleStrategy("Updating 2");
-    await buildDashboard(stocks[0].date);
+    try {
+      await _useStocksIfAvailable(
+        await service.getSimpleStrategySupabase("From Supabase 1"),
+      );
+      initialSourceLoaded = true;
+      loading = false;
+      notifyListeners();
+    } catch (ex) {
+      logger.e(ex);
+    }
+
+    // 1️⃣ 先顯示現有資料（快速）
+    try {
+      await _useStocksIfAvailable(
+        await service.getSimpleStrategy("Updating 2"),
+      );
+      initialSourceLoaded = true;
+    } catch (ex) {
+      logger.e(ex);
+    }
+
     loading = false;
+    if (!initialSourceLoaded && stocks.isEmpty) {
+      loadFailed = true;
+      notifyListeners();
+      return;
+    }
+
+    updateStatus = StockUpdateStatus.updating;
     notifyListeners();
 
     try {
       // 2️⃣ 背景更新資料（不阻塞 UI）
       await service.loadRawData();
+      await _useStocksIfAvailable(
+        await service.getSimpleStrategy("Updated 3"),
+      );
     } catch (ex) {
       logger.e(ex);
+      updateStatus = StockUpdateStatus.failed;
+      notifyListeners();
+      return;
     }
     // 3️⃣ 更新完成後，再抓一次（刷新畫面🔥）
-    stocks = await service.getSimpleStrategy("Updated 3");
-    await buildDashboard(stocks[0].date);
-    loading = false;
+    updateStatus = StockUpdateStatus.succeeded;
     notifyListeners();
+  }
+
+  Future<void> _useStocksIfAvailable(List<ModelStock> availableStocks) async {
+    if (availableStocks.isEmpty) return;
+
+    stocks = availableStocks;
+    await buildDashboard(stocks.first.date);
   }
 
   Future<void> buildDashboard(DateTime? date) async {
@@ -61,7 +100,9 @@ class ControllerStock extends ChangeNotifier {
       ),
     );
 
-    foreignBuyTop30 = foreignBuyTop30.where((e) => e.foreignDiff > 0).toList(); //.take(30).toList();
+    foreignBuyTop30 = foreignBuyTop30
+        .where((e) => e.foreignDiff > 0)
+        .toList(); //.take(30).toList();
 
     // ==========
     // 外資賣超 Top30
@@ -74,7 +115,9 @@ class ControllerStock extends ChangeNotifier {
       ),
     );
 
-    foreignSellTop30 = foreignSellTop30.where((e) => e.foreignDiff < 0).toList(); //.take(30).toList();
+    foreignSellTop30 = foreignSellTop30
+        .where((e) => e.foreignDiff < 0)
+        .toList(); //.take(30).toList();
 
     // ==========
     // 期貨未平倉

@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+typedef AccessTokenProvider = String? Function();
+
 class ServiceApiException implements Exception {
   final String path;
   final int? statusCode;
@@ -24,8 +26,15 @@ class ServiceApiException implements Exception {
 class ServiceApi {
   final String baseUrl;
   final Duration timeout;
+  final AccessTokenProvider? accessTokenProvider;
+  final http.Client _client;
 
-  ServiceApi(this.baseUrl, {this.timeout = const Duration(seconds: 20)});
+  ServiceApi(
+    this.baseUrl, {
+    this.timeout = const Duration(seconds: 20),
+    this.accessTokenProvider,
+    http.Client? client,
+  }) : _client = client ?? http.Client();
 
   Uri buildUri(String path) {
     final normalizedBaseUrl = baseUrl.endsWith('/')
@@ -36,25 +45,33 @@ class ServiceApi {
     return Uri.parse('$normalizedBaseUrl/$normalizedPath');
   }
 
-  Future<dynamic> post(
-    String path,
-    Map<String, dynamic> body, {
-    String? bearerToken,
-  }) async {
-    late final http.Response res;
-    final normalizedToken = bearerToken?.trim();
-    final headers = <String, String>{
+  Map<String, String> _headers(String? bearerToken) {
+    final providedToken = bearerToken?.trim();
+    final fallbackToken = accessTokenProvider?.call()?.trim();
+    final normalizedToken = providedToken != null && providedToken.isNotEmpty
+        ? providedToken
+        : fallbackToken;
+
+    return {
       'Content-Type': 'application/json',
       if (normalizedToken != null && normalizedToken.isNotEmpty)
         'Authorization': 'Bearer $normalizedToken',
     };
+  }
+
+  Future<dynamic> get(
+    String path, {
+    String? bearerToken,
+  }) async {
+    late final http.Response res;
 
     try {
-      res = await http.post(
-        buildUri(path),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(timeout);
+      res = await _client
+          .get(
+            buildUri(path),
+            headers: _headers(bearerToken),
+          )
+          .timeout(timeout);
     } on TimeoutException {
       throw ServiceApiException(
         path: path,
@@ -62,6 +79,35 @@ class ServiceApi {
       );
     }
 
+    return _decodeResponse(path, res);
+  }
+
+  Future<dynamic> post(
+    String path,
+    Map<String, dynamic> body, {
+    String? bearerToken,
+  }) async {
+    late final http.Response res;
+
+    try {
+      res = await _client
+          .post(
+            buildUri(path),
+            headers: _headers(bearerToken),
+            body: jsonEncode(body),
+          )
+          .timeout(timeout);
+    } on TimeoutException {
+      throw ServiceApiException(
+        path: path,
+        message: 'Request timed out after ${timeout.inSeconds} seconds',
+      );
+    }
+
+    return _decodeResponse(path, res);
+  }
+
+  dynamic _decodeResponse(String path, http.Response res) {
     if (res.statusCode != 200) {
       throw ServiceApiException(
         path: path,

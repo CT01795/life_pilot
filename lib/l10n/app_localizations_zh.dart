@@ -669,4 +669,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get passwordUpdateSuccessful => '密碼已更新，請使用新密碼登入。';
+
+  @override
+  String get stockUpdateInProgress => '股票資料與模型更新中，完成後會自動顯示新結果。';
+
+  @override
+  String get stockUpdateSucceeded => '股票資料與模型更新完成。';
+
+  @override
+  String get stockUpdateFailed => '股票更新失敗，目前仍顯示上次可用的資料。';
+
+  @override
+  String get stockNoData => '目前沒有可顯示的股票資料。';
+
+  @override
+  String get stockLoadFailed => '股票資料載入失敗，請稍後再試。';
+
+  @override
+  String get stockRetry => '重新載入';
 }

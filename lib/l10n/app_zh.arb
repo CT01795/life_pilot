@@ -447,5 +447,17 @@
   "hidePassword": "隱藏密碼",
   "@hidePassword": {"description": "Tooltip for hiding a password"},
   "passwordUpdateSuccessful": "密碼已更新，請使用新密碼登入。",
-  "@passwordUpdateSuccessful": {"description": "Message shown after a successful password update"}
+  "@passwordUpdateSuccessful": {"description": "Message shown after a successful password update"},
+  "stockUpdateInProgress": "股票資料與模型更新中，完成後會自動顯示新結果。",
+  "@stockUpdateInProgress": {"description": "Stock page background update status"},
+  "stockUpdateSucceeded": "股票資料與模型更新完成。",
+  "@stockUpdateSucceeded": {"description": "Stock page background update success status"},
+  "stockUpdateFailed": "股票更新失敗，目前仍顯示上次可用的資料。",
+  "@stockUpdateFailed": {"description": "Stock page background update failure status"},
+  "stockNoData": "目前沒有可顯示的股票資料。",
+  "@stockNoData": {"description": "Stock page empty state"},
+  "stockLoadFailed": "股票資料載入失敗，請稍後再試。",
+  "@stockLoadFailed": {"description": "Stock page initial load failure"},
+  "stockRetry": "重新載入",
+  "@stockRetry": {"description": "Stock page retry button"}
 }

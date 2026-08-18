@@ -7,8 +7,11 @@ from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
 import logging
 import sys
-from fastapi import APIRouter, BackgroundTasks, Body
+from threading import Lock
+
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
 from config import engine, SessionLocal
+from security.supabase_auth import require_supabase_admin
 from stock.model_stock_institutional import create_stock_institutional_model
 from stock.model_futures_institutional import create_futures_institutional_model
 from stock.train_model import train_and_save_model
@@ -21,7 +24,60 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_supabase_admin)])
+_model_training_lock = Lock()
+_model_training_state_lock = Lock()
+_model_training_state = {
+    "status": "idle",
+    "started_at": None,
+    "finished_at": None,
+}
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(ZoneInfo("UTC")).isoformat()
+
+
+def _set_model_training_state(
+    status: str,
+    *,
+    started_at: str | None = None,
+    finished_at: str | None = None,
+):
+    with _model_training_state_lock:
+      _model_training_state.update({
+          "status": status,
+          "started_at": started_at,
+          "finished_at": finished_at,
+      })
+
+
+def _get_model_training_state() -> dict:
+    with _model_training_state_lock:
+      return dict(_model_training_state)
+
+
+def _run_model_training():
+    try:
+      train_and_save_model()
+      current_state = _get_model_training_state()
+      _set_model_training_state(
+          "succeeded",
+          started_at=current_state["started_at"],
+          finished_at=_utc_now_iso(),
+      )
+    except Exception:
+      current_state = _get_model_training_state()
+      _set_model_training_state(
+          "failed",
+          started_at=current_state["started_at"],
+          finished_at=_utc_now_iso(),
+      )
+      raise
+    finally:
+      _model_training_lock.release()
+
+
 @router.post(
       "/stock/delete_stock_daily_price"
       , summary="刪除指定日期的股票每日價格數據"
@@ -32,7 +88,6 @@ def route_delete_stock_daily_price(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
-    print("route_delete_stock_daily_price DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       db.query(StockModel).filter(StockModel.date <= date.date()).delete(synchronize_session=False)
@@ -51,7 +106,6 @@ def route_delete_stock_date(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
-    print("route_delete_stock_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       db.query(StockModel).filter(StockModel.date <= date.date()).delete(synchronize_session=False)
@@ -70,7 +124,6 @@ def route_insert_stock_daily_price_batch(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     stocks_data = payload.get("stocks")
     db: Session = SessionLocal()
-    print("route_insert_stock_daily_price_batch DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       # 取得 model 欄位
@@ -131,7 +184,6 @@ def route_insert_stock_institutional_batch(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     stocks_institutional_data = payload.get("stocks")
     db: Session = SessionLocal()
-    print("route_insert_stock_institutional_batch DB_URL =", engine.url)
     try:
       StockInstitutionalModel = create_stock_institutional_model(table_name)
       # 取得 model 欄位
@@ -207,7 +259,6 @@ def route_insert_futures_institutional_batch(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     futures_institutional_data = payload.get("futures")
     db: Session = SessionLocal()
-    print("route_insert_futures_institutional_batch DB_URL =", engine.url)
     try:
       FuturesInstitutionalModel = create_futures_institutional_model(table_name)
       # 取得 model 欄位
@@ -249,7 +300,6 @@ def route_insert_stock_date_batch(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     stocks_data = payload.get("stocks")
     db: Session = SessionLocal()
-    print("route_insert_stock_date_batch DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       for stock_data in stocks_data:
@@ -279,7 +329,6 @@ def route_check_stock_date(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date"))
     type = payload.get("type")
     db: Session = SessionLocal()
-    print("route_check_stock_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.type == type)
@@ -299,7 +348,6 @@ def route_select_stock_daily_price_by_date(payload: dict = Body(...)):
     date = datetime.fromisoformat(payload.get("date"))
     traded_number = payload.get("traded_number")
     db: Session = SessionLocal()
-    print("route_select_stock_daily_price_by_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.traded_number >= traded_number).filter(StockModel.closing_price >= 12).filter(StockModel.closing_price < 1000)
@@ -326,7 +374,6 @@ def route_select_latest_stock_date(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     type = payload.get("type")
     db: Session = SessionLocal()
-    print("route_select_latest_stock_date DB_URL =", engine.url)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(StockModel.type == type).order_by(StockModel.date.desc())
@@ -352,10 +399,7 @@ def route_select_stock_predicted(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
     db: Session = SessionLocal()
-    print("route_select_stock_predicted DB_URL =", engine.url)
     try:
-      print("select_stock_predicted")
-      print(date)
       StockPredictedModel = create_stock_predicted_model(table_name)
       result = db.query(StockPredictedModel).filter(func.date(StockPredictedModel.date) == date.date())
       stockPredicted = result.first()
@@ -375,8 +419,6 @@ def route_select_stock_quantitative_count(payload: dict = Body(...)):
     table_name = payload.get("table_name")
     date = datetime.fromisoformat(payload.get("date"))
     db: Session = SessionLocal()
-    print("route_select_stock_quantitative_count DB_URL =", engine.url)
-    print("date =", date)
     try:
       StockModel = create_stock_model(table_name)
       result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(
@@ -405,7 +447,6 @@ def route_update_stock_technical_for_date(payload: dict = Body(...)):
     p_date = datetime.fromisoformat(payload.get("p_date")).astimezone(ZoneInfo("UTC"))
     p_start = payload.get("p_start")
     p_end = payload.get("p_end")
-    print("route_update_stock_technical_for_date DB_URL =", engine.url)
     with engine.begin() as conn:
         conn.execute(
             text("SELECT update_stock_technical_for_date(:p_date, :p_start, :p_end)"),
@@ -422,9 +463,38 @@ def route_update_stock_technical_for_date(payload: dict = Body(...)):
       , summary="於背景訓練模型"
       , description="於背景訓練模型")
 def route_update_model(background_tasks: BackgroundTasks):
+    if not _model_training_lock.acquire(blocking=False):
+      raise HTTPException(
+          status_code=409,
+          detail="Model training is already in progress",
+      )
+
+    _set_model_training_state(
+        "training",
+        started_at=_utc_now_iso(),
+        finished_at=None,
+    )
     logging.info("update_model started")
-    background_tasks.add_task(train_and_save_model)
+    try:
+      background_tasks.add_task(_run_model_training)
+    except Exception:
+      current_state = _get_model_training_state()
+      _set_model_training_state(
+          "failed",
+          started_at=current_state["started_at"],
+          finished_at=_utc_now_iso(),
+      )
+      _model_training_lock.release()
+      raise
     return {"message": "Model training started in background"}
+
+
+@router.get(
+      "/stock/model_training_status"
+      , summary="查詢模型訓練狀態"
+      , description="查詢最近一次模型訓練的執行狀態")
+def route_model_training_status():
+    return _get_model_training_state()
 
 @router.post(
       "/stock/backtest_model"

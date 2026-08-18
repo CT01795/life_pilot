@@ -1,4 +1,5 @@
 import json
+from time import perf_counter
 
 from config import engine
 import pandas as pd
@@ -12,6 +13,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+
+logger = logging.getLogger(__name__)
 
 def prepare_stock_data(df: pd.DataFrame, is_train=True) -> pd.DataFrame:
     """
@@ -174,12 +177,13 @@ def train_model():
     return model
 
 def train_and_save_model():
+    started_at = perf_counter()
+    logger.info("Model training started")
     try:
-        logging.info("train_and_save_model started")
         model = train_model()
-        logging.info("train_and_save_model model get")
+        logger.info("Buy model training completed")
         model2 = train_sell_model()
-        logging.info("train_and_save_model model2 get")
+        logger.info("Sell model training completed")
 
         # 取得最新日期資料
         query = """
@@ -191,6 +195,9 @@ def train_and_save_model():
         """
         df = pd.read_sql(query, engine)
         if df.empty:
+            logger.warning(
+                "Model training stopped: no prediction data available"
+            )
             return {"stocks": [], "message": "No data available"}
 
         df = prepare_stock_data(df, is_train=False)
@@ -282,6 +289,7 @@ def train_and_save_model():
         latest_date = df['date'].max()
 
         if recommended.empty:
+            logger.warning("Model training stopped: no stocks recommended")
             return {"message": "No recommended"}
 
         insert_sql = text("""
@@ -311,9 +319,15 @@ def train_and_save_model():
                 """),
                 {"date": latest_date.to_pydatetime(), "data": json.dumps(data_json)}
             )
-            logging.info(f"✅ Saved prediction for {latest_date}")
-            return data_json
-    except Exception as e:
-        logging.info(f"Error during training: {e}")
-    finally:
-        logging.info("train_and_save_model ended")
+        logger.info(
+            "Model training completed successfully for %s in %.1f seconds",
+            latest_date,
+            perf_counter() - started_at,
+        )
+        return data_json
+    except Exception:
+        logger.exception(
+            "Model training failed after %.1f seconds",
+            perf_counter() - started_at,
+        )
+        raise

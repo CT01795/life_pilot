@@ -517,6 +517,10 @@ async def weather_forecast(
         )
         return persistent_response
 
+    cached_response = _get_cached_weather(cache_key)
+    if cached_response is not None:
+        return cached_response
+
     in_flight = _weather_in_flight.get(cache_key)
     if in_flight is None:
         in_flight = asyncio.create_task(

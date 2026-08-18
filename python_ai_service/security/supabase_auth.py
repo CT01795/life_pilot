@@ -2,11 +2,12 @@ import os
 from typing import Annotated, Any
 
 import httpx
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 
 
 AUTH_TIMEOUT_SECONDS = 8.0
 MAX_AUTHORIZATION_LENGTH = 4096
+ADMIN_ROLE = "admin"
 
 
 def _get_supabase_config() -> tuple[str, str]:
@@ -71,5 +72,21 @@ async def require_supabase_user(
 
     if not isinstance(user, dict) or not user.get("id"):
         raise _unauthorized()
+
+    return user
+
+
+def require_supabase_admin(
+    user: Annotated[dict[str, Any], Depends(require_supabase_user)],
+) -> dict[str, Any]:
+    app_metadata = user.get("app_metadata")
+    if (
+        not isinstance(app_metadata, dict)
+        or app_metadata.get("role") != ADMIN_ROLE
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator access required",
+        )
 
     return user

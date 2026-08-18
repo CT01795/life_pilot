@@ -1,6 +1,7 @@
 // lib/pages/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/stock/controller_stock.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
@@ -20,16 +21,27 @@ class PageStock extends StatelessWidget {
           if (controller.loading) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (controller.loadFailed && controller.stocks.isEmpty) {
+            return _buildLoadFailure(context, controller);
+          }
 
           return ListView(
             padding: const EdgeInsets.all(8),
             children: [
+              if (controller.updateStatus != StockUpdateStatus.idle) ...[
+                _buildUpdateStatus(context, controller.updateStatus),
+                Gaps.h8,
+              ],
 
               /// =========================
               /// 📊 DASHBOARD（放最上面）
               /// =========================
-              _buildDashboard(controller),
-              Gaps.h8,
+              if (controller.stocks.isEmpty)
+                _buildEmptyState(context)
+              else ...[
+                _buildDashboard(controller),
+                Gaps.h8,
+              ],
 
               /// =========================
               /// 📈 STOCK LIST
@@ -44,6 +56,108 @@ class PageStock extends StatelessWidget {
   }
 }
 
+Widget _buildLoadFailure(
+  BuildContext context,
+  ControllerStock controller,
+) {
+  final loc = AppLocalizations.of(context)!;
+
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off, size: 48, color: Colors.red),
+          Gaps.h8,
+          Text(
+            loc.stockLoadFailed,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          Gaps.h16,
+          FilledButton.icon(
+            onPressed: controller.load,
+            icon: const Icon(Icons.refresh),
+            label: Text(loc.stockRetry),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildEmptyState(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 48),
+    child: Column(
+      children: [
+        const Icon(Icons.query_stats, size: 48, color: Colors.grey),
+        Gaps.h8,
+        Text(
+          loc.stockNoData,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildUpdateStatus(BuildContext context, StockUpdateStatus status) {
+  final loc = AppLocalizations.of(context)!;
+  final (icon, color, message) = switch (status) {
+    StockUpdateStatus.updating => (
+        Icons.sync,
+        Colors.blue,
+        loc.stockUpdateInProgress,
+      ),
+    StockUpdateStatus.succeeded => (
+        Icons.check_circle_outline,
+        Colors.green,
+        loc.stockUpdateSucceeded,
+      ),
+    StockUpdateStatus.failed => (
+        Icons.error_outline,
+        Colors.red,
+        loc.stockUpdateFailed,
+      ),
+    StockUpdateStatus.idle => (
+        Icons.info_outline,
+        Colors.grey,
+        '',
+      ),
+  };
+
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.1),
+      border: Border.all(color: color.withValues(alpha: 0.4)),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        if (status == StockUpdateStatus.updating)
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: color,
+            ),
+          )
+        else
+          Icon(icon, color: color),
+        Gaps.w8,
+        Expanded(child: Text(message)),
+      ],
+    ),
+  );
+}
+
 Widget _buildDashboard(ControllerStock c) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,227 +167,232 @@ Widget _buildDashboard(ControllerStock c) {
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
       Gaps.h8,
-      ...c.futures.map( //.take(30).map(
-            (e) => RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: "${e.productName?.trim()} ${e.identityType?.trim()} ",
-                    ),
-                    TextSpan(
-                      text: "${NumberFormat('#,##0').format(e.oiNetQty)} ",
-                      style: TextStyle(
-                        color: (e.oiNetQty ?? 0) >= 0 ? Colors.red : Colors.green,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: "Net:",
-                    ),
-                    TextSpan(
-                      text: "${NumberFormat('#,##0').format(e.oiNetQtyDiff)} ",
-                      style: TextStyle(
-                        color: (e.oiNetQtyDiff ?? 0) > 0 ? Colors.red : Colors.green,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+      ...c.futures.map(
+        //.take(30).map(
+        (e) => RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 20,
+              color: Colors.black,
+            ),
+            children: [
+              TextSpan(
+                text: "${e.productName?.trim()} ${e.identityType?.trim()} ",
+              ),
+              TextSpan(
+                text: "${NumberFormat('#,##0').format(e.oiNetQty)} ",
+                style: TextStyle(
+                  color: (e.oiNetQty ?? 0) >= 0 ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+              TextSpan(
+                text: "Net:",
+              ),
+              TextSpan(
+                text: "${NumberFormat('#,##0').format(e.oiNetQtyDiff)} ",
+                style: TextStyle(
+                  color: (e.oiNetQtyDiff ?? 0) > 0 ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       Gaps.h32,
       Text("外資買超 Top30"),
-      ...c.foreignBuyTop30.map( //.take(30).map(
-            (e) => RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
-                    ),
-                    TextSpan(
-                      text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: "Net:",
-                    ),
-                    TextSpan(
-                      text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
-                      style: TextStyle(
-                        color: e.foreignDiff < e.totalDiff ? Colors.red : Colors.blue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: "仟張",
-                    ),
-                  ],
+      ...c.foreignBuyTop30.map(
+        //.take(30).map(
+        (e) => RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 20,
+              color: Colors.black,
+            ),
+            children: [
+              TextSpan(
+                text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
+              ),
+              TextSpan(
+                text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+              TextSpan(
+                text: "Net:",
+              ),
+              TextSpan(
+                text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
+                style: TextStyle(
+                  color: e.foreignDiff < e.totalDiff ? Colors.red : Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const TextSpan(
+                text: "仟張",
+              ),
+            ],
+          ),
+        ),
+      ),
       Gaps.h8,
       Text("外資賣超 Top30"),
-      ...c.foreignSellTop30.map( //.take(30).map(
-            (e) => RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
-                    ),
-                    TextSpan(
-                      text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: "Net:",
-                    ),
-                    TextSpan(
-                      text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
-                      style: TextStyle(
-                        color: e.foreignDiff > e.totalDiff ? Colors.green : Colors.blue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: "仟張",
-                    ),
-                  ],
+      ...c.foreignSellTop30.map(
+        //.take(30).map(
+        (e) => RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 20,
+              color: Colors.black,
+            ),
+            children: [
+              TextSpan(
+                text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
+              ),
+              TextSpan(
+                text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+              TextSpan(
+                text: "Net:",
+              ),
+              TextSpan(
+                text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
+                style: TextStyle(
+                  color:
+                      e.foreignDiff > e.totalDiff ? Colors.green : Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const TextSpan(
+                text: "仟張",
+              ),
+            ],
+          ),
+        ),
+      ),
     ],
   );
 }
 
 Widget _buildStockCard(ModelStock stock, int index) {
   bool isUp = stock.change != null && stock.change!.contains("+");
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// 🔹 第一行：股號 + 名稱（可點擊）
-            GestureDetector(
-              onTap: () async {
-                final url = Uri.parse(
-                    "https://tw.stock.yahoo.com/quote/${stock.securityCode}");
+  return Card(
+    elevation: 2,
+    margin: const EdgeInsets.symmetric(vertical: 6),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// 🔹 第一行：股號 + 名稱（可點擊）
+          GestureDetector(
+            onTap: () async {
+              final url = Uri.parse(
+                  "https://tw.stock.yahoo.com/quote/${stock.securityCode}");
 
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url,
-                      mode: LaunchMode.externalApplication);
-                }
-              },
-              child: Row(
-                children: [
-                  Text(
-                    "${index + 1}. ",
-                  ),
-                  Gaps.w8,
-                  Text(
-                    stock.securityCode,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                  Gaps.w8,
-                  Expanded(
-                    child: Text(
-                      "${stock.securityName} ${stock.signalText ?? ''} ${stock.predPct?.toStringAsFixed(2) ?? ""}",
-                      style: TextStyle(
-                        color: stock.signal == 1
-                            ? Colors.red
-                            : (stock.signal == -1 ? Colors.green : Colors.black),
-                        fontWeight: stock.signal != 0
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Gaps.h8,
-
-            /// 🔹 第二行：收盤價 + 漲跌
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            child: Row(
               children: [
                 Text(
-                  "收盤價: ${NumberFormat('#,##0.00').format(stock.closingPrice)}",
+                  "${index + 1}. ",
+                ),
+                Gaps.w8,
+                Text(
+                  stock.securityCode,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
                   ),
                 ),
                 Gaps.w8,
-                Text(
-                  "${stock.pctChange?.toStringAsFixed(2)}%",
-                  style: TextStyle(
-                    color: isUp || (stock.pctChange ?? 0) > 0? Colors.red : Colors.green,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    "${stock.securityName} ${stock.signalText ?? ''} ${stock.predPct?.toStringAsFixed(2) ?? ""}",
+                    style: TextStyle(
+                      color: stock.signal == 1
+                          ? Colors.red
+                          : (stock.signal == -1 ? Colors.green : Colors.black),
+                      fontWeight: stock.signal != 0
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
                   ),
                 ),
-                Gaps.w8,
-                if (stock.peRatio != null && stock.peRatio != 0)
-                    Text("P/E: ${stock.peRatio}"),
               ],
             ),
-            Gaps.h8,
+          ),
+          Gaps.h8,
 
-            /// 🔹 第三行：其他資訊
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "RSI: ${stock.rsi?.toStringAsFixed(2)}",
-                  style: TextStyle(
-                    color: stock.rsi == null || stock.rsi! < 50
-                        ? Colors.green
-                        : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
+          /// 🔹 第二行：收盤價 + 漲跌
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "收盤價: ${NumberFormat('#,##0.00').format(stock.closingPrice)}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
                 ),
-                Gaps.w8,
-                Text(
-                  "成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}",
+              ),
+              Gaps.w8,
+              Text(
+                "${stock.pctChange?.toStringAsFixed(2)}%",
+                style: TextStyle(
+                  color: isUp || (stock.pctChange ?? 0) > 0
+                      ? Colors.red
+                      : Colors.green,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-            Gaps.h8,
+              ),
+              Gaps.w8,
+              if (stock.peRatio != null && stock.peRatio != 0)
+                Text("P/E: ${stock.peRatio}"),
+            ],
+          ),
+          Gaps.h8,
 
-            /// 🔹 第四行：其他資訊
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "${DateFormat('M/d').format(stock.date)} ${stock.level ?? ''}",
+          /// 🔹 第三行：其他資訊
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "RSI: ${stock.rsi?.toStringAsFixed(2)}",
+                style: TextStyle(
+                  color: stock.rsi == null || stock.rsi! < 50
+                      ? Colors.green
+                      : Colors.red,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              Gaps.w8,
+              Text(
+                "成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}",
+              ),
+            ],
+          ),
+          Gaps.h8,
+
+          /// 🔹 第四行：其他資訊
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "${DateFormat('M/d').format(stock.date)} ${stock.level ?? ''}",
+              ),
+            ],
+          ),
+        ],
       ),
-    );
+    ),
+  );
 }

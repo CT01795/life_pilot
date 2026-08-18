@@ -1,4 +1,5 @@
 // lib/services/stock_service.dart
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart' hide Element;
@@ -7,8 +8,12 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/service/service_api.dart';
 
 class ServiceStock {
+  static const _modelTrainingPollInterval = Duration(seconds: 10);
+  static const _modelTrainingTimeout = Duration(hours: 2);
+
   List<ModelStock> stocks = [];
   int? stocksLength;
   Future<void> loadRawData() async {
@@ -371,13 +376,11 @@ class ServiceStock {
   Future<List<ModelInstitutional>> selectStockInstitutional(
       DateTime date) async {
     try {
-      final result = await supabase
-          .from(TableNames.stockInstitutional)
-          .select()
-          .eq(
-            'date',
-            DateFormat('yyyy-MM-dd').format(date),
-          );
+      final result =
+          await supabase.from(TableNames.stockInstitutional).select().eq(
+                'date',
+                DateFormat('yyyy-MM-dd').format(date),
+              );
 
       return (result as List)
           .map<ModelInstitutional>(
@@ -474,7 +477,7 @@ class ServiceStock {
     DateTime tmpDate = date;
     List result2 = [];
     try {
-      while(result2.isEmpty) {
+      while (result2.isEmpty) {
         tmpDate = tmpDate.subtract(Duration(days: 1));
         result2 = await apiSupabase.post('stock/select_futures_institutional', {
           'date': DateFormat('yyyy-MM-dd').format(tmpDate),
@@ -484,34 +487,41 @@ class ServiceStock {
       logger.e(ex);
     }
 
-     final Map<String, int> yesterdayMap = {
+    final Map<String, int> yesterdayMap = {
       for (var e in result2)
         "${e['product_name']}_${e['identity_type']}": e['oi_net_qty'] ?? 0,
     };
 
     return result.where((e) {
-        if (!['臺股期貨','小型臺指期貨','微型臺指期貨','金融期貨','小型金融期貨','電子期貨','小型電子期貨','非金電期貨'].contains(e['product_name'])) {
-          return false;
-        } 
-        final key = "${e['product_name']}_${e['identity_type']}";
+      if (![
+        '臺股期貨',
+        '小型臺指期貨',
+        '微型臺指期貨',
+        '金融期貨',
+        '小型金融期貨',
+        '電子期貨',
+        '小型電子期貨',
+        '非金電期貨'
+      ].contains(e['product_name'])) {
+        return false;
+      }
+      final key = "${e['product_name']}_${e['identity_type']}";
 
-        final todayQty = e['oi_net_qty'] ?? 0;
-        final yQty = yesterdayMap[key] ?? 0;
-        final diff = todayQty - yQty;
-        return !(todayQty.abs() < 200 && diff.abs() < 200);
-      })
-      .map<ModelFuture>((e) {
-        final key = "${e['product_name']}_${e['identity_type']}";
+      final todayQty = e['oi_net_qty'] ?? 0;
+      final yQty = yesterdayMap[key] ?? 0;
+      final diff = todayQty - yQty;
+      return !(todayQty.abs() < 200 && diff.abs() < 200);
+    }).map<ModelFuture>((e) {
+      final key = "${e['product_name']}_${e['identity_type']}";
 
-        final todayQty = (e['oi_net_qty'] ?? 0) as num;
-        final yQty = (yesterdayMap[key] ?? 0) as num;
+      final todayQty = (e['oi_net_qty'] ?? 0) as num;
+      final yQty = (yesterdayMap[key] ?? 0) as num;
 
-        return ModelFuture.fromJson({
-          ...e,
-          "oi_net_qty_diff": todayQty - yQty,
-        });
-      })
-      .toList();
+      return ModelFuture.fromJson({
+        ...e,
+        "oi_net_qty_diff": todayQty - yQty,
+      });
+    }).toList();
   }
 
   Future<bool> isDataExist(DateTime date, String type) async {
@@ -757,7 +767,12 @@ class ServiceStock {
         }
       ],
     });
-    await api.post('stock/update_model', {});
+    try {
+      await api.post('stock/update_model', {});
+    } on ServiceApiException catch (error) {
+      if (error.statusCode != 409) rethrow;
+    }
+    await _waitForModelTraining();
 
     await apiSupabase.post('stock/insert_stock_date_batch', {
       'table_name': TableNames.stockDate,
@@ -779,6 +794,30 @@ class ServiceStock {
     }
   }
 
+  Future<void> _waitForModelTraining() async {
+    final deadline = DateTime.now().add(_modelTrainingTimeout);
+
+    while (DateTime.now().isBefore(deadline)) {
+      final response = await api.get('stock/model_training_status');
+      final status = response['status']?.toString();
+
+      if (status == 'succeeded') return;
+      if (status == 'failed') {
+        throw StateError('Model training failed');
+      }
+      if (status != 'training') {
+        throw StateError('Unexpected model training status: $status');
+      }
+
+      await Future<void>.delayed(_modelTrainingPollInterval);
+    }
+
+    throw TimeoutException(
+      'Model training did not finish within '
+      '${_modelTrainingTimeout.inMinutes} minutes',
+    );
+  }
+
   Future<void> insertFromApi(List<ModelStock> stocks, DateTime date) async {
     // 檢查同一天是否已經有資料
     final existing = await apiSupabase.post('stock/select_stock_predicted', {
@@ -789,16 +828,11 @@ class ServiceStock {
       return;
     }
 
-    await supabase
-      .from(TableNames.stockPredicted)
-      .insert({
-        'date': date.toUtc().toIso8601String(),
-        'data': stocks
-            .map((stock) => stock.toJsonPred())
-            .toList(),
-        Fields.createdAt: DateTime.now()
-            .toUtc().toIso8601String(),
-      });
+    await supabase.from(TableNames.stockPredicted).insert({
+      'date': date.toUtc().toIso8601String(),
+      'data': stocks.map((stock) => stock.toJsonPred()).toList(),
+      Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
+    });
   }
 }
 

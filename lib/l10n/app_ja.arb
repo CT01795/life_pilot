@@ -447,5 +447,17 @@
   "hidePassword": "パスワードを非表示",
   "@hidePassword": {"description": "Tooltip for hiding a password"},
   "passwordUpdateSuccessful": "パスワードを更新しました。新しいパスワードでログインしてください。",
-  "@passwordUpdateSuccessful": {"description": "Message shown after a successful password update"}
+  "@passwordUpdateSuccessful": {"description": "Message shown after a successful password update"},
+  "stockUpdateInProgress": "株式データとモデルを更新しています。完了後、新しい結果が自動的に表示されます。",
+  "@stockUpdateInProgress": {"description": "Stock page background update status"},
+  "stockUpdateSucceeded": "株式データとモデルの更新が完了しました。",
+  "@stockUpdateSucceeded": {"description": "Stock page background update success status"},
+  "stockUpdateFailed": "株式データの更新に失敗しました。前回利用可能なデータを表示しています。",
+  "@stockUpdateFailed": {"description": "Stock page background update failure status"},
+  "stockNoData": "現在表示できる株式データはありません。",
+  "@stockNoData": {"description": "Stock page empty state"},
+  "stockLoadFailed": "株式データを読み込めませんでした。もう一度お試しください。",
+  "@stockLoadFailed": {"description": "Stock page initial load failure"},
+  "stockRetry": "再読み込み",
+  "@stockRetry": {"description": "Stock page retry button"}
 }

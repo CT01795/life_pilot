@@ -669,4 +669,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get passwordUpdateSuccessful => 'パスワードを更新しました。新しいパスワードでログインしてください。';
+
+  @override
+  String get stockUpdateInProgress => '株式データとモデルを更新しています。完了後、新しい結果が自動的に表示されます。';
+
+  @override
+  String get stockUpdateSucceeded => '株式データとモデルの更新が完了しました。';
+
+  @override
+  String get stockUpdateFailed => '株式データの更新に失敗しました。前回利用可能なデータを表示しています。';
+
+  @override
+  String get stockNoData => '現在表示できる株式データはありません。';
+
+  @override
+  String get stockLoadFailed => '株式データを読み込めませんでした。もう一度お試しください。';
+
+  @override
+  String get stockRetry => '再読み込み';
 }
