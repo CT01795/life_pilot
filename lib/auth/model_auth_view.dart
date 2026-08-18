@@ -27,7 +27,7 @@ class ModelAuthView extends ChangeNotifier {
 
   Future<void> initialize() => _auth.initialize();
   Future<void> checkLoginStatus() => _auth.checkLoginStatus();
-  Future<void> logout() => _auth.logout();
+  Future<String?> logout() => _auth.logout();
   Future<String?> login({required String email, required String password}) =>
       _auth.login(email: email, password: password);
 

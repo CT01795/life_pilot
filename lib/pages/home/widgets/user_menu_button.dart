@@ -7,6 +7,7 @@ import 'package:life_pilot/feedback/controller_feedback.dart';
 import 'package:life_pilot/feedback/page_feedback.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,7 +33,7 @@ class UserMenuButton extends StatelessWidget {
       tooltip: loc.userMenuButton,
       color: const Color(0xFF0066CC), // 改成跟 LanguageToggleDropdown 一樣
       constraints: const BoxConstraints(minWidth: 320, maxWidth: 360),
-      onSelected: (value) {
+      onSelected: (value) async {
         switch (value) {
           case "feedback":
             _openFeedback(context);
@@ -56,7 +57,12 @@ class UserMenuButton extends StatelessWidget {
             _requestDataExport(context, auth.account!, loc);
             break;
           case "logout":
-            auth.logout.call();
+            final error = await auth.logout();
+            if (error != null && context.mounted) {
+              AppNavigator.showErrorBar(
+                auth.showLoginError(message: error, loc: loc),
+              );
+            }
             break;
         }
       },

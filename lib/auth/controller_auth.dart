@@ -131,10 +131,14 @@ class ControllerAuth extends ChangeNotifier {
           () => ServiceAuth.register(email: email, password: password));
 
   // -------------------- 登出 --------------------
-  Future<void> logout() async {
+  Future<String?> logout() async {
     _update(() => _isLoading = true, notify: false);
 
-    await ServiceAuth.logout();
+    final error = await ServiceAuth.logout();
+    if (error != null) {
+      _update(() => _isLoading = false);
+      return error;
+    }
 
     if (_currentAccount != null && !_isAnonymous) {
       _registerMap[AuthConstants.email] = _currentAccount!;
@@ -151,6 +155,7 @@ class ControllerAuth extends ChangeNotifier {
     controllerCalendar?.clearAll(); // 🧹 登出也清除資料
 
     _update(() => _isLoading = false);
+    return null;
   }
 
   // -------------------- 忘記密碼 --------------------

@@ -83,7 +83,13 @@ class _PageResetPasswordState extends State<PageResetPassword> {
       if (!mounted) {
         return;
       }
-      await _authView.logout();
+      final logoutError = await _authView.logout();
+      if (logoutError != null) {
+        AppNavigator.showErrorBar(
+          _authView.showLoginError(message: logoutError, loc: loc),
+        );
+        return;
+      }
       AppNavigator.showSnackBar(loc.passwordUpdateSuccessful);
     } catch (e) {
       logger.e('Reset Password Error: $e');
@@ -99,7 +105,13 @@ class _PageResetPasswordState extends State<PageResetPassword> {
     if (!mounted || _isSubmitting) return;
     setState(() => _isSubmitting = true);
     try {
-      await _authView.logout();
+      final error = await _authView.logout();
+      if (error != null && mounted) {
+        final loc = AppLocalizations.of(context)!;
+        AppNavigator.showErrorBar(
+          _authView.showLoginError(message: error, loc: loc),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
