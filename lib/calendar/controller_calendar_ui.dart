@@ -48,8 +48,10 @@ Future<void> onEditPressed({
       ),
     ),
   );
+  if (updatedEvent == null || !context.mounted) return;
 
   await controller.onEditEvent(event: event, updatedEvent: updatedEvent);
+  if (!context.mounted) return;
 
   if (Navigator.of(context).canPop()) {
     Navigator.of(context).pop(); // 只有確定更新才關閉外層 dialog
