@@ -410,6 +410,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get retry => '다시 시도';
 
   @override
+  String get externalLinkOpenFailed => '링크를 열 수 없습니다. 잠시 후 다시 시도해 주세요';
+
+  @override
   String get unsavedChangesPrompt => '변경 사항이 저장되지 않았습니다. 취소하시겠습니까?';
 
   @override

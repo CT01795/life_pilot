@@ -273,6 +273,8 @@
   "@dashboardLoadFailed": {"description": "Shown when a dashboard section cannot be loaded"},
   "retry": "重試",
   "@retry": {"description": "Retry button label"},
+  "externalLinkOpenFailed": "無法開啟連結，請稍後再試",
+  "@externalLinkOpenFailed": {"description": "Shown when an external website or map cannot be opened"},
   "unsavedChangesPrompt": "變更尚未儲存，確定要捨棄嗎？",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "捨棄變更",

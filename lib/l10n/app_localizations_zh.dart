@@ -410,6 +410,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retry => '重試';
 
   @override
+  String get externalLinkOpenFailed => '無法開啟連結，請稍後再試';
+
+  @override
   String get unsavedChangesPrompt => '變更尚未儲存，確定要捨棄嗎？';
 
   @override

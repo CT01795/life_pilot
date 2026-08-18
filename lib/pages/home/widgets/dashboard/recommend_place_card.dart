@@ -146,7 +146,12 @@ class RecommendPlaceCard extends StatelessWidget {
                                   column: 'page_views',
                                   account: auth.account,
                                 );
-                                await tracking.launchUrlLink(e.masterUrl);
+                                if (!await tracking.launchUrlLink(e.masterUrl) &&
+                                    context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                                  );
+                                }
                               },
                         child: Text(
                           '${e.startTime?.formatTimeString() ?? ''} ${e.name}',
@@ -173,7 +178,12 @@ class RecommendPlaceCard extends StatelessWidget {
                                   column: 'card_clicks',
                                   account: auth.account,
                                 );
-                                await tracking.onOpenMap(e.city, e.location);
+                                if (!await tracking.onOpenMap(e.city, e.location) &&
+                                    context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                                  );
+                                }
                               }
                             : null,
                         child: Row(

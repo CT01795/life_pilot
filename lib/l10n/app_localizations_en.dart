@@ -410,6 +410,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get externalLinkOpenFailed => 'Could not open the link. Please try again later';
+
+  @override
   String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
 
   @override

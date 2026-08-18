@@ -55,7 +55,12 @@ class TodayEventItem extends StatelessWidget {
                             column: 'page_views',
                             account: auth.account,
                           );
-                          await tracking.launchUrlLink(event.masterUrl);
+                          if (!await tracking.launchUrlLink(event.masterUrl) &&
+                              context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                            );
+                          }
                         },
                   child: Text(
                     '${event.startTime?.formatTimeString() ?? ''} ${event.name}',
@@ -82,7 +87,12 @@ class TodayEventItem extends StatelessWidget {
                       column: 'card_clicks',
                       account: auth.account,
                     );
-                    await tracking.onOpenMap(event.city, event.location);
+                    if (!await tracking.onOpenMap(event.city, event.location) &&
+                        context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                      );
+                    }
                   },
                   child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -897,6 +897,12 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// Shown when an external website or map cannot be opened
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the link. Please try again later'**
+  String get externalLinkOpenFailed;
+
   /// Confirmation shown before leaving an edited form
   ///
   /// In en, this message translates to:
