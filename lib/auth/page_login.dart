@@ -82,7 +82,7 @@ class _PageLoginState extends State<PageLogin> {
     FocusScope.of(context).unfocus();
     setState(() => _isSubmitting = true);
     final controllerPageMain = context.read<ControllerPageMain>();
-    controllerPageMain.changePage(PageType.personalEvent);
+    controllerPageMain.changePage(PageType.home);
 
     String? error;
     try {
