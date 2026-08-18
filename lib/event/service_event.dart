@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -7,6 +8,7 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/event_city_normalizer.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceEvent {
   ServiceEvent();
@@ -130,6 +132,12 @@ class ServiceEvent {
 
         await query;
       }
+    } on PostgrestException catch (ex, stacktrace) {
+      logger.e("saveEvent error", error: ex, stackTrace: stacktrace);
+      if (ex.code == '23505') {
+        throw const EventSaveException(EventSaveError.duplicate);
+      }
+      rethrow;
     } catch (ex, stacktrace) {
       logger.e("saveEvent error", error: ex, stackTrace: stacktrace);
       rethrow;
@@ -206,7 +214,7 @@ class ServiceEvent {
   // --- 私有方法 ---
   void _validateEvent({required EventItem event}) {
     if (event.name.isEmpty) {
-      throw Exception("event_save_error");
+      throw const EventSaveException(EventSaveError.missingName);
     }
   }
 

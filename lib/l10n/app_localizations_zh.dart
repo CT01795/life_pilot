@@ -398,6 +398,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventSaveError => '活動名稱不可為空';
 
   @override
+  String get eventAlreadyExists => '此活動已存在';
+
+  @override
+  String get eventSaveFailed => '活動儲存失敗，請稍後再試';
+
+  @override
   String get eventAddEdit => '新增／編輯活動';
 
   @override

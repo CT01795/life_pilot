@@ -398,6 +398,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventSaveError => '이벤트 이름은 비울 수 없습니다';
 
   @override
+  String get eventAlreadyExists => '이미 존재하는 이벤트입니다';
+
+  @override
+  String get eventSaveFailed => '이벤트를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요';
+
+  @override
   String get eventAddEdit => '이벤트 추가/편집';
 
   @override

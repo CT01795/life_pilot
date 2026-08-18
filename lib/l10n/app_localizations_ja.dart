@@ -398,6 +398,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventSaveError => 'イベント名は空にできません';
 
   @override
+  String get eventAlreadyExists => 'このイベントは既に存在します';
+
+  @override
+  String get eventSaveFailed => 'イベントを保存できませんでした。しばらくしてからもう一度お試しください';
+
+  @override
   String get eventAddEdit => 'イベントの追加／編集';
 
   @override

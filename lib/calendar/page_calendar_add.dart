@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
+import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -32,6 +33,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   final Map<String, FocusNode> _focusNodes = {};
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -71,8 +73,11 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   }
 
   Future<void> _saveEvent(AppLocalizations loc) async {
+    if (_isSaving) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isSaving = true);
     try {
-      if (!(_formKey.currentState?.validate() ?? false)) return;
       FocusScope.of(context).unfocus();
 
       EventItem event = controllerAdd.toEventItem();
@@ -84,11 +89,16 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       );
       AppNavigator.showSnackBar(loc.eventSaved);
       if (context.mounted) Navigator.pop(context, event);
-    } catch (error) {
-      final message = error.toString().contains("event_save_error")
-          ? loc.eventSaveError
-          : error.toString();
+    } on EventSaveException catch (error) {
+      final message = switch (error.error) {
+        EventSaveError.missingName => loc.eventSaveError,
+        EventSaveError.duplicate => loc.eventAlreadyExists,
+      };
       AppNavigator.showErrorBar(message);
+    } catch (_) {
+      AppNavigator.showErrorBar(loc.eventSaveFailed);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -118,11 +128,20 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
             title: Text(loc.eventAddEdit),
             actions: [
               TextButton(
-                onPressed: () => _saveEvent(loc),
+                onPressed: _isSaving ? null : () => _saveEvent(loc),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
+                  disabledForegroundColor: Colors.white70,
                 ),
-                child: Text(loc.save),
+                child: _isSaving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(loc.save),
               ),
             ],
           ),

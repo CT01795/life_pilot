@@ -873,6 +873,18 @@ abstract class AppLocalizations {
   /// **'Activity name cannot be empty'**
   String get eventSaveError;
 
+  /// Shown when saving a duplicate event
+  ///
+  /// In en, this message translates to:
+  /// **'This event already exists'**
+  String get eventAlreadyExists;
+
+  /// Shown when an event cannot be saved
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the event. Please try again later'**
+  String get eventSaveFailed;
+
   /// Label for eventAddEdit
   ///
   /// In en, this message translates to:

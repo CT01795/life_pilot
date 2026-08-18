@@ -398,6 +398,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventSaveError => 'Activity name cannot be empty';
 
   @override
+  String get eventAlreadyExists => 'This event already exists';
+
+  @override
+  String get eventSaveFailed => 'Could not save the event. Please try again later';
+
+  @override
   String get eventAddEdit => 'Add/Edit';
 
   @override
