@@ -419,6 +419,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountListLoadFailed => '帳戶清單載入失敗，請稍後再試';
 
   @override
+  String get accountListEmpty => '尚未建立帳戶，請先建立帳戶後再選擇。';
+
+  @override
   String get unsavedChangesPrompt => '變更尚未儲存，確定要捨棄嗎？';
 
   @override

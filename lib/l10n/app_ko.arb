@@ -279,6 +279,8 @@
   "@dashboardSettingSaveFailed": {"description": "Shown when a dashboard selection cannot be saved"},
   "accountListLoadFailed": "계정 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요",
   "@accountListLoadFailed": {"description": "Shown when the account selector cannot load accounts"},
+  "accountListEmpty": "아직 계정이 없습니다. 계정을 만든 후 선택해 주세요.",
+  "@accountListEmpty": {"description": "Shown when there are no accounts to select"},
   "unsavedChangesPrompt": "변경 사항이 저장되지 않았습니다. 취소하시겠습니까?",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "변경 사항 취소",

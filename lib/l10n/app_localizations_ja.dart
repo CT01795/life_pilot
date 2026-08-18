@@ -419,6 +419,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountListLoadFailed => 'アカウント一覧を読み込めませんでした。しばらくしてからもう一度お試しください';
 
   @override
+  String get accountListEmpty => 'アカウントがまだ作成されていません。作成してから選択してください。';
+
+  @override
   String get unsavedChangesPrompt => '変更が保存されていません。破棄しますか？';
 
   @override

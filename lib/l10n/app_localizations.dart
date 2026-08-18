@@ -915,6 +915,12 @@ abstract class AppLocalizations {
   /// **'Could not load the account list. Please try again later'**
   String get accountListLoadFailed;
 
+  /// Shown when there are no accounts to select
+  ///
+  /// In en, this message translates to:
+  /// **'No account has been created yet. Create one before selecting it.'**
+  String get accountListEmpty;
+
   /// Confirmation shown before leaving an edited form
   ///
   /// In en, this message translates to:

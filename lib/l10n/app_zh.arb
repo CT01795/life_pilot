@@ -279,6 +279,8 @@
   "@dashboardSettingSaveFailed": {"description": "Shown when a dashboard selection cannot be saved"},
   "accountListLoadFailed": "帳戶清單載入失敗，請稍後再試",
   "@accountListLoadFailed": {"description": "Shown when the account selector cannot load accounts"},
+  "accountListEmpty": "尚未建立帳戶，請先建立帳戶後再選擇。",
+  "@accountListEmpty": {"description": "Shown when there are no accounts to select"},
   "unsavedChangesPrompt": "變更尚未儲存，確定要捨棄嗎？",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "捨棄變更",

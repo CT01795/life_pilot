@@ -419,6 +419,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountListLoadFailed => 'Could not load the account list. Please try again later';
 
   @override
+  String get accountListEmpty => 'No account has been created yet. Create one before selecting it.';
+
+  @override
   String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
 
   @override

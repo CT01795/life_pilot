@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
@@ -47,6 +48,31 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                 );
 
             if (!context.mounted) return;
+
+            if (accounts.isEmpty) {
+              await showDialog<void>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  content: Text(loc.accountListEmpty),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(loc.cancel),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context
+                            .read<ControllerPageMain>()
+                            .changePage(PageType.pointsRecord);
+                      },
+                      child: Text(loc.pointsRecord),
+                    ),
+                  ],
+                ),
+              );
+              return;
+            }
 
             final selected = await showDialog<Map<String, String>>(
             context: context,
