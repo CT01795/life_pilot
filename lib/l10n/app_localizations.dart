@@ -990,7 +990,7 @@ abstract class AppLocalizations {
   /// Label for deleteError
   ///
   /// In en, this message translates to:
-  /// **'❌ Delete failed'**
+  /// **'Delete failed'**
   String get deleteError;
 
   /// Label for todaySchedule
@@ -1130,6 +1130,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'✅ Set alarm completed'**
   String get setAlarmCompleted;
+
+  /// Shown when alarm settings cannot be saved
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the reminder. Please try again later'**
+  String get alarmUpdateFailed;
 
   /// Label for previousMonth
   ///

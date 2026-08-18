@@ -4,6 +4,7 @@ import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 
 Future<void> onEditPressed({
@@ -49,8 +50,14 @@ Future<void> onDeletePressed({
   try {
     await controller.deleteEvent(event);
     AppNavigator.showSnackBar(loc.deleteOk);
-  } catch (e) {
-    AppNavigator.showErrorBar('${loc.deleteError}: $e');
+  } catch (error, stackTrace) {
+    logger.e(
+      'Delete event failed',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    AppNavigator.showErrorBar(loc.deleteError);
+    return;
   }
 
   if (Navigator.of(context).canPop()) {

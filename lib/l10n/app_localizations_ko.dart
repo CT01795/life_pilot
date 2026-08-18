@@ -455,7 +455,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get deleteOk => '✅ 삭제 완료';
 
   @override
-  String get deleteError => '❌ 삭제 실패';
+  String get deleteError => '삭제 실패';
 
   @override
   String get todaySchedule => '오늘의 일정';
@@ -525,6 +525,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get setAlarmCompleted => '✅ 알람이 설정되었습니다';
+
+  @override
+  String get alarmUpdateFailed => '알림을 설정하지 못했습니다. 잠시 후 다시 시도해 주세요';
 
   @override
   String get previousMonth => '이전 달';

@@ -455,7 +455,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteOk => '✅ 刪除完成';
 
   @override
-  String get deleteError => '❌ 刪除失敗';
+  String get deleteError => '刪除失敗';
 
   @override
   String get todaySchedule => '今日行程';
@@ -525,6 +525,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get setAlarmCompleted => '✅ 設定鬧鐘完成';
+
+  @override
+  String get alarmUpdateFailed => '提醒設定失敗，請稍後再試';
 
   @override
   String get previousMonth => '上一個月';

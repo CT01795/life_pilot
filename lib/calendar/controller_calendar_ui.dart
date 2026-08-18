@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 
 Future<void> onAddEventPressed({
@@ -72,8 +73,14 @@ Future<void> onDeletePressed({
   try {
     await controller.deleteEvent(event);
     AppNavigator.showSnackBar(loc.deleteOk);
-  } catch (e) {
-    AppNavigator.showErrorBar('${loc.deleteError}: $e');
+  } catch (error, stackTrace) {
+    logger.e(
+      'Delete calendar event failed',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    AppNavigator.showErrorBar(loc.deleteError);
+    return;
   }
 
   if (Navigator.of(context).canPop()) {
@@ -141,7 +148,12 @@ Future<void> onAlarmPressed({
     reminders: result["reminders"],
     loc: loc,
   );
-  AppNavigator.showSnackBar(msg["msg"] ?? msg["error"]!);
+  if (msg["error"] != null) {
+    AppNavigator.showErrorBar(loc.alarmUpdateFailed);
+    return;
+  }
+
+  AppNavigator.showSnackBar(msg["msg"]!);
   if (Navigator.of(context).canPop()) {
     Navigator.of(context).pop();
   }

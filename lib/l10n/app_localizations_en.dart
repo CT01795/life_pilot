@@ -455,7 +455,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteOk => '✅ Deletion completed';
 
   @override
-  String get deleteError => '❌ Delete failed';
+  String get deleteError => 'Delete failed';
 
   @override
   String get todaySchedule => 'Today\'s schedule';
@@ -525,6 +525,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setAlarmCompleted => '✅ Set alarm completed';
+
+  @override
+  String get alarmUpdateFailed => 'Could not update the reminder. Please try again later';
 
   @override
   String get previousMonth => 'Previous month';

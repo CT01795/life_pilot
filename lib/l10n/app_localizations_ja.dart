@@ -455,7 +455,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deleteOk => '✅ 削除完了';
 
   @override
-  String get deleteError => '❌ 削除失敗';
+  String get deleteError => '削除失敗';
 
   @override
   String get todaySchedule => '本日の予定';
@@ -525,6 +525,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get setAlarmCompleted => '✅ アラームを設定しました';
+
+  @override
+  String get alarmUpdateFailed => 'リマインダーを設定できませんでした。しばらくしてからもう一度お試しください';
 
   @override
   String get previousMonth => '先月';
