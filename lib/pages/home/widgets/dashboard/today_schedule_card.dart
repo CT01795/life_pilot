@@ -6,6 +6,7 @@ import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -59,12 +60,8 @@ class TodayScheduleCard extends StatelessWidget {
                     message: loc.completeEventTitle,
                     child: Transform.scale(
                       scale: 1.5, // 放大倍率
-                      child: Checkbox(
-                          value: false,
-                          onChanged: (value) async {
-                            if (value != true) {
-                              return;
-                            }
+                      child: AsyncActionCheckbox(
+                          onAccepted: () async {
                             final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (_) => AlertDialog(
@@ -90,10 +87,24 @@ class TodayScheduleCard extends StatelessWidget {
                             if (confirm != true) {
                               return;
                             }
-                            await context.read<ModelDashboard>().completeEvent(
-                                  id: e.id,
-                                  account: auth.account!,
+                            try {
+                              await context.read<ModelDashboard>().completeEvent(
+                                    id: e.id,
+                                    account: auth.account!,
+                                  );
+                            } catch (error, stackTrace) {
+                              logger.e(
+                                'Could not complete today schedule event.',
+                                error: error,
+                                stackTrace: stackTrace,
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(loc.eventSaveFailed)),
                                 );
+                              }
+                              return;
+                            }
                             final calendar = context.read<CalendarService>();
                             try {
                               final confirm = await showDialog<bool>(
@@ -121,8 +132,17 @@ class TodayScheduleCard extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(loc.memoryAddOk)));
                               }
-                            } catch (e) {
-                              logger.e(e);
+                            } catch (error, stackTrace) {
+                              logger.e(
+                                'Could not add calendar event to memory.',
+                                error: error,
+                                stackTrace: stackTrace,
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(loc.eventSaveFailed)),
+                                );
+                              }
                             }
                             context
                                 .read<ModelDashboard>()

@@ -7,6 +7,7 @@ import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/place_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -54,12 +55,8 @@ class RecommendPlaceCard extends StatelessWidget {
                       message: loc.addToSchedule,
                       child: Transform.scale(
                         scale: 1.5, // 放大倍率
-                        child: Checkbox(
-                          value: false,
-                          onChanged: (value) async {
-                            if (value != true) {
-                              return;
-                            }
+                        child: AsyncActionCheckbox(
+                          onAccepted: () async {
                             final calendar = context.read<CalendarService>();
                             try {
                               bool isExist =
@@ -110,8 +107,17 @@ class RecommendPlaceCard extends StatelessWidget {
                                   eventName: e.name, // 或者用 eventViewModel.name
                                   column: 'saves', //收藏到行事曆
                                   account: auth.account ?? AuthConstants.guest);
-                            } catch (e) {
-                              logger.e(e);
+                            } catch (e, stackTrace) {
+                              logger.e(
+                                'Could not add recommended place to calendar.',
+                                error: e,
+                                stackTrace: stackTrace,
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(loc.eventSaveFailed)),
+                                );
+                              }
                             }
                           }),
                       ),
