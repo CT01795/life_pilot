@@ -13,21 +13,6 @@ class ServiceEvent {
   bool get _isCurrentUserAdmin =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
 
-  Future<String> getKey({required String keyName}) async {
-    try {
-      final response = await supabase.rpc(
-        'get_key',
-        params: {
-          'p_key_name': keyName,
-        },
-      );
-      return response?.toString() ?? '';
-    } catch (e, st) {
-      logger.e('getKey failed $e\n$st');
-      return '';
-    }
-  }
-
   // 📌 取得推薦事件
   Future<List<EventItem>?> getEvents({
     required String tableName,

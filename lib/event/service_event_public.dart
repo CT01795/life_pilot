@@ -376,6 +376,14 @@ class ServiceEventPublic {
   }
 
   Future<void> fetchAndSaveAllEvents() async {
+    final isCurrentUserAdmin =
+        supabase.auth.currentUser?.appMetadata['role'] ==
+            AuthConstants.adminRole;
+    if (!isCurrentUserAdmin) {
+      logger.w('Skipped public event import for a non-admin user');
+      return;
+    }
+
     //==================================== 取得目前資料庫事件 ====================================
     List<EventItem> historyList = (await ServiceEvent().getEvents(
           tableName: TableNames.recommendEvents,

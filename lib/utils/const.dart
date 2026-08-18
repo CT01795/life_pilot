@@ -87,7 +87,6 @@ class TableNames {
 
   static const feedback = "feedback";
 
-  static const weatherForecast = "weather_forecast";
 
   static const gameUser = "game_user";
   static const gameList = "game_list";

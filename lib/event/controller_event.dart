@@ -355,7 +355,9 @@ class ControllerEvent extends ChangeNotifier {
     _invalidateViewModelCache();
     if (!_disposed) notifyListeners();
 
-    if (isGetPublicEvents) {
+    if (isGetPublicEvents &&
+        auth.isSysAdmin &&
+        _tableName == TableNames.recommendEvents) {
       await ServiceEventPublic().fetchAndSaveAllEvents();
 
       final newList = await _serviceEvent.getEvents(
