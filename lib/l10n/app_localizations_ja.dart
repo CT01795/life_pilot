@@ -416,6 +416,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardSettingSaveFailed => '設定を保存できませんでした。しばらくしてからもう一度お試しください';
 
   @override
+  String get accountListLoadFailed => 'アカウント一覧を読み込めませんでした。しばらくしてからもう一度お試しください';
+
+  @override
   String get unsavedChangesPrompt => '変更が保存されていません。破棄しますか？';
 
   @override

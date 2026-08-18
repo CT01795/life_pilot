@@ -909,6 +909,12 @@ abstract class AppLocalizations {
   /// **'Could not save the setting. Please try again later'**
   String get dashboardSettingSaveFailed;
 
+  /// Shown when the account selector cannot load accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the account list. Please try again later'**
+  String get accountListLoadFailed;
+
   /// Confirmation shown before leaving an edited form
   ///
   /// In en, this message translates to:

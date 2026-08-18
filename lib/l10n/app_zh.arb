@@ -277,6 +277,8 @@
   "@externalLinkOpenFailed": {"description": "Shown when an external website or map cannot be opened"},
   "dashboardSettingSaveFailed": "設定儲存失敗，請稍後再試",
   "@dashboardSettingSaveFailed": {"description": "Shown when a dashboard selection cannot be saved"},
+  "accountListLoadFailed": "帳戶清單載入失敗，請稍後再試",
+  "@accountListLoadFailed": {"description": "Shown when the account selector cannot load accounts"},
   "unsavedChangesPrompt": "變更尚未儲存，確定要捨棄嗎？",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "捨棄變更",

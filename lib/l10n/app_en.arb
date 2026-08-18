@@ -277,6 +277,8 @@
   "@externalLinkOpenFailed": {"description": "Shown when an external website or map cannot be opened"},
   "dashboardSettingSaveFailed": "Could not save the setting. Please try again later",
   "@dashboardSettingSaveFailed": {"description": "Shown when a dashboard selection cannot be saved"},
+  "accountListLoadFailed": "Could not load the account list. Please try again later",
+  "@accountListLoadFailed": {"description": "Shown when the account selector cannot load accounts"},
   "unsavedChangesPrompt": "Your changes have not been saved. Discard them?",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "Discard changes",

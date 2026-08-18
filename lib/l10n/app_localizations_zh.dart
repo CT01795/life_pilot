@@ -416,6 +416,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboardSettingSaveFailed => '設定儲存失敗，請稍後再試';
 
   @override
+  String get accountListLoadFailed => '帳戶清單載入失敗，請稍後再試';
+
+  @override
   String get unsavedChangesPrompt => '變更尚未儲存，確定要捨棄嗎？';
 
   @override

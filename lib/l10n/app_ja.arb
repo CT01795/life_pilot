@@ -277,6 +277,8 @@
   "@externalLinkOpenFailed": {"description": "Shown when an external website or map cannot be opened"},
   "dashboardSettingSaveFailed": "設定を保存できませんでした。しばらくしてからもう一度お試しください",
   "@dashboardSettingSaveFailed": {"description": "Shown when a dashboard selection cannot be saved"},
+  "accountListLoadFailed": "アカウント一覧を読み込めませんでした。しばらくしてからもう一度お試しください",
+  "@accountListLoadFailed": {"description": "Shown when the account selector cannot load accounts"},
   "unsavedChangesPrompt": "変更が保存されていません。破棄しますか？",
   "@unsavedChangesPrompt": {"description": "Confirmation shown before leaving an edited form"},
   "discardChanges": "変更を破棄",

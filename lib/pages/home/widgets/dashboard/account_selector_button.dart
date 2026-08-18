@@ -7,10 +7,17 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
-class AccountSelectorButton extends StatelessWidget {
+class AccountSelectorButton extends StatefulWidget {
   const AccountSelectorButton({
     super.key,
   });
+
+  @override
+  State<AccountSelectorButton> createState() => _AccountSelectorButtonState();
+}
+
+class _AccountSelectorButtonState extends State<AccountSelectorButton> {
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +36,19 @@ class AccountSelectorButton extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        onPressed: () async {
-          final accounts =
-              await context.read<ServiceAccounting>().fetchAccounts(user: auth.account ?? '', category: AccountCategory.personal.name);
+        onPressed: _isLoading
+            ? null
+            : () async {
+          setState(() => _isLoading = true);
+          try {
+            final accounts = await context.read<ServiceAccounting>().fetchAccounts(
+                  user: auth.account ?? '',
+                  category: AccountCategory.personal.name,
+                );
 
-          final selected = await showDialog<Map<String,String>>(
+            if (!context.mounted) return;
+
+            final selected = await showDialog<Map<String, String>>(
             context: context,
             builder: (_) {
               return SimpleDialog(
@@ -58,22 +73,29 @@ class AccountSelectorButton extends StatelessWidget {
             },
           );
 
-          if (selected == null || auth.account == null) {
-            return;
-          }
+            if (selected == null || auth.account == null) return;
 
-          try {
-            await dashboard.changeAccountingAccount(
-              account: auth.account!,
-              accountId: selected[Fields.id]!,
-              accountName: selected['name']!,
-            );
+            try {
+              await dashboard.changeAccountingAccount(
+                account: auth.account!,
+                accountId: selected[Fields.id]!,
+                accountName: selected['name']!,
+              );
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+                );
+              }
+            }
           } catch (_) {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+                SnackBar(content: Text(loc.accountListLoadFailed)),
               );
             }
+          } finally {
+            if (mounted) setState(() => _isLoading = false);
           }
         },
       ),

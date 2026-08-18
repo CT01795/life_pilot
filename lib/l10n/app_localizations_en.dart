@@ -416,6 +416,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardSettingSaveFailed => 'Could not save the setting. Please try again later';
 
   @override
+  String get accountListLoadFailed => 'Could not load the account list. Please try again later';
+
+  @override
   String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
 
   @override
