@@ -871,6 +871,79 @@ class StockAuthorizationTest(unittest.TestCase):
         )
         db.close.assert_called_once_with()
 
+    def test_stock_quantitative_count_rejects_invalid_input(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        cases = (
+            {
+                "table_name": "another_table",
+                "date": "2026-08-20T00:00:00Z",
+            },
+            {
+                "table_name": "stock_daily_price",
+                "date": "not-a-date",
+            },
+        )
+
+        for payload in cases:
+            with self.subTest(payload=payload):
+                response = self.client.post(
+                    "/stock/select_stock_quantitative_count",
+                    json=payload,
+                )
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_stock_quantitative_count_returns_incomplete_count(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        query = db.query.return_value
+        query.filter.return_value = query
+        query.count.return_value = 37
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_quantitative_count",
+                json={
+                    "table_name": "stock_daily_price",
+                    "date": "2026-08-20T00:00:00Z",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"count": 37})
+        query.count.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_stock_quantitative_count_reports_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.query.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_quantitative_count",
+                json={
+                    "table_name": "stock_daily_price",
+                    "date": "2026-08-20T00:00:00Z",
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock indicator count could not be loaded",
+        )
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

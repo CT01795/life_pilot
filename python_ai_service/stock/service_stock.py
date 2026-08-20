@@ -130,6 +130,11 @@ class StockPredictionQueryRequest(BaseModel):
     date: datetime
 
 
+class StockQuantitativeCountRequest(BaseModel):
+    table_name: Literal["stock_daily_price"]
+    date: datetime
+
+
 def _delete_stock_rows_before(*, table_name: str, cutoff: datetime) -> dict:
     latest_allowed_cutoff = (
         datetime.now(ZoneInfo("UTC")).date() - timedelta(days=30)
@@ -608,24 +613,33 @@ def route_select_stock_predicted(payload: StockPredictionQueryRequest):
       , description="""量化筆數, 參數
         { 'table_name': table_name
         , 'date': date}""")   
-def route_select_stock_quantitative_count(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
+def route_select_stock_quantitative_count(
+    payload: StockQuantitativeCountRequest,
+):
     db: Session = SessionLocal()
     try:
-      StockModel = create_stock_model(table_name)
-      result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(
-                or_(
-                    StockModel.ma5 == None,
-                    StockModel.ma20 == None,
-                    StockModel.high20 == None,
-                    StockModel.vol5 == None,
-                    StockModel.rsi == None,
-                )
-            )
-      count = result.count()
-      return {"count": count}
-      
+      StockModel = create_stock_model(payload.table_name)
+      incomplete_count = (
+          db.query(StockModel)
+          .filter(func.date(StockModel.date) == payload.date.date())
+          .filter(
+              or_(
+                  StockModel.ma5.is_(None),
+                  StockModel.ma20.is_(None),
+                  StockModel.high20.is_(None),
+                  StockModel.vol5.is_(None),
+                  StockModel.rsi.is_(None),
+              )
+          )
+          .count()
+      )
+      return {"count": incomplete_count}
+    except SQLAlchemyError as exception:
+      logger.exception("Could not count incomplete stock indicators")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock indicator count could not be loaded",
+      ) from exception
     finally:
       db.close()
 
