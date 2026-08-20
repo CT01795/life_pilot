@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Lock
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -92,6 +92,50 @@ class StockInstitutionalBatchRequest(BaseModel):
     )
 
 
+class StockDailyPriceCleanupRequest(BaseModel):
+    table_name: Literal["stock_daily_price"]
+    date: datetime
+
+
+class StockDateCleanupRequest(BaseModel):
+    table_name: Literal["stock_date"]
+    date: datetime
+
+
+def _delete_stock_rows_before(*, table_name: str, cutoff: datetime) -> dict:
+    latest_allowed_cutoff = (
+        datetime.now(ZoneInfo("UTC")).date() - timedelta(days=30)
+    )
+    if cutoff.date() > latest_allowed_cutoff:
+        raise HTTPException(
+            status_code=422,
+            detail="Stock cleanup cutoff must be at least 30 days old",
+        )
+
+    db: Session = SessionLocal()
+    try:
+      StockModel = create_stock_model(table_name)
+      deleted_rows = (
+          db.query(StockModel)
+          .filter(StockModel.date <= cutoff.date())
+          .delete(synchronize_session=False)
+      )
+      db.commit()
+      return {
+          "status": "ok",
+          "deleted_rows": deleted_rows,
+      }
+    except SQLAlchemyError as exception:
+      db.rollback()
+      logger.exception("Could not clean up stock data")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock cleanup could not be completed",
+      ) from exception
+    finally:
+      db.close()
+
+
 def _utc_now_iso() -> str:
     return datetime.now(ZoneInfo("UTC")).isoformat()
 
@@ -142,17 +186,11 @@ def _run_model_training():
       , description="""刪除指定日期的股票每日價格數據, 參數
         { 'table_name': table_name
         , 'date': date,}""")   
-def route_delete_stock_daily_price(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
-    db: Session = SessionLocal()
-    try:
-      StockModel = create_stock_model(table_name)
-      db.query(StockModel).filter(StockModel.date <= date.date()).delete(synchronize_session=False)
-      db.commit()
-      return {"status": "ok"}
-    finally:
-      db.close()
+def route_delete_stock_daily_price(payload: StockDailyPriceCleanupRequest):
+    return _delete_stock_rows_before(
+        table_name=payload.table_name,
+        cutoff=payload.date,
+    )
 
 @router.post(
       "/stock/delete_stock_date"
@@ -160,17 +198,11 @@ def route_delete_stock_daily_price(payload: dict = Body(...)):
       , description="""刪除指定日期的股票日期數據, 參數
         { 'table_name': table_name
         , 'date': date,}""")   
-def route_delete_stock_date(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
-    db: Session = SessionLocal()
-    try:
-      StockModel = create_stock_model(table_name)
-      db.query(StockModel).filter(StockModel.date <= date.date()).delete(synchronize_session=False)
-      db.commit()
-      return {"status": "ok"}
-    finally:
-      db.close()
+def route_delete_stock_date(payload: StockDateCleanupRequest):
+    return _delete_stock_rows_before(
+        table_name=payload.table_name,
+        cutoff=payload.date,
+    )
 
 @router.post(
       "/stock/insert_stock_daily_price_batch"

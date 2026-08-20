@@ -1,5 +1,6 @@
 import os
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -461,6 +462,112 @@ class StockAuthorizationTest(unittest.TestCase):
         self.assertEqual(
             response.json()["detail"],
             "Stock institutional batch could not be saved",
+        )
+        db.rollback.assert_called_once_with()
+        db.commit.assert_not_called()
+        db.close.assert_called_once_with()
+
+    def test_stock_cleanup_endpoints_reject_wrong_tables(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        cases = (
+            ("/stock/delete_stock_daily_price", "stock_date"),
+            ("/stock/delete_stock_date", "stock_daily_price"),
+        )
+
+        for endpoint, table_name in cases:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.post(
+                    endpoint,
+                    json={
+                        "table_name": table_name,
+                        "date": "2025-08-20T00:00:00Z",
+                    },
+                )
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_stock_cleanup_endpoints_reject_recent_cutoff(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        cases = (
+            ("/stock/delete_stock_daily_price", "stock_daily_price"),
+            ("/stock/delete_stock_date", "stock_date"),
+        )
+        recent_cutoff = datetime.now(timezone.utc).isoformat()
+
+        for endpoint, table_name in cases:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.post(
+                    endpoint,
+                    json={
+                        "table_name": table_name,
+                        "date": recent_cutoff,
+                    },
+                )
+
+                self.assertEqual(response.status_code, 422)
+                self.assertEqual(
+                    response.json()["detail"],
+                    "Stock cleanup cutoff must be at least 30 days old",
+                )
+
+    def test_stock_cleanup_reports_deleted_rows(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.query.return_value.filter.return_value.delete.return_value = 42
+        safe_cutoff = (
+            datetime.now(timezone.utc) - timedelta(days=370)
+        ).isoformat()
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/delete_stock_daily_price",
+                json={
+                    "table_name": "stock_daily_price",
+                    "date": safe_cutoff,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "ok", "deleted_rows": 42},
+        )
+        db.commit.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_stock_cleanup_rolls_back_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.query.side_effect = SQLAlchemyError("database unavailable")
+        safe_cutoff = (
+            datetime.now(timezone.utc) - timedelta(days=370)
+        ).isoformat()
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/delete_stock_date",
+                json={
+                    "table_name": "stock_date",
+                    "date": safe_cutoff,
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock cleanup could not be completed",
         )
         db.rollback.assert_called_once_with()
         db.commit.assert_not_called()
