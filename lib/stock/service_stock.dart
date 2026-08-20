@@ -13,6 +13,12 @@ import 'package:life_pilot/utils/service/service_api.dart';
 class ServiceStock {
   static const _modelTrainingPollInterval = Duration(seconds: 10);
   static const _modelTrainingTimeout = Duration(hours: 2);
+  static const _maxFuturesLookbackDays = 14;
+
+  final ServiceApi _supabaseApi;
+
+  ServiceStock({ServiceApi? supabaseApi})
+      : _supabaseApi = supabaseApi ?? apiSupabase;
 
   List<ModelStock> stocks = [];
   int? stocksLength;
@@ -471,15 +477,18 @@ class ServiceStock {
 
   Future<List<ModelFuture>> selectFutures(DateTime date) async {
     final result =
-        await apiSupabase.post('stock/select_futures_institutional', {
+        await _supabaseApi.post('stock/select_futures_institutional', {
       'date': DateFormat('yyyy-MM-dd').format(date),
     });
     DateTime tmpDate = date;
     List result2 = [];
     try {
-      while (result2.isEmpty) {
+      for (int daysBack = 1;
+          daysBack <= _maxFuturesLookbackDays && result2.isEmpty;
+          daysBack++) {
         tmpDate = tmpDate.subtract(Duration(days: 1));
-        result2 = await apiSupabase.post('stock/select_futures_institutional', {
+        result2 = await _supabaseApi.post(
+            'stock/select_futures_institutional', {
           'date': DateFormat('yyyy-MM-dd').format(tmpDate),
         });
       }
@@ -508,14 +517,14 @@ class ServiceStock {
       final key = "${e['product_name']}_${e['identity_type']}";
 
       final todayQty = e['oi_net_qty'] ?? 0;
-      final yQty = yesterdayMap[key] ?? 0;
+      final yQty = yesterdayMap[key] ?? todayQty;
       final diff = todayQty - yQty;
       return !(todayQty.abs() < 200 && diff.abs() < 200);
     }).map<ModelFuture>((e) {
       final key = "${e['product_name']}_${e['identity_type']}";
 
       final todayQty = (e['oi_net_qty'] ?? 0) as num;
-      final yQty = (yesterdayMap[key] ?? 0) as num;
+      final yQty = (yesterdayMap[key] ?? todayQty) as num;
 
       return ModelFuture.fromJson({
         ...e,
