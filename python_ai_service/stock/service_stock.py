@@ -3,14 +3,17 @@ import logging
 import sys
 from datetime import datetime
 from threading import Lock
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 from config import SessionLocal, engine
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
+from pydantic import BaseModel, Field
 from security.supabase_auth import require_supabase_admin
 from sqlalchemy import func, or_, text
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from stock.model_futures_institutional import \
     create_futures_institutional_model
@@ -24,6 +27,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+logger = logging.getLogger(__name__)
 
 router = APIRouter(dependencies=[Depends(require_supabase_admin)])
 _model_training_lock = Lock()
@@ -33,6 +37,16 @@ _model_training_state = {
     "started_at": None,
     "finished_at": None,
 }
+
+
+class StockDateItem(BaseModel):
+    type: str = Field(min_length=1, max_length=100)
+    date: datetime
+
+
+class StockDateBatchRequest(BaseModel):
+    table_name: Literal["stock_date"]
+    stocks: list[StockDateItem] = Field(min_length=1, max_length=10_000)
 
 
 def _utc_now_iso() -> str:
@@ -297,17 +311,11 @@ def route_insert_futures_institutional_batch(payload: dict = Body(...)):
       , description="""批量插入股票date, 參數
         { 'table_name': table_name
         , 'stocks': stocks,}""")   
-def route_insert_stock_date_batch(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    stocks_data = payload.get("stocks")
+def route_insert_stock_date_batch(payload: StockDateBatchRequest):
+    stocks_data = [stock.model_dump() for stock in payload.stocks]
     db: Session = SessionLocal()
     try:
-      StockModel = create_stock_model(table_name)
-      for stock_data in stocks_data:
-            if stock_data.get("date"):
-                stock_data["date"] = datetime.fromisoformat(
-                    stock_data["date"].replace("Z", "+00:00")
-                )
+      StockModel = create_stock_model(payload.table_name)
       stmt = insert(StockModel).values(stocks_data)
 
       # type + date 重複時忽略
@@ -315,10 +323,22 @@ def route_insert_stock_date_batch(payload: dict = Body(...)):
           index_elements=["type", "date"]
       )
 
-      db.execute(stmt)
+      result = db.execute(stmt)
       db.commit()
 
-      return {"status": "ok"}
+      inserted_rows = max(result.rowcount or 0, 0)
+      return {
+          "status": "ok",
+          "received_rows": len(stocks_data),
+          "inserted_rows": inserted_rows,
+          "skipped_rows": len(stocks_data) - inserted_rows,
+      }
+    except SQLAlchemyError as exception:
+      db.rollback()
+      raise HTTPException(
+          status_code=503,
+          detail="Stock date batch could not be saved",
+      ) from exception
     finally:
       db.close()
 

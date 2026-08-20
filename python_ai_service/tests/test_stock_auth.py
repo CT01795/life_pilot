@@ -1,8 +1,9 @@
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
 
 os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 
@@ -113,6 +114,83 @@ class StockAuthorizationTest(unittest.TestCase):
         response = self.client.get("/stock/model_training_status")
 
         self.assertEqual(response.status_code, 403)
+
+    def test_stock_date_batch_rejects_unknown_table(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+
+        response = self.client.post(
+            "/stock/insert_stock_date_batch",
+            json={
+                "table_name": "another_table",
+                "stocks": [{"type": "daily", "date": "2026-08-20T00:00:00Z"}],
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_stock_date_batch_reports_inserted_and_skipped_rows(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.return_value.rowcount = 1
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_stock_date_batch",
+                json={
+                    "table_name": "stock_date",
+                    "stocks": [
+                        {"type": "daily", "date": "2026-08-20T00:00:00Z"},
+                        {"type": "daily", "date": "2026-08-20T00:00:00Z"},
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ok",
+                "received_rows": 2,
+                "inserted_rows": 1,
+                "skipped_rows": 1,
+            },
+        )
+        db.commit.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_stock_date_batch_rolls_back_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_stock_date_batch",
+                json={
+                    "table_name": "stock_date",
+                    "stocks": [
+                        {"type": "daily", "date": "2026-08-20T00:00:00Z"},
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock date batch could not be saved",
+        )
+        db.rollback.assert_called_once_with()
+        db.commit.assert_not_called()
+        db.close.assert_called_once_with()
 
 
 if __name__ == "__main__":
