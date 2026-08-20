@@ -106,6 +106,8 @@ class ModelGamePolyominoLevelData {
 }
 
 class ModelGamePolyominoLevelFactory {
+  static const int _maxGenerationAttempts = 100;
+
   static ModelGamePolyominoLevelData generateLevel(int level) {
     int rows = 3 + (level / 3).ceil();
     int cols = rows;
@@ -113,8 +115,10 @@ class ModelGamePolyominoLevelFactory {
     final start = const Point(0, 0);
     final goal = Point(cols - 1, rows - 1);
 
-    while (true) {
-      final path = _generatePath(start, goal, rows, level);
+    for (var attempt = 0; attempt <= _maxGenerationAttempts; attempt++) {
+      final path = attempt < _maxGenerationAttempts
+          ? _generatePath(start, goal, rows, level)
+          : _generateFallbackPath(start, goal);
 
       // 計算 start/goal 的方向
       Map<Point<int>, List<bool>> tileDirections = {};
@@ -164,6 +168,8 @@ class ModelGamePolyominoLevelFactory {
         );
       }
     }
+
+    throw StateError('Unable to generate a valid polyomino level');
   }
 
   static List<Point<int>> _generatePath(
@@ -173,7 +179,7 @@ class ModelGamePolyominoLevelFactory {
     double rate = 20;
     int cellCount = rows * rows;
     // 重試直到成功生成一條從 start 到 goal 的路徑
-    while (true) {
+    for (var attempt = 0; attempt < _maxGenerationAttempts; attempt++) {
       path = [start];
       var cur = start;
       Set<Point<int>> visited = {cur};
@@ -234,7 +240,27 @@ class ModelGamePolyominoLevelFactory {
         return path;
       }
     }
-    // 否則重新生成路徑
+
+    return _generateFallbackPath(start, goal);
+  }
+
+  static List<Point<int>> _generateFallbackPath(
+    Point<int> start,
+    Point<int> goal,
+  ) {
+    final path = <Point<int>>[start];
+    var current = start;
+
+    while (current.x < goal.x) {
+      current = Point(current.x + 1, current.y);
+      path.add(current);
+    }
+    while (current.y < goal.y) {
+      current = Point(current.x, current.y + 1);
+      path.add(current);
+    }
+
+    return path;
   }
 
   static int getWeightedSegmentSize(Random rnd, int maxSize) {

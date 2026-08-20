@@ -77,16 +77,21 @@ class ControllerGameSteamMonomino extends ChangeNotifier {
   }
 
   Future<bool> checkPath() async {
-    bool ok = level.checkPath(remainingFixed);
+    final ok = level.checkPath(List<Point<int>>.from(remainingFixed));
     if (ok && !_scoreSaved) {
       _calculateScore();
-      await service.saveUserGameScore(
-        newUserName: userName,
-        newScore: score.toDouble(),
-        newGameId: gameId, // 使用傳入的 gameId
-        newIsPass: true,
-      );
       _scoreSaved = true;
+      try {
+        await service.saveUserGameScore(
+          newUserName: userName,
+          newScore: score.toDouble(),
+          newGameId: gameId,
+          newIsPass: true,
+        );
+      } catch (_) {
+        _scoreSaved = false;
+        rethrow;
+      }
     }
     return ok;
   }

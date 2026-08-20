@@ -123,6 +123,8 @@ class ControllerGameSteamScratch {
   final String gameId;
   final ModelGameSteamScratchLevel level;
   bool _scoreSaved = false;
+  bool _disposed = false;
+  bool _isExecuting = false;
 
   // 使用 ValueNotifier 提高效能，安全 UI 更新
   final ValueNotifier<GameState> stateNotifier = ValueNotifier(GameState());
@@ -141,6 +143,7 @@ class ControllerGameSteamScratch {
   });
 
   void resetGame() {
+    if (_disposed) return;
     stateNotifier.value = GameState();
     _scoreSaved = false; // ⭐ 重新遊戲前清空
     for (var fruit in level.fruits) {
@@ -150,10 +153,14 @@ class ControllerGameSteamScratch {
     _eventController.add(ModelGameEvent(EnumGameEventType.none, ''));
   }
 
-  void _notifyEvent(ModelGameEvent event) => _eventController.add(event);
+  void _notifyEvent(ModelGameEvent event) {
+    if (_disposed || _eventController.isClosed) return;
+    _eventController.add(event);
+  }
 
   // ---------------- Movement ----------------
   Future<bool> moveForward() async {
+    if (_disposed) return false;
     switch (state.facing) {
       case Direction.north:
         state.y += 1;
@@ -172,6 +179,7 @@ class ControllerGameSteamScratch {
   }
 
   Future<bool> moveBackward() async {
+    if (_disposed) return false;
     switch (state.facing) {
       case Direction.north:
         state.y -= 1;
@@ -190,11 +198,13 @@ class ControllerGameSteamScratch {
   }
 
   Future<bool> jumpUp() async {
+    if (_disposed) return false;
     state.y += 1;
     return _afterMovement();
   }
 
   Future<bool> jumpDown() async {
+    if (_disposed) return false;
     state.y -= 1;
     return _afterMovement();
   }
@@ -202,17 +212,23 @@ class ControllerGameSteamScratch {
   Future<bool> _afterMovement() async {
     // 延遲 400ms 再回傳
     await Future.delayed(Duration(milliseconds: 400));
+    if (_disposed) return false;
 
     if (_scoreSaved) return false; // 已經過關 → 不要再檢查
 
     // 先更新位置
     state.x = state.x.clamp(-1, level.treasure.x + 1);
-    state.y = state.y.clamp(-1, level.treasure.y + 1); // ✅ 防止已卸載 widget 呼叫 setState
+    state.y =
+        state.y.clamp(-1, level.treasure.y + 1); // ✅ 防止已卸載 widget 呼叫 setState
     stateNotifier.value = state.copy();
 
     // 掉下懸崖檢查
-    if (state.x < 0 || state.x > level.treasure.x || state.y < 0 || state.y > level.treasure.y) {
-      _notifyEvent(ModelGameEvent(EnumGameEventType.obstacle, "Fall off a cliff！"));
+    if (state.x < 0 ||
+        state.x > level.treasure.x ||
+        state.y < 0 ||
+        state.y > level.treasure.y) {
+      _notifyEvent(
+          ModelGameEvent(EnumGameEventType.obstacle, "Fall off a cliff！"));
       return false; // 停止遊戲
     }
 
@@ -226,7 +242,8 @@ class ControllerGameSteamScratch {
     for (var obs in level.obstacles) {
       if (obs.x == state.x && obs.y == state.y) {
         state.score += obs.scoreValue;
-        _notifyEvent(ModelGameEvent(EnumGameEventType.obstacle, "Hit an obstacle！"));
+        _notifyEvent(
+            ModelGameEvent(EnumGameEventType.obstacle, "Hit an obstacle！"));
         return true;
       }
     }
@@ -239,8 +256,8 @@ class ControllerGameSteamScratch {
       if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
         fruit.collected = true;
         state.score += fruit.scoreValue;
-        _notifyEvent(
-            ModelGameEvent(EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
+        _notifyEvent(ModelGameEvent(
+            EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
       }
     }
   }
@@ -250,7 +267,8 @@ class ControllerGameSteamScratch {
     if (!state.treasureCollected &&
         state.x == level.treasure.x &&
         state.y == level.treasure.y) {
-      if (state.score < min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
+      if (state.score <
+          min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
         //至少要吃一點東西
         _notifyEvent(ModelGameEvent(EnumGameEventType.warning,
             "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!"));
@@ -268,9 +286,16 @@ class ControllerGameSteamScratch {
 
   // ---- 執行 commands ----
   Future<void> executeCommands(List<Command> commands) async {
-    for (var cmd in commands) {
-      bool ok = await cmd.execute(this);
-      if (!ok) return; // 撞障礙直接停止
+    if (_disposed || _isExecuting) return;
+    _isExecuting = true;
+    try {
+      for (var cmd in commands) {
+        if (_disposed) return;
+        bool ok = await cmd.execute(this);
+        if (!ok) return;
+      }
+    } finally {
+      _isExecuting = false;
     }
   }
 
@@ -289,6 +314,9 @@ class ControllerGameSteamScratch {
   }
 
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    stateNotifier.dispose();
     _eventController.close();
   }
 }

@@ -100,6 +100,8 @@ class ControllerGameSteamScratchMaze {
   final String gameId;
   final ModelGameSteamScratchMazeLevel level;
   bool _scoreSaved = false;
+  bool _disposed = false;
+  bool _isExecuting = false;
 
   // 使用 ValueNotifier 提高效能，安全 UI 更新
   final ValueNotifier<GameState> stateNotifier = ValueNotifier(GameState());
@@ -118,6 +120,7 @@ class ControllerGameSteamScratchMaze {
   });
 
   void resetGame() {
+    if (_disposed) return;
     stateNotifier.value = GameState();
     _scoreSaved = false; // ⭐ 重新遊戲前清空
     for (var fruit in level.fruits) {
@@ -127,7 +130,10 @@ class ControllerGameSteamScratchMaze {
     _eventController.add(ModelGameEvent(EnumGameEventType.none, ''));
   }
 
-  void _notifyEvent(ModelGameEvent event) => _eventController.add(event);
+  void _notifyEvent(ModelGameEvent event) {
+    if (_disposed || _eventController.isClosed) return;
+    _eventController.add(event);
+  }
 
   // ---------------- Movement ----------------
   Future<bool> moveForward() async {
@@ -141,7 +147,8 @@ class ControllerGameSteamScratchMaze {
         ..y = newY;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX, newY - 1) ||
-          await _isWalkable(newX, newY + 1)) { //岔路處跳出
+          await _isWalkable(newX, newY + 1)) {
+        //岔路處跳出
         break;
       }
     }
@@ -156,10 +163,11 @@ class ControllerGameSteamScratchMaze {
       // ✅ 更新 ValueNotifier
       stateNotifier.value = state.copy()
         ..x = newX
-        ..y = newY;  
+        ..y = newY;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX, newY - 1) ||
-          await _isWalkable(newX, newY + 1)) { //岔路處跳出
+          await _isWalkable(newX, newY + 1)) {
+        //岔路處跳出
         break;
       }
     }
@@ -177,7 +185,8 @@ class ControllerGameSteamScratchMaze {
         ..y = newY;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX - 1, newY) ||
-          await _isWalkable(newX + 1, newY)) { //岔路處跳出
+          await _isWalkable(newX + 1, newY)) {
+        //岔路處跳出
         break;
       }
     }
@@ -195,7 +204,8 @@ class ControllerGameSteamScratchMaze {
         ..y = newY;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX - 1, newY) ||
-          await _isWalkable(newX + 1, newY)) { //岔路處跳出
+          await _isWalkable(newX + 1, newY)) {
+        //岔路處跳出
         break;
       }
     }
@@ -203,6 +213,7 @@ class ControllerGameSteamScratchMaze {
   }
 
   Future<bool> _isWalkable(int x, int y) async {
+    if (_disposed) return false;
     // 延遲 400ms 再回傳
     if (_scoreSaved) return false; // 已經過關 → 不要再檢查
     if (x < 0 || y < 0 || x > level.treasure.x || y > level.treasure.y) {
@@ -243,9 +254,16 @@ class ControllerGameSteamScratchMaze {
 
   // ---- 執行 commands ----
   Future<void> executeCommands(List<Command> commands) async {
-    for (var cmd in commands) {
-      bool ok = await cmd.execute(this);
-      if (!ok) return; // 撞障礙直接停止
+    if (_disposed || _isExecuting) return;
+    _isExecuting = true;
+    try {
+      for (var cmd in commands) {
+        if (_disposed) return;
+        bool ok = await cmd.execute(this);
+        if (!ok) return;
+      }
+    } finally {
+      _isExecuting = false;
     }
   }
 
@@ -264,6 +282,9 @@ class ControllerGameSteamScratchMaze {
   }
 
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    stateNotifier.dispose();
     _eventController.close();
   }
 }
