@@ -944,6 +944,85 @@ class StockAuthorizationTest(unittest.TestCase):
         )
         db.close.assert_called_once_with()
 
+    def test_futures_institutional_query_rejects_invalid_date(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+
+        response = self.client.post(
+            "/stock/select_futures_institutional",
+            json={"date": "not-a-date"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_futures_institutional_query_returns_rows(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        result = db.execute.return_value
+        result.mappings.return_value.all.return_value = [
+            {
+                "date": datetime(2026, 8, 20, tzinfo=timezone.utc),
+                "product_name": "Taiwan futures",
+                "identity_type": "foreign investor",
+                "oi_net_qty": 25,
+            },
+        ]
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_futures_institutional",
+                json={"date": "2026-08-20"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["oi_net_qty"], 25)
+        result.mappings.return_value.all.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_futures_institutional_query_returns_empty_list_when_missing(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.return_value.mappings.return_value.all.return_value = []
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_futures_institutional",
+                json={"date": "2026-08-20"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+        db.close.assert_called_once_with()
+
+    def test_futures_institutional_query_reports_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_futures_institutional",
+                json={"date": "2026-08-20"},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Futures institutional data could not be loaded",
+        )
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from datetime import date as Date
 from datetime import datetime, timedelta
 from threading import Lock
 from typing import Annotated, Literal
@@ -133,6 +134,10 @@ class StockPredictionQueryRequest(BaseModel):
 class StockQuantitativeCountRequest(BaseModel):
     table_name: Literal["stock_daily_price"]
     date: datetime
+
+
+class InstitutionalDateQueryRequest(BaseModel):
+    date: Date
 
 
 def _delete_stock_rows_before(*, table_name: str, cutoff: datetime) -> dict:
@@ -362,11 +367,9 @@ def route_insert_stock_institutional_batch(
             , summary="查询三大法人futures數據"
             , description="""查询三大法人futures數據, 參數
               { 'date': date,}""")
-def route_select_futures_institutional(payload: dict = Body(...)):
-    date = datetime.strptime(
-        payload.get("date"),
-        "%Y-%m-%d"
-    ).date()
+def route_select_futures_institutional(
+    payload: InstitutionalDateQueryRequest,
+):
     db: Session = SessionLocal()
     try:
         rows = db.execute(
@@ -386,9 +389,15 @@ def route_select_futures_institutional(payload: dict = Body(...)):
                         END,
                         identity_type
             """),
-            {"date": date}
+            {"date": payload.date}
         ).mappings().all()
         return [dict(row) for row in rows]
+    except SQLAlchemyError as exception:
+        logger.exception("Could not select futures institutional data")
+        raise HTTPException(
+            status_code=503,
+            detail="Futures institutional data could not be loaded",
+        ) from exception
     finally:
         db.close()
 
