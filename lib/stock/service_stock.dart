@@ -524,7 +524,7 @@ class ServiceStock {
       final key = "${e['product_name']}_${e['identity_type']}";
 
       final todayQty = (e['oi_net_qty'] ?? 0) as num;
-      final yQty = (yesterdayMap[key] ?? todayQty) as num;
+      final yQty = (yesterdayMap[key] ?? todayQty);
 
       return ModelFuture.fromJson({
         ...e,

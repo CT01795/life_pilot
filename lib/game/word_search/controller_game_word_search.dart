@@ -2,14 +2,12 @@
 
 import 'dart:async';
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
-import '../../utils/logger.dart';
 
 class ControllerGameWordSearch extends ChangeNotifier {
   final String userName;
@@ -49,9 +47,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
     required this.currentQuestion,
   });
 
-  final player = AudioPlayer();
-
-  final Map<String, Uint8List> _audioCache = {};
+  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
 
@@ -60,43 +56,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
       return;
     }
 
-    if (_audioCache.containsKey(text)) {
-      await player.play(BytesSource(_audioCache[text]!));
-      return;
-    }
-    String url =
-        "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-
-    // 用 http.get 先取得 bytes，並加上 User-Agent
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-              "AppleWebKit/537.36 Chrome/115 Safari/537.36",
-          "Referer": url,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final bytes = response.bodyBytes;
-
-        _audioCache[text] = bytes;
-
-        await player.play(BytesSource(bytes),);
-      } else {
-        logger.e(
-          "Google TTS error: ${response.statusCode}",
-        );
-      }
-    } catch (e, st) {
-      logger.e(
-        "speak failed",
-        error: e,
-        stackTrace: st,
-      );
-    }
+    await _ttsAudio.speak(text: text, languageCode: 'en-US');
   }
 
   Future<void> loadNextQuestion() async {
@@ -307,6 +267,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
   @override
   void dispose() {
     _nextQuestionTimer?.cancel();
+    _ttsAudio.dispose();
     super.dispose();
   }
 }

@@ -1,16 +1,13 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
-
-import '../../utils/logger.dart';
 
 class ControllerGameTranslation extends ChangeNotifier {
   final String userName;
@@ -38,75 +35,32 @@ class ControllerGameTranslation extends ChangeNotifier {
       required this.gameName,
       required this.maxQuestions});
 
-  final player = AudioPlayer();
-
-  final Map<String, Uint8List> _audioCache = {};
+  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text, String group, bool isQuestion) async {
     if (text.isEmpty) return;
 
-    //final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
     if (kIsWeb) {
       await speakWeb(text, group: group, isQuestion: isQuestion);
       return;
     }
 
-    if (_audioCache.containsKey(text)) {
-      await player.play(BytesSource(_audioCache[text]!));
-      return;
-    }
-    String url = "";
-    if ((group.contains("中翻英") && isQuestion) || (group.contains("英翻中") && !isQuestion) || 
-        (group.contains("日翻中") && !isQuestion) || (group.contains("中翻日") && isQuestion) || 
-        (group.contains("韓翻中") && !isQuestion) || (group.contains("中翻韓") && isQuestion)) {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=zh&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else if ((group.contains("中翻日英") && !isQuestion) || (group.contains("日翻中英") && isQuestion)) {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else if ((group.contains("中翻日") && !isQuestion) || (group.contains("日翻中") && isQuestion)) {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=ja&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else if ((group.contains("中翻韓英") && !isQuestion) || (group.contains("韓翻中英") && isQuestion)) {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else if ((group.contains("中翻韓") && !isQuestion) || (group.contains("韓翻中") && isQuestion)) {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
-    } else {
-      url =
-          "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${Uri.encodeComponent(text.split('/')[0])}";
+    var languageCode = 'en-US';
+    if ((group.contains('中翻英') && isQuestion) ||
+        (group.contains('英翻中') && !isQuestion) ||
+        (group.contains('日翻中') && !isQuestion) ||
+        (group.contains('中翻日') && isQuestion) ||
+        (group.contains('韓翻中') && !isQuestion) ||
+        (group.contains('中翻韓') && isQuestion)) {
+      languageCode = 'zh';
+    } else if ((group.contains('中翻日') && !isQuestion) ||
+        (group.contains('日翻中') && isQuestion)) {
+      languageCode = 'ja';
+    } else if ((group.contains('中翻韓') && !isQuestion) ||
+        (group.contains('韓翻中') && isQuestion)) {
+      languageCode = 'ko';
     }
 
-    // 用 http.get 先取得 bytes，並加上 User-Agent
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-              "AppleWebKit/537.36 Chrome/115 Safari/537.36",
-          "Referer": url,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final bytes = response.bodyBytes;
-
-        _audioCache[text] = bytes;
-
-        await player.play(BytesSource(bytes),);
-      } else {
-        logger.e(
-          "Google TTS error: ${response.statusCode}",
-        );
-      }
-    } catch (e, st) {
-      logger.e(
-        "speak failed",
-        error: e,
-        stackTrace: st,
-      );
-    }
+    await _ttsAudio.speak(text: text, languageCode: languageCode);
   }
 
   Future<void> loadNextQuestion() async {
@@ -223,6 +177,7 @@ class ControllerGameTranslation extends ChangeNotifier {
   @override
   void dispose() {
     _nextQuestionTimer?.cancel();
+    _ttsAudio.dispose();
     super.dispose();
   }
 }

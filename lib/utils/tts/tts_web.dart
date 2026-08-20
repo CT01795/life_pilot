@@ -2,13 +2,39 @@
 
 import 'dart:html' as html;
 
+final Set<String> _activeSpeech = {};
+
+Future<void> _speakOnce(
+  html.SpeechSynthesisUtterance utterance,
+  String text,
+) async {
+  if (!_activeSpeech.add(text)) return;
+  final synthesis = html.window.speechSynthesis;
+  if (synthesis == null) {
+    _activeSpeech.remove(text);
+    return;
+  }
+
+  try {
+    final speechFinished = Future.any<void>([
+      utterance.onEnd.first,
+      utterance.onError.first,
+      Future<void>.delayed(const Duration(minutes: 2)),
+    ]);
+    synthesis.speak(utterance);
+    await speechFinished;
+  } finally {
+    _activeSpeech.remove(text);
+  }
+}
+
 Future<void> speakWeb(String text, {String? group, bool? isQuestion}) async {
   final utterance = html.SpeechSynthesisUtterance(text.split('/').first.trim());
 
   if (group == null || isQuestion == null) {
     utterance.lang =
         RegExp(r'[\u4e00-\u9fff]').hasMatch(text) ? 'zh-TW' : 'en-US';
-    html.window.speechSynthesis?.speak(utterance);
+    await _speakOnce(utterance, utterance.text ?? text);
     return;
   }
   // 判斷語言
@@ -35,5 +61,5 @@ Future<void> speakWeb(String text, {String? group, bool? isQuestion}) async {
     utterance.lang = 'en-US';
   }
 
-  html.window.speechSynthesis?.speak(utterance);
+  await _speakOnce(utterance, utterance.text ?? text);
 }
