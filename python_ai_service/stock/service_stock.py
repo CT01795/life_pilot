@@ -77,6 +77,21 @@ class FuturesInstitutionalBatchRequest(BaseModel):
     )
 
 
+class StockInstitutionalItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    date: datetime
+    stock_no: str = Field(min_length=1, max_length=20)
+
+
+class StockInstitutionalBatchRequest(BaseModel):
+    table_name: Literal["stock_institutional"]
+    stocks: list[StockInstitutionalItem] = Field(
+        min_length=1,
+        max_length=10_000,
+    )
+
+
 def _utc_now_iso() -> str:
     return datetime.now(ZoneInfo("UTC")).isoformat()
 
@@ -231,38 +246,50 @@ def route_select_stock_institutional(payload: dict = Body(...)):
       , description="""批量插入TWSE三大法人股票數據, 參數
         { 'table_name': table_name
         , 'stocks': stocks,}""")   
-def route_insert_stock_institutional_batch(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    stocks_institutional_data = payload.get("stocks")
+def route_insert_stock_institutional_batch(
+    payload: StockInstitutionalBatchRequest,
+):
+    stocks_institutional_data = [
+        item.model_dump()
+        for item in payload.stocks
+    ]
     db: Session = SessionLocal()
     try:
-      StockInstitutionalModel = create_stock_institutional_model(table_name)
+      StockInstitutionalModel = create_stock_institutional_model(
+          payload.table_name
+      )
       # 取得 model 欄位
       model_columns = StockInstitutionalModel.__table__.columns.keys()
-      objects = []
-      for stock_institutional_data in stocks_institutional_data:
-        # 過濾不存在欄位
-        filtered_institutional_data = {
+      filtered_stocks = [
+        {
             k: v
-            for k, v in stock_institutional_data.items()
+            for k, v in item.items()
             if k in model_columns
         }
-        # 處理 date
-        if filtered_institutional_data.get("date"):
-            filtered_institutional_data["date"] = (
-                datetime.fromisoformat(
-                    filtered_institutional_data["date"].replace("Z", "+00:00")
-                )
-            )
-        objects.append(
-            StockInstitutionalModel(**filtered_institutional_data)
-        )
-      db.add_all(objects) 
+        for item in stocks_institutional_data
+      ]
+      stmt = insert(StockInstitutionalModel).values(filtered_stocks)
+      stmt = stmt.on_conflict_do_nothing(
+          index_elements=["date", "stock_no"]
+      )
+
+      result = db.execute(stmt)
       db.commit()
-      return {"status": "ok"}
-    except Exception as e:
+
+      inserted_rows = max(result.rowcount or 0, 0)
+      return {
+          "status": "ok",
+          "received_rows": len(filtered_stocks),
+          "inserted_rows": inserted_rows,
+          "skipped_rows": len(filtered_stocks) - inserted_rows,
+      }
+    except SQLAlchemyError as exception:
       db.rollback()
-      raise e
+      logger.exception("Could not insert stock institutional batch")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock institutional batch could not be saved",
+      ) from exception
     finally:
       db.close()
 
