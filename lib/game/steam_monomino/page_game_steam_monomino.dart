@@ -38,8 +38,15 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
         gameLevel: widget.gameLevel);
   }
 
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   void _checkPath() async {
     bool ok = await controller.checkPath();
+    if (!mounted) return;
     setState(() {}); // 更新分數
 
     // 顯示結果
@@ -81,7 +88,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                                   builder: (context) => PageGameTranslation(
                                     gameId: widget.gameId,
                                     gameLevel: -1, //widget.gameLevel,
-                                    gameName: "",   
+                                    gameName: "",
                                   ),
                                 ),
                               )
@@ -104,7 +111,9 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                                       ),
                                     ),
                                   );
-                Navigator.pop(context, true); // 過關 -> 返回上一頁
+                if (mounted) {
+                  Navigator.pop(context, true); // 過關 -> 返回上一頁
+                }
               }
             },
             child: Text("OK"),
@@ -154,12 +163,13 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                   child: Text("Check the path"),
                 ),
                 Gaps.w16,
-                if(controller.usedSteps > 20)
+                if (controller.usedSteps > 20)
                   ElevatedButton(
                     onPressed: () async {
                       controller.showHint();
                       setState(() {});
                       await Future.delayed(Duration(seconds: 2));
+                      if (!mounted) return;
                       controller.clearHint();
                       setState(() {});
                     },

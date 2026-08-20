@@ -11,19 +11,22 @@ class ControllerGameList extends ChangeNotifier {
   final Map<String, Map<String, List<ModelGameItem>>> _gamesByCategory = {};
   List<String> _categories = [];
   final Map<String, List<ModelGameUser>> _userProgressCache = {};
-  
+  bool _isDisposed = false;
+
   bool isLoading = false;
 
   ControllerGameList({required this.serviceGame, required this.userName});
 
   List<String> get categories => _categories;
-  Map<String, Map<String, List<ModelGameItem>>> get gamesByCategory => _gamesByCategory;
+  Map<String, Map<String, List<ModelGameItem>>> get gamesByCategory =>
+      _gamesByCategory;
 
   Future<void> loadGames() async {
     isLoading = true;
-    notifyListeners();
+    _notifyIfActive();
 
     _games = await serviceGame.fetchGames();
+    if (_isDisposed) return;
     _gamesByCategory.clear();
     for (var g in _games) {
       _gamesByCategory.putIfAbsent(g.gameType, () => {});
@@ -33,24 +36,37 @@ class ControllerGameList extends ChangeNotifier {
     _categories = _gamesByCategory.keys.toList();
 
     isLoading = false;
-    notifyListeners();
+    _notifyIfActive();
   }
 
   // 查詢目前使用者的分數紀錄
-  Future<List<ModelGameUser>> loadUserProgress(String gameType, String gameName) async {
+  Future<List<ModelGameUser>> loadUserProgress(
+      String gameType, String gameName) async {
     // 組 key
     final key = '$gameType|$gameName';
 
     isLoading = true;
-    notifyListeners();
+    _notifyIfActive();
 
-    final progress = await serviceGame.fetchUserProgress(userName, gameType, gameName);
+    final progress =
+        await serviceGame.fetchUserProgress(userName, gameType, gameName);
+    if (_isDisposed) return progress;
     // 存到快取
     _userProgressCache[key] = progress;
 
     isLoading = false;
-    notifyListeners();
+    _notifyIfActive();
     return progress;
+  }
+
+  void _notifyIfActive() {
+    if (!_isDisposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   // 取得使用者已通關的最高等級

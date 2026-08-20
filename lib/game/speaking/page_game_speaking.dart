@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,7 +11,6 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-
 
 // ignore: must_be_immutable
 class PageGameSpeaking extends StatefulWidget {
@@ -45,6 +45,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
       },
       onError: (error) {
         logger.e('Speech error: $error');
+        if (!mounted) return;
         setState(() {
           isRecording = false;
         });
@@ -65,6 +66,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
   @override
   void dispose() {
+    unawaited(_speech.cancel());
+    controller.dispose();
     answerController.dispose();
     super.dispose();
   }
@@ -77,6 +80,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     showCorrectAnswer(controller.currentQuestion!.correctAnswer);
     await Future.delayed(Duration(
         milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)));
+    if (!mounted) return;
     answerController.clear();
 
     if (controller.isRightAnswer == true || controller.repeatCounts == 2) {
@@ -85,7 +89,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     if (answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
-      Future.microtask(() => Navigator.pop(context, true));
+      Future.microtask(() {
+        if (mounted) Navigator.pop(context, true);
+      });
     }
   }
 
@@ -98,6 +104,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     List<String> tmp = text.split(" ");
     for (int i = 0; i < tmp.length; i++) {
       await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
 
       final newValue = TextEditingValue(
         text: "${answerController.text}${tmp[i]} ",
@@ -109,7 +116,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   }
 
   void onSpeechResult(String recognizedText) {
-    if (!isRecording) return;
+    if (!mounted || !isRecording) return;
 
     answerController.value = TextEditingValue(
       text: recognizedText,
@@ -122,6 +129,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   }) async {
     if (_speech.isListening) {
       await _speech.stop();
+      if (!mounted) return;
     }
     final available = await _speech.initialize(
       onError: (error) {
@@ -132,20 +140,25 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
           return;
         }
 
+        if (!mounted) return;
         setState(() {
           isRecording = false;
         });
       },
     );
 
-    if (!available) return;
+    if (!mounted) return;
+    if (!available) {
+      setState(() => isRecording = false);
+      return;
+    }
 
     answerController.clear();
 
     await _speech.listen(
       localeId: 'en_US',
       onResult: (result) {
-        if (!isRecording) return;
+        if (!mounted || !isRecording) return;
         onResult(result.recognizedWords);
       },
       listenOptions: stt.SpeechListenOptions(
@@ -170,7 +183,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
       builder: (context, _) {
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
-          Future.microtask(() => Navigator.pop(context, true));
+          Future.microtask(() {
+            if (mounted) Navigator.pop(context, true);
+          });
           return Scaffold(
             body: Center(
               child: Text("Congratulations! Score: ${controller.score}"),
@@ -257,11 +272,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                                   isRecording = true;
                                 });
                                 // 🚀 開始語音辨識
-                                startSpeechRecognition(
+                                await startSpeechRecognition(
                                     onResult: onSpeechResult);
                               } else {
                                 // ⏹ 停止錄音
-                                stopSpeechRecognition();
+                                await stopSpeechRecognition();
+                                if (!mounted) return;
                                 setState(() {
                                   isRecording = false;
                                 });

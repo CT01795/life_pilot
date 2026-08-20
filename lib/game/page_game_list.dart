@@ -42,6 +42,7 @@ class _PageGameListState extends State<PageGameList> {
   String? selectedGameName;
   int? selectedLevel;
   List<ModelGameUser> userProgress = [];
+  int _progressRequestId = 0;
 
   @override
   void initState() {
@@ -58,22 +59,35 @@ class _PageGameListState extends State<PageGameList> {
 
   Future<void> _loadData() async {
     await controllerGameList.loadGames();
+    if (!mounted) return;
     if (controllerGameList.gamesByCategory.isNotEmpty) {
-      selectedCategory = controllerGameList.gamesByCategory.keys.first;
-      final gamesMap = controllerGameList.gamesByCategory[selectedCategory!]!;
-      selectedGameName = gamesMap.keys.first;
-      selectedLevel = gamesMap[selectedGameName]!.first.level;
+      setState(() {
+        selectedCategory = controllerGameList.gamesByCategory.keys.first;
+        final gamesMap = controllerGameList.gamesByCategory[selectedCategory!]!;
+        selectedGameName = gamesMap.keys.first;
+        selectedLevel = gamesMap[selectedGameName]!.first.level;
+      });
       await _loadUserProgress();
+    } else {
+      setState(() {});
     }
   }
 
   Future<void> _loadUserProgress() async {
     if (selectedCategory == null || selectedGameName == null) return;
+    final requestId = ++_progressRequestId;
+    final requestedCategory = selectedCategory!;
+    final requestedGameName = selectedGameName!;
     // 取得該遊戲所有關卡紀錄
     final progress = await controllerGameList.loadUserProgress(
-      selectedCategory!,
-      selectedGameName!,
+      requestedCategory,
+      requestedGameName,
     );
+    if (!mounted || requestId != _progressRequestId) return;
+    if (selectedCategory != requestedCategory ||
+        selectedGameName != requestedGameName) {
+      return;
+    }
     setState(() {
       userProgress = progress;
 
@@ -88,6 +102,13 @@ class _PageGameListState extends State<PageGameList> {
         selectedLevel = levelList.last.level;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _progressRequestId++;
+    controllerGameList.dispose();
+    super.dispose();
   }
 
   ModelGameItem? get selectedGameItem {
@@ -252,10 +273,15 @@ class _PageGameListState extends State<PageGameList> {
                                               height: 60,
                                               decoration: BoxDecoration(
                                                 color: GameColors.buttonBase,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.white12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                    color: Colors.white12),
                                               ),
-                                              child: Icon(Icons.arrow_back_rounded, color: Colors.white70, size: 60),
+                                              child: Icon(
+                                                  Icons.arrow_back_rounded,
+                                                  color: Colors.white70,
+                                                  size: 60),
                                             ),
                                           ),
                                           Gaps.w16,
@@ -269,10 +295,15 @@ class _PageGameListState extends State<PageGameList> {
                                               height: 60,
                                               decoration: BoxDecoration(
                                                 color: GameColors.buttonBase,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.white12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                    color: Colors.white12),
                                               ),
-                                              child: Icon(Icons.arrow_forward_rounded, color: Colors.white70, size: 60),
+                                              child: Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  color: Colors.white70,
+                                                  size: 60),
                                             ),
                                           ),
                                           Gaps.w16,
@@ -283,10 +314,16 @@ class _PageGameListState extends State<PageGameList> {
                                               height: 60,
                                               decoration: BoxDecoration(
                                                 color: GameColors.buttonAccent,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.white12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                    color: Colors.white12),
                                               ),
-                                              child: Icon(Icons.arrow_upward_rounded, color: Colors.white70, size: 60,),
+                                              child: Icon(
+                                                Icons.arrow_upward_rounded,
+                                                color: Colors.white70,
+                                                size: 60,
+                                              ),
                                             ),
                                           ),
                                           Gaps.w16,
@@ -299,10 +336,13 @@ class _PageGameListState extends State<PageGameList> {
                                               height: 60,
                                               decoration: BoxDecoration(
                                                 color: Color(0xFFC94B4B),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.white12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                    color: Colors.white12),
                                               ),
-                                              child: Icon(Icons.circle, color: Colors.white70),
+                                              child: Icon(Icons.circle,
+                                                  color: Colors.white70),
                                             ),
                                           ),
                                         ],
@@ -427,8 +467,9 @@ class _PageGameListState extends State<PageGameList> {
                         if (result == true) {
                           await _loadUserProgress();
                         }
-                      } else if (game.gameName.toLowerCase().contains(
-                          "translation".toLowerCase())) {
+                      } else if (game.gameName
+                          .toLowerCase()
+                          .contains("translation".toLowerCase())) {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
