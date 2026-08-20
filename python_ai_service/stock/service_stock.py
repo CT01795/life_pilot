@@ -1,22 +1,23 @@
-from datetime import datetime
 import json
+import logging
+import sys
+from datetime import datetime
+from threading import Lock
 from zoneinfo import ZoneInfo
 
 import pandas as pd
-from sqlalchemy import func, or_, text
-from sqlalchemy.orm import Session
-import logging
-import sys
-from threading import Lock
-
+from config import SessionLocal, engine
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
-from config import engine, SessionLocal
 from security.supabase_auth import require_supabase_admin
-from stock.model_stock_institutional import create_stock_institutional_model
-from stock.model_futures_institutional import create_futures_institutional_model
-from stock.train_model import train_and_save_model
-from stock.model_stock_predicted import create_stock_predicted_model
+from sqlalchemy import func, or_, text
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
+from stock.model_futures_institutional import \
+    create_futures_institutional_model
 from stock.model_stock import create_stock_model
+from stock.model_stock_institutional import create_stock_institutional_model
+from stock.model_stock_predicted import create_stock_predicted_model
+from stock.train_model import train_and_save_model
 
 logging.basicConfig(
     level=logging.INFO,
@@ -307,12 +308,16 @@ def route_insert_stock_date_batch(payload: dict = Body(...)):
                 stock_data["date"] = datetime.fromisoformat(
                     stock_data["date"].replace("Z", "+00:00")
                 )
-      objects = [
-            StockModel(**stock_data)
-            for stock_data in stocks_data
-        ]
-      db.add_all(objects) 
+      stmt = insert(StockModel).values(stocks_data)
+
+      # type + date 重複時忽略
+      stmt = stmt.on_conflict_do_nothing(
+          index_elements=["type", "date"]
+      )
+
+      db.execute(stmt)
       db.commit()
+
       return {"status": "ok"}
     finally:
       db.close()
