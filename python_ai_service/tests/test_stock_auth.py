@@ -677,6 +677,92 @@ class StockAuthorizationTest(unittest.TestCase):
         )
         db.close.assert_called_once_with()
 
+    def test_stock_daily_price_query_rejects_invalid_input(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        cases = (
+            {
+                "table_name": "another_table",
+                "date": "2026-08-20T00:00:00Z",
+                "traded_number": 20_000_000,
+            },
+            {
+                "table_name": "stock_daily_price",
+                "date": "2026-08-20T00:00:00Z",
+                "traded_number": -1,
+            },
+        )
+
+        for payload in cases:
+            with self.subTest(payload=payload):
+                response = self.client.post(
+                    "/stock/select_stock_daily_price_by_date",
+                    json=payload,
+                )
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_stock_daily_price_query_returns_matching_rows(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        StockModel = service_stock.create_stock_model("stock_daily_price")
+        stock = StockModel(
+            security_code="2330",
+            security_name="TSMC",
+            date=datetime(2026, 8, 20, tzinfo=timezone.utc),
+            traded_number=30_000_000,
+            closing_price=950,
+        )
+        db = MagicMock()
+        query = db.query.return_value
+        query.filter.return_value = query
+        query.all.return_value = [stock]
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_daily_price_by_date",
+                json={
+                    "table_name": "stock_daily_price",
+                    "date": "2026-08-20T00:00:00Z",
+                    "traded_number": 20_000_000,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["security_code"], "2330")
+        self.assertEqual(response.json()[0]["closing_price"], 950)
+        query.all.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_stock_daily_price_query_reports_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.query.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_daily_price_by_date",
+                json={
+                    "table_name": "stock_daily_price",
+                    "date": "2026-08-20T00:00:00Z",
+                    "traded_number": 20_000_000,
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock daily prices could not be loaded",
+        )
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

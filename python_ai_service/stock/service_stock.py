@@ -119,6 +119,12 @@ class LatestStockDateRequest(BaseModel):
     type: StockType
 
 
+class StockDailyPriceQueryRequest(BaseModel):
+    table_name: Literal["stock_daily_price"]
+    date: datetime
+    traded_number: float = Field(ge=0)
+
+
 def _delete_stock_rows_before(*, table_name: str, cutoff: datetime) -> dict:
     latest_allowed_cutoff = (
         datetime.now(ZoneInfo("UTC")).date() - timedelta(days=30)
@@ -500,18 +506,29 @@ def route_check_stock_date(payload: StockDateCheckRequest):
         { 'table_name': table_name
         , 'date': date
         , 'traded_number': traded_number}""")   
-def route_select_stock_daily_price_by_date(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
-    traded_number = payload.get("traded_number")
+def route_select_stock_daily_price_by_date(
+    payload: StockDailyPriceQueryRequest,
+):
     db: Session = SessionLocal()
     try:
-      StockModel = create_stock_model(table_name)
-      result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.traded_number >= traded_number).filter(StockModel.closing_price >= 12).filter(StockModel.closing_price < 1000)
-      stockList = result.all()
-      if not stockList:
+      StockModel = create_stock_model(payload.table_name)
+      stocks = (
+          db.query(StockModel)
+          .filter(func.date(StockModel.date) == payload.date.date())
+          .filter(StockModel.traded_number >= payload.traded_number)
+          .filter(StockModel.closing_price >= 12)
+          .filter(StockModel.closing_price < 1000)
+          .all()
+      )
+      if not stocks:
         return []
-      return [model_to_dict(stock) for stock in stockList]
+      return [model_to_dict(stock) for stock in stocks]
+    except SQLAlchemyError as exception:
+      logger.exception("Could not select stock daily prices")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock daily prices could not be loaded",
+      ) from exception
     finally:
       db.close()
 
