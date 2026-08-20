@@ -145,6 +145,9 @@ class ControllerGameSteamScratchMaze {
       stateNotifier.value = state.copy()
         ..x = newX
         ..y = newY;
+      _checkFruit();
+      await _checkTreasure();
+      if (_scoreSaved) break;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX, newY - 1) ||
           await _isWalkable(newX, newY + 1)) {
@@ -164,6 +167,9 @@ class ControllerGameSteamScratchMaze {
       stateNotifier.value = state.copy()
         ..x = newX
         ..y = newY;
+      _checkFruit();
+      await _checkTreasure();
+      if (_scoreSaved) break;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX, newY - 1) ||
           await _isWalkable(newX, newY + 1)) {
@@ -183,6 +189,9 @@ class ControllerGameSteamScratchMaze {
       stateNotifier.value = state.copy()
         ..x = newX
         ..y = newY;
+      _checkFruit();
+      await _checkTreasure();
+      if (_scoreSaved) break;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX - 1, newY) ||
           await _isWalkable(newX + 1, newY)) {
@@ -202,6 +211,9 @@ class ControllerGameSteamScratchMaze {
       stateNotifier.value = state.copy()
         ..x = newX
         ..y = newY;
+      _checkFruit();
+      await _checkTreasure();
+      if (_scoreSaved) break;
       await Future.delayed(Duration(milliseconds: 400));
       if (await _isWalkable(newX - 1, newY) ||
           await _isWalkable(newX + 1, newY)) {
@@ -247,7 +259,13 @@ class ControllerGameSteamScratchMaze {
       state.score += level.treasure.scoreValue;
       _notifyEvent(ModelGameEvent(
           EnumGameEventType.treasure, "Treasure found！Score: ${state.score}"));
-      await _saveScore(true);
+      try {
+        await _saveScore(true);
+      } catch (_) {
+        state.treasureCollected = false;
+        state.score -= level.treasure.scoreValue;
+        rethrow;
+      }
     }
     return true;
   }
@@ -269,16 +287,21 @@ class ControllerGameSteamScratchMaze {
 
   Future<void> _saveScore(bool isPass) async {
     if (_scoreSaved || state.score < level.treasure.scoreValue) {
-      return; // ⛔ 已存過就不再存
+      return;
     }
     _scoreSaved = true;
-    await service.saveUserGameScore(
-      newUserName: userName,
-      newScore: state.score.toDouble(),
-      newGameId: gameId, // 使用傳入的 gameId
-      newIsPass: isPass,
-    );
-    state.score = 0;
+    try {
+      await service.saveUserGameScore(
+        newUserName: userName,
+        newScore: state.score.toDouble(),
+        newGameId: gameId,
+        newIsPass: isPass,
+      );
+      state.score = 0;
+    } catch (_) {
+      _scoreSaved = false;
+      rethrow;
+    }
   }
 
   void dispose() {

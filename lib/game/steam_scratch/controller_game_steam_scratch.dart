@@ -234,7 +234,7 @@ class ControllerGameSteamScratch {
 
     if (_checkObstacle()) return false;
     _checkFruit();
-    return _checkTreasure();
+    return await _checkTreasure();
   }
 
   // ---- 檢查障礙 ----
@@ -263,13 +263,12 @@ class ControllerGameSteamScratch {
   }
 
   // ---- 檢查寶藏 ----
-  bool _checkTreasure() {
+  Future<bool> _checkTreasure() async {
     if (!state.treasureCollected &&
         state.x == level.treasure.x &&
         state.y == level.treasure.y) {
       if (state.score <
           min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
-        //至少要吃一點東西
         _notifyEvent(ModelGameEvent(EnumGameEventType.warning,
             "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!"));
         return true;
@@ -278,7 +277,13 @@ class ControllerGameSteamScratch {
       state.score += level.treasure.scoreValue;
       _notifyEvent(ModelGameEvent(
           EnumGameEventType.treasure, "Treasure found！Score: ${state.score}"));
-      _saveScore(true);
+      try {
+        await _saveScore(true);
+      } catch (_) {
+        state.treasureCollected = false;
+        state.score -= level.treasure.scoreValue;
+        rethrow;
+      }
       return false;
     }
     return true;
@@ -301,16 +306,21 @@ class ControllerGameSteamScratch {
 
   Future<void> _saveScore(bool isPass) async {
     if (_scoreSaved || state.score < level.treasure.scoreValue) {
-      return; // ⛔ 已存過就不再存
+      return;
     }
     _scoreSaved = true;
-    await service.saveUserGameScore(
-      newUserName: userName,
-      newScore: state.score.toDouble(),
-      newGameId: gameId, // 使用傳入的 gameId
-      newIsPass: isPass,
-    );
-    state.score = 0;
+    try {
+      await service.saveUserGameScore(
+        newUserName: userName,
+        newScore: state.score.toDouble(),
+        newGameId: gameId,
+        newIsPass: isPass,
+      );
+      state.score = 0;
+    } catch (_) {
+      _scoreSaved = false;
+      rethrow;
+    }
   }
 
   void dispose() {

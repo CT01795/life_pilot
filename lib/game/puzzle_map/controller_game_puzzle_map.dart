@@ -26,8 +26,9 @@ class ControllerGamePuzzleMap extends ChangeNotifier {
   int get rowsCount => rows;
   int get colsCount => cols;
 
-  void setGridSize(
-      int imgWidth, int imgHeight, int shortSideCount) {
+  void setGridSize(int imgWidth, int imgHeight, int shortSideCount) {
+    _scoreSaved = false;
+    score = 0;
     double tileSize;
     if (imgWidth > imgHeight) {
       // 高是短邊
@@ -61,16 +62,21 @@ class ControllerGamePuzzleMap extends ChangeNotifier {
   }
 
   Future<bool> checkResult() async {
-    bool ok = pieces.every((p) => p.correctIndex == p.currentIndex);
+    final ok = pieces.every((p) => p.correctIndex == p.currentIndex);
     if (ok && !_scoreSaved) {
       _calculateScore();
-      await service.saveUserGameScore(
-        newUserName: userName,
-        newScore: score.toDouble(),
-        newGameId: gameId, // 使用傳入的 gameId
-        newIsPass: true,
-      );
       _scoreSaved = true;
+      try {
+        await service.saveUserGameScore(
+          newUserName: userName,
+          newScore: score.toDouble(),
+          newGameId: gameId,
+          newIsPass: true,
+        );
+      } catch (_) {
+        _scoreSaved = false;
+        rethrow;
+      }
     }
     return ok;
   }
@@ -80,10 +86,11 @@ class ControllerGamePuzzleMap extends ChangeNotifier {
   }
 
   void updateDrag(ModelGamePuzzlePiece piece, Offset delta) {
-    if(piece.currentIndex == piece.correctIndex) return;
+    if (piece.currentIndex == piece.correctIndex) return;
     dragOffsets[piece.currentIndex] =
         (dragOffsets[piece.currentIndex] ?? Offset.zero) + delta;
-    if (DateTime.now().difference(_lastNotify).inMilliseconds > 16) { //notifyListeners 節流
+    if (DateTime.now().difference(_lastNotify).inMilliseconds > 16) {
+      //notifyListeners 節流
       _lastNotify = DateTime.now();
       notifyListeners();
     }
@@ -94,7 +101,7 @@ class ControllerGamePuzzleMap extends ChangeNotifier {
     double tileWidth,
     double tileHeight,
   ) {
-    if(piece.currentIndex == piece.correctIndex) return;
+    if (piece.currentIndex == piece.correctIndex) return;
     final totalOffset = dragOffsets[piece.currentIndex] ?? Offset.zero;
     _moveGroup([piece], totalOffset, tileWidth, tileHeight);
     notifyListeners();

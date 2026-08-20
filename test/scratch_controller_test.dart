@@ -19,6 +19,21 @@ class _BlockingCommand extends Command {
   }
 }
 
+class _FailOnceGameService extends ServiceGame {
+  int attempts = 0;
+
+  @override
+  Future<void> saveUserGameScore({
+    required String newUserName,
+    required double newScore,
+    required String? newGameId,
+    bool? newIsPass,
+  }) async {
+    attempts++;
+    if (attempts == 1) throw StateError('temporary save failure');
+  }
+}
+
 void main() {
   test('scratch ignores a second command run while one is active', () async {
     final controller = ControllerGameSteamScratch(
@@ -64,5 +79,29 @@ void main() {
     controller.dispose();
 
     expect(await movement, isFalse);
+  });
+
+  test('scratch can retry after a score save failure', () async {
+    final service = _FailOnceGameService();
+    final controller = ControllerGameSteamScratch(
+      userName: 'test-user',
+      service: service,
+      gameId: 'test-game',
+      level: ModelGameSteamScratchLevel(
+        levelNumber: 1,
+        obstacles: [],
+        fruits: [],
+        treasure: ModelGameSteamScratchTreasure(x: 1, y: 0),
+      ),
+    );
+
+    await expectLater(controller.moveForward(), throwsStateError);
+    expect(controller.state.treasureCollected, isFalse);
+    expect(controller.state.score, 0);
+
+    controller.resetGame();
+    expect(await controller.moveForward(), isFalse);
+    expect(service.attempts, 2);
+    controller.dispose();
   });
 }

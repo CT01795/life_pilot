@@ -94,6 +94,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
+      if (!mounted) {
+        img.dispose();
+        return;
+      }
       controller!.setGridSize(img.width, img.height, gameSize);
       setState(() {
         puzzleImage = img;
@@ -385,6 +389,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
   void _check() async {
     final ok = await controller!.checkResult();
+    if (!mounted) return;
     // 顯示結果
     showDialog(
       context: context,
@@ -423,8 +428,8 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                                 MaterialPageRoute(
                                   builder: (context) => PageGameTranslation(
                                     gameId: widget.gameId,
-                                    gameLevel: -1, 
-                                    gameName: "",     //widget.gameLevel
+                                    gameLevel: -1,
+                                    gameName: "", //widget.gameLevel
                                   ),
                                 ),
                               )
@@ -447,7 +452,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                                       ),
                                     ),
                                   );
-                Navigator.pop(context, true); // 過關 -> 返回上一頁
+                if (mounted) {
+                  Navigator.pop(context, true); // 過關 -> 返回上一頁
+                }
               }
             },
             child: Text("OK"),

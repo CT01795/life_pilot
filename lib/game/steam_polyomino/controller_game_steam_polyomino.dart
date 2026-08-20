@@ -215,14 +215,19 @@ class ControllerGameSteamPolyomino extends ChangeNotifier {
     if (placedBlocks.length != levelData.availableBlocks.length) {
       return false;
     }
-    if(!_scoreSaved){
-      await service.saveUserGameScore(
-        newUserName: userName,
-        newScore: levelData.availableBlocks.length * 10,
-        newGameId: gameId, // 使用傳入的 gameId
-        newIsPass: true,
-      );
+    if (!_scoreSaved) {
       _scoreSaved = true;
+      try {
+        await service.saveUserGameScore(
+          newUserName: userName,
+          newScore: levelData.availableBlocks.length * 10,
+          newGameId: gameId,
+          newIsPass: true,
+        );
+      } catch (_) {
+        _scoreSaved = false;
+        rethrow;
+      }
     }
     return true; // 到達終點且待用水管全部放完
   }
