@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/grammar/controller_game_grammar.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -43,15 +44,23 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   }
 
   // 呼叫這個方法答題並判斷是否完成題數
-  void onAnswer(String userAnswer) {
-    controller.answer(userAnswer);
+  Future<void> onAnswer(String userAnswer) async {
+    await controller.answer(userAnswer);
+    if (!mounted) return;
 
-    if (controller.answeredCount >= maxQ &&
-        !_hasPopped) {
+    if (controller.answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
-      Future.microtask(() => Navigator.pop(context, true));
+      Future.microtask(() {
+        if (mounted) Navigator.pop(context, true);
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -59,12 +68,39 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final loc = AppLocalizations.of(context)!;
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
-          Future.microtask(() => Navigator.pop(context, true));
+          Future.microtask(() {
+            if (mounted) Navigator.pop(context, true);
+          });
           return Center(
             child:
                 Text("Congratulations! Score: ${controller.model.player.hp}"),
+          );
+        }
+
+        if (controller.loadError != null) {
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.unknownError),
+                  Gaps.h8,
+                  ElevatedButton(
+                    onPressed: controller.loadNextQuestion,
+                    child: Text(loc.retry),
+                  ),
+                ],
+              ),
+            ),
           );
         }
 
@@ -246,6 +282,9 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
+                      onPressed: controller.isRightAnswer == null
+                          ? () => onAnswer(opt)
+                          : null,
                       child: Text(
                         opt,
                         style: TextStyle(
@@ -254,7 +293,6 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      onPressed: () => onAnswer(opt),
                     ),
                   ),
                 ),

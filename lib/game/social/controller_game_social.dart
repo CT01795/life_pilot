@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/social/model_game_social.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
@@ -21,6 +22,8 @@ class ControllerGameSocial extends ChangeNotifier {
   int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
+  Object? loadError;
+  bool _isDisposed = false;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
@@ -51,24 +54,46 @@ class ControllerGameSocial extends ChangeNotifier {
   }
 
   Future<void> loadNextQuestion() async {
+    if (_isDisposed || isLoading) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     if (score >= 100) {
-      isFinished = true;
-      await _saveScore(score >= 100);
-      notifyListeners();
+      await _completeGame();
       return;
     }
 
     isLoading = true;
+    loadError = null;
     lastAnswer = null;
     showCorrectAnswer = false;
-    notifyListeners();
+    _notifyIfActive();
 
-    currentQuestion = await service.fetchSocialQuestion(userName, gameLevel);
+    currentQuestion = await _fetchQuestionSafely();
+    if (_isDisposed) return;
 
     isLoading = false;
-    notifyListeners();
-    speak(currentQuestion!.scene);
+    _notifyIfActive();
+    if (currentQuestion != null) {
+      unawaited(_speakSafely(currentQuestion!.scene));
+    }
+  }
+
+  Future<ModelGameSocial?> _fetchQuestionSafely() async {
+    try {
+      return await service.fetchSocialQuestion(userName, gameLevel);
+    } catch (error, stackTrace) {
+      logger.e('Load social question failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+      return null;
+    }
+  }
+
+  Future<void> _speakSafely(String text) async {
+    try {
+      await speak(text);
+    } catch (error, stackTrace) {
+      logger.e('Social audio failed', error: error, stackTrace: stackTrace);
+    }
   }
 
   Map<String, Set<String>> synonyms = {};
@@ -91,22 +116,67 @@ class ControllerGameSocial extends ChangeNotifier {
       seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
-    notifyListeners();
+    _notifyIfActive();
 
     // 用 Timer 2 秒後跳下一題
     _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
-      loadNextQuestion();
+      unawaited(loadNextQuestion());
     });
 
     if (answeredCount >= maxQuestions) {
-      isFinished = true;
+      await _completeGame();
     }
-    unawaited(service.submitSocialAnswer(
-      userName: userName,
+    unawaited(_submitAnswerSafely(
       questionId: currentQuestion!.id,
       answer: answer,
       isRightAnswer: isRightAnswer,
     ));
+  }
+
+  Future<void> _submitAnswerSafely({
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    try {
+      await service.submitSocialAnswer(
+        userName: userName,
+        questionId: questionId,
+        answer: answer,
+        isRightAnswer: isRightAnswer,
+      );
+    } catch (error, stackTrace) {
+      logger.e('Submit social answer failed',
+          error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _completeGame() async {
+    if (_isDisposed || isLoading) return;
+    _nextQuestionTimer?.cancel();
+    isLoading = true;
+    loadError = null;
+    _notifyIfActive();
+    try {
+      await _saveScore(score >= 100);
+      if (_isDisposed) return;
+      isFinished = true;
+    } catch (error, stackTrace) {
+      logger.e('Save social score failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+    } finally {
+      if (!_isDisposed) {
+        isLoading = false;
+        _notifyIfActive();
+      }
+    }
+  }
+
+  Future<void> retry() {
+    return answeredCount >= maxQuestions || score >= 100
+        ? _completeGame()
+        : loadNextQuestion();
   }
 
   Future<void> _saveScore(bool isPass) async {
@@ -116,6 +186,10 @@ class ControllerGameSocial extends ChangeNotifier {
       newGameId: gameId, // 使用傳入的 gameId
       newIsPass: isPass,
     );
+  }
+
+  void _notifyIfActive() {
+    if (!_isDisposed) notifyListeners();
   }
 
   Color getButtonColor(String option) {
@@ -164,6 +238,7 @@ class ControllerGameSocial extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _nextQuestionTimer?.cancel();
     _ttsAudio.dispose();
     super.dispose();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/social/controller_game_social.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
@@ -36,8 +37,14 @@ class _PageGameSocialState extends State<PageGameSocial> {
   }
 
   // 呼叫這個方法答題並判斷是否完成題數
-  void onAnswer(String option) {
-    controller.answer(option);
+  Future<void> onAnswer(String option) async {
+    await controller.answer(option);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,11 +52,38 @@ class _PageGameSocialState extends State<PageGameSocial> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final loc = AppLocalizations.of(context)!;
         // ✅ 判斷遊戲是否完成
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
-          Future.microtask(() => Navigator.pop(context, true));
+          Future.microtask(() {
+            if (mounted) Navigator.pop(context, true);
+          });
           return const SizedBox.shrink(); // 回上一頁前先返回空 widget
+        }
+
+        if (controller.loadError != null) {
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.unknownError),
+                  Gaps.h8,
+                  ElevatedButton(
+                    onPressed: controller.retry,
+                    child: Text(loc.retry),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         if (controller.isLoading || controller.currentQuestion == null) {
@@ -136,7 +170,9 @@ class _PageGameSocialState extends State<PageGameSocial> {
                         children: [
                           // ⭐ 改成自訂 CheckBox 風格的 Radio
                           GestureDetector(
-                            onTap: () => onAnswer(opt),
+                            onTap: controller.lastAnswer == null
+                                ? () => onAnswer(opt)
+                                : null,
                             child: Container(
                               width: 60,
                               height: 60,

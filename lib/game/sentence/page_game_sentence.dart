@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/sentence/controller_game_sentence.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -43,14 +44,22 @@ class _PageGameSentenceState extends State<PageGameSentence> {
 
   // 呼叫這個方法答題並判斷是否完成題數
   void onAnswer() {
-    controller.checkAnswer();
+    if (!controller.checkAnswer()) return;
     answeredCount++;
 
     if (answeredCount >= maxQ && !_hasPopped) {
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
-      Future.microtask(() => Navigator.pop(context, true));
+      Future.microtask(() {
+        if (mounted) Navigator.pop(context, true);
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,10 +86,29 @@ class _PageGameSentenceState extends State<PageGameSentence> {
       body: AnimatedBuilder(
           animation: controller,
           builder: (_, __) {
+            final loc = AppLocalizations.of(context)!;
             if (controller.isFinished && !_hasPopped) {
               _hasPopped = true;
-              Future.microtask(() => Navigator.pop(context, true));
+              Future.microtask(() {
+                if (mounted) Navigator.pop(context, true);
+              });
               return const SizedBox.shrink();
+            }
+
+            if (controller.loadError != null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(loc.unknownError),
+                    Gaps.h8,
+                    ElevatedButton(
+                      onPressed: controller.loadNextQuestion,
+                      child: Text(loc.retry),
+                    ),
+                  ],
+                ),
+              );
             }
 
             if (controller.isLoading || controller.currentQuestion == null) {
@@ -98,8 +126,8 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                       IconButton(
                         icon: Icon(Icons.volume_up,
                             size: 60, color: Color(0xFF26A69A)),
-                        onPressed: () async =>
-                            await controller.speak(controller.currentQuestion!.correctAnswer),
+                        onPressed: () async => await controller
+                            .speak(controller.currentQuestion!.correctAnswer),
                       ),
                       Gaps.w36,
                       ElevatedButton(
@@ -110,7 +138,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: onAnswer,
+                        onPressed: controller.canCheckAnswer ? onAnswer : null,
                         child: Text("Check",
                             style:
                                 TextStyle(fontSize: 24, color: Colors.white)),
