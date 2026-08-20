@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 from config import SessionLocal, engine
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from security.supabase_auth import require_supabase_admin
 from sqlalchemy import func, or_, text
 from sqlalchemy.dialects.postgresql import insert
@@ -47,6 +47,18 @@ class StockDateItem(BaseModel):
 class StockDateBatchRequest(BaseModel):
     table_name: Literal["stock_date"]
     stocks: list[StockDateItem] = Field(min_length=1, max_length=10_000)
+
+
+class StockDailyPriceItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    security_code: str = Field(min_length=1, max_length=32)
+    date: datetime
+
+
+class StockDailyPriceBatchRequest(BaseModel):
+    table_name: Literal["stock_daily_price"]
+    stocks: list[StockDailyPriceItem] = Field(min_length=1, max_length=10_000)
 
 
 def _utc_now_iso() -> str:
@@ -135,35 +147,43 @@ def route_delete_stock_date(payload: dict = Body(...)):
       , description="""批量插入股票數據, 參數
         { 'table_name': table_name
         , 'stocks': stocks,}""")   
-def route_insert_stock_daily_price_batch(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    stocks_data = payload.get("stocks")
+def route_insert_stock_daily_price_batch(payload: StockDailyPriceBatchRequest):
+    stocks_data = [stock.model_dump() for stock in payload.stocks]
     db: Session = SessionLocal()
     try:
-      StockModel = create_stock_model(table_name)
+      StockModel = create_stock_model(payload.table_name)
       # 取得 model 欄位
       model_columns = StockModel.__table__.columns.keys()
-      objects = []
-      for stock_data in stocks_data:
-        # 過濾不存在欄位
-        filtered_data = {
+      filtered_stocks = [
+        {
             k: v
             for k, v in stock_data.items()
             if k in model_columns
         }
-        # 處理 date
-        if filtered_data.get("date"):
-            filtered_data["date"] = (
-                datetime.fromisoformat(
-                    filtered_data["date"]
-                ).astimezone(ZoneInfo("UTC"))
-            )
-        objects.append(
-            StockModel(**filtered_data)
-        )
-      db.add_all(objects) 
+        for stock_data in stocks_data
+      ]
+      stmt = insert(StockModel).values(filtered_stocks)
+      stmt = stmt.on_conflict_do_nothing(
+          index_elements=["security_code", "date"]
+      )
+
+      result = db.execute(stmt)
       db.commit()
-      return {"status": "ok"}
+
+      inserted_rows = max(result.rowcount or 0, 0)
+      return {
+          "status": "ok",
+          "received_rows": len(filtered_stocks),
+          "inserted_rows": inserted_rows,
+          "skipped_rows": len(filtered_stocks) - inserted_rows,
+      }
+    except SQLAlchemyError as exception:
+      db.rollback()
+      logger.exception("Could not insert stock daily price batch")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock daily price batch could not be saved",
+      ) from exception
     finally:
       db.close()
 

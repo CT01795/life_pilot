@@ -192,6 +192,101 @@ class StockAuthorizationTest(unittest.TestCase):
         db.commit.assert_not_called()
         db.close.assert_called_once_with()
 
+    def test_stock_daily_price_batch_rejects_unknown_table(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+
+        response = self.client.post(
+            "/stock/insert_stock_daily_price_batch",
+            json={
+                "table_name": "stock_date",
+                "stocks": [
+                    {
+                        "security_code": "2330",
+                        "date": "2026-08-20T00:00:00Z",
+                    },
+                ],
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_stock_daily_price_batch_reports_duplicate_rows(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.return_value.rowcount = 1
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_stock_daily_price_batch",
+                json={
+                    "table_name": "stock_daily_price",
+                    "stocks": [
+                        {
+                            "security_code": "2330",
+                            "security_name": "TSMC",
+                            "date": "2026-08-20T00:00:00Z",
+                            "closing_price": 1200,
+                        },
+                        {
+                            "security_code": "2330",
+                            "security_name": "TSMC",
+                            "date": "2026-08-20T00:00:00Z",
+                            "closing_price": 1200,
+                        },
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ok",
+                "received_rows": 2,
+                "inserted_rows": 1,
+                "skipped_rows": 1,
+            },
+        )
+        db.commit.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_stock_daily_price_batch_rolls_back_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_stock_daily_price_batch",
+                json={
+                    "table_name": "stock_daily_price",
+                    "stocks": [
+                        {
+                            "security_code": "2330",
+                            "date": "2026-08-20T00:00:00Z",
+                        },
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock daily price batch could not be saved",
+        )
+        db.rollback.assert_called_once_with()
+        db.commit.assert_not_called()
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()
