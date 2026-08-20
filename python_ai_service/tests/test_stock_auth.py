@@ -287,6 +287,96 @@ class StockAuthorizationTest(unittest.TestCase):
         db.commit.assert_not_called()
         db.close.assert_called_once_with()
 
+    def test_futures_institutional_batch_rejects_unknown_table(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+
+        response = self.client.post(
+            "/stock/insert_futures_institutional_batch",
+            json={
+                "table_name": "another_table",
+                "futures": [
+                    {
+                        "date": "2026-08-20T00:00:00Z",
+                        "product_name": "Taiwan futures",
+                        "identity_type": "foreign investor",
+                    },
+                ],
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_futures_institutional_batch_reports_duplicate_rows(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.return_value.rowcount = 1
+        item = {
+            "date": "2026-08-20T00:00:00Z",
+            "product_name": "Taiwan futures",
+            "identity_type": "foreign investor",
+            "trade_long_qty": 100,
+        }
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_futures_institutional_batch",
+                json={
+                    "table_name": "futures_institutional",
+                    "futures": [item, item],
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ok",
+                "received_rows": 2,
+                "inserted_rows": 1,
+                "skipped_rows": 1,
+            },
+        )
+        db.commit.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_futures_institutional_batch_rolls_back_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_futures_institutional_batch",
+                json={
+                    "table_name": "futures_institutional",
+                    "futures": [
+                        {
+                            "date": "2026-08-20T00:00:00Z",
+                            "product_name": "Taiwan futures",
+                            "identity_type": "foreign investor",
+                        },
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Futures institutional batch could not be saved",
+        )
+        db.rollback.assert_called_once_with()
+        db.commit.assert_not_called()
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

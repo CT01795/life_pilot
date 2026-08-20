@@ -61,6 +61,22 @@ class StockDailyPriceBatchRequest(BaseModel):
     stocks: list[StockDailyPriceItem] = Field(min_length=1, max_length=10_000)
 
 
+class FuturesInstitutionalItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    date: datetime
+    product_name: str = Field(min_length=1, max_length=50)
+    identity_type: str = Field(min_length=1, max_length=20)
+
+
+class FuturesInstitutionalBatchRequest(BaseModel):
+    table_name: Literal["futures_institutional"]
+    futures: list[FuturesInstitutionalItem] = Field(
+        min_length=1,
+        max_length=10_000,
+    )
+
+
 def _utc_now_iso() -> str:
     return datetime.now(ZoneInfo("UTC")).isoformat()
 
@@ -290,38 +306,50 @@ def route_select_futures_institutional(payload: dict = Body(...)):
       , description="""批量插入三大法人futures數據, 參數
         { 'table_name': table_name
         , 'futures': futures,}""")   
-def route_insert_futures_institutional_batch(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    futures_institutional_data = payload.get("futures")
+def route_insert_futures_institutional_batch(
+    payload: FuturesInstitutionalBatchRequest,
+):
+    futures_institutional_data = [
+        item.model_dump()
+        for item in payload.futures
+    ]
     db: Session = SessionLocal()
     try:
-      FuturesInstitutionalModel = create_futures_institutional_model(table_name)
+      FuturesInstitutionalModel = create_futures_institutional_model(
+          payload.table_name
+      )
       # 取得 model 欄位
       model_columns = FuturesInstitutionalModel.__table__.columns.keys()
-      objects = []
-      for future_institutional_data in futures_institutional_data:
-        # 過濾不存在欄位
-        filtered_institutional_data = {
+      filtered_futures = [
+        {
             k: v
-            for k, v in future_institutional_data.items()
+            for k, v in item.items()
             if k in model_columns
         }
-        # 處理 date
-        if filtered_institutional_data.get("date"):
-            filtered_institutional_data["date"] = (
-                datetime.fromisoformat(
-                    filtered_institutional_data["date"].replace("Z", "+00:00")
-                )
-            )
-        objects.append(
-            FuturesInstitutionalModel(**filtered_institutional_data)
-        )
-      db.add_all(objects) 
+        for item in futures_institutional_data
+      ]
+      stmt = insert(FuturesInstitutionalModel).values(filtered_futures)
+      stmt = stmt.on_conflict_do_nothing(
+          index_elements=["date", "product_name", "identity_type"]
+      )
+
+      result = db.execute(stmt)
       db.commit()
-      return {"status": "ok"}
-    except Exception as e:
+
+      inserted_rows = max(result.rowcount or 0, 0)
+      return {
+          "status": "ok",
+          "received_rows": len(filtered_futures),
+          "inserted_rows": inserted_rows,
+          "skipped_rows": len(filtered_futures) - inserted_rows,
+      }
+    except SQLAlchemyError as exception:
       db.rollback()
-      raise e
+      logger.exception("Could not insert futures institutional batch")
+      raise HTTPException(
+          status_code=503,
+          detail="Futures institutional batch could not be saved",
+      ) from exception
     finally:
       db.close()
 
