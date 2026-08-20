@@ -573,6 +573,110 @@ class StockAuthorizationTest(unittest.TestCase):
         db.commit.assert_not_called()
         db.close.assert_called_once_with()
 
+    def test_stock_date_queries_reject_invalid_input(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        cases = (
+            (
+                "/stock/check_stock_date",
+                {
+                    "table_name": "another_table",
+                    "date": "2026-08-20T00:00:00Z",
+                    "type": "daily",
+                },
+            ),
+            (
+                "/stock/select_latest_stock_date",
+                {"table_name": "stock_date", "type": "   "},
+            ),
+        )
+
+        for endpoint, payload in cases:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.post(endpoint, json=payload)
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_check_stock_date_uses_first_matching_row(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        query = db.query.return_value
+        query.filter.return_value = query
+        query.first.return_value = (datetime.now(timezone.utc),)
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/check_stock_date",
+                json={
+                    "table_name": "stock_date",
+                    "date": "2026-08-20T00:00:00Z",
+                    "type": "daily",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": True})
+        query.first.assert_called_once_with()
+        self.assertFalse(query.count.called)
+        db.close.assert_called_once_with()
+
+    def test_select_latest_stock_date_only_loads_first_row(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        expected_date = datetime(2026, 8, 20, tzinfo=timezone.utc)
+        db = MagicMock()
+        query = db.query.return_value
+        query.filter.return_value = query
+        query.order_by.return_value = query
+        query.first.return_value = (expected_date,)
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_latest_stock_date",
+                json={"table_name": "stock_date", "type": "daily"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            datetime.fromisoformat(response.json()["date"]),
+            expected_date,
+        )
+        query.first.assert_called_once_with()
+        self.assertFalse(query.all.called)
+        db.close.assert_called_once_with()
+
+    def test_stock_date_query_reports_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.query.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/check_stock_date",
+                json={
+                    "table_name": "stock_date",
+                    "date": "2026-08-20T00:00:00Z",
+                    "type": "daily",
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock date could not be checked",
+        )
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()

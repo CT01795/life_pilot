@@ -3,13 +3,13 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from threading import Lock
-from typing import Literal
+from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 from config import SessionLocal, engine
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from security.supabase_auth import require_supabase_admin
 from sqlalchemy import func, or_, text
 from sqlalchemy.dialects.postgresql import insert
@@ -100,6 +100,23 @@ class StockDailyPriceCleanupRequest(BaseModel):
 class StockDateCleanupRequest(BaseModel):
     table_name: Literal["stock_date"]
     date: datetime
+
+
+StockType = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
+]
+
+
+class StockDateCheckRequest(BaseModel):
+    table_name: Literal["stock_date"]
+    date: datetime
+    type: StockType
+
+
+class LatestStockDateRequest(BaseModel):
+    table_name: Literal["stock_date"]
+    type: StockType
 
 
 def _delete_stock_rows_before(*, table_name: str, cutoff: datetime) -> dict:
@@ -456,15 +473,23 @@ def route_insert_stock_date_batch(payload: StockDateBatchRequest):
         { 'table_name': table_name
         , 'date': date
         , 'type': type}""")   
-def route_check_stock_date(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date"))
-    type = payload.get("type")
+def route_check_stock_date(payload: StockDateCheckRequest):
     db: Session = SessionLocal()
     try:
-      StockModel = create_stock_model(table_name)
-      result = db.query(StockModel).filter(func.date(StockModel.date) == date.date()).filter(StockModel.type == type)
-      return {"status": result.count() > 0}
+      StockModel = create_stock_model(payload.table_name)
+      existing_row = (
+          db.query(StockModel.date)
+          .filter(func.date(StockModel.date) == payload.date.date())
+          .filter(StockModel.type == payload.type)
+          .first()
+      )
+      return {"status": existing_row is not None}
+    except SQLAlchemyError as exception:
+      logger.exception("Could not check stock date")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock date could not be checked",
+      ) from exception
     finally:
       db.close()
 
@@ -502,22 +527,29 @@ def model_to_dict(obj):
       , description="""查詢最新股票日期, 參數
         { 'table_name': table_name
         , 'type': type}""")   
-def route_select_latest_stock_date(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    type = payload.get("type")
+def route_select_latest_stock_date(payload: LatestStockDateRequest):
     db: Session = SessionLocal()
     try:
-      StockModel = create_stock_model(table_name)
-      result = db.query(StockModel).filter(StockModel.type == type).order_by(StockModel.date.desc())
-      stockList = result.all()
-      if not stockList:
+      StockModel = create_stock_model(payload.table_name)
+      latest_stock_date = (
+          db.query(StockModel.date)
+          .filter(StockModel.type == payload.type)
+          .order_by(StockModel.date.desc())
+          .first()
+      )
+      if latest_stock_date is None:
         return {
           "date": None
         }
-      stock = stockList[0]
       return {
-          "date": stock.date
+          "date": latest_stock_date[0]
       }
+    except SQLAlchemyError as exception:
+      logger.exception("Could not select latest stock date")
+      raise HTTPException(
+          status_code=503,
+          detail="Latest stock date could not be loaded",
+      ) from exception
     finally:
       db.close()
 
