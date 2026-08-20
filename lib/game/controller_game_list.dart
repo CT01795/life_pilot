@@ -25,18 +25,22 @@ class ControllerGameList extends ChangeNotifier {
     isLoading = true;
     _notifyIfActive();
 
-    _games = await serviceGame.fetchGames();
-    if (_isDisposed) return;
-    _gamesByCategory.clear();
-    for (var g in _games) {
-      _gamesByCategory.putIfAbsent(g.gameType, () => {});
-      final gameMap = _gamesByCategory[g.gameType]!;
-      gameMap.putIfAbsent(g.gameName, () => []).add(g);
+    try {
+      _games = await serviceGame.fetchGames();
+      if (_isDisposed) return;
+      _gamesByCategory.clear();
+      for (var g in _games) {
+        _gamesByCategory.putIfAbsent(g.gameType, () => {});
+        final gameMap = _gamesByCategory[g.gameType]!;
+        gameMap.putIfAbsent(g.gameName, () => []).add(g);
+      }
+      _categories = _gamesByCategory.keys.toList();
+    } finally {
+      if (!_isDisposed) {
+        isLoading = false;
+        _notifyIfActive();
+      }
     }
-    _categories = _gamesByCategory.keys.toList();
-
-    isLoading = false;
-    _notifyIfActive();
   }
 
   // 查詢目前使用者的分數紀錄
@@ -48,15 +52,20 @@ class ControllerGameList extends ChangeNotifier {
     isLoading = true;
     _notifyIfActive();
 
-    final progress =
-        await serviceGame.fetchUserProgress(userName, gameType, gameName);
-    if (_isDisposed) return progress;
-    // 存到快取
-    _userProgressCache[key] = progress;
-
-    isLoading = false;
-    _notifyIfActive();
-    return progress;
+    try {
+      final progress =
+          await serviceGame.fetchUserProgress(userName, gameType, gameName);
+      if (!_isDisposed) {
+        // 存到快取
+        _userProgressCache[key] = progress;
+      }
+      return progress;
+    } finally {
+      if (!_isDisposed) {
+        isLoading = false;
+        _notifyIfActive();
+      }
+    }
   }
 
   void _notifyIfActive() {

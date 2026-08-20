@@ -185,6 +185,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get game => '遊戲';
 
   @override
+  String get gameStart => '開始';
+
+  @override
+  String get gameNoRecords => '尚無遊戲紀錄';
+
+  @override
+  String get gameLevel => '關卡';
+
+  @override
+  String get gameScore => '分數';
+
+  @override
   String get ai => 'AI助理';
 
   @override

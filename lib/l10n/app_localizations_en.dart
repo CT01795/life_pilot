@@ -185,6 +185,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game => 'Game';
 
   @override
+  String get gameStart => 'Start';
+
+  @override
+  String get gameNoRecords => 'No game records';
+
+  @override
+  String get gameLevel => 'Level';
+
+  @override
+  String get gameScore => 'Score';
+
+  @override
   String get ai => 'AI';
 
   @override

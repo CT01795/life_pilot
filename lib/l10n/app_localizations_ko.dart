@@ -185,6 +185,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get game => '게임';
 
   @override
+  String get gameStart => '시작';
+
+  @override
+  String get gameNoRecords => '게임 기록이 없습니다';
+
+  @override
+  String get gameLevel => '레벨';
+
+  @override
+  String get gameScore => '점수';
+
+  @override
   String get ai => 'AI 도우미';
 
   @override

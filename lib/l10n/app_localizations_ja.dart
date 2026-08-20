@@ -185,6 +185,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get game => 'ゲーム';
 
   @override
+  String get gameStart => '開始';
+
+  @override
+  String get gameNoRecords => 'ゲーム記録はありません';
+
+  @override
+  String get gameLevel => 'レベル';
+
+  @override
+  String get gameScore => 'スコア';
+
+  @override
   String get ai => 'AIアシスタント';
 
   @override

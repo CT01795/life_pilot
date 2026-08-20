@@ -447,6 +447,30 @@ abstract class AppLocalizations {
   /// **'Game'**
   String get game;
 
+  /// Game start button label
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get gameStart;
+
+  /// Empty game progress message
+  ///
+  /// In en, this message translates to:
+  /// **'No game records'**
+  String get gameNoRecords;
+
+  /// Game level label
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get gameLevel;
+
+  /// Game score label
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get gameScore;
+
   /// Label for AI
   ///
   /// In en, this message translates to:

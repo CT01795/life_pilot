@@ -21,6 +21,8 @@ import 'package:life_pilot/game/steam_scratch/page_game_steam_scratch.dart';
 import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/steam_scratch_maze/page_game_steam_scratch_maze.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/logger.dart';
@@ -43,6 +45,8 @@ class _PageGameListState extends State<PageGameList> {
   int? selectedLevel;
   List<ModelGameUser> userProgress = [];
   int _progressRequestId = 0;
+  bool _hasLoadError = false;
+  bool _isOpeningGame = false;
 
   @override
   void initState() {
@@ -58,18 +62,25 @@ class _PageGameListState extends State<PageGameList> {
   }
 
   Future<void> _loadData() async {
-    await controllerGameList.loadGames();
-    if (!mounted) return;
-    if (controllerGameList.gamesByCategory.isNotEmpty) {
-      setState(() {
-        selectedCategory = controllerGameList.gamesByCategory.keys.first;
-        final gamesMap = controllerGameList.gamesByCategory[selectedCategory!]!;
-        selectedGameName = gamesMap.keys.first;
-        selectedLevel = gamesMap[selectedGameName]!.first.level;
-      });
-      await _loadUserProgress();
-    } else {
-      setState(() {});
+    if (mounted) setState(() => _hasLoadError = false);
+    try {
+      await controllerGameList.loadGames();
+      if (!mounted) return;
+      if (controllerGameList.gamesByCategory.isNotEmpty) {
+        setState(() {
+          selectedCategory = controllerGameList.gamesByCategory.keys.first;
+          final gamesMap =
+              controllerGameList.gamesByCategory[selectedCategory!]!;
+          selectedGameName = gamesMap.keys.first;
+          selectedLevel = gamesMap[selectedGameName]!.first.level;
+        });
+        await _loadUserProgress();
+      } else {
+        setState(() {});
+      }
+    } catch (error, stackTrace) {
+      logger.e('Load games failed', error: error, stackTrace: stackTrace);
+      if (mounted) setState(() => _hasLoadError = true);
     }
   }
 
@@ -79,10 +90,23 @@ class _PageGameListState extends State<PageGameList> {
     final requestedCategory = selectedCategory!;
     final requestedGameName = selectedGameName!;
     // 取得該遊戲所有關卡紀錄
-    final progress = await controllerGameList.loadUserProgress(
-      requestedCategory,
-      requestedGameName,
-    );
+    late final List<ModelGameUser> progress;
+    try {
+      progress = await controllerGameList.loadUserProgress(
+        requestedCategory,
+        requestedGameName,
+      );
+    } catch (error, stackTrace) {
+      logger.e('Load game progress failed',
+          error: error, stackTrace: stackTrace);
+      if (mounted && requestId == _progressRequestId) {
+        setState(() {});
+        AppNavigator.showErrorBar(
+          AppLocalizations.of(context)!.unknownError,
+        );
+      }
+      return;
+    }
     if (!mounted || requestId != _progressRequestId) return;
     if (selectedCategory != requestedCategory ||
         selectedGameName != requestedGameName) {
@@ -128,9 +152,27 @@ class _PageGameListState extends State<PageGameList> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final loc = AppLocalizations.of(context)!;
     if (controllerGameList.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_hasLoadError) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(loc.unknownError),
+              Gaps.h8,
+              ElevatedButton(
+                onPressed: _loadData,
+                child: Text(loc.retry),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -210,7 +252,7 @@ class _PageGameListState extends State<PageGameList> {
                   value: g.level,
                   enabled: !locked,
                   child: Text(
-                    'Level ${g.level}${locked ? ' 🔒' : ''}',
+                    '${loc.gameLevel} ${g.level}${locked ? ' 🔒' : ''}',
                     style: TextStyle(
                       color: locked ? Colors.grey : Colors.black,
                     ),
@@ -220,9 +262,11 @@ class _PageGameListState extends State<PageGameList> {
             ),
             Gaps.h16,
             ElevatedButton(
-              onPressed: (selectedGameItem != null &&
+              onPressed: (!_isOpeningGame &&
+                      selectedGameItem != null &&
                       selectedLevel! <= unlockedMaxLevel)
                   ? () async {
+                      setState(() => _isOpeningGame = true);
                       final game = selectedGameItem!;
                       if (game.gameName.toLowerCase() ==
                           "social".toLowerCase()) {
@@ -487,14 +531,22 @@ class _PageGameListState extends State<PageGameList> {
                         // 其他遊戲開啟方式
                         logger.i("尚未實作此遊戲頁面");
                       }
+                      if (mounted) {
+                        setState(() => _isOpeningGame = false);
+                      }
                     }
                   : null,
-              child: const Text('Start'),
+              child: _isOpeningGame
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(loc.gameStart),
             ),
             const Divider(),
             Expanded(
               child: userProgress.isEmpty
-                  ? const Center(child: Text('No data'))
+                  ? Center(child: Text(loc.gameNoRecords))
                   : ListView.builder(
                       itemCount: userProgress.length,
                       itemBuilder: (context, index) {
@@ -512,7 +564,8 @@ class _PageGameListState extends State<PageGameList> {
                             index == 0 ? FontWeight.bold : FontWeight.normal;
                         return ListTile(
                           title: Text(
-                            '$formattedDate Level ${item.level} => Score: ${item.score}',
+                            '$formattedDate ${loc.gameLevel} ${item.level} '
+                            '=> ${loc.gameScore}: ${item.score}',
                             style: TextStyle(
                                 color: textColor, fontWeight: textBold),
                           ),

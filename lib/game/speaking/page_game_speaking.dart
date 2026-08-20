@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/speaking/controller_game_speaking.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -181,6 +182,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final loc = AppLocalizations.of(context)!;
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
           Future.microtask(() {
@@ -189,6 +191,30 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
           return Scaffold(
             body: Center(
               child: Text("Congratulations! Score: ${controller.score}"),
+            ),
+          );
+        }
+
+        if (controller.loadError != null) {
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.unknownError),
+                  Gaps.h8,
+                  ElevatedButton(
+                    onPressed: controller.loadNextQuestion,
+                    child: Text(loc.retry),
+                  ),
+                ],
+              ),
             ),
           );
         }
