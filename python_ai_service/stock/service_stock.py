@@ -125,6 +125,11 @@ class StockDailyPriceQueryRequest(BaseModel):
     traded_number: float = Field(ge=0)
 
 
+class StockPredictionQueryRequest(BaseModel):
+    table_name: Literal["stock_predicted"]
+    date: datetime
+
+
 def _delete_stock_rows_before(*, table_name: str, cutoff: datetime) -> dict:
     latest_allowed_cutoff = (
         datetime.now(ZoneInfo("UTC")).date() - timedelta(days=30)
@@ -576,17 +581,24 @@ def route_select_latest_stock_date(payload: LatestStockDateRequest):
       , description="""查詢模型預測結果, 參數
         { 'table_name': table_name
         , 'date': date}""")   
-def route_select_stock_predicted(payload: dict = Body(...)):
-    table_name = payload.get("table_name")
-    date = datetime.fromisoformat(payload.get("date").replace("Z", "+00:00"))
+def route_select_stock_predicted(payload: StockPredictionQueryRequest):
     db: Session = SessionLocal()
     try:
-      StockPredictedModel = create_stock_predicted_model(table_name)
-      result = db.query(StockPredictedModel).filter(func.date(StockPredictedModel.date) == date.date())
-      stockPredicted = result.first()
-      if not stockPredicted:
+      StockPredictedModel = create_stock_predicted_model(payload.table_name)
+      prediction = (
+          db.query(StockPredictedModel)
+          .filter(func.date(StockPredictedModel.date) == payload.date.date())
+          .first()
+      )
+      if prediction is None:
         return {}
-      return stockPredicted
+      return model_to_dict(prediction)
+    except SQLAlchemyError as exception:
+      logger.exception("Could not select stock prediction")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock prediction could not be loaded",
+      ) from exception
     finally:
       db.close()
 

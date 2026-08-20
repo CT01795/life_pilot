@@ -763,6 +763,114 @@ class StockAuthorizationTest(unittest.TestCase):
         )
         db.close.assert_called_once_with()
 
+    def test_stock_prediction_query_rejects_invalid_input(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        cases = (
+            {
+                "table_name": "another_table",
+                "date": "2026-08-20T00:00:00Z",
+            },
+            {
+                "table_name": "stock_predicted",
+                "date": "not-a-date",
+            },
+        )
+
+        for payload in cases:
+            with self.subTest(payload=payload):
+                response = self.client.post(
+                    "/stock/select_stock_predicted",
+                    json=payload,
+                )
+
+                self.assertEqual(response.status_code, 422)
+
+    def test_stock_prediction_query_returns_explicit_dictionary(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        prediction_date = datetime(2026, 8, 20, tzinfo=timezone.utc)
+        StockPredictedModel = service_stock.create_stock_predicted_model(
+            "stock_predicted"
+        )
+        prediction = StockPredictedModel(
+            date=prediction_date,
+            data=[{"security_code": "2330", "pred_pct": 2.5}],
+            created_at=prediction_date,
+        )
+        db = MagicMock()
+        query = db.query.return_value
+        query.filter.return_value = query
+        query.first.return_value = prediction
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_predicted",
+                json={
+                    "table_name": "stock_predicted",
+                    "date": prediction_date.isoformat(),
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["data"],
+            [{"security_code": "2330", "pred_pct": 2.5}],
+        )
+        query.first.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_stock_prediction_query_returns_empty_dictionary_when_missing(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        query = db.query.return_value
+        query.filter.return_value = query
+        query.first.return_value = None
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_predicted",
+                json={
+                    "table_name": "stock_predicted",
+                    "date": "2026-08-20T00:00:00Z",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {})
+        db.close.assert_called_once_with()
+
+    def test_stock_prediction_query_reports_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.query.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/select_stock_predicted",
+                json={
+                    "table_name": "stock_predicted",
+                    "date": "2026-08-20T00:00:00Z",
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock prediction could not be loaded",
+        )
+        db.close.assert_called_once_with()
+
 
 if __name__ == "__main__":
     unittest.main()
