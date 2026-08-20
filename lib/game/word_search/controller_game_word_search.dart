@@ -159,12 +159,15 @@ class ControllerGameWordSearch extends ChangeNotifier {
     final dc = dir[1];
 
     // 找合法起點
-    int startRow, startCol;
-    while (true) {
-      startRow = random.nextInt(board.size);
-      startCol = random.nextInt(board.size);
-      if (_canPlace(word, startRow, startCol, dr, dc)) break;
-    }
+    final start = chooseWordPlacementStart(
+      random: random,
+      boardSize: board.size,
+      wordLength: word.length,
+      rowDirection: dr,
+      columnDirection: dc,
+    );
+    final startRow = start.row;
+    final startCol = start.col;
 
     // 放字
     for (int i = 0; i < word.length; i++) {
@@ -177,18 +180,6 @@ class ControllerGameWordSearch extends ChangeNotifier {
     _fillRandomLetters(random);
 
     notifyListeners();
-  }
-
-  bool _canPlace(String word, int r, int c, int dr, int dc) {
-    for (int i = 0; i < word.length; i++) {
-      final nr = r + dr * i;
-      final nc = c + dc * i;
-
-      if (nr < 0 || nr >= board.size || nc < 0 || nc >= board.size) {
-        return false;
-      }
-    }
-    return true;
   }
 
   void _fillRandomLetters(Random random) {
