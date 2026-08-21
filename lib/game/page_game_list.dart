@@ -10,6 +10,8 @@ import 'package:life_pilot/game/page_game_question_create.dart';
 import 'package:life_pilot/game/page_game_my_questions.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/social/page_game_social.dart';
+import 'package:life_pilot/game/social/page_game_social_question_create.dart';
+import 'package:life_pilot/game/social/page_game_social_questions.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/model_game_user.dart';
@@ -167,10 +169,16 @@ class _PageGameListState extends State<PageGameList> {
     return gameName == 'mario translation' ||
         gameName == 'english rpg adventure' ||
         gameName == 'speaking' ||
+        gameName == 'social' ||
         gameName == 'word and sentence builder' ||
         gameName == 'word searching' ||
         gameName.contains('translation');
   }
+
+  bool get _supportsQuestionManagement =>
+      (selectedGameName?.toLowerCase() ?? '') != 'social';
+
+  bool get _isSocialGame => (selectedGameName?.toLowerCase() ?? '') == 'social';
 
   @override
   Widget build(BuildContext context) {
@@ -309,52 +317,89 @@ class _PageGameListState extends State<PageGameList> {
                 },
               ),
               Gaps.h8,
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: Text(loc.addQuestion),
-                      onPressed:
-                          selectedGameName == null || selectedLevel == null
-                              ? null
-                              : () async {
-                                  final added = await Navigator.push<bool>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => PageGameQuestionCreate(
-                                        gameName: selectedGameName!,
-                                        initialLevel: selectedLevel!,
-                                      ),
-                                    ),
-                                  );
-                                  if (mounted && added == true) {
-                                    setState(
-                                      () => selectedQuestionBank = 'mine',
-                                    );
-                                  }
-                                },
+              if (_isSocialGame)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: Text(loc.addQuestion),
+                        onPressed: () async {
+                          final added = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const PageGameSocialQuestionCreate(),
+                            ),
+                          );
+                          if (mounted && added == true) {
+                            setState(() => selectedQuestionBank = 'mine');
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                  Gaps.w8,
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.list_alt),
-                      label: Text(loc.myQuestions),
-                      onPressed: selectedGameName == null
-                          ? null
-                          : () => Navigator.push<void>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PageGameMyQuestions(
-                                    gameName: selectedGameName!,
+                    Gaps.w8,
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.list_alt),
+                        label: Text(loc.myQuestions),
+                        onPressed: () => Navigator.push<void>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PageGameSocialQuestions(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              if (_supportsQuestionManagement)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: Text(loc.addQuestion),
+                        onPressed:
+                            selectedGameName == null || selectedLevel == null
+                                ? null
+                                : () async {
+                                    final added = await Navigator.push<bool>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => PageGameQuestionCreate(
+                                          gameName: selectedGameName!,
+                                          initialLevel: selectedLevel!,
+                                        ),
+                                      ),
+                                    );
+                                    if (mounted && added == true) {
+                                      setState(
+                                        () => selectedQuestionBank = 'mine',
+                                      );
+                                    }
+                                  },
+                      ),
+                    ),
+                    Gaps.w8,
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.list_alt),
+                        label: Text(loc.myQuestions),
+                        onPressed: selectedGameName == null
+                            ? null
+                            : () => Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PageGameMyQuestions(
+                                      gameName: selectedGameName!,
+                                    ),
                                   ),
                                 ),
-                              ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               Gaps.h16,
             ],
             ElevatedButton(
@@ -402,6 +447,7 @@ class _PageGameListState extends State<PageGameList> {
                               child: PageGameSocial(
                                 gameId: game.id,
                                 gameLevel: game.level,
+                                questionBank: _effectiveQuestionBank,
                               ),
                             ),
                           ),

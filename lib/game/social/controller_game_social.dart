@@ -16,6 +16,7 @@ class ControllerGameSocial extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final String questionBank;
 
   ModelGameSocial? currentQuestion;
   int score = 0; // +1 / -1
@@ -35,6 +36,7 @@ class ControllerGameSocial extends ChangeNotifier {
       required this.service,
       required this.gameId, // 初始化
       required this.gameLevel,
+      this.questionBank = 'admin',
       required this.maxQuestions});
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
@@ -79,7 +81,8 @@ class ControllerGameSocial extends ChangeNotifier {
 
   Future<ModelGameSocial?> _fetchQuestionSafely() async {
     try {
-      return await service.fetchSocialQuestion(userName, gameLevel);
+      return await service.fetchSocialQuestion(userName, gameLevel,
+          questionBank: questionBank);
     } catch (error, stackTrace) {
       logger.e('Load social question failed',
           error: error, stackTrace: stackTrace);

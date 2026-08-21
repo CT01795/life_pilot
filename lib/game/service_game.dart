@@ -70,6 +70,48 @@ class MyGameQuestionPage {
   final int totalCount;
 }
 
+class MySocialChoice {
+  const MySocialChoice({
+    required this.text,
+    required this.score,
+    required this.feedback,
+    required this.isBest,
+  });
+
+  final String text;
+  final int score;
+  final String feedback;
+  final bool isBest;
+}
+
+class MySocialQuestion {
+  const MySocialQuestion({
+    required this.id,
+    required this.title,
+    required this.scene,
+    required this.category,
+    required this.isActive,
+    required this.choices,
+  });
+
+  final String id;
+  final String title;
+  final String scene;
+  final String category;
+  final bool isActive;
+  final List<MySocialChoice> choices;
+}
+
+class MySocialQuestionPage {
+  const MySocialQuestionPage({
+    required this.questions,
+    required this.totalCount,
+  });
+
+  final List<MySocialQuestion> questions;
+  final int totalCount;
+}
+
 class ServiceGame {
   static const _grammarQuestionTable = 'game_grammar';
   static const _sentenceQuestionTable = 'game_sentence';
@@ -185,6 +227,132 @@ class ServiceGame {
     });
   }
 
+  Future<void> addSocialQuestion({
+    required String title,
+    required String scene,
+    required String category,
+    required int level,
+    required List<Map<String, dynamic>> choices,
+  }) async {
+    try {
+      await supabase.rpc(
+        'create_my_social_question',
+        params: {
+          'p_title': title.trim(),
+          'p_scene': scene.trim(),
+          'p_category': category.trim(),
+          'p_level': level,
+          'p_choices': choices,
+        },
+      );
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') {
+        throw const DuplicateGameQuestionException();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> updateSocialQuestion({
+    required String id,
+    required String title,
+    required String scene,
+    required String category,
+    required List<Map<String, dynamic>> choices,
+  }) async {
+    try {
+      await supabase.rpc('update_my_social_question', params: {
+        'p_scenario_id': id,
+        'p_title': title.trim(),
+        'p_scene': scene.trim(),
+        'p_category': category.trim(),
+        'p_choices': choices,
+      });
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') {
+        throw const DuplicateGameQuestionException();
+      }
+      rethrow;
+    }
+  }
+
+  Future<MySocialQuestionPage> fetchMySocialQuestions({
+    String keyword = '',
+    String? category,
+    String status = 'all',
+    int offset = 0,
+  }) async {
+    final rows = await supabase.rpc('get_my_social_questions_page', params: {
+      'p_keyword': keyword.trim(),
+      'p_category': category,
+      'p_status': status,
+      'p_offset': offset,
+      'p_limit': 50,
+    }) as List<dynamic>;
+    final questions = rows.cast<Map<String, dynamic>>().map((row) {
+      final choices =
+          (row['choices'] as List<dynamic>? ?? const []).map((choice) {
+        final data = choice as Map<String, dynamic>;
+        return MySocialChoice(
+          text: data['option_text']?.toString() ?? '',
+          score: int.tryParse(data['score']?.toString() ?? '') ?? 0,
+          feedback: data['feedback']?.toString() ?? '',
+          isBest: data['is_best'] == true,
+        );
+      }).toList()
+            ..sort((a, b) => b.score.compareTo(a.score));
+      return MySocialQuestion(
+        id: row['id'].toString(),
+        title: row['title']?.toString() ?? '',
+        scene: row['scene']?.toString() ?? '',
+        category: row['category']?.toString() ?? 'social',
+        isActive: row['is_active'] == true,
+        choices: choices,
+      );
+    }).toList();
+    return MySocialQuestionPage(
+      questions: questions,
+      totalCount: rows.isEmpty
+          ? 0
+          : int.tryParse((rows.first as Map<String, dynamic>)['total_count']
+                  .toString()) ??
+              0,
+    );
+  }
+
+  Future<List<String>> fetchMySocialQuestionCategories() async {
+    final rows = await supabase.rpc('get_my_social_question_categories')
+        as List<dynamic>;
+    return rows
+        .map((row) =>
+            (row as Map<String, dynamic>)['category']?.toString() ?? '')
+        .where((category) => category.isNotEmpty)
+        .toList();
+  }
+
+  Future<void> setMySocialQuestionActive({
+    required String id,
+    required bool isActive,
+  }) async {
+    await supabase.rpc('set_my_social_question_active', params: {
+      'p_scenario_id': id,
+      'p_is_active': isActive,
+    });
+  }
+
+  Future<void> deleteMySocialQuestion(String id) async {
+    try {
+      await supabase.rpc('delete_my_social_question', params: {
+        'p_scenario_id': id,
+      });
+    } on PostgrestException catch (error) {
+      if (error.code == '23503') {
+        throw const GameQuestionHasAnswersException();
+      }
+      rethrow;
+    }
+  }
+
   Future<void> updateGrammarQuestion({
     required String id,
     required String question,
@@ -247,6 +415,23 @@ class ServiceGame {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
     final normalizedName = gameName.toLowerCase();
+    if (normalizedName == 'social') {
+      final rows = await supabase
+          .from(TableNames.gameSocialScenarios)
+          .select('id, ${TableNames.gameSocialChoices}(id)')
+          .eq('owner_id', userId)
+          .eq('is_active', true)
+          .lte('level', level);
+      final completeQuestionCount = rows.where((row) {
+        final choices = row[TableNames.gameSocialChoices] as List<dynamic>?;
+        return (choices?.length ?? 0) >= 3;
+      }).length;
+      return QuestionBankAvailability(
+        questionCount: completeQuestionCount,
+        canPlay: completeQuestionCount > 0,
+        requiresThreeInGroup: false,
+      );
+    }
     late final String tableName;
     if (normalizedName == 'english rpg adventure') {
       tableName = _grammarQuestionTable;
@@ -657,13 +842,14 @@ class ServiceGame {
   }
 
   //------------------------- Social -------------------------
-  Future<ModelGameSocial> fetchSocialQuestion(
-      String userName, int level) async {
+  Future<ModelGameSocial> fetchSocialQuestion(String userName, int level,
+      {String questionBank = 'admin'}) async {
     final result = await supabase.rpc(
       'get_social_with_options',
       params: {
         'user_name': userName,
         'p_level': level,
+        'p_question_bank': questionBank,
       },
     );
 

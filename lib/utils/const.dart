@@ -94,6 +94,8 @@ class TableNames {
   static const gameGrammarUser = "game_grammar_user";
   static const gameSentenceUser = "game_sentence_user";
   static const gameSpeakingUser = "game_speaking_user";
+  static const gameSocialScenarios = "game_social_scenarios";
+  static const gameSocialChoices = "game_social_choices";
   static const gameSocialUser = "game_social_user";
   static const gameTranslationUser = "game_translation_user";
   static const gameWordSearchUser = "game_word_search_user";

@@ -10,7 +10,13 @@ import 'package:provider/provider.dart';
 class PageGameSocial extends StatefulWidget {
   final String gameId;
   int gameLevel;
-  PageGameSocial({super.key, required this.gameId, required this.gameLevel});
+  final String questionBank;
+  PageGameSocial({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+    this.questionBank = 'admin',
+  });
 
   @override
   State<PageGameSocial> createState() => _PageGameSocialState();
@@ -31,6 +37,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
+      questionBank: widget.questionBank,
       maxQuestions: widget.gameLevel == -1 ? 10 : 999,
     );
     controller.loadNextQuestion();
