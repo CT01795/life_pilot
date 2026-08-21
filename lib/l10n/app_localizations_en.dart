@@ -854,5 +854,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockRetry => 'Try again';
 
   @override
-  String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can still edit it.';
+  String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can deactivate it instead.';
+
+  @override
+  String get questionStatus => 'Question status';
+
+  @override
+  String get allQuestionStatuses => 'All statuses';
+
+  @override
+  String get activeQuestion => 'Active';
+
+  @override
+  String get inactiveQuestion => 'Inactive';
+
+  @override
+  String get deactivateQuestion => 'Deactivate question';
+
+  @override
+  String get reactivateQuestion => 'Reactivate question';
+
+  @override
+  String get questionDeactivated => 'Question deactivated.';
+
+  @override
+  String get questionReactivated => 'Question reactivated.';
+
+  @override
+  String get questionStatusUpdateFailed => 'Question status could not be updated. Please try again.';
 }

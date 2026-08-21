@@ -47,6 +47,7 @@ class MyGameQuestion {
     required this.answer,
     required this.group,
     required this.level,
+    required this.isActive,
     this.options,
   });
 
@@ -55,6 +56,7 @@ class MyGameQuestion {
   final String answer;
   final String group;
   final int level;
+  final bool isActive;
   final String? options;
 }
 
@@ -266,6 +268,7 @@ class ServiceGame {
         .from(tableName)
         .select('group')
         .eq('owner_id', userId)
+        .eq('is_active', true)
         .lte('level', level);
 
     final matchingGroups =
@@ -309,8 +312,8 @@ class ServiceGame {
     if (userId == null) throw StateError('User must be signed in');
     final tableName = _questionTableForGame(gameName);
     final columns = tableName == _grammarQuestionTable
-        ? 'id, question, answer, group, level, options'
-        : 'id, question, answer, group, level';
+        ? 'id, question, answer, group, level, options, is_active'
+        : 'id, question, answer, group, level, is_active';
     final rows = await supabase
         .from(tableName)
         .select(columns)
@@ -328,6 +331,7 @@ class ServiceGame {
               answer: row['answer']?.toString() ?? '',
               group: row['group']?.toString() ?? '',
               level: int.tryParse(row['level']?.toString() ?? '') ?? 1,
+              isActive: row['is_active'] == true,
               options: row['options']?.toString(),
             ))
         .toList();
@@ -338,11 +342,14 @@ class ServiceGame {
   }) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
-    final rows =
-        await supabase.from(_questionTableForGame(gameName)).select('group').or(
-              'owner_id.eq.$userId,'
-              'owner_id.eq.${AuthConstants.systemQuestionBankOwnerId}',
-            );
+    final rows = await supabase
+        .from(_questionTableForGame(gameName))
+        .select('group')
+        .or(
+          'owner_id.eq.$userId,'
+          'owner_id.eq.${AuthConstants.systemQuestionBankOwnerId}',
+        )
+        .eq('is_active', true);
     final groups = rows
         .map((row) => row['group']?.toString().trim() ?? '')
         .where(
@@ -363,6 +370,7 @@ class ServiceGame {
         .select('question, answer')
         .eq('owner_id', AuthConstants.systemQuestionBankOwnerId)
         .eq('group', group)
+        .eq('is_active', true)
         .gte('rand_key', randomKey)
         .order('rand_key')
         .limit(1);
@@ -372,6 +380,7 @@ class ServiceGame {
           .select('question, answer')
           .eq('owner_id', AuthConstants.systemQuestionBankOwnerId)
           .eq('group', group)
+          .eq('is_active', true)
           .lt('rand_key', randomKey)
           .order('rand_key')
           .limit(1);
@@ -406,6 +415,24 @@ class ServiceGame {
     }
     if (deletedRows.isEmpty) {
       throw StateError('Question was not deleted');
+    }
+  }
+
+  Future<void> setMyQuestionActive({
+    required String gameName,
+    required String questionId,
+    required bool isActive,
+  }) async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) throw StateError('User must be signed in');
+    final updatedRows = await supabase
+        .from(_questionTableForGame(gameName))
+        .update({'is_active': isActive})
+        .eq('id', questionId)
+        .eq('owner_id', userId)
+        .select('id');
+    if (updatedRows.isEmpty) {
+      throw StateError('Question status was not updated');
     }
   }
 

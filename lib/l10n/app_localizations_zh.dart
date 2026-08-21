@@ -854,5 +854,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stockRetry => '重新載入';
 
   @override
-  String get questionHasAnswersDeleteBlocked => '這個題目已有作答紀錄，無法刪除；你仍可編輯題目。';
+  String get questionHasAnswersDeleteBlocked => '這個題目已有作答紀錄，無法刪除；你可以改為停用。';
+
+  @override
+  String get questionStatus => '題目狀態';
+
+  @override
+  String get allQuestionStatuses => '全部狀態';
+
+  @override
+  String get activeQuestion => '使用中';
+
+  @override
+  String get inactiveQuestion => '已停用';
+
+  @override
+  String get deactivateQuestion => '停用題目';
+
+  @override
+  String get reactivateQuestion => '重新啟用題目';
+
+  @override
+  String get questionDeactivated => '題目已停用。';
+
+  @override
+  String get questionReactivated => '題目已重新啟用。';
+
+  @override
+  String get questionStatusUpdateFailed => '題目狀態更新失敗，請稍後再試。';
 }

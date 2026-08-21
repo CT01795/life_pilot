@@ -854,5 +854,32 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stockRetry => '다시 불러오기';
 
   @override
-  String get questionHasAnswersDeleteBlocked => '이 문제에는 답변 기록이 있어 삭제할 수 없습니다. 문제를 편집할 수는 있습니다.';
+  String get questionHasAnswersDeleteBlocked => '이 문제에는 답변 기록이 있어 삭제할 수 없습니다. 대신 비활성화할 수 있습니다.';
+
+  @override
+  String get questionStatus => '문제 상태';
+
+  @override
+  String get allQuestionStatuses => '모든 상태';
+
+  @override
+  String get activeQuestion => '사용 중';
+
+  @override
+  String get inactiveQuestion => '비활성';
+
+  @override
+  String get deactivateQuestion => '문제 비활성화';
+
+  @override
+  String get reactivateQuestion => '문제 다시 활성화';
+
+  @override
+  String get questionDeactivated => '문제가 비활성화되었습니다.';
+
+  @override
+  String get questionReactivated => '문제가 다시 활성화되었습니다.';
+
+  @override
+  String get questionStatusUpdateFailed => '문제 상태를 업데이트하지 못했습니다. 다시 시도하세요.';
 }

@@ -1788,8 +1788,62 @@ abstract class AppLocalizations {
   /// Shown when answer history prevents question deletion
   ///
   /// In en, this message translates to:
-  /// **'This question has answer history and cannot be deleted. You can still edit it.'**
+  /// **'This question has answer history and cannot be deleted. You can deactivate it instead.'**
   String get questionHasAnswersDeleteBlocked;
+
+  /// No description provided for @questionStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Question status'**
+  String get questionStatus;
+
+  /// No description provided for @allQuestionStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'All statuses'**
+  String get allQuestionStatuses;
+
+  /// No description provided for @activeQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get activeQuestion;
+
+  /// No description provided for @inactiveQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get inactiveQuestion;
+
+  /// No description provided for @deactivateQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate question'**
+  String get deactivateQuestion;
+
+  /// No description provided for @reactivateQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivate question'**
+  String get reactivateQuestion;
+
+  /// No description provided for @questionDeactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Question deactivated.'**
+  String get questionDeactivated;
+
+  /// No description provided for @questionReactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Question reactivated.'**
+  String get questionReactivated;
+
+  /// No description provided for @questionStatusUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Question status could not be updated. Please try again.'**
+  String get questionStatusUpdateFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

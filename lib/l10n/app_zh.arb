@@ -530,6 +530,15 @@
   "@stockLoadFailed": {"description": "Stock page initial load failure"},
   "stockRetry": "重新載入",
   "@stockRetry": {"description": "Stock page retry button"},
-  "questionHasAnswersDeleteBlocked": "這個題目已有作答紀錄，無法刪除；你仍可編輯題目。",
+  "questionHasAnswersDeleteBlocked": "這個題目已有作答紀錄，無法刪除；你可以改為停用。",
+  "questionStatus": "題目狀態",
+  "allQuestionStatuses": "全部狀態",
+  "activeQuestion": "使用中",
+  "inactiveQuestion": "已停用",
+  "deactivateQuestion": "停用題目",
+  "reactivateQuestion": "重新啟用題目",
+  "questionDeactivated": "題目已停用。",
+  "questionReactivated": "題目已重新啟用。",
+  "questionStatusUpdateFailed": "題目狀態更新失敗，請稍後再試。",
   "@questionHasAnswersDeleteBlocked": {"description": "Shown when answer history prevents question deletion"}
 }

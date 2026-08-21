@@ -530,6 +530,15 @@
   "@stockLoadFailed": {"description": "Stock page initial load failure"},
   "stockRetry": "再読み込み",
   "@stockRetry": {"description": "Stock page retry button"},
-  "questionHasAnswersDeleteBlocked": "この問題には解答履歴があるため削除できません。問題の編集は可能です。",
+  "questionHasAnswersDeleteBlocked": "この問題には解答履歴があるため削除できません。代わりに無効化できます。",
+  "questionStatus": "問題の状態",
+  "allQuestionStatuses": "すべての状態",
+  "activeQuestion": "使用中",
+  "inactiveQuestion": "無効",
+  "deactivateQuestion": "問題を無効化",
+  "reactivateQuestion": "問題を再有効化",
+  "questionDeactivated": "問題を無効化しました。",
+  "questionReactivated": "問題を再有効化しました。",
+  "questionStatusUpdateFailed": "問題の状態を更新できませんでした。もう一度お試しください。",
   "@questionHasAnswersDeleteBlocked": {"description": "Shown when answer history prevents question deletion"}
 }

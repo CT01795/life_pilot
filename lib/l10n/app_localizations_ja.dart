@@ -854,5 +854,32 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stockRetry => '再読み込み';
 
   @override
-  String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。問題の編集は可能です。';
+  String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。代わりに無効化できます。';
+
+  @override
+  String get questionStatus => '問題の状態';
+
+  @override
+  String get allQuestionStatuses => 'すべての状態';
+
+  @override
+  String get activeQuestion => '使用中';
+
+  @override
+  String get inactiveQuestion => '無効';
+
+  @override
+  String get deactivateQuestion => '問題を無効化';
+
+  @override
+  String get reactivateQuestion => '問題を再有効化';
+
+  @override
+  String get questionDeactivated => '問題を無効化しました。';
+
+  @override
+  String get questionReactivated => '問題を再有効化しました。';
+
+  @override
+  String get questionStatusUpdateFailed => '問題の状態を更新できませんでした。もう一度お試しください。';
 }

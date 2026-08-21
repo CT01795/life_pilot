@@ -5,6 +5,8 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 
+enum _QuestionStatusFilter { all, active, inactive }
+
 class PageGameMyQuestions extends StatefulWidget {
   const PageGameMyQuestions({
     super.key,
@@ -23,8 +25,10 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   bool _isLoading = true;
   bool _hasError = false;
   final Set<String> _deletingIds = {};
+  final Set<String> _updatingIds = {};
   final TextEditingController _searchController = TextEditingController();
   String? _selectedGroup;
+  _QuestionStatusFilter _statusFilter = _QuestionStatusFilter.all;
 
   List<String> get _groups {
     final groups = _questions
@@ -40,6 +44,13 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
     final keyword = _searchController.text.trim().toLowerCase();
     return _questions.where((question) {
       if (_selectedGroup != null && question.group != _selectedGroup) {
+        return false;
+      }
+      if (_statusFilter == _QuestionStatusFilter.active && !question.isActive) {
+        return false;
+      }
+      if (_statusFilter == _QuestionStatusFilter.inactive &&
+          question.isActive) {
         return false;
       }
       if (keyword.isEmpty) return true;
@@ -146,6 +157,56 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
     if (updated == true && mounted) await _load();
   }
 
+  Future<void> _setActive(MyGameQuestion question, bool isActive) async {
+    final loc = AppLocalizations.of(context)!;
+    setState(() => _updatingIds.add(question.id));
+    try {
+      await _service.setMyQuestionActive(
+        gameName: widget.gameName,
+        questionId: question.id,
+        isActive: isActive,
+      );
+      if (!mounted) return;
+      setState(() {
+        _questions = _questions
+            .map(
+              (existing) => existing.id == question.id
+                  ? MyGameQuestion(
+                      id: existing.id,
+                      question: existing.question,
+                      answer: existing.answer,
+                      group: existing.group,
+                      level: existing.level,
+                      isActive: isActive,
+                      options: existing.options,
+                    )
+                  : existing,
+            )
+            .toList();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isActive ? loc.questionReactivated : loc.questionDeactivated,
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      logger.e(
+        'Update game question status failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.questionStatusUpdateFailed)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingIds.remove(question.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -231,14 +292,41 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                             ],
                           ),
                           Gaps.h16,
+                          DropdownButtonFormField<_QuestionStatusFilter>(
+                            initialValue: _statusFilter,
+                            decoration: InputDecoration(
+                              labelText: loc.questionStatus,
+                              border: const OutlineInputBorder(),
+                            ),
+                            items: [
+                              DropdownMenuItem(
+                                value: _QuestionStatusFilter.all,
+                                child: Text(loc.allQuestionStatuses),
+                              ),
+                              DropdownMenuItem(
+                                value: _QuestionStatusFilter.active,
+                                child: Text(loc.activeQuestion),
+                              ),
+                              DropdownMenuItem(
+                                value: _QuestionStatusFilter.inactive,
+                                child: Text(loc.inactiveQuestion),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _statusFilter = value);
+                              }
+                            },
+                          ),
+                          Gaps.h16,
                           if (filteredQuestions.isEmpty)
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 32),
                               child: Center(child: Text(loc.noMyQuestions)),
                             ),
                           ...filteredQuestions.map((question) {
-                            final isDeleting =
-                                _deletingIds.contains(question.id);
+                            final isBusy = _deletingIds.contains(question.id) ||
+                                _updatingIds.contains(question.id);
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Card(
@@ -256,13 +344,17 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                                       ),
                                       Text(
                                           '${loc.gameLevel}: ${question.level}'),
+                                      Text(
+                                        '${loc.questionStatus}: '
+                                        '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
+                                      ),
                                       if (question.options?.isNotEmpty == true)
                                         Text(
                                           '${loc.answerOptions}: ${question.options}',
                                         ),
                                     ],
                                   ),
-                                  trailing: isDeleting
+                                  trailing: isBusy
                                       ? const SizedBox.square(
                                           dimension: 24,
                                           child: CircularProgressIndicator(
@@ -278,12 +370,32 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                                                   Icons.edit_outlined),
                                               onPressed: () => _edit(question),
                                             ),
-                                            IconButton(
-                                              tooltip: loc.delete,
-                                              icon: const Icon(
-                                                  Icons.delete_outline),
-                                              onPressed: () =>
-                                                  _delete(question),
+                                            PopupMenuButton<String>(
+                                              onSelected: (action) {
+                                                if (action == 'toggle') {
+                                                  _setActive(
+                                                    question,
+                                                    !question.isActive,
+                                                  );
+                                                } else if (action == 'delete') {
+                                                  _delete(question);
+                                                }
+                                              },
+                                              itemBuilder: (_) => [
+                                                PopupMenuItem(
+                                                  value: 'toggle',
+                                                  child: Text(
+                                                    question.isActive
+                                                        ? loc.deactivateQuestion
+                                                        : loc
+                                                            .reactivateQuestion,
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'delete',
+                                                  child: Text(loc.delete),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
