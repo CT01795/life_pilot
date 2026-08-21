@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/word_search/controller_game_word_search.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -10,7 +11,8 @@ import 'package:provider/provider.dart';
 class PageGameWordSearch extends StatefulWidget {
   final String gameId;
   int gameLevel;
-  PageGameWordSearch({super.key, required this.gameId, required this.gameLevel});
+  PageGameWordSearch(
+      {super.key, required this.gameId, required this.gameLevel});
 
   @override
   State<PageGameWordSearch> createState() => _PageGameWordSearchState();
@@ -42,15 +44,48 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final loc = AppLocalizations.of(context)!;
         // ✅ 判斷遊戲是否完成
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
-          Future.microtask(() => Navigator.pop(context, true));
+          Future.microtask(() {
+            if (mounted) Navigator.pop(context, true);
+          });
           return const SizedBox.shrink(); // 回上一頁前先返回空 widget
+        }
+
+        if (controller.loadError != null) {
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.unknownError),
+                  Gaps.h8,
+                  ElevatedButton(
+                    onPressed: controller.retry,
+                    child: Text(loc.retry),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         if (controller.isLoading) {
@@ -82,7 +117,8 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                       padding:
                           EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
                     ),
-                    onPressed: () => controller.speak(controller.currentQuestion.question),
+                    onPressed: () =>
+                        controller.speak(controller.currentQuestion.question),
                     child: Row(
                       mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -91,7 +127,8 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                           scale: 4, // 放大，可自行調整
                           alignment: Alignment.centerLeft, // 左對齊
                           child: InkWell(
-                            onTap: () => controller.speak(controller.currentQuestion.question),
+                            onTap: () => controller
+                                .speak(controller.currentQuestion.question),
                             child:
                                 Icon(Icons.volume_up, color: Color(0xFF212121)),
                           ),
@@ -120,8 +157,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                       ? null
                       : controller.submitSelection,
                   child: const Text('Submit',
-                            style:
-                                TextStyle(fontSize: 24, color: Colors.white)),
+                      style: TextStyle(fontSize: 24, color: Colors.white)),
                 ),
               ),
               // ⭐ Word Search Grid

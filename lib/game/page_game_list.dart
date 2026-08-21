@@ -298,7 +298,26 @@ class _PageGameListState extends State<PageGameList> {
                               return Scaffold(
                                 body: Stack(
                                   children: [
-                                    GameWidget(game: game1), // 先加入遊戲畫面
+                                    GameWidget(
+                                      game: game1,
+                                      loadingBuilder: (context) => const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      errorBuilder: (context, error) => Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(loc.unknownError),
+                                            Gaps.h8,
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: Text(loc.back),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                     Positioned(
                                       left: 0,
                                       right: 0,
@@ -308,10 +327,16 @@ class _PageGameListState extends State<PageGameList> {
                                             MainAxisAlignment.center, // 水平置中
                                         children: [
                                           GestureDetector(
-                                            onTapDown: (_) =>
-                                                game1.player.moveLeft(true),
-                                            onTapUp: (_) =>
-                                                game1.player.moveLeft(false),
+                                            onTapDown: (_) {
+                                              if (game1.isLoaded) {
+                                                game1.player.moveLeft(true);
+                                              }
+                                            },
+                                            onTapUp: (_) {
+                                              if (game1.isLoaded) {
+                                                game1.player.moveLeft(false);
+                                              }
+                                            },
                                             child: Container(
                                               width: 60,
                                               height: 60,
@@ -330,10 +355,16 @@ class _PageGameListState extends State<PageGameList> {
                                           ),
                                           Gaps.w16,
                                           GestureDetector(
-                                            onTapDown: (_) =>
-                                                game1.player.moveRight(true),
-                                            onTapUp: (_) =>
-                                                game1.player.moveRight(false),
+                                            onTapDown: (_) {
+                                              if (game1.isLoaded) {
+                                                game1.player.moveRight(true);
+                                              }
+                                            },
+                                            onTapUp: (_) {
+                                              if (game1.isLoaded) {
+                                                game1.player.moveRight(false);
+                                              }
+                                            },
                                             child: Container(
                                               width: 60,
                                               height: 60,
@@ -352,7 +383,11 @@ class _PageGameListState extends State<PageGameList> {
                                           ),
                                           Gaps.w16,
                                           GestureDetector(
-                                            onTap: () => game1.player.jump(),
+                                            onTap: () {
+                                              if (game1.isLoaded) {
+                                                game1.player.jump();
+                                              }
+                                            },
                                             child: Container(
                                               width: 60,
                                               height: 60,
@@ -373,7 +408,9 @@ class _PageGameListState extends State<PageGameList> {
                                           Gaps.w16,
                                           GestureDetector(
                                             onTap: () async {
-                                              await game1.shoot();
+                                              if (game1.isLoaded) {
+                                                await game1.shoot();
+                                              }
                                             },
                                             child: Container(
                                               width: 60,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/translation/controller_game_translation.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +12,10 @@ class PageGameTranslation extends StatefulWidget {
   final String gameName;
   int gameLevel;
   PageGameTranslation(
-      {super.key, required this.gameId, required this.gameLevel, required this.gameName});
+      {super.key,
+      required this.gameId,
+      required this.gameLevel,
+      required this.gameName});
 
   @override
   State<PageGameTranslation> createState() => _PageGameTranslationState();
@@ -26,13 +30,18 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
   @override
   void initState() {
     super.initState();
-    questionSize = widget.gameName.contains("日") || widget.gameName.contains("韓") ? 24.0 : questionSize;
-    answerSize = widget.gameName.contains("日") || widget.gameName.contains("韓") ? 24.0 : answerSize;
+    questionSize =
+        widget.gameName.contains("日") || widget.gameName.contains("韓")
+            ? 24.0
+            : questionSize;
+    answerSize = widget.gameName.contains("日") || widget.gameName.contains("韓")
+        ? 24.0
+        : answerSize;
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameTranslation(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
-      gameName:widget.gameName,
+      gameName: widget.gameName,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
       maxQuestions: widget.gameLevel == -1 ? 10 : 999,
@@ -41,8 +50,14 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
   }
 
   // 呼叫這個方法答題並判斷是否完成題數
-  void onAnswer(String option) {
-    controller.answer(option);
+  Future<void> onAnswer(String option) async {
+    await controller.answer(option);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -50,11 +65,38 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final loc = AppLocalizations.of(context)!;
         // ✅ 判斷遊戲是否完成
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
-          Future.microtask(() => Navigator.pop(context, true));
+          Future.microtask(() {
+            if (mounted) Navigator.pop(context, true);
+          });
           return const SizedBox.shrink(); // 回上一頁前先返回空 widget
+        }
+
+        if (controller.loadError != null) {
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.unknownError),
+                  Gaps.h8,
+                  ElevatedButton(
+                    onPressed: controller.retry,
+                    child: Text(loc.retry),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         if (controller.isLoading || controller.currentQuestion == null) {
@@ -109,7 +151,8 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                           child: Text(
                             q.question,
                             style: TextStyle(
-                                fontSize: questionSize, color: Color(0xFF212121)),
+                                fontSize: questionSize,
+                                color: Color(0xFF212121)),
                             textAlign: TextAlign.start,
                             softWrap: true, // 允許換行
                             overflow: TextOverflow.visible,
@@ -143,7 +186,10 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                         children: [
                           // ⭐ 改成自訂 CheckBox 風格的 Radio
                           GestureDetector(
-                            onTap: () => onAnswer(opt),
+                            onTap: controller.lastAnswer == null &&
+                                    !controller.isAnswering
+                                ? () => onAnswer(opt)
+                                : null,
                             child: Container(
                               width: 60,
                               height: 60,
@@ -168,7 +214,8 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                             child: Text(
                               opt,
                               style: TextStyle(
-                                  fontSize: answerSize, color: Color(0xFF212121)),
+                                  fontSize: answerSize,
+                                  color: Color(0xFF212121)),
                               softWrap: true, // 允許自動換行
                               textAlign: TextAlign.start,
                             ),

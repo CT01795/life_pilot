@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
@@ -22,6 +23,8 @@ class ControllerGameWordSearch extends ChangeNotifier {
   int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
+  Object? loadError;
+  bool _isDisposed = false;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
@@ -49,37 +52,58 @@ class ControllerGameWordSearch extends ChangeNotifier {
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text) async {
-    if (text.isEmpty) return;
+    try {
+      if (text.isEmpty) return;
 
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
+      if (kIsWeb) {
+        await speakWeb(text);
+        return;
+      }
+
+      await _ttsAudio.speak(text: text, languageCode: 'en-US');
+    } catch (error, stackTrace) {
+      logger.e('Word search audio failed',
+          error: error, stackTrace: stackTrace);
     }
-
-    await _ttsAudio.speak(text: text, languageCode: 'en-US');
   }
 
   Future<void> loadNextQuestion() async {
+    if (_isDisposed || isLoading) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     if (score >= 100) {
-      isFinished = true;
-      await _saveScore(score >= 100);
-      notifyListeners();
+      await _completeGame();
       return;
     }
 
     isLoading = true;
+    loadError = null;
     lastAnswer = null;
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion =
-        await service.fetchWordSearchQuestion(userName, gameLevel);
+    final question = await _fetchQuestionSafely();
+    if (_isDisposed) return;
+    isLoading = false;
+    if (question == null) {
+      _notifyIfActive();
+      return;
+    }
+    currentQuestion = question;
     _generateBoardFromQuestion();
 
-    isLoading = false;
     notifyListeners();
-    speak(currentQuestion.question);
+    unawaited(speak(currentQuestion.question));
+  }
+
+  Future<ModelGameWordSearch?> _fetchQuestionSafely() async {
+    try {
+      return await service.fetchWordSearchQuestion(userName, gameLevel);
+    } catch (error, stackTrace) {
+      logger.e('Load word search question failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+      return null;
+    }
   }
 
   void _generateBoardFromQuestion() {
@@ -240,19 +264,29 @@ class ControllerGameWordSearch extends ChangeNotifier {
     notifyListeners();
 
     // 用 Timer 2 秒後跳下一題
-    _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
-      loadNextQuestion();
-    });
-
     if (answeredCount >= maxQuestions) {
+      _nextQuestionTimer?.cancel();
       isFinished = true;
+    } else {
+      _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
+        unawaited(loadNextQuestion());
+      });
     }
-    unawaited(service.submitWordSearchAnswer(
-      userName: userName,
-      questionId: currentQuestion.questionId,
-      answer: currentQuestion.question,
-      isRightAnswer: isRightAnswer,
-    ));
+    unawaited(_submitAnswerSafely(isRightAnswer));
+  }
+
+  Future<void> _submitAnswerSafely(bool isRightAnswer) async {
+    try {
+      await service.submitWordSearchAnswer(
+        userName: userName,
+        questionId: currentQuestion.questionId,
+        answer: currentQuestion.question,
+        isRightAnswer: isRightAnswer,
+      );
+    } catch (error, stackTrace) {
+      logger.e('Submit word search answer failed',
+          error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<void> _saveScore(bool isPass) async {
@@ -264,8 +298,39 @@ class ControllerGameWordSearch extends ChangeNotifier {
     );
   }
 
+  Future<void> _completeGame() async {
+    if (_isDisposed || isLoading) return;
+    _nextQuestionTimer?.cancel();
+    isLoading = true;
+    loadError = null;
+    _notifyIfActive();
+    try {
+      await _saveScore(true);
+      if (_isDisposed) return;
+      isFinished = true;
+    } catch (error, stackTrace) {
+      logger.e('Save word search score failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+    } finally {
+      if (!_isDisposed) {
+        isLoading = false;
+        _notifyIfActive();
+      }
+    }
+  }
+
+  Future<void> retry() {
+    return score >= 100 ? _completeGame() : loadNextQuestion();
+  }
+
+  void _notifyIfActive() {
+    if (!_isDisposed) notifyListeners();
+  }
+
   @override
   void dispose() {
+    _isDisposed = true;
     _nextQuestionTimer?.cancel();
     _ttsAudio.dispose();
     super.dispose();

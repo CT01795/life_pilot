@@ -124,7 +124,9 @@ class ControllerGameSocial extends ChangeNotifier {
     });
 
     if (answeredCount >= maxQuestions) {
-      await _completeGame();
+      _nextQuestionTimer?.cancel();
+      isFinished = true;
+      _notifyIfActive();
     }
     unawaited(_submitAnswerSafely(
       questionId: currentQuestion!.id,
@@ -174,9 +176,7 @@ class ControllerGameSocial extends ChangeNotifier {
   }
 
   Future<void> retry() {
-    return answeredCount >= maxQuestions || score >= 100
-        ? _completeGame()
-        : loadNextQuestion();
+    return score >= 100 ? _completeGame() : loadNextQuestion();
   }
 
   Future<void> _saveScore(bool isPass) async {

@@ -81,7 +81,7 @@ class PageGameMarioTranslation extends FlameGame
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
-      gameLevel: gameLevel,
+      gameLevel: gameLevel == -1 ? 1 : gameLevel,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
       maxQuestions: gameLevel == -1 ? 10 : 999,
@@ -200,6 +200,15 @@ class PageGameMarioTranslation extends FlameGame
         onCollect: (word) async {
           bool isRightAnswer = await controller.answer(word);
 
+          if (controller.isFinished) {
+            for (final option in optionItems) {
+              option.removeFromParent();
+            }
+            optionItems.clear();
+            Future.microtask(() => Navigator.pop(context, true));
+            return;
+          }
+
           if (isRightAnswer) {
             for (var o in optionItems) {
               o.removeFromParent();
@@ -220,7 +229,7 @@ class PageGameMarioTranslation extends FlameGame
             questionText.updateText(q.question);
             scoreText.updateText("分數: ${controller.score}");
           }
-          if (controller.score >= 100 || controller.score < -20) {
+          if (controller.isFinished) {
             Future.microtask(() => Navigator.pop(context, true));
           }
         },
@@ -250,7 +259,7 @@ class PageGameMarioTranslation extends FlameGame
     final noEnemy = children.whereType<Enemy>().isEmpty;
 
     if (enemySpawnTimer >= 1.5) {
-        enemySpawnTimer = 0;
+      enemySpawnTimer = 0;
       optionItems.removeWhere((e) => !e.isMounted); // 🧹 強制同步清理
       if (noOption && noEnemy) {
         spawnEnemy();

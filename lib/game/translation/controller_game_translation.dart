@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
@@ -21,6 +22,9 @@ class ControllerGameTranslation extends ChangeNotifier {
   int scoreMinus = 0; // +1 / -1
   bool isFinished = false;
   bool isLoading = false;
+  bool isAnswering = false;
+  Object? loadError;
+  bool _isDisposed = false;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
@@ -36,7 +40,7 @@ class ControllerGameTranslation extends ChangeNotifier {
       required this.maxQuestions});
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
-  Future<void> speak(String text, String group, bool isQuestion) async {
+  Future<void> _speak(String text, String group, bool isQuestion) async {
     if (text.isEmpty) return;
 
     if (kIsWeb) {
@@ -63,70 +67,124 @@ class ControllerGameTranslation extends ChangeNotifier {
     await _ttsAudio.speak(text: text, languageCode: languageCode);
   }
 
+  Future<void> speak(String text, String group, bool isQuestion) async {
+    try {
+      await _speak(text, group, isQuestion);
+    } catch (error, stackTrace) {
+      logger.e('Translation audio failed',
+          error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<void> loadNextQuestion() async {
+    if (_isDisposed || isLoading) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     if (score >= 100) {
-      isFinished = true;
-      await _saveScore(score >= 100);
-      notifyListeners();
+      await _completeGame();
       return;
     }
 
     isLoading = true;
+    loadError = null;
     lastAnswer = null;
     showCorrectAnswer = false;
-    notifyListeners();
+    _notifyIfActive();
 
-    currentQuestion =
-        await service.fetchTranslationQuestion(userName, gameLevel, gameName);
+    currentQuestion = await _fetchQuestionSafely();
+    if (_isDisposed) return;
 
     isLoading = false;
-    notifyListeners();
+    _notifyIfActive();
+    if (currentQuestion == null) return;
     speak(currentQuestion!.question, currentQuestion!.group, true); // 自動播放題目
+  }
+
+  Future<ModelGameTranslation?> _fetchQuestionSafely() async {
+    try {
+      return await service.fetchTranslationQuestion(
+          userName, gameLevel, gameName);
+    } catch (error, stackTrace) {
+      logger.e('Load translation question failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+      return null;
+    }
   }
 
   Map<String, Set<String>> synonyms = {};
   Future<void> answer(String answer) async {
-    if (currentQuestion == null || lastAnswer != null) return;
+    if (currentQuestion == null || lastAnswer != null || isAnswering) return;
+    isAnswering = true;
+    _notifyIfActive();
 
-    if (synonyms.isEmpty) {
-      synonyms = await service.getSynonyms();
+    try {
+      if (synonyms.isEmpty) {
+        synonyms = await service.getSynonyms();
+        if (_isDisposed) return;
+      }
+
+      lastAnswer = answer;
+      answeredCount++;
+      final q = currentQuestion!.question.toLowerCase();
+      final normalized = answer.toLowerCase();
+      final isRightAnswer =
+          normalized == currentQuestion!.correctAnswer.toLowerCase() ||
+              synonyms[q]?.contains(normalized) == true;
+
+      int seconds = 1;
+      if (isRightAnswer) {
+        score += 4;
+        seconds = 1;
+      } else {
+        score -= 4;
+        scoreMinus -= 4;
+        seconds = 2;
+        showCorrectAnswer = true; // 顯示正確答案
+      }
+      _notifyIfActive();
+
+      // 用 Timer 2 秒後跳下一題
+      if (answeredCount >= maxQuestions) {
+        _nextQuestionTimer?.cancel();
+        isFinished = true;
+      } else {
+        _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
+          unawaited(loadNextQuestion());
+        });
+      }
+      unawaited(_submitAnswerSafely(
+        questionId: currentQuestion!.questionId,
+        answer: answer,
+        isRightAnswer: isRightAnswer,
+      ));
+    } catch (error, stackTrace) {
+      logger.e('Answer translation question failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+    } finally {
+      if (!_isDisposed) {
+        isAnswering = false;
+        _notifyIfActive();
+      }
     }
+  }
 
-    lastAnswer = answer;
-    answeredCount++;
-    final q = currentQuestion!.question.toLowerCase();
-    final normalized = answer.toLowerCase();
-    final isRightAnswer =
-        normalized == currentQuestion!.correctAnswer.toLowerCase() ||
-            synonyms[q]?.contains(normalized) == true;
-
-    int seconds = 1;
-    if (isRightAnswer) {
-      score += 4;
-      seconds = 1;
-    } else {
-      score -= 4;
-      scoreMinus -= 4;
-      seconds = 2;
-      showCorrectAnswer = true; // 顯示正確答案
+  Future<void> _submitAnswerSafely({
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    try {
+      await service.submitTranslationAnswer(
+        userName: userName,
+        questionId: questionId,
+        answer: answer,
+        isRightAnswer: isRightAnswer,
+      );
+    } catch (error, stackTrace) {
+      logger.e('Submit translation answer failed',
+          error: error, stackTrace: stackTrace);
     }
-    notifyListeners();
-
-    // 用 Timer 2 秒後跳下一題
-    _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
-      loadNextQuestion();
-    });
-
-    if (answeredCount >= maxQuestions) {
-      isFinished = true;
-    }
-    unawaited(service.submitTranslationAnswer(
-      userName: userName,
-      questionId: currentQuestion!.questionId,
-      answer: answer,
-      isRightAnswer: isRightAnswer,
-    ));
   }
 
   Future<void> _saveScore(bool isPass) async {
@@ -136,6 +194,36 @@ class ControllerGameTranslation extends ChangeNotifier {
       newGameId: gameId, // 使用傳入的 gameId
       newIsPass: isPass,
     );
+  }
+
+  Future<void> _completeGame() async {
+    if (_isDisposed || isLoading) return;
+    _nextQuestionTimer?.cancel();
+    isLoading = true;
+    loadError = null;
+    _notifyIfActive();
+    try {
+      await _saveScore(true);
+      if (_isDisposed) return;
+      isFinished = true;
+    } catch (error, stackTrace) {
+      logger.e('Save translation score failed',
+          error: error, stackTrace: stackTrace);
+      if (!_isDisposed) loadError = error;
+    } finally {
+      if (!_isDisposed) {
+        isLoading = false;
+        _notifyIfActive();
+      }
+    }
+  }
+
+  Future<void> retry() {
+    return score >= 100 ? _completeGame() : loadNextQuestion();
+  }
+
+  void _notifyIfActive() {
+    if (!_isDisposed) notifyListeners();
   }
 
   Color getButtonColor(String option) {
@@ -176,6 +264,7 @@ class ControllerGameTranslation extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _nextQuestionTimer?.cancel();
     _ttsAudio.dispose();
     super.dispose();

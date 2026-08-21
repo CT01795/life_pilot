@@ -88,6 +88,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
       answeredCount++;
     }
     if (answeredCount >= maxQ && !_hasPopped) {
+      controller.finishPractice();
       _hasPopped = true;
       // 延遲一下讓 UI 更新後再跳回
       Future.microtask(() {

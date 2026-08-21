@@ -170,6 +170,11 @@ class ControllerGameSpeaking extends ChangeNotifier {
     );
   }
 
+  void finishPractice() {
+    _nextQuestionTimer?.cancel();
+    isBusy = false;
+  }
+
   void _notifyIfActive() {
     if (!_isDisposed) notifyListeners();
   }

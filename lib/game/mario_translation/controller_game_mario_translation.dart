@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
@@ -34,18 +35,23 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text) async {
-    if (text.isEmpty) return;
+    try {
+      if (text.isEmpty) return;
 
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
+      if (kIsWeb) {
+        await speakWeb(text);
+        return;
+      }
+
+      final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+      await _ttsAudio.speak(
+        text: text,
+        languageCode: containsChinese ? 'zh' : 'en-US',
+      );
+    } catch (error, stackTrace) {
+      logger.e('Mario translation audio failed',
+          error: error, stackTrace: stackTrace);
     }
-
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    await _ttsAudio.speak(
-      text: text,
-      languageCode: containsChinese ? 'zh' : 'en-US',
-    );
   }
 
   Future<void> loadNextQuestion() async {
@@ -76,7 +82,7 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
       if (currentQuestion == null || isAnswering) return false;
       isAnswering = true;
       if (synonyms.isEmpty) {
-        synonyms = await service.getSynonyms();
+        synonyms = await _loadSynonymsSafely();
       }
 
       lastAnswer = answer;
@@ -98,12 +104,11 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
       if (answeredCount >= maxQuestions) {
         isFinished = true;
       }
-      await service.submitTranslationAnswer(
-        userName: userName,
+      unawaited(_submitAnswerSafely(
         questionId: currentQuestion!.questionId,
         answer: answer,
         isRightAnswer: isRightAnswer,
-      );
+      ));
       return isRightAnswer;
     } finally {
       isAnswering = false;
@@ -123,5 +128,33 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
   void dispose() {
     _ttsAudio.dispose();
     super.dispose();
+  }
+
+  Future<Map<String, Set<String>>> _loadSynonymsSafely() async {
+    try {
+      return await service.getSynonyms();
+    } catch (error, stackTrace) {
+      logger.e('Load Mario translation synonyms failed',
+          error: error, stackTrace: stackTrace);
+      return {};
+    }
+  }
+
+  Future<void> _submitAnswerSafely({
+    required String questionId,
+    required String answer,
+    required bool isRightAnswer,
+  }) async {
+    try {
+      await service.submitTranslationAnswer(
+        userName: userName,
+        questionId: questionId,
+        answer: answer,
+        isRightAnswer: isRightAnswer,
+      );
+    } catch (error, stackTrace) {
+      logger.e('Submit Mario translation answer failed',
+          error: error, stackTrace: stackTrace);
+    }
   }
 }
