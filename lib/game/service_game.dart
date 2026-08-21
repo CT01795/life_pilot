@@ -75,6 +75,12 @@ class ServiceGame {
   static const _sentenceQuestionTable = 'game_sentence';
   static const _translationQuestionTable = 'game_translation';
 
+  String get _currentUserId {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) throw StateError('User must be signed in');
+    return userId;
+  }
+
   //------------------------- 共用 -------------------------
   Future<void> saveUserGameScore(
       {required String newUserName,
@@ -86,6 +92,7 @@ class ServiceGame {
       return;
     }
     await supabase.from(TableNames.gameUser).insert({
+      'owner_id': _currentUserId,
       'game_id': newGameId,
       'score': newScore,
       'name': newUserName,
@@ -557,6 +564,7 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await supabase.from(TableNames.gameGrammarUser).insert({
+      'owner_id': _currentUserId,
       'user': userName,
       'question_id': questionId,
       'answer': answer,
@@ -597,6 +605,7 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await supabase.from(TableNames.gameSentenceUser).insert({
+      'owner_id': _currentUserId,
       'user': userName,
       'question_id': questionId,
       'answer': answer,
@@ -638,6 +647,7 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await supabase.from(TableNames.gameSpeakingUser).insert({
+      'owner_id': _currentUserId,
       'user': userName,
       'question_id': questionId,
       'answer': answer,
@@ -693,6 +703,7 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await supabase.from(TableNames.gameSocialUser).insert({
+      'owner_id': _currentUserId,
       'user': userName,
       'question_id': questionId,
       'answer': answer,
@@ -789,6 +800,7 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await supabase.from(TableNames.gameTranslationUser).insert({
+      'owner_id': _currentUserId,
       'user': userName,
       'question_id': questionId,
       'answer': answer,
@@ -826,6 +838,7 @@ class ServiceGame {
     required bool isRightAnswer,
   }) async {
     await supabase.from(TableNames.gameWordSearchUser).insert({
+      'owner_id': _currentUserId,
       'user': userName,
       'question_id': questionId,
       'answer': answer,
