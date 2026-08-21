@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:life_pilot/game/game_question_authoring_rules.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
@@ -59,29 +60,30 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
   }
 
   bool get _allowsNumberedCustomGroup =>
-      widget.gameName.contains('日') || widget.gameName.contains('韓');
+      GameQuestionAuthoringRules.isNumberedLanguageGame(widget.gameName);
 
   bool get _isQuestionBankAdmin =>
       supabase.auth.currentUser?.id == AuthConstants.systemQuestionBankOwnerId;
 
   bool get _allowsCustomGroup =>
-      _isQuestionBankAdmin || _allowsNumberedCustomGroup;
+      GameQuestionAuthoringRules.canCreateCustomGroup(
+        isAdmin: _isQuestionBankAdmin,
+        gameName: widget.gameName,
+      );
 
   String _groupWithoutLevel(String group) =>
-      group.trim().replaceFirst(RegExp(r'\d+$'), '');
+      GameQuestionAuthoringRules.groupWithoutLevel(group);
 
-  int _levelFromGroup(String group) {
-    final match = RegExp(r'(\d+)$').firstMatch(group.trim());
-    return int.tryParse(match?.group(1) ?? '') ?? 1;
-  }
+  int _levelFromGroup(String group) =>
+      GameQuestionAuthoringRules.levelFromGroup(group);
 
   String get _resolvedGroup {
     if (!_useCustomGroup) return _selectedGroup?.trim() ?? '';
     if (!_allowsNumberedCustomGroup) return _groupController.text.trim();
-    final suffix = _customGroupLevelController.text.trim();
-    return suffix.isEmpty || suffix == '1'
-        ? _customGroupBase
-        : '$_customGroupBase$suffix';
+    return GameQuestionAuthoringRules.numberedGroup(
+      base: _customGroupBase,
+      suffix: _customGroupLevelController.text,
+    );
   }
 
   @override
@@ -217,19 +219,11 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
       return hint.answer;
     }
     if (_kind == _QuestionKind.grammar) {
-      if (_usesPluralGrammarTemplate) {
-        final beforeArrow =
-            hint.question.split(RegExp(r'\s*(?:<|↔)')).first.trim();
-        if (beforeArrow.isNotEmpty && beforeArrow != hint.question.trim()) {
-          return beforeArrow;
-        }
-        final beforeMany = hint.question
-            .split(RegExp(r'\s+many\s+', caseSensitive: false))
-            .first
-            .trim();
-        if (beforeMany.isNotEmpty) return beforeMany;
-      }
-      return hint.question.replaceFirst(RegExp(r'_{2,}'), hint.answer);
+      return GameQuestionAuthoringRules.grammarHint(
+        question: hint.question,
+        answer: hint.answer,
+        isPlural: _usesPluralGrammarTemplate,
+      );
     }
     return hint.question;
   }
@@ -326,11 +320,9 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
 
   Future<void> _save() async {
     if (_kind == _QuestionKind.sentence) {
-      final answer = _answerController.text.trim();
-      final parts = answer.contains(RegExp(r'\s'))
-          ? answer.split(RegExp(r'\s+'))
-          : answer.split('');
-      _questionController.text = parts.join('_');
+      _questionController.text = GameQuestionAuthoringRules.sentenceQuestion(
+        _answerController.text,
+      );
     }
     if (_isSaving || !_formKey.currentState!.validate()) return;
     final loc = AppLocalizations.of(context)!;
@@ -344,10 +336,16 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
         case _QuestionKind.grammar:
           final answer = _answerController.text.trim();
           final completedQuestion = _questionController.text.trim();
-          final question = _usesPluralGrammarTemplate
-              ? '$completedQuestion <--> many ______'
-              : completedQuestion.replaceFirst(answer, '______');
-          if (!_usesPluralGrammarTemplate && question == completedQuestion) {
+          final question = GameQuestionAuthoringRules.grammarQuestion(
+            completedQuestion: completedQuestion,
+            answer: answer,
+            isPlural: _usesPluralGrammarTemplate,
+          );
+          if (!_usesPluralGrammarTemplate &&
+              !GameQuestionAuthoringRules.grammarAnswerAppears(
+                completedQuestion: completedQuestion,
+                answer: answer,
+              )) {
             throw FormatException(loc.grammarAnswerMustAppear);
           }
           if (_usesPluralGrammarTemplate) {
