@@ -86,13 +86,13 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
     try {
       if (currentQuestion == null || isAnswering) return false;
       isAnswering = true;
-      if (synonyms.isEmpty) {
-        synonyms = await _loadSynonymsSafely();
+      final q = currentQuestion!.question.toLowerCase();
+      if (!synonyms.containsKey(q)) {
+        synonyms[q] = await _loadSynonymsSafely(q);
       }
 
       lastAnswer = answer;
       answeredCount++;
-      final q = currentQuestion!.question.toLowerCase();
       final normalized = answer.toLowerCase();
       final isRightAnswer =
           normalized == currentQuestion!.correctAnswer.toLowerCase() ||
@@ -135,13 +135,13 @@ class ControllerGameMarioTranslation extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<Map<String, Set<String>>> _loadSynonymsSafely() async {
+  Future<Set<String>> _loadSynonymsSafely(String question) async {
     try {
-      return await service.getSynonyms();
+      return await service.getSynonyms(question);
     } catch (error, stackTrace) {
       logger.e('Load Mario translation synonyms failed',
           error: error, stackTrace: stackTrace);
-      return {};
+      return <String>{};
     }
   }
 

@@ -60,6 +60,16 @@ class MyGameQuestion {
   final String? options;
 }
 
+class MyGameQuestionPage {
+  const MyGameQuestionPage({
+    required this.questions,
+    required this.totalCount,
+  });
+
+  final List<MyGameQuestion> questions;
+  final int totalCount;
+}
+
 class ServiceGame {
   static const _grammarQuestionTable = 'game_grammar';
   static const _sentenceQuestionTable = 'game_sentence';
@@ -131,14 +141,6 @@ class ServiceGame {
     required int level,
     required List<String> options,
   }) async {
-    if (await _questionExists(
-      tableName: _grammarQuestionTable,
-      question: question,
-      answer: answer,
-      group: group,
-    )) {
-      throw const DuplicateGameQuestionException();
-    }
     await _insertQuestion(_grammarQuestionTable, {
       'question': question.trim(),
       'answer': answer.trim(),
@@ -154,14 +156,6 @@ class ServiceGame {
     required String group,
     required int level,
   }) async {
-    if (await _questionExists(
-      tableName: _sentenceQuestionTable,
-      question: question,
-      answer: answer,
-      group: group,
-    )) {
-      throw const DuplicateGameQuestionException();
-    }
     await _insertQuestion(_sentenceQuestionTable, {
       'question': question.trim(),
       'answer': answer.trim(),
@@ -176,14 +170,6 @@ class ServiceGame {
     required String group,
     required int level,
   }) async {
-    if (await _questionExists(
-      tableName: _translationQuestionTable,
-      question: question,
-      answer: answer,
-      group: group,
-    )) {
-      throw const DuplicateGameQuestionException();
-    }
     await _insertQuestion(_translationQuestionTable, {
       'question': question.trim(),
       'answer': answer.trim(),
@@ -264,107 +250,129 @@ class ServiceGame {
       tableName = _translationQuestionTable;
     }
 
-    final rows = await supabase
-        .from(tableName)
-        .select('group')
-        .eq('owner_id', userId)
-        .eq('is_active', true)
-        .lte('level', level);
-
-    final matchingGroups =
-        rows.map((row) => row['group']?.toString() ?? '').where((group) {
-      if (normalizedName == 'word searching') {
-        return group == '英翻中Word';
-      }
-      if (gameName.contains('日')) return group.contains('日');
-      if (gameName.contains('韓')) return group.contains('韓');
-      if (normalizedName.contains('translation')) {
-        return !group.contains('日') && !group.contains('韓');
-      }
-      return true;
-    }).toList();
+    final rows = await supabase.rpc(
+      'get_my_question_group_counts',
+      params: {
+        'p_table_name': tableName,
+        'p_level': level,
+      },
+    ) as List<dynamic>;
+    final groupCounts = <String, int>{};
+    for (final row in rows.cast<Map<String, dynamic>>()) {
+      final group = row['question_group']?.toString() ?? '';
+      if (!_groupMatchesGame(gameName, group)) continue;
+      groupCounts[group] = int.tryParse(row['question_count'].toString()) ?? 0;
+    }
+    final questionCount = groupCounts.values.fold<int>(
+      0,
+      (total, count) => total + count,
+    );
 
     final requiresThree = normalizedName.contains('translation');
     if (!requiresThree) {
       return QuestionBankAvailability(
-        questionCount: matchingGroups.length,
-        canPlay: matchingGroups.isNotEmpty,
+        questionCount: questionCount,
+        canPlay: questionCount > 0,
         requiresThreeInGroup: false,
       );
     }
 
-    final groupCounts = <String, int>{};
-    for (final group in matchingGroups) {
-      groupCounts.update(group, (count) => count + 1, ifAbsent: () => 1);
-    }
     return QuestionBankAvailability(
-      questionCount: matchingGroups.length,
+      questionCount: questionCount,
       canPlay: groupCounts.isNotEmpty &&
           groupCounts.values.every((count) => count >= 3),
       requiresThreeInGroup: true,
     );
   }
 
-  Future<List<MyGameQuestion>> fetchMyQuestions({
+  Future<MyGameQuestionPage> fetchMyQuestions({
     required String gameName,
+    String keyword = '',
+    String? group,
+    String status = 'all',
+    int offset = 0,
+    int limit = 50,
   }) async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) throw StateError('User must be signed in');
-    final tableName = _questionTableForGame(gameName);
-    final columns = tableName == _grammarQuestionTable
-        ? 'id, question, answer, group, level, options, is_active'
-        : 'id, question, answer, group, level, is_active';
-    const pageSize = 500;
-    final rows = <Map<String, dynamic>>[];
-    var offset = 0;
-    while (true) {
-      final page = await supabase
-          .from(tableName)
-          .select(columns)
-          .eq('owner_id', userId)
-          .order('created_at', ascending: false)
-          .order('id', ascending: false)
-          .range(offset, offset + pageSize - 1);
-      rows.addAll(page);
-      if (page.length < pageSize) break;
-      offset += pageSize;
+    if (supabase.auth.currentUser == null) {
+      throw StateError('User must be signed in');
     }
-
-    return rows
-        .where((row) => _groupMatchesGame(
-              gameName,
-              row['group']?.toString() ?? '',
-            ))
+    final tableName = _questionTableForGame(gameName);
+    final rows = await supabase.rpc(
+      'get_my_questions_page',
+      params: {
+        'p_table_name': tableName,
+        'p_game_name': gameName,
+        'p_keyword': keyword.trim(),
+        'p_group': group,
+        'p_status': status,
+        'p_offset': offset,
+        'p_limit': limit,
+      },
+    ) as List<dynamic>;
+    final questions = rows
+        .cast<Map<String, dynamic>>()
         .map((row) => MyGameQuestion(
               id: row['id'].toString(),
               question: row['question']?.toString() ?? '',
               answer: row['answer']?.toString() ?? '',
-              group: row['group']?.toString() ?? '',
+              group: row['question_group']?.toString() ?? '',
               level: int.tryParse(row['level']?.toString() ?? '') ?? 1,
               isActive: row['is_active'] == true,
               options: row['options']?.toString(),
             ))
+        .toList();
+    final totalCount = rows.isEmpty
+        ? 0
+        : int.tryParse((rows.first as Map<String, dynamic>)['total_count']
+                .toString()) ??
+            0;
+    return MyGameQuestionPage(
+      questions: questions,
+      totalCount: totalCount,
+    );
+  }
+
+  Future<List<String>> fetchMyQuestionGroupsForManagement({
+    required String gameName,
+  }) async {
+    if (supabase.auth.currentUser == null) {
+      throw StateError('User must be signed in');
+    }
+    final rows = await supabase.rpc(
+      'get_my_question_groups_for_management',
+      params: {
+        'p_table_name': _questionTableForGame(gameName),
+      },
+    ) as List<dynamic>;
+    return rows
+        .map((row) =>
+            (row as Map<String, dynamic>)['question_group']?.toString() ?? '')
+        .where(
+          (group) => group.isNotEmpty && _groupMatchesGame(gameName, group),
+        )
         .toList();
   }
 
   Future<List<String>> fetchMyQuestionGroups({
     required String gameName,
   }) async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) throw StateError('User must be signed in');
-    final rows = await supabase
-        .from(_questionTableForGame(gameName))
-        .select('group')
-        .or(
-          'owner_id.eq.$userId,'
-          'owner_id.eq.${AuthConstants.systemQuestionBankOwnerId}',
-        )
-        .eq('is_active', true);
+    if (supabase.auth.currentUser == null) {
+      throw StateError('User must be signed in');
+    }
+    final rows = await supabase.rpc(
+      'get_question_bank_groups',
+      params: {
+        'p_table_name': _questionTableForGame(gameName),
+      },
+    ) as List<dynamic>;
     final groups = rows
-        .map((row) => row['group']?.toString().trim() ?? '')
+        .map((row) =>
+            (row as Map<String, dynamic>)['question_group']
+                ?.toString()
+                .trim() ??
+            '')
         .where(
             (group) => group.isNotEmpty && _groupMatchesGame(gameName, group))
-        .toSet()
         .toList()
       ..sort();
     return groups;
@@ -469,37 +477,6 @@ class ServiceGame {
     return true;
   }
 
-  Future<bool> _questionExists({
-    required String tableName,
-    required String question,
-    required String answer,
-    required String group,
-    String? excludedId,
-  }) async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) throw StateError('User must be signed in');
-
-    final rows = await supabase
-        .from(tableName)
-        .select('id, question, answer')
-        .eq('owner_id', userId)
-        .eq('group', group.trim());
-    final normalizedQuestion = _normalizeQuestion(question);
-    final normalizedAnswer = _normalizeQuestion(answer);
-    return rows.any(
-      (row) =>
-          row['id']?.toString() != excludedId &&
-          _normalizeQuestion(row['question']?.toString() ?? '') ==
-              normalizedQuestion &&
-          _normalizeQuestion(row['answer']?.toString() ?? '') ==
-              normalizedAnswer,
-    );
-  }
-
-  String _normalizeQuestion(String value) {
-    return value.toLowerCase().replaceAll(RegExp(r'[\s_]+'), '');
-  }
-
   Future<void> _insertQuestion(
     String tableName,
     Map<String, Object?> values,
@@ -525,15 +502,6 @@ class ServiceGame {
   }) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
-    if (await _questionExists(
-      tableName: tableName,
-      question: question,
-      answer: answer,
-      group: group,
-      excludedId: id,
-    )) {
-      throw const DuplicateGameQuestionException();
-    }
 
     try {
       await supabase
@@ -801,20 +769,16 @@ class ServiceGame {
         ]..shuffle());
   }
 
-  Future<Map<String, Set<String>>> getSynonyms() async {
-    final response =
-        await supabase.from(TableNames.gameTranslationSynonyms).select();
+  Future<Set<String>> getSynonyms(String question) async {
+    final response = await supabase
+        .from(TableNames.gameTranslationSynonyms)
+        .select('answer')
+        .eq('question', question.toLowerCase());
 
-    final Map<String, Set<String>> synonyms = {};
-
-    for (final row in response) {
-      final String question = row['question'];
-      final String answer = row['answer'];
-
-      synonyms.putIfAbsent(question, () => <String>{});
-      synonyms[question]!.add(answer);
-    }
-    return synonyms;
+    return response
+        .map((row) => row['answer']?.toString().toLowerCase() ?? '')
+        .where((answer) => answer.isNotEmpty)
+        .toSet();
   }
 
   // 寫入使用者答題紀錄

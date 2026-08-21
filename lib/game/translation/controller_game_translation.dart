@@ -124,14 +124,14 @@ class ControllerGameTranslation extends ChangeNotifier {
     _notifyIfActive();
 
     try {
-      if (synonyms.isEmpty) {
-        synonyms = await service.getSynonyms();
+      final q = currentQuestion!.question.toLowerCase();
+      if (!synonyms.containsKey(q)) {
+        synonyms[q] = await service.getSynonyms(q);
         if (_isDisposed) return;
       }
 
       lastAnswer = answer;
       answeredCount++;
-      final q = currentQuestion!.question.toLowerCase();
       final normalized = answer.toLowerCase();
       final isRightAnswer =
           normalized == currentQuestion!.correctAnswer.toLowerCase() ||
