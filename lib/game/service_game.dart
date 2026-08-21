@@ -314,11 +314,21 @@ class ServiceGame {
     final columns = tableName == _grammarQuestionTable
         ? 'id, question, answer, group, level, options, is_active'
         : 'id, question, answer, group, level, is_active';
-    final rows = await supabase
-        .from(tableName)
-        .select(columns)
-        .eq('owner_id', userId)
-        .order('created_at', ascending: false);
+    const pageSize = 500;
+    final rows = <Map<String, dynamic>>[];
+    var offset = 0;
+    while (true) {
+      final page = await supabase
+          .from(tableName)
+          .select(columns)
+          .eq('owner_id', userId)
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .range(offset, offset + pageSize - 1);
+      rows.addAll(page);
+      if (page.length < pageSize) break;
+      offset += pageSize;
+    }
 
     return rows
         .where((row) => _groupMatchesGame(
