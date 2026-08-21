@@ -204,13 +204,31 @@ class _PageState extends State<PageGameSocialQuestions> {
                         decoration: InputDecoration(
                           labelText: loc.searchKeywords,
                           border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            tooltip: loc.search,
-                            onPressed: _loading ? null : _load,
-                            icon: const Icon(Icons.search),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_searchController.text.isNotEmpty)
+                                IconButton(
+                                  tooltip: loc.clear,
+                                  onPressed: _loading
+                                      ? null
+                                      : () {
+                                          _searchController.clear();
+                                          setState(() {});
+                                          _load();
+                                        },
+                                  icon: const Icon(Icons.clear),
+                                ),
+                              IconButton(
+                                tooltip: loc.search,
+                                onPressed: _loading ? null : _load,
+                                icon: const Icon(Icons.search),
+                              ),
+                            ],
                           ),
                         ),
                         textInputAction: TextInputAction.search,
+                        onChanged: (_) => setState(() {}),
                         onSubmitted: (_) {
                           if (!_loading) _load();
                         },
@@ -284,12 +302,6 @@ class _PageState extends State<PageGameSocialQuestions> {
                                   _load();
                                 }
                               },
-                      ),
-                      Gaps.h8,
-                      FilledButton.icon(
-                        onPressed: _loading ? null : _load,
-                        icon: const Icon(Icons.search),
-                        label: Text(loc.search),
                       ),
                       Gaps.h16,
                       Text('${_questions.length} / $_totalCount'),
