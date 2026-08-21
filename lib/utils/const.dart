@@ -31,6 +31,8 @@ final List<String> currencyList = [
 class AuthConstants {
   static const guest = 'Guest';
   static const systemEventOwnerEmail = 'minavi@alumni.nccu.edu.tw';
+  static const systemQuestionBankOwnerId =
+      'cd55646b-7924-4413-9cd0-b75de0b9f605';
   static const adminRole = 'admin';
   static const email = 'email';
   static const minimumPasswordLength = 8;
@@ -86,7 +88,6 @@ class TableNames {
   static const businessPlanTemplateSection = "business_plan_template_section";
 
   static const feedback = "feedback";
-
 
   static const gameUser = "game_user";
   static const gameList = "game_list";

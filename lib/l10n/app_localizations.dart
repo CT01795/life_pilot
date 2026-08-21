@@ -342,7 +342,7 @@ abstract class AppLocalizations {
   /// No description provided for @grammarQuestionHelp.
   ///
   /// In en, this message translates to:
-  /// **'Enter only the base word (for example, head) and its plural answer (heads). The full question and choices are created automatically.'**
+  /// **'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.'**
   String get grammarQuestionHelp;
 
   /// No description provided for @sentenceQuestionHelp.
@@ -356,6 +356,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Base word (for example, head)'**
   String get grammarBaseWord;
+
+  /// No description provided for @completedGrammarQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete question with the answer (for example, We are young)'**
+  String get completedGrammarQuestion;
+
+  /// No description provided for @grammarAnswerMustAppear.
+  ///
+  /// In en, this message translates to:
+  /// **'The complete question must contain the correct answer so the blank can be created automatically.'**
+  String get grammarAnswerMustAppear;
+
+  /// No description provided for @questionExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Question example'**
+  String get questionExample;
+
+  /// No description provided for @answerExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer example'**
+  String get answerExample;
 
   /// No description provided for @sentenceOrWord.
   ///

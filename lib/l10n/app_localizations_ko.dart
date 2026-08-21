@@ -131,13 +131,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get questionAdded => '문제가 내 문제 은행에 추가되었습니다';
 
   @override
-  String get grammarQuestionHelp => '기본 단어(예: head)와 복수형 정답(heads)만 입력하세요. 전체 문제와 선택지는 자동으로 생성됩니다.';
+  String get grammarQuestionHelp => '일반 문법 문제는 We are young 같은 완성된 문장을 입력하면 are가 자동으로 빈칸이 됩니다. plural 카테고리는 head와 heads만 입력하세요.';
 
   @override
   String get sentenceQuestionHelp => 'mother 또는 I love apples와 같이 완성된 단어나 올바른 문장만 입력하세요. 재배열 형식으로 자동 변환됩니다.';
 
   @override
   String get grammarBaseWord => '기본 단어(예: head)';
+
+  @override
+  String get completedGrammarQuestion => '정답이 포함된 완성된 문제(예: We are young)';
+
+  @override
+  String get grammarAnswerMustAppear => '빈칸을 자동으로 만들 수 있도록 완성된 문제에 정답을 포함하세요.';
+
+  @override
+  String get questionExample => '문제 예시';
+
+  @override
+  String get answerExample => '정답 예시';
 
   @override
   String get sentenceOrWord => '완성된 단어 또는 올바른 문장';

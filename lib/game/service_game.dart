@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/model_game_item.dart';
@@ -17,6 +19,13 @@ class DuplicateGameQuestionException implements Exception {
 
 class GameQuestionHasAnswersException implements Exception {
   const GameQuestionHasAnswersException();
+}
+
+class GameQuestionHint {
+  const GameQuestionHint({required this.question, required this.answer});
+
+  final String question;
+  final String answer;
 }
 
 class QuestionBankAvailability {
@@ -341,6 +350,37 @@ class ServiceGame {
         .toList()
       ..sort();
     return groups;
+  }
+
+  Future<GameQuestionHint?> fetchAdminQuestionHint({
+    required String gameName,
+    required String group,
+  }) async {
+    final randomKey = Random.secure().nextDouble();
+    var rows = await supabase
+        .from(_questionTableForGame(gameName))
+        .select('question, answer')
+        .eq('owner_id', AuthConstants.systemQuestionBankOwnerId)
+        .eq('group', group)
+        .gte('rand_key', randomKey)
+        .order('rand_key')
+        .limit(1);
+    if (rows.isEmpty) {
+      rows = await supabase
+          .from(_questionTableForGame(gameName))
+          .select('question, answer')
+          .eq('owner_id', AuthConstants.systemQuestionBankOwnerId)
+          .eq('group', group)
+          .lt('rand_key', randomKey)
+          .order('rand_key')
+          .limit(1);
+    }
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return GameQuestionHint(
+      question: row['question']?.toString() ?? '',
+      answer: row['answer']?.toString() ?? '',
+    );
   }
 
   Future<void> deleteMyQuestion({

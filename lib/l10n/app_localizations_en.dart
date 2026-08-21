@@ -131,13 +131,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get questionAdded => 'Question added to your question bank';
 
   @override
-  String get grammarQuestionHelp => 'Enter only the base word (for example, head) and its plural answer (heads). The full question and choices are created automatically.';
+  String get grammarQuestionHelp => 'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.';
 
   @override
   String get sentenceQuestionHelp => 'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.';
 
   @override
   String get grammarBaseWord => 'Base word (for example, head)';
+
+  @override
+  String get completedGrammarQuestion => 'Complete question with the answer (for example, We are young)';
+
+  @override
+  String get grammarAnswerMustAppear => 'The complete question must contain the correct answer so the blank can be created automatically.';
+
+  @override
+  String get questionExample => 'Question example';
+
+  @override
+  String get answerExample => 'Answer example';
 
   @override
   String get sentenceOrWord => 'Complete word or correct sentence';

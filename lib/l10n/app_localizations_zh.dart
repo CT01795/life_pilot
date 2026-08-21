@@ -131,13 +131,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get questionAdded => '題目已加入我的題庫';
 
   @override
-  String get grammarQuestionHelp => '只要輸入單字原形（例如 head）和複數答案（例如 heads），系統會自動建立完整題目與選項。';
+  String get grammarQuestionHelp => '一般文法題請輸入包含答案的完整句子，例如 We are young，系統會自動把 are 變成空格。plural 分類只需輸入 head 與 heads。';
 
   @override
   String get sentenceQuestionHelp => '只要輸入完整單字或正確句子，例如 mother 或 I love apples，系統會自動拆開並建立重新排列題目。';
 
   @override
   String get grammarBaseWord => '單字原形（例如 head）';
+
+  @override
+  String get completedGrammarQuestion => '完整題目（請直接填入答案，例如 We are young）';
+
+  @override
+  String get grammarAnswerMustAppear => '完整題目中必須包含正確答案，系統才能自動建立填空位置。';
+
+  @override
+  String get questionExample => '題目範例';
+
+  @override
+  String get answerExample => '答案範例';
 
   @override
   String get sentenceOrWord => '完整單字或正確句子';

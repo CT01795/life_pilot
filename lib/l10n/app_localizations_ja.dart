@@ -131,13 +131,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get questionAdded => '問題を自分の問題集に追加しました';
 
   @override
-  String get grammarQuestionHelp => '単語の原形（例：head）と複数形の答え（heads）だけを入力してください。問題と選択肢は自動作成されます。';
+  String get grammarQuestionHelp => '一般文法では We are young のような完成した文を入力すると、are が自動的に空欄になります。plural カテゴリーでは head と heads だけを入力します。';
 
   @override
   String get sentenceQuestionHelp => 'mother や I love apples のように、完成した単語または正しい文だけを入力してください。並べ替え形式に自動変換されます。';
 
   @override
   String get grammarBaseWord => '単語の原形（例：head）';
+
+  @override
+  String get completedGrammarQuestion => '答えを含む完成した問題（例：We are young）';
+
+  @override
+  String get grammarAnswerMustAppear => '空欄を自動作成するため、完成した問題に正解を含めてください。';
+
+  @override
+  String get questionExample => '問題の例';
+
+  @override
+  String get answerExample => '答えの例';
 
   @override
   String get sentenceOrWord => '完成した単語または正しい文';

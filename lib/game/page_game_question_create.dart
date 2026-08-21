@@ -36,6 +36,9 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
   String? _selectedGroup;
   bool _useCustomGroup = false;
   bool _isSaving = false;
+  GameQuestionHint? _questionHint;
+  bool _isLoadingHint = false;
+  int _hintRequestId = 0;
   bool _canPop = false;
   bool _isConfirmingExit = false;
   late final String _initialQuestion;
@@ -43,6 +46,13 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
   late final String _initialGroup;
   late final String _initialOptions;
   late final int _initialLevel;
+
+  bool get _usesPluralGrammarTemplate {
+    if (_kind != _QuestionKind.grammar) return false;
+    final group = (_selectedGroup ?? _groupController.text).toLowerCase();
+    return group.contains('plural') ||
+        (widget.existingQuestion?.question.contains('<--> many') ?? false);
+  }
 
   @override
   void initState() {
@@ -93,6 +103,17 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
         _questionController.text = existing.question;
       }
       _answerController.text = existing.answer;
+      if (_kind == _QuestionKind.grammar) {
+        if (existing.question.contains('<--> many')) {
+          _questionController.text =
+              existing.question.split('<--> many').first.trim();
+        } else {
+          _questionController.text = existing.question.replaceFirst(
+            RegExp(r'_{2,}'),
+            existing.answer,
+          );
+        }
+      }
       _groupController.text = existing.group;
       _optionsController.text = (existing.options ?? '').split('_').join(', ');
       if (!_availableGroups.contains(existing.group)) {
@@ -118,11 +139,59 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
           if (!_availableGroups.contains(group)) _availableGroups.add(group);
         }
         _availableGroups.sort();
+        _selectedGroup ??=
+            _availableGroups.isEmpty ? null : _availableGroups.first;
       });
+      if (widget.existingQuestion == null && _selectedGroup != null) {
+        await _loadQuestionHint(_selectedGroup!);
+      }
     } catch (_) {
       // The form can still use its built-in categories if loading fails.
     }
   }
+
+  Future<void> _loadQuestionHint(String group) async {
+    if (widget.existingQuestion != null) return;
+    final requestId = ++_hintRequestId;
+    setState(() {
+      _isLoadingHint = true;
+      _questionHint = null;
+    });
+    try {
+      final hint = await _service.fetchAdminQuestionHint(
+        gameName: widget.gameName,
+        group: group,
+      );
+      if (!mounted || requestId != _hintRequestId) return;
+      setState(() => _questionHint = hint);
+    } catch (_) {
+      if (mounted && requestId == _hintRequestId) {
+        setState(() => _questionHint = null);
+      }
+    } finally {
+      if (mounted && requestId == _hintRequestId) {
+        setState(() => _isLoadingHint = false);
+      }
+    }
+  }
+
+  String get _displayHintQuestion {
+    final hint = _questionHint;
+    if (hint == null) return '';
+    if (_kind == _QuestionKind.sentence || _kind == _QuestionKind.speaking) {
+      return hint.answer;
+    }
+    if (_kind == _QuestionKind.grammar) {
+      return hint.question.replaceFirst(RegExp(r'_{2,}'), hint.answer);
+    }
+    return hint.question;
+  }
+
+  bool get _showQuestionHint =>
+      widget.existingQuestion == null &&
+      _questionHint != null &&
+      _questionController.text.trim().isEmpty &&
+      _answerController.text.trim().isEmpty;
 
   @override
   void dispose() {
@@ -210,10 +279,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
   }
 
   Future<void> _save() async {
-    if (_kind == _QuestionKind.grammar) {
-      _optionsController.text =
-          '${_questionController.text.trim()}, ${_answerController.text.trim()}';
-    } else if (_kind == _QuestionKind.sentence) {
+    if (_kind == _QuestionKind.sentence) {
       final answer = _answerController.text.trim();
       final parts = answer.contains(RegExp(r'\s'))
           ? answer.split(RegExp(r'\s+'))
@@ -227,6 +293,17 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     try {
       switch (_kind) {
         case _QuestionKind.grammar:
+          final answer = _answerController.text.trim();
+          final completedQuestion = _questionController.text.trim();
+          final question = _usesPluralGrammarTemplate
+              ? '$completedQuestion <--> many ______'
+              : completedQuestion.replaceFirst(answer, '______');
+          if (!_usesPluralGrammarTemplate && question == completedQuestion) {
+            throw FormatException(loc.grammarAnswerMustAppear);
+          }
+          if (_usesPluralGrammarTemplate) {
+            _optionsController.text = '$completedQuestion, $answer';
+          }
           final options = _optionsController.text
               .split(RegExp(r'[,，_\n]'))
               .map((option) => option.trim())
@@ -241,8 +318,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
           }
           if (widget.existingQuestion == null) {
             await _service.addGrammarQuestion(
-              question: '${_questionController.text.trim()} <--> many ______',
-              answer: _answerController.text,
+              question: question,
+              answer: answer,
               group: group,
               level: _level,
               options: options,
@@ -250,8 +327,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
           } else {
             await _service.updateGrammarQuestion(
               id: widget.existingQuestion!.id,
-              question: '${_questionController.text.trim()} <--> many ______',
-              answer: _answerController.text,
+              question: question,
+              answer: answer,
               group: group,
               level: _level,
               options: options,
@@ -385,16 +462,46 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                 ),
               ),
               Gaps.h16,
+              if (_isLoadingHint && widget.existingQuestion == null)
+                const Center(child: LinearProgressIndicator()),
+              if (_showQuestionHint) ...[
+                Card(
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          loc.questionExample,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(_displayHintQuestion),
+                        Gaps.h8,
+                        Text(
+                          loc.answerExample,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(_questionHint!.answer),
+                      ],
+                    ),
+                  ),
+                ),
+                Gaps.h16,
+              ],
               if (!isSpeaking && _kind != _QuestionKind.sentence)
                 TextFormField(
                   controller: _questionController,
                   decoration: InputDecoration(
                     labelText: _kind == _QuestionKind.grammar
-                        ? loc.grammarBaseWord
+                        ? _usesPluralGrammarTemplate
+                            ? loc.grammarBaseWord
+                            : loc.completedGrammarQuestion
                         : loc.question,
                     border: const OutlineInputBorder(),
                   ),
                   validator: _required,
+                  onChanged: (_) => setState(() {}),
                 ),
               if (!isSpeaking && _kind != _QuestionKind.sentence) Gaps.h16,
               TextFormField(
@@ -408,7 +515,21 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                   border: const OutlineInputBorder(),
                 ),
                 validator: _required,
+                onChanged: (_) => setState(() {}),
               ),
+              if (_kind == _QuestionKind.grammar &&
+                  !_usesPluralGrammarTemplate) ...[
+                Gaps.h16,
+                TextFormField(
+                  controller: _optionsController,
+                  decoration: InputDecoration(
+                    labelText: loc.answerOptions,
+                    helperText: loc.answerOptionsHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: _required,
+                ),
+              ],
               Gaps.h16,
               DropdownButtonFormField<String>(
                 key: ValueKey('$_selectedGroup-$_useCustomGroup'),
@@ -432,7 +553,11 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                   setState(() {
                     _useCustomGroup = value == '__custom__';
                     _selectedGroup = _useCustomGroup ? null : value;
+                    _questionHint = null;
                   });
+                  if (value != null && value != '__custom__') {
+                    _loadQuestionHint(value);
+                  }
                 },
               ),
               if (_useCustomGroup) ...[
