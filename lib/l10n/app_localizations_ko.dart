@@ -161,6 +161,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get newQuestionGroup => '새 카테고리 이름';
 
   @override
+  String get questionGroupLevelNumber => '카테고리 뒤의 level 숫자(비워 두면 1)';
+
+  @override
+  String get questionGroupLevelRange => 'level 숫자는 1에서 30 사이여야 합니다.';
+
+  @override
   String get speakingQuestionHelp => '사용자가 소리 내어 읽을 단어나 문장을 입력하세요. 예: Nice to meet you.';
 
   @override

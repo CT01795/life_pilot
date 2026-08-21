@@ -161,6 +161,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newQuestionGroup => 'New category name';
 
   @override
+  String get questionGroupLevelNumber => 'Level number after the category (blank means 1)';
+
+  @override
+  String get questionGroupLevelRange => 'The level number must be between 1 and 30.';
+
+  @override
   String get speakingQuestionHelp => 'Enter the word or sentence the user should read aloud. Example: Nice to meet you.';
 
   @override

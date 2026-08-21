@@ -399,6 +399,18 @@ abstract class AppLocalizations {
   /// **'New category name'**
   String get newQuestionGroup;
 
+  /// No description provided for @questionGroupLevelNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Level number after the category (blank means 1)'**
+  String get questionGroupLevelNumber;
+
+  /// No description provided for @questionGroupLevelRange.
+  ///
+  /// In en, this message translates to:
+  /// **'The level number must be between 1 and 30.'**
+  String get questionGroupLevelRange;
+
   /// No description provided for @speakingQuestionHelp.
   ///
   /// In en, this message translates to:

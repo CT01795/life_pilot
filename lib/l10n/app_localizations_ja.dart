@@ -161,6 +161,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get newQuestionGroup => '新しいカテゴリー名';
 
   @override
+  String get questionGroupLevelNumber => 'カテゴリー末尾の level 数字（空欄は 1）';
+
+  @override
+  String get questionGroupLevelRange => 'level 数字は 1 から 30 の範囲で入力してください。';
+
+  @override
   String get speakingQuestionHelp => '読み上げる単語または文を入力してください。例：Nice to meet you。';
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 
 enum _QuestionKind { grammar, sentence, speaking, translation }
@@ -26,6 +27,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
   final _questionController = TextEditingController();
   final _answerController = TextEditingController();
   final _groupController = TextEditingController();
+  final _customGroupLevelController = TextEditingController();
   final _optionsController = TextEditingController();
   final _service = ServiceGame();
 
@@ -35,6 +37,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
   final List<String> _availableGroups = [];
   String? _selectedGroup;
   bool _useCustomGroup = false;
+  String _customGroupBase = '';
   bool _isSaving = false;
   GameQuestionHint? _questionHint;
   bool _isLoadingHint = false;
@@ -52,6 +55,32 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     final group = (_selectedGroup ?? _groupController.text).toLowerCase();
     return group.contains('plural') ||
         (widget.existingQuestion?.question.contains('<--> many') ?? false);
+  }
+
+  bool get _allowsNumberedCustomGroup =>
+      widget.gameName.contains('日') || widget.gameName.contains('韓');
+
+  bool get _isQuestionBankAdmin =>
+      supabase.auth.currentUser?.id == AuthConstants.systemQuestionBankOwnerId;
+
+  bool get _allowsCustomGroup =>
+      _isQuestionBankAdmin || _allowsNumberedCustomGroup;
+
+  String _groupWithoutLevel(String group) =>
+      group.trim().replaceFirst(RegExp(r'\d+$'), '');
+
+  int _levelFromGroup(String group) {
+    final match = RegExp(r'(\d+)$').firstMatch(group.trim());
+    return int.tryParse(match?.group(1) ?? '')?.clamp(1, 30) ?? 1;
+  }
+
+  String get _resolvedGroup {
+    if (!_useCustomGroup) return _selectedGroup?.trim() ?? '';
+    if (!_allowsNumberedCustomGroup) return _groupController.text.trim();
+    final suffix = _customGroupLevelController.text.trim();
+    return suffix.isEmpty || suffix == '1'
+        ? _customGroupBase
+        : '$_customGroupBase$suffix';
   }
 
   @override
@@ -92,6 +121,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     }
     _availableGroups.addAll(_fixedGroups);
     if (_availableGroups.isNotEmpty) _selectedGroup = _availableGroups.first;
+    _customGroupBase =
+        _selectedGroup == null ? '' : _groupWithoutLevel(_selectedGroup!);
 
     final existing = widget.existingQuestion;
     if (existing != null) {
@@ -120,6 +151,9 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
         _availableGroups.add(existing.group);
       }
       _selectedGroup = existing.group;
+      if (_allowsNumberedCustomGroup) {
+        _level = _levelFromGroup(existing.group);
+      }
     }
     _initialQuestion = _questionController.text;
     _initialAnswer = _answerController.text;
@@ -182,22 +216,23 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
       return hint.answer;
     }
     if (_kind == _QuestionKind.grammar) {
+      if (_usesPluralGrammarTemplate && hint.question.contains('<--> many')) {
+        return hint.question.split('<--> many').first.trim();
+      }
       return hint.question.replaceFirst(RegExp(r'_{2,}'), hint.answer);
     }
     return hint.question;
   }
 
   bool get _showQuestionHint =>
-      widget.existingQuestion == null &&
-      _questionHint != null &&
-      _questionController.text.trim().isEmpty &&
-      _answerController.text.trim().isEmpty;
+      widget.existingQuestion == null && _questionHint != null;
 
   @override
   void dispose() {
     _questionController.dispose();
     _answerController.dispose();
     _groupController.dispose();
+    _customGroupLevelController.dispose();
     _optionsController.dispose();
     super.dispose();
   }
@@ -236,6 +271,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     return _questionController.text != _initialQuestion ||
         _answerController.text != _initialAnswer ||
         (_selectedGroup ?? _groupController.text) != _initialGroup ||
+        _customGroupLevelController.text.isNotEmpty ||
         _optionsController.text != _initialOptions ||
         _level != _initialLevel;
   }
@@ -288,7 +324,10 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     }
     if (_isSaving || !_formKey.currentState!.validate()) return;
     final loc = AppLocalizations.of(context)!;
-    final group = _selectedGroup ?? _groupController.text.trim();
+    final group = _resolvedGroup;
+    if (_allowsNumberedCustomGroup) {
+      _level = _levelFromGroup(group);
+    }
     setState(() => _isSaving = true);
     try {
       switch (_kind) {
@@ -501,7 +540,6 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                     border: const OutlineInputBorder(),
                   ),
                   validator: _required,
-                  onChanged: (_) => setState(() {}),
                 ),
               if (!isSpeaking && _kind != _QuestionKind.sentence) Gaps.h16,
               TextFormField(
@@ -515,7 +553,6 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                   border: const OutlineInputBorder(),
                 ),
                 validator: _required,
-                onChanged: (_) => setState(() {}),
               ),
               if (_kind == _QuestionKind.grammar &&
                   !_usesPluralGrammarTemplate) ...[
@@ -543,16 +580,32 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                         value: group,
                         child: Text(group),
                       )),
-                  DropdownMenuItem(
-                    value: '__custom__',
-                    child: Text(loc.customQuestionGroup),
-                  ),
+                  if (_allowsCustomGroup)
+                    DropdownMenuItem(
+                      value: '__custom__',
+                      child: Text(loc.customQuestionGroup),
+                    ),
                 ],
                 validator: (value) => value == null ? loc.requiredField : null,
                 onChanged: (value) {
                   setState(() {
-                    _useCustomGroup = value == '__custom__';
-                    _selectedGroup = _useCustomGroup ? null : value;
+                    if (value == '__custom__') {
+                      if (_allowsNumberedCustomGroup) {
+                        _customGroupBase = _groupWithoutLevel(
+                          _selectedGroup ?? _availableGroups.first,
+                        );
+                      }
+                      _customGroupLevelController.clear();
+                      _groupController.clear();
+                      _useCustomGroup = true;
+                      _selectedGroup = null;
+                    } else {
+                      _useCustomGroup = false;
+                      _selectedGroup = value;
+                      if (value != null && _allowsNumberedCustomGroup) {
+                        _level = _levelFromGroup(value);
+                      }
+                    }
                     _questionHint = null;
                   });
                   if (value != null && value != '__custom__') {
@@ -562,33 +615,53 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
               ),
               if (_useCustomGroup) ...[
                 Gaps.h16,
-                TextFormField(
-                  controller: _groupController,
-                  decoration: InputDecoration(
-                    labelText: loc.newQuestionGroup,
-                    border: const OutlineInputBorder(),
+                if (_allowsNumberedCustomGroup)
+                  TextFormField(
+                    controller: _customGroupLevelController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: loc.questionGroupLevelNumber,
+                      prefixText: _customGroupBase,
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return null;
+                      final level = int.tryParse(value.trim());
+                      if (level == null || level < 1 || level > 30) {
+                        return loc.questionGroupLevelRange;
+                      }
+                      return null;
+                    },
+                  )
+                else
+                  TextFormField(
+                    controller: _groupController,
+                    decoration: InputDecoration(
+                      labelText: loc.newQuestionGroup,
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: _required,
                   ),
-                  validator: _required,
-                ),
               ],
               Gaps.h16,
-              DropdownButtonFormField<int>(
-                initialValue: _level,
-                decoration: InputDecoration(
-                  labelText: loc.gameLevel,
-                  border: const OutlineInputBorder(),
-                ),
-                items: List.generate(
-                  30,
-                  (index) => DropdownMenuItem(
-                    value: index + 1,
-                    child: Text('${index + 1}'),
+              if (!_allowsNumberedCustomGroup)
+                DropdownButtonFormField<int>(
+                  initialValue: _level,
+                  decoration: InputDecoration(
+                    labelText: loc.gameLevel,
+                    border: const OutlineInputBorder(),
                   ),
+                  items: List.generate(
+                    30,
+                    (index) => DropdownMenuItem(
+                      value: index + 1,
+                      child: Text('${index + 1}'),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    if (value != null) setState(() => _level = value);
+                  },
                 ),
-                onChanged: (value) {
-                  if (value != null) setState(() => _level = value);
-                },
-              ),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: _isSaving ? null : _save,

@@ -79,6 +79,8 @@
   "sentenceOrWord": "Complete word or correct sentence",
   "customQuestionGroup": "+ Create a new category",
   "newQuestionGroup": "New category name",
+  "questionGroupLevelNumber": "Level number after the category (blank means 1)",
+  "questionGroupLevelRange": "The level number must be between 1 and 30.",
   "speakingQuestionHelp": "Enter the word or sentence the user should read aloud. Example: Nice to meet you.",
   "translationQuestionHelp": "Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.",
   "japaneseTranslationQuestionHelp": "Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.",

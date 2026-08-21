@@ -338,10 +338,11 @@ class ServiceGame {
   }) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
-    final rows = await supabase
-        .from(_questionTableForGame(gameName))
-        .select('group')
-        .eq('owner_id', userId);
+    final rows =
+        await supabase.from(_questionTableForGame(gameName)).select('group').or(
+              'owner_id.eq.$userId,'
+              'owner_id.eq.${AuthConstants.systemQuestionBankOwnerId}',
+            );
     final groups = rows
         .map((row) => row['group']?.toString().trim() ?? '')
         .where(

@@ -161,6 +161,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get newQuestionGroup => '新分類名稱';
 
   @override
+  String get questionGroupLevelNumber => '分類後面的 level 數字（留空代表 1）';
+
+  @override
+  String get questionGroupLevelRange => 'level 數字必須介於 1 到 30。';
+
+  @override
   String get speakingQuestionHelp => '請輸入使用者需要朗讀的單字或句子，例如 Nice to meet you。';
 
   @override
