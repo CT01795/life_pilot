@@ -216,8 +216,17 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
       return hint.answer;
     }
     if (_kind == _QuestionKind.grammar) {
-      if (_usesPluralGrammarTemplate && hint.question.contains('<--> many')) {
-        return hint.question.split('<--> many').first.trim();
+      if (_usesPluralGrammarTemplate) {
+        final beforeArrow =
+            hint.question.split(RegExp(r'\s*(?:<|↔)')).first.trim();
+        if (beforeArrow.isNotEmpty && beforeArrow != hint.question.trim()) {
+          return beforeArrow;
+        }
+        final beforeMany = hint.question
+            .split(RegExp(r'\s+many\s+', caseSensitive: false))
+            .first
+            .trim();
+        if (beforeMany.isNotEmpty) return beforeMany;
       }
       return hint.question.replaceFirst(RegExp(r'_{2,}'), hint.answer);
     }
