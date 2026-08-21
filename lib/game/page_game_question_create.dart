@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
@@ -71,7 +72,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
 
   int _levelFromGroup(String group) {
     final match = RegExp(r'(\d+)$').firstMatch(group.trim());
-    return int.tryParse(match?.group(1) ?? '')?.clamp(1, 30) ?? 1;
+    return int.tryParse(match?.group(1) ?? '') ?? 1;
   }
 
   String get _resolvedGroup {
@@ -628,19 +629,15 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                   TextFormField(
                     controller: _customGroupLevelController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(3),
+                    ],
                     decoration: InputDecoration(
                       labelText: loc.questionGroupLevelNumber,
                       prefixText: _customGroupBase,
                       border: const OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return null;
-                      final level = int.tryParse(value.trim());
-                      if (level == null || level < 1 || level > 30) {
-                        return loc.questionGroupLevelRange;
-                      }
-                      return null;
-                    },
                   )
                 else
                   TextFormField(
