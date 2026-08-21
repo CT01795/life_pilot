@@ -2,6 +2,7 @@
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
@@ -180,6 +181,121 @@ class _PageGameListState extends State<PageGameList> {
 
   bool get _isSocialGame => (selectedGameName?.toLowerCase() ?? '') == 'social';
 
+  Future<void> _showCreateGameLevel() async {
+    if (!_isQuestionBankAdmin ||
+        selectedCategory == null ||
+        selectedGameName == null) {
+      return;
+    }
+    final loc = AppLocalizations.of(context)!;
+    final gameType = selectedCategory!;
+    final gameName = selectedGameName!;
+    final levels = controllerGameList.gamesByCategory[gameType]![gameName]!;
+    final nextLevel = levels.map((item) => item.level).reduce(
+              (current, value) => current > value ? current : value,
+            ) +
+        1;
+    final controller = TextEditingController(text: '$nextLevel');
+    String? errorText;
+    var saving = false;
+    final created = await showDialog<bool>(
+          context: context,
+          barrierDismissible: !saving,
+          builder: (dialogContext) => StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: Text('${loc.add} ${loc.gameLevel}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$gameType · $gameName'),
+                  Gaps.h16,
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    enabled: !saving,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: loc.gameLevel,
+                      errorText: errorText,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      saving ? null : () => Navigator.pop(dialogContext, false),
+                  child: Text(loc.cancel),
+                ),
+                FilledButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final level = int.tryParse(controller.text);
+                          if (level == null || level < 1 || level > 999) {
+                            setDialogState(() => errorText = '1–999');
+                            return;
+                          }
+                          setDialogState(() {
+                            saving = true;
+                            errorText = null;
+                          });
+                          try {
+                            await _serviceGame.createGameLevel(
+                              gameType: gameType,
+                              gameName: gameName,
+                              level: level,
+                            );
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext, true);
+                            }
+                          } on DuplicateGameLevelException {
+                            if (dialogContext.mounted) {
+                              setDialogState(() {
+                                saving = false;
+                                errorText = loc.duplicateQuestion;
+                              });
+                            }
+                          } catch (error, stackTrace) {
+                            logger.e('Create game level failed',
+                                error: error, stackTrace: stackTrace);
+                            if (dialogContext.mounted) {
+                              setDialogState(() {
+                                saving = false;
+                                errorText = loc.unknownError;
+                              });
+                            }
+                          }
+                        },
+                  child: saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(loc.save),
+                ),
+              ],
+            ),
+          ),
+        ) ??
+        false;
+    controller.dispose();
+    if (created && mounted) {
+      await controllerGameList.loadGames();
+      if (!mounted) return;
+      setState(() {
+        selectedCategory = gameType;
+        selectedGameName = gameName;
+        selectedLevel = controllerGameList
+            .gamesByCategory[gameType]![gameName]!.first.level;
+      });
+      await _loadUserProgress();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -291,6 +407,14 @@ class _PageGameListState extends State<PageGameList> {
                 );
               }).toList(),
             ),
+            if (_isQuestionBankAdmin) ...[
+              Gaps.h8,
+              OutlinedButton.icon(
+                onPressed: _showCreateGameLevel,
+                icon: const Icon(Icons.add),
+                label: Text('${loc.add} ${loc.gameLevel}'),
+              ),
+            ],
             Gaps.h16,
             if (_supportsQuestionBank) ...[
               DropdownButtonFormField<String>(

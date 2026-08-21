@@ -17,6 +17,10 @@ class DuplicateGameQuestionException implements Exception {
   const DuplicateGameQuestionException();
 }
 
+class DuplicateGameLevelException implements Exception {
+  const DuplicateGameLevelException();
+}
+
 class GameQuestionHasAnswersException implements Exception {
   const GameQuestionHasAnswersException();
 }
@@ -328,6 +332,23 @@ class ServiceGame {
             (row as Map<String, dynamic>)['category']?.toString() ?? '')
         .where((category) => category.isNotEmpty)
         .toList();
+  }
+
+  Future<void> createGameLevel({
+    required String gameType,
+    required String gameName,
+    required int level,
+  }) async {
+    try {
+      await supabase.rpc('create_game_level', params: {
+        'p_game_type': gameType.trim(),
+        'p_game_name': gameName.trim(),
+        'p_level': level,
+      });
+    } on PostgrestException catch (error) {
+      if (error.code == '23505') throw const DuplicateGameLevelException();
+      rethrow;
+    }
   }
 
   Future<void> setMySocialQuestionActive({

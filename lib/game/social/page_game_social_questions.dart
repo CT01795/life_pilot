@@ -237,8 +237,10 @@ class _PageState extends State<PageGameSocialQuestions> {
                                   .toList(),
                               onChanged: _loading
                                   ? null
-                                  : (value) =>
-                                      setState(() => _selectedCategory = value),
+                                  : (value) {
+                                      setState(() => _selectedCategory = value);
+                                      _load();
+                                    },
                             ),
                           ),
                           if (_selectedCategory != null) ...[
@@ -247,8 +249,10 @@ class _PageState extends State<PageGameSocialQuestions> {
                               tooltip: loc.clear,
                               onPressed: _loading
                                   ? null
-                                  : () =>
-                                      setState(() => _selectedCategory = null),
+                                  : () {
+                                      setState(() => _selectedCategory = null);
+                                      _load();
+                                    },
                               icon: const Icon(Icons.filter_alt_off),
                             ),
                           ],
@@ -277,6 +281,7 @@ class _PageState extends State<PageGameSocialQuestions> {
                             : (value) {
                                 if (value != null) {
                                   setState(() => _status = value);
+                                  _load();
                                 }
                               },
                       ),
