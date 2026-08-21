@@ -26,6 +26,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   int _totalCount = 0;
   bool _isLoading = true;
   bool _isLoadingMore = false;
+  bool _hasLoaded = false;
   bool _hasError = false;
   int _loadGeneration = 0;
   final Set<String> _deletingIds = {};
@@ -55,6 +56,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   }
 
   Future<void> _load({bool append = false}) async {
+    if (!append && _isLoading && _hasLoaded) return;
     if (append && (_isLoadingMore || !_hasMore)) return;
     final generation = append ? _loadGeneration : ++_loadGeneration;
     setState(() {
@@ -78,18 +80,43 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
           : _service.fetchMyQuestionGroupsForManagement(
               gameName: widget.gameName,
             );
-      final page = await pageFuture;
+      var page = await pageFuture;
       final groups = await groupsFuture;
       if (!mounted || generation != _loadGeneration) return;
+      if (!append &&
+          _selectedGroup != null &&
+          !groups.contains(_selectedGroup)) {
+        _selectedGroup = null;
+        page = await _service.fetchMyQuestions(
+          gameName: widget.gameName,
+          keyword: _searchController.text,
+          status: _statusValue,
+        );
+        if (!mounted || generation != _loadGeneration) return;
+      }
       setState(() {
         _questions =
             append ? [..._questions, ...page.questions] : page.questions;
         _totalCount = page.totalCount;
         _groups = groups;
+        _hasLoaded = true;
       });
-    } catch (_) {
-      if (mounted && generation == _loadGeneration && !append) {
-        setState(() => _hasError = true);
+    } catch (error, stackTrace) {
+      logger.e(
+        append
+            ? 'Load more game questions failed'
+            : 'Load game questions failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted && generation == _loadGeneration) {
+        if (append || _hasLoaded) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
+          );
+        } else {
+          setState(() => _hasError = true);
+        }
       }
     } finally {
       if (mounted && generation == _loadGeneration) {
@@ -207,9 +234,9 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(loc.myQuestions)),
-      body: _isLoading
+      body: _isLoading && !_hasLoaded
           ? const Center(child: CircularProgressIndicator())
-          : _hasError
+          : _hasError && !_hasLoaded
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -228,27 +255,32 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      if (_isLoading) ...[
+                        const LinearProgressIndicator(),
+                        Gaps.h16,
+                      ],
                       TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
                           labelText: loc.search,
-                          prefixIcon: const Icon(Icons.search),
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (_searchController.text.isNotEmpty)
                                 IconButton(
                                   tooltip: loc.clear,
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {});
-                                    _load();
-                                  },
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () {
+                                          _searchController.clear();
+                                          setState(() {});
+                                          _load();
+                                        },
                                   icon: const Icon(Icons.clear),
                                 ),
                               IconButton(
                                 tooltip: loc.search,
-                                onPressed: _load,
+                                onPressed: _isLoading ? null : _load,
                                 icon: const Icon(Icons.search),
                               ),
                             ],
@@ -257,7 +289,9 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                         ),
                         textInputAction: TextInputAction.search,
                         onChanged: (_) => setState(() {}),
-                        onSubmitted: (_) => _load(),
+                        onSubmitted: (_) {
+                          if (!_isLoading) _load();
+                        },
                       ),
                       Gaps.h16,
                       Row(
@@ -266,6 +300,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                             child: DropdownButtonFormField<String>(
                               key: ValueKey(_selectedGroup),
                               initialValue: _selectedGroup,
+                              isExpanded: true,
                               decoration: InputDecoration(
                                 labelText: loc.questionGroup,
                                 border: const OutlineInputBorder(),
@@ -274,27 +309,35 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                                   .map(
                                     (group) => DropdownMenuItem(
                                       value: group,
-                                      child: Text(
-                                        group,
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Tooltip(
+                                        message: group,
+                                        child: Text(
+                                          group,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                     ),
                                   )
                                   .toList(),
-                              onChanged: (value) {
-                                setState(() => _selectedGroup = value);
-                                _load();
-                              },
+                              onChanged: _isLoading
+                                  ? null
+                                  : (value) {
+                                      setState(() => _selectedGroup = value);
+                                      _load();
+                                    },
                             ),
                           ),
                           if (_selectedGroup != null) ...[
                             Gaps.w8,
                             IconButton(
                               tooltip: loc.clear,
-                              onPressed: () {
-                                setState(() => _selectedGroup = null);
-                                _load();
-                              },
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      setState(() => _selectedGroup = null);
+                                      _load();
+                                    },
                               icon: const Icon(Icons.filter_alt_off),
                             ),
                           ],
@@ -321,12 +364,14 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                             child: Text(loc.inactiveQuestion),
                           ),
                         ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _statusFilter = value);
-                            _load();
-                          }
-                        },
+                        onChanged: _isLoading
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  setState(() => _statusFilter = value);
+                                  _load();
+                                }
+                              },
                       ),
                       Gaps.h16,
                       if (_questions.isEmpty)
@@ -375,9 +420,12 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                                         IconButton(
                                           tooltip: loc.edit,
                                           icon: const Icon(Icons.edit_outlined),
-                                          onPressed: () => _edit(question),
+                                          onPressed: _isLoading
+                                              ? null
+                                              : () => _edit(question),
                                         ),
                                         PopupMenuButton<String>(
+                                          enabled: !_isLoading,
                                           onSelected: (action) {
                                             if (action == 'toggle') {
                                               _setActive(

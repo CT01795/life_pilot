@@ -579,6 +579,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
               DropdownButtonFormField<String>(
                 key: ValueKey('$_selectedGroup-$_useCustomGroup'),
                 initialValue: _useCustomGroup ? '__custom__' : _selectedGroup,
+                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: loc.questionGroup,
                   border: const OutlineInputBorder(),
@@ -586,7 +587,14 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                 items: [
                   ..._availableGroups.map((group) => DropdownMenuItem(
                         value: group,
-                        child: Text(group),
+                        child: Tooltip(
+                          message: group,
+                          child: Text(
+                            group,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       )),
                   if (_allowsCustomGroup)
                     DropdownMenuItem(
