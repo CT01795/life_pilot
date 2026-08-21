@@ -12,6 +12,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final String questionBank;
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   ModelGameSpeaking? currentQuestion;
   int score = 0; // +1 / -1
@@ -31,6 +32,7 @@ class ControllerGameSpeaking extends ChangeNotifier {
     required this.service,
     required this.gameId, // 初始化
     required this.gameLevel,
+    this.questionBank = 'admin',
   });
 
   Future<void> loadNextQuestion() async {
@@ -68,7 +70,11 @@ class ControllerGameSpeaking extends ChangeNotifier {
 
   Future<ModelGameSpeaking?> _fetchQuestionSafely() async {
     try {
-      return await service.fetchSpeakingQuestion(userName, gameLevel);
+      return await service.fetchSpeakingQuestion(
+        userName,
+        gameLevel,
+        questionBank: questionBank,
+      );
     } catch (error, stackTrace) {
       logger.e('Load speaking question failed',
           error: error, stackTrace: stackTrace);

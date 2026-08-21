@@ -12,7 +12,13 @@ import 'package:provider/provider.dart';
 class PageGameGrammar extends StatefulWidget {
   final String gameId;
   int gameLevel;
-  PageGameGrammar({super.key, required this.gameId, required this.gameLevel});
+  final String questionBank;
+  PageGameGrammar({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+    this.questionBank = 'admin',
+  });
 
   @override
   State<PageGameGrammar> createState() => _PageGameGrammarState();
@@ -34,6 +40,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     controller = ControllerGameGrammar(
         gameId: widget.gameId,
         gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
+        questionBank: widget.questionBank,
         userName: auth.currentAccount ?? AuthConstants.guest,
         service: ServiceGame(),
         model: ModelGameGrammar());
@@ -85,7 +92,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
             appBar: AppBar(
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.maybePop(context),
               ),
             ),
             body: Center(
@@ -117,7 +124,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
-                Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+                Navigator.maybePop(context);
               },
             ),
             title:

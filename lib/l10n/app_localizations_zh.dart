@@ -86,6 +86,108 @@ class AppLocalizationsZh extends AppLocalizations {
   String get back => '返回';
 
   @override
+  String get leaveGameConfirmation => '確定要離開遊戲並返回上一頁嗎？';
+
+  @override
+  String get questionBank => '題庫來源';
+
+  @override
+  String get adminQuestionBank => '管理者題庫';
+
+  @override
+  String get myQuestionBank => '我的題庫';
+
+  @override
+  String get addQuestion => '新增題目';
+
+  @override
+  String get question => '題目';
+
+  @override
+  String get correctAnswer => '正確答案';
+
+  @override
+  String get questionGroup => '題目分類';
+
+  @override
+  String get answerOptions => '答案選項';
+
+  @override
+  String get answerOptionsHint => '請使用逗號分隔選項';
+
+  @override
+  String get scrambledWords => '要重新排列的單字';
+
+  @override
+  String get speakingText => '要朗讀的文字';
+
+  @override
+  String get requiredField => '此欄位不可空白';
+
+  @override
+  String get twoOptionsRequired => '請至少輸入兩個答案選項';
+
+  @override
+  String get questionAdded => '題目已加入我的題庫';
+
+  @override
+  String get grammarQuestionHelp => '只要輸入單字原形（例如 head）和複數答案（例如 heads），系統會自動建立完整題目與選項。';
+
+  @override
+  String get sentenceQuestionHelp => '只要輸入完整單字或正確句子，例如 mother 或 I love apples，系統會自動拆開並建立重新排列題目。';
+
+  @override
+  String get grammarBaseWord => '單字原形（例如 head）';
+
+  @override
+  String get sentenceOrWord => '完整單字或正確句子';
+
+  @override
+  String get customQuestionGroup => '＋自行建立分類';
+
+  @override
+  String get newQuestionGroup => '新分類名稱';
+
+  @override
+  String get speakingQuestionHelp => '請輸入使用者需要朗讀的單字或句子，例如 Nice to meet you。';
+
+  @override
+  String get translationQuestionHelp => '題目填原文，正確答案填翻譯。同一分類至少建立 3 題，遊戲才能產生兩個錯誤選項。';
+
+  @override
+  String get japaneseTranslationQuestionHelp => '題目填日文，正確答案填翻譯。同一分類請至少建立 3 題。';
+
+  @override
+  String get koreanTranslationQuestionHelp => '題目填韓文，正確答案填翻譯。同一分類請至少建立 3 題。';
+
+  @override
+  String get wordSearchQuestionHelp => '題目請填英文單字，正確答案填中文意思，例如 apple／蘋果。';
+
+  @override
+  String get duplicateQuestion => '相同的題目與答案已存在於你選擇的題目分類中。';
+
+  @override
+  String get myQuestionBankEmpty => '你的題庫在這個等級尚無可用題目，請先新增題目。';
+
+  @override
+  String get threeQuestionsRequired => '使用我的題庫前，每個已建立的分類都必須至少有 3 題。';
+
+  @override
+  String get myQuestions => '我的題目';
+
+  @override
+  String get noMyQuestions => '你尚未為這個遊戲新增題目。';
+
+  @override
+  String get questionDeleted => '題目已刪除';
+
+  @override
+  String get editQuestion => '編輯題目';
+
+  @override
+  String get questionUpdated => '題目已更新';
+
+  @override
   String get loginError => '登入失敗，請再試一次。';
 
   @override
@@ -732,4 +834,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stockRetry => '重新載入';
+
+  @override
+  String get questionHasAnswersDeleteBlocked => '這個題目已有作答紀錄，無法刪除；你仍可編輯題目。';
 }

@@ -15,6 +15,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final String questionBank;
 
   final WordSearchBoard board;
   ModelGameWordSearch currentQuestion;
@@ -45,6 +46,7 @@ class ControllerGameWordSearch extends ChangeNotifier {
     required this.service,
     required this.gameId, // 初始化
     required this.gameLevel,
+    this.questionBank = 'admin',
     required this.maxQuestions,
     required this.board,
     required this.currentQuestion,
@@ -97,7 +99,11 @@ class ControllerGameWordSearch extends ChangeNotifier {
 
   Future<ModelGameWordSearch?> _fetchQuestionSafely() async {
     try {
-      return await service.fetchWordSearchQuestion(userName, gameLevel);
+      return await service.fetchWordSearchQuestion(
+        userName,
+        gameLevel,
+        questionBank: questionBank,
+      );
     } catch (error, stackTrace) {
       logger.e('Load word search question failed',
           error: error, stackTrace: stackTrace);

@@ -86,6 +86,108 @@ class AppLocalizationsEn extends AppLocalizations {
   String get back => 'Back';
 
   @override
+  String get leaveGameConfirmation => 'Leave this game and return to the previous page?';
+
+  @override
+  String get questionBank => 'Question bank';
+
+  @override
+  String get adminQuestionBank => 'Admin question bank';
+
+  @override
+  String get myQuestionBank => 'My question bank';
+
+  @override
+  String get addQuestion => 'Add question';
+
+  @override
+  String get question => 'Question';
+
+  @override
+  String get correctAnswer => 'Correct answer';
+
+  @override
+  String get questionGroup => 'Question group';
+
+  @override
+  String get answerOptions => 'Answer options';
+
+  @override
+  String get answerOptionsHint => 'Separate options with commas';
+
+  @override
+  String get scrambledWords => 'Words to rearrange';
+
+  @override
+  String get speakingText => 'Text to speak';
+
+  @override
+  String get requiredField => 'This field is required';
+
+  @override
+  String get twoOptionsRequired => 'Enter at least two answer options';
+
+  @override
+  String get questionAdded => 'Question added to your question bank';
+
+  @override
+  String get grammarQuestionHelp => 'Enter only the base word (for example, head) and its plural answer (heads). The full question and choices are created automatically.';
+
+  @override
+  String get sentenceQuestionHelp => 'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.';
+
+  @override
+  String get grammarBaseWord => 'Base word (for example, head)';
+
+  @override
+  String get sentenceOrWord => 'Complete word or correct sentence';
+
+  @override
+  String get customQuestionGroup => '+ Create a new category';
+
+  @override
+  String get newQuestionGroup => 'New category name';
+
+  @override
+  String get speakingQuestionHelp => 'Enter the word or sentence the user should read aloud. Example: Nice to meet you.';
+
+  @override
+  String get translationQuestionHelp => 'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.';
+
+  @override
+  String get japaneseTranslationQuestionHelp => 'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
+
+  @override
+  String get koreanTranslationQuestionHelp => 'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
+
+  @override
+  String get wordSearchQuestionHelp => 'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.';
+
+  @override
+  String get duplicateQuestion => 'The same question and answer already exist in your selected question group.';
+
+  @override
+  String get myQuestionBankEmpty => 'Your question bank has no questions available for this level. Add a question first.';
+
+  @override
+  String get threeQuestionsRequired => 'Each group in your question bank needs at least 3 questions before you can play.';
+
+  @override
+  String get myQuestions => 'My questions';
+
+  @override
+  String get noMyQuestions => 'You have not added any questions for this game yet.';
+
+  @override
+  String get questionDeleted => 'Question deleted';
+
+  @override
+  String get editQuestion => 'Edit question';
+
+  @override
+  String get questionUpdated => 'Question updated';
+
+  @override
   String get loginError => 'Login failed. Please try again.';
 
   @override
@@ -732,4 +834,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stockRetry => 'Try again';
+
+  @override
+  String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can still edit it.';
 }

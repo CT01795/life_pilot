@@ -249,6 +249,210 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get back;
 
+  /// No description provided for @leaveGameConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this game and return to the previous page?'**
+  String get leaveGameConfirmation;
+
+  /// No description provided for @questionBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Question bank'**
+  String get questionBank;
+
+  /// No description provided for @adminQuestionBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin question bank'**
+  String get adminQuestionBank;
+
+  /// No description provided for @myQuestionBank.
+  ///
+  /// In en, this message translates to:
+  /// **'My question bank'**
+  String get myQuestionBank;
+
+  /// No description provided for @addQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add question'**
+  String get addQuestion;
+
+  /// No description provided for @question.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get question;
+
+  /// No description provided for @correctAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get correctAnswer;
+
+  /// No description provided for @questionGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Question group'**
+  String get questionGroup;
+
+  /// No description provided for @answerOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer options'**
+  String get answerOptions;
+
+  /// No description provided for @answerOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate options with commas'**
+  String get answerOptionsHint;
+
+  /// No description provided for @scrambledWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Words to rearrange'**
+  String get scrambledWords;
+
+  /// No description provided for @speakingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to speak'**
+  String get speakingText;
+
+  /// No description provided for @requiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get requiredField;
+
+  /// No description provided for @twoOptionsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least two answer options'**
+  String get twoOptionsRequired;
+
+  /// No description provided for @questionAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Question added to your question bank'**
+  String get questionAdded;
+
+  /// No description provided for @grammarQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter only the base word (for example, head) and its plural answer (heads). The full question and choices are created automatically.'**
+  String get grammarQuestionHelp;
+
+  /// No description provided for @sentenceQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.'**
+  String get sentenceQuestionHelp;
+
+  /// No description provided for @grammarBaseWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Base word (for example, head)'**
+  String get grammarBaseWord;
+
+  /// No description provided for @sentenceOrWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete word or correct sentence'**
+  String get sentenceOrWord;
+
+  /// No description provided for @customQuestionGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Create a new category'**
+  String get customQuestionGroup;
+
+  /// No description provided for @newQuestionGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New category name'**
+  String get newQuestionGroup;
+
+  /// No description provided for @speakingQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the word or sentence the user should read aloud. Example: Nice to meet you.'**
+  String get speakingQuestionHelp;
+
+  /// No description provided for @translationQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.'**
+  String get translationQuestionHelp;
+
+  /// No description provided for @japaneseTranslationQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.'**
+  String get japaneseTranslationQuestionHelp;
+
+  /// No description provided for @koreanTranslationQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.'**
+  String get koreanTranslationQuestionHelp;
+
+  /// No description provided for @wordSearchQuestionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.'**
+  String get wordSearchQuestionHelp;
+
+  /// No description provided for @duplicateQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'The same question and answer already exist in your selected question group.'**
+  String get duplicateQuestion;
+
+  /// No description provided for @myQuestionBankEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question bank has no questions available for this level. Add a question first.'**
+  String get myQuestionBankEmpty;
+
+  /// No description provided for @threeQuestionsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Each group in your question bank needs at least 3 questions before you can play.'**
+  String get threeQuestionsRequired;
+
+  /// No description provided for @myQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'My questions'**
+  String get myQuestions;
+
+  /// No description provided for @noMyQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not added any questions for this game yet.'**
+  String get noMyQuestions;
+
+  /// No description provided for @questionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Question deleted'**
+  String get questionDeleted;
+
+  /// No description provided for @editQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit question'**
+  String get editQuestion;
+
+  /// No description provided for @questionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Question updated'**
+  String get questionUpdated;
+
   /// Label for login error
   ///
   /// In en, this message translates to:
@@ -1544,6 +1748,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get stockRetry;
+
+  /// Shown when answer history prevents question deletion
+  ///
+  /// In en, this message translates to:
+  /// **'This question has answer history and cannot be deleted. You can still edit it.'**
+  String get questionHasAnswersDeleteBlocked;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

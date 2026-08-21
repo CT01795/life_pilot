@@ -25,7 +25,8 @@ class PageGameSteamScratchMaze extends StatefulWidget {
       {super.key, required this.gameId, required this.gameLevel});
 
   @override
-  State<PageGameSteamScratchMaze> createState() => _PageGameSteamScratchMazeState();
+  State<PageGameSteamScratchMaze> createState() =>
+      _PageGameSteamScratchMazeState();
 }
 
 class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
@@ -74,8 +75,8 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
 
   void showGameDialog(ModelGameEvent event) {
     if (!mounted) return;
-    final pageContext = context; 
-    
+    final pageContext = context;
+
     if (event.type == EnumGameEventType.none) return;
     Color bg = switch (event.type) {
       EnumGameEventType.obstacle => Colors.red.shade600, // 柔和紅
@@ -119,7 +120,8 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
         },
       );
       Future.delayed(
-        Duration(milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500),
+        Duration(
+            milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500),
         () {
           if (!mounted) return;
           Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
@@ -164,7 +166,8 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                     ),
                     onPressed: () async {
                       if (!mounted) return;
-                      Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
+                      Navigator.of(pageContext, rootNavigator: true)
+                          .pop(); // 關 dialog
                       await Future.delayed(
                           Duration(milliseconds: 100)); // 等 dialog 關閉完成
                       game.resetGame(); // 重置遊戲
@@ -186,7 +189,8 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                     ),
                     onPressed: () {
                       if (!mounted) return;
-                      Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
+                      Navigator.of(pageContext, rootNavigator: true)
+                          .pop(); // 關 dialog
                       Navigator.of(pageContext).pop(true); // 回上一頁
                     },
                     icon: Icon(Icons.arrow_back, size: 22),
@@ -228,55 +232,55 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
       // 強制跳轉到遊戲頁（不能跳過）
       int value = widget.gameLevel % 5;
       value == 0
-        ? await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PageGameGrammar(
-                gameId: widget.gameId,
-                gameLevel: -1, //widget.gameLevel,
-              ),
-            ),
-          )
-        : value == 4
-            ? await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PageGameSpeaking(
-                    gameId: widget.gameId,
-                    gameLevel: -1, //widget.gameLevel,
-                  ),
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameGrammar(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
                 ),
-              )
-            : value == 3
-                ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameTranslation(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                        gameName: "",   
-                      ),
+              ),
+            )
+          : value == 4
+              ? await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PageGameSpeaking(
+                      gameId: widget.gameId,
+                      gameLevel: -1, //widget.gameLevel,
                     ),
-                  )
-                : value == 2
-                    ? await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameSentence(
-                            gameId: widget.gameId,
-                            gameLevel: -1, //widget.gameLevel,
-                          ),
+                  ),
+                )
+              : value == 3
+                  ? await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PageGameTranslation(
+                          gameId: widget.gameId,
+                          gameLevel: -1, //widget.gameLevel,
+                          gameName: "",
                         ),
-                      )
-                    : await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameWordSearch(
-                            gameId: widget.gameId,
-                            gameLevel: -1, //widget.gameLevel,
+                      ),
+                    )
+                  : value == 2
+                      ? await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PageGameSentence(
+                              gameId: widget.gameId,
+                              gameLevel: -1, //widget.gameLevel,
+                            ),
                           ),
-                        ),
-                      );
+                        )
+                      : await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PageGameWordSearch(
+                              gameId: widget.gameId,
+                              gameLevel: -1, //widget.gameLevel,
+                            ),
+                          ),
+                        );
       // ⭐ 回上一頁（通常是 PageGameList）
       if (!mounted) return;
       Navigator.of(pageContext).pop(true); // 回上一頁並刷新
@@ -298,13 +302,13 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
-          },
-        ),
-        title: Text('Scratch Game (Maze)')),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.maybePop(context);
+            },
+          ),
+          title: Text('Scratch Game (Maze)')),
       body: Row(
         children: [
           // -----------------------------------------------------------------
@@ -334,7 +338,8 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                       ),
                       TextButton(
                         onPressed: () async {
-                          await editorKeyMaze.currentState?.requestBlocklyJson();
+                          await editorKeyMaze.currentState
+                              ?.requestBlocklyJson();
                         },
                         child: Text("Start",
                             style: TextStyle(color: Colors.white)),

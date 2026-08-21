@@ -74,7 +74,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
 
   void showGameDialog(ModelGameEvent event) {
     if (!mounted) return;
-    final pageContext = context; 
+    final pageContext = context;
 
     if (event.type == EnumGameEventType.none) return;
     Color bg = switch (event.type) {
@@ -119,7 +119,8 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
         },
       );
       Future.delayed(
-        Duration(milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500),
+        Duration(
+            milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500),
         () {
           if (!mounted) return;
           Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
@@ -164,7 +165,8 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                     ),
                     onPressed: () async {
                       if (!mounted) return;
-                      Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
+                      Navigator.of(pageContext, rootNavigator: true)
+                          .pop(); // 關 dialog
                       await Future.delayed(
                           Duration(milliseconds: 100)); // 等 dialog 關閉完成
                       game.resetGame(); // 重置遊戲
@@ -186,7 +188,8 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                     ),
                     onPressed: () {
                       if (!mounted) return;
-                      Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
+                      Navigator.of(pageContext, rootNavigator: true)
+                          .pop(); // 關 dialog
                       Navigator.of(pageContext).pop(true); // 回上一頁
                     },
                     icon: Icon(Icons.arrow_back, size: 22),
@@ -224,59 +227,59 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
     Future.delayed(Duration(seconds: 1), () async {
       if (!mounted) return; // widget 已卸載，直接 return
       Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
-      
+
       // 強制跳轉到遊戲頁（不能跳過）
       int value = widget.gameLevel % 5;
       value == 0
-        ? await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PageGameGrammar(
-                gameId: widget.gameId,
-                gameLevel: -1, //widget.gameLevel,
-              ),
-            ),
-          )
-        : value == 4
-            ? await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PageGameSpeaking(
-                    gameId: widget.gameId,
-                    gameLevel: -1, //widget.gameLevel,
-                  ),
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameGrammar(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
                 ),
-              )
-            : value == 3
-                ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameTranslation(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                        gameName: "",   
-                      ),
+              ),
+            )
+          : value == 4
+              ? await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PageGameSpeaking(
+                      gameId: widget.gameId,
+                      gameLevel: -1, //widget.gameLevel,
                     ),
-                  )
-                : value == 2
-                    ? await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameSentence(
-                            gameId: widget.gameId,
-                            gameLevel: -1, //widget.gameLevel,
-                          ),
+                  ),
+                )
+              : value == 3
+                  ? await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PageGameTranslation(
+                          gameId: widget.gameId,
+                          gameLevel: -1, //widget.gameLevel,
+                          gameName: "",
                         ),
-                      )
-                    : await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameWordSearch(
-                            gameId: widget.gameId,
-                            gameLevel: -1, //widget.gameLevel,
+                      ),
+                    )
+                  : value == 2
+                      ? await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PageGameSentence(
+                              gameId: widget.gameId,
+                              gameLevel: -1, //widget.gameLevel,
+                            ),
                           ),
-                        ),
-                      );
+                        )
+                      : await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PageGameWordSearch(
+                              gameId: widget.gameId,
+                              gameLevel: -1, //widget.gameLevel,
+                            ),
+                          ),
+                        );
       if (!mounted) return;
       // ⭐ 回上一頁（通常是 PageGameList）
       Navigator.of(pageContext).pop(true); // 回上一頁並刷新
@@ -298,13 +301,13 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
-          },
-        ),
-        title: Text('Scratch Game')),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.maybePop(context);
+            },
+          ),
+          title: Text('Scratch Game')),
       body: Row(
         children: [
           // -----------------------------------------------------------------

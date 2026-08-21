@@ -11,8 +11,12 @@ import 'package:provider/provider.dart';
 class PageGameWordSearch extends StatefulWidget {
   final String gameId;
   int gameLevel;
+  final String questionBank;
   PageGameWordSearch(
-      {super.key, required this.gameId, required this.gameLevel});
+      {super.key,
+      required this.gameId,
+      required this.gameLevel,
+      this.questionBank = 'admin'});
 
   @override
   State<PageGameWordSearch> createState() => _PageGameWordSearchState();
@@ -31,6 +35,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
     controller = ControllerGameWordSearch(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
+      questionBank: widget.questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
       maxQuestions: widget.gameLevel == -1 ? 10 : 999,
@@ -69,7 +74,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
             appBar: AppBar(
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.maybePop(context),
               ),
             ),
             body: Center(
@@ -99,7 +104,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
-                Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+                Navigator.maybePop(context);
               },
             ),
             title: Text("Word Search (${controller.score}/100)"),

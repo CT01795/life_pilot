@@ -16,6 +16,7 @@ class ControllerGameTranslation extends ChangeNotifier {
   final String gameId;
   final int gameLevel;
   final String gameName;
+  final String questionBank;
 
   ModelGameTranslation? currentQuestion;
   int score = 0; // +1 / -1
@@ -37,6 +38,7 @@ class ControllerGameTranslation extends ChangeNotifier {
       required this.gameId, // 初始化
       required this.gameLevel,
       required this.gameName,
+      this.questionBank = 'admin',
       required this.maxQuestions});
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
@@ -102,7 +104,11 @@ class ControllerGameTranslation extends ChangeNotifier {
   Future<ModelGameTranslation?> _fetchQuestionSafely() async {
     try {
       return await service.fetchTranslationQuestion(
-          userName, gameLevel, gameName);
+        userName,
+        gameLevel,
+        gameName,
+        questionBank: questionBank,
+      );
     } catch (error, stackTrace) {
       logger.e('Load translation question failed',
           error: error, stackTrace: stackTrace);

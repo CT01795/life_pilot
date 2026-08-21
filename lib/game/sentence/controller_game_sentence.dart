@@ -14,6 +14,7 @@ class ControllerGameSentence extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final String questionBank;
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   ModelGameSentence? currentQuestion;
   bool isFinished = false;
@@ -35,6 +36,7 @@ class ControllerGameSentence extends ChangeNotifier {
     required this.service,
     required this.gameId, // 初始化
     required this.gameLevel,
+    this.questionBank = 'admin',
   });
 
   Future<void> loadNextQuestion() async {
@@ -82,7 +84,11 @@ class ControllerGameSentence extends ChangeNotifier {
 
   Future<ModelGameSentence?> _fetchQuestionSafely() async {
     try {
-      return await service.fetchSentenceQuestion(userName, gameLevel);
+      return await service.fetchSentenceQuestion(
+        userName,
+        gameLevel,
+        questionBank: questionBank,
+      );
     } catch (error, stackTrace) {
       logger.e('Load sentence question failed',
           error: error, stackTrace: stackTrace);

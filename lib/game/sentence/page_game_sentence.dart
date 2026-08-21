@@ -14,7 +14,13 @@ import 'package:provider/provider.dart';
 class PageGameSentence extends StatefulWidget {
   final String gameId;
   int gameLevel;
-  PageGameSentence({super.key, required this.gameId, required this.gameLevel});
+  final String questionBank;
+  PageGameSentence({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+    this.questionBank = 'admin',
+  });
 
   @override
   State<PageGameSentence> createState() => _PageGameSentenceState();
@@ -36,6 +42,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     controller = ControllerGameSentence(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
+      questionBank: widget.questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
     );
@@ -71,7 +78,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+            Navigator.maybePop(context);
           },
         ),
         title: AnimatedBuilder(

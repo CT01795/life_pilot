@@ -11,11 +11,13 @@ class PageGameTranslation extends StatefulWidget {
   final String gameId;
   final String gameName;
   int gameLevel;
+  final String questionBank;
   PageGameTranslation(
       {super.key,
       required this.gameId,
       required this.gameLevel,
-      required this.gameName});
+      required this.gameName,
+      this.questionBank = 'admin'});
 
   @override
   State<PageGameTranslation> createState() => _PageGameTranslationState();
@@ -42,6 +44,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       gameName: widget.gameName,
+      questionBank: widget.questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
       maxQuestions: widget.gameLevel == -1 ? 10 : 999,
@@ -80,7 +83,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
             appBar: AppBar(
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.maybePop(context),
               ),
             ),
             body: Center(
@@ -111,7 +114,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
-                Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+                Navigator.maybePop(context);
               },
             ),
             title: Text("Translation (${controller.score}/100)"),

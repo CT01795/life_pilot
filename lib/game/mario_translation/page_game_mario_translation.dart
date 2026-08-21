@@ -29,6 +29,7 @@ class PageGameMarioTranslation extends FlameGame
   final BuildContext context;
   final String gameId;
   final int gameLevel;
+  final String questionBank;
   late QuestionDisplay questionTitle;
   late QuestionDisplay questionText;
   late QuestionDisplay scoreText;
@@ -41,6 +42,7 @@ class PageGameMarioTranslation extends FlameGame
     required this.context,
     required this.gameId,
     required this.gameLevel,
+    this.questionBank = 'admin',
   });
 
   @override
@@ -82,6 +84,7 @@ class PageGameMarioTranslation extends FlameGame
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
       gameLevel: gameLevel == -1 ? 1 : gameLevel,
+      questionBank: questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
       service: ServiceGame(),
       maxQuestions: gameLevel == -1 ? 10 : 999,

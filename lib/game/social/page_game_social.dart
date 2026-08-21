@@ -67,7 +67,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
             appBar: AppBar(
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.maybePop(context),
               ),
             ),
             body: Center(
@@ -98,7 +98,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
-                Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+                Navigator.maybePop(context);
               },
             ),
             title: Text("Social (${controller.score}/100)"),

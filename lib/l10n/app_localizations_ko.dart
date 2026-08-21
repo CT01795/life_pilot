@@ -86,6 +86,108 @@ class AppLocalizationsKo extends AppLocalizations {
   String get back => '뒤로';
 
   @override
+  String get leaveGameConfirmation => '게임을 종료하고 이전 페이지로 돌아가시겠습니까?';
+
+  @override
+  String get questionBank => '문제 은행';
+
+  @override
+  String get adminQuestionBank => '관리자 문제 은행';
+
+  @override
+  String get myQuestionBank => '내 문제 은행';
+
+  @override
+  String get addQuestion => '문제 추가';
+
+  @override
+  String get question => '문제';
+
+  @override
+  String get correctAnswer => '정답';
+
+  @override
+  String get questionGroup => '문제 그룹';
+
+  @override
+  String get answerOptions => '답안 선택지';
+
+  @override
+  String get answerOptionsHint => '선택지는 쉼표로 구분하세요';
+
+  @override
+  String get scrambledWords => '재배열할 단어';
+
+  @override
+  String get speakingText => '말할 문장';
+
+  @override
+  String get requiredField => '필수 입력 항목입니다';
+
+  @override
+  String get twoOptionsRequired => '답안 선택지를 두 개 이상 입력하세요';
+
+  @override
+  String get questionAdded => '문제가 내 문제 은행에 추가되었습니다';
+
+  @override
+  String get grammarQuestionHelp => '기본 단어(예: head)와 복수형 정답(heads)만 입력하세요. 전체 문제와 선택지는 자동으로 생성됩니다.';
+
+  @override
+  String get sentenceQuestionHelp => 'mother 또는 I love apples와 같이 완성된 단어나 올바른 문장만 입력하세요. 재배열 형식으로 자동 변환됩니다.';
+
+  @override
+  String get grammarBaseWord => '기본 단어(예: head)';
+
+  @override
+  String get sentenceOrWord => '완성된 단어 또는 올바른 문장';
+
+  @override
+  String get customQuestionGroup => '+ 새 카테고리 만들기';
+
+  @override
+  String get newQuestionGroup => '새 카테고리 이름';
+
+  @override
+  String get speakingQuestionHelp => '사용자가 소리 내어 읽을 단어나 문장을 입력하세요. 예: Nice to meet you.';
+
+  @override
+  String get translationQuestionHelp => '문제에는 원문, 정답에는 번역을 입력하세요. 같은 그룹에 3문제 이상 만들어야 오답 두 개를 생성할 수 있습니다.';
+
+  @override
+  String get japaneseTranslationQuestionHelp => '문제에는 일본어, 정답에는 번역을 입력하세요. 같은 그룹에 3문제 이상 만드세요.';
+
+  @override
+  String get koreanTranslationQuestionHelp => '문제에는 한국어, 정답에는 번역을 입력하세요. 같은 그룹에 3문제 이상 만드세요.';
+
+  @override
+  String get wordSearchQuestionHelp => '문제에는 영어 단어, 정답에는 뜻을 입력하세요. 예: apple／사과.';
+
+  @override
+  String get duplicateQuestion => '같은 문제와 정답이 선택한 문제 그룹에 이미 있습니다.';
+
+  @override
+  String get myQuestionBankEmpty => '이 레벨에서 사용할 수 있는 문제가 없습니다. 먼저 문제를 추가하세요.';
+
+  @override
+  String get threeQuestionsRequired => '내 문제 은행으로 플레이하려면 만든 모든 그룹에 문제가 3개 이상 있어야 합니다.';
+
+  @override
+  String get myQuestions => '내 문제';
+
+  @override
+  String get noMyQuestions => '이 게임에 추가한 문제가 아직 없습니다.';
+
+  @override
+  String get questionDeleted => '문제가 삭제되었습니다';
+
+  @override
+  String get editQuestion => '문제 수정';
+
+  @override
+  String get questionUpdated => '문제가 수정되었습니다';
+
+  @override
   String get loginError => '로그인 실패, 다시 시도해 주세요.';
 
   @override
@@ -732,4 +834,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get stockRetry => '다시 불러오기';
+
+  @override
+  String get questionHasAnswersDeleteBlocked => '이 문제에는 답변 기록이 있어 삭제할 수 없습니다. 문제를 편집할 수는 있습니다.';
 }

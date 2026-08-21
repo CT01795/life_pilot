@@ -86,6 +86,108 @@ class AppLocalizationsJa extends AppLocalizations {
   String get back => '戻る';
 
   @override
+  String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
+
+  @override
+  String get questionBank => '問題集';
+
+  @override
+  String get adminQuestionBank => '管理者の問題集';
+
+  @override
+  String get myQuestionBank => '自分の問題集';
+
+  @override
+  String get addQuestion => '問題を追加';
+
+  @override
+  String get question => '問題';
+
+  @override
+  String get correctAnswer => '正解';
+
+  @override
+  String get questionGroup => '問題グループ';
+
+  @override
+  String get answerOptions => '回答選択肢';
+
+  @override
+  String get answerOptionsHint => '選択肢はカンマで区切ってください';
+
+  @override
+  String get scrambledWords => '並べ替える単語';
+
+  @override
+  String get speakingText => '読み上げるテキスト';
+
+  @override
+  String get requiredField => '必須項目です';
+
+  @override
+  String get twoOptionsRequired => '回答選択肢を2つ以上入力してください';
+
+  @override
+  String get questionAdded => '問題を自分の問題集に追加しました';
+
+  @override
+  String get grammarQuestionHelp => '単語の原形（例：head）と複数形の答え（heads）だけを入力してください。問題と選択肢は自動作成されます。';
+
+  @override
+  String get sentenceQuestionHelp => 'mother や I love apples のように、完成した単語または正しい文だけを入力してください。並べ替え形式に自動変換されます。';
+
+  @override
+  String get grammarBaseWord => '単語の原形（例：head）';
+
+  @override
+  String get sentenceOrWord => '完成した単語または正しい文';
+
+  @override
+  String get customQuestionGroup => '＋新しいカテゴリーを作成';
+
+  @override
+  String get newQuestionGroup => '新しいカテゴリー名';
+
+  @override
+  String get speakingQuestionHelp => '読み上げる単語または文を入力してください。例：Nice to meet you。';
+
+  @override
+  String get translationQuestionHelp => '問題に原文、正解に翻訳を入力します。同じグループに3問以上作成すると、誤答を2つ生成できます。';
+
+  @override
+  String get japaneseTranslationQuestionHelp => '問題に日本語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
+
+  @override
+  String get koreanTranslationQuestionHelp => '問題に韓国語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
+
+  @override
+  String get wordSearchQuestionHelp => '問題に英単語、正解に意味を入力します。例：apple／りんご。';
+
+  @override
+  String get duplicateQuestion => '同じ問題と答えが選択した問題グループにすでに存在します。';
+
+  @override
+  String get myQuestionBankEmpty => 'このレベルで使用できる問題がありません。先に問題を追加してください。';
+
+  @override
+  String get threeQuestionsRequired => '自分の問題集で遊ぶには、作成した各グループに3問以上必要です。';
+
+  @override
+  String get myQuestions => '自分の問題';
+
+  @override
+  String get noMyQuestions => 'このゲームにはまだ問題を追加していません。';
+
+  @override
+  String get questionDeleted => '問題を削除しました';
+
+  @override
+  String get editQuestion => '問題を編集';
+
+  @override
+  String get questionUpdated => '問題を更新しました';
+
+  @override
   String get loginError => 'ログイン失敗、もう一度お試しください。';
 
   @override
@@ -732,4 +834,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get stockRetry => '再読み込み';
+
+  @override
+  String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。問題の編集は可能です。';
 }

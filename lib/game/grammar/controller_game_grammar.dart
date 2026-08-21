@@ -12,6 +12,7 @@ class ControllerGameGrammar extends ChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
+  final String questionBank;
   final ModelGameGrammar model;
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   bool? isRightAnswer;
@@ -30,6 +31,7 @@ class ControllerGameGrammar extends ChangeNotifier {
     required this.service,
     required this.gameId, // 初始化
     required this.gameLevel,
+    this.questionBank = 'admin',
     required this.model,
   });
 
@@ -85,7 +87,11 @@ class ControllerGameGrammar extends ChangeNotifier {
 
   Future<ModelGameGrammarQuestion?> _fetchQuestionSafely() async {
     try {
-      return await service.fetchGrammarQuestion(userName, gameLevel);
+      return await service.fetchGrammarQuestion(
+        userName,
+        gameLevel,
+        questionBank: questionBank,
+      );
     } catch (error, stackTrace) {
       logger.e('Load grammar question failed',
           error: error, stackTrace: stackTrace);

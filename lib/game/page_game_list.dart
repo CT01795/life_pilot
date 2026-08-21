@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
+import 'package:life_pilot/game/game_exit_guard.dart';
+import 'package:life_pilot/game/page_game_question_create.dart';
+import 'package:life_pilot/game/page_game_my_questions.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/social/page_game_social.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -40,22 +43,32 @@ class _PageGameListState extends State<PageGameList> {
   int unlockedMaxLevel = 1; // 預設第 1 關
   // 範例遊戲類別與遊戲名稱
   late final ControllerGameList controllerGameList;
+  final ServiceGame _serviceGame = ServiceGame();
   String? selectedCategory;
   String? selectedGameName;
   int? selectedLevel;
+  String selectedQuestionBank = 'admin';
   List<ModelGameUser> userProgress = [];
   int _progressRequestId = 0;
   bool _hasLoadError = false;
   bool _isOpeningGame = false;
+  late final bool _isQuestionBankAdmin;
+
+  String get _effectiveQuestionBank =>
+      _isQuestionBankAdmin && selectedQuestionBank == 'mine'
+          ? 'admin'
+          : selectedQuestionBank;
 
   @override
   void initState() {
     super.initState();
     final auth = context.read<ControllerAuth>();
-    final serviceGame = ServiceGame();
+    final currentAccount = auth.currentAccount ?? AuthConstants.guest;
+    _isQuestionBankAdmin = currentAccount.trim().toLowerCase() ==
+        AuthConstants.systemEventOwnerEmail.toLowerCase();
     controllerGameList = ControllerGameList(
-      serviceGame: serviceGame,
-      userName: auth.currentAccount ?? AuthConstants.guest,
+      serviceGame: _serviceGame,
+      userName: currentAccount,
     );
 
     _loadData();
@@ -147,6 +160,16 @@ class _PageGameListState extends State<PageGameList> {
     if (levelList == null) return null;
     return levelList.firstWhere((g) => g.level == selectedLevel,
         orElse: () => levelList.first);
+  }
+
+  bool get _supportsQuestionBank {
+    final gameName = selectedGameName?.toLowerCase() ?? '';
+    return gameName == 'mario translation' ||
+        gameName == 'english rpg adventure' ||
+        gameName == 'speaking' ||
+        gameName == 'word and sentence builder' ||
+        gameName == 'word searching' ||
+        gameName.contains('translation');
   }
 
   @override
@@ -261,6 +284,79 @@ class _PageGameListState extends State<PageGameList> {
               }).toList(),
             ),
             Gaps.h16,
+            if (_supportsQuestionBank) ...[
+              DropdownButtonFormField<String>(
+                key: ValueKey(selectedQuestionBank),
+                initialValue: selectedQuestionBank,
+                decoration: InputDecoration(
+                  labelText: loc.questionBank,
+                  border: const OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'admin',
+                    child: Text(loc.adminQuestionBank),
+                  ),
+                  DropdownMenuItem(
+                    value: 'mine',
+                    child: Text(loc.myQuestionBank),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => selectedQuestionBank = value);
+                  }
+                },
+              ),
+              Gaps.h8,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: Text(loc.addQuestion),
+                      onPressed:
+                          selectedGameName == null || selectedLevel == null
+                              ? null
+                              : () async {
+                                  final added = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PageGameQuestionCreate(
+                                        gameName: selectedGameName!,
+                                        initialLevel: selectedLevel!,
+                                      ),
+                                    ),
+                                  );
+                                  if (mounted && added == true) {
+                                    setState(
+                                      () => selectedQuestionBank = 'mine',
+                                    );
+                                  }
+                                },
+                    ),
+                  ),
+                  Gaps.w8,
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.list_alt),
+                      label: Text(loc.myQuestions),
+                      onPressed: selectedGameName == null
+                          ? null
+                          : () => Navigator.push<void>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PageGameMyQuestions(
+                                    gameName: selectedGameName!,
+                                  ),
+                                ),
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+              Gaps.h16,
+            ],
             ElevatedButton(
               onPressed: (!_isOpeningGame &&
                       selectedGameItem != null &&
@@ -268,14 +364,45 @@ class _PageGameListState extends State<PageGameList> {
                   ? () async {
                       setState(() => _isOpeningGame = true);
                       final game = selectedGameItem!;
+                      if (_effectiveQuestionBank == 'mine' &&
+                          _supportsQuestionBank) {
+                        try {
+                          final availability =
+                              await _serviceGame.getMyQuestionBankAvailability(
+                            gameName: game.gameName,
+                            level: game.level,
+                          );
+                          if (!availability.canPlay) {
+                            if (mounted) {
+                              AppNavigator.showErrorBar(
+                                availability.requiresThreeInGroup
+                                    ? loc.threeQuestionsRequired
+                                    : loc.myQuestionBankEmpty,
+                              );
+                              setState(() => _isOpeningGame = false);
+                            }
+                            return;
+                          }
+                        } catch (error, stackTrace) {
+                          logger.e('Check question bank availability failed',
+                              error: error, stackTrace: stackTrace);
+                          if (mounted) {
+                            AppNavigator.showErrorBar(loc.unknownError);
+                            setState(() => _isOpeningGame = false);
+                          }
+                          return;
+                        }
+                      }
                       if (game.gameName.toLowerCase() ==
                           "social".toLowerCase()) {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSocial(
-                              gameId: game.id,
-                              gameLevel: game.level,
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSocial(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              ),
                             ),
                           ),
                         );
@@ -293,143 +420,168 @@ class _PageGameListState extends State<PageGameList> {
                                 context: context,
                                 gameId: game.id,
                                 gameLevel: game.level,
+                                questionBank: _effectiveQuestionBank,
                               );
 
-                              return Scaffold(
-                                body: Stack(
-                                  children: [
-                                    GameWidget(
-                                      game: game1,
-                                      loadingBuilder: (context) => const Center(
-                                        child: CircularProgressIndicator(),
+                              return GameExitGuard(
+                                child: Scaffold(
+                                  body: Stack(
+                                    children: [
+                                      GameWidget(
+                                        game: game1,
+                                        loadingBuilder: (context) =>
+                                            const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                        errorBuilder: (context, error) =>
+                                            Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(loc.unknownError),
+                                              Gaps.h8,
+                                              ElevatedButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text(loc.back),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                      errorBuilder: (context, error) => Center(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(loc.unknownError),
-                                            Gaps.h8,
-                                            ElevatedButton(
+                                      Positioned(
+                                        top: 8,
+                                        left: 8,
+                                        child: SafeArea(
+                                          child: Material(
+                                            color: Colors.black54,
+                                            shape: const CircleBorder(),
+                                            child: IconButton(
+                                              tooltip: loc.back,
+                                              icon: const Icon(
+                                                Icons.arrow_back,
+                                                color: Colors.white,
+                                              ),
                                               onPressed: () =>
-                                                  Navigator.pop(context),
-                                              child: Text(loc.back),
+                                                  Navigator.maybePop(context),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 20,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center, // 水平置中
+                                          children: [
+                                            GestureDetector(
+                                              onTapDown: (_) {
+                                                if (game1.isLoaded) {
+                                                  game1.player.moveLeft(true);
+                                                }
+                                              },
+                                              onTapUp: (_) {
+                                                if (game1.isLoaded) {
+                                                  game1.player.moveLeft(false);
+                                                }
+                                              },
+                                              child: Container(
+                                                width: 60,
+                                                height: 60,
+                                                decoration: BoxDecoration(
+                                                  color: GameColors.buttonBase,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                      color: Colors.white12),
+                                                ),
+                                                child: Icon(
+                                                    Icons.arrow_back_rounded,
+                                                    color: Colors.white70,
+                                                    size: 60),
+                                              ),
+                                            ),
+                                            Gaps.w16,
+                                            GestureDetector(
+                                              onTapDown: (_) {
+                                                if (game1.isLoaded) {
+                                                  game1.player.moveRight(true);
+                                                }
+                                              },
+                                              onTapUp: (_) {
+                                                if (game1.isLoaded) {
+                                                  game1.player.moveRight(false);
+                                                }
+                                              },
+                                              child: Container(
+                                                width: 60,
+                                                height: 60,
+                                                decoration: BoxDecoration(
+                                                  color: GameColors.buttonBase,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                      color: Colors.white12),
+                                                ),
+                                                child: Icon(
+                                                    Icons.arrow_forward_rounded,
+                                                    color: Colors.white70,
+                                                    size: 60),
+                                              ),
+                                            ),
+                                            Gaps.w16,
+                                            GestureDetector(
+                                              onTap: () {
+                                                if (game1.isLoaded) {
+                                                  game1.player.jump();
+                                                }
+                                              },
+                                              child: Container(
+                                                width: 60,
+                                                height: 60,
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      GameColors.buttonAccent,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                      color: Colors.white12),
+                                                ),
+                                                child: Icon(
+                                                  Icons.arrow_upward_rounded,
+                                                  color: Colors.white70,
+                                                  size: 60,
+                                                ),
+                                              ),
+                                            ),
+                                            Gaps.w16,
+                                            GestureDetector(
+                                              onTap: () async {
+                                                if (game1.isLoaded) {
+                                                  await game1.shoot();
+                                                }
+                                              },
+                                              child: Container(
+                                                width: 60,
+                                                height: 60,
+                                                decoration: BoxDecoration(
+                                                  color: Color(0xFFC94B4B),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                      color: Colors.white12),
+                                                ),
+                                                child: Icon(Icons.circle,
+                                                    color: Colors.white70),
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 20,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center, // 水平置中
-                                        children: [
-                                          GestureDetector(
-                                            onTapDown: (_) {
-                                              if (game1.isLoaded) {
-                                                game1.player.moveLeft(true);
-                                              }
-                                            },
-                                            onTapUp: (_) {
-                                              if (game1.isLoaded) {
-                                                game1.player.moveLeft(false);
-                                              }
-                                            },
-                                            child: Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: GameColors.buttonBase,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                    color: Colors.white12),
-                                              ),
-                                              child: Icon(
-                                                  Icons.arrow_back_rounded,
-                                                  color: Colors.white70,
-                                                  size: 60),
-                                            ),
-                                          ),
-                                          Gaps.w16,
-                                          GestureDetector(
-                                            onTapDown: (_) {
-                                              if (game1.isLoaded) {
-                                                game1.player.moveRight(true);
-                                              }
-                                            },
-                                            onTapUp: (_) {
-                                              if (game1.isLoaded) {
-                                                game1.player.moveRight(false);
-                                              }
-                                            },
-                                            child: Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: GameColors.buttonBase,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                    color: Colors.white12),
-                                              ),
-                                              child: Icon(
-                                                  Icons.arrow_forward_rounded,
-                                                  color: Colors.white70,
-                                                  size: 60),
-                                            ),
-                                          ),
-                                          Gaps.w16,
-                                          GestureDetector(
-                                            onTap: () {
-                                              if (game1.isLoaded) {
-                                                game1.player.jump();
-                                              }
-                                            },
-                                            child: Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: GameColors.buttonAccent,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                    color: Colors.white12),
-                                              ),
-                                              child: Icon(
-                                                Icons.arrow_upward_rounded,
-                                                color: Colors.white70,
-                                                size: 60,
-                                              ),
-                                            ),
-                                          ),
-                                          Gaps.w16,
-                                          GestureDetector(
-                                            onTap: () async {
-                                              if (game1.isLoaded) {
-                                                await game1.shoot();
-                                              }
-                                            },
-                                            child: Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFFC94B4B),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                    color: Colors.white12),
-                                              ),
-                                              child: Icon(Icons.circle,
-                                                  color: Colors.white70),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ],
+                                      )
+                                    ],
+                                  ),
                                 ),
                               );
                             },
@@ -443,8 +595,10 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSteamScratch(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSteamScratch(
+                                  gameId: game.id, gameLevel: game.level),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -455,8 +609,10 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSteamScratchMaze(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSteamScratchMaze(
+                                  gameId: game.id, gameLevel: game.level),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -467,8 +623,10 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSteamMonomino(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSteamMonomino(
+                                  gameId: game.id, gameLevel: game.level),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -479,8 +637,10 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSteamPolyomino(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSteamPolyomino(
+                                  gameId: game.id, gameLevel: game.level),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -491,8 +651,13 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSentence(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSentence(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                                questionBank: _effectiveQuestionBank,
+                              ),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -503,8 +668,13 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameSpeaking(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameSpeaking(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                                questionBank: _effectiveQuestionBank,
+                              ),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -515,9 +685,11 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGamePuzzleMap(
-                              gameId: game.id,
-                              gameLevel: game.level,
+                            builder: (_) => GameExitGuard(
+                              child: PageGamePuzzleMap(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              ),
                             ),
                           ),
                         );
@@ -529,8 +701,13 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameGrammar(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameGrammar(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                                questionBank: _effectiveQuestionBank,
+                              ),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -541,8 +718,13 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameWordSearch(
-                                gameId: game.id, gameLevel: game.level),
+                            builder: (_) => GameExitGuard(
+                              child: PageGameWordSearch(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                                questionBank: _effectiveQuestionBank,
+                              ),
+                            ),
                           ),
                         );
                         if (result == true) {
@@ -554,10 +736,13 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PageGameTranslation(
-                              gameId: game.id,
-                              gameLevel: game.level,
-                              gameName: game.gameName,
+                            builder: (_) => GameExitGuard(
+                              child: PageGameTranslation(
+                                gameId: game.id,
+                                gameLevel: game.level,
+                                gameName: game.gameName,
+                                questionBank: _effectiveQuestionBank,
+                              ),
                             ),
                           ),
                         );

@@ -66,7 +66,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context, true); // 返回上一頁並通知需要刷新
+            Navigator.maybePop(context);
           },
         ),
         title: const Text("Polyomino Game"),
