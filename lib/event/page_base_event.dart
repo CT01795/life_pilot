@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/event/event_refresh_text.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_event_add.dart';
+import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
@@ -77,6 +79,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
     if (_hasLoaded) return;
     _hasLoaded = true;
     await _controller.loadEvents(isGetPublicEvents: true);
+    await _controller.checkPublicEventsUpdatedToday();
   }
 
   Future<void> _onAddPressed(BuildContext context) async {
@@ -115,6 +118,19 @@ class _GenericEventPageState extends State<GenericEventPage> {
           title: widget.title,
           enableSearchAndExport: true,
           enableUpload: widget.auth.isSysAdmin,
+          onRefresh: _controller.canRefreshPublicEvents
+              ? () async {
+                  final succeeded = await _controller.refreshPublicEvents();
+                  if (!context.mounted) return;
+                  AppNavigator.showSnackBar(
+                    succeeded
+                        ? EventRefreshText.succeeded(context)
+                        : EventRefreshText.failed(context),
+                  );
+                }
+              : null,
+          isRefreshing: _controller.isRefreshingPublicEvents,
+          refreshTooltip: EventRefreshText.button(context),
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
           loc: loc,

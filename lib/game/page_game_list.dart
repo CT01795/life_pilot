@@ -191,10 +191,10 @@ class _PageGameListState extends State<PageGameList> {
     final gameType = selectedCategory!;
     final gameName = selectedGameName!;
     final levels = controllerGameList.gamesByCategory[gameType]![gameName]!;
-    final nextLevel = levels.map((item) => item.level).reduce(
-              (current, value) => current > value ? current : value,
-            ) +
-        1;
+    final currentMaxLevel = levels.map((item) => item.level).reduce(
+          (current, value) => current > value ? current : value,
+        );
+    final nextLevel = currentMaxLevel + 1;
     final controller = TextEditingController(text: '$nextLevel');
     String? errorText;
     var saving = false;
@@ -209,6 +209,7 @@ class _PageGameListState extends State<PageGameList> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('$gameType · $gameName'),
+                  Text('${loc.gameLevel}: $currentMaxLevel →'),
                   Gaps.h16,
                   TextField(
                     controller: controller,
@@ -235,8 +236,12 @@ class _PageGameListState extends State<PageGameList> {
                       ? null
                       : () async {
                           final level = int.tryParse(controller.text);
-                          if (level == null || level < 1 || level > 999) {
-                            setDialogState(() => errorText = '1–999');
+                          if (level == null ||
+                              level <= currentMaxLevel ||
+                              level > 999) {
+                            setDialogState(
+                              () => errorText = '${currentMaxLevel + 1}–999',
+                            );
                             return;
                           }
                           setDialogState(() {
@@ -256,7 +261,7 @@ class _PageGameListState extends State<PageGameList> {
                             if (dialogContext.mounted) {
                               setDialogState(() {
                                 saving = false;
-                                errorText = loc.duplicateQuestion;
+                                errorText = '${currentMaxLevel + 1}–999';
                               });
                             }
                           } catch (error, stackTrace) {
@@ -282,7 +287,9 @@ class _PageGameListState extends State<PageGameList> {
           ),
         ) ??
         false;
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
     if (created && mounted) {
       await controllerGameList.loadGames();
       if (!mounted) return;

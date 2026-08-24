@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart' hide Element;
+import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -37,6 +38,11 @@ class ServiceEventPublic {
   String safeAddress2(String location) => location.length > 3
       ? location.substring(location.substring(2, 3) == "縣" ? 3 : 2)
       : '';
+
+  Future<bool> hasUpdatedToday() async {
+    final response = await apiSupabase.get('event/public_events_updated_today');
+    return response is Map && response['updated'] == true;
+  }
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
     try {
@@ -110,26 +116,39 @@ class ServiceEventPublic {
     if (newEvents.isNotEmpty) {
       try {
         final rows = newEvents.map((e) => e.toJson()).toList();
-        await DuplicateTolerantBatchWriter.write(
-          items: rows,
-          writeBatch: (items) async {
-            await supabase.from(TableNames.recommendEvents).insert(items);
-          },
-          writeOne: (item) async {
-            await supabase.from(TableNames.recommendEvents).insert(item);
-          },
-          isDuplicateError: (error) =>
-              error is PostgrestException && error.code == '23505',
-          onDuplicate: (item) {
-            logger.i('Skipped duplicate imported event: ${item[Fields.id]}');
-          },
-        );
+        final isCurrentUserAdmin =
+            supabase.auth.currentUser?.appMetadata['role'] ==
+                AuthConstants.adminRole;
+        if (isCurrentUserAdmin) {
+          await DuplicateTolerantBatchWriter.write(
+            items: rows,
+            writeBatch: (items) async {
+              await supabase.from(TableNames.recommendEvents).insert(items);
+            },
+            writeOne: (item) async {
+              await supabase.from(TableNames.recommendEvents).insert(item);
+            },
+            isDuplicateError: (error) =>
+                error is PostgrestException && error.code == '23505',
+            onDuplicate: (item) {
+              logger.i('Skipped duplicate imported event: ${item[Fields.id]}');
+            },
+          );
+          await _markEventsUrlCompleted(url, checkedAt);
+        } else {
+          for (var offset = 0; offset < rows.length; offset += 200) {
+            final end = offset + 200 < rows.length ? offset + 200 : rows.length;
+            await apiSupabase.post('event/import_public_events', {
+              'source_url': url,
+              'events': rows.sublist(offset, end),
+            });
+          }
+        }
       } on Exception catch (ex) {
         logger.e(ex);
         rethrow;
       }
     }
-    await _markEventsUrlCompleted(url, checkedAt);
     return dbNameDateSet;
   }
 
@@ -398,11 +417,13 @@ class ServiceEventPublic {
   }
 
   Future<void> fetchAndSaveAllEvents() async {
-    final isCurrentUserAdmin =
-        supabase.auth.currentUser?.appMetadata['role'] ==
-            AuthConstants.adminRole;
-    if (!isCurrentUserAdmin) {
-      logger.w('Skipped public event import for a non-admin user');
+    final isCurrentUserAdmin = supabase.auth.currentUser?.appMetadata['role'] ==
+        AuthConstants.adminRole;
+    final isMobileApp = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    if (!isCurrentUserAdmin && !isMobileApp) {
+      logger.w('Skipped public event import outside the mobile app');
       return;
     }
 
@@ -598,8 +619,8 @@ class ServiceEventPublic {
         List<EventItem> ntpcList =
             await fetchPageEventsNtpc(ntpcUrl, today, Source.ntpc) ?? [];
 
-        dbNameDateSet = await _insertIfNotExists(
-            ntpcList, dbNameDateSet, ntpcUrl, today);
+        dbNameDateSet =
+            await _insertIfNotExists(ntpcList, dbNameDateSet, ntpcUrl, today);
       } catch (ex) {
         logger.e(ex);
       }
@@ -915,7 +936,7 @@ class ServiceEventPublic {
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
       String url, DateTime today, String source) async {
     final res = await apiSupabase
-        .post('event/get_url_data', {'url': url, 'method': 'GET'});
+        .post('event/get_public_event_url_data', {'url': url, 'method': 'GET'});
     if (res['status'] != 'ok') {
       return [];
     }
@@ -1006,8 +1027,11 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          final detailRes = await apiSupabase
-              .post('event/get_url_data', {'url': masterUrl, 'method': 'GET'});
+          final detailRes =
+              await apiSupabase.post('event/get_public_event_url_data', {
+            'url': masterUrl,
+            'method': 'GET',
+          });
           if (detailRes['status'] == 'ok') {
             final detailDoc = parse(detailRes['data']);
             final infoTable = detailDoc.querySelector("dl.info-table");

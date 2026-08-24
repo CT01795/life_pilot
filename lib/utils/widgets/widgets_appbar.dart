@@ -8,11 +8,18 @@ AppBar widgetsWhiteAppBar({
   required ControllerAppBarActions handler,
   required AppLocalizations loc,
   VoidCallback? onAdd,
+  Future<void> Function()? onRefresh,
+  String? refreshTooltip,
+  bool isRefreshing = false,
   bool enableSearchAndExport = false,
   required bool enableUpload,
 }) {
   return AppBar(
-    title: Text(title, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold,)),
+    title: Text(title,
+        style: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+        )),
     backgroundColor: Colors.white,
     foregroundColor: Colors.black,
     elevation: 0,
@@ -20,6 +27,9 @@ AppBar widgetsWhiteAppBar({
         handler: handler,
         loc: loc,
         onAdd: onAdd,
+        onRefresh: onRefresh,
+        refreshTooltip: refreshTooltip,
+        isRefreshing: isRefreshing,
         enableSearchAndExport: enableSearchAndExport,
         enableUpload: enableUpload),
   );
@@ -29,10 +39,28 @@ List<Widget> _buildActions({
   required ControllerAppBarActions handler,
   required AppLocalizations loc,
   VoidCallback? onAdd,
+  Future<void> Function()? onRefresh,
+  String? refreshTooltip,
+  bool isRefreshing = false,
   bool enableSearchAndExport = false,
   required bool enableUpload,
 }) {
   final List<Widget> actions = [];
+
+  if (onRefresh != null) {
+    actions.add(
+      IconButton(
+        icon: isRefreshing
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.refresh),
+        tooltip: refreshTooltip,
+        onPressed: isRefreshing ? null : () => onRefresh(),
+      ),
+    );
+  }
 
   if (enableSearchAndExport) {
     actions.addAll([
@@ -48,7 +76,7 @@ List<Widget> _buildActions({
             final exportResult = await handler.exportEvents(loc);
             AppNavigator.showSnackBar(exportResult);
           }),
-      if(enableUpload)
+      if (enableUpload)
         IconButton(
             icon: const Icon(Icons.upload),
             tooltip: loc.uploadExcel,

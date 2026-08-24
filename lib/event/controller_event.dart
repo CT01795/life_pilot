@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/event/model_event.dart';
@@ -459,6 +460,70 @@ class ControllerEvent extends ChangeNotifier {
       );
     } catch (e) {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
+    }
+  }
+
+  bool _isRefreshingPublicEvents = false;
+  bool get isRefreshingPublicEvents => _isRefreshingPublicEvents;
+  bool _publicEventsUpdatedToday = false;
+  bool _hasCheckedPublicEventsUpdate = false;
+
+  bool get canRefreshPublicEvents {
+    final isMobileApp = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    return _tableName == TableNames.recommendEvents &&
+        (auth.isSysAdmin ||
+            (isMobileApp &&
+                _hasCheckedPublicEventsUpdate &&
+                !_publicEventsUpdatedToday));
+  }
+
+  Future<void> checkPublicEventsUpdatedToday() async {
+    if (_tableName != TableNames.recommendEvents || auth.isSysAdmin) return;
+    try {
+      _publicEventsUpdatedToday = await ServiceEventPublic().hasUpdatedToday();
+    } catch (error, stackTrace) {
+      logger.e(
+        'checkPublicEventsUpdatedToday failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _publicEventsUpdatedToday = false;
+    }
+    _hasCheckedPublicEventsUpdate = true;
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<bool> refreshPublicEvents() async {
+    if (!canRefreshPublicEvents || _isRefreshingPublicEvents || _disposed) {
+      return false;
+    }
+
+    _isRefreshingPublicEvents = true;
+    notifyListeners();
+    try {
+      await ServiceEventPublic().fetchAndSaveAllEvents();
+      final newList = await _serviceEvent.getEvents(
+        tableName: _tableName,
+        inputUser: auth.currentAccount,
+      );
+      _modelEvent.setEvents(newList ?? []);
+      _invalidateViewModelCache();
+      _publicEventsUpdatedToday = await ServiceEventPublic().hasUpdatedToday();
+      _hasCheckedPublicEventsUpdate = true;
+      if (!_disposed) notifyListeners();
+      return _publicEventsUpdatedToday;
+    } catch (error, stackTrace) {
+      logger.e(
+        'refreshPublicEvents failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    } finally {
+      _isRefreshingPublicEvents = false;
+      if (!_disposed) notifyListeners();
     }
   }
 
