@@ -281,6 +281,54 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             "https://strolltimes.com/weekend.json",
         )
 
+    def test_deleted_public_event_is_blocked_by_source_key(self):
+        from event.service_event import _exclude_deleted_public_events
+
+        deleted = {
+            "id": "old-id",
+            "name": "Old title",
+            "master_url": "https://example.com/event/1",
+            "start_date": "2026-08-24",
+            "start_time": "10:00",
+            "city": "\u81fa\u5317\u5e02",
+            "location": "\u81fa\u5317\u8eca\u7ad9\u200b",
+        }
+        downloaded_again = {
+            **deleted,
+            "id": "new-id",
+            "name": "Updated title",
+            "city": "Taipei City",
+            "location": "\u53f0\u5317\u8eca\u7ad9",
+        }
+
+        self.assertEqual(
+            _exclude_deleted_public_events([downloaded_again], [deleted]),
+            [],
+        )
+
+    def test_deleted_public_event_does_not_block_another_session(self):
+        from event.service_event import _exclude_deleted_public_events
+
+        deleted = {
+            "id": "morning-id",
+            "name": "Same event",
+            "master_url": "https://example.com/event/1",
+            "start_date": "2026-08-24",
+            "start_time": "10:00",
+            "city": "\u53f0\u5317",
+            "location": "\u53f0\u5317\u8eca\u7ad9",
+        }
+        afternoon = {
+            **deleted,
+            "id": "afternoon-id",
+            "start_time": "14:00",
+        }
+
+        self.assertEqual(
+            _exclude_deleted_public_events([afternoon], [deleted]),
+            [afternoon],
+        )
+
     def test_public_event_import_rejects_unapproved_source(self):
         app.dependency_overrides[require_supabase_user] = lambda: {
             "id": "regular-user-id",

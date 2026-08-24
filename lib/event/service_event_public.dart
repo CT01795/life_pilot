@@ -176,13 +176,17 @@ class ServiceEventPublic {
       e.city = EventCityNormalizer.normalize(e.city);
       final tmpName = EventDeduplicationKey.byName(e);
       final tmpId = EventDeduplicationKey.byId(e);
+      final tmpSource = EventDeduplicationKey.bySource(e);
 
-      if (dbNameDateSet.contains(tmpName) || dbNameDateSet.contains(tmpId)) {
+      if (dbNameDateSet.contains(tmpName) ||
+          dbNameDateSet.contains(tmpId) ||
+          (tmpSource.isNotEmpty && dbNameDateSet.contains(tmpSource))) {
         continue;
       }
 
       dbNameDateSet.add(tmpName);
       dbNameDateSet.add(tmpId);
+      if (tmpSource.isNotEmpty) dbNameDateSet.add(tmpSource);
 
       // ✅ await 放這裡
       EventItem updatedEvent = await ClusterItem.getLatLngFromAddressItem(e);
@@ -564,6 +568,10 @@ class ServiceEventPublic {
         .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
         .toSet());
+    dbNameDateSet.addAll(historyList
+        .map(EventDeduplicationKey.bySource)
+        .where((source) => source.isNotEmpty)
+        .toSet());
     dbNameDateSet.addAll(deletedList
         .map(EventDeduplicationKey.byName)
         .where((name) => name.isNotEmpty)
@@ -571,6 +579,10 @@ class ServiceEventPublic {
     dbNameDateSet.addAll(deletedList
         .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
+        .toSet());
+    dbNameDateSet.addAll(deletedList
+        .map(EventDeduplicationKey.bySource)
+        .where((source) => source.isNotEmpty)
         .toSet());
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================

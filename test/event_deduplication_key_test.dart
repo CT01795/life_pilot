@@ -7,10 +7,12 @@ void main() {
   EventItem buildEvent({
     String id = 'event-1',
     String city = '\u53F0\u5317',
+    String masterUrl = 'https://example.com/events/1',
     TimeOfDay? startTime = const TimeOfDay(hour: 14, minute: 30),
   }) {
     return EventItem(
       id: id,
+      masterUrl: masterUrl,
       name: ' Test_Event ',
       startDate: DateTime(2026, 8, 20),
       startTime: startTime,
@@ -56,6 +58,27 @@ void main() {
         EventDeduplicationKey.byId(buildEvent(city: '\u81FA\u5317\u5E02')),
         EventDeduplicationKey.byId(buildEvent(city: 'Taipei City')),
       );
+    });
+
+    test('keeps different sessions from the same source URL separate', () {
+      expect(
+        EventDeduplicationKey.bySource(
+          buildEvent(startTime: const TimeOfDay(hour: 19, minute: 30)),
+        ),
+        isNot(EventDeduplicationKey.bySource(buildEvent())),
+      );
+    });
+
+    test('matches events without a start time by their source fields', () {
+      expect(
+        EventDeduplicationKey.bySource(buildEvent(startTime: null)),
+        EventDeduplicationKey.bySource(buildEvent(startTime: null)),
+      );
+    });
+
+    test('does not create a source key when master URL is missing', () {
+      expect(
+          EventDeduplicationKey.bySource(buildEvent(masterUrl: '')), isEmpty);
     });
   });
 }

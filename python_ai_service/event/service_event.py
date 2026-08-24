@@ -1,5 +1,6 @@
 import base64
 import logging
+import re
 import sys
 from uuid import UUID, uuid4
 from functools import lru_cache
@@ -8,7 +9,7 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Body, Depends, HTTPException
 import requests
 from fastapi.responses import JSONResponse
-from sqlalchemy import MetaData, Table, text
+from sqlalchemy import MetaData, Table, select, text
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 
 from config import SessionLocal, engine
@@ -208,6 +209,93 @@ def _recommended_event_url_table() -> Table:
     )
 
 
+@lru_cache(maxsize=1)
+def _recommended_events_deleted_table() -> Table:
+    return Table(
+        "recommended_events_deleted",
+        MetaData(),
+        schema="public",
+        autoload_with=engine,
+    )
+
+
+def _normalize_event_city(value: object) -> str:
+    cleaned = (
+        str(value or "")
+        .replace("\u200b", "")
+        .strip()
+        .replace("\u81fa", "\u53f0")
+    )
+    aliases = {
+        "hsinchu city": "\u65b0\u7af9",
+        "hs": "\u65b0\u7af9",
+        "new taipei city": "\u65b0\u5317",
+        "ne": "\u65b0\u5317",
+        "taipei city": "\u53f0\u5317",
+        "ta": "\u53f0\u5317",
+        "\u4e2d\u58e2\u5340": "\u6843\u5712",
+        "\u9f13\u5c71\u5340": "\u9ad8\u96c4",
+    }
+    return aliases.get(cleaned.lower(), cleaned[:2] if len(cleaned) > 2 else cleaned)
+
+
+def _normalize_event_date(value: object) -> str:
+    if value is None:
+        return ""
+    if hasattr(value, "date") and not isinstance(value, str):
+        value = value.date()
+    return str(value).strip()[:10]
+
+
+def _normalize_event_time(value: object) -> str:
+    if value is None:
+        return ""
+    if hasattr(value, "strftime"):
+        return value.strftime("%H:%M")
+    match = re.match(r"^\s*(\d{1,2}):(\d{2})", str(value))
+    return f"{int(match.group(1)):02d}:{match.group(2)}" if match else ""
+
+
+def _event_tombstone_keys(event: dict) -> set[tuple[str, ...]]:
+    date = _normalize_event_date(event.get("start_date"))
+    city = _normalize_event_city(event.get("city"))
+    location = (
+        str(event.get("location") or "")
+        .replace("\u200b", "")
+        .strip()
+        .replace("\u81fa", "\u53f0")
+    )
+    time = _normalize_event_time(event.get("start_time"))
+    keys = {
+        (
+            "name",
+            re.sub(r"[\s_]+", "", str(event.get("name") or "")).lower(),
+            date,
+            time,
+            city,
+            location,
+        ),
+        ("id", str(event.get("id") or "").strip(), date, city, location),
+    }
+    master_url = str(event.get("master_url") or "").strip()
+    if master_url:
+        keys.add(("source", master_url, date, time, city, location))
+    return keys
+
+
+def _exclude_deleted_public_events(
+    events: list[dict], deleted_events: list[dict]
+) -> list[dict]:
+    deleted_keys = {
+        key for deleted in deleted_events for key in _event_tombstone_keys(deleted)
+    }
+    return [
+        event
+        for event in events
+        if _event_tombstone_keys(event).isdisjoint(deleted_keys)
+    ]
+
+
 def _validated_public_event_source(source_url: object) -> str:
     if not isinstance(source_url, str) or not source_url.strip():
         raise HTTPException(status_code=400, detail="A valid source URL is required")
@@ -250,6 +338,7 @@ def _sanitize_public_event(event: object, source_url: str) -> dict:
 def _insert_public_events(events: list[dict], source_url: str) -> int:
     event_table = _recommended_events_table()
     marker_table = _recommended_event_url_table()
+    deleted_table = _recommended_events_deleted_table()
     allowed_columns = {column.name for column in event_table.columns}
     rows = [
         {
@@ -261,11 +350,29 @@ def _insert_public_events(events: list[dict], source_url: str) -> int:
     ]
     db = SessionLocal()
     try:
-        result = db.execute(
-            postgres_insert(event_table)
-            .values(rows)
-            .on_conflict_do_nothing()
-        )
+        deleted_rows = [
+            dict(row)
+            for row in db.execute(
+                select(
+                    deleted_table.c.id,
+                    deleted_table.c.name,
+                    deleted_table.c.master_url,
+                    deleted_table.c.start_date,
+                    deleted_table.c.start_time,
+                    deleted_table.c.city,
+                    deleted_table.c.location,
+                )
+            ).mappings()
+        ]
+        rows = _exclude_deleted_public_events(rows, deleted_rows)
+        inserted_rows = 0
+        if rows:
+            result = db.execute(
+                postgres_insert(event_table)
+                .values(rows)
+                .on_conflict_do_nothing()
+            )
+            inserted_rows = max(result.rowcount or 0, 0)
         db.execute(
             postgres_insert(marker_table)
             .values(
@@ -280,7 +387,7 @@ def _insert_public_events(events: list[dict], source_url: str) -> int:
             )
         )
         db.commit()
-        return max(result.rowcount or 0, 0)
+        return inserted_rows
     except Exception:
         db.rollback()
         raise
