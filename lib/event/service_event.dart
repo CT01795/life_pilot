@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -55,7 +57,7 @@ class ServiceEvent {
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     if (tableName == TableNames.recommendEvents) {
-      await _cleanupRecommendedEventsOncePerDay(today);
+      unawaited(_cleanupRecommendedEventsOncePerDay(today));
     }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace
