@@ -120,4 +120,28 @@ void main() {
     expect(captured.headers['Referer'], 'https://example.com');
     expect(captured.body, contains('page=1'));
   });
+
+  test('close releases the underlying HTTP client', () {
+    final client = _CloseTrackingClient();
+    final requester = EventHttpRequester(client: client);
+
+    requester.close();
+
+    expect(client.wasClosed, isTrue);
+  });
+}
+
+class _CloseTrackingClient extends http.BaseClient {
+  bool wasClosed = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    return http.StreamedResponse(const Stream.empty(), 200);
+  }
+
+  @override
+  void close() {
+    wasClosed = true;
+    super.close();
+  }
 }

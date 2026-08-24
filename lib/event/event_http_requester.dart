@@ -16,6 +16,8 @@ class EventHttpRequester {
   final Duration retryDelay;
   final int maxAttempts;
 
+  void close() => _client.close();
+
   Future<http.Response> get(
     Uri uri, {
     Map<String, String>? headers,

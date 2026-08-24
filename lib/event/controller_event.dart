@@ -29,6 +29,8 @@ class ControllerEvent extends ChangeNotifier {
   final String _tableName;
   final String? _toTableName;
   final ServiceEventTransfer _serviceEventTransfer;
+  final ServiceEventPublic _serviceEventPublic;
+  final bool _ownsServiceEventPublic;
   final tracking = EventTrackingService();
   final Future<void> Function()? onCalendarReload;
 
@@ -39,12 +41,15 @@ class ControllerEvent extends ChangeNotifier {
       required ModelEvent modelEvent,
       required String tableName,
       String? toTableName,
+      ServiceEventPublic? serviceEventPublic,
       this.onCalendarReload})
       : _tableName = tableName,
         _toTableName = toTableName,
         _modelEvent = modelEvent,
         _serviceEvent = serviceEvent,
         _serviceWeather = serviceWeather,
+        _serviceEventPublic = serviceEventPublic ?? ServiceEventPublic(),
+        _ownsServiceEventPublic = serviceEventPublic == null,
         _serviceEventTransfer = ServiceEventTransfer(
             currentAccount: auth.currentAccount ?? '',
             serviceEvent: serviceEvent);
@@ -360,7 +365,7 @@ class ControllerEvent extends ChangeNotifier {
     if (isGetPublicEvents &&
         auth.isSysAdmin &&
         _tableName == TableNames.recommendEvents) {
-      await ServiceEventPublic().fetchAndSaveAllEvents();
+      await _serviceEventPublic.fetchAndSaveAllEvents();
 
       final newList = await _serviceEvent.getEvents(
         tableName: _tableName,
@@ -483,7 +488,7 @@ class ControllerEvent extends ChangeNotifier {
   Future<void> checkPublicEventsUpdatedToday() async {
     if (_tableName != TableNames.recommendEvents || auth.isSysAdmin) return;
     try {
-      _publicEventsUpdatedToday = await ServiceEventPublic().hasUpdatedToday();
+      _publicEventsUpdatedToday = await _serviceEventPublic.hasUpdatedToday();
     } catch (error, stackTrace) {
       logger.e(
         'checkPublicEventsUpdatedToday failed',
@@ -504,14 +509,14 @@ class ControllerEvent extends ChangeNotifier {
     _isRefreshingPublicEvents = true;
     notifyListeners();
     try {
-      await ServiceEventPublic().fetchAndSaveAllEvents();
+      await _serviceEventPublic.fetchAndSaveAllEvents();
       final newList = await _serviceEvent.getEvents(
         tableName: _tableName,
         inputUser: auth.currentAccount,
       );
       _modelEvent.setEvents(newList ?? []);
       _invalidateViewModelCache();
-      _publicEventsUpdatedToday = await ServiceEventPublic().hasUpdatedToday();
+      _publicEventsUpdatedToday = await _serviceEventPublic.hasUpdatedToday();
       _hasCheckedPublicEventsUpdate = true;
       if (!_disposed) notifyListeners();
       return _publicEventsUpdatedToday;
@@ -532,6 +537,7 @@ class ControllerEvent extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (_ownsServiceEventPublic) _serviceEventPublic.close();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();

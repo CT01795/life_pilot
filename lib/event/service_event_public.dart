@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:csv/csv.dart';
@@ -24,10 +25,16 @@ import 'package:uuid/uuid.dart';
 class ServiceEventPublic {
   final Duration perEventDelay;
   final EventHttpRequester _http;
+  final bool _ownsHttpRequester;
   ServiceEventPublic({
     this.perEventDelay = const Duration(seconds: 1),
     EventHttpRequester? httpRequester,
-  }) : _http = httpRequester ?? EventHttpRequester();
+  })  : _http = httpRequester ?? EventHttpRequester(),
+        _ownsHttpRequester = httpRequester == null;
+
+  void close() {
+    if (_ownsHttpRequester) _http.close();
+  }
 
   String safeCity(String location) =>
       location.length >= 3 ? location.substring(0, 3) : location;
@@ -46,6 +53,40 @@ class ServiceEventPublic {
   Future<bool> hasUpdatedToday() async {
     final response = await apiSupabase.get('event/public_events_updated_today');
     return response is Map && response['updated'] == true;
+  }
+
+  Future<String?> _startRefresh() async {
+    final response = await apiSupabase.post(
+      'event/start_public_event_refresh',
+      const {},
+    );
+    if (response is! Map || response['acquired'] != true) return null;
+    final token = response['token']?.toString();
+    return token == null || token.isEmpty ? null : token;
+  }
+
+  Future<void> _finishRefresh(String token, {required bool completed}) async {
+    await apiSupabase.post(
+      completed
+          ? 'event/complete_public_event_refresh'
+          : 'event/abort_public_event_refresh',
+      {'token': token},
+    );
+  }
+
+  Future<void> _heartbeatRefresh(String token) async {
+    try {
+      await apiSupabase.post(
+        'event/heartbeat_public_event_refresh',
+        {'token': token},
+      );
+    } catch (error, stackTrace) {
+      logger.e(
+        'Public event refresh heartbeat failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<bool> checkIfUrlExists(String url, DateTime today) async {
@@ -431,6 +472,41 @@ class ServiceEventPublic {
       return;
     }
 
+    final refreshToken = await _startRefresh();
+    if (refreshToken == null) {
+      logger.i('Skipped public event import already completed or running');
+      return;
+    }
+
+    final heartbeatTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _heartbeatRefresh(refreshToken),
+    );
+    try {
+      await _fetchAndSaveAllEvents();
+      await _finishRefresh(refreshToken, completed: true);
+    } catch (error, stackTrace) {
+      logger.e(
+        'Public event import batch failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      try {
+        await _finishRefresh(refreshToken, completed: false);
+      } catch (abortError, abortStackTrace) {
+        logger.e(
+          'Release public event import failed',
+          error: abortError,
+          stackTrace: abortStackTrace,
+        );
+      }
+      rethrow;
+    } finally {
+      heartbeatTimer.cancel();
+    }
+  }
+
+  Future<void> _fetchAndSaveAllEvents() async {
     //==================================== 取得目前資料庫事件 ====================================
     List<EventItem> historyList = (await ServiceEvent().getEvents(
           tableName: TableNames.recommendEvents,

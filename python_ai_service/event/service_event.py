@@ -1,6 +1,7 @@
 import base64
 import logging
 import sys
+from uuid import UUID, uuid4
 from functools import lru_cache
 from urllib.parse import urlsplit
 
@@ -54,6 +55,137 @@ PUBLIC_EVENT_SOURCE_HOSTS = {
     "www.ntpc.gov.tw",
     "cultureexpress.taipei",
 }
+PUBLIC_EVENT_REFRESH_COMPLETE = "__life_pilot_public_event_refresh_complete__"
+PUBLIC_EVENT_REFRESH_RUNNING_PREFIX = "__life_pilot_public_event_refresh_running__:"
+
+
+def _refresh_marker_token(token: object) -> str:
+    try:
+        return str(UUID(str(token)))
+    except (TypeError, ValueError, AttributeError) as error:
+        raise HTTPException(status_code=400, detail="Invalid refresh token") from error
+
+
+def _start_public_event_refresh() -> dict:
+    db = SessionLocal()
+    try:
+        db.execute(text("select pg_advisory_xact_lock(hashtext('life_pilot_public_event_refresh'))"))
+        completed = db.execute(
+            text(
+                """
+                select exists (
+                  select 1 from public.recommended_event_url
+                  where master_url = :complete_marker
+                    and (start_date at time zone 'Asia/Taipei')::date =
+                        (now() at time zone 'Asia/Taipei')::date
+                )
+                """
+            ),
+            {"complete_marker": PUBLIC_EVENT_REFRESH_COMPLETE},
+        ).scalar()
+        if completed:
+            db.commit()
+            return {"acquired": False, "updated": True, "token": None}
+
+        active_token = db.execute(
+            text(
+                """
+                select substring(master_url from :token_start)
+                from public.recommended_event_url
+                where left(master_url, :prefix_length) = :running_prefix
+                  and start_date >= now() - interval '15 minutes'
+                order by start_date desc
+                limit 1
+                """
+            ),
+            {
+                "token_start": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX) + 1,
+                "prefix_length": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX),
+                "running_prefix": PUBLIC_EVENT_REFRESH_RUNNING_PREFIX,
+            },
+        ).scalar()
+        if active_token:
+            db.commit()
+            return {"acquired": False, "updated": False, "token": None}
+
+        db.execute(
+            text(
+                "delete from public.recommended_event_url "
+                "where left(master_url, :prefix_length) = :running_prefix"
+            ),
+            {
+                "prefix_length": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX),
+                "running_prefix": PUBLIC_EVENT_REFRESH_RUNNING_PREFIX,
+            },
+        )
+        token = str(uuid4())
+        db.execute(
+            text(
+                "insert into public.recommended_event_url (master_url, start_date) "
+                "values (:marker, now())"
+            ),
+            {"marker": f"{PUBLIC_EVENT_REFRESH_RUNNING_PREFIX}{token}"},
+        )
+        db.commit()
+        return {"acquired": True, "updated": False, "token": token}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def _finish_public_event_refresh(token: object, *, completed: bool) -> None:
+    normalized_token = _refresh_marker_token(token)
+    marker = f"{PUBLIC_EVENT_REFRESH_RUNNING_PREFIX}{normalized_token}"
+    db = SessionLocal()
+    try:
+        deleted = db.execute(
+            text(
+                "delete from public.recommended_event_url "
+                "where master_url = :marker returning master_url"
+            ),
+            {"marker": marker},
+        ).scalar()
+        if not deleted:
+            raise HTTPException(status_code=409, detail="Refresh token is no longer active")
+        if completed:
+            db.execute(
+                text(
+                    "insert into public.recommended_event_url (master_url, start_date) "
+                    "values (:complete_marker, now()) "
+                    "on conflict do nothing"
+                ),
+                {"complete_marker": PUBLIC_EVENT_REFRESH_COMPLETE},
+            )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def _heartbeat_public_event_refresh(token: object) -> None:
+    normalized_token = _refresh_marker_token(token)
+    marker = f"{PUBLIC_EVENT_REFRESH_RUNNING_PREFIX}{normalized_token}"
+    db = SessionLocal()
+    try:
+        updated = db.execute(
+            text(
+                "update public.recommended_event_url set start_date = now() "
+                "where master_url = :marker returning master_url"
+            ),
+            {"marker": marker},
+        ).scalar()
+        if not updated:
+            raise HTTPException(status_code=409, detail="Refresh token is no longer active")
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 @lru_cache(maxsize=1)
@@ -246,15 +378,52 @@ def public_events_updated_today():
                 select exists (
                   select 1
                   from public.recommended_event_url
-                  where (start_date at time zone 'Asia/Taipei')::date =
+                  where master_url = :complete_marker
+                    and (start_date at time zone 'Asia/Taipei')::date =
                         (now() at time zone 'Asia/Taipei')::date
                 )
                 """
             ),
+            {"complete_marker": PUBLIC_EVENT_REFRESH_COMPLETE},
         ).scalar()
         return {"updated": bool(updated)}
     finally:
         db.close()
+
+
+@router.post(
+    "/event/start_public_event_refresh",
+    dependencies=[Depends(require_supabase_user)],
+)
+def start_public_event_refresh():
+    return _start_public_event_refresh()
+
+
+@router.post(
+    "/event/complete_public_event_refresh",
+    dependencies=[Depends(require_supabase_user)],
+)
+def complete_public_event_refresh(payload: dict = Body(...)):
+    _finish_public_event_refresh(payload.get("token"), completed=True)
+    return {"status": "ok"}
+
+
+@router.post(
+    "/event/abort_public_event_refresh",
+    dependencies=[Depends(require_supabase_user)],
+)
+def abort_public_event_refresh(payload: dict = Body(...)):
+    _finish_public_event_refresh(payload.get("token"), completed=False)
+    return {"status": "ok"}
+
+
+@router.post(
+    "/event/heartbeat_public_event_refresh",
+    dependencies=[Depends(require_supabase_user)],
+)
+def heartbeat_public_event_refresh(payload: dict = Body(...)):
+    _heartbeat_public_event_refresh(payload.get("token"))
+    return {"status": "ok"}
 
 
 def _get_url_data(payload: dict):

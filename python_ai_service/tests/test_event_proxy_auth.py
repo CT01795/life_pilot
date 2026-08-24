@@ -128,6 +128,94 @@ class EventProxyAuthorizationTest(unittest.TestCase):
         self.assertEqual(response.json(), {"updated": True})
         db.close.assert_called_once()
 
+    def test_authenticated_user_can_claim_public_event_refresh(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "regular-user-id",
+            "app_metadata": {"role": "user"},
+        }
+        claim = {
+            "acquired": True,
+            "updated": False,
+            "token": "123e4567-e89b-12d3-a456-426614174000",
+        }
+
+        with patch(
+            "event.service_event._start_public_event_refresh",
+            return_value=claim,
+        ):
+            response = self.client.post("/event/start_public_event_refresh")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), claim)
+
+    def test_authenticated_user_can_complete_public_event_refresh(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "regular-user-id",
+            "app_metadata": {"role": "user"},
+        }
+        token = "123e4567-e89b-12d3-a456-426614174000"
+
+        with patch(
+            "event.service_event._finish_public_event_refresh",
+        ) as finish:
+            response = self.client.post(
+                "/event/complete_public_event_refresh",
+                json={"token": token},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        finish.assert_called_once_with(token, completed=True)
+
+    def test_authenticated_user_can_abort_public_event_refresh(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "regular-user-id",
+            "app_metadata": {"role": "user"},
+        }
+        token = "123e4567-e89b-12d3-a456-426614174000"
+
+        with patch(
+            "event.service_event._finish_public_event_refresh",
+        ) as finish:
+            response = self.client.post(
+                "/event/abort_public_event_refresh",
+                json={"token": token},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        finish.assert_called_once_with(token, completed=False)
+
+    def test_refresh_batch_endpoints_require_authentication(self):
+        for path in (
+            "/event/start_public_event_refresh",
+            "/event/complete_public_event_refresh",
+            "/event/abort_public_event_refresh",
+            "/event/heartbeat_public_event_refresh",
+        ):
+            with self.subTest(path=path):
+                response = self.client.post(
+                    path,
+                    json={"token": "123e4567-e89b-12d3-a456-426614174000"},
+                )
+                self.assertEqual(response.status_code, 401)
+
+    def test_authenticated_user_can_heartbeat_public_event_refresh(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "regular-user-id",
+            "app_metadata": {"role": "user"},
+        }
+        token = "123e4567-e89b-12d3-a456-426614174000"
+
+        with patch(
+            "event.service_event._heartbeat_public_event_refresh",
+        ) as heartbeat:
+            response = self.client.post(
+                "/event/heartbeat_public_event_refresh",
+                json={"token": token},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        heartbeat.assert_called_once_with(token)
+
     def test_authenticated_user_can_submit_pending_public_events(self):
         app.dependency_overrides[require_supabase_user] = lambda: {
             "id": "regular-user-id",
