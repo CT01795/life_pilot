@@ -863,6 +863,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRefreshFailed => 'Could not update recommended events. Try again later.';
 
   @override
+  String get eventRefreshRunning => 'Recommended events are being updated. Please check again later.';
+
+  @override
   String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can deactivate it instead.';
 
   @override

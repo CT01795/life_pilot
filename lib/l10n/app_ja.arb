@@ -576,6 +576,8 @@
   "@eventRefreshSucceeded": {"description": "おすすめイベント更新成功メッセージ"},
   "eventRefreshFailed": "おすすめイベントを更新できませんでした。後でもう一度お試しください。",
   "@eventRefreshFailed": {"description": "おすすめイベント更新失敗メッセージ"},
+  "eventRefreshRunning": "おすすめイベントを更新しています。しばらくしてからご確認ください。",
+  "@eventRefreshRunning": {"description": "おすすめイベント更新中メッセージ"},
   "questionHasAnswersDeleteBlocked": "この問題には解答履歴があるため削除できません。代わりに無効化できます。",
   "@questionHasAnswersDeleteBlocked": {"description": "Shown when answer history prevents question deletion"},
   "questionStatus": "問題の状態",

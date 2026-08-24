@@ -863,6 +863,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventRefreshFailed => '推薦活動更新失敗，請稍後再試。';
 
   @override
+  String get eventRefreshRunning => '推薦活動正在更新，請稍後再查看。';
+
+  @override
   String get questionHasAnswersDeleteBlocked => '這個題目已有作答紀錄，無法刪除；你可以改為停用。';
 
   @override

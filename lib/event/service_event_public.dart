@@ -22,6 +22,18 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+class PublicEventRefreshStatus {
+  const PublicEventRefreshStatus({
+    required this.updated,
+    required this.running,
+  });
+
+  final bool updated;
+  final bool running;
+}
+
+enum PublicEventRefreshExecution { performed, alreadyUpdated, running }
+
 class ServiceEventPublic {
   final Duration perEventDelay;
   final EventHttpRequester _http;
@@ -51,18 +63,38 @@ class ServiceEventPublic {
       : '';
 
   Future<bool> hasUpdatedToday() async {
-    final response = await apiSupabase.get('event/public_events_updated_today');
-    return response is Map && response['updated'] == true;
+    return (await getRefreshStatus()).updated;
   }
 
-  Future<String?> _startRefresh() async {
+  Future<PublicEventRefreshStatus> getRefreshStatus() async {
+    final response = await apiSupabase.get('event/public_events_updated_today');
+    return PublicEventRefreshStatus(
+      updated: response is Map && response['updated'] == true,
+      running: response is Map && response['running'] == true,
+    );
+  }
+
+  Future<(String?, PublicEventRefreshExecution)> _startRefresh() async {
     final response = await apiSupabase.post(
       'event/start_public_event_refresh',
       const {},
     );
-    if (response is! Map || response['acquired'] != true) return null;
+    if (response is! Map) {
+      return (null, PublicEventRefreshExecution.running);
+    }
+    if (response['acquired'] != true) {
+      return (
+        null,
+        response['updated'] == true
+            ? PublicEventRefreshExecution.alreadyUpdated
+            : PublicEventRefreshExecution.running,
+      );
+    }
     final token = response['token']?.toString();
-    return token == null || token.isEmpty ? null : token;
+    return (
+      token == null || token.isEmpty ? null : token,
+      PublicEventRefreshExecution.performed,
+    );
   }
 
   Future<void> _finishRefresh(String token, {required bool completed}) async {
@@ -461,7 +493,7 @@ class ServiceEventPublic {
     return "";
   }
 
-  Future<void> fetchAndSaveAllEvents() async {
+  Future<PublicEventRefreshExecution> fetchAndSaveAllEvents() async {
     final isCurrentUserAdmin = supabase.auth.currentUser?.appMetadata['role'] ==
         AuthConstants.adminRole;
     final isMobileApp = !kIsWeb &&
@@ -469,13 +501,13 @@ class ServiceEventPublic {
             defaultTargetPlatform == TargetPlatform.iOS);
     if (!isCurrentUserAdmin && !isMobileApp) {
       logger.w('Skipped public event import outside the mobile app');
-      return;
+      return PublicEventRefreshExecution.running;
     }
 
-    final refreshToken = await _startRefresh();
+    final (refreshToken, execution) = await _startRefresh();
     if (refreshToken == null) {
       logger.i('Skipped public event import already completed or running');
-      return;
+      return execution;
     }
 
     final heartbeatTimer = Timer.periodic(
@@ -485,6 +517,7 @@ class ServiceEventPublic {
     try {
       await _fetchAndSaveAllEvents();
       await _finishRefresh(refreshToken, completed: true);
+      return PublicEventRefreshExecution.performed;
     } catch (error, stackTrace) {
       logger.e(
         'Public event import batch failed',

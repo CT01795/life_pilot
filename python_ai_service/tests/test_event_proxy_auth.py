@@ -119,13 +119,20 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             "app_metadata": {"role": "user"},
         }
         db = MagicMock()
-        db.execute.return_value.scalar.return_value = True
+        first_result = MagicMock()
+        first_result.scalar.return_value = True
+        second_result = MagicMock()
+        second_result.scalar.return_value = False
+        db.execute.side_effect = [first_result, second_result]
 
         with patch("event.service_event.SessionLocal", return_value=db):
             response = self.client.get("/event/public_events_updated_today")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"updated": True})
+        self.assertEqual(
+            response.json(),
+            {"updated": True, "running": False},
+        )
         db.close.assert_called_once()
 
     def test_authenticated_user_can_claim_public_event_refresh(self):

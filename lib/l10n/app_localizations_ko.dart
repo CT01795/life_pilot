@@ -863,6 +863,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventRefreshFailed => '추천 이벤트를 업데이트하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
   @override
+  String get eventRefreshRunning => '추천 이벤트를 업데이트하고 있습니다. 잠시 후 다시 확인해 주세요.';
+
+  @override
   String get questionHasAnswersDeleteBlocked => '이 문제에는 답변 기록이 있어 삭제할 수 없습니다. 대신 비활성화할 수 있습니다.';
 
   @override

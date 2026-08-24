@@ -11,6 +11,7 @@ void main() {
     TargetPlatform platform = TargetPlatform.android,
     bool hasCheckedUpdate = true,
     bool updatedToday = false,
+    bool isRunning = false,
   }) =>
       EventRefreshPolicy.canRefresh(
         tableName: tableName,
@@ -19,15 +20,15 @@ void main() {
         platform: platform,
         hasCheckedUpdate: hasCheckedUpdate,
         updatedToday: updatedToday,
+        isRunning: isRunning,
       );
 
-  test('admin can refresh recommended events on every platform', () {
+  test('admin can refresh recommended events after status is checked', () {
     expect(
       canRefresh(
         isAdmin: true,
         isWeb: true,
         platform: TargetPlatform.windows,
-        updatedToday: true,
       ),
       isTrue,
     );
@@ -40,6 +41,15 @@ void main() {
 
   test('mobile user cannot refresh when already updated today', () {
     expect(canRefresh(updatedToday: true), isFalse);
+  });
+
+  test('admin and mobile user cannot refresh while another update runs', () {
+    expect(canRefresh(isRunning: true), isFalse);
+    expect(canRefresh(isAdmin: true, isRunning: true), isFalse);
+  });
+
+  test('admin cannot refresh when already updated today', () {
+    expect(canRefresh(isAdmin: true, updatedToday: true), isFalse);
   });
 
   test('button stays hidden before update status check finishes', () {

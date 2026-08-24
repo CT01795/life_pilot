@@ -472,6 +472,8 @@ class ControllerEvent extends ChangeNotifier {
   bool _isRefreshingPublicEvents = false;
   bool get isRefreshingPublicEvents => _isRefreshingPublicEvents;
   bool _publicEventsUpdatedToday = false;
+  bool _publicEventsRefreshRunning = false;
+  bool get publicEventsRefreshRunning => _publicEventsRefreshRunning;
   bool _hasCheckedPublicEventsUpdate = false;
 
   bool get canRefreshPublicEvents {
@@ -482,13 +484,16 @@ class ControllerEvent extends ChangeNotifier {
       platform: defaultTargetPlatform,
       hasCheckedUpdate: _hasCheckedPublicEventsUpdate,
       updatedToday: _publicEventsUpdatedToday,
+      isRunning: _publicEventsRefreshRunning,
     );
   }
 
   Future<void> checkPublicEventsUpdatedToday() async {
-    if (_tableName != TableNames.recommendEvents || auth.isSysAdmin) return;
+    if (_tableName != TableNames.recommendEvents) return;
     try {
-      _publicEventsUpdatedToday = await _serviceEventPublic.hasUpdatedToday();
+      final status = await _serviceEventPublic.getRefreshStatus();
+      _publicEventsUpdatedToday = status.updated;
+      _publicEventsRefreshRunning = status.running;
     } catch (error, stackTrace) {
       logger.e(
         'checkPublicEventsUpdatedToday failed',
@@ -496,6 +501,7 @@ class ControllerEvent extends ChangeNotifier {
         stackTrace: stackTrace,
       );
       _publicEventsUpdatedToday = false;
+      _publicEventsRefreshRunning = false;
     }
     _hasCheckedPublicEventsUpdate = true;
     if (!_disposed) notifyListeners();
@@ -509,14 +515,21 @@ class ControllerEvent extends ChangeNotifier {
     _isRefreshingPublicEvents = true;
     notifyListeners();
     try {
-      await _serviceEventPublic.fetchAndSaveAllEvents();
+      final execution = await _serviceEventPublic.fetchAndSaveAllEvents();
+      if (execution == PublicEventRefreshExecution.running) {
+        _publicEventsRefreshRunning = true;
+        _hasCheckedPublicEventsUpdate = true;
+        return false;
+      }
       final newList = await _serviceEvent.getEvents(
         tableName: _tableName,
         inputUser: auth.currentAccount,
       );
       _modelEvent.setEvents(newList ?? []);
       _invalidateViewModelCache();
-      _publicEventsUpdatedToday = await _serviceEventPublic.hasUpdatedToday();
+      final status = await _serviceEventPublic.getRefreshStatus();
+      _publicEventsUpdatedToday = status.updated;
+      _publicEventsRefreshRunning = status.running;
       _hasCheckedPublicEventsUpdate = true;
       if (!_disposed) notifyListeners();
       return _publicEventsUpdatedToday;

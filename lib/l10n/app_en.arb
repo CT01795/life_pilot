@@ -576,6 +576,8 @@
   "@eventRefreshSucceeded": {"description": "Recommended event refresh success message"},
   "eventRefreshFailed": "Could not update recommended events. Try again later.",
   "@eventRefreshFailed": {"description": "Recommended event refresh failure message"},
+  "eventRefreshRunning": "Recommended events are being updated. Please check again later.",
+  "@eventRefreshRunning": {"description": "Recommended event refresh already running message"},
   "questionHasAnswersDeleteBlocked": "This question has answer history and cannot be deleted. You can deactivate it instead.",
   "@questionHasAnswersDeleteBlocked": {"description": "Shown when answer history prevents question deletion"},
   "questionStatus": "Question status",

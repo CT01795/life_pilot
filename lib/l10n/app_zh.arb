@@ -576,6 +576,8 @@
   "@eventRefreshSucceeded": {"description": "推薦活動更新成功訊息"},
   "eventRefreshFailed": "推薦活動更新失敗，請稍後再試。",
   "@eventRefreshFailed": {"description": "推薦活動更新失敗訊息"},
+  "eventRefreshRunning": "推薦活動正在更新，請稍後再查看。",
+  "@eventRefreshRunning": {"description": "推薦活動正在更新訊息"},
   "questionHasAnswersDeleteBlocked": "這個題目已有作答紀錄，無法刪除；你可以改為停用。",
   "@questionHasAnswersDeleteBlocked": {"description": "Shown when answer history prevents question deletion"},
   "questionStatus": "題目狀態",

@@ -125,7 +125,9 @@ class _GenericEventPageState extends State<GenericEventPage> {
                   AppNavigator.showSnackBar(
                     succeeded
                         ? loc.eventRefreshSucceeded
-                        : loc.eventRefreshFailed,
+                        : _controller.publicEventsRefreshRunning
+                            ? loc.eventRefreshRunning
+                            : loc.eventRefreshFailed,
                   );
                 }
               : null,

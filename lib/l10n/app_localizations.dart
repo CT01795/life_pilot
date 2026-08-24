@@ -1803,6 +1803,12 @@ abstract class AppLocalizations {
   /// **'Could not update recommended events. Try again later.'**
   String get eventRefreshFailed;
 
+  /// Recommended event refresh already running message
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended events are being updated. Please check again later.'**
+  String get eventRefreshRunning;
+
   /// Shown when answer history prevents question deletion
   ///
   /// In en, this message translates to:

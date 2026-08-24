@@ -386,7 +386,23 @@ def public_events_updated_today():
             ),
             {"complete_marker": PUBLIC_EVENT_REFRESH_COMPLETE},
         ).scalar()
-        return {"updated": bool(updated)}
+        running = db.execute(
+            text(
+                """
+                select exists (
+                  select 1
+                  from public.recommended_event_url
+                  where left(master_url, :prefix_length) = :running_prefix
+                    and start_date >= now() - interval '15 minutes'
+                )
+                """
+            ),
+            {
+                "prefix_length": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX),
+                "running_prefix": PUBLIC_EVENT_REFRESH_RUNNING_PREFIX,
+            },
+        ).scalar()
+        return {"updated": bool(updated), "running": bool(running)}
     finally:
         db.close()
 

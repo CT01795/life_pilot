@@ -863,6 +863,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventRefreshFailed => 'おすすめイベントを更新できませんでした。後でもう一度お試しください。';
 
   @override
+  String get eventRefreshRunning => 'おすすめイベントを更新しています。しばらくしてからご確認ください。';
+
+  @override
   String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。代わりに無効化できます。';
 
   @override

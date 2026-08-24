@@ -11,12 +11,14 @@ class EventRefreshPolicy {
     required TargetPlatform platform,
     required bool hasCheckedUpdate,
     required bool updatedToday,
+    required bool isRunning,
   }) {
     if (tableName != TableNames.recommendEvents) return false;
+    if (!hasCheckedUpdate || updatedToday || isRunning) return false;
     if (isAdmin) return true;
 
     final isMobileApp = !isWeb &&
         (platform == TargetPlatform.android || platform == TargetPlatform.iOS);
-    return isMobileApp && hasCheckedUpdate && !updatedToday;
+    return isMobileApp;
   }
 }
