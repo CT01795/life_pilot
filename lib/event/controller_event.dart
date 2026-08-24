@@ -9,6 +9,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
+import 'package:life_pilot/event/event_refresh_policy.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
@@ -469,14 +470,14 @@ class ControllerEvent extends ChangeNotifier {
   bool _hasCheckedPublicEventsUpdate = false;
 
   bool get canRefreshPublicEvents {
-    final isMobileApp = !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
-    return _tableName == TableNames.recommendEvents &&
-        (auth.isSysAdmin ||
-            (isMobileApp &&
-                _hasCheckedPublicEventsUpdate &&
-                !_publicEventsUpdatedToday));
+    return EventRefreshPolicy.canRefresh(
+      tableName: _tableName,
+      isAdmin: auth.isSysAdmin,
+      isWeb: kIsWeb,
+      platform: defaultTargetPlatform,
+      hasCheckedUpdate: _hasCheckedPublicEventsUpdate,
+      updatedToday: _publicEventsUpdatedToday,
+    );
   }
 
   Future<void> checkPublicEventsUpdatedToday() async {

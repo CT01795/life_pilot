@@ -7,15 +7,27 @@ import 'package:life_pilot/utils/logger.dart';
 
 enum _StatusFilter { all, active, inactive }
 
+typedef SocialQuestionCreatePageBuilder = Widget Function(
+  String initialTitle,
+  String? initialCategory,
+);
+
 class PageGameSocialQuestions extends StatefulWidget {
-  const PageGameSocialQuestions({super.key});
+  const PageGameSocialQuestions({
+    super.key,
+    this.service,
+    this.createPageBuilder,
+  });
+
+  final ServiceGame? service;
+  final SocialQuestionCreatePageBuilder? createPageBuilder;
 
   @override
   State<PageGameSocialQuestions> createState() => _PageState();
 }
 
 class _PageState extends State<PageGameSocialQuestions> {
-  final _service = ServiceGame();
+  late final ServiceGame _service;
   final _searchController = TextEditingController();
   String _appliedKeyword = '';
   List<MySocialQuestion> _questions = const [];
@@ -40,6 +52,7 @@ class _PageState extends State<PageGameSocialQuestions> {
   @override
   void initState() {
     super.initState();
+    _service = widget.service ?? ServiceGame();
     _load();
   }
 
@@ -110,13 +123,18 @@ class _PageState extends State<PageGameSocialQuestions> {
   }
 
   Future<void> _add() async {
+    final createPage = widget.createPageBuilder?.call(
+          _appliedKeyword,
+          _selectedCategory,
+        ) ??
+        PageGameSocialQuestionCreate(
+          initialTitle: _appliedKeyword,
+          initialCategory: _selectedCategory,
+        );
     final added = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => PageGameSocialQuestionCreate(
-          initialTitle: _appliedKeyword,
-          initialCategory: _selectedCategory,
-        ),
+        builder: (_) => createPage,
       ),
     );
     if (added == true && mounted) await _load();

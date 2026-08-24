@@ -7,22 +7,32 @@ import 'package:life_pilot/utils/logger.dart';
 
 enum _QuestionStatusFilter { all, active, inactive }
 
+typedef GameQuestionCreatePageBuilder = Widget Function(
+  String initialQuestion,
+  String? initialGroup,
+  int initialLevel,
+);
+
 class PageGameMyQuestions extends StatefulWidget {
   const PageGameMyQuestions({
     super.key,
     required this.gameName,
     required this.initialLevel,
+    this.service,
+    this.createPageBuilder,
   });
 
   final String gameName;
   final int initialLevel;
+  final ServiceGame? service;
+  final GameQuestionCreatePageBuilder? createPageBuilder;
 
   @override
   State<PageGameMyQuestions> createState() => _PageGameMyQuestionsState();
 }
 
 class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
-  final ServiceGame _service = ServiceGame();
+  late final ServiceGame _service;
   List<MyGameQuestion> _questions = const [];
   List<String> _groups = const [];
   int _totalCount = 0;
@@ -49,6 +59,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   @override
   void initState() {
     super.initState();
+    _service = widget.service ?? ServiceGame();
     _load();
   }
 
@@ -198,15 +209,21 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   }
 
   Future<void> _add() async {
-    final added = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PageGameQuestionCreate(
+    final createPage = widget.createPageBuilder?.call(
+          _appliedKeyword,
+          _selectedGroup,
+          widget.initialLevel,
+        ) ??
+        PageGameQuestionCreate(
           gameName: widget.gameName,
           initialLevel: widget.initialLevel,
           initialQuestion: _appliedKeyword,
           initialGroup: _selectedGroup,
-        ),
+        );
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => createPage,
       ),
     );
     if (added == true && mounted) await _load();
