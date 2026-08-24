@@ -8,9 +8,13 @@ class PageGameSocialQuestionCreate extends StatefulWidget {
   const PageGameSocialQuestionCreate({
     super.key,
     this.existingQuestion,
+    this.initialTitle,
+    this.initialCategory,
   });
 
   final MySocialQuestion? existingQuestion;
+  final String? initialTitle;
+  final String? initialCategory;
 
   @override
   State<PageGameSocialQuestionCreate> createState() =>
@@ -51,6 +55,14 @@ class _PageGameSocialQuestionCreateState
   @override
   void initState() {
     super.initState();
+    _titleController.text = widget.initialTitle?.trim() ?? '';
+    final initialCategory = widget.initialCategory?.trim() ?? '';
+    if (_categories.contains(initialCategory)) {
+      _category = initialCategory;
+    } else if (_isAdmin && initialCategory.isNotEmpty) {
+      _useCustomCategory = true;
+      _customCategoryController.text = initialCategory;
+    }
     final existing = widget.existingQuestion;
     if (existing != null) {
       _titleController.text = existing.title;

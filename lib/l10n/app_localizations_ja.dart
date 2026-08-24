@@ -83,9 +83,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get updatePassword => 'パスワード更新';
 
   @override
-  String get back => '戻る';
-
-  @override
   String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
 
   @override
@@ -204,6 +201,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get questionUpdated => '問題を更新しました';
+
+  @override
+  String get back => '戻る';
 
   @override
   String get loginError => 'ログイン失敗、もう一度お試しください。';
@@ -852,6 +852,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get stockRetry => '再読み込み';
+
+  @override
+  String get eventRefresh => 'おすすめイベントを更新';
+
+  @override
+  String get eventRefreshSucceeded => 'おすすめイベントを更新しました。';
+
+  @override
+  String get eventRefreshFailed => 'おすすめイベントを更新できませんでした。後でもう一度お試しください。';
 
   @override
   String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。代わりに無効化できます。';

@@ -524,6 +524,7 @@ class _PageGameListState extends State<PageGameList> {
                                   MaterialPageRoute(
                                     builder: (_) => PageGameMyQuestions(
                                       gameName: selectedGameName!,
+                                      initialLevel: selectedLevel ?? 1,
                                     ),
                                   ),
                                 ),

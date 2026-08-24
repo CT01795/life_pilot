@@ -83,9 +83,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updatePassword => 'Update Password';
 
   @override
-  String get back => 'Back';
-
-  @override
   String get leaveGameConfirmation => 'Leave this game and return to the previous page?';
 
   @override
@@ -204,6 +201,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get questionUpdated => 'Question updated';
+
+  @override
+  String get back => 'Back';
 
   @override
   String get loginError => 'Login failed. Please try again.';
@@ -852,6 +852,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stockRetry => 'Try again';
+
+  @override
+  String get eventRefresh => 'Update recommended events';
+
+  @override
+  String get eventRefreshSucceeded => 'Recommended events updated.';
+
+  @override
+  String get eventRefreshFailed => 'Could not update recommended events. Try again later.';
 
   @override
   String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can deactivate it instead.';

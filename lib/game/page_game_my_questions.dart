@@ -11,9 +11,11 @@ class PageGameMyQuestions extends StatefulWidget {
   const PageGameMyQuestions({
     super.key,
     required this.gameName,
+    required this.initialLevel,
   });
 
   final String gameName;
+  final int initialLevel;
 
   @override
   State<PageGameMyQuestions> createState() => _PageGameMyQuestionsState();
@@ -32,6 +34,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   final Set<String> _deletingIds = {};
   final Set<String> _updatingIds = {};
   final TextEditingController _searchController = TextEditingController();
+  String _appliedKeyword = '';
   String? _selectedGroup;
   _QuestionStatusFilter _statusFilter = _QuestionStatusFilter.all;
 
@@ -70,7 +73,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
     try {
       final pageFuture = _service.fetchMyQuestions(
         gameName: widget.gameName,
-        keyword: _searchController.text,
+        keyword: _appliedKeyword,
         group: _selectedGroup,
         status: _statusValue,
         offset: append ? _questions.length : 0,
@@ -89,7 +92,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
         _selectedGroup = null;
         page = await _service.fetchMyQuestions(
           gameName: widget.gameName,
-          keyword: _searchController.text,
+          keyword: _appliedKeyword,
           status: _statusValue,
         );
         if (!mounted || generation != _loadGeneration) return;
@@ -194,6 +197,27 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
     if (updated == true && mounted) await _load();
   }
 
+  Future<void> _add() async {
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PageGameQuestionCreate(
+          gameName: widget.gameName,
+          initialLevel: widget.initialLevel,
+          initialQuestion: _appliedKeyword,
+          initialGroup: _selectedGroup,
+        ),
+      ),
+    );
+    if (added == true && mounted) await _load();
+  }
+
+  void _applySearch() {
+    FocusScope.of(context).unfocus();
+    setState(() => _appliedKeyword = _searchController.text.trim());
+    _load();
+  }
+
   Future<void> _setActive(MyGameQuestion question, bool isActive) async {
     final loc = AppLocalizations.of(context)!;
     setState(() => _updatingIds.add(question.id));
@@ -273,14 +297,16 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                                       ? null
                                       : () {
                                           _searchController.clear();
-                                          setState(() {});
+                                          setState(() {
+                                            _appliedKeyword = '';
+                                          });
                                           _load();
                                         },
                                   icon: const Icon(Icons.clear),
                                 ),
                               IconButton(
                                 tooltip: loc.search,
-                                onPressed: _isLoading ? null : _load,
+                                onPressed: _isLoading ? null : _applySearch,
                                 icon: const Icon(Icons.search),
                               ),
                             ],
@@ -290,7 +316,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                         textInputAction: TextInputAction.search,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) {
-                          if (!_isLoading) _load();
+                          if (!_isLoading) _applySearch();
                         },
                       ),
                       Gaps.h16,
@@ -377,7 +403,19 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                       if (_questions.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Center(child: Text(loc.noMyQuestions)),
+                          child: Column(
+                            children: [
+                              Text(loc.noMyQuestions),
+                              if (_appliedKeyword.isNotEmpty) ...[
+                                Gaps.h16,
+                                FilledButton.icon(
+                                  onPressed: _isLoading ? null : _add,
+                                  icon: const Icon(Icons.add),
+                                  label: Text(loc.addQuestion),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ..._questions.map((question) {
                         final isBusy = _deletingIds.contains(question.id) ||

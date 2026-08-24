@@ -83,9 +83,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get updatePassword => '비밀번호 변경';
 
   @override
-  String get back => '뒤로';
-
-  @override
   String get leaveGameConfirmation => '게임을 종료하고 이전 페이지로 돌아가시겠습니까?';
 
   @override
@@ -204,6 +201,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get questionUpdated => '문제가 수정되었습니다';
+
+  @override
+  String get back => '뒤로';
 
   @override
   String get loginError => '로그인 실패, 다시 시도해 주세요.';
@@ -852,6 +852,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get stockRetry => '다시 불러오기';
+
+  @override
+  String get eventRefresh => '추천 이벤트 업데이트';
+
+  @override
+  String get eventRefreshSucceeded => '추천 이벤트를 업데이트했습니다.';
+
+  @override
+  String get eventRefreshFailed => '추천 이벤트를 업데이트하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
   @override
   String get questionHasAnswersDeleteBlocked => '이 문제에는 답변 기록이 있어 삭제할 수 없습니다. 대신 비활성화할 수 있습니다.';

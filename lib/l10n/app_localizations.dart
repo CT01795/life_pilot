@@ -243,251 +243,251 @@ abstract class AppLocalizations {
   /// **'Update Password'**
   String get updatePassword;
 
-  /// Label for back
-  ///
-  /// In en, this message translates to:
-  /// **'Back'**
-  String get back;
-
-  /// No description provided for @leaveGameConfirmation.
+  /// Label for leaveGameConfirmation
   ///
   /// In en, this message translates to:
   /// **'Leave this game and return to the previous page?'**
   String get leaveGameConfirmation;
 
-  /// No description provided for @questionBank.
+  /// Label for question bank
   ///
   /// In en, this message translates to:
   /// **'Question bank'**
   String get questionBank;
 
-  /// No description provided for @adminQuestionBank.
+  /// Label for adminQuestionBank
   ///
   /// In en, this message translates to:
   /// **'Admin question bank'**
   String get adminQuestionBank;
 
-  /// No description provided for @myQuestionBank.
+  /// Label for myQuestionBank
   ///
   /// In en, this message translates to:
   /// **'My question bank'**
   String get myQuestionBank;
 
-  /// No description provided for @addQuestion.
+  /// Label for addQuestion
   ///
   /// In en, this message translates to:
   /// **'Add question'**
   String get addQuestion;
 
-  /// No description provided for @question.
+  /// Label for question
   ///
   /// In en, this message translates to:
   /// **'Question'**
   String get question;
 
-  /// No description provided for @correctAnswer.
+  /// Label for correctAnswer
   ///
   /// In en, this message translates to:
   /// **'Correct answer'**
   String get correctAnswer;
 
-  /// No description provided for @questionGroup.
+  /// Label for questionGroup
   ///
   /// In en, this message translates to:
   /// **'Question group'**
   String get questionGroup;
 
-  /// No description provided for @answerOptions.
+  /// Label for answerOptions
   ///
   /// In en, this message translates to:
   /// **'Answer options'**
   String get answerOptions;
 
-  /// No description provided for @answerOptionsHint.
+  /// Label for answerOptionsHint
   ///
   /// In en, this message translates to:
   /// **'Separate options with commas'**
   String get answerOptionsHint;
 
-  /// No description provided for @scrambledWords.
+  /// Label for scrambledWords
   ///
   /// In en, this message translates to:
   /// **'Words to rearrange'**
   String get scrambledWords;
 
-  /// No description provided for @speakingText.
+  /// Label for speakingText
   ///
   /// In en, this message translates to:
   /// **'Text to speak'**
   String get speakingText;
 
-  /// No description provided for @requiredField.
+  /// Label for requiredField
   ///
   /// In en, this message translates to:
   /// **'This field is required'**
   String get requiredField;
 
-  /// No description provided for @twoOptionsRequired.
+  /// Label for twoOptionsRequired
   ///
   /// In en, this message translates to:
   /// **'Enter at least two answer options'**
   String get twoOptionsRequired;
 
-  /// No description provided for @questionAdded.
+  /// Label for questionAdded
   ///
   /// In en, this message translates to:
   /// **'Question added to your question bank'**
   String get questionAdded;
 
-  /// No description provided for @grammarQuestionHelp.
+  /// Label for grammarQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.'**
   String get grammarQuestionHelp;
 
-  /// No description provided for @sentenceQuestionHelp.
+  /// Label for sentenceQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.'**
   String get sentenceQuestionHelp;
 
-  /// No description provided for @grammarBaseWord.
+  /// Label for grammarBaseWord
   ///
   /// In en, this message translates to:
   /// **'Base word (for example, head)'**
   String get grammarBaseWord;
 
-  /// No description provided for @completedGrammarQuestion.
+  /// Label for completedGrammarQuestion
   ///
   /// In en, this message translates to:
   /// **'Complete question with the answer (for example, We are young)'**
   String get completedGrammarQuestion;
 
-  /// No description provided for @grammarAnswerMustAppear.
+  /// Label for grammarAnswerMustAppear
   ///
   /// In en, this message translates to:
   /// **'The complete question must contain the correct answer so the blank can be created automatically.'**
   String get grammarAnswerMustAppear;
 
-  /// No description provided for @questionExample.
+  /// Label for questionExample
   ///
   /// In en, this message translates to:
   /// **'Question example'**
   String get questionExample;
 
-  /// No description provided for @answerExample.
+  /// Label for answerExample
   ///
   /// In en, this message translates to:
   /// **'Answer example'**
   String get answerExample;
 
-  /// No description provided for @sentenceOrWord.
+  /// Label for sentenceOrWord
   ///
   /// In en, this message translates to:
   /// **'Complete word or correct sentence'**
   String get sentenceOrWord;
 
-  /// No description provided for @customQuestionGroup.
+  /// Label for customQuestionGroup
   ///
   /// In en, this message translates to:
   /// **'+ Create a new category'**
   String get customQuestionGroup;
 
-  /// No description provided for @newQuestionGroup.
+  /// Label for newQuestionGroup
   ///
   /// In en, this message translates to:
   /// **'New category name'**
   String get newQuestionGroup;
 
-  /// No description provided for @questionGroupLevelNumber.
+  /// Label for questionGroupLevelNumber
   ///
   /// In en, this message translates to:
   /// **'Level number after the category (blank means 1)'**
   String get questionGroupLevelNumber;
 
-  /// No description provided for @questionGroupLevelRange.
+  /// Label for questionGroupLevelRange
   ///
   /// In en, this message translates to:
   /// **'The level number must be between 1 and 30.'**
   String get questionGroupLevelRange;
 
-  /// No description provided for @speakingQuestionHelp.
+  /// Label for speakingQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'Enter the word or sentence the user should read aloud. Example: Nice to meet you.'**
   String get speakingQuestionHelp;
 
-  /// No description provided for @translationQuestionHelp.
+  /// Label for translationQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.'**
   String get translationQuestionHelp;
 
-  /// No description provided for @japaneseTranslationQuestionHelp.
+  /// Label for japaneseTranslationQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.'**
   String get japaneseTranslationQuestionHelp;
 
-  /// No description provided for @koreanTranslationQuestionHelp.
+  /// Label for koreanTranslationQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.'**
   String get koreanTranslationQuestionHelp;
 
-  /// No description provided for @wordSearchQuestionHelp.
+  /// Label for wordSearchQuestionHelp
   ///
   /// In en, this message translates to:
   /// **'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.'**
   String get wordSearchQuestionHelp;
 
-  /// No description provided for @duplicateQuestion.
+  /// Label for duplicateQuestion
   ///
   /// In en, this message translates to:
   /// **'The same question and answer already exist in your selected question group.'**
   String get duplicateQuestion;
 
-  /// No description provided for @myQuestionBankEmpty.
+  /// Label for myQuestionBankEmpty
   ///
   /// In en, this message translates to:
   /// **'Your question bank has no questions available for this level. Add a question first.'**
   String get myQuestionBankEmpty;
 
-  /// No description provided for @threeQuestionsRequired.
+  /// Label for threeQuestionsRequired
   ///
   /// In en, this message translates to:
   /// **'Each group in your question bank needs at least 3 questions before you can play.'**
   String get threeQuestionsRequired;
 
-  /// No description provided for @myQuestions.
+  /// Label for myQuestions
   ///
   /// In en, this message translates to:
   /// **'My questions'**
   String get myQuestions;
 
-  /// No description provided for @noMyQuestions.
+  /// Label for noMyQuestions
   ///
   /// In en, this message translates to:
   /// **'You have not added any questions for this game yet.'**
   String get noMyQuestions;
 
-  /// No description provided for @questionDeleted.
+  /// Label for questionDeleted
   ///
   /// In en, this message translates to:
   /// **'Question deleted'**
   String get questionDeleted;
 
-  /// No description provided for @editQuestion.
+  /// Label for editQuestion
   ///
   /// In en, this message translates to:
   /// **'Edit question'**
   String get editQuestion;
 
-  /// No description provided for @questionUpdated.
+  /// Label for questionUpdated
   ///
   /// In en, this message translates to:
   /// **'Question updated'**
   String get questionUpdated;
+
+  /// Label for back
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
 
   /// Label for login error
   ///
@@ -1785,61 +1785,79 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get stockRetry;
 
+  /// Recommended event refresh button
+  ///
+  /// In en, this message translates to:
+  /// **'Update recommended events'**
+  String get eventRefresh;
+
+  /// Recommended event refresh success message
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended events updated.'**
+  String get eventRefreshSucceeded;
+
+  /// Recommended event refresh failure message
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update recommended events. Try again later.'**
+  String get eventRefreshFailed;
+
   /// Shown when answer history prevents question deletion
   ///
   /// In en, this message translates to:
   /// **'This question has answer history and cannot be deleted. You can deactivate it instead.'**
   String get questionHasAnswersDeleteBlocked;
 
-  /// No description provided for @questionStatus.
+  /// Label for questionStatus
   ///
   /// In en, this message translates to:
   /// **'Question status'**
   String get questionStatus;
 
-  /// No description provided for @allQuestionStatuses.
+  /// Label for allQuestionStatuses
   ///
   /// In en, this message translates to:
   /// **'All statuses'**
   String get allQuestionStatuses;
 
-  /// No description provided for @activeQuestion.
+  /// Label for activeQuestion
   ///
   /// In en, this message translates to:
   /// **'Active'**
   String get activeQuestion;
 
-  /// No description provided for @inactiveQuestion.
+  /// Label for inactiveQuestion
   ///
   /// In en, this message translates to:
   /// **'Inactive'**
   String get inactiveQuestion;
 
-  /// No description provided for @deactivateQuestion.
+  /// Label for deactivateQuestion
   ///
   /// In en, this message translates to:
   /// **'Deactivate question'**
   String get deactivateQuestion;
 
-  /// No description provided for @reactivateQuestion.
+  /// Label for reactivateQuestion
   ///
   /// In en, this message translates to:
   /// **'Reactivate question'**
   String get reactivateQuestion;
 
-  /// No description provided for @questionDeactivated.
+  /// Label for questionDeactivated
   ///
   /// In en, this message translates to:
   /// **'Question deactivated.'**
   String get questionDeactivated;
 
-  /// No description provided for @questionReactivated.
+  /// Label for questionReactivated
   ///
   /// In en, this message translates to:
   /// **'Question reactivated.'**
   String get questionReactivated;
 
-  /// No description provided for @questionStatusUpdateFailed.
+  /// Label for questionStatusUpdateFailed
   ///
   /// In en, this message translates to:
   /// **'Question status could not be updated. Please try again.'**

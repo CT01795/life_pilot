@@ -17,6 +17,7 @@ class PageGameSocialQuestions extends StatefulWidget {
 class _PageState extends State<PageGameSocialQuestions> {
   final _service = ServiceGame();
   final _searchController = TextEditingController();
+  String _appliedKeyword = '';
   List<MySocialQuestion> _questions = const [];
   List<String> _categories = const [];
   final Set<String> _busyIds = {};
@@ -57,7 +58,7 @@ class _PageState extends State<PageGameSocialQuestions> {
     });
     try {
       final pageFuture = _service.fetchMySocialQuestions(
-        keyword: _searchController.text,
+        keyword: _appliedKeyword,
         category: _selectedCategory,
         status: _statusValue,
         offset: append ? _questions.length : 0,
@@ -106,6 +107,25 @@ class _PageState extends State<PageGameSocialQuestions> {
       ),
     );
     if (mounted && changed == true) await _load();
+  }
+
+  Future<void> _add() async {
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PageGameSocialQuestionCreate(
+          initialTitle: _appliedKeyword,
+          initialCategory: _selectedCategory,
+        ),
+      ),
+    );
+    if (added == true && mounted) await _load();
+  }
+
+  void _applySearch() {
+    FocusScope.of(context).unfocus();
+    setState(() => _appliedKeyword = _searchController.text.trim());
+    _load();
   }
 
   Future<void> _toggle(MySocialQuestion question) async {
@@ -214,14 +234,16 @@ class _PageState extends State<PageGameSocialQuestions> {
                                       ? null
                                       : () {
                                           _searchController.clear();
-                                          setState(() {});
+                                          setState(() {
+                                            _appliedKeyword = '';
+                                          });
                                           _load();
                                         },
                                   icon: const Icon(Icons.clear),
                                 ),
                               IconButton(
                                 tooltip: loc.search,
-                                onPressed: _loading ? null : _load,
+                                onPressed: _loading ? null : _applySearch,
                                 icon: const Icon(Icons.search),
                               ),
                             ],
@@ -230,7 +252,7 @@ class _PageState extends State<PageGameSocialQuestions> {
                         textInputAction: TextInputAction.search,
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) {
-                          if (!_loading) _load();
+                          if (!_loading) _applySearch();
                         },
                       ),
                       Gaps.h16,
@@ -309,7 +331,19 @@ class _PageState extends State<PageGameSocialQuestions> {
                       if (_questions.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Center(child: Text(loc.noMyQuestions)),
+                          child: Column(
+                            children: [
+                              Text(loc.noMyQuestions),
+                              if (_appliedKeyword.isNotEmpty) ...[
+                                Gaps.h16,
+                                FilledButton.icon(
+                                  onPressed: _loading ? null : _add,
+                                  icon: const Icon(Icons.add),
+                                  label: Text(loc.addQuestion),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ..._questions.map((question) => _card(question, loc)),
                       if (_hasMore)

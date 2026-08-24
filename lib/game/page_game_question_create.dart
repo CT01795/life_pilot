@@ -14,11 +14,15 @@ class PageGameQuestionCreate extends StatefulWidget {
     required this.gameName,
     required this.initialLevel,
     this.existingQuestion,
+    this.initialQuestion,
+    this.initialGroup,
   });
 
   final String gameName;
   final int initialLevel;
   final MyGameQuestion? existingQuestion;
+  final String? initialQuestion;
+  final String? initialGroup;
 
   @override
   State<PageGameQuestionCreate> createState() => _PageGameQuestionCreateState();
@@ -124,6 +128,17 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     }
     _availableGroups.addAll(_fixedGroups);
     if (_availableGroups.isNotEmpty) _selectedGroup = _availableGroups.first;
+    final initialGroup = widget.initialGroup?.trim() ?? '';
+    if (initialGroup.isNotEmpty) {
+      if (!_availableGroups.contains(initialGroup)) {
+        _availableGroups.add(initialGroup);
+      }
+      _selectedGroup = initialGroup;
+      if (_allowsNumberedCustomGroup) {
+        _level = _levelFromGroup(initialGroup);
+      }
+    }
+    _questionController.text = widget.initialQuestion?.trim() ?? '';
     _customGroupBase =
         _selectedGroup == null ? '' : _groupWithoutLevel(_selectedGroup!);
 

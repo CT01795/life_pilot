@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
-import 'package:life_pilot/event/event_refresh_text.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_event_add.dart';
@@ -112,6 +111,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    context.watch<ControllerEvent>();
 
     return Scaffold(
         appBar: widgetsWhiteAppBar(
@@ -124,13 +124,13 @@ class _GenericEventPageState extends State<GenericEventPage> {
                   if (!context.mounted) return;
                   AppNavigator.showSnackBar(
                     succeeded
-                        ? EventRefreshText.succeeded(context)
-                        : EventRefreshText.failed(context),
+                        ? loc.eventRefreshSucceeded
+                        : loc.eventRefreshFailed,
                   );
                 }
               : null,
           isRefreshing: _controller.isRefreshingPublicEvents,
-          refreshTooltip: EventRefreshText.button(context),
+          refreshTooltip: loc.eventRefresh,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
           loc: loc,

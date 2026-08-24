@@ -83,9 +83,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updatePassword => '更新密碼';
 
   @override
-  String get back => '返回';
-
-  @override
   String get leaveGameConfirmation => '確定要離開遊戲並返回上一頁嗎？';
 
   @override
@@ -204,6 +201,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get questionUpdated => '題目已更新';
+
+  @override
+  String get back => '返回';
 
   @override
   String get loginError => '登入失敗，請再試一次。';
@@ -852,6 +852,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stockRetry => '重新載入';
+
+  @override
+  String get eventRefresh => '更新推薦活動';
+
+  @override
+  String get eventRefreshSucceeded => '推薦活動已更新。';
+
+  @override
+  String get eventRefreshFailed => '推薦活動更新失敗，請稍後再試。';
 
   @override
   String get questionHasAnswersDeleteBlocked => '這個題目已有作答紀錄，無法刪除；你可以改為停用。';
