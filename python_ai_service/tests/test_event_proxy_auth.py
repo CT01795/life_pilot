@@ -281,6 +281,71 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             "https://strolltimes.com/weekend.json",
         )
 
+    def test_daily_event_cleanup_requires_authentication(self):
+        response = self.client.post("/event/cleanup_recommended_events")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_authenticated_user_can_trigger_daily_event_cleanup(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "regular-user-id",
+            "app_metadata": {"role": "user"},
+        }
+
+        with patch(
+            "event.service_event._cleanup_recommended_events_once_per_day",
+            return_value=True,
+        ) as cleanup:
+            response = self.client.post("/event/cleanup_recommended_events")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok", "cleaned": True})
+        cleanup.assert_called_once_with()
+
+    def test_daily_event_cleanup_skips_when_today_is_already_done(self):
+        from event.service_event import _cleanup_recommended_events_once_per_day
+
+        db = MagicMock()
+        lock_result = MagicMock()
+        status_result = MagicMock()
+        status_result.scalar.return_value = True
+        db.execute.side_effect = [lock_result, status_result]
+
+        with patch("event.service_event.SessionLocal", return_value=db):
+            cleaned = _cleanup_recommended_events_once_per_day()
+
+        self.assertFalse(cleaned)
+        self.assertEqual(db.execute.call_count, 2)
+        db.commit.assert_called_once_with()
+        db.close.assert_called_once_with()
+
+    def test_daily_event_cleanup_runs_and_records_today_marker(self):
+        from event.service_event import _cleanup_recommended_events_once_per_day
+
+        db = MagicMock()
+        lock_result = MagicMock()
+        status_result = MagicMock()
+        status_result.scalar.return_value = False
+        cleanup_result = MagicMock()
+        marker_result = MagicMock()
+        db.execute.side_effect = [
+            lock_result,
+            status_result,
+            cleanup_result,
+            marker_result,
+        ]
+
+        with patch("event.service_event.SessionLocal", return_value=db):
+            cleaned = _cleanup_recommended_events_once_per_day()
+
+        self.assertTrue(cleaned)
+        self.assertEqual(db.execute.call_count, 4)
+        executed_sql = [str(call.args[0]) for call in db.execute.call_args_list]
+        self.assertIn("cleanup_recommended_events", executed_sql[2])
+        self.assertIn("recommended_event_url", executed_sql[3])
+        db.commit.assert_called_once_with()
+        db.close.assert_called_once_with()
+
     def test_deleted_public_event_is_blocked_by_source_key(self):
         from event.service_event import _exclude_deleted_public_events
 

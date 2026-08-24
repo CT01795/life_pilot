@@ -13,8 +13,37 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceEvent {
   ServiceEvent();
 
+  static DateTime? _lastCleanupRequestDate;
+  static Future<void>? _cleanupRequest;
+
   bool get _isCurrentUserAdmin =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
+
+  Future<void> _cleanupRecommendedEventsOncePerDay(DateTime today) async {
+    if (_lastCleanupRequestDate == today) return;
+    final activeRequest = _cleanupRequest;
+    if (activeRequest != null) return activeRequest;
+
+    final request = () async {
+      try {
+        await apiSupabase.post(
+          'event/cleanup_recommended_events',
+          const {},
+        );
+        _lastCleanupRequestDate = today;
+      } catch (error, stackTrace) {
+        logger.e(
+          'Daily recommended event cleanup failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      } finally {
+        _cleanupRequest = null;
+      }
+    }();
+    _cleanupRequest = request;
+    return request;
+  }
 
   // 📌 取得推薦事件
   Future<List<EventItem>?> getEvents({
@@ -25,14 +54,8 @@ class ServiceEvent {
     String? inputUser,
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
-    final cutoffDate = today.subtract(Duration(days: 2));
-    if (tableName == TableNames.recommendEvents && today.weekday == 3) {
-      await supabase.rpc(
-        'cleanup_recommended_events',
-        params: {
-          'cutoff': cutoffDate.toUtc().toIso8601String(),
-        },
-      );
+    if (tableName == TableNames.recommendEvents) {
+      await _cleanupRecommendedEventsOncePerDay(today);
     }
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace

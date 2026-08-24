@@ -58,6 +58,56 @@ PUBLIC_EVENT_SOURCE_HOSTS = {
 }
 PUBLIC_EVENT_REFRESH_COMPLETE = "__life_pilot_public_event_refresh_complete__"
 PUBLIC_EVENT_REFRESH_RUNNING_PREFIX = "__life_pilot_public_event_refresh_running__:"
+RECOMMENDED_EVENT_CLEANUP_MARKER = "__life_pilot_recommended_event_cleanup__"
+
+
+def _cleanup_recommended_events_once_per_day() -> bool:
+    db = SessionLocal()
+    try:
+        db.execute(
+            text(
+                "select pg_advisory_xact_lock("
+                "hashtext('life_pilot_recommended_event_cleanup'))"
+            )
+        )
+        already_cleaned = db.execute(
+            text(
+                """
+                select exists (
+                  select 1
+                  from public.recommended_event_url
+                  where master_url = :marker
+                    and (start_date at time zone 'Asia/Taipei')::date =
+                        (now() at time zone 'Asia/Taipei')::date
+                )
+                """
+            ),
+            {"marker": RECOMMENDED_EVENT_CLEANUP_MARKER},
+        ).scalar()
+        if already_cleaned:
+            db.commit()
+            return False
+
+        db.execute(
+            text(
+                "select public.cleanup_recommended_events("
+                "((now() at time zone 'Asia/Taipei')::date - 2)::date)"
+            )
+        )
+        db.execute(
+            text(
+                "insert into public.recommended_event_url "
+                "(master_url, start_date) values (:marker, now())"
+            ),
+            {"marker": RECOMMENDED_EVENT_CLEANUP_MARKER},
+        )
+        db.commit()
+        return True
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def _refresh_marker_token(token: object) -> str:
@@ -470,6 +520,15 @@ def import_public_events(payload: dict = Body(...)):
         raise HTTPException(status_code=413, detail="Too many events in one batch")
     inserted_rows = _insert_public_events(events, source_url)
     return {"status": "ok", "inserted_rows": inserted_rows}
+
+
+@router.post(
+    "/event/cleanup_recommended_events",
+    dependencies=[Depends(require_supabase_user)],
+)
+def cleanup_recommended_events():
+    cleaned = _cleanup_recommended_events_once_per_day()
+    return {"status": "ok", "cleaned": cleaned}
 
 
 @router.get(
