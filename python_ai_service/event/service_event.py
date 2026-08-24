@@ -13,6 +13,7 @@ from sqlalchemy import MetaData, Table, select, text
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 
 from config import SessionLocal, engine
+from security.rate_limit import InMemoryRateLimiter
 from security.supabase_auth import require_supabase_admin, require_supabase_user
 
 # Only proxy the exact public endpoints used by the application.
@@ -59,6 +60,10 @@ PUBLIC_EVENT_SOURCE_HOSTS = {
 PUBLIC_EVENT_REFRESH_COMPLETE = "__life_pilot_public_event_refresh_complete__"
 PUBLIC_EVENT_REFRESH_RUNNING_PREFIX = "__life_pilot_public_event_refresh_running__:"
 RECOMMENDED_EVENT_CLEANUP_MARKER = "__life_pilot_recommended_event_cleanup__"
+_event_cleanup_rate_limiter = InMemoryRateLimiter(
+    max_requests=10,
+    window_seconds=5 * 60,
+)
 
 
 def _cleanup_recommended_events_once_per_day() -> bool:
@@ -522,11 +527,9 @@ def import_public_events(payload: dict = Body(...)):
     return {"status": "ok", "inserted_rows": inserted_rows}
 
 
-@router.post(
-    "/event/cleanup_recommended_events",
-    dependencies=[Depends(require_supabase_user)],
-)
-def cleanup_recommended_events():
+@router.post("/event/cleanup_recommended_events")
+def cleanup_recommended_events(user: dict = Depends(require_supabase_user)):
+    _event_cleanup_rate_limiter.check(str(user["id"]))
     cleaned = _cleanup_recommended_events_once_per_day()
     return {"status": "ok", "cleaned": cleaned}
 

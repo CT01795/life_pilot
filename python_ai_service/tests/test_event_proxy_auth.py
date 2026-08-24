@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import requests
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("DB_URL", "sqlite:///:memory:")
@@ -295,11 +296,14 @@ class EventProxyAuthorizationTest(unittest.TestCase):
         with patch(
             "event.service_event._cleanup_recommended_events_once_per_day",
             return_value=True,
-        ) as cleanup:
+        ) as cleanup, patch(
+            "event.service_event._event_cleanup_rate_limiter.check"
+        ) as check_limit:
             response = self.client.post("/event/cleanup_recommended_events")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok", "cleaned": True})
+        check_limit.assert_called_once_with("regular-user-id")
         cleanup.assert_called_once_with()
 
     def test_daily_event_cleanup_skips_when_today_is_already_done(self):
@@ -318,6 +322,23 @@ class EventProxyAuthorizationTest(unittest.TestCase):
         self.assertEqual(db.execute.call_count, 2)
         db.commit.assert_called_once_with()
         db.close.assert_called_once_with()
+
+    def test_daily_event_cleanup_rate_limit_returns_429(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "regular-user-id",
+            "app_metadata": {"role": "user"},
+        }
+
+        with patch(
+            "event.service_event._event_cleanup_rate_limiter.check",
+            side_effect=HTTPException(status_code=429, detail="Too many requests"),
+        ), patch(
+            "event.service_event._cleanup_recommended_events_once_per_day",
+        ) as cleanup:
+            response = self.client.post("/event/cleanup_recommended_events")
+
+        self.assertEqual(response.status_code, 429)
+        cleanup.assert_not_called()
 
     def test_daily_event_cleanup_runs_and_records_today_marker(self):
         from event.service_event import _cleanup_recommended_events_once_per_day
