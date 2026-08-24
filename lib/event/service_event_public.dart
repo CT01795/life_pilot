@@ -6,10 +6,10 @@ import 'package:csv/csv.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' show parse;
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/event_deduplication_key.dart';
 import 'package:life_pilot/event/event_import_validator.dart';
+import 'package:life_pilot/event/event_http_requester.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/api.dart';
@@ -23,7 +23,11 @@ import 'package:uuid/uuid.dart';
 
 class ServiceEventPublic {
   final Duration perEventDelay;
-  ServiceEventPublic({this.perEventDelay = const Duration(seconds: 1)});
+  final EventHttpRequester _http;
+  ServiceEventPublic({
+    this.perEventDelay = const Duration(seconds: 1),
+    EventHttpRequester? httpRequester,
+  }) : _http = httpRequester ?? EventHttpRequester();
 
   String safeCity(String location) =>
       location.length >= 3 ? location.substring(0, 3) : location;
@@ -480,7 +484,7 @@ class ServiceEventPublic {
     String strolltimesEventsUrl = "https://strolltimes.com/events-data.csv";
     if (await checkEventsUrl(strolltimesEventsUrl, today)) {
       try {
-        final res = await http.get(Uri.parse(strolltimesEventsUrl));
+        final res = await _http.get(Uri.parse(strolltimesEventsUrl));
         if (res.statusCode == 200) {
           String csv = res.body; //res.bodyBytes //utf8.decode(res['data']);
           List<EventItem> strolltimesList =
@@ -647,7 +651,7 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
       String url, DateTime today, String source) async {
-    final res = await http.get(
+    final res = await _http.get(
       Uri.parse(url),
     );
     if (res.statusCode != 200) {
@@ -709,7 +713,7 @@ class ServiceEventPublic {
 
   Future<List<EventItem>?> fetchPageEventsNtpc(
       String url, DateTime today, String source) async {
-    final res = await http.post(
+    final res = await _http.post(
       Uri.parse(url),
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -839,7 +843,7 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 文化局 ====================================
   Future<List<EventItem>?> fetchPageEventsMoc(
       String url, DateTime today, String source) async {
-    final res = await http.get(
+    final res = await _http.get(
       Uri.parse(url),
     );
     if (res.statusCode != 200) {
@@ -1085,7 +1089,7 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 PaperWindmill ====================================
   Future<List<EventItem>?> fetchPageEventsPaperWindmill(
       String url, DateTime today, String source) async {
-    final res = await http.get(
+    final res = await _http.get(
       Uri.parse(url),
     );
     if (res.statusCode != 200) {
@@ -1193,7 +1197,7 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsAccupass(
       String inUrl, DateTime today, String source) async {
-    final res = await http.get(
+    final res = await _http.get(
       Uri.parse(inUrl),
     );
     if (res.statusCode != 200) {
@@ -1377,7 +1381,7 @@ class ServiceEventPublic {
   //==================================== 取得外部資源事件 cloud.Culture ====================================
   Future<List<EventItem>?> fetchPageEventsCloudCulture(
       String url, DateTime today, String source) async {
-    final res = await http.get(
+    final res = await _http.get(
       Uri.parse(url),
     );
     if (res.statusCode != 200) {
@@ -1487,7 +1491,7 @@ class ServiceEventPublic {
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
       String inUrl, DateTime today, String source) async {
     //final url = Uri.parse(inUrl);
-    final res = await http.get(
+    final res = await _http.get(
       Uri.parse(inUrl),
     );
     if (res.statusCode != 200) {
@@ -1502,7 +1506,7 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     for (int i = 1; i < links.length; i++) {
-      final res2 = await http.get(
+      final res2 = await _http.get(
         Uri.parse(links[i]),
       );
       if (res2.statusCode != 200) {
