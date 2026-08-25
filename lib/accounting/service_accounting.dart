@@ -124,7 +124,9 @@ class ServiceAccounting {
         if (exist[Fields.isValid] != true) {
           result = await supabase
               .from(TableNames.accountingAccount)
-              .update({Fields.isValid: true,})
+              .update({
+                Fields.isValid: true,
+              })
               .eq(Fields.id, exist[Fields.id])
               .select()
               .single();
@@ -171,6 +173,11 @@ class ServiceAccounting {
       await supabase.from(TableNames.accountingAccount).update({
         Fields.isValid: false,
       }).eq(Fields.id, accountId);
+
+      await supabase.from(TableNames.dashboardSetting).update({
+        'accounting_account_id': null,
+        'accounting_account_name': null,
+      }).eq('accounting_account_id', accountId);
     } catch (e, st) {
       logger.e('deleteAccount failed $e\n$st');
       rethrow;

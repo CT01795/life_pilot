@@ -45,6 +45,59 @@ void main() {
 
     expect(model.state.todayIncomeExpense.single.description, 'new');
   });
+
+  test('clearing dashboard accounts removes saved selections and records',
+      () async {
+    final repository = _ClearSelectionRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    await model.refreshAccounting(accountId: 'account');
+    await model.refreshPoints(accountId: 'points');
+    expect(model.state.todayIncomeExpense, isNotEmpty);
+    expect(model.state.todayPoints, isNotEmpty);
+
+    await model.changeAccountingAccount(
+      account: 'user',
+      accountId: null,
+      accountName: null,
+    );
+    await model.changePointAccount(
+      account: 'user',
+      accountId: null,
+      accountName: null,
+    );
+
+    expect(model.setting.accountingAccountId, isNull);
+    expect(model.setting.accountingAccountName, isNull);
+    expect(model.setting.pointAccountId, isNull);
+    expect(model.setting.pointAccountName, isNull);
+    expect(model.state.todayIncomeExpense, isEmpty);
+    expect(model.state.todayPoints, isEmpty);
+    expect(repository.savedSetting?.accountingAccountId, isNull);
+    expect(repository.savedSetting?.pointAccountId, isNull);
+  });
+
+  test('selecting dashboard accounts immediately reloads homepage records',
+      () async {
+    final repository = _ClearSelectionRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    await model.changeAccountingAccount(
+      account: 'user',
+      accountId: 'account',
+      accountName: 'Accounting',
+    );
+    await model.changePointAccount(
+      account: 'user',
+      accountId: 'points',
+      accountName: 'Points',
+    );
+
+    expect(model.state.todayIncomeExpense.single.description, 'record');
+    expect(model.state.todayPoints.single.description, 'record');
+    expect(repository.savedSetting?.accountingAccountId, 'account');
+    expect(repository.savedSetting?.pointAccountId, 'points');
+  });
 }
 
 ModelDashboard _model(DashboardRepository repository) => ModelDashboard(
@@ -115,4 +168,26 @@ class _RefreshOrderRepository extends DashboardRepository {
   @override
   Future<List<PointRecordItem>> loadPoints({required String accountId}) async =>
       [];
+}
+
+class _ClearSelectionRepository extends DashboardRepository {
+  DashboardSetting? savedSetting;
+
+  @override
+  Future<void> saveDashboardSetting({
+    required String account,
+    required DashboardSetting setting,
+  }) async {
+    savedSetting = setting;
+  }
+
+  @override
+  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense({
+    required String accountId,
+  }) async =>
+      [_income('record')];
+
+  @override
+  Future<List<PointRecordItem>> loadPoints({required String accountId}) async =>
+      [PointRecordItem(description: 'record', type: 'point', value: 1)];
 }

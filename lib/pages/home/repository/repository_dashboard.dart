@@ -189,6 +189,7 @@ class DashboardRepository {
           Fields.id,
           accountId,
         )
+        .eq(Fields.isValid, true)
         .maybeSingle();
 
     if (accountResult == null) {
@@ -238,6 +239,7 @@ class DashboardRepository {
           Fields.id,
           accountId,
         )
+        .eq(Fields.isValid, true)
         .maybeSingle();
 
     if (accountResult == null) {

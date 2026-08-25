@@ -298,6 +298,7 @@ class ModelDashboard extends ChangeNotifier {
 
       if (request != _accountingRequest) return;
 
+      _failedSections.remove(DashboardSection.accounting);
       _state = _state.copyWith(todayIncomeExpense: todayIncomeExpense);
     } finally {
       if (request == _accountingRequest) {
@@ -319,6 +320,7 @@ class ModelDashboard extends ChangeNotifier {
 
       if (request != _pointsRequest) return;
 
+      _failedSections.remove(DashboardSection.points);
       _state = _state.copyWith(todayPoints: todayPoints);
     } finally {
       if (request == _pointsRequest) {
@@ -404,8 +406,8 @@ class ModelDashboard extends ChangeNotifier {
 
   Future<void> changeAccountingAccount({
     required String account,
-    required String accountId,
-    required String accountName,
+    required String? accountId,
+    required String? accountName,
   }) async {
     final updatedSetting = _setting.copyWith(
       accountingAccountId: accountId,
@@ -420,15 +422,23 @@ class ModelDashboard extends ChangeNotifier {
     _setting = updatedSetting;
     notifyListeners();
 
-    await refreshAccounting(
-      accountId: accountId,
-    );
+    if (accountId == null) {
+      _accountingRequest++;
+      _failedSections.remove(DashboardSection.accounting);
+      _state = _state.copyWith(todayIncomeExpense: const []);
+      notifyListeners();
+    } else {
+      _failedSections.remove(DashboardSection.accounting);
+      _state = _state.copyWith(todayIncomeExpense: const []);
+      notifyListeners();
+      await refreshAccounting(accountId: accountId);
+    }
   }
 
   Future<void> changePointAccount({
     required String account,
-    required String accountId,
-    required String accountName,
+    required String? accountId,
+    required String? accountName,
   }) async {
     final updatedSetting = _setting.copyWith(
       pointAccountId: accountId,
@@ -443,8 +453,16 @@ class ModelDashboard extends ChangeNotifier {
     _setting = updatedSetting;
     notifyListeners();
 
-    await refreshPoints(
-      accountId: accountId,
-    );
+    if (accountId == null) {
+      _pointsRequest++;
+      _failedSections.remove(DashboardSection.points);
+      _state = _state.copyWith(todayPoints: const []);
+      notifyListeners();
+    } else {
+      _failedSections.remove(DashboardSection.points);
+      _state = _state.copyWith(todayPoints: const []);
+      notifyListeners();
+      await refreshPoints(accountId: accountId);
+    }
   }
 }

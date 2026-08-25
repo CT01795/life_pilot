@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
+import 'package:life_pilot/game/game_question_bank_visibility.dart';
 import 'package:life_pilot/game/game_exit_guard.dart';
 import 'package:life_pilot/game/page_game_question_create.dart';
 import 'package:life_pilot/game/page_game_my_questions.dart';
@@ -180,6 +181,12 @@ class _PageGameListState extends State<PageGameList> {
       (selectedGameName?.toLowerCase() ?? '') != 'social';
 
   bool get _isSocialGame => (selectedGameName?.toLowerCase() ?? '') == 'social';
+
+  bool get _showQuestionManagementActions =>
+      GameQuestionBankVisibility.showManagementActions(
+        isAdmin: _isQuestionBankAdmin,
+        selectedQuestionBank: selectedQuestionBank,
+      );
 
   Future<void> _showCreateGameLevel() async {
     if (!_isQuestionBankAdmin ||
@@ -448,7 +455,7 @@ class _PageGameListState extends State<PageGameList> {
                 },
               ),
               Gaps.h8,
-              if (_isSocialGame)
+              if (_isSocialGame && _showQuestionManagementActions)
                 Row(
                   children: [
                     Expanded(
@@ -484,7 +491,7 @@ class _PageGameListState extends State<PageGameList> {
                     ),
                   ],
                 ),
-              if (_supportsQuestionManagement)
+              if (_supportsQuestionManagement && _showQuestionManagementActions)
                 Row(
                   children: [
                     Expanded(

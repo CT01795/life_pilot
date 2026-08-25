@@ -32,12 +32,12 @@ class ServicePointRecord {
       {required String eventId, required String user}) async {
     try {
       final response = await supabase
-        .from(currentTable)
-        .select()
-        .eq(Fields.id, eventId)
-        .eq(Fields.createdBy, user)
-        .eq(Fields.isValid, true)
-        .maybeSingle();
+          .from(currentTable)
+          .select()
+          .eq(Fields.id, eventId)
+          .eq(Fields.createdBy, user)
+          .eq(Fields.isValid, true)
+          .maybeSingle();
 
       if (response == null) {
         return null;
@@ -70,12 +70,12 @@ class ServicePointRecord {
   }) async {
     try {
       final response = await supabase
-        .from(TableNames.pointRecordAccount)
-        .select()
-        .eq(Fields.createdBy, user)
-        .eq('category', category)
-        .eq(Fields.isValid, true)
-        .order(Fields.account, ascending: true);
+          .from(TableNames.pointRecordAccount)
+          .select()
+          .eq(Fields.createdBy, user)
+          .eq('category', category)
+          .eq(Fields.isValid, true)
+          .order(Fields.account, ascending: true);
 
       if (response.isEmpty) {
         return [];
@@ -176,6 +176,11 @@ class ServicePointRecord {
       if (result.isEmpty) {
         throw Exception("account not found");
       }
+
+      await supabase.from(TableNames.dashboardSetting).update({
+        'point_account_id': null,
+        'point_account_name': null,
+      }).eq('point_account_id', accountId);
     } catch (e, stacktrace) {
       logger.e(
         "deleteAccount error",
@@ -192,13 +197,13 @@ class ServicePointRecord {
       // 不管 Web / Mobile 都轉 base64
       // Mobile / Web 統一存 bytea (Uint8List)
       final result = await supabase
-        .from(TableNames.pointRecordAccount)
-        .update({
-          'master_graph_url': base64Encode(imageBytes),
-        })
-        .eq(Fields.id, accountId)
-        .eq(Fields.isValid, true)
-        .select();
+          .from(TableNames.pointRecordAccount)
+          .update({
+            'master_graph_url': base64Encode(imageBytes),
+          })
+          .eq(Fields.id, accountId)
+          .eq(Fields.isValid, true)
+          .select();
 
       if (result.isEmpty) {
         throw Exception("account not found or invalid");

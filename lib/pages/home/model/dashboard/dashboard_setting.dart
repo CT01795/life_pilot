@@ -1,5 +1,7 @@
 import 'package:life_pilot/apps/config_app.dart';
 
+const _notProvided = Object();
+
 class DashboardSetting {
   final String recommendEventCity;
   final String recommendPlaceCity;
@@ -23,19 +25,27 @@ class DashboardSetting {
     String? recommendEventCity,
     String? recommendPlaceCity,
     String? language,
-    String? accountingAccountId,
-    String? accountingAccountName,
-    String? pointAccountId,
-    String? pointAccountName,
+    Object? accountingAccountId = _notProvided,
+    Object? accountingAccountName = _notProvided,
+    Object? pointAccountId = _notProvided,
+    Object? pointAccountName = _notProvided,
   }) {
     return DashboardSetting(
       recommendEventCity: recommendEventCity ?? this.recommendEventCity,
       recommendPlaceCity: recommendPlaceCity ?? this.recommendPlaceCity,
       language: language ?? this.language,
-      accountingAccountId: accountingAccountId ?? this.accountingAccountId,
-      accountingAccountName: accountingAccountName ?? this.accountingAccountName,
-      pointAccountId: pointAccountId ?? this.pointAccountId,
-      pointAccountName: pointAccountName ?? this.pointAccountName,
+      accountingAccountId: identical(accountingAccountId, _notProvided)
+          ? this.accountingAccountId
+          : accountingAccountId as String?,
+      accountingAccountName: identical(accountingAccountName, _notProvided)
+          ? this.accountingAccountName
+          : accountingAccountName as String?,
+      pointAccountId: identical(pointAccountId, _notProvided)
+          ? this.pointAccountId
+          : pointAccountId as String?,
+      pointAccountName: identical(pointAccountName, _notProvided)
+          ? this.pointAccountName
+          : pointAccountName as String?,
     );
   }
 

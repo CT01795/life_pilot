@@ -40,90 +40,105 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
         onPressed: _isLoading
             ? null
             : () async {
-          setState(() => _isLoading = true);
-          try {
-            final accounts = await context.read<ServiceAccounting>().fetchAccounts(
-                  user: auth.account ?? '',
-                  category: AccountCategory.personal.name,
-                );
+                setState(() => _isLoading = true);
+                try {
+                  final accounts =
+                      await context.read<ServiceAccounting>().fetchAccounts(
+                            user: auth.account ?? '',
+                            category: AccountCategory.personal.name,
+                          );
 
-            if (!context.mounted) return;
+                  if (!context.mounted) return;
 
-            if (accounts.isEmpty) {
-              await showDialog<void>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  content: Text(loc.accountListEmpty),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(loc.cancel),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context
-                            .read<ControllerPageMain>()
-                            .changePage(PageType.accountRecords);
-                      },
-                      child: Text(loc.accountRecords),
-                    ),
-                  ],
-                ),
-              );
-              return;
-            }
+                  if (accounts.isEmpty) {
+                    await showDialog<void>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        content: Text(loc.accountListEmpty),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(loc.cancel),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              context
+                                  .read<ControllerPageMain>()
+                                  .changePage(PageType.accountRecords);
+                            },
+                            child: Text(loc.accountRecords),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
 
-            final selected = await showDialog<Map<String, String>>(
-            context: context,
-            builder: (_) {
-              return SimpleDialog(
-                title: Text(loc.selectAccount),
-                children: accounts.map((a) {
-                  return SimpleDialogOption(
-                    child: Text(
-                      a.accountName,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(
-                        context,
-                        {
-                          Fields.id: a.id,
-                          'name': a.accountName,
-                        },
+                  final selected = await showDialog<Map<String, String>>(
+                    context: context,
+                    builder: (_) {
+                      return SimpleDialog(
+                        title: Text(loc.selectAccount),
+                        children: [
+                          if (dashboard.setting.accountingAccountId != null)
+                            SimpleDialogOption(
+                              onPressed: () => Navigator.pop(
+                                context,
+                                const <String, String>{},
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.clear),
+                                  const SizedBox(width: 12),
+                                  Text(loc.clear),
+                                ],
+                              ),
+                            ),
+                          ...accounts.map((a) {
+                            return SimpleDialogOption(
+                              child: Text(a.accountName),
+                              onPressed: () {
+                                Navigator.pop(
+                                  context,
+                                  {
+                                    Fields.id: a.id,
+                                    'name': a.accountName,
+                                  },
+                                );
+                              },
+                            );
+                          }),
+                        ],
                       );
                     },
                   );
-                }).toList(),
-              );
-            },
-          );
 
-            if (selected == null || auth.account == null) return;
+                  if (selected == null || auth.account == null) return;
 
-            try {
-              await dashboard.changeAccountingAccount(
-                account: auth.account!,
-                accountId: selected[Fields.id]!,
-                accountName: selected['name']!,
-              );
-            } catch (_) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
-                );
-              }
-            }
-          } catch (_) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(loc.accountListLoadFailed)),
-              );
-            }
-          } finally {
-            if (mounted) setState(() => _isLoading = false);
-          }
-        },
+                  try {
+                    await dashboard.changeAccountingAccount(
+                      account: auth.account!,
+                      accountId: selected[Fields.id],
+                      accountName: selected['name'],
+                    );
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+                      );
+                    }
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(loc.accountListLoadFailed)),
+                    );
+                  }
+                } finally {
+                  if (mounted) setState(() => _isLoading = false);
+                }
+              },
       ),
     );
   }

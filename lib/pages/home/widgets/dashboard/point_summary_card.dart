@@ -24,6 +24,9 @@ class PointSummaryCard extends StatelessWidget {
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.points),
     );
+    final hasSelectedAccount = context.select<ModelDashboard, bool>(
+      (m) => m.setting.pointAccountId != null,
+    );
 
     final total = records.fold<int>(
       0,
@@ -31,7 +34,7 @@ class PointSummaryCard extends StatelessWidget {
     );
 
     final formatter = NumberFormat('#,###');
-    
+
     return Card(
       color: Color(0xFFEDE6C8),
       elevation: 2,
@@ -43,55 +46,60 @@ class PointSummaryCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.stars,
               title: loc.pointsRecord,
-              trailing:const PointSelectorButton(),
+              trailing: const PointSelectorButton(),
             ),
-            Gaps.h16,
-            ListTile(
-              dense: true,
-              title: Text(loc.todayPoints, style: Theme.of(context).textTheme.titleMedium),
-              trailing: Text(
-                formatter.format(total),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: total < 0
-                          ? Colors.red 
-                          : Colors.black, 
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ),
-            const Divider(),
-
-            if (hasLoadFailed)
-              DashboardLoadFailure(
-                onRetry: () => context.read<ModelDashboard>().refreshAll(
-                      account: context.read<ModelAuthView>().account!,
-                    ),
-              )
-            else if (records.isEmpty)
+            if (!hasSelectedAccount)
               ListTile(
-                leading: Icon(Icons.info_outline),
-                 title: Text(loc.noInfoAvailable),
+                leading: const Icon(Icons.info_outline),
+                title: Text(loc.selectAccount),
               )
-            else
-              ...records.map(
-                (record) => ListTile(
-                  dense: true,
-                  title: Text(record.description,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: Text(
-                      record.group == null || record.group!.isEmpty ? '' : record.group!,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  trailing: Text(
-                    formatter.format(record.value),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: record.value < 0
-                              ? Colors.red
-                              : Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
+            else ...[
+              Gaps.h16,
+              ListTile(
+                dense: true,
+                title: Text(loc.todayPoints,
+                    style: Theme.of(context).textTheme.titleMedium),
+                trailing: Text(
+                  formatter.format(total),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: total < 0 ? Colors.red : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
+              const Divider(),
+              if (hasLoadFailed)
+                DashboardLoadFailure(
+                  onRetry: () => context.read<ModelDashboard>().refreshAll(
+                        account: context.read<ModelAuthView>().account!,
+                      ),
+                )
+              else if (records.isEmpty)
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(loc.noInfoAvailable),
+                )
+              else
+                ...records.map(
+                  (record) => ListTile(
+                    dense: true,
+                    title: Text(record.description,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    subtitle: Text(
+                        record.group == null || record.group!.isEmpty
+                            ? ''
+                            : record.group!,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    trailing: Text(
+                      formatter.format(record.value),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: record.value < 0 ? Colors.red : Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                ),
+            ],
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(

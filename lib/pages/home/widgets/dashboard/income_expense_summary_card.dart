@@ -24,6 +24,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.accounting),
     );
+    final hasSelectedAccount = context.select<ModelDashboard, bool>(
+      (m) => m.setting.accountingAccountId != null,
+    );
 
     final total = records.fold<int>(
       0,
@@ -46,54 +49,64 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.account_balance_wallet,
               title: loc.accountRecords,
-              trailing:const AccountSelectorButton(),
+              trailing: const AccountSelectorButton(),
             ),
-            Gaps.h16,
-            ListTile(
-              dense: true,
-              title: Text(loc.todayIncomeExpense, style: Theme.of(context).textTheme.titleMedium),
-              trailing: Text(
-                '${formatter.format(total)} $currency',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: total < 0
-                          ? Colors.red // 收入
-                          : Colors.black, // 支出
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ),
-            const Divider(),
-            if (hasLoadFailed)
-              DashboardLoadFailure(
-                onRetry: () => context.read<ModelDashboard>().refreshAll(
-                      account: context.read<ModelAuthView>().account!,
-                    ),
-              )
-            else if (records.isEmpty)
+            if (!hasSelectedAccount)
               ListTile(
-                leading: Icon(Icons.info_outline),
-                 title: Text(loc.noInfoAvailable),
+                leading: const Icon(Icons.info_outline),
+                title: Text(loc.selectAccount),
               )
-            else
-              ...records.map(
-              (record) => ListTile(
+            else ...[
+              Gaps.h16,
+              ListTile(
                 dense: true,
-                title: Text(record.description,
-                    style: Theme.of(context).textTheme.titleMedium),
-                subtitle: Text(
-                    record.group == null || record.group!.isEmpty ? '' : record.group!,
+                title: Text(loc.todayIncomeExpense,
                     style: Theme.of(context).textTheme.titleMedium),
                 trailing: Text(
-                  '${formatter.format(record.value)} $currency',
+                  '${formatter.format(total)} $currency',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: record.value < 0
+                        color: total < 0
                             ? Colors.red // 收入
                             : Colors.black, // 支出
                         fontWeight: FontWeight.bold,
                       ),
                 ),
               ),
-            ),
+              const Divider(),
+              if (hasLoadFailed)
+                DashboardLoadFailure(
+                  onRetry: () => context.read<ModelDashboard>().refreshAll(
+                        account: context.read<ModelAuthView>().account!,
+                      ),
+                )
+              else if (records.isEmpty)
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(loc.noInfoAvailable),
+                )
+              else
+                ...records.map(
+                  (record) => ListTile(
+                    dense: true,
+                    title: Text(record.description,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    subtitle: Text(
+                        record.group == null || record.group!.isEmpty
+                            ? ''
+                            : record.group!,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    trailing: Text(
+                      '${formatter.format(record.value)} $currency',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: record.value < 0
+                                ? Colors.red // 收入
+                                : Colors.black, // 支出
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                ),
+            ],
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
