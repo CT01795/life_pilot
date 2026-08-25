@@ -1,0 +1,3 @@
+"NSMicrophoneUsageDescription" = "允許使用麥克風進行語音輸入。";
+"NSPhotoLibraryUsageDescription" = "允許存取相簿以選擇帳戶圖片。";
+"NSSpeechRecognitionUsageDescription" = "允許使用語音辨識進行口說練習。";

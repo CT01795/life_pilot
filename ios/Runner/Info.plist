@@ -6,6 +6,13 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Life Pilot</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hant</string>
+		<string>ja</string>
+		<string>ko</string>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -46,11 +53,11 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>RequiresMicrophoneForVoiceInput</string>
+	<string>Allow microphone access for voice input.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>允許從相簿選擇帳戶圖片</string>
+	<string>Allow photo library access to choose an account image.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>RequiresVoiceRecognition</string>
+	<string>Allow speech recognition for speaking exercises.</string>
 
 	<key>CFBundleURLTypes</key>
 	<array>

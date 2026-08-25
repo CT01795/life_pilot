@@ -1,0 +1,3 @@
+"NSMicrophoneUsageDescription" = "Allow microphone access for voice input.";
+"NSPhotoLibraryUsageDescription" = "Allow photo library access to choose an account image.";
+"NSSpeechRecognitionUsageDescription" = "Allow speech recognition for speaking exercises.";
