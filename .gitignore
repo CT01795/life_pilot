@@ -35,6 +35,8 @@ migrate_working_dir/
 /temp_build/
 /node_modules/
 /maps/
+/blockly/
+/images/
 /assets/fonts/static/
 /assets/fonts/NotoSansTC-*.ttf
 !/assets/fonts/NotoSansTC-Regular.ttf

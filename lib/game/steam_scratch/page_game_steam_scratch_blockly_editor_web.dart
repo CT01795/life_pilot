@@ -35,7 +35,7 @@ class PageGameSteamScratchBlocklyEditorState
       // ignore: undefined_prefixed_name
       platformViewRegistry.registerViewFactory('blockly-iframe-scratch', (int viewId) {
         final frame = html.IFrameElement()
-          ..src = 'assets/blockly/index.html'
+      ..src = 'assets/assets/blockly/index.html'
           ..style.border = 'none'
           ..width = '100%'
           ..height = '100%';
