@@ -11,6 +11,7 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
 
 class ServiceStock {
+  static const _stockDailyPriceBatchSize = 200;
   static const _modelTrainingPollInterval = Duration(seconds: 10);
   static const _modelTrainingTimeout = Duration(hours: 2);
   static const _maxFuturesLookbackDays = 14;
@@ -120,8 +121,8 @@ class ServiceStock {
           continue;
         }
         batch.add(stock.toJson());
-        if (batch.length >= 500) {
-          await api.post('stock/insert_stock_daily_price_batch', {
+        if (batch.length >= _stockDailyPriceBatchSize) {
+          await api.postWithRetry('stock/insert_stock_daily_price_batch', {
             'table_name': TableNames.stockDailyPrice,
             'stocks': batch,
           });
@@ -129,7 +130,7 @@ class ServiceStock {
         }
       }
       if (batch.isNotEmpty) {
-        await api.post('stock/insert_stock_daily_price_batch', {
+        await api.postWithRetry('stock/insert_stock_daily_price_batch', {
           'table_name': TableNames.stockDailyPrice,
           'stocks': batch,
         });
@@ -349,8 +350,8 @@ class ServiceStock {
         continue;
       }
       batch.add(stock.toJson());
-      if (batch.length >= 500) {
-        await api.post('stock/insert_stock_daily_price_batch', {
+      if (batch.length >= _stockDailyPriceBatchSize) {
+        await api.postWithRetry('stock/insert_stock_daily_price_batch', {
           'table_name': TableNames.stockDailyPrice,
           'stocks': batch,
         });
@@ -358,7 +359,7 @@ class ServiceStock {
       }
     }
     if (batch.isNotEmpty) {
-      await api.post('stock/insert_stock_daily_price_batch', {
+      await api.postWithRetry('stock/insert_stock_daily_price_batch', {
         'table_name': TableNames.stockDailyPrice,
         'stocks': batch,
       });

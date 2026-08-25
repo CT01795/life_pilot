@@ -107,6 +107,37 @@ class ServiceApi {
     return _decodeResponse(path, res);
   }
 
+  Future<dynamic> postWithRetry(
+    String path,
+    Map<String, dynamic> body, {
+    String? bearerToken,
+    int maxAttempts = 3,
+    Duration initialDelay = const Duration(seconds: 1),
+  }) async {
+    if (maxAttempts < 1) {
+      throw ArgumentError.value(
+          maxAttempts, 'maxAttempts', 'must be at least 1');
+    }
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await post(path, body, bearerToken: bearerToken);
+      } on http.ClientException {
+        if (attempt == maxAttempts) rethrow;
+      } on ServiceApiException catch (error) {
+        final isTransient = error.statusCode == null ||
+            error.statusCode == 502 ||
+            error.statusCode == 503 ||
+            error.statusCode == 504;
+        if (!isTransient || attempt == maxAttempts) rethrow;
+      }
+
+      await Future<void>.delayed(initialDelay * (1 << (attempt - 1)));
+    }
+
+    throw StateError('Retry loop completed without a response');
+  }
+
   dynamic _decodeResponse(String path, http.Response res) {
     if (res.statusCode != 200) {
       throw ServiceApiException(

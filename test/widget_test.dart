@@ -81,6 +81,31 @@ void main() {
     expect(authorizationHeader, 'Bearer explicit-token');
   });
 
+  test('ServiceApi retries a POST after transient connection failures',
+      () async {
+    var attempts = 0;
+    final client = MockClient((request) async {
+      attempts++;
+      if (attempts < 3) {
+        throw http.ClientException(
+          'Connection closed before full header was received',
+          request.url,
+        );
+      }
+      return http.Response('{"status":"ok"}', 200);
+    });
+    final api = ServiceApi('https://example.com', client: client);
+
+    final response = await api.postWithRetry(
+      '/stock/insert_stock_daily_price_batch',
+      {'stocks': <dynamic>[]},
+      initialDelay: Duration.zero,
+    );
+
+    expect(attempts, 3);
+    expect(response['status'], 'ok');
+  });
+
   test('ServiceApi GET sends the session token', () async {
     String? requestMethod;
     String? authorizationHeader;
