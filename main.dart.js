@@ -168915,7 +168915,7 @@ return A.i($async$As,r)},
 E(a){return new A.y1("blockly-iframe-scratch",null,null,B.mX,null)}}
 A.aYC.prototype={
 $1(a){var s,r=document.createElement("iframe")
-r.src="assets/blockly/index.html"
+r.src="assets/assets/blockly/index.html"
 s=r.style
 s.border="none"
 r.width="100%"
@@ -169727,7 +169727,7 @@ return A.i($async$As,r)},
 E(a){return new A.y1("blockly-iframe-scratch-maze",null,null,B.mX,null)}}
 A.aYG.prototype={
 $1(a){var s,r=document.createElement("iframe")
-r.src="assets/blockly/index.html"
+r.src="assets/assets/blockly/index.html"
 s=r.style
 s.border="none"
 r.width="100%"
