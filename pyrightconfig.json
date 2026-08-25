@@ -1,0 +1,7 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "include": [
+    "python_ai_service"
+  ]
+}

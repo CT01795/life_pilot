@@ -40,13 +40,24 @@ class ServiceStock {
     }
     for (int i = checkDates; i >= minDayValue; i--) {
       DateTime targetDate = today.subtract(Duration(days: i));
+      logger.i(
+          "Loading stock data for date: ${DateFormat('yyyy-MM-dd').format(targetDate)}");
       await loadRawDataTWSE(targetDate);
       await loadRawDataOTC(targetDate);
       await loadStockInstitutionalTWSE(targetDate);
       await loadStockInstitutionalOTC(targetDate);
-      await insertStockInstitutionalToSupabase(targetDate);
+      try {
+        await insertStockInstitutionalToSupabase(targetDate);
+      } catch (e) {
+        logger.e("Error occurred while inserting stock institutional data",
+            error: e);
+      }
       await loadFuturesInstitutional(targetDate);
-      await insertFuturesToSupabase(targetDate);
+      try {
+        await insertFuturesToSupabase(targetDate);
+      } catch (e) {
+        logger.e("Error occurred while inserting futures data", error: e);
+      }
       await quantitativeCalculation(500, targetDate);
     }
   }
@@ -373,6 +384,14 @@ class ServiceStock {
       'date': DateFormat('yyyy-MM-dd').format(date),
     });
 
+    if (result is! List || result.isEmpty) {
+      logger.w(
+        'No institutional data found for '
+        '${DateFormat('yyyy-MM-dd').format(date)}; skipping sync',
+      );
+      return;
+    }
+
     await apiSupabase.post('stock/insert_stock_institutional_batch', {
       'table_name': TableNames.stockInstitutional,
       'stocks': result,
@@ -487,8 +506,8 @@ class ServiceStock {
           daysBack <= _maxFuturesLookbackDays && result2.isEmpty;
           daysBack++) {
         tmpDate = tmpDate.subtract(Duration(days: 1));
-        result2 = await _supabaseApi.post(
-            'stock/select_futures_institutional', {
+        result2 =
+            await _supabaseApi.post('stock/select_futures_institutional', {
           'date': DateFormat('yyyy-MM-dd').format(tmpDate),
         });
       }
