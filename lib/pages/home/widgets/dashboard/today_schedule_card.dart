@@ -70,94 +70,93 @@ class TodayScheduleCard extends StatelessWidget {
                     message: loc.completeEventTitle,
                     child: Transform.scale(
                       scale: 1.5, // 放大倍率
-                      child: AsyncActionCheckbox(
-                          onAccepted: () async {
-                            final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (_) => AlertDialog(
-                                      title: Text(
-                                        loc.completeEventTitle,
-                                      ),
-                                      content: Text(
-                                        loc.completeEventMessage,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context, false);
-                                            },
-                                            child: Text(loc.cancel)),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, true);
-                                            },
-                                            child: Text(loc.confirm))
-                                      ],
-                                    ));
-                            if (confirm != true) {
-                              return;
-                            }
-                            try {
-                              await context.read<ModelDashboard>().completeEvent(
-                                    id: e.id,
-                                    account: auth.account!,
-                                  );
-                            } catch (error, stackTrace) {
-                              logger.e(
-                                'Could not complete today schedule event.',
-                                error: error,
-                                stackTrace: stackTrace,
+                      child: AsyncActionCheckbox(onAccepted: () async {
+                        final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                                  title: Text(
+                                    loc.completeEventTitle,
+                                  ),
+                                  content: Text(
+                                    loc.completeEventMessage,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context, false);
+                                        },
+                                        child: Text(loc.cancel)),
+                                    TextButton(
+                                        onPressed: () async {
+                                          Navigator.pop(context, true);
+                                        },
+                                        child: Text(loc.confirm))
+                                  ],
+                                ));
+                        if (confirm != true) {
+                          return;
+                        }
+                        try {
+                          await context.read<ModelDashboard>().completeEvent(
+                                id: e.id,
+                                account: auth.account!,
                               );
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(loc.eventSaveFailed)),
-                                );
-                              }
-                              return;
-                            }
-                            final calendar = context.read<CalendarService>();
-                            try {
-                              final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                        content: Text(
-                                            '${loc.memoryAdd}「${e.name}」？'),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context, false);
-                                              },
-                                              child: Text(loc.cancel)),
-                                          TextButton(
-                                              onPressed: () async {
-                                                Navigator.pop(context, true);
-                                              },
-                                              child: Text(loc.confirm))
-                                        ],
-                                      ));
+                        } catch (error, stackTrace) {
+                          logger.e(
+                            'Could not complete today schedule event.',
+                            error: error,
+                            stackTrace: stackTrace,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(loc.eventSaveFailed)),
+                            );
+                          }
+                          return;
+                        }
+                        final calendar = context.read<CalendarService>();
+                        try {
+                          final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                    content:
+                                        Text('${loc.memoryAdd}「${e.name}」？'),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context, false);
+                                          },
+                                          child: Text(loc.cancel)),
+                                      TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(context, true);
+                                          },
+                                          child: Text(loc.confirm))
+                                    ],
+                                  ));
 
-                              if (confirm == true) {
-                                await calendar.addCalendarEventToMemory(
-                                    account: auth.account!, event: e, id: e.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(loc.memoryAddOk)));
-                              }
-                            } catch (error, stackTrace) {
-                              logger.e(
-                                'Could not add calendar event to memory.',
-                                error: error,
-                                stackTrace: stackTrace,
-                              );
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(loc.eventSaveFailed)),
-                                );
-                              }
-                            }
-                            context
-                                .read<ModelDashboard>()
-                                .refreshTodaySchedule(account: auth.account!);
-                          }),
+                          if (confirm == true) {
+                            await calendar.addCalendarEventToMemory(
+                                account: auth.account!, event: e, id: e.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(loc.memoryAddOk)));
+                          }
+                        } catch (error, stackTrace) {
+                          logger.e(
+                            'Could not add calendar event to memory.',
+                            error: error,
+                            stackTrace: stackTrace,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(loc.eventSaveFailed)),
+                            );
+                          }
+                        }
+                        context
+                            .read<ModelDashboard>()
+                            .refreshTodaySchedule(account: auth.account!);
+                      }),
                     ),
                   ),
                   title: Tooltip(
@@ -172,12 +171,13 @@ class TodayScheduleCard extends StatelessWidget {
                                 eventId: e.id,
                                 eventName: e.name,
                                 column: 'page_views',
-                                account: auth.account,
                               );
                               if (!await tracking.launchUrlLink(e.masterUrl) &&
                                   context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                                  SnackBar(
+                                      content:
+                                          Text(loc.externalLinkOpenFailed)),
                                 );
                               }
                             },
@@ -204,12 +204,14 @@ class TodayScheduleCard extends StatelessWidget {
                                 eventId: e.id,
                                 eventName: e.name,
                                 column: 'card_clicks',
-                                account: auth.account,
                               );
-                              if (!await tracking.onOpenMap(e.city, e.location) &&
+                              if (!await tracking.onOpenMap(
+                                      e.city, e.location) &&
                                   context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                                  SnackBar(
+                                      content:
+                                          Text(loc.externalLinkOpenFailed)),
                                 );
                               }
                             }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
@@ -20,7 +19,6 @@ class TodayEventItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final auth = context.watch<ModelAuthView>();
     final tracking = context.read<EventTrackingService>();
     return Padding(
       padding: Insets.all12,
@@ -53,12 +51,12 @@ class TodayEventItem extends StatelessWidget {
                             eventId: event.id,
                             eventName: event.name,
                             column: 'page_views',
-                            account: auth.account,
                           );
                           if (!await tracking.launchUrlLink(event.masterUrl) &&
                               context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                              SnackBar(
+                                  content: Text(loc.externalLinkOpenFailed)),
                             );
                           }
                         },
@@ -85,7 +83,6 @@ class TodayEventItem extends StatelessWidget {
                       eventId: event.id,
                       eventName: event.name,
                       column: 'card_clicks',
-                      account: auth.account,
                     );
                     if (!await tracking.onOpenMap(event.city, event.location) &&
                         context.mounted) {

@@ -64,72 +64,70 @@ class RecommendEventCard extends StatelessWidget {
                         message: loc.addToSchedule,
                         child: Transform.scale(
                           scale: 1.5, // 放大倍率
-                          child: AsyncActionCheckbox(
-                              onAccepted: () async {
-                                final calendar =
-                                    context.read<CalendarService>();
-                                try {
-                                  bool isExist =
-                                      await calendar.existsRecommendedEventToCal(
-                                          account: auth.account!, event: e);
-                                  if (!isExist) {
-                                    await calendar.addRecommendedEventToCal(
-                                        account: auth.account!,
-                                        event: e,
-                                        id: e.id);
-                                    context.read<ModelDashboard>().refreshTodaySchedule(account: auth.account!);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content: Text(loc.eventAddOk)));
-                                  } else {
-                                    final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (_) => AlertDialog(
-                                              content: Text('「${e.name}」${loc.eventAddError}'),
-                                              actions: [
-                                                TextButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(
-                                                          context, false);
-                                                    },
-                                                    child: Text(loc.cancel)),
-                                                TextButton(
-                                                    onPressed: () async {
-                                                      Navigator.pop(
-                                                          context, true);
-                                                    },
-                                                    child: Text(loc.confirm))
-                                              ],
-                                            ));
-                                    if (confirm == true) {
-                                      await calendar.addRecommendedEventToCal(
-                                          account: auth.account!,
-                                          event: e,
-                                          id: null);
-                                      context.read<ModelDashboard>().refreshTodaySchedule(account: auth.account!);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                              content: Text(loc.eventAddOk)));
-                                    }
-                                  }
-                                  await tracking.incrementEventCounter(
-                                    eventId: e.id,
-                                    eventName: e.name, // 或者用 eventViewModel.name
-                                    column: 'saves', //收藏到行事曆
-                                    account: auth.account ?? AuthConstants.guest);
-                                } catch (e, stackTrace) {
-                                  logger.e(
-                                    'Could not add recommended event to calendar.',
-                                    error: e,
-                                    stackTrace: stackTrace,
-                                  );
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(loc.eventSaveFailed)),
-                                    );
-                                  }
+                          child: AsyncActionCheckbox(onAccepted: () async {
+                            final calendar = context.read<CalendarService>();
+                            try {
+                              bool isExist =
+                                  await calendar.existsRecommendedEventToCal(
+                                      account: auth.account!, event: e);
+                              if (!isExist) {
+                                await calendar.addRecommendedEventToCal(
+                                    account: auth.account!, event: e, id: e.id);
+                                context
+                                    .read<ModelDashboard>()
+                                    .refreshTodaySchedule(
+                                        account: auth.account!);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(loc.eventAddOk)));
+                              } else {
+                                final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                          content: Text(
+                                              '「${e.name}」${loc.eventAddError}'),
+                                          actions: [
+                                            TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context, false);
+                                                },
+                                                child: Text(loc.cancel)),
+                                            TextButton(
+                                                onPressed: () async {
+                                                  Navigator.pop(context, true);
+                                                },
+                                                child: Text(loc.confirm))
+                                          ],
+                                        ));
+                                if (confirm == true) {
+                                  await calendar.addRecommendedEventToCal(
+                                      account: auth.account!,
+                                      event: e,
+                                      id: null);
+                                  context
+                                      .read<ModelDashboard>()
+                                      .refreshTodaySchedule(
+                                          account: auth.account!);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(loc.eventAddOk)));
                                 }
-                              }),
+                              }
+                              await tracking.incrementEventCounter(
+                                  eventId: e.id,
+                                  eventName: e.name, // 或者用 eventViewModel.name
+                                  column: 'saves'); //收藏到行事曆
+                            } catch (e, stackTrace) {
+                              logger.e(
+                                'Could not add recommended event to calendar.',
+                                error: e,
+                                stackTrace: stackTrace,
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(loc.eventSaveFailed)),
+                                );
+                              }
+                            }
+                          }),
                         ),
                       ),
                       title: Tooltip(
@@ -144,12 +142,14 @@ class RecommendEventCard extends StatelessWidget {
                                     eventId: e.id,
                                     eventName: e.name,
                                     column: 'page_views',
-                                    account: auth.account,
                                   );
-                                  if (!await tracking.launchUrlLink(e.masterUrl) &&
+                                  if (!await tracking
+                                          .launchUrlLink(e.masterUrl) &&
                                       context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                                      SnackBar(
+                                          content:
+                                              Text(loc.externalLinkOpenFailed)),
                                     );
                                   }
                                 },
@@ -178,12 +178,14 @@ class RecommendEventCard extends StatelessWidget {
                                     eventId: e.id,
                                     eventName: e.name,
                                     column: 'card_clicks',
-                                    account: auth.account,
                                   );
-                                  if (!await tracking.onOpenMap(e.city, e.location) &&
+                                  if (!await tracking.onOpenMap(
+                                          e.city, e.location) &&
                                       context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(loc.externalLinkOpenFailed)),
+                                      SnackBar(
+                                          content:
+                                              Text(loc.externalLinkOpenFailed)),
                                     );
                                   }
                                 }

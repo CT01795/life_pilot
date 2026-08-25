@@ -132,8 +132,7 @@ class ControllerEvent extends ChangeNotifier {
       await tracking.incrementEventCounter(
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
-          column: event.isLike == true ? 'like_counts' : 'card_clicks',
-          account: auth.currentAccount ?? AuthConstants.guest);
+          column: event.isLike == true ? 'like_counts' : 'card_clicks');
     }
     _invalidateViewModelCache();
     final newList = await _serviceEvent.getEvents(
@@ -157,8 +156,7 @@ class ControllerEvent extends ChangeNotifier {
       await tracking.incrementEventCounter(
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
-          column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
-          account: auth.currentAccount ?? AuthConstants.guest);
+          column: event.isDislike == true ? 'dislike_counts' : 'card_clicks');
     }
     _invalidateViewModelCache();
     final newList = await _serviceEvent.getEvents(
@@ -229,8 +227,7 @@ class ControllerEvent extends ChangeNotifier {
       await tracking.incrementEventCounter(
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
-          column: 'saves', //收藏到行事曆
-          account: auth.currentAccount ?? AuthConstants.guest);
+          column: 'saves'); //收藏到行事曆
       _invalidateViewModelCache();
     }
     if (!_disposed) notifyListeners();
@@ -462,7 +459,6 @@ class ControllerEvent extends ChangeNotifier {
         eventId: event.id,
         eventName: event.name,
         column: column,
-        account: auth.currentAccount!,
       );
     } catch (e) {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');

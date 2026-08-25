@@ -21,7 +21,6 @@ class EventTrackingService {
     required String eventId,
     required String eventName,
     required String column,
-    required String? account,
   }) async {
     try {
       await supabase.rpc(
@@ -30,7 +29,6 @@ class EventTrackingService {
           'p_event_id': eventId,
           'p_event_name': eventName,
           'p_column': column,
-          'p_account': account,
         },
       );
     } catch (e) {
@@ -47,7 +45,8 @@ class EventTrackingService {
     final query = Uri.encodeComponent(locationDisplay);
 
     // Google Maps 網頁導航 URL
-    final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=$query';
+    final googleMapsUrl =
+        'https://www.google.com/maps/dir/?api=1&destination=$query';
 
     return launchUrlLink(googleMapsUrl);
   }

@@ -708,7 +708,6 @@ class ControllerCalendar extends ChangeNotifier {
         eventId: event.id,
         eventName: event.name,
         column: column,
-        account: auth!.currentAccount!,
       );
     } catch (e) {
       logger.e('Failed to increment counter for ${event.id} ($column): $e');
