@@ -78,7 +78,9 @@ class ServiceEvent {
             'inputid': id,
             'inputdates': inputDateS,
             'inputdatee': inputDateE,
-            'inputuser': inputUser,
+            if (tableName != TableNames.recommendEvents &&
+                tableName != TableNames.recommendPlaces)
+              'inputuser': inputUser,
           }
         },
       );

@@ -74,12 +74,12 @@ class _RecommendationOrderRepository extends DashboardRepository {
   int _eventCalls = 0;
 
   @override
-  Future<DashboardSetting> loadDashboardSetting({required String account}) async =>
+  Future<DashboardSetting> loadDashboardSetting(
+          {required String account}) async =>
       _setting();
 
   @override
-  Future<List<RecommendedEvent>> loadRecommendEvents(
-      String account, String city) {
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) {
     _eventCalls++;
     return _eventCalls == 1 ? firstEvents.future : secondEvents.future;
   }
@@ -90,21 +90,18 @@ class _RefreshOrderRepository extends DashboardRepository {
   int _accountingCalls = 0;
 
   @override
-  Future<DashboardSetting> loadDashboardSetting({required String account}) async =>
+  Future<DashboardSetting> loadDashboardSetting(
+          {required String account}) async =>
       _setting();
 
   @override
   Future<List<CalendarEvent>> loadTodayEvents(String account) async => [];
 
   @override
-  Future<List<RecommendedEvent>> loadRecommendEvents(
-          String account, String city) async =>
-      [];
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) async => [];
 
   @override
-  Future<List<RecommendedPlace>> loadRecommendPlaces(
-          String account, String city) async =>
-      [];
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async => [];
 
   @override
   Future<List<IncomeExpenseItem>> loadTodayIncomeExpense(

@@ -83,10 +83,12 @@ class DashboardRepository {
         .update({
           'is_completed': true,
         })
-        .eq(Fields.id,
+        .eq(
+          Fields.id,
           id,
         )
-        .eq(Fields.account,
+        .eq(
+          Fields.account,
           account,
         );
   }
@@ -126,13 +128,8 @@ class DashboardRepository {
     });
   }
 
-  Future<List<DashboardCity>> loadEventCities(String account) async {
-    final result = await supabase.rpc(
-      'get_event_city_counts',
-      params: {
-        'input_account': account,
-      },
-    );
+  Future<List<DashboardCity>> loadEventCities() async {
+    final result = await supabase.rpc('get_event_city_counts');
 
     return (result as List)
         .map(
@@ -141,12 +138,10 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<RecommendedEvent>> loadRecommendEvents(
-      String account, String city) async {
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
     final result = await supabase.rpc(
       'get_home_recommended_events',
       params: {
-        'p_account': account,
         'p_city': city,
         'p_limit': 5,
       },
@@ -159,13 +154,8 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<DashboardCity>> loadPlaceCities(String account) async {
-    final result = await supabase.rpc(
-      'get_place_city_counts',
-      params: {
-        'input_account': account,
-      },
-    );
+  Future<List<DashboardCity>> loadPlaceCities() async {
+    final result = await supabase.rpc('get_place_city_counts');
 
     return (result as List)
         .map(
@@ -174,12 +164,10 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<RecommendedPlace>> loadRecommendPlaces(
-      String account, String city) async {
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
     final result = await supabase.rpc(
       'get_home_recommended_places',
       params: {
-        'p_account': account,
         'p_city': city,
         'p_limit': 5,
       },

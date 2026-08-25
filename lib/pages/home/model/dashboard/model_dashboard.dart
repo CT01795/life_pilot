@@ -85,7 +85,7 @@ class ModelDashboard extends ChangeNotifier {
     if (!_isCurrentRequest(account, generation)) return;
     List<DashboardCity> eventCities;
     try {
-      eventCities = await repository.loadEventCities(account);
+      eventCities = await repository.loadEventCities();
     } catch (error, stackTrace) {
       logger.e('Could not load recommended event cities.',
           error: error, stackTrace: stackTrace);
@@ -101,7 +101,7 @@ class ModelDashboard extends ChangeNotifier {
     if (!_isCurrentRequest(account, generation)) return;
     List<DashboardCity> placeCities;
     try {
-      placeCities = await repository.loadPlaceCities(account);
+      placeCities = await repository.loadPlaceCities();
     } catch (error, stackTrace) {
       logger.e('Could not load recommended place cities.',
           error: error, stackTrace: stackTrace);
@@ -147,11 +147,11 @@ class ModelDashboard extends ChangeNotifier {
         ),
         _loadSection(
           DashboardSection.recommendEvents,
-          () => repository.loadRecommendEvents(account, setting.recommendEventCity),
+          () => repository.loadRecommendEvents(setting.recommendEventCity),
         ),
         _loadSection(
           DashboardSection.recommendPlaces,
-          () => repository.loadRecommendPlaces(account, setting.recommendPlaceCity),
+          () => repository.loadRecommendPlaces(setting.recommendPlaceCity),
         ),
         _loadSection(
           DashboardSection.accounting,
@@ -238,8 +238,8 @@ class ModelDashboard extends ChangeNotifier {
         account: account,
       );
 
-      final recommendedEvents = await repository.loadRecommendEvents(
-          account, setting.recommendEventCity);
+      final recommendedEvents =
+          await repository.loadRecommendEvents(setting.recommendEventCity);
 
       if (request != _recommendEventRequest) return;
 
@@ -267,8 +267,8 @@ class ModelDashboard extends ChangeNotifier {
         account: account,
       );
 
-      final recommendedPlaces = await repository.loadRecommendPlaces(
-          account, setting.recommendPlaceCity);
+      final recommendedPlaces =
+          await repository.loadRecommendPlaces(setting.recommendPlaceCity);
 
       if (request != _recommendPlaceRequest) return;
 
@@ -423,7 +423,6 @@ class ModelDashboard extends ChangeNotifier {
     await refreshAccounting(
       accountId: accountId,
     );
-
   }
 
   Future<void> changePointAccount({
@@ -447,6 +446,5 @@ class ModelDashboard extends ChangeNotifier {
     await refreshPoints(
       accountId: accountId,
     );
-
   }
 }
