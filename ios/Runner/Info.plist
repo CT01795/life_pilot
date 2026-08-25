@@ -47,17 +47,11 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>RequiresMicrophoneForVoiceInput</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>允許從相簿選擇帳戶圖片</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>RequiresVoiceRecognition</string>
 
-	<key>NSUserNotificationUsageDescription</key>
-	<string>WeWillUseNotificationsToRemindYouOfEventsAndSchedules</string>
-
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>remote-notification</string>
-	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

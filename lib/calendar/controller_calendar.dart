@@ -21,7 +21,6 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
-import 'package:life_pilot/utils/service/service_permission.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -32,7 +31,6 @@ class ControllerCalendar extends ChangeNotifier {
   late ServiceEvent _serviceEvent;
   late ControllerNotification _controllerNotification;
   late ServiceWeather _serviceWeather;
-  late ServicePermission _servicePermission;
   ControllerAuth? auth;
   late ProviderLocale _localeProvider;
   late String _tableName;
@@ -79,7 +77,6 @@ class ControllerCalendar extends ChangeNotifier {
       required this.auth,
       required ControllerNotification controllerNotification,
       required ServiceWeather serviceWeather,
-      required ServicePermission servicePermission,
       required ProviderLocale localeProvider,
       required String tableName,
       required String toTableName,
@@ -88,7 +85,6 @@ class ControllerCalendar extends ChangeNotifier {
     _serviceEvent = serviceEvent;
     _controllerNotification = controllerNotification;
     _serviceWeather = serviceWeather;
-    _servicePermission = servicePermission;
     _localeProvider = localeProvider;
     _lastLocale = localeProvider.locale;
     _tableName = tableName;
@@ -365,7 +361,6 @@ class ControllerCalendar extends ChangeNotifier {
         isNew: isNew,
         tableName: _tableName);
     if (isNew) {
-      await _servicePermission.checkExactAlarmPermission();
       await _controllerNotification.scheduleEventReminders(event: newEvent);
     } else if (oldEvent != null) {
       await refreshNotification(oldEvent: oldEvent, newEvent: newEvent);
@@ -427,7 +422,6 @@ class ControllerCalendar extends ChangeNotifier {
       await _controllerNotification.cancelEventReminders(
           eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
     }
-    await _servicePermission.checkExactAlarmPermission();
     await _controllerNotification.scheduleEventReminders(event: newEvent);
   }
 

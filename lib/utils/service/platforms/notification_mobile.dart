@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/calendar/service_reminder.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/date_time.dart' show DateTimeCompare, DateTimeFormatter;
+import 'package:life_pilot/utils/date_time.dart'
+    show DateTimeCompare, DateTimeFormatter;
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/service/service_notification/service_notification_platform.dart';
@@ -19,7 +19,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
 
   @override
   FlutterLocalNotificationsPlugin? get plugin => _plugin;
-  
+
   @override
   Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -27,8 +27,8 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
 
     const android = AndroidInitializationSettings(CalendarMisc.androidIcon);
     const ios = DarwinInitializationSettings();
-    await _plugin
-        .initialize(settings: InitializationSettings(android: android, iOS: ios));
+    await _plugin.initialize(
+        settings: InitializationSettings(android: android, iOS: ios));
     await _requestPermissions();
   }
 
@@ -38,21 +38,14 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
       if (!await Permission.notification.isGranted) {
         await Permission.notification.request();
       }
-
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      // ✅ 檢查 Android 12+ 是否有精準鬧鐘權限
-      if (androidInfo.version.sdkInt >= 31 &&
-          !await Permission.scheduleExactAlarm.isGranted) {
-        await openAppSettings(); // 引導設定
-      }
     }
 
     if (Platform.isIOS) {
       // ✅ iOS 通知權限請求
       // 無法使用 _plugin，只能呼叫原生層或透過外部 plugin 處理
       final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-      final ios = flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
+      final ios =
+          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin>();
       await ios?.requestPermissions(alert: true, badge: true, sound: true);
     }
@@ -87,7 +80,7 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
         await _plugin.zonedSchedule(
           id: id,
           title: title,
-          body:'',
+          body: '',
           scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
           notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -101,19 +94,13 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
 
   // ------------------ 即時通知 ------------------
   Future<EventNotification> _showImmediateNotification(
-      {required EventItem event,
-      required DateTime now}) async {
+      {required EventItem event, required DateTime now}) async {
     // 通知ID，建議用事件ID或其它唯一數字
     final int notificationId = ServiceReminder.generateNotificationId(
         eventId: event.id, reminderOption: CalendarReminderOption.fifteenMin);
     // 通知標題
     final String title =
-        '${!DateTimeCompare.isSameDayFutureTime(event.startDate, event.startTime, now) ? 
-                (!((event.endDate != null && DateTimeCompare.isSameDayFutureTime(event.endDate, event.endTime, now)) 
-                  || (event.endDate == null && event.endTime != null && DateTimeCompare.isSameDayFutureTime(event.startDate, event.endTime, now))) ? 
-                  now.formatDateString(passYear: true, formatShow: true) 
-                  : '${event.endDate == null ? event.startDate!.formatDateString(passYear: true, formatShow: true) : event.endDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}') 
-                : '${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}'} ${event.name}';
+        '${!DateTimeCompare.isSameDayFutureTime(event.startDate, event.startTime, now) ? (!((event.endDate != null && DateTimeCompare.isSameDayFutureTime(event.endDate, event.endTime, now)) || (event.endDate == null && event.endTime != null && DateTimeCompare.isSameDayFutureTime(event.startDate, event.endTime, now))) ? now.formatDateString(passYear: true, formatShow: true) : '${event.endDate == null ? event.startDate!.formatDateString(passYear: true, formatShow: true) : event.endDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}') : '${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}'} ${event.name}';
 
     return EventNotification(
       id: notificationId,
@@ -127,11 +114,13 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
   // ------------------ 取消事件提醒 ------------------
   @override
   Future<NotificationResult> cancelEventReminders(
-      {required String eventId, required List<CalendarReminderOption> reminderOptions}) async {
+      {required String eventId,
+      required List<CalendarReminderOption> reminderOptions}) async {
     try {
       for (final option in reminderOptions) {
-        await _plugin.cancel(id: ServiceReminder.generateNotificationId(
-            eventId: eventId, reminderOption: option));
+        await _plugin.cancel(
+            id: ServiceReminder.generateNotificationId(
+                eventId: eventId, reminderOption: option));
       }
       return NotificationResult(success: true);
     } catch (e) {

@@ -24,7 +24,6 @@ import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:life_pilot/utils/service/service_notification/service_notification_factory.dart';
-import 'package:life_pilot/utils/service/service_permission.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:provider/provider.dart';
 import 'utils/service/export/service_export.dart';
@@ -128,9 +127,6 @@ void main() async {
             return controller;
           },
         ),
-        Provider(
-          create: (_) => ServicePermission(),
-        ),
         //-------------- ControllerCalendar (ModelCalendar, ControllerAuth, ServiceStorage, ProviderLocale)--------------
         ChangeNotifierProxyProvider6<
             ModelCalendar,
@@ -149,7 +145,6 @@ void main() async {
               serviceEvent: context.read<ServiceEvent>(),
               serviceWeather: context.read<ServiceWeather>(),
               controllerNotification: context.read<ControllerNotification>(),
-              servicePermission: context.read<ServicePermission>(),
               localeProvider: context.read<ProviderLocale>(),
               tableName: TableNames.calendarEvents,
               toTableName: TableNames.memoryTrace,
