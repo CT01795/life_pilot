@@ -33,6 +33,10 @@ migrate_working_dir/
 .pub/
 /build/
 /temp_build/
+/node_modules/
+/maps/
+/assets/fonts/static/
+/main.dart.js.map
 
 # Symbolication related
 app.*.symbols
