@@ -857,10 +857,10 @@ class ServiceStock {
       return;
     }
 
-    await supabase.from(TableNames.stockPredicted).insert({
+    await apiSupabase.post('stock/insert_stock_predicted', {
+      'table_name': TableNames.stockPredicted,
       'date': date.toUtc().toIso8601String(),
       'data': stocks.map((stock) => stock.toJsonPred()).toList(),
-      Fields.createdAt: DateTime.now().toUtc().toIso8601String(),
     });
   }
 }

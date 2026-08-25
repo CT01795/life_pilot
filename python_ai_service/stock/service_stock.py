@@ -4,7 +4,7 @@ import sys
 from datetime import date as Date
 from datetime import datetime, timedelta
 from threading import Lock
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -129,6 +129,12 @@ class StockDailyPriceQueryRequest(BaseModel):
 class StockPredictionQueryRequest(BaseModel):
     table_name: Literal["stock_predicted"]
     date: datetime
+
+
+class StockPredictionInsertRequest(BaseModel):
+    table_name: Literal["stock_predicted"]
+    date: datetime
+    data: list[dict[str, Any]] = Field(min_length=1, max_length=10_000)
 
 
 class StockQuantitativeCountRequest(BaseModel):
@@ -612,6 +618,39 @@ def route_select_stock_predicted(payload: StockPredictionQueryRequest):
       raise HTTPException(
           status_code=503,
           detail="Stock prediction could not be loaded",
+      ) from exception
+    finally:
+      db.close()
+
+@router.post(
+      "/stock/insert_stock_predicted"
+      , summary="寫入模型預測結果"
+      , description="由管理員後端寫入指定日期的模型預測結果")
+def route_insert_stock_predicted(payload: StockPredictionInsertRequest):
+    db: Session = SessionLocal()
+    try:
+      StockPredictedModel = create_stock_predicted_model(payload.table_name)
+      stmt = insert(StockPredictedModel).values({
+          "date": payload.date,
+          "data": payload.data,
+          "created_at": datetime.now(ZoneInfo("UTC")),
+      })
+      stmt = stmt.on_conflict_do_nothing(index_elements=["date"])
+
+      result = db.execute(stmt)
+      db.commit()
+      inserted_rows = max(result.rowcount or 0, 0)
+      return {
+          "status": "ok",
+          "inserted_rows": inserted_rows,
+          "skipped_rows": 1 - inserted_rows,
+      }
+    except SQLAlchemyError as exception:
+      db.rollback()
+      logger.exception("Could not insert stock prediction")
+      raise HTTPException(
+          status_code=503,
+          detail="Stock prediction could not be saved",
       ) from exception
     finally:
       db.close()

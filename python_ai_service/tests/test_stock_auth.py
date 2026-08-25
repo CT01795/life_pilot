@@ -1,7 +1,7 @@
 import os
 import unittest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import SQLAlchemyError
@@ -869,6 +869,82 @@ class StockAuthorizationTest(unittest.TestCase):
             response.json()["detail"],
             "Stock prediction could not be loaded",
         )
+        db.close.assert_called_once_with()
+
+    def test_stock_prediction_insert_reports_inserted_row(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.return_value.rowcount = 1
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_stock_predicted",
+                json={
+                    "table_name": "stock_predicted",
+                    "date": "2026-08-20T00:00:00Z",
+                    "data": [
+                        {"security_code": "2330", "pred_pct": 2.5},
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "ok", "inserted_rows": 1, "skipped_rows": 0},
+        )
+        db.execute.assert_called_once_with(ANY)
+        db.commit.assert_called_once_with()
+        db.rollback.assert_not_called()
+        db.close.assert_called_once_with()
+
+    def test_stock_prediction_insert_rejects_empty_data(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+
+        response = self.client.post(
+            "/stock/insert_stock_predicted",
+            json={
+                "table_name": "stock_predicted",
+                "date": "2026-08-20T00:00:00Z",
+                "data": [],
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_stock_prediction_insert_reports_database_failure(self):
+        app.dependency_overrides[require_supabase_user] = lambda: {
+            "id": "admin-user-id",
+            "app_metadata": {"role": "admin"},
+        }
+        db = MagicMock()
+        db.execute.side_effect = SQLAlchemyError("database unavailable")
+
+        with patch("stock.service_stock.SessionLocal", return_value=db):
+            response = self.client.post(
+                "/stock/insert_stock_predicted",
+                json={
+                    "table_name": "stock_predicted",
+                    "date": "2026-08-20T00:00:00Z",
+                    "data": [
+                        {"security_code": "2330", "pred_pct": 2.5},
+                    ],
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Stock prediction could not be saved",
+        )
+        db.rollback.assert_called_once_with()
+        db.commit.assert_not_called()
         db.close.assert_called_once_with()
 
     def test_stock_quantitative_count_rejects_invalid_input(self):
