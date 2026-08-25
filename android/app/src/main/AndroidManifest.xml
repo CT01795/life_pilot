@@ -1,10 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!--  android:name="${applicationName}" -->
     <application
-        android:label="life_pilot"
+        android:label="Life Pilot"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
