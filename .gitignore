@@ -36,6 +36,9 @@ migrate_working_dir/
 /node_modules/
 /maps/
 /assets/fonts/static/
+/assets/fonts/NotoSansTC-*.ttf
+!/assets/fonts/NotoSansTC-Regular.ttf
+!/assets/fonts/NotoSansTC-VariableFont_wght.ttf
 /main.dart.js.map
 
 # Symbolication related
