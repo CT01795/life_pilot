@@ -324,12 +324,6 @@ class _AccountCard extends StatelessWidget {
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: '${loc.pointsLabel} ',
-                                style: const TextStyle(
-                                    color: Color(0xFF757575),
-                                    fontSize: 20), // 中灰
-                              ),
-                              TextSpan(
                                 text:
                                     '${formatter.format(account.points)} ${loc.pointsUnit}'
                                         .trim(),

@@ -646,8 +646,6 @@
   "@accountingUnit": {"description": "Label for accountingUnit"},
   "pointsUnit": "포인트",
   "@pointsUnit": {"description": "Label for pointsUnit"},
-  "pointsLabel": "포인트",
-  "@pointsLabel": {"description": "Label for pointsLabel"},
   "eventRefresh": "추천 이벤트 업데이트",
   "@eventRefresh": {"description": "추천 이벤트 업데이트 버튼"},
   "eventRefreshSucceeded": "추천 이벤트를 업데이트했습니다.",

@@ -646,8 +646,6 @@
   "@accountingUnit": {"description": "Label for accountingUnit"},
   "pointsUnit": "points",
   "@pointsUnit": {"description": "Label for pointsUnit"},
-  "pointsLabel": "Points",
-  "@pointsLabel": {"description": "Label for pointsLabel"},
   "eventRefresh": "Update recommended events",
   "@eventRefresh": {"description": "Recommended event refresh button"},
   "eventRefreshSucceeded": "Recommended events updated.",

@@ -646,8 +646,6 @@
   "@accountingUnit": {"description": "Label for accountingUnit"},
   "pointsUnit": "ポイント",
   "@pointsUnit": {"description": "Label for pointsUnit"},
-  "pointsLabel": "ポイント",
-  "@pointsLabel": {"description": "Label for pointsLabel"},
   "eventRefresh": "おすすめイベントを更新",
   "@eventRefresh": {"description": "おすすめイベント更新ボタン"},
   "eventRefreshSucceeded": "おすすめイベントを更新しました。",

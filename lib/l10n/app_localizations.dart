@@ -2013,12 +2013,6 @@ abstract class AppLocalizations {
   /// **'points'**
   String get pointsUnit;
 
-  /// Label for pointsLabel
-  ///
-  /// In en, this message translates to:
-  /// **'Points'**
-  String get pointsLabel;
-
   /// Recommended event refresh button
   ///
   /// In en, this message translates to:

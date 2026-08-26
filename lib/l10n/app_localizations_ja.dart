@@ -974,9 +974,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pointsUnit => 'ポイント';
 
   @override
-  String get pointsLabel => 'ポイント';
-
-  @override
   String get eventRefresh => 'おすすめイベントを更新';
 
   @override

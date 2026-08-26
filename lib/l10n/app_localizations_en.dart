@@ -974,9 +974,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pointsUnit => 'points';
 
   @override
-  String get pointsLabel => 'Points';
-
-  @override
   String get eventRefresh => 'Update recommended events';
 
   @override

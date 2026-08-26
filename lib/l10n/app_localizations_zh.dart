@@ -974,9 +974,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pointsUnit => '點';
 
   @override
-  String get pointsLabel => '積分';
-
-  @override
   String get eventRefresh => '更新推薦活動';
 
   @override

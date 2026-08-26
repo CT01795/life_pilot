@@ -646,8 +646,6 @@
   "@accountingUnit": {"description": "Label for accountingUnit"},
   "pointsUnit": "點",
   "@pointsUnit": {"description": "Label for pointsUnit"},
-  "pointsLabel": "積分",
-  "@pointsLabel": {"description": "Label for pointsLabel"},
   "eventRefresh": "更新推薦活動",
   "@eventRefresh": {"description": "推薦活動更新按鈕"},
   "eventRefreshSucceeded": "推薦活動已更新。",

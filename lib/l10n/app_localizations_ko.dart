@@ -974,9 +974,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pointsUnit => '포인트';
 
   @override
-  String get pointsLabel => '포인트';
-
-  @override
   String get eventRefresh => '추천 이벤트 업데이트';
 
   @override

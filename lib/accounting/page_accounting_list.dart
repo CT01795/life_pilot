@@ -186,6 +186,7 @@ class _AccountCard extends StatelessWidget {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
         return prev.balance != next.balance ||
+            prev.currency != next.currency ||
             prev.masterGraphUrl != next.masterGraphUrl;
       },
       builder: (context, account, _) {
