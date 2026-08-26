@@ -11,18 +11,19 @@ class ControllerPointRecordDetail extends ChangeNotifier {
   ControllerAuth? auth;
   final String accountId;
 
-  ControllerPointRecordDetail(
-      {required this.service,
-      required this.auth,
-      required this.accountId,});
-  
+  ControllerPointRecordDetail({
+    required this.service,
+    required this.auth,
+    required this.accountId,
+  });
+
   final String currentType = 'points';
-  
+
   List<ModelPointRecordDetail> todayRecords = [];
   int todayTotal = 0;
   int? total;
   bool isLoading = false;
-  
+
   Future<void> loadToday({String? inputAccountId}) async {
     if (isLoading) return;
     isLoading = true;
@@ -43,10 +44,9 @@ class ControllerPointRecordDetail extends ChangeNotifier {
     final todayStart = DateTime(now.year, now.month, now.day);
 
     todayTotal = todayRecords
-        .where((r) =>
-            r.localTime.isAfter(todayStart))
+        .where((r) => r.localTime.isAfter(todayStart))
         .fold(0, (s, r) => s + r.value);
-    total = todayRecords[0].points;
+    total = todayRecords.isEmpty ? 0 : todayRecords.first.points;
   }
 
   Future<ModelPointRecordAccount?> findAccountByEventId(
@@ -63,8 +63,9 @@ class ControllerPointRecordDetail extends ChangeNotifier {
     return results
         .map(
           (r) => PointRecordPreview(
-              description: r.description,
-              value: r.value,),
+            description: r.description,
+            value: r.value,
+          ),
         )
         .toList();
   }
@@ -72,11 +73,25 @@ class ControllerPointRecordDetail extends ChangeNotifier {
   Future<void> commitRecords(List<PointRecordPreview> previews,
       {String? inputAccountId}) async {
     await service.insertRecordsBatch(
-        accountId: inputAccountId ?? accountId,
-        type: currentType,
-        records: previews,);
+      accountId: inputAccountId ?? accountId,
+      type: currentType,
+      records: previews,
+    );
 
     await loadToday(inputAccountId: inputAccountId ?? accountId);
   }
-}
 
+  Future<void> updatePointRecordDetail(PointRecordPreview preview) async {
+    if (preview.id == null) return;
+
+    await service.updatePointRecordDetail(
+      detailId: preview.id!,
+      newValue: preview.value,
+      newDescription: preview.description,
+      newDate: preview.date ?? DateTime.now(),
+      newPrimaryCategory: preview.primaryCategory,
+      newSecondaryCategory: preview.secondaryCategory,
+    );
+    await loadToday();
+  }
+}

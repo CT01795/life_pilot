@@ -854,6 +854,129 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stockRetry => '重新載入';
 
   @override
+  String get stockDashboardTitle => '📊 市場儀表板';
+
+  @override
+  String get stockForeignBuyTop30 => '外資買超排行';
+
+  @override
+  String get stockForeignSellTop30 => '外資賣超排行';
+
+  @override
+  String get stockThousandLots => '仟張';
+
+  @override
+  String stockClosingPrice(String value) {
+    return '收盤價：$value';
+  }
+
+  @override
+  String stockTradingVolume(String value) {
+    return '成交張數：$value';
+  }
+
+  @override
+  String get editRecord => '編輯明細';
+
+  @override
+  String get recordDate => '日期';
+
+  @override
+  String get recordValue => '數值';
+
+  @override
+  String get recordPrimaryCategory => '一級分類';
+
+  @override
+  String get recordSecondaryCategory => '二級分類（可留空）';
+
+  @override
+  String get recordCategoryUncategorized => '未分類';
+
+  @override
+  String get recordCategoryFood => '食';
+
+  @override
+  String get recordCategoryClothing => '衣';
+
+  @override
+  String get recordCategoryHousing => '住';
+
+  @override
+  String get recordCategoryTransportation => '行';
+
+  @override
+  String get recordCategoryEducation => '育';
+
+  @override
+  String get recordCategoryEntertainment => '樂';
+
+  @override
+  String get recordCategoryVirtue => '德';
+
+  @override
+  String get recordCategoryIntelligence => '智';
+
+  @override
+  String get recordCategoryFitness => '體';
+
+  @override
+  String get recordCategorySocial => '群';
+
+  @override
+  String get recordCategoryArts => '美';
+
+  @override
+  String get recordTotal => '總計';
+
+  @override
+  String get recordPleaseConfirm => '請確認';
+
+  @override
+  String get recordSubmit => '送出';
+
+  @override
+  String get accountNew => '新增帳戶';
+
+  @override
+  String get accountName => '帳戶名稱';
+
+  @override
+  String get accountCreate => '建立';
+
+  @override
+  String get accountDefault => '預設';
+
+  @override
+  String get accountAlreadyExists => '帳戶已存在';
+
+  @override
+  String accountDeleteConfirmation(String name) {
+    return '刪除 $name？';
+  }
+
+  @override
+  String get accountSetMainCurrency => '設定主要幣別';
+
+  @override
+  String get accountSwitchCurrency => '切換幣別';
+
+  @override
+  String get accountingSpeechHint => '例如：加／扣金額';
+
+  @override
+  String get pointsSpeechHint => '例如：加／扣積分';
+
+  @override
+  String get accountingUnit => '元';
+
+  @override
+  String get pointsUnit => '點';
+
+  @override
+  String get pointsLabel => '積分';
+
+  @override
   String get eventRefresh => '更新推薦活動';
 
   @override

@@ -854,6 +854,129 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stockRetry => '다시 불러오기';
 
   @override
+  String get stockDashboardTitle => '📊 시장 대시보드';
+
+  @override
+  String get stockForeignBuyTop30 => '외국인 순매수 순위';
+
+  @override
+  String get stockForeignSellTop30 => '외국인 순매도 순위';
+
+  @override
+  String get stockThousandLots => '천 로트';
+
+  @override
+  String stockClosingPrice(String value) {
+    return '종가: $value';
+  }
+
+  @override
+  String stockTradingVolume(String value) {
+    return '거래량: $value로트';
+  }
+
+  @override
+  String get editRecord => '내역 편집';
+
+  @override
+  String get recordDate => '날짜';
+
+  @override
+  String get recordValue => '값';
+
+  @override
+  String get recordPrimaryCategory => '1차 분류';
+
+  @override
+  String get recordSecondaryCategory => '2차 분류(선택)';
+
+  @override
+  String get recordCategoryUncategorized => '미분류';
+
+  @override
+  String get recordCategoryFood => '식';
+
+  @override
+  String get recordCategoryClothing => '의';
+
+  @override
+  String get recordCategoryHousing => '주';
+
+  @override
+  String get recordCategoryTransportation => '행';
+
+  @override
+  String get recordCategoryEducation => '육';
+
+  @override
+  String get recordCategoryEntertainment => '락';
+
+  @override
+  String get recordCategoryVirtue => '덕';
+
+  @override
+  String get recordCategoryIntelligence => '지';
+
+  @override
+  String get recordCategoryFitness => '체';
+
+  @override
+  String get recordCategorySocial => '군';
+
+  @override
+  String get recordCategoryArts => '미';
+
+  @override
+  String get recordTotal => '합계';
+
+  @override
+  String get recordPleaseConfirm => '확인해 주세요';
+
+  @override
+  String get recordSubmit => '제출';
+
+  @override
+  String get accountNew => '새 계정';
+
+  @override
+  String get accountName => '계정 이름';
+
+  @override
+  String get accountCreate => '만들기';
+
+  @override
+  String get accountDefault => '기본';
+
+  @override
+  String get accountAlreadyExists => '계정이 이미 존재합니다';
+
+  @override
+  String accountDeleteConfirmation(String name) {
+    return '$name을(를) 삭제할까요?';
+  }
+
+  @override
+  String get accountSetMainCurrency => '기준 통화 설정';
+
+  @override
+  String get accountSwitchCurrency => '통화 전환';
+
+  @override
+  String get accountingSpeechHint => '예: 금액 추가/차감';
+
+  @override
+  String get pointsSpeechHint => '예: 포인트 추가/차감';
+
+  @override
+  String get accountingUnit => '';
+
+  @override
+  String get pointsUnit => '포인트';
+
+  @override
+  String get pointsLabel => '포인트';
+
+  @override
   String get eventRefresh => '추천 이벤트 업데이트';
 
   @override

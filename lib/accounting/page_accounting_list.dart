@@ -112,8 +112,8 @@ class _PageAccountingListState extends State<PageAccountingList>
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
               if (accounts.isEmpty) {
-                return const Center(
-                  child: Text('No accounts yet'),
+                return Center(
+                  child: Text(AppLocalizations.of(context)!.accountListEmpty),
                 );
               }
 
@@ -134,18 +134,19 @@ class _PageAccountingListState extends State<PageAccountingList>
   void _showAddDialog(BuildContext context) {
     final controller = context.read<ControllerAccountingList>();
     final textController = TextEditingController();
+    final loc = AppLocalizations.of(context)!;
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(hintText: 'Account'),
+          decoration: InputDecoration(hintText: loc.accountName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(loc.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -154,11 +155,11 @@ class _PageAccountingListState extends State<PageAccountingList>
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Account already exists')),
+                  SnackBar(content: Text(loc.accountAlreadyExists)),
                 );
               }
             },
-            child: const Text('Create'),
+            child: Text(loc.accountCreate),
           ),
         ],
       ),
@@ -178,6 +179,7 @@ class _AccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.read<ControllerAccountingList>();
     final auth = context.watch<ModelAuthView>();
+    final loc = AppLocalizations.of(context)!;
     return Selector<ControllerAccountingList, ModelAccountingAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
@@ -274,7 +276,7 @@ class _AccountCard extends StatelessWidget {
                       children: [
                         Text(
                           account.accountName == auth.account
-                              ? 'Default'
+                              ? loc.accountDefault
                               : account.accountName,
                           style: const TextStyle(
                             fontSize: 24,
@@ -295,7 +297,8 @@ class _AccountCard extends StatelessWidget {
                               ),
                               TextSpan(
                                 text:
-                                    '${formatter.format(account.balance)} 元', // 資料還沒來先顯示 '-'
+                                    '${formatter.format(account.balance)} ${loc.accountingUnit}'
+                                        .trim(),
                                 style: TextStyle(
                                     color: account.balance >= 0
                                         ? Color(0xFF388E3C) // 綠色
@@ -319,7 +322,7 @@ class _AccountCard extends StatelessWidget {
                             final selected = await showDialog<String>(
                               context: context,
                               builder: (_) => SimpleDialog(
-                                title: const Text('Switching Currency'),
+                                title: Text(loc.accountSwitchCurrency),
                                 children: currencyList.map((c) {
                                   return SimpleDialogOption(
                                     child: Text(c),
@@ -344,17 +347,18 @@ class _AccountCard extends StatelessWidget {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (_) => AlertDialog(
-                                content: Text('Delete ${account.accountName}?'),
+                                content: Text(loc.accountDeleteConfirmation(
+                                    account.accountName)),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
+                                    child: Text(loc.cancel),
                                   ),
                                   ElevatedButton(
                                     onPressed: () =>
                                         Navigator.pop(context, true),
-                                    child: const Text('Delete'),
+                                    child: Text(loc.delete),
                                   ),
                                 ],
                               ),

@@ -16,7 +16,8 @@ class ControllerAccountingDetail extends ChangeNotifier {
       {required ServiceAccounting service,
       required this.auth,
       required this.accountId,
-      this.currentExchangeRate}): _service = service;
+      this.currentExchangeRate})
+      : _service = service;
 
   final String currentType = 'balance';
 
@@ -49,7 +50,7 @@ class ControllerAccountingDetail extends ChangeNotifier {
         .where((r) =>
             r.currency == _currentCurrency && r.localTime.isAfter(todayStart))
         .fold(0, (s, r) => s + r.value);
-    total = todayRecords[0].balance;
+    total = todayRecords.isEmpty ? 0 : todayRecords.first.balance;
   }
 
   Future<ModelAccountingAccount?> findAccountByEventId(
@@ -107,8 +108,10 @@ class ControllerAccountingDetail extends ChangeNotifier {
       newValue: preview.value,
       newCurrency: preview.currency!,
       newDescription: preview.description,
+      newDate: preview.date ?? DateTime.now(),
+      newPrimaryCategory: preview.primaryCategory,
+      newSecondaryCategory: preview.secondaryCategory,
     );
     await loadToday();
   }
 }
-

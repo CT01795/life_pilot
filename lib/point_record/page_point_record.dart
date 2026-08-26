@@ -145,8 +145,8 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
             selector: (_, c) => c.accounts,
             builder: (context, accounts, _) {
               if (accounts.isEmpty) {
-                return const Center(
-                  child: Text('No accounts yet'),
+                return Center(
+                  child: Text(AppLocalizations.of(context)!.accountListEmpty),
                 );
               }
 
@@ -167,18 +167,19 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   void _showAddDialog(BuildContext context) {
     final controller = context.read<ControllerPointRecordList>();
     final textController = TextEditingController();
+    final loc = AppLocalizations.of(context)!;
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         content: TextField(
           controller: textController,
-          decoration: const InputDecoration(hintText: 'Account'),
+          decoration: InputDecoration(hintText: loc.accountName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(loc.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -187,11 +188,11 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Account already exists')),
+                  SnackBar(content: Text(loc.accountAlreadyExists)),
                 );
               }
             },
-            child: const Text('Create'),
+            child: Text(loc.accountCreate),
           ),
         ],
       ),
@@ -211,13 +212,14 @@ class _AccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.read<ControllerPointRecordList>();
     final auth = context.watch<ModelAuthView>();
+    final loc = AppLocalizations.of(context)!;
     return Selector<ControllerPointRecordList, ModelPointRecordAccount?>(
       selector: (_, c) => c.getAccountById(accountId),
       shouldRebuild: (prev, next) {
         if (prev == null && next == null) return false;
         if (prev == null || next == null) return true;
         return prev.points != next.points ||
-          prev.masterGraphUrl != next.masterGraphUrl;
+            prev.masterGraphUrl != next.masterGraphUrl;
       },
       builder: (context, account, _) {
         if (account == null) {
@@ -307,7 +309,9 @@ class _AccountCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          account.accountName == auth.account ? 'Default' : account.accountName,
+                          account.accountName == auth.account
+                              ? loc.accountDefault
+                              : account.accountName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -319,14 +323,16 @@ class _AccountCard extends StatelessWidget {
                         Text.rich(
                           TextSpan(
                             children: [
-                              const TextSpan(
-                                text: 'Points ',
-                                style: TextStyle(
+                              TextSpan(
+                                text: '${loc.pointsLabel} ',
+                                style: const TextStyle(
                                     color: Color(0xFF757575),
                                     fontSize: 20), // 中灰
                               ),
                               TextSpan(
-                                text: '${formatter.format(account.points)} 分',
+                                text:
+                                    '${formatter.format(account.points)} ${loc.pointsUnit}'
+                                        .trim(),
                                 style: TextStyle(
                                     color: account.points >= 0
                                         ? Color(0xFF388E3C)
@@ -353,17 +359,18 @@ class _AccountCard extends StatelessWidget {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (_) => AlertDialog(
-                                content: Text('Delete ${account.accountName}?'),
+                                content: Text(loc.accountDeleteConfirmation(
+                                    account.accountName)),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
+                                    child: Text(loc.cancel),
                                   ),
                                   ElevatedButton(
                                     onPressed: () =>
                                         Navigator.pop(context, true),
-                                    child: const Text('Delete'),
+                                    child: Text(loc.delete),
                                   ),
                                 ],
                               ),

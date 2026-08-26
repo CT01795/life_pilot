@@ -17,7 +17,7 @@ class ControllerAccountingList extends ChangeNotifier {
   ControllerAccountingList({
     required ServiceAccounting service,
     required this.auth,
-  }): _service = service;
+  }) : _service = service;
 
   bool isLoading = false;
   List<ModelAccountingAccount> accounts = [];
@@ -27,8 +27,7 @@ class ControllerAccountingList extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     accounts = await _service.fetchAccounts(
-        user: auth?.currentAccount ?? '',
-        category: inputCategory ?? category);
+        user: auth?.currentAccount ?? '', category: inputCategory ?? category);
     isLoading = false;
     notifyListeners();
   }
@@ -47,6 +46,7 @@ class ControllerAccountingList extends ChangeNotifier {
   }
 
   Future<void> askMainCurrency({required BuildContext context}) async {
+    final loc = AppLocalizations.of(context)!;
     if (accounts.isNotEmpty) {
       mainCurrency = accounts[0].currency;
       return;
@@ -63,15 +63,15 @@ class ControllerAccountingList extends ChangeNotifier {
     final result = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Set main currency'),
+        title: Text(loc.accountSetMainCurrency),
         content: TextField(controller: textController),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, null),
-              child: Text('Cancel')),
+              child: Text(loc.cancel)),
           ElevatedButton(
               onPressed: () => Navigator.pop(context, textController.text),
-              child: Text('OK')),
+              child: Text(loc.confirm)),
         ],
       ),
     );
@@ -276,6 +276,7 @@ class _AccountListViewState extends State<_AccountListView> {
     return Consumer<ControllerAccountingList>(
       builder: (_, controller, __) {
         final accounts = controller.accounts;
+        final loc = AppLocalizations.of(context)!;
 
         if (controller.isLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -299,7 +300,7 @@ class _AccountListViewState extends State<_AccountListView> {
             ),
             TextButton.icon(
               icon: const Icon(Icons.add),
-              label: const Text("New Account"),
+              label: Text(loc.accountNew),
               onPressed: () async {
                 final textController = TextEditingController();
 
@@ -308,13 +309,12 @@ class _AccountListViewState extends State<_AccountListView> {
                   builder: (_) => AlertDialog(
                     content: TextField(
                       controller: textController,
-                      decoration:
-                          const InputDecoration(hintText: 'Account name'),
+                      decoration: InputDecoration(hintText: loc.accountName),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
+                        child: Text(loc.cancel),
                       ),
                       ElevatedButton(
                         onPressed: () async {
@@ -341,7 +341,7 @@ class _AccountListViewState extends State<_AccountListView> {
                                 .setCategory(modelAccountingAccount.category);
                           }
                         },
-                        child: const Text('Create'),
+                        child: Text(loc.accountCreate),
                       ),
                     ],
                   ),

@@ -854,6 +854,129 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockRetry => 'Try again';
 
   @override
+  String get stockDashboardTitle => '📊 Market dashboard';
+
+  @override
+  String get stockForeignBuyTop30 => 'Net foreign buy ranking';
+
+  @override
+  String get stockForeignSellTop30 => 'Net foreign sell ranking';
+
+  @override
+  String get stockThousandLots => ' thousand lots';
+
+  @override
+  String stockClosingPrice(String value) {
+    return 'Closing price: $value';
+  }
+
+  @override
+  String stockTradingVolume(String value) {
+    return 'Trading volume: $value lots';
+  }
+
+  @override
+  String get editRecord => 'Edit record';
+
+  @override
+  String get recordDate => 'Date';
+
+  @override
+  String get recordValue => 'Value';
+
+  @override
+  String get recordPrimaryCategory => 'Category';
+
+  @override
+  String get recordSecondaryCategory => 'Custom subcategory (optional)';
+
+  @override
+  String get recordCategoryUncategorized => 'Uncategorized';
+
+  @override
+  String get recordCategoryFood => 'Food';
+
+  @override
+  String get recordCategoryClothing => 'Clothing';
+
+  @override
+  String get recordCategoryHousing => 'Housing';
+
+  @override
+  String get recordCategoryTransportation => 'Transportation';
+
+  @override
+  String get recordCategoryEducation => 'Education';
+
+  @override
+  String get recordCategoryEntertainment => 'Entertainment';
+
+  @override
+  String get recordCategoryVirtue => 'Virtue';
+
+  @override
+  String get recordCategoryIntelligence => 'Intelligence';
+
+  @override
+  String get recordCategoryFitness => 'Fitness';
+
+  @override
+  String get recordCategorySocial => 'Social';
+
+  @override
+  String get recordCategoryArts => 'Arts';
+
+  @override
+  String get recordTotal => 'Total';
+
+  @override
+  String get recordPleaseConfirm => 'Please confirm';
+
+  @override
+  String get recordSubmit => 'Submit';
+
+  @override
+  String get accountNew => 'New account';
+
+  @override
+  String get accountName => 'Account name';
+
+  @override
+  String get accountCreate => 'Create';
+
+  @override
+  String get accountDefault => 'Default';
+
+  @override
+  String get accountAlreadyExists => 'Account already exists';
+
+  @override
+  String accountDeleteConfirmation(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get accountSetMainCurrency => 'Set main currency';
+
+  @override
+  String get accountSwitchCurrency => 'Switch currency';
+
+  @override
+  String get accountingSpeechHint => 'For example: add/subtract an amount';
+
+  @override
+  String get pointsSpeechHint => 'For example: add/subtract points';
+
+  @override
+  String get accountingUnit => '';
+
+  @override
+  String get pointsUnit => 'points';
+
+  @override
+  String get pointsLabel => 'Points';
+
+  @override
   String get eventRefresh => 'Update recommended events';
 
   @override

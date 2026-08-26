@@ -854,6 +854,129 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stockRetry => '再読み込み';
 
   @override
+  String get stockDashboardTitle => '📊 市場ダッシュボード';
+
+  @override
+  String get stockForeignBuyTop30 => '外国人投資家買い越しランキング';
+
+  @override
+  String get stockForeignSellTop30 => '外国人投資家売り越しランキング';
+
+  @override
+  String get stockThousandLots => '千ロット';
+
+  @override
+  String stockClosingPrice(String value) {
+    return '終値：$value';
+  }
+
+  @override
+  String stockTradingVolume(String value) {
+    return '出来高：$valueロット';
+  }
+
+  @override
+  String get editRecord => '明細を編集';
+
+  @override
+  String get recordDate => '日付';
+
+  @override
+  String get recordValue => '値';
+
+  @override
+  String get recordPrimaryCategory => 'カテゴリ';
+
+  @override
+  String get recordSecondaryCategory => 'サブカテゴリ（任意）';
+
+  @override
+  String get recordCategoryUncategorized => '未分類';
+
+  @override
+  String get recordCategoryFood => '食';
+
+  @override
+  String get recordCategoryClothing => '衣';
+
+  @override
+  String get recordCategoryHousing => '住';
+
+  @override
+  String get recordCategoryTransportation => '行';
+
+  @override
+  String get recordCategoryEducation => '育';
+
+  @override
+  String get recordCategoryEntertainment => '楽';
+
+  @override
+  String get recordCategoryVirtue => '徳';
+
+  @override
+  String get recordCategoryIntelligence => '智';
+
+  @override
+  String get recordCategoryFitness => '体';
+
+  @override
+  String get recordCategorySocial => '群';
+
+  @override
+  String get recordCategoryArts => '美';
+
+  @override
+  String get recordTotal => '合計';
+
+  @override
+  String get recordPleaseConfirm => '確認してください';
+
+  @override
+  String get recordSubmit => '送信';
+
+  @override
+  String get accountNew => '新しいアカウント';
+
+  @override
+  String get accountName => 'アカウント名';
+
+  @override
+  String get accountCreate => '作成';
+
+  @override
+  String get accountDefault => 'デフォルト';
+
+  @override
+  String get accountAlreadyExists => 'アカウントはすでに存在します';
+
+  @override
+  String accountDeleteConfirmation(String name) {
+    return '$name を削除しますか？';
+  }
+
+  @override
+  String get accountSetMainCurrency => '基準通貨を設定';
+
+  @override
+  String get accountSwitchCurrency => '通貨を切り替え';
+
+  @override
+  String get accountingSpeechHint => '例：金額を追加／減算';
+
+  @override
+  String get pointsSpeechHint => '例：ポイントを追加／減算';
+
+  @override
+  String get accountingUnit => '円';
+
+  @override
+  String get pointsUnit => 'ポイント';
+
+  @override
+  String get pointsLabel => 'ポイント';
+
+  @override
   String get eventRefresh => 'おすすめイベントを更新';
 
   @override

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_detail.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
+import 'package:life_pilot/utils/record_categories.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
 
@@ -93,6 +95,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     BuildContext context,
     List<AccountingPreview> previews,
   ) {
+    final loc = AppLocalizations.of(context)!;
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -103,7 +106,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               (p) => p.value != 0 && p.description.trim().isNotEmpty,
             );
             return AlertDialog(
-              title: const Text('Please confirm'),
+              title: Text(loc.recordPleaseConfirm),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(previews.length, (index) {
@@ -133,12 +136,12 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(loc.cancel),
                 ),
                 ElevatedButton(
                   onPressed:
                       isValid ? () => Navigator.pop(context, true) : null,
-                  child: const Text('Confirm'),
+                  child: Text(loc.confirm),
                 ),
               ],
             );
@@ -177,7 +180,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
       body: Column(
         children: [
           Gaps.h8,
-          _buildSummary(account, controller),
+          _buildSummary(context, account, controller),
           _buildMicButton(context, controller),
           const Divider(),
           _buildTodayList(controller),
@@ -186,8 +189,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     );
   }
 
-  Widget _buildSummary(
-      ModelAccountingAccount account, ControllerAccountingDetail controller) {
+  Widget _buildSummary(BuildContext context, ModelAccountingAccount account,
+      ControllerAccountingDetail controller) {
+    final loc = AppLocalizations.of(context)!;
     String currency = controller.currentCurrency ?? (account.currency ?? '');
     int totalValue = controller.total ?? 0;
 
@@ -201,7 +205,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
       children: [
         TableRow(
           children: [
-            Text(' Total ', style: const TextStyle(fontSize: 20)),
+            Text(' ${loc.recordTotal} ', style: const TextStyle(fontSize: 20)),
             account.currency != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -209,7 +213,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   )
                 : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(totalValue)} ${'元'}',
+              '${NumberFormat('#,###').format(totalValue)} ${loc.accountingUnit}'
+                  .trim(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -221,7 +226,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         ),
         TableRow(
           children: [
-            Text(' Today ', style: const TextStyle(fontSize: 20)),
+            Text(' ${loc.today} ', style: const TextStyle(fontSize: 20)),
             account.currency != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -229,7 +234,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   )
                 : const SizedBox(),
             Text(
-              '${NumberFormat('#,###').format(controller.todayTotal)} ${'元'}',
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${loc.accountingUnit}'
+                  .trim(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -244,11 +250,14 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildTodayList(ControllerAccountingDetail controller) {
+    final visibleRecords = controller.todayRecords
+        .where((record) => record.id.isNotEmpty)
+        .toList();
     return Expanded(
       child: ListView.builder(
-        itemCount: controller.todayRecords.length,
+        itemCount: visibleRecords.length,
         itemBuilder: (context, index) {
-          final record = controller.todayRecords[index];
+          final record = visibleRecords[index];
           return ListTile(
             key: ValueKey(record.id),
             title: Text.rich(
@@ -257,6 +266,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   TextSpan(
                     text: "${record.displayTime}  ",
                     style: TextStyle(fontSize: 12, color: Colors.grey), // 時間小一點
+                  ),
+                  TextSpan(
+                    text:
+                        '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]  ',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   TextSpan(
                     text: record.description,
@@ -282,6 +296,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   value: record.value,
                   currency: record.currency,
                   exchangeRate: null,
+                  date: record.localTime,
+                  primaryCategory: record.primaryCategory,
+                  secondaryCategory: record.secondaryCategory,
                 ),
               );
               if (updated != null) {
@@ -297,6 +314,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   Widget _buildMicButton(
       BuildContext context, ControllerAccountingDetail controller) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -319,9 +337,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           Expanded(
             child: TextField(
               controller: _speechTextController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '...加/扣...元',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: loc.accountingSpeechHint,
               ),
               maxLines: 1,
             ),
@@ -344,7 +362,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 _speechTextController.clear();
               });
             },
-            child: const Text('Submit'),
+            child: Text(loc.recordSubmit),
           ),
         ],
       ),
@@ -358,6 +376,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         TextEditingController(text: record.value.toString());
     final descController = TextEditingController(text: record.description);
     String currency = record.currency ?? '';
+    DateTime selectedDate = record.date ?? DateTime.now();
+    String primaryCategory = record.primaryCategory;
+    final secondaryController =
+        TextEditingController(text: record.secondaryCategory ?? '');
+    final loc = AppLocalizations.of(context)!;
 
     final result = await showDialog<AccountingPreview>(
       context: context,
@@ -366,39 +389,99 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Edit Record'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                  TextField(
-                    controller: valueController,
-                    decoration: const InputDecoration(labelText: 'Value'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  DropdownButton<String>(
-                    value: currency,
-                    isExpanded: true,
-                    items: currencyList
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          currency = val; // ✅ 正確更新幣別
-                        });
-                      }
-                    },
-                  ),
-                ],
+              title: Text(loc.editRecord),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: descController,
+                      decoration: InputDecoration(labelText: loc.description),
+                    ),
+                    TextField(
+                      controller: valueController,
+                      decoration: InputDecoration(labelText: loc.recordValue),
+                      keyboardType: TextInputType.number,
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today),
+                      title: Text(loc.recordDate),
+                      subtitle: Text(
+                        DateFormat.yMd(
+                                Localizations.localeOf(context).toString())
+                            .format(selectedDate),
+                      ),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 3650)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            selectedDate = DateTime(
+                              picked.year,
+                              picked.month,
+                              picked.day,
+                              selectedDate.hour,
+                              selectedDate.minute,
+                              selectedDate.second,
+                            );
+                          });
+                        }
+                      },
+                    ),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue:
+                          RecordCategories.accounting.contains(primaryCategory)
+                              ? primaryCategory
+                              : RecordCategories.uncategorized,
+                      decoration:
+                          InputDecoration(labelText: loc.recordPrimaryCategory),
+                      items: RecordCategories.accounting
+                          .map(
+                            (category) => DropdownMenuItem(
+                              value: category,
+                              child:
+                                  Text(RecordCategories.label(loc, category)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) primaryCategory = value;
+                      },
+                    ),
+                    TextField(
+                      controller: secondaryController,
+                      decoration: InputDecoration(
+                          labelText: loc.recordSecondaryCategory),
+                    ),
+                    DropdownButton<String>(
+                      value: currency,
+                      isExpanded: true,
+                      items: currencyList
+                          .map(
+                              (c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            currency = val; // ✅ 正確更新幣別
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, null),
-                  child: const Text('Cancel'),
+                  child: Text(loc.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -410,10 +493,13 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                         value: v,
                         description: descController.text.trim(),
                         currency: currency,
+                        date: selectedDate,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryController.text.trim(),
                       ),
                     );
                   },
-                  child: const Text('Save'),
+                  child: Text(loc.save),
                 ),
               ],
             );

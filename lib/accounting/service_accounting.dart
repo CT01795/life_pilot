@@ -232,6 +232,12 @@ class ServiceAccounting {
         accountId: detail['account_id']?.toString() ?? '',
         createdAt:
             DateTime.tryParse(detail[Fields.createdAt] ?? '') ?? DateTime.now(),
+        date: DateTime.tryParse(detail['date'] ?? '') ??
+            DateTime.tryParse(detail[Fields.createdAt] ?? '') ??
+            DateTime.now(),
+        primaryCategory:
+            detail['primary_category']?.toString() ?? 'uncategorized',
+        secondaryCategory: detail['group']?.toString(),
         description: detail['description'] ?? '',
         type: detail['type'] ?? '',
         value: detail['value'] ?? 0,
@@ -253,6 +259,8 @@ class ServiceAccounting {
               'description': r.description,
               'value': r.value,
               'currency': r.currency ?? currency,
+              'primary_category': r.primaryCategory,
+              'group': r.secondaryCategory?.trim() ?? '',
             })
         .toList();
 
@@ -276,15 +284,21 @@ class ServiceAccounting {
     required int newValue,
     required String newCurrency,
     required String newDescription,
+    required DateTime newDate,
+    required String newPrimaryCategory,
+    String? newSecondaryCategory,
   }) async {
     try {
       await supabase.rpc(
-        'update_accounting_detail',
+        'update_accounting_detail_with_date',
         params: {
           'p_detail_id': detailId,
           'p_new_value': newValue,
           'p_new_currency': newCurrency,
           'p_new_description': newDescription,
+          'p_new_date': newDate.toUtc().toIso8601String(),
+          'p_new_primary_category': newPrimaryCategory,
+          'p_new_group': newSecondaryCategory?.trim() ?? '',
         },
       );
     } catch (e, st) {

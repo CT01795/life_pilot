@@ -1785,6 +1785,240 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get stockRetry;
 
+  /// Stock page dashboard title
+  ///
+  /// In en, this message translates to:
+  /// **'📊 Market dashboard'**
+  String get stockDashboardTitle;
+
+  /// Stock page foreign buy ranking title
+  ///
+  /// In en, this message translates to:
+  /// **'Net foreign buy ranking'**
+  String get stockForeignBuyTop30;
+
+  /// Stock page foreign sell ranking title
+  ///
+  /// In en, this message translates to:
+  /// **'Net foreign sell ranking'**
+  String get stockForeignSellTop30;
+
+  /// Stock page thousand lots unit
+  ///
+  /// In en, this message translates to:
+  /// **' thousand lots'**
+  String get stockThousandLots;
+
+  /// No description provided for @stockClosingPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing price: {value}'**
+  String stockClosingPrice(String value);
+
+  /// No description provided for @stockTradingVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Trading volume: {value} lots'**
+  String stockTradingVolume(String value);
+
+  /// Label for editRecord
+  ///
+  /// In en, this message translates to:
+  /// **'Edit record'**
+  String get editRecord;
+
+  /// Label for recordDate
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get recordDate;
+
+  /// Label for recordValue
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get recordValue;
+
+  /// Label for recordPrimaryCategory
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get recordPrimaryCategory;
+
+  /// Label for recordSecondaryCategory
+  ///
+  /// In en, this message translates to:
+  /// **'Custom subcategory (optional)'**
+  String get recordSecondaryCategory;
+
+  /// Label for recordCategoryUncategorized
+  ///
+  /// In en, this message translates to:
+  /// **'Uncategorized'**
+  String get recordCategoryUncategorized;
+
+  /// Label for recordCategoryFood
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get recordCategoryFood;
+
+  /// Label for recordCategoryClothing
+  ///
+  /// In en, this message translates to:
+  /// **'Clothing'**
+  String get recordCategoryClothing;
+
+  /// Label for recordCategoryHousing
+  ///
+  /// In en, this message translates to:
+  /// **'Housing'**
+  String get recordCategoryHousing;
+
+  /// Label for recordCategoryTransportation
+  ///
+  /// In en, this message translates to:
+  /// **'Transportation'**
+  String get recordCategoryTransportation;
+
+  /// Label for recordCategoryEducation
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get recordCategoryEducation;
+
+  /// Label for recordCategoryEntertainment
+  ///
+  /// In en, this message translates to:
+  /// **'Entertainment'**
+  String get recordCategoryEntertainment;
+
+  /// Label for recordCategoryVirtue
+  ///
+  /// In en, this message translates to:
+  /// **'Virtue'**
+  String get recordCategoryVirtue;
+
+  /// Label for recordCategoryIntelligence
+  ///
+  /// In en, this message translates to:
+  /// **'Intelligence'**
+  String get recordCategoryIntelligence;
+
+  /// Label for recordCategoryFitness
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness'**
+  String get recordCategoryFitness;
+
+  /// Label for recordCategorySocial
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get recordCategorySocial;
+
+  /// Label for recordCategoryArts
+  ///
+  /// In en, this message translates to:
+  /// **'Arts'**
+  String get recordCategoryArts;
+
+  /// Label for recordTotal
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get recordTotal;
+
+  /// Label for recordPleaseConfirm
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm'**
+  String get recordPleaseConfirm;
+
+  /// Label for recordSubmit
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get recordSubmit;
+
+  /// Label for accountNew
+  ///
+  /// In en, this message translates to:
+  /// **'New account'**
+  String get accountNew;
+
+  /// Label for accountName
+  ///
+  /// In en, this message translates to:
+  /// **'Account name'**
+  String get accountName;
+
+  /// Label for accountCreate
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get accountCreate;
+
+  /// Label for accountDefault
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get accountDefault;
+
+  /// Label for accountAlreadyExists
+  ///
+  /// In en, this message translates to:
+  /// **'Account already exists'**
+  String get accountAlreadyExists;
+
+  /// No description provided for @accountDeleteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String accountDeleteConfirmation(String name);
+
+  /// Label for accountSetMainCurrency
+  ///
+  /// In en, this message translates to:
+  /// **'Set main currency'**
+  String get accountSetMainCurrency;
+
+  /// Label for accountSwitchCurrency
+  ///
+  /// In en, this message translates to:
+  /// **'Switch currency'**
+  String get accountSwitchCurrency;
+
+  /// Label for accountingSpeechHint
+  ///
+  /// In en, this message translates to:
+  /// **'For example: add/subtract an amount'**
+  String get accountingSpeechHint;
+
+  /// Label for pointsSpeechHint
+  ///
+  /// In en, this message translates to:
+  /// **'For example: add/subtract points'**
+  String get pointsSpeechHint;
+
+  /// Label for accountingUnit
+  ///
+  /// In en, this message translates to:
+  /// **''**
+  String get accountingUnit;
+
+  /// Label for pointsUnit
+  ///
+  /// In en, this message translates to:
+  /// **'points'**
+  String get pointsUnit;
+
+  /// Label for pointsLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get pointsLabel;
+
   /// Recommended event refresh button
   ///
   /// In en, this message translates to:

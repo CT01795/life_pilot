@@ -244,6 +244,14 @@ class ServicePointRecord {
           createdAt:
               DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
                   DateTime.now(),
+          date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+              DateTime.tryParse(
+                detail[Fields.createdAt]?.toString() ?? '',
+              ) ??
+              DateTime.now(),
+          primaryCategory:
+              detail['primary_category']?.toString() ?? 'uncategorized',
+          secondaryCategory: detail['group']?.toString(),
           description: detail['description']?.toString() ?? '',
           type: detail['type']?.toString() ?? '',
           value: detail['value'] is int
@@ -272,6 +280,8 @@ class ServicePointRecord {
               .map((r) => {
                     'description': r.description,
                     'value': r.value,
+                    'primary_category': r.primaryCategory,
+                    'group': r.secondaryCategory?.trim() ?? '',
                   })
               .toList(),
         },
@@ -282,6 +292,32 @@ class ServicePointRecord {
         error: e,
         stackTrace: st,
       );
+      rethrow;
+    }
+  }
+
+  Future<void> updatePointRecordDetail({
+    required String detailId,
+    required int newValue,
+    required String newDescription,
+    required DateTime newDate,
+    required String newPrimaryCategory,
+    String? newSecondaryCategory,
+  }) async {
+    try {
+      await supabase.rpc(
+        'update_point_record_detail',
+        params: {
+          'p_detail_id': detailId,
+          'p_new_value': newValue,
+          'p_new_description': newDescription,
+          'p_new_date': newDate.toUtc().toIso8601String(),
+          'p_new_primary_category': newPrimaryCategory,
+          'p_new_group': newSecondaryCategory?.trim() ?? '',
+        },
+      );
+    } catch (e, st) {
+      logger.e('updatePointRecordDetail failed $e\n$st');
       rethrow;
     }
   }

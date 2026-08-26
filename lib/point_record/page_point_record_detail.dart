@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/point_record/controller_point_record_detail.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -8,6 +9,7 @@ import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
+import 'package:life_pilot/utils/record_categories.dart';
 import 'package:provider/provider.dart';
 
 class PagePointRecordDetail extends StatelessWidget {
@@ -24,7 +26,8 @@ class PagePointRecordDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProxyProvider<ControllerAuth, ControllerPointRecordDetail>(
+        ChangeNotifierProxyProvider<ControllerAuth,
+            ControllerPointRecordDetail>(
           create: (context) => ControllerPointRecordDetail(
             service: service,
             auth: context.read<ControllerAuth>(),
@@ -61,7 +64,8 @@ class _PagePointRecordDetailView extends StatefulWidget {
       _PagePointRecordDetailViewState();
 }
 
-class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> {
+class _PagePointRecordDetailViewState
+    extends State<_PagePointRecordDetailView> {
   late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
@@ -71,7 +75,9 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ControllerPointRecordDetail>().loadToday(inputAccountId: widget.account.id);
+      context
+          .read<ControllerPointRecordDetail>()
+          .loadToday(inputAccountId: widget.account.id);
     });
   }
 
@@ -92,6 +98,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
     BuildContext context,
     List<PointRecordPreview> previews,
   ) {
+    final loc = AppLocalizations.of(context)!;
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -102,54 +109,32 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
               (p) => p.value != 0 && p.description.trim().isNotEmpty,
             );
             return AlertDialog(
-              title: const Text('Please confirm'),
+              title: Text(loc.recordPleaseConfirm),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(previews.length, (index) {
                   final p = previews[index];
                   return ListTile(
                     dense: true,
-                    title: InkWell(
-                      onTap: () async {
-                        final controller =
-                            TextEditingController(text: p.description);
-
-                        final result = await showDialog<String>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('Edit description'),
-                            content: TextField(controller: controller),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, null),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, controller.text),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (result != null && result.trim().isNotEmpty) {
-                          setState(() {
-                            previews[index] = p.copyWith(
-                              description: result.trim(),
-                            );
-                          });
-                        }
-                      },
-                      child: Text(p.description),
+                    onTap: () async {
+                      final updated = await _showEditDetailDialog(context, p);
+                      if (updated != null) {
+                        setState(() => previews[index] = updated);
+                      }
+                    },
+                    title: Text(p.description),
+                    subtitle: Text(
+                      RecordCategories.label(
+                        AppLocalizations.of(context)!,
+                        p.primaryCategory,
+                      ),
                     ),
-                    trailing: _EditableValue(
-                      value: p.value,
-                      onChanged: (newValue) {
-                        setState(() {
-                          previews[index] = p.copyWith(value: newValue);
-                        });
-                      },
+                    trailing: Text(
+                      p.value > 0 ? '+${p.value}' : p.value.toString(),
+                      style: TextStyle(
+                        color: p.value >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   );
                 }),
@@ -157,12 +142,12 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(loc.cancel),
                 ),
                 ElevatedButton(
                   onPressed:
                       isValid ? () => Navigator.pop(context, true) : null,
-                  child: const Text('Confirm'),
+                  child: Text(loc.confirm),
                 ),
               ],
             );
@@ -201,7 +186,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
       body: Column(
         children: [
           Gaps.h8,
-          _buildSummary(account, controller),
+          _buildSummary(context, account, controller),
           _buildMicButton(context, controller),
           const Divider(),
           _buildTodayList(controller),
@@ -210,8 +195,9 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
     );
   }
 
-  Widget _buildSummary(
-      ModelPointRecordAccount account, ControllerPointRecordDetail controller) {
+  Widget _buildSummary(BuildContext context, ModelPointRecordAccount account,
+      ControllerPointRecordDetail controller) {
+    final loc = AppLocalizations.of(context)!;
     int totalValue = controller.total ?? 0;
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -223,9 +209,10 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
       children: [
         TableRow(
           children: [
-            Text(' Total ', style: const TextStyle(fontSize: 20)),
+            Text(' ${loc.recordTotal} ', style: const TextStyle(fontSize: 20)),
             Text(
-              '${NumberFormat('#,###').format(totalValue)} ${'分'}',
+              '${NumberFormat('#,###').format(totalValue)} ${loc.pointsUnit}'
+                  .trim(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -237,9 +224,10 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
         ),
         TableRow(
           children: [
-            Text(' Today ', style: const TextStyle(fontSize: 20)),
+            Text(' ${loc.today} ', style: const TextStyle(fontSize: 20)),
             Text(
-              '${NumberFormat('#,###').format(controller.todayTotal)} ${'分'}',
+              '${NumberFormat('#,###').format(controller.todayTotal)} ${loc.pointsUnit}'
+                  .trim(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -254,11 +242,14 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
   }
 
   Widget _buildTodayList(ControllerPointRecordDetail controller) {
+    final visibleRecords = controller.todayRecords
+        .where((record) => record.id.isNotEmpty)
+        .toList();
     return Expanded(
       child: ListView.builder(
-        itemCount: controller.todayRecords.length,
+        itemCount: visibleRecords.length,
         itemBuilder: (context, index) {
-          final record = controller.todayRecords[index];
+          final record = visibleRecords[index];
           return ListTile(
             key: ValueKey(record.id),
             title: Text.rich(
@@ -267,6 +258,11 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
                   TextSpan(
                     text: "${record.displayTime}  ",
                     style: TextStyle(fontSize: 12, color: Colors.grey), // 時間小一點
+                  ),
+                  TextSpan(
+                    text:
+                        '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]  ',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   TextSpan(
                     text: record.description,
@@ -283,6 +279,22 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
                   color: record.value >= 0 ? Colors.green : Colors.red,
                   fontSize: 18),
             ),
+            onTap: () async {
+              final updated = await _showEditDetailDialog(
+                context,
+                PointRecordPreview(
+                  id: record.id,
+                  description: record.description,
+                  value: record.value,
+                  date: record.localTime,
+                  primaryCategory: record.primaryCategory,
+                  secondaryCategory: record.secondaryCategory,
+                ),
+              );
+              if (updated != null) {
+                await controller.updatePointRecordDetail(updated);
+              }
+            },
           );
         },
       ),
@@ -291,6 +303,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
 
   Widget _buildMicButton(
       BuildContext context, ControllerPointRecordDetail controller) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -299,8 +312,7 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
           FloatingActionButton(
             child: const Icon(Icons.mic, size: 50),
             onPressed: () async {
-              final speechController =
-                  context.read<ControllerSpeech>();
+              final speechController = context.read<ControllerSpeech>();
               final text = await speechController.recordAndTranscribe();
               if (text.isNotEmpty) {
                 setState(() {
@@ -314,9 +326,9 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
           Expanded(
             child: TextField(
               controller: _speechTextController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '...加/扣...分',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: loc.pointsSpeechHint,
               ),
               maxLines: 1,
             ),
@@ -325,8 +337,8 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
           ElevatedButton(
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
-              final previews = controller.parseFromSpeech(
-                  _speechTextController.text);
+              final previews =
+                  controller.parseFromSpeech(_speechTextController.text);
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
@@ -338,64 +350,125 @@ class _PagePointRecordDetailViewState extends State<_PagePointRecordDetailView> 
                 _speechTextController.clear();
               });
             },
-            child: const Text('Submit'),
+            child: Text(loc.recordSubmit),
           ),
         ],
       ),
     );
   }
-}
 
-class _EditableValue extends StatelessWidget {
-  final int value;
-  final ValueChanged<int> onChanged;
+  Future<PointRecordPreview?> _showEditDetailDialog(
+    BuildContext context,
+    PointRecordPreview record,
+  ) async {
+    final valueController =
+        TextEditingController(text: record.value.toString());
+    final descController = TextEditingController(text: record.description);
+    DateTime selectedDate = record.date ?? DateTime.now();
+    String primaryCategory = record.primaryCategory;
+    final secondaryController =
+        TextEditingController(text: record.secondaryCategory ?? '');
+    final loc = AppLocalizations.of(context)!;
 
-  const _EditableValue({
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () async {
-        final controller = TextEditingController(text: value.abs().toString());
-
-        final result = await showDialog<int>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Edit value'),
-            content: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
+    return showDialog<PointRecordPreview>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(loc.editRecord),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: descController,
+                  decoration: InputDecoration(labelText: loc.description),
+                ),
+                TextField(
+                  controller: valueController,
+                  decoration: InputDecoration(labelText: loc.recordValue),
+                  keyboardType: TextInputType.number,
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today),
+                  title: Text(loc.recordDate),
+                  subtitle: Text(
+                    DateFormat.yMd(Localizations.localeOf(context).toString())
+                        .format(selectedDate),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now().add(const Duration(days: 3650)),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        selectedDate = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          selectedDate.hour,
+                          selectedDate.minute,
+                          selectedDate.second,
+                        );
+                      });
+                    }
+                  },
+                ),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue:
+                      RecordCategories.points.contains(primaryCategory)
+                          ? primaryCategory
+                          : RecordCategories.uncategorized,
+                  decoration:
+                      InputDecoration(labelText: loc.recordPrimaryCategory),
+                  items: RecordCategories.points
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(RecordCategories.label(loc, category)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) primaryCategory = value;
+                  },
+                ),
+                TextField(
+                  controller: secondaryController,
+                  decoration:
+                      InputDecoration(labelText: loc.recordSecondaryCategory),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, null),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final v = int.tryParse(controller.text);
-                  if (v != null) {
-                    Navigator.pop(context, value >= 0 ? v : -v);
-                  }
-                },
-                child: const Text('OK'),
-              ),
-            ],
           ),
-        );
-
-        if (result != null) {
-          onChanged(result);
-        }
-      },
-      child: Text(
-        value > 0 ? '+$value' : value.toString(),
-        style: TextStyle(
-          color: value >= 0 ? Colors.green : Colors.red,
-          fontWeight: FontWeight.bold,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(loc.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final value = int.tryParse(valueController.text);
+                final description = descController.text.trim();
+                if (value == null || description.isEmpty) return;
+                Navigator.pop(
+                  context,
+                  record.copyWith(
+                    value: value,
+                    description: description,
+                    date: selectedDate,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryController.text.trim(),
+                  ),
+                );
+              },
+              child: Text(loc.save),
+            ),
+          ],
         ),
       ),
     );
