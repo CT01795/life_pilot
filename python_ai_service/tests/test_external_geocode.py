@@ -166,6 +166,73 @@ class ExternalGeocodeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.lat, 25.033)
         self.assertEqual(response.lng, 121.5654)
 
+    async def test_backfill_supports_recommended_attractions_and_tracks_missing(self):
+        rows = [
+            {
+                "id": "place-1",
+                "country": "TW",
+                "city": "Taipei",
+                "location": "Taipei 101",
+            },
+            {
+                "id": "place-2",
+                "country": "TW",
+                "city": "Taipei",
+                "location": "Unknown place",
+            },
+        ]
+        with (
+            patch.object(
+                service_weather,
+                "get_missing_event_map_locations",
+                return_value=rows,
+            ) as get_missing,
+            patch.object(
+                service_weather,
+                "_geocode_query",
+                side_effect=[
+                    service_weather.GeocodeResponse(lat=25.033, lng=121.5654),
+                    service_weather.GeocodeResponse(),
+                ],
+            ),
+            patch.object(
+                service_weather,
+                "save_event_map_coordinates",
+                return_value={"lat": 25.033, "lng": 121.5654},
+            ) as save_coordinates,
+            patch.object(
+                service_weather,
+                "get_event_map_coverage",
+                return_value={
+                    "total_rows": 20,
+                    "coordinate_rows": 7,
+                    "eligible_remaining": 12,
+                    "missing_address_rows": 1,
+                },
+            ),
+        ):
+            response = await service_weather.backfill_recommended_event_map_coordinates(
+                service_weather.EventMapGeocodeBackfillRequest(
+                    table_name="recommended_attractions",
+                    limit=2,
+                    offset=3,
+                ),
+                {"id": "admin-1"},
+            )
+
+        get_missing.assert_called_once_with(
+            table_name="recommended_attractions",
+            limit=2,
+            offset=3,
+        )
+        save_coordinates.assert_called_once()
+        self.assertEqual(response.processed, 2)
+        self.assertEqual(response.saved, 1)
+        self.assertEqual(response.not_found, 1)
+        self.assertEqual(response.remaining, 12)
+        self.assertEqual(response.next_offset, 4)
+        self.assertEqual(response.coverage_percent, 35.0)
+
 
 if __name__ == "__main__":
     unittest.main()

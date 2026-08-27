@@ -10,7 +10,9 @@ from typing import Annotated, Any, Literal
 import httpx
 from external.repository_geocodes import (
     claim_geocode_refresh,
+    get_event_map_coverage,
     get_event_map_location,
+    get_missing_event_map_locations,
     get_geocode_cache,
     mark_geocode_failed,
     save_event_map_coordinates,
@@ -23,7 +25,7 @@ from external.repository_weather import (
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from security.rate_limit import InMemoryRateLimiter
-from security.supabase_auth import require_supabase_user
+from security.supabase_auth import require_supabase_admin, require_supabase_user
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -54,6 +56,28 @@ class EventMapGeocodeRequest(BaseModel):
         "memory_trace",
     ]
     event_id: str = Field(min_length=1, max_length=200)
+
+
+class EventMapGeocodeBackfillRequest(BaseModel):
+    table_name: Literal[
+        "recommended_events",
+        "recommended_attractions",
+    ]
+    limit: int = Field(default=25, ge=1, le=25)
+    offset: int = Field(default=0, ge=0)
+
+
+class EventMapGeocodeBackfillResponse(BaseModel):
+    processed: int
+    saved: int
+    not_found: int
+    remaining: int
+    next_offset: int
+    total_rows: int
+    coordinate_rows: int
+    missing_address_rows: int
+    coverage_percent: float
+    stopped_reason: str | None = None
 
 
 class WeatherRequest(BaseModel):
@@ -94,6 +118,7 @@ _weather_global_rate_limiter = InMemoryRateLimiter(
 )
 _weather_cache: dict[str, tuple[float, WeatherResponse]] = {}
 _weather_in_flight: dict[str, asyncio.Task[WeatherResponse]] = {}
+_map_geocode_backfill_lock = asyncio.Lock()
 
 
 def _weather_cache_key(lat: float, lng: float) -> str:
@@ -450,6 +475,91 @@ async def map_geocode(
                 lng=float(refreshed_lng),
             )
     return GeocodeResponse()
+
+
+@router.post(
+    "/map-geocode/backfill",
+    response_model=EventMapGeocodeBackfillResponse,
+)
+async def backfill_recommended_event_map_coordinates(
+    payload: EventMapGeocodeBackfillRequest,
+    user: Annotated[dict[str, Any], Depends(require_supabase_admin)],
+) -> EventMapGeocodeBackfillResponse:
+    if _map_geocode_backfill_lock.locked():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A map coordinate backfill is already running",
+        )
+
+    async with _map_geocode_backfill_lock:
+        try:
+            events = await asyncio.to_thread(
+                get_missing_event_map_locations,
+                table_name=payload.table_name,
+                limit=payload.limit,
+                offset=payload.offset,
+            )
+        except (RuntimeError, SQLAlchemyError) as exception:
+            raise _database_unavailable(exception) from exception
+
+        processed = 0
+        saved = 0
+        not_found = 0
+        stopped_reason: str | None = None
+        for event in events:
+            country = str(event.get("country") or "TW").strip().upper() or "TW"
+            city = str(event.get("city") or "").strip()
+            location = str(event.get("location") or "").strip()
+            query = ", ".join(
+                value for value in (location, city, country) if value
+            )
+            try:
+                result = await _geocode_query(query, str(user["id"]))
+            except HTTPException as exception:
+                stopped_reason = str(exception.detail)
+                break
+
+            processed += 1
+            if result.lat is None or result.lng is None:
+                not_found += 1
+                continue
+            try:
+                result_saved = await asyncio.to_thread(
+                    save_event_map_coordinates,
+                    table_name=payload.table_name,
+                    event_id=str(event["id"]),
+                    country=country,
+                    city=city,
+                    location=location,
+                    lat=result.lat,
+                    lng=result.lng,
+                )
+            except (RuntimeError, SQLAlchemyError) as exception:
+                raise _database_unavailable(exception) from exception
+            if result_saved is not None:
+                saved += 1
+
+        try:
+            coverage = await asyncio.to_thread(
+                get_event_map_coverage,
+                table_name=payload.table_name,
+            )
+        except (RuntimeError, SQLAlchemyError) as exception:
+            raise _database_unavailable(exception) from exception
+        return EventMapGeocodeBackfillResponse(
+            processed=processed,
+            saved=saved,
+            not_found=not_found,
+            remaining=coverage["eligible_remaining"],
+            next_offset=payload.offset + not_found,
+            total_rows=coverage["total_rows"],
+            coordinate_rows=coverage["coordinate_rows"],
+            missing_address_rows=coverage["missing_address_rows"],
+            coverage_percent=round(
+                coverage["coordinate_rows"] * 100 / coverage["total_rows"], 2
+            ) if coverage["total_rows"] else 100.0,
+            stopped_reason=stopped_reason,
+        )
 
 
 async def _fetch_weather_from_provider(

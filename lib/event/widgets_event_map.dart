@@ -17,9 +17,9 @@ class WidgetsEventMap extends StatelessWidget {
     '基隆': Offset(.90, .08),
     '台北': Offset(.65, .06),
     '新北': Offset(.82, .15),
-    '桃園': Offset(.65, .17),
-    '新竹': Offset(.58, .21),
-    '苗栗': Offset(.59, .28),
+    '桃園': Offset(.66, .11),
+    '新竹': Offset(.61, .19),
+    '苗栗': Offset(.58, .27),
     '台中': Offset(.55, .35),
     '彰化': Offset(.37, .42),
     '南投': Offset(.57, .45),
@@ -67,7 +67,7 @@ class WidgetsEventMap extends StatelessWidget {
                 constraints:
                     const BoxConstraints(maxWidth: 520, maxHeight: 680),
                 child: AspectRatio(
-                  aspectRatio: .78,
+                  aspectRatio: 1,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return Stack(
@@ -76,14 +76,12 @@ class WidgetsEventMap extends StatelessWidget {
                         children: [
                           Image.asset(
                             'assets/maps/taiwan.png',
-                            fit: BoxFit.cover,
-                            alignment: Alignment.centerRight,
+                            fit: BoxFit.contain,
                           ),
                           ...mapCounts.entries.map((entry) {
                             final position = _positions[entry.key]!;
-                            final adjustedX = (position.dx - .22) / .78;
                             return Positioned(
-                              left: constraints.maxWidth * adjustedX - 15,
+                              left: constraints.maxWidth * position.dx - 15,
                               top: constraints.maxHeight * position.dy - 15,
                               child: _countButton(entry),
                             );

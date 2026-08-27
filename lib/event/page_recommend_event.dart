@@ -60,6 +60,7 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
           controllerEvent: _controllerEvent,
           title: '',
           emptyText: loc.recommendEventZero,
+          enableCityFilter: true,
           searchPanelBuilder: widgetsSearchPanel,
           listBuilder: ({
             required List<EventItem> filteredEvents,

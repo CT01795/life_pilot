@@ -164,6 +164,59 @@ def get_event_map_location(
         return dict(row) if row is not None else None
 
 
+def get_missing_event_map_locations(
+    *, table_name: str, limit: int, offset: int = 0
+) -> list[dict[str, Any]]:
+    if table_name not in EVENT_MAP_TABLES:
+        raise ValueError("Unsupported event table")
+    statement = text(
+        f"""
+        select id, country, city, location
+        from public.{table_name}
+        where (map_lat is null or map_lng is null)
+          and (nullif(trim(city), '') is not null
+               or nullif(trim(location), '') is not null)
+        order by created_at, id
+        limit :limit
+        offset :offset
+        """
+    )
+    with get_database_engine().connect() as connection:
+        rows = connection.execute(
+            statement,
+            {"limit": limit, "offset": offset},
+        ).mappings().all()
+        return [dict(row) for row in rows]
+
+
+def get_event_map_coverage(*, table_name: str) -> dict[str, int]:
+    if table_name not in EVENT_MAP_TABLES:
+        raise ValueError("Unsupported event table")
+    statement = text(
+        f"""
+        select
+          count(*) as total_rows,
+          count(*) filter (
+            where map_lat is not null and map_lng is not null
+          ) as coordinate_rows,
+          count(*) filter (
+            where (map_lat is null or map_lng is null)
+              and (nullif(trim(city), '') is not null
+                   or nullif(trim(location), '') is not null)
+          ) as eligible_remaining,
+          count(*) filter (
+            where (map_lat is null or map_lng is null)
+              and nullif(trim(city), '') is null
+              and nullif(trim(location), '') is null
+          ) as missing_address_rows
+        from public.{table_name}
+        """
+    )
+    with get_database_engine().connect() as connection:
+        row = connection.execute(statement).mappings().one()
+        return {key: int(value) for key, value in row.items()}
+
+
 def save_event_map_coordinates(
     *,
     table_name: str,
