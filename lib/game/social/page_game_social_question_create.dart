@@ -238,114 +238,117 @@ class _PageGameSocialQuestionCreateState
               ? 'Social · ${loc.addQuestion}'
               : 'Social · ${loc.editQuestion}'),
         ),
-        body: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.lightbulb_outline),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '${loc.question} → ${loc.description} → '
-                          '${loc.answerOptions}\n${loc.gameScore}: +10',
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.lightbulb_outline),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '${loc.question} → ${loc.description} → '
+                            '${loc.answerOptions}\n${loc.gameScore}: +10',
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Gaps.h16,
-              TextFormField(
-                controller: _titleController,
-                minLines: 1,
-                maxLines: 3,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                scrollPadding: const EdgeInsets.only(bottom: 160),
-                decoration: InputDecoration(
-                  labelText: loc.question,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: _required,
-              ),
-              Gaps.h16,
-              TextFormField(
-                controller: _sceneController,
-                minLines: 3,
-                maxLines: 10,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-                scrollPadding: const EdgeInsets.only(bottom: 160),
-                decoration: InputDecoration(
-                  labelText: loc.description,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: _required,
-              ),
-              Gaps.h16,
-              DropdownButtonFormField<String>(
-                initialValue: _useCustomCategory ? '__custom__' : _category,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: loc.questionGroup,
-                  border: const OutlineInputBorder(),
-                ),
-                items: [
-                  ..._categories.map(
-                    (category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(category, overflow: TextOverflow.ellipsis),
+                      ],
                     ),
                   ),
-                  if (_isAdmin)
-                    DropdownMenuItem(
-                      value: '__custom__',
-                      child: Text(loc.customQuestionGroup),
-                    ),
-                ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _useCustomCategory = value == '__custom__';
-                    if (!_useCustomCategory) _category = value;
-                  });
-                },
-              ),
-              if (_useCustomCategory) ...[
-                Gaps.h8,
+                ),
+                Gaps.h16,
                 TextFormField(
-                  controller: _customCategoryController,
+                  controller: _titleController,
+                  minLines: 1,
+                  maxLines: 3,
+                  keyboardType: TextInputType.multiline,
+                  textCapitalization: TextCapitalization.sentences,
+                  scrollPadding: const EdgeInsets.only(bottom: 160),
                   decoration: InputDecoration(
-                    labelText: loc.questionGroup,
+                    labelText: loc.question,
                     border: const OutlineInputBorder(),
                   ),
                   validator: _required,
                 ),
+                Gaps.h16,
+                TextFormField(
+                  controller: _sceneController,
+                  minLines: 3,
+                  maxLines: 10,
+                  keyboardType: TextInputType.multiline,
+                  textCapitalization: TextCapitalization.sentences,
+                  scrollPadding: const EdgeInsets.only(bottom: 160),
+                  decoration: InputDecoration(
+                    labelText: loc.description,
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: _required,
+                ),
+                Gaps.h16,
+                DropdownButtonFormField<String>(
+                  initialValue: _useCustomCategory ? '__custom__' : _category,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: loc.questionGroup,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    ..._categories.map(
+                      (category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
+                    if (_isAdmin)
+                      DropdownMenuItem(
+                        value: '__custom__',
+                        child: Text(loc.customQuestionGroup),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _useCustomCategory = value == '__custom__';
+                      if (!_useCustomCategory) _category = value;
+                    });
+                  },
+                ),
+                if (_useCustomCategory) ...[
+                  Gaps.h8,
+                  TextFormField(
+                    controller: _customCategoryController,
+                    decoration: InputDecoration(
+                      labelText: loc.questionGroup,
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: _required,
+                  ),
+                ],
+                Gaps.h16,
+                Text(loc.answerOptions,
+                    style: Theme.of(context).textTheme.titleMedium),
+                Gaps.h8,
+                ...List.generate(3, _buildChoiceCard),
+                FilledButton.icon(
+                  onPressed: _isSaving ? null : _save,
+                  icon: _isSaving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(loc.save),
+                ),
               ],
-              Gaps.h16,
-              Text(loc.answerOptions,
-                  style: Theme.of(context).textTheme.titleMedium),
-              Gaps.h8,
-              ...List.generate(3, _buildChoiceCard),
-              FilledButton.icon(
-                onPressed: _isSaving ? null : _save,
-                icon: _isSaving
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(loc.save),
-              ),
-            ],
+            ),
           ),
         ),
       ),

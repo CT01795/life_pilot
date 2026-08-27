@@ -504,202 +504,215 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                 : loc.editQuestion,
           ),
         ),
-        body: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.lightbulb_outline),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(_creationHelp(loc))),
-                    ],
-                  ),
-                ),
-              ),
-              Gaps.h16,
-              if (_isLoadingHint && widget.existingQuestion == null)
-                const Center(child: LinearProgressIndicator()),
-              if (_showQuestionHint) ...[
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(16),
+              children: [
                 Card(
-                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  color: Theme.of(context).colorScheme.secondaryContainer,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          loc.questionExample,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        Text(_displayHintQuestion),
-                        Gaps.h8,
-                        Text(
-                          loc.answerExample,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        Text(_questionHint!.answer),
+                        const Icon(Icons.lightbulb_outline),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(_creationHelp(loc))),
                       ],
                     ),
                   ),
                 ),
                 Gaps.h16,
-              ],
-              if (!isSpeaking && _kind != _QuestionKind.sentence)
-                TextFormField(
-                  controller: _questionController,
-                  decoration: InputDecoration(
-                    labelText: _kind == _QuestionKind.grammar
-                        ? _usesPluralGrammarTemplate
-                            ? loc.grammarBaseWord
-                            : loc.completedGrammarQuestion
-                        : loc.question,
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: _required,
-                ),
-              if (!isSpeaking && _kind != _QuestionKind.sentence) Gaps.h16,
-              TextFormField(
-                controller: _answerController,
-                decoration: InputDecoration(
-                  labelText: _kind == _QuestionKind.sentence
-                      ? loc.sentenceOrWord
-                      : isSpeaking
-                          ? loc.speakingText
-                          : loc.correctAnswer,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: _required,
-              ),
-              if (_kind == _QuestionKind.grammar &&
-                  !_usesPluralGrammarTemplate) ...[
-                Gaps.h16,
-                TextFormField(
-                  controller: _optionsController,
-                  decoration: InputDecoration(
-                    labelText: loc.answerOptions,
-                    helperText: loc.answerOptionsHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: _required,
-                ),
-              ],
-              Gaps.h16,
-              DropdownButtonFormField<String>(
-                key: ValueKey('$_selectedGroup-$_useCustomGroup'),
-                initialValue: _useCustomGroup ? '__custom__' : _selectedGroup,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: loc.questionGroup,
-                  border: const OutlineInputBorder(),
-                ),
-                items: [
-                  ..._availableGroups.map((group) => DropdownMenuItem(
-                        value: group,
-                        child: Tooltip(
-                          message: group,
-                          child: Text(
-                            group,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                if (_isLoadingHint && widget.existingQuestion == null)
+                  const Center(child: LinearProgressIndicator()),
+                if (_showQuestionHint) ...[
+                  Card(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc.questionExample,
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
-                        ),
-                      )),
-                  if (_allowsCustomGroup)
-                    DropdownMenuItem(
-                      value: '__custom__',
-                      child: Text(loc.customQuestionGroup),
+                          Text(_displayHintQuestion),
+                          Gaps.h8,
+                          Text(
+                            loc.answerExample,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          Text(_questionHint!.answer),
+                        ],
+                      ),
                     ),
+                  ),
+                  Gaps.h16,
                 ],
-                validator: (value) => value == null ? loc.requiredField : null,
-                onChanged: (value) {
-                  setState(() {
-                    if (value == '__custom__') {
-                      if (_allowsNumberedCustomGroup) {
-                        _customGroupBase = _groupWithoutLevel(
-                          _selectedGroup ?? _availableGroups.first,
-                        );
-                      }
-                      _customGroupLevelController.clear();
-                      _groupController.clear();
-                      _useCustomGroup = true;
-                      _selectedGroup = null;
-                    } else {
-                      _useCustomGroup = false;
-                      _selectedGroup = value;
-                      if (value != null && _allowsNumberedCustomGroup) {
-                        _level = _levelFromGroup(value);
-                      }
-                    }
-                    _questionHint = null;
-                  });
-                  if (value != null && value != '__custom__') {
-                    _loadQuestionHint(value);
-                  }
-                },
-              ),
-              if (_useCustomGroup) ...[
-                Gaps.h16,
-                if (_allowsNumberedCustomGroup)
+                if (!isSpeaking && _kind != _QuestionKind.sentence)
                   TextFormField(
-                    controller: _customGroupLevelController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(3),
-                    ],
+                    controller: _questionController,
+                    minLines: 1,
+                    maxLines: 3,
+                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
-                      labelText: loc.questionGroupLevelNumber,
-                      prefixText: _customGroupBase,
-                      border: const OutlineInputBorder(),
-                    ),
-                  )
-                else
-                  TextFormField(
-                    controller: _groupController,
-                    decoration: InputDecoration(
-                      labelText: loc.newQuestionGroup,
+                      labelText: _kind == _QuestionKind.grammar
+                          ? _usesPluralGrammarTemplate
+                              ? loc.grammarBaseWord
+                              : loc.completedGrammarQuestion
+                          : loc.question,
                       border: const OutlineInputBorder(),
                     ),
                     validator: _required,
                   ),
-              ],
-              Gaps.h16,
-              if (!_allowsNumberedCustomGroup)
-                DropdownButtonFormField<int>(
-                  initialValue: _level,
+                if (!isSpeaking && _kind != _QuestionKind.sentence) Gaps.h16,
+                TextFormField(
+                  controller: _answerController,
+                  minLines: 1,
+                  maxLines: 3,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    labelText: loc.gameLevel,
+                    labelText: _kind == _QuestionKind.sentence
+                        ? loc.sentenceOrWord
+                        : isSpeaking
+                            ? loc.speakingText
+                            : loc.correctAnswer,
                     border: const OutlineInputBorder(),
                   ),
-                  items: List.generate(
-                    30,
-                    (index) => DropdownMenuItem(
-                      value: index + 1,
-                      child: Text('${index + 1}'),
+                  validator: _required,
+                ),
+                if (_kind == _QuestionKind.grammar &&
+                    !_usesPluralGrammarTemplate) ...[
+                  Gaps.h16,
+                  TextFormField(
+                    controller: _optionsController,
+                    minLines: 1,
+                    maxLines: 2,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: loc.answerOptions,
+                      helperText: loc.answerOptionsHint,
+                      border: const OutlineInputBorder(),
                     ),
+                    validator: _required,
                   ),
+                ],
+                Gaps.h16,
+                DropdownButtonFormField<String>(
+                  key: ValueKey('$_selectedGroup-$_useCustomGroup'),
+                  initialValue: _useCustomGroup ? '__custom__' : _selectedGroup,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: loc.questionGroup,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    ..._availableGroups.map((group) => DropdownMenuItem(
+                          value: group,
+                          child: Tooltip(
+                            message: group,
+                            child: Text(
+                              group,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )),
+                    if (_allowsCustomGroup)
+                      DropdownMenuItem(
+                        value: '__custom__',
+                        child: Text(loc.customQuestionGroup),
+                      ),
+                  ],
+                  validator: (value) =>
+                      value == null ? loc.requiredField : null,
                   onChanged: (value) {
-                    if (value != null) setState(() => _level = value);
+                    setState(() {
+                      if (value == '__custom__') {
+                        if (_allowsNumberedCustomGroup) {
+                          _customGroupBase = _groupWithoutLevel(
+                            _selectedGroup ?? _availableGroups.first,
+                          );
+                        }
+                        _customGroupLevelController.clear();
+                        _groupController.clear();
+                        _useCustomGroup = true;
+                        _selectedGroup = null;
+                      } else {
+                        _useCustomGroup = false;
+                        _selectedGroup = value;
+                        if (value != null && _allowsNumberedCustomGroup) {
+                          _level = _levelFromGroup(value);
+                        }
+                      }
+                      _questionHint = null;
+                    });
+                    if (value != null && value != '__custom__') {
+                      _loadQuestionHint(value);
+                    }
                   },
                 ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _isSaving ? null : _save,
-                child: _isSaving
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(loc.save),
-              ),
-            ],
+                if (_useCustomGroup) ...[
+                  Gaps.h16,
+                  if (_allowsNumberedCustomGroup)
+                    TextFormField(
+                      controller: _customGroupLevelController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: loc.questionGroupLevelNumber,
+                        prefixText: _customGroupBase,
+                        border: const OutlineInputBorder(),
+                      ),
+                    )
+                  else
+                    TextFormField(
+                      controller: _groupController,
+                      decoration: InputDecoration(
+                        labelText: loc.newQuestionGroup,
+                        border: const OutlineInputBorder(),
+                      ),
+                      validator: _required,
+                    ),
+                ],
+                Gaps.h16,
+                if (!_allowsNumberedCustomGroup)
+                  DropdownButtonFormField<int>(
+                    initialValue: _level,
+                    decoration: InputDecoration(
+                      labelText: loc.gameLevel,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: List.generate(
+                      30,
+                      (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      if (value != null) setState(() => _level = value);
+                    },
+                  ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _isSaving ? null : _save,
+                  child: _isSaving
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(loc.save),
+                ),
+              ],
+            ),
           ),
         ),
       ),
