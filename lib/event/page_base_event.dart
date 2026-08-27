@@ -148,27 +148,43 @@ class _GenericEventPageState extends State<GenericEventPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    context.watch<ControllerEvent>();
+    final pageState = context.select<
+        ControllerEvent,
+        ({
+          bool loading,
+          bool error,
+          bool canRefresh,
+          bool refreshing,
+          bool running
+        })>(
+      (controller) => (
+        loading: controller.isLoadingEvents,
+        error: controller.hasLoadEventsError,
+        canRefresh: controller.canRefreshPublicEvents,
+        refreshing: controller.isRefreshingPublicEvents,
+        running: controller.publicEventsRefreshRunning,
+      ),
+    );
 
     return Scaffold(
         appBar: widgetsWhiteAppBar(
           title: widget.title,
           enableSearchAndExport: true,
           enableUpload: widget.auth.isSysAdmin,
-          onRefresh: _controller.canRefreshPublicEvents
+          onRefresh: pageState.canRefresh
               ? () async {
                   final succeeded = await _controller.refreshPublicEvents();
                   if (!context.mounted) return;
                   AppNavigator.showSnackBar(
                     succeeded
                         ? loc.eventRefreshSucceeded
-                        : _controller.publicEventsRefreshRunning
+                        : pageState.running
                             ? loc.eventRefreshRunning
                             : loc.eventRefreshFailed,
                   );
                 }
               : null,
-          isRefreshing: _controller.isRefreshingPublicEvents,
+          isRefreshing: pageState.refreshing,
           refreshTooltip: loc.eventRefresh,
           showMap: _showMap,
           onToggleMap: () => setState(() => _showMap = !_showMap),
@@ -187,9 +203,9 @@ class _GenericEventPageState extends State<GenericEventPage> {
           onAdd: () => _onAddPressed(context),
           loc: loc,
         ),
-        body: (!_hasLoaded || _controller.isLoadingEvents)
+        body: (!_hasLoaded || pageState.loading)
             ? const Center(child: CircularProgressIndicator())
-            : _controller.hasLoadEventsError
+            : pageState.error
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

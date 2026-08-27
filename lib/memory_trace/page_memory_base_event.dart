@@ -112,7 +112,12 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    context.watch<ControllerEvent>();
+    final loadState = context.select<ControllerEvent, (bool, bool)>(
+      (controller) => (
+        controller.isLoadingEvents,
+        controller.hasLoadEventsError,
+      ),
+    );
 
     return Scaffold(
         appBar: widgetsWhiteAppBar(
@@ -125,9 +130,9 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
           onToggleMap: () => setState(() => _showMap = !_showMap),
           loc: loc,
         ),
-        body: (!_hasLoaded || _controller.isLoadingEvents)
+        body: (!_hasLoaded || loadState.$1)
             ? const Center(child: CircularProgressIndicator())
-            : _controller.hasLoadEventsError
+            : loadState.$2
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

@@ -3,12 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
-import 'package:life_pilot/utils/graph.dart';
+import 'package:life_pilot/utils/widgets/widgets_weather_icon.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:life_pilot/event/widgets_event_image.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
+import 'package:life_pilot/utils/model_event_weather.dart';
+import 'package:provider/provider.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -126,23 +128,17 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
 }
 
 class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
-  final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
-
-  Future<bool> _cachedAssetExists(String path) async {
-    if (_assetCache.containsKey(path)) return _assetCache[path]!;
-    final exists = await assetExists(path);
-    _assetCache[path] = exists;
-    return exists;
-  }
-
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate =
         widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
-    final forecast = widget.controllerEvent
-        .getForecast(locationDisplay: widget.eventViewModel.locationDisplay);
+    final forecast = context.select<ControllerEvent, List<EventWeather>?>(
+      (controller) => controller.getForecast(
+        locationDisplay: widget.eventViewModel.locationDisplay,
+      ),
+    );
 
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
@@ -168,27 +164,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                           )
                         : null,
                 padding: const EdgeInsets.all(1),
-                child: FutureBuilder<bool>(
-                  future: _cachedAssetExists(
-                      'assets/weather_icons/${todayWeather.icon}.png'),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState != ConnectionState.done) {
-                      return const SizedBox(width: 40, height: 40);
-                    }
-                    final exists = snapshot.data ?? false;
-                    return exists
-                        ? Image.asset(
-                            'assets/weather_icons/${todayWeather.icon}.png',
-                            width: 40,
-                            height: 40,
-                          )
-                        : Image.network(
-                            'https://openweathermap.org/img/wn/${todayWeather.icon}.png',
-                            width: 40,
-                            height: 40,
-                          );
-                  },
-                ),
+                child: WidgetsWeatherIcon(icon: todayWeather.icon),
               ),
               tooltip:
                   '${localizeWeatherCondition(loc, todayWeather.main)} ${todayWeather.temp.toStringAsFixed(1)}°C',
@@ -231,29 +207,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                                           )
                                         : null,
                                 padding: const EdgeInsets.all(1),
-                                child: FutureBuilder<bool>(
-                                  future: _cachedAssetExists(
-                                      'assets/weather_icons/${w.icon}.png'),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState !=
-                                        ConnectionState.done) {
-                                      return const SizedBox(
-                                          width: 40, height: 40);
-                                    }
-                                    final exists = snapshot.data ?? false;
-                                    return exists
-                                        ? Image.asset(
-                                            'assets/weather_icons/${w.icon}.png',
-                                            width: 40,
-                                            height: 40,
-                                          )
-                                        : Image.network(
-                                            'https://openweathermap.org/img/wn/${w.icon}.png',
-                                            width: 40,
-                                            height: 40,
-                                          );
-                                  },
-                                ),
+                                child: WidgetsWeatherIcon(icon: w.icon),
                               ),
                               title: Text(
                                   '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
