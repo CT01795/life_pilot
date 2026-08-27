@@ -36,6 +36,7 @@ class ControllerEvent extends ChangeNotifier {
   Object? _loadEventsError;
   final Set<String> _weatherPreloadAttemptedIds = {};
   Future<void> _weatherPreloadQueue = Future<void>.value();
+  int _filterRevision = 0;
 
   ControllerEvent(
       {required this.auth,
@@ -76,6 +77,7 @@ class ControllerEvent extends ChangeNotifier {
   TextEditingController get searchController => _searchController;
   bool get isLoadingEvents => _isLoadingEvents;
   bool get hasLoadEventsError => _loadEventsError != null;
+  int get filterRevision => _filterRevision;
 
   // ---------------------------------------------------------------------------
   // 📦 CRUD 操作
@@ -293,6 +295,7 @@ class ControllerEvent extends ChangeNotifier {
     String? keywords,
   ) {
     _modelEvent.updateSearchKeywords(keywords);
+    _filterRevision++;
 
     final filter = _modelEvent.searchFilter;
 
@@ -323,6 +326,7 @@ class ControllerEvent extends ChangeNotifier {
     DateTime? startDate,
   ) {
     _modelEvent.updateStartDate(startDate);
+    _filterRevision++;
     if (!_disposed) notifyListeners();
   }
 
@@ -330,6 +334,7 @@ class ControllerEvent extends ChangeNotifier {
     DateTime? endDate,
   ) {
     _modelEvent.updateEndDate(endDate);
+    _filterRevision++;
     if (!_disposed) notifyListeners();
   }
 

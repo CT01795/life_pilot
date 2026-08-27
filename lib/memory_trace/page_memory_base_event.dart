@@ -153,11 +153,13 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                 : Column(
                     children: [
                       AnimatedBuilder(
-                        animation: Listenable.merge([
-                          _controller,
-                          _appBarHandler,
-                        ]),
-                        builder: (_, __) => _buildSearchPanel(loc, context),
+                        animation: _appBarHandler,
+                        builder: (_, __) => Selector<ControllerEvent, int>(
+                          selector: (_, controller) =>
+                              controller.filterRevision,
+                          builder: (_, __, ___) =>
+                              _buildSearchPanel(loc, context),
+                        ),
                       ),
                       Expanded(
                           // ✅ 讓 ListView 可以使用剩餘高度

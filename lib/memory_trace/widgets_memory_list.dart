@@ -39,11 +39,7 @@ class WidgetsMemoryList extends StatelessWidget {
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
         EventViewModel eventViewModel = viewModels[index];
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            controllerEvent.preloadWeatherForEvent(eventViewModel);
-          }
-        });
+        controllerEvent.preloadWeatherForEvent(eventViewModel);
         final date = eventViewModel.startDate;
         final previousDate =
             index == 0 ? null : viewModels[index - 1].startDate;
@@ -64,79 +60,73 @@ class WidgetsMemoryList extends StatelessWidget {
                   ),
                 ),
               ),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: 38,
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Container(
-                              width: 2, color: const Color(0xFFE1CDE6)),
-                        ),
-                        Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF9B67A7),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: const [
-                              BoxShadow(
-                                  color: Color(0x337E5787), blurRadius: 5),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                              width: 2, color: const Color(0xFFE1CDE6)),
-                        ),
+            Stack(
+              children: [
+                const Positioned(
+                  left: 18,
+                  top: 0,
+                  bottom: 0,
+                  child: SizedBox(
+                    width: 2,
+                    child: ColoredBox(color: Color(0xFFE1CDE6)),
+                  ),
+                ),
+                Positioned(
+                  left: 12,
+                  top: 28,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9B67A7),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x337E5787), blurRadius: 5),
                       ],
                     ),
                   ),
-                  Expanded(
-                    child: WidgetsMemoryCard(
-                      key: ValueKey(eventViewModel.id),
-                      controllerEvent: controllerEvent,
-                      eventViewModel: eventViewModel,
-                      tableName: controllerEvent.fromTableName,
-                      onTap: () => _showEventDialog(
-                          context: context,
-                          eventViewModel: eventViewModel,
-                          tableName: controllerEvent.fromTableName),
-                      onDelete: eventViewModel.canDelete
-                          ? () async {
-                              await onDeletePressed(
-                                context: context,
-                                controller: controllerEvent,
-                                event: eventViewModel.event,
-                                loc: loc,
-                              );
-                            }
-                          : null,
-                      onAccounting: () => context
-                          .read<ControllerAccountingList>()
-                          .handleAccounting(
-                            context: context,
-                            eventId: eventViewModel.id,
-                          ),
-                      onOpenLink: () =>
-                          controllerEvent.onOpenLink(eventViewModel),
-                      onOpenMap: () =>
-                          controllerEvent.onOpenMap(eventViewModel),
-                      trailing: widgetsMemoryTrailing(
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 38),
+                  child: WidgetsMemoryCard(
+                    key: ValueKey(eventViewModel.id),
+                    controllerEvent: controllerEvent,
+                    eventViewModel: eventViewModel,
+                    tableName: controllerEvent.fromTableName,
+                    onTap: () => _showEventDialog(
                         context: context,
-                        auth: auth,
-                        controllerEvent: controllerEvent,
-                        event: eventViewModel.event,
-                      ),
-                      showSubEvents: false,
+                        eventViewModel: eventViewModel,
+                        tableName: controllerEvent.fromTableName),
+                    onDelete: eventViewModel.canDelete
+                        ? () async {
+                            await onDeletePressed(
+                              context: context,
+                              controller: controllerEvent,
+                              event: eventViewModel.event,
+                              loc: loc,
+                            );
+                          }
+                        : null,
+                    onAccounting: () => context
+                        .read<ControllerAccountingList>()
+                        .handleAccounting(
+                          context: context,
+                          eventId: eventViewModel.id,
+                        ),
+                    onOpenLink: () =>
+                        controllerEvent.onOpenLink(eventViewModel),
+                    onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
+                    trailing: widgetsMemoryTrailing(
+                      context: context,
+                      auth: auth,
+                      controllerEvent: controllerEvent,
+                      event: eventViewModel.event,
                     ),
+                    showSubEvents: false,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         );
