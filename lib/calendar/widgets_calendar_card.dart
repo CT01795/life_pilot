@@ -204,7 +204,7 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                           mainAxisSize: MainAxisSize.min,
                           children: forecast.map((w) {
                             String tmp =
-                                '${localizeWeatherCondition(loc, w.main)}\n${loc.weatherTemperature}: ${w.temp.toStringAsFixed(1)}°C';
+                                '${loc.weatherTemperature}: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMin.toStringAsFixed(1)) {
                               tmp =

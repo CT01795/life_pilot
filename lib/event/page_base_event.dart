@@ -245,14 +245,6 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                       eventRegionKey(event.city) ==
                                       effectiveCity)
                                   .toList();
-                          if (!_showMap && visibleEvents.isNotEmpty) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) {
-                                _controller
-                                    .preloadVisibleWeather(visibleEvents);
-                              }
-                            });
-                          }
                           return Column(
                             children: [
                               if (widget.enableCityFilter && cities.isNotEmpty)

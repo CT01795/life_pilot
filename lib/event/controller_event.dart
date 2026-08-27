@@ -12,7 +12,6 @@ import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/event/event_refresh_policy.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
-import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
@@ -35,7 +34,8 @@ class ControllerEvent extends ChangeNotifier {
   final Future<void> Function()? onCalendarReload;
   bool _isLoadingEvents = false;
   Object? _loadEventsError;
-  String? _lastWeatherWarmupKey;
+  final Set<String> _weatherPreloadAttemptedIds = {};
+  Future<void> _weatherPreloadQueue = Future<void>.value();
 
   ControllerEvent(
       {required this.auth,
@@ -427,38 +427,22 @@ class ControllerEvent extends ChangeNotifier {
     }
   }
 
-  void preloadVisibleWeather(List<EventItem> events) {
-    if (events.isEmpty) return;
-    final warmupKey = events.take(8).map((event) => event.id).join('|');
-    if (_lastWeatherWarmupKey == warmupKey) return;
-    _lastWeatherWarmupKey = warmupKey;
-    unawaited(_warmUpWeather(events));
+  void preloadWeatherForEvent(EventViewModel event) {
+    if (!_weatherPreloadAttemptedIds.add(event.id)) return;
+    _weatherPreloadQueue = _weatherPreloadQueue
+        .then((_) => _preloadWeatherForEvent(event))
+        .catchError((_) {});
   }
 
-  Future<void> _warmUpWeather(List<EventItem> events) async {
-    final seenLocations = <String>{};
-    const maxPreloadedLocations = 8;
-
-    for (final e in events) {
-      final vm = buildViewModel(
-        event: e,
-        loc: AppLocalizations.of(
-          app_navigator.navigatorKey.currentContext!,
-        )!,
-      );
-      if (vm.locationDisplay.isEmpty ||
-          !seenLocations.add(vm.locationDisplay)) {
-        continue;
-      }
-
-      final requested = await _serviceWeather.preloadWeather(
-        [vm],
-        tableName: _tableName,
-      );
-      if (requested) {
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      if (seenLocations.length >= maxPreloadedLocations) break;
+  Future<void> _preloadWeatherForEvent(EventViewModel event) async {
+    if (_disposed) return;
+    final requested = await _serviceWeather.preloadWeather(
+      [event],
+      tableName: _tableName,
+    );
+    if (requested) {
+      if (!_disposed) notifyListeners();
+      await Future.delayed(const Duration(seconds: 1));
     }
   }
 

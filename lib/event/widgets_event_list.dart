@@ -37,6 +37,11 @@ class WidgetsEventList extends StatelessWidget {
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
         EventViewModel eventViewModel = viewModels[index];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            controllerEvent.preloadWeatherForEvent(eventViewModel);
+          }
+        });
 
         return WidgetsEventCard(
           key: ValueKey(

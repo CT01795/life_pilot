@@ -141,18 +141,20 @@ class ServiceWeather {
     final DateTime today = DateTimeFormatter.dateOnly(DateTime.now());
     final DateTime rangeEndExclusive = today.add(const Duration(days: 7));
     for (final e in events) {
-      if (e.endDate == null) {
-        if (!(e.startDate!.isBefore(rangeEndExclusive) &&
-            !e.startDate!.isBefore(today))) {
-          continue;
-        }
-      } else {
-        if (!(e.startDate!.isBefore(rangeEndExclusive) &&
-            !e.endDate!.isBefore(today))) {
-          continue;
-        }
-      } //當只有start date, 日期必須是今日或一周內才要看天氣
-      //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
+      if (tableName != TableNames.recommendPlaces) {
+        if (e.endDate == null) {
+          if (!(e.startDate!.isBefore(rangeEndExclusive) &&
+              !e.startDate!.isBefore(today))) {
+            continue;
+          }
+        } else {
+          if (!(e.startDate!.isBefore(rangeEndExclusive) &&
+              !e.endDate!.isBefore(today))) {
+            continue;
+          }
+        } //當只有start date, 日期必須是今日或一周內才要看天氣
+        //strat date 必須在一周內開始, 且結束日必須至少今天開始才要看天氣
+      }
       if (!e.hasLocation) continue;
       if (_getValidCache(e.locationDisplay) != null) continue;
 
