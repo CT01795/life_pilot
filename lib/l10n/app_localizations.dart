@@ -741,6 +741,12 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get search;
 
+  /// Tooltip for additional actions
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get moreActions;
+
   /// Label for toggleView
   ///
   /// In en, this message translates to:
@@ -1322,6 +1328,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
+
+  /// Weather forecast dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Weather forecast'**
+  String get weatherForecast;
+
+  /// Weather temperature label
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get weatherTemperature;
+
+  /// Minimum weather temperature label
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get weatherMinimum;
+
+  /// Maximum weather temperature label
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get weatherMaximum;
+
+  /// No description provided for @weatherThunderstorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Thunderstorm'**
+  String get weatherThunderstorm;
+
+  /// No description provided for @weatherDrizzle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drizzle'**
+  String get weatherDrizzle;
+
+  /// No description provided for @weatherRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get weatherRain;
+
+  /// No description provided for @weatherSnow.
+  ///
+  /// In en, this message translates to:
+  /// **'Snow'**
+  String get weatherSnow;
+
+  /// No description provided for @weatherMist.
+  ///
+  /// In en, this message translates to:
+  /// **'Mist'**
+  String get weatherMist;
+
+  /// No description provided for @weatherClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get weatherClear;
+
+  /// No description provided for @weatherClouds.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudy'**
+  String get weatherClouds;
 
   /// Label for url
   ///

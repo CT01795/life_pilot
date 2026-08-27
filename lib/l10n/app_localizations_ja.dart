@@ -332,6 +332,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get search => '検索';
 
   @override
+  String get moreActions => 'その他';
+
+  @override
   String get toggleView => '表示切り替え';
 
   @override
@@ -621,6 +624,39 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get close => '閉じる';
+
+  @override
+  String get weatherForecast => '天気予報';
+
+  @override
+  String get weatherTemperature => '気温';
+
+  @override
+  String get weatherMinimum => '最低';
+
+  @override
+  String get weatherMaximum => '最高';
+
+  @override
+  String get weatherThunderstorm => '雷雨';
+
+  @override
+  String get weatherDrizzle => '霧雨';
+
+  @override
+  String get weatherRain => '雨';
+
+  @override
+  String get weatherSnow => '雪';
+
+  @override
+  String get weatherMist => '霧';
+
+  @override
+  String get weatherClear => '晴れ';
+
+  @override
+  String get weatherClouds => 'くもり';
 
   @override
   String get url => 'URL';

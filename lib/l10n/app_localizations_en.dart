@@ -332,6 +332,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get search => 'Search';
 
   @override
+  String get moreActions => 'More';
+
+  @override
   String get toggleView => 'Toggle View';
 
   @override
@@ -621,6 +624,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get close => 'Close';
+
+  @override
+  String get weatherForecast => 'Weather forecast';
+
+  @override
+  String get weatherTemperature => 'Temperature';
+
+  @override
+  String get weatherMinimum => 'Low';
+
+  @override
+  String get weatherMaximum => 'High';
+
+  @override
+  String get weatherThunderstorm => 'Thunderstorm';
+
+  @override
+  String get weatherDrizzle => 'Drizzle';
+
+  @override
+  String get weatherRain => 'Rain';
+
+  @override
+  String get weatherSnow => 'Snow';
+
+  @override
+  String get weatherMist => 'Mist';
+
+  @override
+  String get weatherClear => 'Clear';
+
+  @override
+  String get weatherClouds => 'Cloudy';
 
   @override
   String get url => 'URL';

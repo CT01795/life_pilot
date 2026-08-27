@@ -9,6 +9,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/calendar/widgets_calendar_sub_card.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/weather_localization.dart';
 
 class WidgetsCalendarCard extends StatelessWidget {
   final EventViewModel eventViewModel;
@@ -49,9 +50,10 @@ class WidgetsCalendarCard extends StatelessWidget {
     );
   }
 
-  static Widget link(
-      {required String text,
-        required VoidCallback? onTap,}) {
+  static Widget link({
+    required String text,
+    required VoidCallback? onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Text(
@@ -117,9 +119,7 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
       _WidgetsCalendarCardBodyState();
 }
 
-class _WidgetsCalendarCardBodyState
-    extends State<_WidgetsCalendarCardBody> {
-  
+class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
   final Map<String, bool> _assetCache = {}; // 緩存 asset 檢查結果
 
   Future<bool> _cachedAssetExists(String path) async {
@@ -132,16 +132,20 @@ class _WidgetsCalendarCardBodyState
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate = widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
-    
+    final eventDate =
+        widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
+
     // 使用 Selector 只監聽對應 event 的天氣
     final forecast = context.select<ControllerCalendar, List<EventWeather>?>(
-      (c) => c.getForecast(locationDisplay: widget.eventViewModel.locationDisplay),
+      (c) =>
+          c.getForecast(locationDisplay: widget.eventViewModel.locationDisplay),
     );
 
-    final showWeatherIcon = forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
+    final showWeatherIcon =
+        forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather = forecast != null && forecast.isNotEmpty ? forecast.first : null;
+    final todayWeather =
+        forecast != null && forecast.isNotEmpty ? forecast.first : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -184,13 +188,13 @@ class _WidgetsCalendarCardBodyState
                 ),
               ),
               tooltip:
-                  '${todayWeather.main} ${todayWeather.temp.toStringAsFixed(1)}°C',
+                  '${localizeWeatherCondition(loc, todayWeather.main)} ${todayWeather.temp.toStringAsFixed(1)}°C',
               onPressed: () async {
                 if (!context.mounted) return;
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
-                    title: Text('Weather Forecast'),
+                    title: Text(loc.weatherForecast),
                     content: ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.6,
@@ -200,16 +204,16 @@ class _WidgetsCalendarCardBodyState
                           mainAxisSize: MainAxisSize.min,
                           children: forecast.map((w) {
                             String tmp =
-                                '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
+                                '${localizeWeatherCondition(loc, w.main)}\n${loc.weatherTemperature}: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMin.toStringAsFixed(1)) {
                               tmp =
-                                  '$tmp\nMin:${w.tempMin.toStringAsFixed(1)}°C';
+                                  '$tmp\n${loc.weatherMinimum}: ${w.tempMin.toStringAsFixed(1)}°C';
                             }
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMax.toStringAsFixed(1)) {
                               tmp =
-                                  '$tmp~Max:${w.tempMax.toStringAsFixed(1)}°C';
+                                  '$tmp\n${loc.weatherMaximum}: ${w.tempMax.toStringAsFixed(1)}°C';
                             }
                             tmp = '$tmp\n';
                             return ListTile(
@@ -249,7 +253,7 @@ class _WidgetsCalendarCardBodyState
                                 ),
                               ),
                               title: Text(
-                                  '${DateFormat('M/d H:mm').format(w.date)} ${w.main}'),
+                                  '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
                               subtitle: Text(tmp),
                             );
                           }).toList(),
@@ -259,7 +263,7 @@ class _WidgetsCalendarCardBodyState
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text('Close'),
+                        child: Text(loc.close),
                       ),
                     ],
                   ),
@@ -310,11 +314,13 @@ class _WidgetsCalendarCardBodyState
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsCalendarCard.link(
-                text: loc.clickHereToSeeMore,
-                onTap: widget.onOpenLink,),
+              text: loc.clickHereToSeeMore,
+              onTap: widget.onOpenLink,
+            ),
           if (widget.eventViewModel.description.isNotEmpty)
             Text(widget.eventViewModel.description),
-          if (widget.showSubEvents && widget.eventViewModel.subEvents.isNotEmpty)
+          if (widget.showSubEvents &&
+              widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
               shrinkWrap: true, // 讓 ListView 自動高度
               physics:
@@ -322,7 +328,10 @@ class _WidgetsCalendarCardBodyState
               itemCount: widget.eventViewModel.subEvents.length,
               itemBuilder: (context, index) {
                 final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsCalendarSubCard(event: sub, onOpenLink: widget.onOpenLink,);
+                return WidgetsCalendarSubCard(
+                  event: sub,
+                  onOpenLink: widget.onOpenLink,
+                );
               },
             )
         ],
@@ -330,9 +339,9 @@ class _WidgetsCalendarCardBodyState
     );
 
     final container = Container(
-            margin: Insets.h8v16,
-            child: content,
-          );
+      margin: Insets.h8v16,
+      child: content,
+    );
 
     return GestureDetector(
       onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,

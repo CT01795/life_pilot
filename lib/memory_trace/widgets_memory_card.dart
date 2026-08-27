@@ -8,6 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:life_pilot/event/widgets_event_image.dart';
+import 'package:life_pilot/utils/weather_localization.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -190,13 +191,13 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                 ),
               ),
               tooltip:
-                  '${todayWeather.main} ${todayWeather.temp.toStringAsFixed(1)}°C',
+                  '${localizeWeatherCondition(loc, todayWeather.main)} ${todayWeather.temp.toStringAsFixed(1)}°C',
               onPressed: () async {
                 if (!context.mounted) return;
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
-                    title: Text('Weather Forecast'),
+                    title: Text(loc.weatherForecast),
                     content: ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.6,
@@ -206,16 +207,16 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                           mainAxisSize: MainAxisSize.min,
                           children: forecast.map((w) {
                             String tmp =
-                                '${w.description}\nTemperature: ${w.temp.toStringAsFixed(1)}°C';
+                                '${localizeWeatherCondition(loc, w.main)}\n${loc.weatherTemperature}: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMin.toStringAsFixed(1)) {
                               tmp =
-                                  '$tmp\nMin:${w.tempMin.toStringAsFixed(1)}°C';
+                                  '$tmp\n${loc.weatherMinimum}: ${w.tempMin.toStringAsFixed(1)}°C';
                             }
                             if (w.temp.toStringAsFixed(1) !=
                                 w.tempMax.toStringAsFixed(1)) {
                               tmp =
-                                  '$tmp~Max:${w.tempMax.toStringAsFixed(1)}°C';
+                                  '$tmp\n${loc.weatherMaximum}: ${w.tempMax.toStringAsFixed(1)}°C';
                             }
                             tmp = '$tmp\n';
                             return ListTile(
@@ -255,7 +256,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                                 ),
                               ),
                               title: Text(
-                                  '${DateFormat('M/d H:mm').format(w.date)} ${w.main}'),
+                                  '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
                               subtitle: Text(tmp),
                             );
                           }).toList(),
@@ -265,7 +266,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text('Close'),
+                        child: Text(loc.close),
                       ),
                     ],
                   ),

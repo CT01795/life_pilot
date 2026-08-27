@@ -3,6 +3,20 @@ import 'package:life_pilot/event/controller_appbar_actions.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 
+class AppBarMenuAction {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const AppBarMenuAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+  });
+}
+
 AppBar widgetsWhiteAppBar({
   required String title,
   required ControllerAppBarActions handler,
@@ -15,7 +29,7 @@ AppBar widgetsWhiteAppBar({
   required bool enableUpload,
   bool showMap = false,
   VoidCallback? onToggleMap,
-  List<Widget> extraActions = const [],
+  List<AppBarMenuAction> extraMenuActions = const [],
 }) {
   return AppBar(
     title: Text(title,
@@ -37,7 +51,7 @@ AppBar widgetsWhiteAppBar({
         enableUpload: enableUpload,
         showMap: showMap,
         onToggleMap: onToggleMap,
-        extraActions: extraActions),
+        extraMenuActions: extraMenuActions),
   );
 }
 
@@ -52,9 +66,10 @@ List<Widget> _buildActions({
   required bool enableUpload,
   bool showMap = false,
   VoidCallback? onToggleMap,
-  List<Widget> extraActions = const [],
+  List<AppBarMenuAction> extraMenuActions = const [],
 }) {
   final List<Widget> actions = [];
+  final List<AppBarMenuAction> menuActions = [];
 
   if (onToggleMap != null) {
     actions.add(
@@ -67,45 +82,46 @@ List<Widget> _buildActions({
   }
 
   if (onRefresh != null) {
-    actions.add(
-      IconButton(
-        icon: isRefreshing
-            ? const SizedBox.square(
-                dimension: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.refresh),
-        tooltip: refreshTooltip,
+    menuActions.add(
+      AppBarMenuAction(
+        icon: Icons.refresh,
+        label: refreshTooltip ?? loc.eventRefresh,
+        isLoading: isRefreshing,
         onPressed: isRefreshing ? null : () => onRefresh(),
       ),
     );
   }
 
-  actions.addAll(extraActions);
-
   if (enableSearchAndExport) {
-    actions.addAll([
+    actions.add(
       IconButton(
         icon: const Icon(Icons.search),
         tooltip: loc.search,
         onPressed: () => handler.toggleSearchPanel(loc),
       ),
-      IconButton(
-          icon: const Icon(Icons.download),
-          tooltip: loc.exportExcel,
+    );
+    menuActions.add(
+      AppBarMenuAction(
+        icon: Icons.download,
+        label: loc.exportExcel,
+        onPressed: () async {
+          final exportResult = await handler.exportEvents(loc);
+          AppNavigator.showSnackBar(exportResult);
+        },
+      ),
+    );
+    if (enableUpload) {
+      menuActions.add(
+        AppBarMenuAction(
+          icon: Icons.upload,
+          label: loc.uploadExcel,
           onPressed: () async {
-            final exportResult = await handler.exportEvents(loc);
-            AppNavigator.showSnackBar(exportResult);
-          }),
-      if (enableUpload)
-        IconButton(
-            icon: const Icon(Icons.upload),
-            tooltip: loc.uploadExcel,
-            onPressed: () async {
-              final uploadResult = await handler.uploadEvents(loc);
-              AppNavigator.showSnackBar(uploadResult);
-            }),
-    ]);
+            final uploadResult = await handler.uploadEvents(loc);
+            AppNavigator.showSnackBar(uploadResult);
+          },
+        ),
+      );
+    }
   }
 
   if (onAdd != null) {
@@ -114,6 +130,38 @@ List<Widget> _buildActions({
         icon: const Icon(Icons.add),
         tooltip: loc.eventAdd,
         onPressed: onAdd,
+      ),
+    );
+  }
+
+  menuActions.addAll(extraMenuActions);
+  if (menuActions.isNotEmpty) {
+    actions.add(
+      PopupMenuButton<VoidCallback>(
+        tooltip: loc.moreActions,
+        icon: const Icon(Icons.more_vert),
+        onSelected: (callback) => callback(),
+        itemBuilder: (_) => menuActions
+            .map(
+              (action) => PopupMenuItem<VoidCallback>(
+                value: action.onPressed,
+                enabled: action.onPressed != null,
+                child: Row(
+                  children: [
+                    if (action.isLoading)
+                      const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Icon(action.icon, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(action.label)),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }

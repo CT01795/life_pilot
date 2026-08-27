@@ -332,6 +332,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search => '搜尋';
 
   @override
+  String get moreActions => '更多';
+
+  @override
   String get toggleView => '切換檢視模式';
 
   @override
@@ -621,6 +624,39 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get close => '關閉';
+
+  @override
+  String get weatherForecast => '天氣預報';
+
+  @override
+  String get weatherTemperature => '溫度';
+
+  @override
+  String get weatherMinimum => '最低';
+
+  @override
+  String get weatherMaximum => '最高';
+
+  @override
+  String get weatherThunderstorm => '雷雨';
+
+  @override
+  String get weatherDrizzle => '毛毛雨';
+
+  @override
+  String get weatherRain => '雨';
+
+  @override
+  String get weatherSnow => '雪';
+
+  @override
+  String get weatherMist => '霧霾';
+
+  @override
+  String get weatherClear => '晴朗';
+
+  @override
+  String get weatherClouds => '多雲';
 
   @override
   String get url => '網址';

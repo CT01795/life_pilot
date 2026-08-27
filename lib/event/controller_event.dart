@@ -35,6 +35,7 @@ class ControllerEvent extends ChangeNotifier {
   final Future<void> Function()? onCalendarReload;
   bool _isLoadingEvents = false;
   Object? _loadEventsError;
+  String? _lastWeatherWarmupKey;
 
   ControllerEvent(
       {required this.auth,
@@ -387,8 +388,6 @@ class ControllerEvent extends ChangeNotifier {
       _modelEvent.setEvents(list ?? []);
 
       // ✅ STOP UI card 不再觸發 weather
-      _warmUpWeather(list ?? []);
-
       _invalidateViewModelCache();
     } catch (error, stackTrace) {
       _loadEventsError = error;
@@ -426,6 +425,14 @@ class ControllerEvent extends ChangeNotifier {
         );
       }
     }
+  }
+
+  void preloadVisibleWeather(List<EventItem> events) {
+    if (events.isEmpty) return;
+    final warmupKey = events.take(8).map((event) => event.id).join('|');
+    if (_lastWeatherWarmupKey == warmupKey) return;
+    _lastWeatherWarmupKey = warmupKey;
+    unawaited(_warmUpWeather(events));
   }
 
   Future<void> _warmUpWeather(List<EventItem> events) async {

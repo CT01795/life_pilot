@@ -172,16 +172,12 @@ class _GenericEventPageState extends State<GenericEventPage> {
           refreshTooltip: loc.eventRefresh,
           showMap: _showMap,
           onToggleMap: () => setState(() => _showMap = !_showMap),
-          extraActions: [
+          extraMenuActions: [
             if (widget.auth.isSysAdmin && _supportsCoordinateBackfill)
-              IconButton(
-                icon: _isBackfillingCoordinates
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_location_alt_outlined),
-                tooltip: loc.mapCoordinateBackfill,
+              AppBarMenuAction(
+                icon: Icons.add_location_alt_outlined,
+                label: loc.mapCoordinateBackfill,
+                isLoading: _isBackfillingCoordinates,
                 onPressed: _isBackfillingCoordinates
                     ? null
                     : () => _backfillMapCoordinates(loc),
@@ -249,6 +245,14 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                       eventRegionKey(event.city) ==
                                       effectiveCity)
                                   .toList();
+                          if (!_showMap && visibleEvents.isNotEmpty) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _controller
+                                    .preloadVisibleWeather(visibleEvents);
+                              }
+                            });
+                          }
                           return Column(
                             children: [
                               if (widget.enableCityFilter && cities.isNotEmpty)

@@ -112,6 +112,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    context.watch<ControllerEvent>();
 
     return Scaffold(
         appBar: widgetsWhiteAppBar(
@@ -173,6 +174,14 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                                       eventRegionKey(event.city) ==
                                       effectiveCity)
                                   .toList();
+                          if (!_showMap && visibleEvents.isNotEmpty) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _controller
+                                    .preloadVisibleWeather(visibleEvents);
+                              }
+                            });
+                          }
                           return Column(
                             children: [
                               Expanded(

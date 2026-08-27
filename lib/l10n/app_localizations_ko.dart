@@ -332,6 +332,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get search => '검색';
 
   @override
+  String get moreActions => '더보기';
+
+  @override
   String get toggleView => '보기 전환';
 
   @override
@@ -621,6 +624,39 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get close => '닫기';
+
+  @override
+  String get weatherForecast => '일기 예보';
+
+  @override
+  String get weatherTemperature => '기온';
+
+  @override
+  String get weatherMinimum => '최저';
+
+  @override
+  String get weatherMaximum => '최고';
+
+  @override
+  String get weatherThunderstorm => '뇌우';
+
+  @override
+  String get weatherDrizzle => '이슬비';
+
+  @override
+  String get weatherRain => '비';
+
+  @override
+  String get weatherSnow => '눈';
+
+  @override
+  String get weatherMist => '안개';
+
+  @override
+  String get weatherClear => '맑음';
+
+  @override
+  String get weatherClouds => '흐림';
 
   @override
   String get url => 'URL';
