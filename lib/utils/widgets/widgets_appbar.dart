@@ -13,6 +13,8 @@ AppBar widgetsWhiteAppBar({
   bool isRefreshing = false,
   bool enableSearchAndExport = false,
   required bool enableUpload,
+  bool showMap = false,
+  VoidCallback? onToggleMap,
 }) {
   return AppBar(
     title: Text(title,
@@ -31,7 +33,9 @@ AppBar widgetsWhiteAppBar({
         refreshTooltip: refreshTooltip,
         isRefreshing: isRefreshing,
         enableSearchAndExport: enableSearchAndExport,
-        enableUpload: enableUpload),
+        enableUpload: enableUpload,
+        showMap: showMap,
+        onToggleMap: onToggleMap),
   );
 }
 
@@ -44,8 +48,20 @@ List<Widget> _buildActions({
   bool isRefreshing = false,
   bool enableSearchAndExport = false,
   required bool enableUpload,
+  bool showMap = false,
+  VoidCallback? onToggleMap,
 }) {
   final List<Widget> actions = [];
+
+  if (onToggleMap != null) {
+    actions.add(
+      IconButton(
+        icon: Icon(showMap ? Icons.view_agenda_outlined : Icons.map_outlined),
+        tooltip: showMap ? _listTooltip(loc) : _mapTooltip(loc),
+        onPressed: onToggleMap,
+      ),
+    );
+  }
 
   if (onRefresh != null) {
     actions.add(
@@ -98,4 +114,18 @@ List<Widget> _buildActions({
   }
 
   return actions;
+}
+
+String _listTooltip(AppLocalizations loc) {
+  if (loc.localeName.startsWith('zh')) return '切換為清單';
+  if (loc.localeName.startsWith('ja')) return 'リストに切り替え';
+  if (loc.localeName.startsWith('ko')) return '목록으로 전환';
+  return 'Switch to list';
+}
+
+String _mapTooltip(AppLocalizations loc) {
+  if (loc.localeName.startsWith('zh')) return '切換為地圖';
+  if (loc.localeName.startsWith('ja')) return '地図に切り替え';
+  if (loc.localeName.startsWith('ko')) return '지도로 전환';
+  return 'Switch to map';
 }

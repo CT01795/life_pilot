@@ -45,16 +45,14 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
         _loadAccounts();
       }
     });
-
   }
 
   Future<void> _loadAccounts() async {
-    if(_accountController.accounts.isNotEmpty){
+    if (_accountController.accounts.isNotEmpty) {
       setState(() {
         _accountsLoaded = true;
       });
-    }
-    else if (!_accountsLoaded) {
+    } else if (!_accountsLoaded) {
       await _accountController.loadAccounts(inputCategory: 'project');
       setState(() {
         _accountsLoaded = true;
@@ -81,10 +79,10 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     // ✅ 但 build() 會重跑，因此 loc 會更新、文字立即刷新
     return ChangeNotifierProvider.value(
       value: _controllerEvent,
-      child:MemoryGenericEventPage(
+      child: MemoryGenericEventPage(
         auth: auth,
         controllerEvent: _controllerEvent,
-        title: loc.memoryTrace,
+        title: '',
         emptyText: loc.memoryTraceZero,
         searchPanelBuilder: widgetsSearchPanel,
         listBuilder: ({

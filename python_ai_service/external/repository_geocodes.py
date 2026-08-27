@@ -4,6 +4,13 @@ from typing import Any
 from external.database import get_database_engine
 from sqlalchemy import text
 
+EVENT_MAP_TABLES = {
+    "calendar_events",
+    "recommended_events",
+    "recommended_attractions",
+    "memory_trace",
+}
+
 
 def get_geocode_cache(query_hash: str) -> dict[str, Any] | None:
     statement = text(
@@ -125,3 +132,72 @@ def mark_geocode_failed(*, cache_id: int, error_code: str) -> None:
                 "error_code": error_code[:100],
             },
         )
+
+
+def get_event_map_location(
+    *, table_name: str, event_id: str, user_email: str, is_admin: bool
+) -> dict[str, Any] | None:
+    if table_name not in EVENT_MAP_TABLES:
+        raise ValueError("Unsupported event table")
+    visibility = (
+        "lower(account) = :user_email"
+        if table_name in {"calendar_events", "memory_trace"}
+        else "(:is_admin = true or lower(account) = :user_email "
+        "or coalesce(is_approved, false) = true)"
+    )
+    statement = text(
+        f"""
+        select id, country, city, location, map_lat, map_lng
+        from public.{table_name}
+        where id = :event_id and ({visibility})
+        """
+    )
+    with get_database_engine().connect() as connection:
+        row = connection.execute(
+            statement,
+            {
+                "event_id": event_id,
+                "user_email": user_email.casefold(),
+                "is_admin": is_admin,
+            },
+        ).mappings().one_or_none()
+        return dict(row) if row is not None else None
+
+
+def save_event_map_coordinates(
+    *,
+    table_name: str,
+    event_id: str,
+    country: str,
+    city: str,
+    location: str,
+    lat: float,
+    lng: float,
+) -> dict[str, float] | None:
+    if table_name not in EVENT_MAP_TABLES:
+        raise ValueError("Unsupported event table")
+    statement = text(
+        f"""
+        update public.{table_name}
+        set map_lat = :lat, map_lng = :lng
+        where id = :event_id
+          and country = :country and city = :city and location = :location
+          and map_lat is null and map_lng is null
+        returning map_lat, map_lng
+        """
+    )
+    with get_database_engine().begin() as connection:
+        row = connection.execute(
+            statement,
+            {
+                "event_id": event_id,
+                "country": country,
+                "city": city,
+                "location": location,
+                "lat": lat,
+                "lng": lng,
+            },
+        ).mappings().one_or_none()
+        if row is None:
+            return None
+        return {"lat": float(row["map_lat"]), "lng": float(row["map_lng"])}

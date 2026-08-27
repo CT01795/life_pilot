@@ -5,13 +5,15 @@ import os
 import unicodedata
 from datetime import datetime, time as datetime_time, timedelta, timezone
 from time import monotonic
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import httpx
 from external.repository_geocodes import (
     claim_geocode_refresh,
+    get_event_map_location,
     get_geocode_cache,
     mark_geocode_failed,
+    save_event_map_coordinates,
     save_geocode_result,
 )
 from external.repository_weather import (
@@ -42,6 +44,16 @@ class GeocodeRequest(BaseModel):
 class GeocodeResponse(BaseModel):
     lat: float | None = None
     lng: float | None = None
+
+
+class EventMapGeocodeRequest(BaseModel):
+    table_name: Literal[
+        "calendar_events",
+        "recommended_events",
+        "recommended_attractions",
+        "memory_trace",
+    ]
+    event_id: str = Field(min_length=1, max_length=200)
 
 
 class WeatherRequest(BaseModel):
@@ -245,7 +257,11 @@ async def geocode(
     payload: GeocodeRequest,
     user: Annotated[dict[str, Any], Depends(require_supabase_user)],
 ) -> GeocodeResponse:
-    query = unicodedata.normalize("NFKC", " ".join(payload.query.split()))
+    return await _geocode_query(payload.query, str(user["id"]))
+
+
+async def _geocode_query(query_value: str, user_id: str) -> GeocodeResponse:
+    query = unicodedata.normalize("NFKC", " ".join(query_value.split()))
     if not query:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -277,7 +293,7 @@ async def geocode(
         return GeocodeResponse()
 
     try:
-        _geocode_rate_limiter.check(str(user["id"]))
+        _geocode_rate_limiter.check(user_id)
     except HTTPException:
         await _mark_geocode_failed_safely(cache_id, "rate_limited")
         raise
@@ -352,6 +368,88 @@ async def geocode(
         raise _database_unavailable(exception) from exception
 
     return result
+
+
+@router.post("/map-geocode", response_model=GeocodeResponse)
+async def map_geocode(
+    payload: EventMapGeocodeRequest,
+    user: Annotated[dict[str, Any], Depends(require_supabase_user)],
+) -> GeocodeResponse:
+    user_email = str(user.get("email") or "").strip().casefold()
+    app_metadata = user.get("app_metadata")
+    is_admin = (
+        isinstance(app_metadata, dict)
+        and app_metadata.get("role") == "admin"
+    )
+    try:
+        event = await asyncio.to_thread(
+            get_event_map_location,
+            table_name=payload.table_name,
+            event_id=payload.event_id,
+            user_email=user_email,
+            is_admin=is_admin,
+        )
+    except (RuntimeError, SQLAlchemyError) as exception:
+        raise _database_unavailable(exception) from exception
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event location was not found",
+        )
+
+    cached_lat = event.get("map_lat")
+    cached_lng = event.get("map_lng")
+    if isinstance(cached_lat, (int, float)) and isinstance(
+        cached_lng, (int, float)
+    ):
+        return GeocodeResponse(lat=float(cached_lat), lng=float(cached_lng))
+
+    country = str(event.get("country") or "Taiwan").strip() or "Taiwan"
+    city = str(event.get("city") or "").strip()
+    location = str(event.get("location") or "").strip()
+    if not location and not city:
+        return GeocodeResponse()
+
+    query = ", ".join(value for value in (location, city, country) if value)
+    result = await _geocode_query(query, str(user["id"]))
+    if result.lat is None or result.lng is None:
+        return result
+
+    try:
+        saved = await asyncio.to_thread(
+            save_event_map_coordinates,
+            table_name=payload.table_name,
+            event_id=payload.event_id,
+            country=country,
+            city=city,
+            location=location,
+            lat=result.lat,
+            lng=result.lng,
+        )
+    except (RuntimeError, SQLAlchemyError) as exception:
+        raise _database_unavailable(exception) from exception
+    if saved is not None:
+        return GeocodeResponse(**saved)
+
+    refreshed = await asyncio.to_thread(
+        get_event_map_location,
+        table_name=payload.table_name,
+        event_id=payload.event_id,
+        user_email=user_email,
+        is_admin=is_admin,
+    )
+    if refreshed is not None:
+        refreshed_lat = refreshed.get("map_lat")
+        refreshed_lng = refreshed.get("map_lng")
+        if isinstance(refreshed_lat, (int, float)) and isinstance(
+            refreshed_lng, (int, float)
+        ):
+            return GeocodeResponse(
+                lat=float(refreshed_lat),
+                lng=float(refreshed_lng),
+            )
+    return GeocodeResponse()
 
 
 async def _fetch_weather_from_provider(

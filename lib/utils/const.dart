@@ -150,6 +150,7 @@ class EventFields {
   static const String endDate = 'end_date';
   static const String startTime = 'start_time';
   static const String endTime = 'end_time';
+  static const String country = 'country';
   static const String city = 'city';
   static const String location = 'location';
   static const String name = 'name';
@@ -180,6 +181,8 @@ class EventFields {
   static const String source = "source";
   static const String lat = "lat";
   static const String lng = "lng";
+  static const String mapLat = "map_lat";
+  static const String mapLng = "map_lng";
 }
 
 class Fields {

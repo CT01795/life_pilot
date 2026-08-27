@@ -54,11 +54,11 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
     return ChangeNotifierProvider.value(
-      value: _controllerEvent,
-      child: GenericEventPage(
+        value: _controllerEvent,
+        child: GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,
-          title: loc.recommendEvent,
+          title: '',
           emptyText: loc.recommendEventZero,
           searchPanelBuilder: widgetsSearchPanel,
           listBuilder: ({
@@ -66,9 +66,11 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
             required ScrollController scrollController,
           }) {
             return WidgetsEventList(
-                scrollController: scrollController,
-                controllerEvent: _controllerEvent,
-                auth: auth);
+              filteredEvents: filteredEvents,
+              scrollController: scrollController,
+              controllerEvent: _controllerEvent,
+              auth: auth,
+            );
           },
         ));
   }

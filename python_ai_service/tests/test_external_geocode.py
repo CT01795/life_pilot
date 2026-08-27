@@ -90,6 +90,82 @@ class ExternalGeocodeTest(unittest.IsolatedAsyncioTestCase):
         claim_refresh.assert_not_called()
         http_client.assert_not_called()
 
+    async def test_map_geocode_uses_saved_coordinates_without_provider(self):
+        with (
+            patch.object(
+                service_weather,
+                "get_event_map_location",
+                return_value={
+                    "country": "Taiwan",
+                    "city": "Taipei",
+                    "location": "Taipei 101",
+                    "map_lat": 25.033,
+                    "map_lng": 121.5654,
+                },
+            ),
+            patch.object(service_weather, "_geocode_query") as provider,
+            patch.object(
+                service_weather,
+                "save_event_map_coordinates",
+            ) as save_coordinates,
+        ):
+            response = await service_weather.map_geocode(
+                service_weather.EventMapGeocodeRequest(
+                    table_name="recommended_events",
+                    event_id="event-1",
+                ),
+                {"id": "user-1", "email": "user@example.com"},
+            )
+
+        self.assertEqual(response.lat, 25.033)
+        self.assertEqual(response.lng, 121.5654)
+        provider.assert_not_called()
+        save_coordinates.assert_not_called()
+
+    async def test_map_geocode_queries_full_address_and_saves_coordinates(self):
+        event_without_coordinates = {
+            "country": "Taiwan",
+            "city": "Taipei",
+            "location": "Taipei 101",
+            "map_lat": None,
+            "map_lng": None,
+        }
+        with (
+            patch.object(
+                service_weather,
+                "get_event_map_location",
+                return_value=event_without_coordinates,
+            ),
+            patch.object(
+                service_weather,
+                "_geocode_query",
+                return_value=service_weather.GeocodeResponse(
+                    lat=25.033,
+                    lng=121.5654,
+                ),
+            ) as provider,
+            patch.object(
+                service_weather,
+                "save_event_map_coordinates",
+                return_value={"lat": 25.033, "lng": 121.5654},
+            ) as save_coordinates,
+        ):
+            response = await service_weather.map_geocode(
+                service_weather.EventMapGeocodeRequest(
+                    table_name="recommended_events",
+                    event_id="event-1",
+                ),
+                {"id": "user-1", "email": "user@example.com"},
+            )
+
+        provider.assert_awaited_once_with(
+            "Taipei 101, Taipei, Taiwan",
+            "user-1",
+        )
+        save_coordinates.assert_called_once()
+        self.assertEqual(response.lat, 25.033)
+        self.assertEqual(response.lng, 121.5654)
+
 
 if __name__ == "__main__":
     unittest.main()

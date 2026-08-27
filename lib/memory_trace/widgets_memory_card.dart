@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
+import 'package:life_pilot/event/widgets_event_image.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -75,15 +76,18 @@ class WidgetsMemoryCard extends StatelessWidget {
       runSpacing: 4,
       children: typeList.map((type) {
         return Container(
-          padding: Insets.h8v4,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            border: Border.all(color: Colors.blue),
-            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFFF3E9FA),
+            borderRadius: BorderRadius.circular(99),
           ),
           child: Text(
             type,
-            style: const TextStyle(color: Colors.blue),
+            style: const TextStyle(
+              color: Color(0xFF76528D),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         );
       }).toList(),
@@ -133,9 +137,11 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate = widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
+    final eventDate =
+        widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
-    final forecast = widget.controllerEvent.getForecast(locationDisplay: widget.eventViewModel.locationDisplay);
+    final forecast = widget.controllerEvent
+        .getForecast(locationDisplay: widget.eventViewModel.locationDisplay);
 
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
@@ -271,7 +277,12 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
           Expanded(
               child: Text(
             widget.eventViewModel.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              height: 1.25,
+              color: Color(0xFF31263A),
+            ),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
             //overflow: TextOverflow.ellipsis, // 防止文字過長
@@ -287,34 +298,76 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
       );
     }
 
+    Widget infoRow(IconData icon, String text, {VoidCallback? onTap}) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 18, color: const Color(0xFF8A668F)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    color: Color(0xFF62536A),
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final content = Padding(
-      padding: Insets.all4,
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 50),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
+          const SizedBox(height: 10),
           if (widget.eventViewModel.dateRange.isNotEmpty)
-            Text(widget.eventViewModel.dateRange),
-          if (widget.eventViewModel.tags.isNotEmpty)
-            WidgetsMemoryCard.tags(typeList: widget.eventViewModel.tags),
+            infoRow(
+                Icons.calendar_month_rounded, widget.eventViewModel.dateRange),
           if (widget.eventViewModel.hasLocation)
-            InkWell(
+            infoRow(
+              Icons.place_rounded,
+              widget.eventViewModel.locationDisplay,
               onTap: widget.onOpenMap,
+            ),
+          if (widget.eventViewModel.tags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child:
+                  WidgetsMemoryCard.tags(typeList: widget.eventViewModel.tags),
+            ),
+          if (widget.eventViewModel.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
               child: Text(
-                widget.eventViewModel.locationDisplay,
+                widget.eventViewModel.description,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Colors.blue,
-                  decoration: TextDecoration.underline,
+                  color: Color(0xFF6D5D72),
+                  height: 1.45,
                 ),
               ),
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
-            WidgetsMemoryCard.link(
-              text: loc.clickHereToSeeMore,
-              onTap: widget.onOpenLink,
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: TextButton.icon(
+                onPressed: widget.onOpenLink,
+                icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                label: Text(loc.clickHereToSeeMore),
+              ),
             ),
-          if (widget.eventViewModel.description.isNotEmpty)
-            Text(widget.eventViewModel.description),
           if (widget.showSubEvents &&
               widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
@@ -335,17 +388,25 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     );
 
     final container = Card(
-      margin: Insets.h8v16,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFEADFEB)),
       ),
-      color: Colors.grey.shade100,
-      elevation: 4,
-      child: content,
+      color: const Color(0xFFFFFBFF),
+      surfaceTintColor: Colors.white,
+      elevation: 1.5,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          WidgetsEventImage(value: widget.eventViewModel.masterGraphUrl),
+          content,
+        ],
+      ),
     );
 
     return GestureDetector(
-      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
+      onTap: widget.eventViewModel.subEvents.isEmpty ? null : widget.onTap,
       child: Stack(
         children: [
           container,

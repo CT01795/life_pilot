@@ -21,6 +21,7 @@ abstract class EventBase {
   DateTime? get endDate;
   TimeOfDay? get startTime;
   TimeOfDay? get endTime;
+  String get country;
   String get city;
   String get location;
   String get name;
@@ -51,6 +52,8 @@ abstract class EventBase {
   String? get source;
   double? get lat;
   double? get lng;
+  double? get mapLat;
+  double? get mapLng;
   List<EventItem> get subEvents;
 
   Map<String, dynamic> toJson();
@@ -74,6 +77,8 @@ class EventItem implements EventBase {
   TimeOfDay? startTime;
   @override
   TimeOfDay? endTime;
+  @override
+  String country;
   @override
   String city;
   @override
@@ -132,6 +137,10 @@ class EventItem implements EventBase {
   double? lat;
   @override
   double? lng;
+  @override
+  double? mapLat;
+  @override
+  double? mapLng;
 
   List<EventItem> _subEvents;
 
@@ -147,6 +156,7 @@ class EventItem implements EventBase {
     this.endDate,
     this.startTime,
     this.endTime,
+    this.country = 'Taiwan',
     this.city = '',
     this.location = '',
     this.name = '',
@@ -176,6 +186,8 @@ class EventItem implements EventBase {
     this.source,
     this.lat,
     this.lng,
+    this.mapLat,
+    this.mapLng,
     List<EventItem>? subEvents,
   })  : id = id ?? _uuid.v4(),
         _subEvents = List<EventItem>.from(subEvents ?? []);
@@ -191,6 +203,7 @@ class EventItem implements EventBase {
       EventFields.endDate: endDate?.formatDateString(),
       EventFields.startTime: startTime?.formatTimeString(),
       EventFields.endTime: endTime?.formatTimeString(),
+      EventFields.country: country,
       EventFields.city: city,
       EventFields.location: location,
       EventFields.name: name,
@@ -223,6 +236,8 @@ class EventItem implements EventBase {
       EventFields.source: source,
       EventFields.lat: lat,
       EventFields.lng: lng,
+      EventFields.mapLat: mapLat,
+      EventFields.mapLng: mapLng,
       EventFields.subEvents: subEvents.map((e) => e.toJson()).toList(),
     };
   }
@@ -238,6 +253,9 @@ class EventItem implements EventBase {
       endDate: fromStringOrNull(json[EventFields.endDate]),
       startTime: parseTimeOfDay(json[EventFields.startTime]),
       endTime: parseTimeOfDay(json[EventFields.endTime]),
+      country: (json[EventFields.country] as String?)?.trim().isNotEmpty == true
+          ? (json[EventFields.country] as String).trim()
+          : 'Taiwan',
       city: json[EventFields.city] ?? '',
       location: json[EventFields.location] ?? '',
       name: json[EventFields.name] ?? '',
@@ -269,6 +287,8 @@ class EventItem implements EventBase {
       source: json[EventFields.source],
       lat: json[EventFields.lat],
       lng: json[EventFields.lng],
+      mapLat: (json[EventFields.mapLat] as num?)?.toDouble(),
+      mapLng: (json[EventFields.mapLng] as num?)?.toDouble(),
       subEvents: subEventsJson is List
           ? subEventsJson
               .whereType<Map<String, dynamic>>()
@@ -287,6 +307,7 @@ class EventItem implements EventBase {
     DateTime? newEndDate,
     TimeOfDay? newStartTime,
     TimeOfDay? newEndTime,
+    String? newCountry,
     String? newCity,
     String? newLocation,
     String? newName,
@@ -317,6 +338,8 @@ class EventItem implements EventBase {
     String? newSource,
     double? newLat,
     double? newLng,
+    double? newMapLat,
+    double? newMapLng,
     List<EventItem>? newSubEvents,
   }) {
     return EventItem(
@@ -328,6 +351,7 @@ class EventItem implements EventBase {
       endDate: newEndDate ?? endDate,
       startTime: newStartTime ?? startTime,
       endTime: newEndTime ?? endTime,
+      country: newCountry ?? country,
       city: newCity ?? city,
       location: newLocation ?? location,
       name: newName ?? name,
@@ -358,6 +382,8 @@ class EventItem implements EventBase {
       source: newSource ?? source,
       lat: newLat ?? lat,
       lng: newLng ?? lng,
+      mapLat: newMapLat ?? mapLat,
+      mapLng: newMapLng ?? mapLng,
     );
   }
 
@@ -399,6 +425,7 @@ class EventViewModel {
   final EventItem event;
   final String id;
   final String name;
+  final String? masterGraphUrl;
   final bool showDate;
   final String dateRange;
   List<String> tags;
@@ -433,6 +460,7 @@ class EventViewModel {
       {required this.event,
       required this.id,
       required this.name,
+      this.masterGraphUrl,
       required this.showDate,
       required this.startDate,
       required this.endDate,
@@ -516,6 +544,7 @@ class EventViewModel {
       event: event,
       id: event.id,
       name: event.name,
+      masterGraphUrl: event.masterGraphUrl,
       showDate: tableName != TableNames.recommendPlaces,
       startDate: event.startDate,
       endDate: event.endDate,

@@ -21,6 +21,31 @@ class ServiceEvent {
   bool get _isCurrentUserAdmin =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
 
+  Future<EventItem> ensureMapCoordinates({
+    required String tableName,
+    required EventItem event,
+  }) async {
+    if (event.mapLat != null && event.mapLng != null) {
+      return event;
+    }
+    if (event.city.trim().isEmpty && event.location.trim().isEmpty) {
+      return event;
+    }
+
+    final response = await apiSupabase.post(
+      '/external/map-geocode',
+      {
+        'table_name': tableName,
+        'event_id': event.id,
+      },
+    );
+    if (response is Map<String, dynamic>) {
+      event.mapLat = (response['lat'] as num?)?.toDouble();
+      event.mapLng = (response['lng'] as num?)?.toDouble();
+    }
+    return event;
+  }
+
   Future<void> _cleanupRecommendedEventsOncePerDay(DateTime today) async {
     if (_lastCleanupRequestDate == today) return;
     final activeRequest = _cleanupRequest;

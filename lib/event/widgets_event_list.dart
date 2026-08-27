@@ -10,12 +10,14 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 
 class WidgetsEventList extends StatelessWidget {
   final ControllerAuth auth;
+  final List<EventItem> filteredEvents;
   final ScrollController scrollController;
   final ControllerEvent controllerEvent;
 
   const WidgetsEventList({
     super.key,
     required this.auth,
+    required this.filteredEvents,
     required this.scrollController,
     required this.controllerEvent,
   });
@@ -23,7 +25,6 @@ class WidgetsEventList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final filteredEvents = controllerEvent.getFilteredEvents(loc);
     final viewModels =
         controllerEvent.buildViewModels(events: filteredEvents, loc: loc);
 

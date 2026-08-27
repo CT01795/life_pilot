@@ -143,6 +143,7 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     Map<String, String> fields = {
+      EventFields.country: _countryLabel(),
       EventFields.city: loc.city,
       EventFields.location: loc.location,
       EventFields.name: loc.activityName,
@@ -232,6 +233,14 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
           ),
         ));
   }
+
+  String _countryLabel() =>
+      switch (Localizations.localeOf(context).languageCode) {
+        'zh' => '國家',
+        'ja' => '国',
+        'ko' => '국가',
+        _ => 'Country',
+      };
 
   // =====================================================
   // 🧱 組件建構部分

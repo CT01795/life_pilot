@@ -39,7 +39,7 @@ class PageStock extends StatelessWidget {
               if (controller.stocks.isEmpty)
                 _buildEmptyState(context)
               else ...[
-                _buildDashboard(controller),
+                _buildDashboard(context, controller),
                 Gaps.h8,
               ],
 
@@ -47,7 +47,7 @@ class PageStock extends StatelessWidget {
               /// 📈 STOCK LIST
               /// =========================
               for (int i = 0; i < controller.stocks.length; i++)
-                _buildStockCard(controller.stocks[i], i),
+                _buildStockCard(context, controller.stocks[i], i),
             ],
           );
         },
@@ -158,12 +158,14 @@ Widget _buildUpdateStatus(BuildContext context, StockUpdateStatus status) {
   );
 }
 
-Widget _buildDashboard(ControllerStock c) {
+Widget _buildDashboard(BuildContext context, ControllerStock c) {
+  final loc = AppLocalizations.of(context)!;
+
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        "📊 市場儀表板",
+        loc.stockDashboardTitle,
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
       Gaps.h8,
@@ -201,7 +203,7 @@ Widget _buildDashboard(ControllerStock c) {
         ),
       ),
       Gaps.h32,
-      Text("外資買超 Top30"),
+      Text(loc.stockForeignBuyTop30),
       ...c.foreignBuyTop30.map(
         //.take(30).map(
         (e) => RichText(
@@ -231,15 +233,15 @@ Widget _buildDashboard(ControllerStock c) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const TextSpan(
-                text: "仟張",
+              TextSpan(
+                text: loc.stockThousandLots,
               ),
             ],
           ),
         ),
       ),
       Gaps.h8,
-      Text("外資賣超 Top30"),
+      Text(loc.stockForeignSellTop30),
       ...c.foreignSellTop30.map(
         //.take(30).map(
         (e) => RichText(
@@ -270,8 +272,8 @@ Widget _buildDashboard(ControllerStock c) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const TextSpan(
-                text: "仟張",
+              TextSpan(
+                text: loc.stockThousandLots,
               ),
             ],
           ),
@@ -281,7 +283,8 @@ Widget _buildDashboard(ControllerStock c) {
   );
 }
 
-Widget _buildStockCard(ModelStock stock, int index) {
+Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
+  final loc = AppLocalizations.of(context)!;
   bool isUp = stock.change != null && stock.change!.contains("+");
   return Card(
     elevation: 2,
@@ -339,7 +342,9 @@ Widget _buildStockCard(ModelStock stock, int index) {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "收盤價: ${NumberFormat('#,##0.00').format(stock.closingPrice)}",
+                loc.stockClosingPrice(
+                  NumberFormat('#,##0.00').format(stock.closingPrice),
+                ),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
@@ -376,7 +381,10 @@ Widget _buildStockCard(ModelStock stock, int index) {
               ),
               Gaps.w8,
               Text(
-                "成交張數: ${NumberFormat('#,##0').format((stock.tradedNumber ?? 0) / 1000)}",
+                loc.stockTradingVolume(
+                  NumberFormat('#,##0')
+                      .format((stock.tradedNumber ?? 0) / 1000),
+                ),
               ),
             ],
           ),

@@ -20,6 +20,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
   DateTime? endDate;
   TimeOfDay? startTime;
   TimeOfDay? endTime;
+  String country = 'Taiwan';
   String city = '';
   String location = '';
   String name = '';
@@ -60,6 +61,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
     endDate = e?.endDate ?? startDate;
     startTime = e?.startTime ?? TimeOfDay.fromDateTime(now);
     endTime = e?.endTime;
+    country = e?.country ?? 'Taiwan';
     city = e?.city ?? '';
     location = e?.location ?? '';
     name = e?.name ?? '';
@@ -71,6 +73,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
         e?.reminderOptions ?? const [CalendarReminderOption.dayBefore8am];
     repeatOptions = e?.repeatOptions ?? CalendarRepeatRule.once;
     final fields = {
+      EventFields.country: country,
       EventFields.city: city,
       EventFields.location: location,
       EventFields.name: name,
@@ -87,6 +90,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
     for (int i = 0; i < subEvents.length; i++) {
       final sub = subEvents[i];
       final subFields = {
+        EventFields.country: sub.country,
         EventFields.city: sub.city,
         EventFields.location: sub.location,
         EventFields.name: sub.name,
@@ -135,6 +139,9 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
 
   void _updateMainField(String key, String value, bool check) {
     switch (key) {
+      case EventFields.country:
+        country = value;
+        break;
       case EventFields.city:
         city = value;
         break;
@@ -159,6 +166,9 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
   void _updateSubEvent(
       String mapKey, EventItem sub, String key, String value, bool check) {
     switch (key) {
+      case EventFields.country:
+        sub.country = value;
+        break;
       case EventFields.city:
         sub.city = value;
         break;
@@ -182,6 +192,10 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
 
   // 將目前表單內容轉換為 EventItem
   EventItem toEventItem() {
+    final addressUnchanged = existingEvent != null &&
+        existingEvent!.country.trim() == country.trim() &&
+        existingEvent!.city.trim() == city.trim() &&
+        existingEvent!.location.trim() == location.trim();
     // ✅ 先更新 subEvents 的內容
     final sortedSubs = List<EventItem>.from(subEvents)..sort(_compareEvents);
     //subEvents.sort(_compareEvents);
@@ -192,18 +206,29 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
         return tmpValue == null || tmpValue.isEmpty ? '' : tmpValue;
       }
 
+      final subCountry = getText(EventFields.country).trim().isEmpty
+          ? 'Taiwan'
+          : getText(EventFields.country).trim();
+      final subCity = getText(EventFields.city);
+      final subLocation = getText(EventFields.location);
+      final subAddressUnchanged = sub.country.trim() == subCountry &&
+          sub.city.trim() == subCity.trim() &&
+          sub.location.trim() == subLocation.trim();
       return sub.copyWith(
         newSubEvents: [],
         newMasterUrl: getText(EventFields.masterUrl),
-        newCity: getText(EventFields.city),
-        newLocation: getText(EventFields.location),
+        newCountry: subCountry,
+        newCity: subCity,
+        newLocation: subLocation,
         newName: getText(EventFields.name),
         newType: getText(EventFields.type),
         newDescription: getText(EventFields.description),
         newAccount: auth.currentAccount,
         newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
         newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
-      );
+      )
+        ..mapLat = subAddressUnchanged ? sub.mapLat : null
+        ..mapLng = subAddressUnchanged ? sub.mapLng : null;
     }).toList();
 
     // ✅ 再組主事件
@@ -216,6 +241,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
       ..endDate = endDate
       ..startTime = startTime
       ..endTime = endTime
+      ..country = country.trim().isEmpty ? 'Taiwan' : country.trim()
       ..city = city
       ..location = location
       ..name = name
@@ -223,7 +249,9 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
       ..description = description
       ..account = auth.currentAccount
       ..repeatOptions = existingEvent?.repeatOptions ?? repeatOptions
-      ..reminderOptions = existingEvent?.reminderOptions ?? reminderOptions;
+      ..reminderOptions = existingEvent?.reminderOptions ?? reminderOptions
+      ..mapLat = addressUnchanged ? existingEvent?.mapLat : null
+      ..mapLng = addressUnchanged ? existingEvent?.mapLng : null;
   }
 
   int _compareEvents(EventItem a, EventItem b) {

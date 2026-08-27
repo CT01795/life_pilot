@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
@@ -30,6 +33,7 @@ class PageEventAdd extends StatefulWidget {
 }
 
 class _PageEventAddState extends State<PageEventAdd> {
+  final ImagePicker _imagePicker = ImagePicker();
   final TextEditingController fbTextController = TextEditingController();
   late final ControllerPageEventAdd controllerAdd;
   final _formKey = GlobalKey<FormState>();
@@ -146,6 +150,7 @@ class _PageEventAddState extends State<PageEventAdd> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     Map<String, String> fields = {
+      EventFields.country: _countryLabel(),
       EventFields.city: loc.city,
       EventFields.location: loc.location,
       EventFields.name: loc.activityName,
@@ -219,7 +224,8 @@ class _PageEventAddState extends State<PageEventAdd> {
                                 icon: const Icon(Icons.auto_fix_high),
                                 label: Text(loc.parsing),
                                 onPressed: () {
-                                  controllerAdd.parseFacebookText(fbTextController.text);
+                                  controllerAdd
+                                      .parseFacebookText(fbTextController.text);
                                 },
                               ),
                               Gaps.w8,
@@ -235,6 +241,12 @@ class _PageEventAddState extends State<PageEventAdd> {
                       ),
                     ),
                   ),
+                  if ({
+                    TableNames.recommendEvents,
+                    TableNames.recommendPlaces,
+                    TableNames.memoryTrace,
+                  }.contains(controllerAdd.tableName))
+                    _buildOptionalImagePicker(loc),
                   _buildDateTimeRow(loc: loc, ctl: controllerAdd),
                   ..._buildTextFields(
                       loc: loc, ctl: controllerAdd, fields: fields),
@@ -281,6 +293,108 @@ class _PageEventAddState extends State<PageEventAdd> {
           ),
         ));
   }
+
+  Widget _buildOptionalImagePicker(AppLocalizations loc) {
+    return Consumer<ControllerPageEventAdd>(
+      builder: (_, ctl, __) {
+        final imageValue = ctl.masterGraphUrl?.trim();
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (imageValue != null && imageValue.isNotEmpty)
+                SizedBox(height: 190, child: _eventImage(imageValue)),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _imageLabel(),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    if (imageValue != null && imageValue.isNotEmpty)
+                      IconButton(
+                        tooltip: loc.delete,
+                        onPressed: () => ctl.setMasterGraphUrl(null),
+                        icon: const Icon(Icons.delete_outline_rounded),
+                      ),
+                    OutlinedButton.icon(
+                      onPressed: () => _pickEventImage(ctl),
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: Text(imageValue == null || imageValue.isEmpty
+                          ? _chooseImageLabel()
+                          : _replaceImageLabel()),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickEventImage(ControllerPageEventAdd ctl) async {
+    final image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 82,
+    );
+    if (image == null) return;
+    ctl.setMasterGraphUrl(base64Encode(await image.readAsBytes()));
+  }
+
+  Widget _eventImage(String value) {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return Image.network(value, fit: BoxFit.cover);
+    }
+    final encoded = value.contains(',') ? value.split(',').last : value;
+    try {
+      return Image.memory(base64Decode(encoded), fit: BoxFit.cover);
+    } catch (_) {
+      return const ColoredBox(
+        color: Color(0xFFF1F3F5),
+        child: Center(child: Icon(Icons.broken_image_outlined)),
+      );
+    }
+  }
+
+  String _imageLabel() =>
+      switch (Localizations.localeOf(context).languageCode) {
+        'zh' => '封面照片（選填）',
+        'ja' => 'カバー写真（任意）',
+        'ko' => '표지 사진 (선택)',
+        _ => 'Cover photo (optional)',
+      };
+
+  String _countryLabel() =>
+      switch (Localizations.localeOf(context).languageCode) {
+        'zh' => '國家',
+        'ja' => '国',
+        'ko' => '국가',
+        _ => 'Country',
+      };
+
+  String _chooseImageLabel() =>
+      switch (Localizations.localeOf(context).languageCode) {
+        'zh' => '選擇照片',
+        'ja' => '写真を選択',
+        'ko' => '사진 선택',
+        _ => 'Choose photo',
+      };
+
+  String _replaceImageLabel() =>
+      switch (Localizations.localeOf(context).languageCode) {
+        'zh' => '更換',
+        'ja' => '変更',
+        'ko' => '변경',
+        _ => 'Replace',
+      };
 
   // =====================================================
   // 🧱 組件建構部分

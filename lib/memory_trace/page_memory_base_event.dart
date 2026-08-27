@@ -5,6 +5,7 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/page_memory_add.dart';
+import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
@@ -49,6 +50,8 @@ class MemoryGenericEventPage extends StatefulWidget {
 }
 
 class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
+  bool _showMap = false;
+  String? _selectedCity;
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
 
   ControllerEvent get _controller => widget.controllerEvent;
@@ -117,6 +120,8 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
           enableUpload: widget.auth.isSysAdmin,
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
+          showMap: _showMap,
+          onToggleMap: () => setState(() => _showMap = !_showMap),
           loc: loc,
         ),
         body: Column(
@@ -133,9 +138,42 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                 child: Selector<ControllerEvent, List<EventItem>>(
               selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
               builder: (_, filteredEvents, __) {
-                return widget.listBuilder(
-                  filteredEvents: filteredEvents,
-                  scrollController: _controller.scrollController,
+                final availableCities = filteredEvents
+                    .map((event) => eventRegionKey(event.city))
+                    .where((city) => city.isNotEmpty)
+                    .toSet();
+                final effectiveCity = _selectedCity != null &&
+                        availableCities.contains(_selectedCity)
+                    ? _selectedCity
+                    : null;
+                final visibleEvents = effectiveCity == null
+                    ? filteredEvents
+                    : filteredEvents
+                        .where((event) =>
+                            eventRegionKey(event.city) == effectiveCity)
+                        .toList();
+                return Column(
+                  children: [
+                    Expanded(
+                      child: visibleEvents.isEmpty
+                          ? Center(child: Text(widget.emptyText))
+                          : _showMap
+                              ? WidgetsEventMap(
+                                  events: filteredEvents,
+                                  onCitySelected: (city) {
+                                    setState(() {
+                                      _selectedCity = city;
+                                      _showMap = false;
+                                    });
+                                  },
+                                )
+                              : widget.listBuilder(
+                                  filteredEvents: visibleEvents,
+                                  scrollController:
+                                      _controller.scrollController,
+                                ),
+                    ),
+                  ],
                 );
               },
             )),

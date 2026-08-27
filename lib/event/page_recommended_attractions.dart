@@ -17,12 +17,10 @@ class PageRecommendPlaces extends StatefulWidget {
   const PageRecommendPlaces({super.key});
 
   @override
-  State<PageRecommendPlaces> createState() =>
-      _PageRecommendPlacesState();
+  State<PageRecommendPlaces> createState() => _PageRecommendPlacesState();
 }
 
-class _PageRecommendPlacesState
-    extends State<PageRecommendPlaces> {
+class _PageRecommendPlacesState extends State<PageRecommendPlaces> {
   late final ControllerEvent _controllerEvent;
 
   @override
@@ -55,17 +53,20 @@ class _PageRecommendPlacesState
         child: GenericEventPage(
           auth: auth,
           controllerEvent: _controllerEvent,
-          title: loc.recommendPlaces,
+          title: '',
           emptyText: loc.recommendPlacesZero,
+          enableCityFilter: true,
           searchPanelBuilder: widgetsSearchPanel,
           listBuilder: ({
             required List<EventItem> filteredEvents,
             required ScrollController scrollController,
           }) {
             return WidgetsEventList(
-                scrollController: scrollController,
-                controllerEvent: _controllerEvent,
-                auth: auth);
+              filteredEvents: filteredEvents,
+              scrollController: scrollController,
+              controllerEvent: _controllerEvent,
+              auth: auth,
+            );
           },
         ));
   }

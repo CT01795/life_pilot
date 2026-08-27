@@ -10,6 +10,7 @@ import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/widgets_event_sub_card.dart';
+import 'package:life_pilot/event/widgets_event_image.dart';
 
 class WidgetsEventCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -84,15 +85,18 @@ class WidgetsEventCard extends StatelessWidget {
       runSpacing: 4,
       children: typeList.map((type) {
         return Container(
-          padding: Insets.h8v4,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            border: Border.all(color: Colors.blue),
-            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFFE8F1FF),
+            borderRadius: BorderRadius.circular(99),
           ),
           child: Text(
             type,
-            style: const TextStyle(color: Colors.blue),
+            style: const TextStyle(
+              color: Color(0xFF315C9B),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         );
       }).toList(),
@@ -146,9 +150,11 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate = widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
+    final eventDate =
+        widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
-    final forecast = widget.controllerEvent.getForecast(locationDisplay: widget.eventViewModel.locationDisplay);
+    final forecast = widget.controllerEvent
+        .getForecast(locationDisplay: widget.eventViewModel.locationDisplay);
 
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
@@ -284,7 +290,12 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           Expanded(
               child: Text(
             widget.eventViewModel.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              height: 1.25,
+              color: Color(0xFF1C2733),
+            ),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
             //overflow: TextOverflow.ellipsis, // 防止文字過長
@@ -300,34 +311,155 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
       );
     }
 
+    Widget infoRow(IconData icon, String text, {VoidCallback? onTap}) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 18, color: const Color(0xFF5C6F82)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    color: Color(0xFF46586A),
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget dateBanner(String text) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF0EC),
+          borderRadius: BorderRadius.circular(12),
+          border: const Border(
+            left: BorderSide(color: Color(0xFFE9573F), width: 4),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.event_available_rounded,
+              size: 20,
+              color: Color(0xFFD84532),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Color(0xFF8A3025),
+                  fontWeight: FontWeight.w800,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget placeLocation(String text) {
+      return InkWell(
+        onTap: widget.onOpenMap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE8F7F2), Color(0xFFEAF4FB)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.explore_rounded,
+                  color: Color(0xFF167D72), size: 22),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    color: Color(0xFF17675F),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(Icons.directions_rounded,
+                  color: Color(0xFF347F9B), size: 19),
+            ],
+          ),
+        ),
+      );
+    }
+
     final content = Padding(
-      padding: Insets.all4,
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 50),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
+          const SizedBox(height: 10),
           if (widget.eventViewModel.dateRange.isNotEmpty)
-            Text(widget.eventViewModel.dateRange),
-          if (widget.eventViewModel.tags.isNotEmpty)
-            WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
+            dateBanner(widget.eventViewModel.dateRange),
+          if (widget.eventViewModel.dateRange.isNotEmpty &&
+              widget.eventViewModel.tags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 9),
+              child:
+                  WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
+            ),
           if (widget.eventViewModel.hasLocation)
-            InkWell(
-              onTap: widget.onOpenMap,
+            widget.tableName == TableNames.recommendPlaces
+                ? placeLocation(widget.eventViewModel.locationDisplay)
+                : infoRow(
+                    Icons.location_on_rounded,
+                    widget.eventViewModel.locationDisplay,
+                    onTap: widget.onOpenMap,
+                  ),
+          if (widget.eventViewModel.dateRange.isEmpty &&
+              widget.eventViewModel.tags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child:
+                  WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
+            ),
+          if (widget.eventViewModel.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
               child: Text(
-                widget.eventViewModel.locationDisplay,
+                widget.eventViewModel.description,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Colors.blue,
-                  decoration: TextDecoration.underline,
+                  color: Color(0xFF5D6874),
+                  height: 1.45,
                 ),
               ),
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(
-              text: loc.clickHereToSeeMore,
-              onTap: widget.onOpenLink,
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: TextButton.icon(
+                onPressed: widget.onOpenLink,
+                icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                label: Text(loc.clickHereToSeeMore),
+              ),
             ),
-          if (widget.eventViewModel.description.isNotEmpty)
-            Text(widget.eventViewModel.description),
           if (widget.showSubEvents &&
               widget.eventViewModel.subEvents.isNotEmpty)
             ListView.builder(
@@ -348,17 +480,25 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     );
 
     final container = Card(
-      margin: Insets.h8v16,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFE4EAF0)),
       ),
-      color: Colors.grey.shade100,
-      elevation: 4,
-      child: content,
+      color: Colors.white,
+      surfaceTintColor: Colors.white,
+      elevation: 1.5,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          WidgetsEventImage(value: widget.eventViewModel.masterGraphUrl),
+          content,
+        ],
+      ),
     );
 
     return GestureDetector(
-      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
+      onTap: widget.eventViewModel.subEvents.isEmpty ? null : widget.onTap,
       child: Stack(
         children: [
           container,
