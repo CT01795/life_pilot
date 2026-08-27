@@ -96,7 +96,7 @@ class ExternalGeocodeTest(unittest.IsolatedAsyncioTestCase):
                 service_weather,
                 "get_event_map_location",
                 return_value={
-                    "country": "Taiwan",
+                    "country": "TW",
                     "city": "Taipei",
                     "location": "Taipei 101",
                     "map_lat": 25.033,
@@ -124,7 +124,7 @@ class ExternalGeocodeTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_map_geocode_queries_full_address_and_saves_coordinates(self):
         event_without_coordinates = {
-            "country": "Taiwan",
+            "country": "TW",
             "city": "Taipei",
             "location": "Taipei 101",
             "map_lat": None,
@@ -159,7 +159,7 @@ class ExternalGeocodeTest(unittest.IsolatedAsyncioTestCase):
             )
 
         provider.assert_awaited_once_with(
-            "Taipei 101, Taipei, Taiwan",
+            "Taipei 101, Taipei, TW",
             "user-1",
         )
         save_coordinates.assert_called_once()

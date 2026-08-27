@@ -405,7 +405,7 @@ async def map_geocode(
     ):
         return GeocodeResponse(lat=float(cached_lat), lng=float(cached_lng))
 
-    country = str(event.get("country") or "Taiwan").strip() or "Taiwan"
+    country = str(event.get("country") or "TW").strip().upper() or "TW"
     city = str(event.get("city") or "").strip()
     location = str(event.get("location") or "").strip()
     if not location and not city:

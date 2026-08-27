@@ -5,6 +5,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
+import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,7 +21,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
   DateTime? endDate;
   TimeOfDay? startTime;
   TimeOfDay? endTime;
-  String country = 'Taiwan';
+  String country = 'TW';
   String city = '';
   String location = '';
   String name = '';
@@ -61,7 +62,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
     endDate = e?.endDate ?? startDate;
     startTime = e?.startTime ?? TimeOfDay.fromDateTime(now);
     endTime = e?.endTime;
-    country = e?.country ?? 'Taiwan';
+    country = EventCountry.normalize(e?.country);
     city = e?.city ?? '';
     location = e?.location ?? '';
     name = e?.name ?? '';
@@ -206,9 +207,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
         return tmpValue == null || tmpValue.isEmpty ? '' : tmpValue;
       }
 
-      final subCountry = getText(EventFields.country).trim().isEmpty
-          ? 'Taiwan'
-          : getText(EventFields.country).trim();
+      final subCountry = EventCountry.normalize(getText(EventFields.country));
       final subCity = getText(EventFields.city);
       final subLocation = getText(EventFields.location);
       final subAddressUnchanged = sub.country.trim() == subCountry &&
@@ -241,7 +240,7 @@ class ControllerPageCalendarAdd extends ChangeNotifier {
       ..endDate = endDate
       ..startTime = startTime
       ..endTime = endTime
-      ..country = country.trim().isEmpty ? 'Taiwan' : country.trim()
+      ..country = EventCountry.normalize(country)
       ..city = city
       ..location = location
       ..name = name

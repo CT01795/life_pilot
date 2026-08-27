@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/enum.dart';
+import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/mapper.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -156,7 +157,7 @@ class EventItem implements EventBase {
     this.endDate,
     this.startTime,
     this.endTime,
-    this.country = 'Taiwan',
+    this.country = 'TW',
     this.city = '',
     this.location = '',
     this.name = '',
@@ -253,9 +254,7 @@ class EventItem implements EventBase {
       endDate: fromStringOrNull(json[EventFields.endDate]),
       startTime: parseTimeOfDay(json[EventFields.startTime]),
       endTime: parseTimeOfDay(json[EventFields.endTime]),
-      country: (json[EventFields.country] as String?)?.trim().isNotEmpty == true
-          ? (json[EventFields.country] as String).trim()
-          : 'Taiwan',
+      country: EventCountry.normalize(json[EventFields.country] as String?),
       city: json[EventFields.city] ?? '',
       location: json[EventFields.location] ?? '',
       name: json[EventFields.name] ?? '',

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
+import 'package:life_pilot/event/widgets_event_country_dropdown.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -261,6 +262,13 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     final Map<String, String> currentFields = Map.from(fields);
     return currentFields.entries.map((e) {
       final keyField = index == null ? e.key : '${e.key}_sub_$index';
+      if (e.key == EventFields.country) {
+        return WidgetsEventCountryDropdown(
+          label: e.value,
+          value: ctl.getController(key: keyField).text,
+          onChanged: (value) => ctl.updateField(keyField, value, false),
+        );
+      }
       return SpeechTextField(
         keyField: keyField,
         label: e.value,
