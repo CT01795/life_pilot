@@ -1014,4 +1014,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get questionStatusUpdateFailed => '題目狀態更新失敗，請稍後再試。';
+
+  @override
+  String get mapCoordinateBackfill => '回填地圖座標';
+
+  @override
+  String get mapCoordinateBackfillFailed => '無法回填地圖座標，請稍後再試。';
+
+  @override
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
+    return '本次寫入 $saved 筆，剩餘 $remaining 筆，覆蓋率 $coverage%。';
+  }
 }

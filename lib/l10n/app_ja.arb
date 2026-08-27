@@ -673,5 +673,15 @@
   "questionReactivated": "問題を再有効化しました。",
   "@questionReactivated": {"description": "Label for questionReactivated"},
   "questionStatusUpdateFailed": "問題の状態を更新できませんでした。もう一度お試しください。",
-  "@questionStatusUpdateFailed": {"description": "Label for questionStatusUpdateFailed"}
+  "@questionStatusUpdateFailed": {"description": "Label for questionStatusUpdateFailed"},
+  "mapCoordinateBackfill": "地図座標を補完",
+  "mapCoordinateBackfillFailed": "地図座標を補完できませんでした。後でもう一度お試しください。",
+  "mapCoordinateBackfillResult": "{saved}件を保存、残り{remaining}件、カバー率{coverage}%。",
+  "@mapCoordinateBackfillResult": {
+    "placeholders": {
+      "saved": {"type": "int"},
+      "remaining": {"type": "int"},
+      "coverage": {"type": "String"}
+    }
+  }
 }

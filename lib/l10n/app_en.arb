@@ -673,5 +673,15 @@
   "questionReactivated": "Question reactivated.",
   "@questionReactivated": {"description": "Label for questionReactivated"},
   "questionStatusUpdateFailed": "Question status could not be updated. Please try again.",
-  "@questionStatusUpdateFailed": {"description": "Label for questionStatusUpdateFailed"}
+  "@questionStatusUpdateFailed": {"description": "Label for questionStatusUpdateFailed"},
+  "mapCoordinateBackfill": "Fill map coordinates",
+  "mapCoordinateBackfillFailed": "Could not fill map coordinates. Try again later.",
+  "mapCoordinateBackfillResult": "Saved {saved}; {remaining} remaining; coverage {coverage}%.",
+  "@mapCoordinateBackfillResult": {
+    "placeholders": {
+      "saved": {"type": "int"},
+      "remaining": {"type": "int"},
+      "coverage": {"type": "String"}
+    }
+  }
 }

@@ -15,6 +15,7 @@ AppBar widgetsWhiteAppBar({
   required bool enableUpload,
   bool showMap = false,
   VoidCallback? onToggleMap,
+  List<Widget> extraActions = const [],
 }) {
   return AppBar(
     title: Text(title,
@@ -35,7 +36,8 @@ AppBar widgetsWhiteAppBar({
         enableSearchAndExport: enableSearchAndExport,
         enableUpload: enableUpload,
         showMap: showMap,
-        onToggleMap: onToggleMap),
+        onToggleMap: onToggleMap,
+        extraActions: extraActions),
   );
 }
 
@@ -50,6 +52,7 @@ List<Widget> _buildActions({
   required bool enableUpload,
   bool showMap = false,
   VoidCallback? onToggleMap,
+  List<Widget> extraActions = const [],
 }) {
   final List<Widget> actions = [];
 
@@ -77,6 +80,8 @@ List<Widget> _buildActions({
       ),
     );
   }
+
+  actions.addAll(extraActions);
 
   if (enableSearchAndExport) {
     actions.addAll([

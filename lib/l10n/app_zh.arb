@@ -673,5 +673,15 @@
   "questionReactivated": "題目已重新啟用。",
   "@questionReactivated": {"description": "Label for questionReactivated"},
   "questionStatusUpdateFailed": "題目狀態更新失敗，請稍後再試。",
-  "@questionStatusUpdateFailed": {"description": "Label for questionStatusUpdateFailed"}
+  "@questionStatusUpdateFailed": {"description": "Label for questionStatusUpdateFailed"},
+  "mapCoordinateBackfill": "回填地圖座標",
+  "mapCoordinateBackfillFailed": "無法回填地圖座標，請稍後再試。",
+  "mapCoordinateBackfillResult": "本次寫入 {saved} 筆，剩餘 {remaining} 筆，覆蓋率 {coverage}%。",
+  "@mapCoordinateBackfillResult": {
+    "placeholders": {
+      "saved": {"type": "int"},
+      "remaining": {"type": "int"},
+      "coverage": {"type": "String"}
+    }
+  }
 }

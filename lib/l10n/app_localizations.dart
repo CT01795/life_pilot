@@ -2096,6 +2096,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Question status could not be updated. Please try again.'**
   String get questionStatusUpdateFailed;
+
+  /// No description provided for @mapCoordinateBackfill.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill map coordinates'**
+  String get mapCoordinateBackfill;
+
+  /// No description provided for @mapCoordinateBackfillFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fill map coordinates. Try again later.'**
+  String get mapCoordinateBackfillFailed;
+
+  /// No description provided for @mapCoordinateBackfillResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {saved}; {remaining} remaining; coverage {coverage}%.'**
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

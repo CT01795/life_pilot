@@ -7,6 +7,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
@@ -56,6 +57,8 @@ class _GenericEventPageState extends State<GenericEventPage> {
   String? _selectedCity;
   bool _showMap = false;
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
+  bool _isBackfillingCoordinates = false;
+  int _coordinateBackfillOffset = 0;
 
   ControllerEvent get _controller => widget.controllerEvent;
 
@@ -113,6 +116,35 @@ class _GenericEventPageState extends State<GenericEventPage> {
     );
   }
 
+  bool get _supportsCoordinateBackfill =>
+      _controller.fromTableName == TableNames.recommendEvents ||
+      _controller.fromTableName == TableNames.recommendPlaces;
+
+  Future<void> _backfillMapCoordinates(AppLocalizations loc) async {
+    if (_isBackfillingCoordinates) return;
+    setState(() => _isBackfillingCoordinates = true);
+    try {
+      final result = await _controller.serviceEvent.backfillMapCoordinates(
+        tableName: _controller.fromTableName,
+        offset: _coordinateBackfillOffset,
+      );
+      _coordinateBackfillOffset = result.nextOffset;
+      if (!mounted) return;
+      AppNavigator.showSnackBar(
+        loc.mapCoordinateBackfillResult(
+          result.saved,
+          result.remaining,
+          result.coveragePercent.toStringAsFixed(2),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppNavigator.showSnackBar(loc.mapCoordinateBackfillFailed);
+    } finally {
+      if (mounted) setState(() => _isBackfillingCoordinates = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -140,6 +172,21 @@ class _GenericEventPageState extends State<GenericEventPage> {
           refreshTooltip: loc.eventRefresh,
           showMap: _showMap,
           onToggleMap: () => setState(() => _showMap = !_showMap),
+          extraActions: [
+            if (widget.auth.isSysAdmin && _supportsCoordinateBackfill)
+              IconButton(
+                icon: _isBackfillingCoordinates
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_location_alt_outlined),
+                tooltip: loc.mapCoordinateBackfill,
+                onPressed: _isBackfillingCoordinates
+                    ? null
+                    : () => _backfillMapCoordinates(loc),
+              ),
+          ],
           handler: _appBarHandler,
           onAdd: () => _onAddPressed(context),
           loc: loc,

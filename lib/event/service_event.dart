@@ -21,6 +21,19 @@ class ServiceEvent {
   bool get _isCurrentUserAdmin =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
 
+  Future<MapCoordinateBackfillResult> backfillMapCoordinates({
+    required String tableName,
+    int offset = 0,
+  }) async {
+    final response = await apiSupabase.post(
+      '/external/map-geocode/backfill',
+      {'table_name': tableName, 'limit': 25, 'offset': offset},
+    );
+    return MapCoordinateBackfillResult.fromJson(
+      Map<String, dynamic>.from(response as Map),
+    );
+  }
+
   Future<EventItem> ensureMapCoordinates({
     required String tableName,
     required EventItem event,
@@ -283,5 +296,28 @@ class ServiceEvent {
       return null;
     }
     return endTime;
+  }
+}
+
+class MapCoordinateBackfillResult {
+  final int saved;
+  final int remaining;
+  final int nextOffset;
+  final double coveragePercent;
+
+  const MapCoordinateBackfillResult({
+    required this.saved,
+    required this.remaining,
+    required this.nextOffset,
+    required this.coveragePercent,
+  });
+
+  factory MapCoordinateBackfillResult.fromJson(Map<String, dynamic> json) {
+    return MapCoordinateBackfillResult(
+      saved: (json['saved'] as num?)?.toInt() ?? 0,
+      remaining: (json['remaining'] as num?)?.toInt() ?? 0,
+      nextOffset: (json['next_offset'] as num?)?.toInt() ?? 0,
+      coveragePercent: (json['coverage_percent'] as num?)?.toDouble() ?? 0,
+    );
   }
 }

@@ -1014,4 +1014,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get questionStatusUpdateFailed => 'Question status could not be updated. Please try again.';
+
+  @override
+  String get mapCoordinateBackfill => 'Fill map coordinates';
+
+  @override
+  String get mapCoordinateBackfillFailed => 'Could not fill map coordinates. Try again later.';
+
+  @override
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
+    return 'Saved $saved; $remaining remaining; coverage $coverage%.';
+  }
 }

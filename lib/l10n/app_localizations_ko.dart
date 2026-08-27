@@ -1014,4 +1014,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get questionStatusUpdateFailed => '문제 상태를 업데이트하지 못했습니다. 다시 시도하세요.';
+
+  @override
+  String get mapCoordinateBackfill => '지도 좌표 채우기';
+
+  @override
+  String get mapCoordinateBackfillFailed => '지도 좌표를 채울 수 없습니다. 나중에 다시 시도해 주세요.';
+
+  @override
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
+    return '$saved개 저장, $remaining개 남음, 적용률 $coverage%.';
+  }
 }

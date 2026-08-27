@@ -1014,4 +1014,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get questionStatusUpdateFailed => '問題の状態を更新できませんでした。もう一度お試しください。';
+
+  @override
+  String get mapCoordinateBackfill => '地図座標を補完';
+
+  @override
+  String get mapCoordinateBackfillFailed => '地図座標を補完できませんでした。後でもう一度お試しください。';
+
+  @override
+  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
+    return '$saved件を保存、残り$remaining件、カバー率$coverage%。';
+  }
 }
