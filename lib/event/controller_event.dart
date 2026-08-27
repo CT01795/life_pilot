@@ -37,6 +37,7 @@ class ControllerEvent extends ChangeNotifier {
   final Set<String> _weatherPreloadAttemptedIds = {};
   Future<void> _weatherPreloadQueue = Future<void>.value();
   int _filterRevision = 0;
+  Timer? _searchDebounce;
 
   ControllerEvent(
       {required this.auth,
@@ -78,6 +79,12 @@ class ControllerEvent extends ChangeNotifier {
   bool get isLoadingEvents => _isLoadingEvents;
   bool get hasLoadEventsError => _loadEventsError != null;
   int get filterRevision => _filterRevision;
+  bool get hasActiveSearchFilters {
+    final filter = _modelEvent.searchFilter;
+    return filter.keywords.isNotEmpty ||
+        filter.startDate != null ||
+        filter.endDate != null;
+  }
 
   // ---------------------------------------------------------------------------
   // 📦 CRUD 操作
@@ -294,6 +301,8 @@ class ControllerEvent extends ChangeNotifier {
   void updateKeywords(
     String? keywords,
   ) {
+    _searchDebounce?.cancel();
+    _searchDebounce = null;
     _modelEvent.updateSearchKeywords(keywords);
     _filterRevision++;
 
@@ -320,6 +329,34 @@ class ControllerEvent extends ChangeNotifier {
     }
     if (!_disposed) notifyListeners();
     return;
+  }
+
+  void updateKeywordsDebounced(String keywords) {
+    _searchDebounce?.cancel();
+    if (keywords.isEmpty) {
+      updateKeywords(null);
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 280), () {
+      _searchDebounce = null;
+      updateKeywords(keywords);
+    });
+  }
+
+  void removeKeywordTag(String tag) {
+    final keywords =
+        _modelEvent.searchFilter.tags.where((item) => item != tag).join(' ');
+    _searchController.text = keywords;
+    updateKeywords(keywords.isEmpty ? null : keywords);
+  }
+
+  void clearSearchFilters() {
+    _searchDebounce?.cancel();
+    _searchDebounce = null;
+    _modelEvent.clearSearchAll();
+    _searchController.clear();
+    _filterRevision++;
+    if (!_disposed) notifyListeners();
   }
 
   void updateStartDate(
@@ -601,6 +638,7 @@ class ControllerEvent extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _searchDebounce?.cancel();
     if (_ownsServiceEventPublic) _serviceEventPublic.close();
     _searchController.dispose();
     _scrollController.dispose();

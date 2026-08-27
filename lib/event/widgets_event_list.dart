@@ -31,6 +31,8 @@ class WidgetsEventList extends StatelessWidget {
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
+      cacheExtent: 180,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: viewModels.length,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,

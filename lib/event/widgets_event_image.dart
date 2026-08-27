@@ -1,7 +1,15 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+Uint8List? _decodeBase64Image(String encoded) {
+  try {
+    return base64Decode(encoded);
+  } catch (_) {
+    return null;
+  }
+}
 
 class WidgetsEventImage extends StatefulWidget {
   final String? value;
@@ -19,7 +27,7 @@ class WidgetsEventImage extends StatefulWidget {
 
 class _WidgetsEventImageState extends State<WidgetsEventImage> {
   String? _decodedValue;
-  Uint8List? _decodedBytes;
+  Future<Uint8List?>? _decodeFuture;
 
   @override
   Widget build(BuildContext context) {
@@ -49,19 +57,25 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
         errorBuilder: (_, __, ___) => _buildErrorPlaceholder(context),
       );
     }
-    final bytes = _decodeImage(imageValue);
-    if (bytes != null) {
-      return Image.memory(
-        bytes,
-        fit: BoxFit.cover,
-        cacheWidth: cacheWidth,
-        cacheHeight: cacheHeight,
-        filterQuality: FilterQuality.low,
-        frameBuilder: _buildFrame,
-        errorBuilder: (_, __, ___) => _buildErrorPlaceholder(context),
-      );
-    }
-    return _buildErrorPlaceholder(context);
+    return FutureBuilder<Uint8List?>(
+      future: _decodeImage(imageValue),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _buildLoadingPlaceholder(context);
+        }
+        final bytes = snapshot.data;
+        if (bytes == null) return _buildErrorPlaceholder(context);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          cacheWidth: cacheWidth,
+          cacheHeight: cacheHeight,
+          filterQuality: FilterQuality.low,
+          frameBuilder: _buildFrame,
+          errorBuilder: (_, __, ___) => _buildErrorPlaceholder(context),
+        );
+      },
+    );
   }
 
   Widget _buildFrame(
@@ -71,17 +85,19 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
     bool wasSynchronouslyLoaded,
   ) {
     if (wasSynchronouslyLoaded) return child;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        _buildLoadingPlaceholder(context),
-        AnimatedOpacity(
-          opacity: frame == null ? 0 : 1,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          child: child,
-        ),
-      ],
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeOut,
+      child: frame == null
+          ? KeyedSubtree(
+              key: const ValueKey('loading'),
+              child: _buildLoadingPlaceholder(context),
+            )
+          : KeyedSubtree(
+              key: const ValueKey('image'),
+              child: child,
+            ),
     );
   }
 
@@ -113,16 +129,14 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
     );
   }
 
-  Uint8List? _decodeImage(String imageValue) {
-    if (_decodedValue == imageValue) return _decodedBytes;
+  Future<Uint8List?> _decodeImage(String imageValue) {
+    if (_decodedValue == imageValue && _decodeFuture != null) {
+      return _decodeFuture!;
+    }
     _decodedValue = imageValue;
     final encoded = imageValue.contains(',')
         ? imageValue.substring(imageValue.indexOf(',') + 1)
         : imageValue;
-    try {
-      return _decodedBytes = base64Decode(encoded);
-    } catch (_) {
-      return _decodedBytes = null;
-    }
+    return _decodeFuture = compute(_decodeBase64Image, encoded);
   }
 }

@@ -14,21 +14,28 @@ Widget widgetsSearchPanel({
     padding: Insets.all12,
     child: Column(
       children: [
-        TextField(
-          controller: controllerEvent.searchController,
-          decoration: InputDecoration(
-            hintText: loc.searchKeywords,
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: IconButton(
-                icon: const Icon(Icons.clear),
-                tooltip: loc.clear,
-                onPressed: () {
-                  controllerEvent.updateKeywords(null);
-                },
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controllerEvent.searchController,
+          builder: (context, value, _) => TextField(
+            controller: controllerEvent.searchController,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: loc.searchKeywords,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: value.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: loc.clear,
+                      onPressed: () => controllerEvent.updateKeywords(null),
+                    ),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            onChanged: (text) =>
+                controllerEvent.updateKeywordsDebounced(text.trim()),
+            onSubmitted: (text) => controllerEvent.updateKeywords(text.trim()),
           ),
-          onChanged: (value) => controllerEvent.updateKeywords(value.trim()),
         ),
         if (filter.tags.isNotEmpty) ...[
           Gaps.h8,
@@ -40,6 +47,9 @@ Widget widgetsSearchPanel({
               children: filter.tags.map((tag) {
                 return Chip(
                   label: Text(tag),
+                  onDeleted: () => controllerEvent.removeKeywordTag(tag),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  deleteButtonTooltipMessage: loc.clear,
                 );
               }).toList(),
             ),
@@ -47,30 +57,37 @@ Widget widgetsSearchPanel({
         ],
         if (controllerEvent.showDate()) ...[
           Gaps.h8,
-          Row(
-            children: [
-              Expanded(
-                child: widgetsDateButton(
-                  context: context,
-                  date: filter.startDate,
-                  label: loc.startDate,
-                  icon: Icons.date_range,
-                  onDateChanged: (value) => controllerEvent.updateStartDate(value), 
-                  loc: loc,
-                ),
-              ),
-              Gaps.w16,
-              Expanded(
-                child: widgetsDateButton(
-                  context: context,
-                  date: filter.endDate,
-                  label: loc.endDate,
-                  icon: Icons.date_range,
-                  onDateChanged: (value) => controllerEvent.updateEndDate(value), 
-                  loc: loc,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final startDate = widgetsDateButton(
+                context: context,
+                date: filter.startDate,
+                label: loc.startDate,
+                icon: Icons.date_range,
+                onDateChanged: controllerEvent.updateStartDate,
+                loc: loc,
+              );
+              final endDate = widgetsDateButton(
+                context: context,
+                date: filter.endDate,
+                label: loc.endDate,
+                icon: Icons.date_range,
+                onDateChanged: controllerEvent.updateEndDate,
+                loc: loc,
+              );
+              if (constraints.maxWidth < 520) {
+                return Column(
+                  children: [startDate, Gaps.h8, endDate],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: startDate),
+                  Gaps.w16,
+                  Expanded(child: endDate),
+                ],
+              );
+            },
           ),
         ],
       ],

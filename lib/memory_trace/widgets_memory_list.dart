@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event_ui.dart';
@@ -33,6 +34,8 @@ class WidgetsMemoryList extends StatelessWidget {
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
+      cacheExtent: 180,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: viewModels.length,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
@@ -142,13 +145,8 @@ class WidgetsMemoryList extends StatelessWidget {
   }
 
   String _dateLabel(BuildContext context, DateTime date) {
-    final locale = Localizations.localeOf(context).languageCode;
-    return switch (locale) {
-      'zh' => '${date.year} 年 ${date.month} 月 ${date.day} 日',
-      'ja' => '${date.year}年${date.month}月${date.day}日',
-      'ko' => '${date.year}년 ${date.month}월 ${date.day}일',
-      _ => '${date.year}/${date.month}/${date.day}',
-    };
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.yMMMMd(locale).format(date);
   }
 
   void _showEventDialog(

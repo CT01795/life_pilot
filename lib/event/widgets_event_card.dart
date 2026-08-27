@@ -141,6 +141,18 @@ class _WidgetsEventCardBody extends StatefulWidget {
 }
 
 class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
+  bool _isUpdatingPreference = false;
+
+  Future<void> _updatePreference(Future<void> Function() action) async {
+    if (_isUpdatingPreference) return;
+    setState(() => _isUpdatingPreference = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _isUpdatingPreference = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
@@ -417,18 +429,15 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
             ),
           if (widget.showSubEvents &&
               widget.eventViewModel.subEvents.isNotEmpty)
-            ListView.builder(
-              shrinkWrap: true, // 讓 ListView 自動高度
-              physics:
-                  const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
-              itemCount: widget.eventViewModel.subEvents.length,
-              itemBuilder: (context, index) {
-                final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsEventSubCard(
-                  event: sub,
-                  onOpenLink: widget.onOpenLink,
-                );
-              },
+            Column(
+              children: [
+                for (final sub in widget.eventViewModel.subEvents)
+                  WidgetsEventSubCard(
+                    key: ValueKey(sub.id),
+                    event: sub,
+                    onOpenLink: widget.onOpenLink,
+                  ),
+              ],
             )
         ],
       ),
@@ -436,6 +445,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
 
     final container = Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: Color(0xFFE4EAF0)),
@@ -468,7 +478,9 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                   PressButton(
                     isPress: widget.eventViewModel.isLike,
                     color: Colors.pinkAccent,
-                    onPressed: widget.onLike,
+                    onPressed: _isUpdatingPreference
+                        ? null
+                        : () => _updatePreference(widget.onLike!),
                     pressedIcon: Icons.favorite_outlined,
                     unPressedIcon: Icons.favorite_outline,
                     tooltip: loc.like,
@@ -478,7 +490,9 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                   PressButton(
                     isPress: widget.eventViewModel.isDislike,
                     color: Colors.grey,
-                    onPressed: widget.onDislike,
+                    onPressed: _isUpdatingPreference
+                        ? null
+                        : () => _updatePreference(widget.onDislike!),
                     pressedIcon: Icons.sentiment_neutral_sharp,
                     unPressedIcon: Icons.sentiment_dissatisfied_outlined,
                     tooltip: loc.dislike,

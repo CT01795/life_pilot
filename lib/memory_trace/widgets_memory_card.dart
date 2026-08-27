@@ -325,18 +325,15 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
             ),
           if (widget.showSubEvents &&
               widget.eventViewModel.subEvents.isNotEmpty)
-            ListView.builder(
-              shrinkWrap: true, // 讓 ListView 自動高度
-              physics:
-                  const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
-              itemCount: widget.eventViewModel.subEvents.length,
-              itemBuilder: (context, index) {
-                final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsMemorySubCard(
-                  event: sub,
-                  onOpenLink: widget.onOpenLink,
-                );
-              },
+            Column(
+              children: [
+                for (final sub in widget.eventViewModel.subEvents)
+                  WidgetsMemorySubCard(
+                    key: ValueKey(sub.id),
+                    event: sub,
+                    onOpenLink: widget.onOpenLink,
+                  ),
+              ],
             )
         ],
       ),
@@ -344,6 +341,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
 
     final container = Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: Color(0xFFEADFEB)),

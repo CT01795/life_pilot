@@ -15,17 +15,21 @@ Widget widgetsDateButton({
       Expanded(
         child: ElevatedButton.icon(
           icon: Icon(icon),
-          label: Text(date == null
-              ? label
-              : date.formatDateString( passYear: true, formatShow: true )),
+          label: Text(
+            date == null
+                ? label
+                : date.formatDateString(passYear: true, formatShow: true),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           onPressed: () async {
-            DateTime? picked = await showDatePicker(
+            final picked = await showDatePicker(
               context: context,
               initialDate: date ?? DateTime.now(),
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
             );
-            onDateChanged(picked);
+            if (picked != null) onDateChanged(picked);
           },
         ),
       ),
@@ -38,5 +42,3 @@ Widget widgetsDateButton({
     ],
   );
 }
-
-

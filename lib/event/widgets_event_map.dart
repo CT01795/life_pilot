@@ -81,8 +81,8 @@ class WidgetsEventMap extends StatelessWidget {
                           ...mapCounts.entries.map((entry) {
                             final position = _positions[entry.key]!;
                             return Positioned(
-                              left: constraints.maxWidth * position.dx - 15,
-                              top: constraints.maxHeight * position.dy - 15,
+                              left: constraints.maxWidth * position.dx - 22,
+                              top: constraints.maxHeight * position.dy - 22,
                               child: _countButton(entry),
                             );
                           }),
@@ -123,21 +123,30 @@ class WidgetsEventMap extends StatelessWidget {
     return Tooltip(
       message: '${entry.key} ${entry.value}',
       child: Material(
-        color: const Color(0xFFE53935),
-        elevation: 5,
+        color: Colors.transparent,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: () => onCitySelected(entry.key),
           child: SizedBox.square(
-            dimension: 30,
+            dimension: 44,
             child: Center(
-              child: Text(
-                '${entry.value}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
+              child: Material(
+                color: const Color(0xFFE53935),
+                elevation: 5,
+                shape: const CircleBorder(),
+                child: SizedBox.square(
+                  dimension: 34,
+                  child: Center(
+                    child: Text(
+                      '${entry.value}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
