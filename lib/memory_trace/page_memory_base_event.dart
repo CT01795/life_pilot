@@ -124,60 +124,81 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
           onToggleMap: () => setState(() => _showMap = !_showMap),
           loc: loc,
         ),
-        body: Column(
-          children: [
-            AnimatedBuilder(
-              animation: Listenable.merge([
-                _controller,
-                _appBarHandler,
-              ]),
-              builder: (_, __) => _buildSearchPanel(loc, context),
-            ),
-            Expanded(
-                // ✅ 讓 ListView 可以使用剩餘高度
-                child: Selector<ControllerEvent, List<EventItem>>(
-              selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
-              builder: (_, filteredEvents, __) {
-                final availableCities = filteredEvents
-                    .map((event) => eventRegionKey(event.city))
-                    .where((city) => city.isNotEmpty)
-                    .toSet();
-                final effectiveCity = _selectedCity != null &&
-                        availableCities.contains(_selectedCity)
-                    ? _selectedCity
-                    : null;
-                final visibleEvents = effectiveCity == null
-                    ? filteredEvents
-                    : filteredEvents
-                        .where((event) =>
-                            eventRegionKey(event.city) == effectiveCity)
-                        .toList();
-                return Column(
-                  children: [
-                    Expanded(
-                      child: visibleEvents.isEmpty
-                          ? Center(child: Text(widget.emptyText))
-                          : _showMap
-                              ? WidgetsEventMap(
-                                  events: filteredEvents,
-                                  onCitySelected: (city) {
-                                    setState(() {
-                                      _selectedCity = city;
-                                      _showMap = false;
-                                    });
-                                  },
-                                )
-                              : widget.listBuilder(
-                                  filteredEvents: visibleEvents,
-                                  scrollController:
-                                      _controller.scrollController,
-                                ),
+        body: (!_hasLoaded || _controller.isLoadingEvents)
+            ? const Center(child: CircularProgressIndicator())
+            : _controller.hasLoadEventsError
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(loc.dashboardLoadFailed),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: () async {
+                            _hasLoaded = false;
+                            await _safeLoadEvents();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: Text(loc.retry),
+                        ),
+                      ],
                     ),
-                  ],
-                );
-              },
-            )),
-          ],
-        ));
+                  )
+                : Column(
+                    children: [
+                      AnimatedBuilder(
+                        animation: Listenable.merge([
+                          _controller,
+                          _appBarHandler,
+                        ]),
+                        builder: (_, __) => _buildSearchPanel(loc, context),
+                      ),
+                      Expanded(
+                          // ✅ 讓 ListView 可以使用剩餘高度
+                          child: Selector<ControllerEvent, List<EventItem>>(
+                        selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
+                        builder: (_, filteredEvents, __) {
+                          final availableCities = filteredEvents
+                              .map((event) => eventRegionKey(event.city))
+                              .where((city) => city.isNotEmpty)
+                              .toSet();
+                          final effectiveCity = _selectedCity != null &&
+                                  availableCities.contains(_selectedCity)
+                              ? _selectedCity
+                              : null;
+                          final visibleEvents = effectiveCity == null
+                              ? filteredEvents
+                              : filteredEvents
+                                  .where((event) =>
+                                      eventRegionKey(event.city) ==
+                                      effectiveCity)
+                                  .toList();
+                          return Column(
+                            children: [
+                              Expanded(
+                                child: visibleEvents.isEmpty
+                                    ? Center(child: Text(widget.emptyText))
+                                    : _showMap
+                                        ? WidgetsEventMap(
+                                            events: filteredEvents,
+                                            onCitySelected: (city) {
+                                              setState(() {
+                                                _selectedCity = city;
+                                                _showMap = false;
+                                              });
+                                            },
+                                          )
+                                        : widget.listBuilder(
+                                            filteredEvents: visibleEvents,
+                                            scrollController:
+                                                _controller.scrollController,
+                                          ),
+                              ),
+                            ],
+                          );
+                        },
+                      )),
+                    ],
+                  ));
   }
 }

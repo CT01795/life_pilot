@@ -33,6 +33,8 @@ class ControllerEvent extends ChangeNotifier {
   final bool _ownsServiceEventPublic;
   final tracking = EventTrackingService();
   final Future<void> Function()? onCalendarReload;
+  bool _isLoadingEvents = false;
+  Object? _loadEventsError;
 
   ControllerEvent(
       {required this.auth,
@@ -71,6 +73,8 @@ class ControllerEvent extends ChangeNotifier {
   bool get showSearchPanel => _modelEvent.showSearchPanel;
   ScrollController get scrollController => _scrollController;
   TextEditingController get searchController => _searchController;
+  bool get isLoadingEvents => _isLoadingEvents;
+  bool get hasLoadEventsError => _loadEventsError != null;
 
   // ---------------------------------------------------------------------------
   // 📦 CRUD 操作
@@ -370,30 +374,57 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   Future<void> loadEvents({required bool isGetPublicEvents}) async {
-    final list = await _serviceEvent.getEvents(
-      tableName: _tableName,
-      inputUser: auth.currentAccount,
-    );
-    _modelEvent.setEvents(list ?? []);
-
-    // ✅ STOP UI card 不再觸發 weather
-    _warmUpWeather(list ?? []);
-
-    _invalidateViewModelCache();
+    if (_isLoadingEvents) return;
+    _isLoadingEvents = true;
+    _loadEventsError = null;
     if (!_disposed) notifyListeners();
+
+    try {
+      final list = await _serviceEvent.getEvents(
+        tableName: _tableName,
+        inputUser: auth.currentAccount,
+      );
+      _modelEvent.setEvents(list ?? []);
+
+      // ✅ STOP UI card 不再觸發 weather
+      _warmUpWeather(list ?? []);
+
+      _invalidateViewModelCache();
+    } catch (error, stackTrace) {
+      _loadEventsError = error;
+      logger.e(
+        'loadEvents failed for $_tableName',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _isLoadingEvents = false;
+      if (!_disposed) notifyListeners();
+    }
+
+    if (_loadEventsError != null) return;
 
     if (isGetPublicEvents &&
         auth.isSysAdmin &&
         _tableName == TableNames.recommendEvents) {
-      await _serviceEventPublic.fetchAndSaveAllEvents();
+      try {
+        await _serviceEventPublic.fetchAndSaveAllEvents();
 
-      final newList = await _serviceEvent.getEvents(
-        tableName: _tableName,
-        inputUser: auth.currentAccount,
-      );
+        final newList = await _serviceEvent.getEvents(
+          tableName: _tableName,
+          inputUser: auth.currentAccount,
+        );
 
-      _modelEvent.setEvents(newList ?? []);
-      if (!_disposed) notifyListeners();
+        _modelEvent.setEvents(newList ?? []);
+        _invalidateViewModelCache();
+        if (!_disposed) notifyListeners();
+      } catch (error, stackTrace) {
+        logger.e(
+          'public event refresh failed after loading existing events',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 

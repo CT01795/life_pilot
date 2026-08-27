@@ -191,93 +191,116 @@ class _GenericEventPageState extends State<GenericEventPage> {
           onAdd: () => _onAddPressed(context),
           loc: loc,
         ),
-        body: Column(
-          children: [
-            AnimatedBuilder(
-              animation: Listenable.merge([
-                _controller,
-                _appBarHandler,
-              ]),
-              builder: (_, __) => _buildSearchPanel(loc, context),
-            ),
-            Expanded(
-                // ✅ 讓 ListView 可以使用剩餘高度
-                child: Selector<ControllerEvent, List<EventItem>>(
-              selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
-              builder: (_, filteredEvents, __) {
-                final cities = filteredEvents
-                    .map((event) => eventRegionKey(event.city))
-                    .where((city) => city.isNotEmpty)
-                    .toSet()
-                    .toList()
-                  ..sort();
-                final effectiveCity =
-                    _selectedCity != null && cities.contains(_selectedCity)
-                        ? _selectedCity
-                        : null;
-                if (_selectedCity != effectiveCity) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) setState(() => _selectedCity = effectiveCity);
-                  });
-                }
-                final visibleEvents = effectiveCity == null
-                    ? filteredEvents
-                    : filteredEvents
-                        .where((event) =>
-                            eventRegionKey(event.city) == effectiveCity)
-                        .toList();
-                return Column(
-                  children: [
-                    if (widget.enableCityFilter && cities.isNotEmpty)
-                      SizedBox(
-                        height: 54,
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            _cityChip(
-                              label: _allCitiesLabel(),
-                              selected: effectiveCity == null,
-                              onSelected: () =>
-                                  setState(() => _selectedCity = null),
-                            ),
-                            ...cities.map(
-                              (city) => _cityChip(
-                                label: city,
-                                selected: effectiveCity == city,
-                                onSelected: () =>
-                                    setState(() => _selectedCity = city),
-                              ),
-                            ),
-                          ],
+        body: (!_hasLoaded || _controller.isLoadingEvents)
+            ? const Center(child: CircularProgressIndicator())
+            : _controller.hasLoadEventsError
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(loc.dashboardLoadFailed),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: () async {
+                            _hasLoaded = false;
+                            await _safeLoadEvents();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: Text(loc.retry),
                         ),
-                      ),
-                    Expanded(
-                      child: visibleEvents.isEmpty
-                          ? Center(child: Text(widget.emptyText))
-                          : _showMap
-                              ? WidgetsEventMap(
-                                  events: filteredEvents,
-                                  onCitySelected: (city) {
-                                    setState(() {
-                                      _selectedCity = city;
-                                      _showMap = false;
-                                    });
-                                  },
-                                )
-                              : widget.listBuilder(
-                                  filteredEvents: visibleEvents,
-                                  scrollController:
-                                      _controller.scrollController,
-                                ),
+                      ],
                     ),
-                  ],
-                );
-              },
-            )),
-          ],
-        ));
+                  )
+                : Column(
+                    children: [
+                      AnimatedBuilder(
+                        animation: Listenable.merge([
+                          _controller,
+                          _appBarHandler,
+                        ]),
+                        builder: (_, __) => _buildSearchPanel(loc, context),
+                      ),
+                      Expanded(
+                          // ✅ 讓 ListView 可以使用剩餘高度
+                          child: Selector<ControllerEvent, List<EventItem>>(
+                        selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
+                        builder: (_, filteredEvents, __) {
+                          final cities = filteredEvents
+                              .map((event) => eventRegionKey(event.city))
+                              .where((city) => city.isNotEmpty)
+                              .toSet()
+                              .toList()
+                            ..sort();
+                          final effectiveCity = _selectedCity != null &&
+                                  cities.contains(_selectedCity)
+                              ? _selectedCity
+                              : null;
+                          if (_selectedCity != effectiveCity) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() => _selectedCity = effectiveCity);
+                              }
+                            });
+                          }
+                          final visibleEvents = effectiveCity == null
+                              ? filteredEvents
+                              : filteredEvents
+                                  .where((event) =>
+                                      eventRegionKey(event.city) ==
+                                      effectiveCity)
+                                  .toList();
+                          return Column(
+                            children: [
+                              if (widget.enableCityFilter && cities.isNotEmpty)
+                                SizedBox(
+                                  height: 54,
+                                  child: ListView(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    scrollDirection: Axis.horizontal,
+                                    children: [
+                                      _cityChip(
+                                        label: _allCitiesLabel(),
+                                        selected: effectiveCity == null,
+                                        onSelected: () => setState(
+                                            () => _selectedCity = null),
+                                      ),
+                                      ...cities.map(
+                                        (city) => _cityChip(
+                                          label: city,
+                                          selected: effectiveCity == city,
+                                          onSelected: () => setState(
+                                              () => _selectedCity = city),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              Expanded(
+                                child: visibleEvents.isEmpty
+                                    ? Center(child: Text(widget.emptyText))
+                                    : _showMap
+                                        ? WidgetsEventMap(
+                                            events: filteredEvents,
+                                            onCitySelected: (city) {
+                                              setState(() {
+                                                _selectedCity = city;
+                                                _showMap = false;
+                                              });
+                                            },
+                                          )
+                                        : widget.listBuilder(
+                                            filteredEvents: visibleEvents,
+                                            scrollController:
+                                                _controller.scrollController,
+                                          ),
+                              ),
+                            ],
+                          );
+                        },
+                      )),
+                    ],
+                  ));
   }
 
   Widget _cityChip({

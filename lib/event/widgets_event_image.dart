@@ -21,15 +21,21 @@ class WidgetsEventImage extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: height,
-      child: _buildImage(imageValue),
+      child: _buildImage(context, imageValue),
     );
   }
 
-  Widget _buildImage(String imageValue) {
+  Widget _buildImage(BuildContext context, String imageValue) {
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = (MediaQuery.sizeOf(context).width * pixelRatio).round();
+    final cacheHeight = (height * pixelRatio).round();
     if (imageValue.startsWith('http://') || imageValue.startsWith('https://')) {
       return Image.network(
         imageValue,
         fit: BoxFit.cover,
+        cacheWidth: cacheWidth,
+        cacheHeight: cacheHeight,
+        filterQuality: FilterQuality.low,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
     }
@@ -40,6 +46,9 @@ class WidgetsEventImage extends StatelessWidget {
       return Image.memory(
         base64Decode(encoded),
         fit: BoxFit.cover,
+        cacheWidth: cacheWidth,
+        cacheHeight: cacheHeight,
+        filterQuality: FilterQuality.low,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
     } catch (_) {
