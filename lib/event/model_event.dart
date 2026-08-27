@@ -13,6 +13,8 @@ class ModelEvent {
   bool showSearchPanel = false;
   final Set<String> selectedEventIds = {};
   final Set<String> removedEventIds = {};
+  List<EventItem>? _filteredEventsCache;
+  AppLocalizations? _filteredEventsLoc;
 
   // ignore: deprecated_member_use
   static final RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
@@ -22,7 +24,11 @@ class ModelEvent {
   static final RegExp priceReg = RegExp(r'^\$?(\d+)(?:~\$?(\d+))?$');
 
   List<EventItem> getFilteredEvents(AppLocalizations loc) {
-    return _filterEvents(
+    if (_filteredEventsCache != null && identical(_filteredEventsLoc, loc)) {
+      return _filteredEventsCache!;
+    }
+    _filteredEventsLoc = loc;
+    return _filteredEventsCache = _filterEvents(
       events: _events,
       inFilter: _searchFilter,
       removedEventIds: removedEventIds,
@@ -39,6 +45,7 @@ class ModelEvent {
 
     if (index != -1) {
       _events[index] = updatedEvent;
+      _invalidateFilteredEvents();
     }
   }
 
@@ -52,10 +59,12 @@ class ModelEvent {
 
   void clearSearchAll() {
     _searchFilter.clear();
+    _invalidateFilteredEvents();
   }
 
   void updateSearchKeywords(String? keywords) {
     _searchFilter.keywords = keywords ?? '';
+    _invalidateFilteredEvents();
   }
 
   void updateStartDate(DateTime? date) {
@@ -65,6 +74,7 @@ class ModelEvent {
       _searchFilter.endDate = date;
     }
     _searchFilter.startDate = date;
+    _invalidateFilteredEvents();
   }
 
   void updateEndDate(DateTime? date) {
@@ -74,6 +84,7 @@ class ModelEvent {
       _searchFilter.startDate = date;
     }
     _searchFilter.endDate = date;
+    _invalidateFilteredEvents();
   }
 
   void toggleEventSelection(String eventId, bool isSelected) {
@@ -86,6 +97,7 @@ class ModelEvent {
 
   void markRemoved(String eventId) {
     removedEventIds.add(eventId);
+    _invalidateFilteredEvents();
   }
 
   //--------------------------- calendar ---------------------------
@@ -101,6 +113,7 @@ class ModelEvent {
   //--------------------------- 核心方法 ---------------------------
   void removeEvent(EventItem event) {
     _events.removeWhere((e) => e.id == event.id);
+    _invalidateFilteredEvents();
   }
 
   void sortRecommendedContent({required bool isEvent}) {
@@ -119,6 +132,7 @@ class ModelEvent {
       if (contentComparison != 0) return contentComparison;
       return originalOrder[left.id]!.compareTo(originalOrder[right.id]!);
     });
+    _invalidateFilteredEvents();
   }
 
   int _preferenceRank(EventItem event) {
@@ -161,6 +175,7 @@ class ModelEvent {
 
   void clearAll() {
     _events.clear();
+    _invalidateFilteredEvents();
   }
 
   void setEvents(List<EventItem> list) {
@@ -168,6 +183,12 @@ class ModelEvent {
       return;
     }
     _events = list;
+    _invalidateFilteredEvents();
+  }
+
+  void _invalidateFilteredEvents() {
+    _filteredEventsCache = null;
+    _filteredEventsLoc = null;
   }
 
   List<EventItem> _filterEvents({
