@@ -252,7 +252,11 @@ def _valid_cached_response(
 
 
 def _database_unavailable(exception: Exception) -> HTTPException:
-    logger.error("Geocode database request failed: %s", type(exception).__name__)
+    logger.exception(
+        "Geocode database request failed: %s",
+        type(exception).__name__,
+        exc_info=exception,
+    )
     return HTTPException(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail="Geocode database is temporarily unavailable",

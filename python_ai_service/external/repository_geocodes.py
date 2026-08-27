@@ -176,7 +176,7 @@ def get_missing_event_map_locations(
         where (map_lat is null or map_lng is null)
           and (nullif(trim(city), '') is not null
                or nullif(trim(location), '') is not null)
-        order by created_at, id
+        order by id
         limit :limit
         offset :offset
         """
