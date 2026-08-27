@@ -103,6 +103,62 @@ class ModelEvent {
     _events.removeWhere((e) => e.id == event.id);
   }
 
+  void sortRecommendedContent({required bool isEvent}) {
+    final originalOrder = <String, int>{
+      for (var index = 0; index < _events.length; index++)
+        _events[index].id: index,
+    };
+    _events.sort((left, right) {
+      final preferenceComparison =
+          _preferenceRank(left).compareTo(_preferenceRank(right));
+      if (preferenceComparison != 0) return preferenceComparison;
+
+      final contentComparison = isEvent
+          ? _compareRecommendedEventDate(left, right)
+          : _compareAttraction(left, right);
+      if (contentComparison != 0) return contentComparison;
+      return originalOrder[left.id]!.compareTo(originalOrder[right.id]!);
+    });
+  }
+
+  int _preferenceRank(EventItem event) {
+    if (event.isLike == true) return 0;
+    if (event.isDislike == true) return 2;
+    return 1;
+  }
+
+  int _compareRecommendedEventDate(EventItem left, EventItem right) {
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    DateTime effectiveDate(EventItem event) {
+      final start = event.startDate ?? today;
+      return start.isBefore(today) ? (event.endDate ?? today) : start;
+    }
+
+    var comparison = effectiveDate(left).compareTo(effectiveDate(right));
+    if (comparison != 0) return comparison;
+    comparison = _timeSortValue(left.startTime)
+        .compareTo(_timeSortValue(right.startTime));
+    if (comparison != 0) return comparison;
+    comparison = (left.endDate ?? left.startDate ?? today)
+        .compareTo(right.endDate ?? right.startDate ?? today);
+    if (comparison != 0) return comparison;
+    comparison =
+        _timeSortValue(left.endTime).compareTo(_timeSortValue(right.endTime));
+    if (comparison != 0) return comparison;
+    comparison = left.city.compareTo(right.city);
+    return comparison != 0 ? comparison : left.name.compareTo(right.name);
+  }
+
+  int _compareAttraction(EventItem left, EventItem right) {
+    final cityComparison = left.city.compareTo(right.city);
+    return cityComparison != 0
+        ? cityComparison
+        : left.name.compareTo(right.name);
+  }
+
+  int _timeSortValue(dynamic time) =>
+      time == null ? 24 * 60 : time.hour * 60 + time.minute;
+
   void clearAll() {
     _events.clear();
   }

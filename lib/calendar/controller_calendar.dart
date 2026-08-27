@@ -148,6 +148,8 @@ class ControllerCalendar extends ChangeNotifier {
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
     final safeList = List<EventItem>.from(events); // ⭐ 複製！
+    final seenLocations = <String>{};
+    const maxPreloadedLocations = 8;
 
     for (final e in safeList) {
       final vm = buildViewModel(
@@ -155,13 +157,20 @@ class ControllerCalendar extends ChangeNotifier {
         loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!,
       );
 
-      await _serviceWeather.preloadWeather(
+      if (vm.locationDisplay.isEmpty ||
+          !seenLocations.add(vm.locationDisplay)) {
+        continue;
+      }
+
+      final requested = await _serviceWeather.preloadWeather(
         [vm],
         tableName: _tableName,
       );
 
-      // 👉 每秒一個
-      await Future.delayed(const Duration(seconds: 1));
+      if (requested) {
+        await Future.delayed(const Duration(seconds: 1));
+      }
+      if (seenLocations.length >= maxPreloadedLocations) break;
     }
   }
 

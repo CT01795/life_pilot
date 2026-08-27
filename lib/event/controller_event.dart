@@ -121,51 +121,74 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   Future<void> likeEvent(EventItem event) async {
+    final previousLike = event.isLike;
+    final previousDislike = event.isDislike;
     event.isLike = event.isLike == true ? false : true;
     event.isDislike = event.isLike == true ? false : event.isDislike;
-    await _serviceEvent.updateLikeEvent(
-        event: event, account: auth.currentAccount!);
-    if (_tableName == TableNames.recommendEvents ||
-        _tableName == TableNames.calendarEvents ||
-        _tableName == TableNames.memoryTrace) {
-      // 🔹 呼叫 function 更新資料庫
-      await tracking.incrementEventCounter(
-          eventId: event.id,
-          eventName: event.name, // 或者用 eventViewModel.name
-          column: event.isLike == true ? 'like_counts' : 'card_clicks');
-    }
+    _sortRecommendedContent();
     _invalidateViewModelCache();
-    final newList = await _serviceEvent.getEvents(
-      tableName: _tableName,
-      inputUser: auth.currentAccount,
-    );
-
-    _modelEvent.setEvents(newList ?? []);
     if (!_disposed) notifyListeners();
+    try {
+      await _serviceEvent.updateLikeEvent(
+          event: event, account: auth.currentAccount!);
+      if (_tableName == TableNames.recommendEvents ||
+          _tableName == TableNames.calendarEvents ||
+          _tableName == TableNames.memoryTrace) {
+        // 🔹 呼叫 function 更新資料庫
+        await tracking.incrementEventCounter(
+            eventId: event.id,
+            eventName: event.name, // 或者用 eventViewModel.name
+            column: event.isLike == true ? 'like_counts' : 'card_clicks');
+      }
+    } catch (_) {
+      event.isLike = previousLike;
+      event.isDislike = previousDislike;
+      _sortRecommendedContent();
+      _invalidateViewModelCache();
+      if (!_disposed) notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> dislikeEvent(EventItem event) async {
+    final previousLike = event.isLike;
+    final previousDislike = event.isDislike;
     event.isDislike = event.isDislike == true ? false : true;
     event.isLike = event.isDislike == true ? false : event.isLike;
-    await _serviceEvent.updateLikeEvent(
-        event: event, account: auth.currentAccount!);
-    if (_tableName == TableNames.recommendEvents ||
-        _tableName == TableNames.calendarEvents ||
-        _tableName == TableNames.memoryTrace) {
-      // 🔹 呼叫 function 更新資料庫
-      await tracking.incrementEventCounter(
-          eventId: event.id,
-          eventName: event.name, // 或者用 eventViewModel.name
-          column: event.isDislike == true ? 'dislike_counts' : 'card_clicks');
-    }
+    _sortRecommendedContent();
     _invalidateViewModelCache();
-    final newList = await _serviceEvent.getEvents(
-      tableName: _tableName,
-      inputUser: auth.currentAccount,
-    );
-
-    _modelEvent.setEvents(newList ?? []);
     if (!_disposed) notifyListeners();
+    try {
+      await _serviceEvent.updateLikeEvent(
+          event: event, account: auth.currentAccount!);
+      if (_tableName == TableNames.recommendEvents ||
+          _tableName == TableNames.calendarEvents ||
+          _tableName == TableNames.memoryTrace) {
+        // 🔹 呼叫 function 更新資料庫
+        await tracking.incrementEventCounter(
+            eventId: event.id,
+            eventName: event.name, // 或者用 eventViewModel.name
+            column: event.isDislike == true ? 'dislike_counts' : 'card_clicks');
+      }
+    } catch (_) {
+      event.isLike = previousLike;
+      event.isDislike = previousDislike;
+      _sortRecommendedContent();
+      _invalidateViewModelCache();
+      if (!_disposed) notifyListeners();
+      rethrow;
+    }
+  }
+
+  bool get _isRecommendedContent =>
+      _tableName == TableNames.recommendEvents ||
+      _tableName == TableNames.recommendPlaces;
+
+  void _sortRecommendedContent() {
+    if (!_isRecommendedContent) return;
+    _modelEvent.sortRecommendedContent(
+      isEvent: _tableName == TableNames.recommendEvents,
+    );
   }
 
   // ✅ 建立單筆事件控制器
@@ -376,6 +399,7 @@ class ControllerEvent extends ChangeNotifier {
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
     final seenLocations = <String>{};
+    const maxPreloadedLocations = 8;
 
     for (final e in events) {
       final vm = buildViewModel(
@@ -384,7 +408,10 @@ class ControllerEvent extends ChangeNotifier {
           app_navigator.navigatorKey.currentContext!,
         )!,
       );
-      if (!seenLocations.add(vm.locationDisplay)) continue;
+      if (vm.locationDisplay.isEmpty ||
+          !seenLocations.add(vm.locationDisplay)) {
+        continue;
+      }
 
       final requested = await _serviceWeather.preloadWeather(
         [vm],
@@ -393,6 +420,7 @@ class ControllerEvent extends ChangeNotifier {
       if (requested) {
         await Future.delayed(const Duration(seconds: 1));
       }
+      if (seenLocations.length >= maxPreloadedLocations) break;
     }
   }
 
