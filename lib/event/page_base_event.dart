@@ -56,6 +56,7 @@ class GenericEventPage extends StatefulWidget {
 class _GenericEventPageState extends State<GenericEventPage> {
   String? _selectedCity;
   bool _showMap = false;
+  final ScrollController _cityScrollController = ScrollController();
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
   bool _isBackfillingCoordinates = false;
   int _coordinateBackfillOffset = 0;
@@ -63,6 +64,12 @@ class _GenericEventPageState extends State<GenericEventPage> {
   ControllerEvent get _controller => widget.controllerEvent;
 
   late final ControllerAppBarActions _appBarHandler;
+
+  @override
+  void dispose() {
+    _cityScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -262,11 +269,24 @@ class _GenericEventPageState extends State<GenericEventPage> {
                               );
                             }
                           }
-                          final cities = cityCounts.keys.toList()..sort();
+                          final cities = cityCounts.keys.toList()
+                            ..sort((left, right) {
+                              final countComparison = cityCounts[right]!
+                                  .compareTo(cityCounts[left]!);
+                              return countComparison != 0
+                                  ? countComparison
+                                  : left.compareTo(right);
+                            });
                           final effectiveCity = _selectedCity != null &&
                                   cities.contains(_selectedCity)
                               ? _selectedCity
                               : null;
+                          final displayedCities = [...cities];
+                          if (effectiveCity != null) {
+                            displayedCities
+                              ..remove(effectiveCity)
+                              ..insert(0, effectiveCity);
+                          }
                           if (_selectedCity != effectiveCity) {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (mounted) {
@@ -285,41 +305,65 @@ class _GenericEventPageState extends State<GenericEventPage> {
                             children: [
                               if (widget.enableCityFilter && cities.isNotEmpty)
                                 SizedBox(
-                                  height: 54,
-                                  child: ListView(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    scrollDirection: Axis.horizontal,
-                                    children: [
-                                      _cityChip(
-                                        label:
-                                            '${_allCitiesLabel()} (${filteredEvents.length})',
-                                        selected: effectiveCity == null,
-                                        onSelected: () => _showCityList(null),
-                                      ),
-                                      ...cities.map(
-                                        (city) => _cityChip(
-                                          label: '$city (${cityCounts[city]})',
-                                          selected: effectiveCity == city,
-                                          onSelected: () => _showCityList(city),
+                                  height: 58,
+                                  child: Scrollbar(
+                                    controller: _cityScrollController,
+                                    thumbVisibility: true,
+                                    interactive: true,
+                                    scrollbarOrientation:
+                                        ScrollbarOrientation.bottom,
+                                    child: ListView(
+                                      controller: _cityScrollController,
+                                      padding: const EdgeInsets.fromLTRB(
+                                          12, 6, 12, 12),
+                                      scrollDirection: Axis.horizontal,
+                                      children: [
+                                        _cityChip(
+                                          label:
+                                              '${_allCitiesLabel()} (${filteredEvents.length})',
+                                          selected: effectiveCity == null,
+                                          onSelected: () => _showCityList(null),
                                         ),
-                                      ),
-                                    ],
+                                        ...displayedCities.map(
+                                          (city) => _cityChip(
+                                            label:
+                                                '$city (${cityCounts[city]})',
+                                            selected: effectiveCity == city,
+                                            onSelected: () =>
+                                                _showCityList(city),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               Expanded(
-                                child: visibleEvents.isEmpty
-                                    ? _buildEmptyState(loc)
-                                    : _showMap
-                                        ? WidgetsEventMap(
-                                            events: filteredEvents,
-                                            onCitySelected: _showCityList,
-                                          )
-                                        : widget.listBuilder(
-                                            filteredEvents: visibleEvents,
-                                            scrollController:
-                                                _controller.scrollController,
-                                          ),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 180),
+                                  switchInCurve: Curves.easeOut,
+                                  switchOutCurve: Curves.easeOut,
+                                  child: visibleEvents.isEmpty
+                                      ? KeyedSubtree(
+                                          key: const ValueKey('empty'),
+                                          child: _buildEmptyState(loc),
+                                        )
+                                      : _showMap
+                                          ? KeyedSubtree(
+                                              key: const ValueKey('map'),
+                                              child: WidgetsEventMap(
+                                                events: filteredEvents,
+                                                onCitySelected: _showCityList,
+                                              ),
+                                            )
+                                          : KeyedSubtree(
+                                              key: const ValueKey('list'),
+                                              child: widget.listBuilder(
+                                                filteredEvents: visibleEvents,
+                                                scrollController: _controller
+                                                    .scrollController,
+                                              ),
+                                            ),
+                                ),
                               ),
                             ],
                           );
