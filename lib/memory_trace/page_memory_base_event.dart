@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -109,8 +110,13 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
       _showMap = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_controller.scrollController.hasClients) return;
-      _controller.scrollController.jumpTo(0);
+      if (!mounted) return;
+      if (_cityScrollController.hasClients) {
+        _cityScrollController.jumpTo(0);
+      }
+      if (_controller.scrollController.hasClients) {
+        _controller.scrollController.jumpTo(0);
+      }
     });
   }
 
@@ -232,36 +238,23 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                             children: [
                               if (cities.isNotEmpty)
                                 SizedBox(
-                                  height: 58,
-                                  child: Scrollbar(
-                                    controller: _cityScrollController,
-                                    thumbVisibility: true,
-                                    interactive: true,
-                                    scrollbarOrientation:
-                                        ScrollbarOrientation.bottom,
-                                    child: ListView(
-                                      controller: _cityScrollController,
-                                      padding: const EdgeInsets.fromLTRB(
-                                          12, 6, 12, 12),
-                                      scrollDirection: Axis.horizontal,
-                                      children: [
-                                        _cityChip(
-                                          label:
-                                              '${_allCitiesLabel()} (${filteredEvents.length})',
-                                          selected: effectiveCity == null,
-                                          onSelected: () => _showCityList(null),
+                                  height: kIsWeb ? 58 : 54,
+                                  child: _buildCityScroller(
+                                    children: [
+                                      _cityChip(
+                                        label:
+                                            '${_allCitiesLabel()} (${filteredEvents.length})',
+                                        selected: effectiveCity == null,
+                                        onSelected: () => _showCityList(null),
+                                      ),
+                                      ...displayedCities.map(
+                                        (city) => _cityChip(
+                                          label: '$city (${cityCounts[city]})',
+                                          selected: effectiveCity == city,
+                                          onSelected: () => _showCityList(city),
                                         ),
-                                        ...displayedCities.map(
-                                          (city) => _cityChip(
-                                            label:
-                                                '$city (${cityCounts[city]})',
-                                            selected: effectiveCity == city,
-                                            onSelected: () =>
-                                                _showCityList(city),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               Expanded(
@@ -322,6 +315,25 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCityScroller({required List<Widget> children}) {
+    final cityList = ListView(
+      controller: _cityScrollController,
+      padding: kIsWeb
+          ? const EdgeInsets.fromLTRB(12, 6, 12, 12)
+          : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      scrollDirection: Axis.horizontal,
+      children: children,
+    );
+    if (!kIsWeb) return cityList;
+    return Scrollbar(
+      controller: _cityScrollController,
+      thumbVisibility: true,
+      interactive: true,
+      scrollbarOrientation: ScrollbarOrientation.bottom,
+      child: cityList,
     );
   }
 
