@@ -23,6 +23,7 @@ class PressButton extends StatefulWidget {
 
 class PressButtonState extends State<PressButton> {
   bool? _isPress;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -31,19 +32,44 @@ class PressButtonState extends State<PressButton> {
   }
 
   @override
+  void didUpdateWidget(covariant PressButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isPress != widget.isPress) {
+      _isPress = widget.isPress;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(
-        _isPress == true ? widget.pressedIcon : widget.unPressedIcon,
-        color: widget.color,
-      ),
+      icon: _isSubmitting
+          ? SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: widget.color,
+              ),
+            )
+          : Icon(
+              _isPress == true ? widget.pressedIcon : widget.unPressedIcon,
+              color: widget.color,
+            ),
       tooltip: widget.tooltip,
-      onPressed: () async {
-        if (widget.onPressed != null) await widget.onPressed!();
-        setState(() {
-          _isPress = !(_isPress ?? false);
-        });
-      },
+      onPressed: widget.onPressed == null || _isSubmitting
+          ? null
+          : () async {
+              setState(() => _isSubmitting = true);
+              try {
+                await widget.onPressed!();
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _isPress = widget.isPress;
+                    _isSubmitting = false;
+                  });
+                }
+              }
+            },
     );
   }
 }
