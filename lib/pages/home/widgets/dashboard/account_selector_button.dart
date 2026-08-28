@@ -84,45 +84,53 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
 
                   final selected = await showDialog<Map<String, String>>(
                     context: context,
-                    builder: (_) {
-                      return SimpleDialog(
+                    builder: (dialogContext) {
+                      final hasClearOption = accountId != null;
+                      return AlertDialog(
                         title: Text(loc.selectAccount),
-                        children: [
-                          if (accountId != null)
-                            SimpleDialogOption(
-                              onPressed: () => Navigator.pop(
-                                context,
-                                const <String, String>{},
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.clear),
-                                  const SizedBox(width: 12),
-                                  Text(loc.clear),
-                                ],
-                              ),
-                            ),
-                          ...accounts.map((a) {
-                            return SimpleDialogOption(
-                              child: ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(a.accountName),
-                                subtitle: Text(
-                                  _categoryLabel(loc, a.category),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.pop(
-                                  context,
-                                  {
-                                    Fields.id: a.id,
-                                    'name': a.accountName,
-                                  },
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                        content: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 420,
+                            maxHeight: 480,
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount:
+                                accounts.length + (hasClearOption ? 1 : 0),
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 1),
+                            itemBuilder: (_, index) {
+                              if (hasClearOption && index == 0) {
+                                return ListTile(
+                                  leading: const Icon(Icons.clear),
+                                  title: Text(loc.clear),
+                                  onTap: () => Navigator.pop(
+                                    dialogContext,
+                                    const <String, String>{},
+                                  ),
                                 );
-                              },
-                            );
-                          }),
-                        ],
+                              }
+                              final accountIndex =
+                                  index - (hasClearOption ? 1 : 0);
+                              final account = accounts[accountIndex];
+                              return ListTile(
+                                title: Text(account.accountName),
+                                subtitle: Text(
+                                  _categoryLabel(loc, account.category),
+                                ),
+                                onTap: () => Navigator.pop(
+                                  dialogContext,
+                                  {
+                                    Fields.id: account.id,
+                                    'name': account.accountName,
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       );
                     },
                   );

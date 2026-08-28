@@ -156,7 +156,6 @@ class _RefreshOrderRepository extends DashboardRepository {
   @override
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async => [];
 
-  @override
   Future<List<IncomeExpenseItem>> loadTodayIncomeExpense(
       {required String accountId}) {
     _accountingCalls++;
@@ -165,7 +164,6 @@ class _RefreshOrderRepository extends DashboardRepository {
         : Future.value([_income('new')]);
   }
 
-  @override
   Future<List<PointRecordItem>> loadPoints({required String accountId}) async =>
       [];
 }
@@ -181,13 +179,11 @@ class _ClearSelectionRepository extends DashboardRepository {
     savedSetting = setting;
   }
 
-  @override
   Future<List<IncomeExpenseItem>> loadTodayIncomeExpense({
     required String accountId,
   }) async =>
       [_income('record')];
 
-  @override
   Future<List<PointRecordItem>> loadPoints({required String accountId}) async =>
       [PointRecordItem(description: 'record', type: 'point', value: 1)];
 }
