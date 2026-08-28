@@ -197,17 +197,16 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
                   Selector<ControllerPageEventAdd, int>(
                     selector: (_, ctl) => ctl.subEvents.length,
                     builder: (_, length, __) {
-                      return ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: length,
-                          itemBuilder: (_, index) {
-                            return _buildSubEventCard(
-                                loc: loc,
-                                ctl: controllerAdd,
-                                index: index,
-                                fields: fields);
-                          });
+                      return Column(
+                        children: List.generate(
+                          length,
+                          (index) => _buildSubEventCard(
+                              loc: loc,
+                              ctl: controllerAdd,
+                              index: index,
+                              fields: fields),
+                        ),
+                      );
                     },
                   ),
                   ElevatedButton.icon(

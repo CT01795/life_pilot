@@ -25,20 +25,21 @@ class WidgetsEventList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final viewModels =
-        controllerEvent.buildViewModels(events: filteredEvents, loc: loc);
 
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
       cacheExtent: 180,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: viewModels.length,
+      itemCount: filteredEvents.length,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
-        EventViewModel eventViewModel = viewModels[index];
+        final eventViewModel = controllerEvent.buildViewModel(
+          event: filteredEvents[index],
+          loc: loc,
+        );
         controllerEvent.preloadWeatherForEvent(eventViewModel);
 
         return WidgetsEventCard(

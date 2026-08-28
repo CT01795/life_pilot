@@ -13,7 +13,13 @@ class EventCitySelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final dashboard = context.watch<ModelDashboard>();
+    final selectedCity = context.select<ModelDashboard, String>(
+      (dashboard) => dashboard.setting.recommendEventCity,
+    );
+    final cities = context.select(
+      (ModelDashboard dashboard) => dashboard.eventCities,
+    );
+    final dashboard = context.read<ModelDashboard>();
     final auth = context.read<ModelAuthView>();
 
     return Tooltip(
@@ -23,7 +29,7 @@ class EventCitySelectorButton extends StatelessWidget {
           Icons.location_on,
         ),
         label: Text(
-          dashboard.setting.recommendEventCity,
+          selectedCity,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -31,7 +37,7 @@ class EventCitySelectorButton extends StatelessWidget {
           final city = await showSearch<String>(
             context: context,
             delegate: CitySearchDelegate(
-              dashboard.eventCities,
+              cities,
             ),
           );
 
@@ -43,7 +49,7 @@ class EventCitySelectorButton extends StatelessWidget {
             return;
           }
 
-          if (city == dashboard.setting.recommendEventCity) {
+          if (city == selectedCity) {
             return;
           }
 

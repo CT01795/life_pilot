@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
@@ -271,12 +273,12 @@ Future<void> openDayDialog(
 ) async {
   final loc = AppLocalizations.of(context)!;
   final dateOnly = DateTimeFormatter.dateOnly(date);
-  final eventsOfDay = controller.getEventsOfDay(dateOnly);
 
   // ✅ 若點到的是不同月份，就先載入那個月份的資料
   await controller.handleCrossMonthTap(
     tappedDate: date,
   );
+  final eventsOfDay = controller.getEventsOfDay(dateOnly);
 
   /// ✅ ① 如果沒有事件 → 直接跳新增頁
   if (eventsOfDay.isEmpty) {
@@ -299,6 +301,7 @@ Future<void> openDayDialog(
   }
 
   /// ✅ ② 有事件 → 才 showDialog
+  unawaited(controller.preloadWeatherForDay(eventsOfDay));
   final shouldReload = await showDialog<bool>(
     context: context,
     builder: (_) => CalendarEventsDialog(

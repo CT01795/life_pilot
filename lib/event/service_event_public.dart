@@ -189,14 +189,29 @@ class ServiceEventPublic {
       if (tmpSource.isNotEmpty) dbNameDateSet.add(tmpSource);
 
       // ✅ await 放這裡
-      EventItem updatedEvent = await ClusterItem.getLatLngFromAddressItem(e);
-      updatedEvent.source = url;
-      newEvents.add(updatedEvent);
+      e.source = url;
+      newEvents.add(e);
     }
 
     if (newEvents.isNotEmpty) {
       try {
-        final rows = newEvents.map((e) => e.toJson()).toList();
+        const geocodeBatchSize = 4;
+        final resolvedEvents = <EventItem>[];
+        for (var offset = 0;
+            offset < newEvents.length;
+            offset += geocodeBatchSize) {
+          final end = offset + geocodeBatchSize < newEvents.length
+              ? offset + geocodeBatchSize
+              : newEvents.length;
+          resolvedEvents.addAll(
+            await Future.wait(
+              newEvents
+                  .sublist(offset, end)
+                  .map(ClusterItem.getLatLngFromAddressItem),
+            ),
+          );
+        }
+        final rows = resolvedEvents.map((event) => event.toJson()).toList();
         final isCurrentUserAdmin =
             supabase.auth.currentUser?.appMetadata['role'] ==
                 AuthConstants.adminRole;

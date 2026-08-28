@@ -212,34 +212,46 @@ class ControllerAccountingList extends ChangeNotifier {
     final loc = AppLocalizations.of(context)!;
     return showDialog<ModelAccountingAccount>(
       context: context,
-      builder: (_) {
+      builder: (dialogContext) {
+        final screenSize = MediaQuery.sizeOf(dialogContext);
         return DefaultTabController(
           length: 2,
           child: Dialog(
-            child: SizedBox(
-              height: 500,
-              child: Column(
-                children: [
-                  TabBar(
-                    tabs: [
-                      Tab(text: loc.accountPersonal),
-                      Tab(text: loc.accountProject),
-                      //Tab(text: loc.accountMaster),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _AccountListView(
-                            category: AccountCategory.personal.name,
-                            eventId: eventId),
-                        _AccountListView(
-                            category: AccountCategory.project.name,
-                            eventId: eventId),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 24,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 640,
+                maxHeight: screenSize.height * 0.8,
+              ),
+              child: SizedBox(
+                width: double.maxFinite,
+                height: screenSize.height * 0.75,
+                child: Column(
+                  children: [
+                    TabBar(
+                      tabs: [
+                        Tab(text: loc.accountPersonal),
+                        Tab(text: loc.accountProject),
+                        //Tab(text: loc.accountMaster),
                       ],
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _AccountListView(
+                              category: AccountCategory.personal.name,
+                              eventId: eventId),
+                          _AccountListView(
+                              category: AccountCategory.project.name,
+                              eventId: eventId),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

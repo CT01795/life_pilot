@@ -23,7 +23,13 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final dashboard = context.watch<ModelDashboard>();
+    final accountName = context.select<ModelDashboard, String?>(
+      (dashboard) => dashboard.setting.accountingAccountName,
+    );
+    final accountId = context.select<ModelDashboard, String?>(
+      (dashboard) => dashboard.setting.accountingAccountId,
+    );
+    final dashboard = context.read<ModelDashboard>();
     final auth = context.read<ModelAuthView>();
 
     return Tooltip(
@@ -33,7 +39,7 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
           Icons.account_balance_wallet,
         ),
         label: Text(
-          dashboard.setting.accountingAccountName ?? loc.selectAccount,
+          accountName ?? loc.selectAccount,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -81,7 +87,7 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
                       return SimpleDialog(
                         title: Text(loc.selectAccount),
                         children: [
-                          if (dashboard.setting.accountingAccountId != null)
+                          if (accountId != null)
                             SimpleDialogOption(
                               onPressed: () => Navigator.pop(
                                 context,

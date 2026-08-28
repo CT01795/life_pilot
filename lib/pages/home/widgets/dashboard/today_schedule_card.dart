@@ -23,15 +23,14 @@ class TodayScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final auth = context.watch<ModelAuthView>();
-    final tracking = context.read<EventTrackingService>();
-    final events = context.select<ModelDashboard, List<CalendarEvent>>(
-      (m) => m.state.todayEvents
-          .where(
-            (e) => !e.isCompleted,
-          )
-          .toList(),
+    final account = context.select<ModelAuthView, String?>(
+      (auth) => auth.account,
     );
+    final tracking = context.read<EventTrackingService>();
+    final allEvents = context.select<ModelDashboard, List<CalendarEvent>>(
+      (m) => m.state.todayEvents,
+    );
+    final events = allEvents.where((event) => !event.isCompleted).toList();
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.todaySchedule),
     );
@@ -55,7 +54,7 @@ class TodayScheduleCard extends StatelessWidget {
             if (hasLoadFailed)
               DashboardLoadFailure(
                 onRetry: () => context.read<ModelDashboard>().refreshAll(
-                      account: auth.account!,
+                      account: account!,
                     ),
               )
             else if (events.isEmpty)
@@ -99,7 +98,7 @@ class TodayScheduleCard extends StatelessWidget {
                         try {
                           await context.read<ModelDashboard>().completeEvent(
                                 id: e.id,
-                                account: auth.account!,
+                                account: account!,
                               );
                         } catch (error, stackTrace) {
                           logger.e(
@@ -137,7 +136,7 @@ class TodayScheduleCard extends StatelessWidget {
 
                           if (confirm == true) {
                             await calendar.addCalendarEventToMemory(
-                                account: auth.account!, event: e, id: e.id);
+                                account: account, event: e, id: e.id);
                             ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(loc.memoryAddOk)));
                           }
@@ -155,7 +154,7 @@ class TodayScheduleCard extends StatelessWidget {
                         }
                         context
                             .read<ModelDashboard>()
-                            .refreshTodaySchedule(account: auth.account!);
+                            .refreshTodaySchedule(account: account);
                       }),
                     ),
                   ),

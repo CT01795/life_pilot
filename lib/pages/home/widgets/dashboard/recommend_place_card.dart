@@ -25,7 +25,9 @@ class RecommendPlaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final auth = context.watch<ModelAuthView>();
+    final account = context.select<ModelAuthView, String?>(
+      (auth) => auth.account,
+    );
     final tracking = context.read<EventTrackingService>();
     final places = context.select<ModelDashboard, List<RecommendedPlace>>(
       (m) => m.state.recommendPlaces,
@@ -50,7 +52,7 @@ class RecommendPlaceCard extends StatelessWidget {
             if (hasLoadFailed)
               DashboardLoadFailure(
                 onRetry: () => context.read<ModelDashboard>().refreshAll(
-                      account: auth.account!,
+                      account: account!,
                     ),
               )
             else if (places.isEmpty)
@@ -70,14 +72,13 @@ class RecommendPlaceCard extends StatelessWidget {
                             try {
                               bool isExist =
                                   await calendar.existsRecommendedPlaceToCal(
-                                      account: auth.account!, place: e);
+                                      account: account!, place: e);
                               if (!isExist) {
                                 await calendar.addRecommendedPlaceToCal(
-                                    account: auth.account!, place: e, id: null);
+                                    account: account, place: e, id: null);
                                 context
                                     .read<ModelDashboard>()
-                                    .refreshTodaySchedule(
-                                        account: auth.account!);
+                                    .refreshTodaySchedule(account: account);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(loc.eventAddOk)));
                               } else {
@@ -101,13 +102,10 @@ class RecommendPlaceCard extends StatelessWidget {
                                         ));
                                 if (confirm == true) {
                                   await calendar.addRecommendedPlaceToCal(
-                                      account: auth.account!,
-                                      place: e,
-                                      id: null);
+                                      account: account, place: e, id: null);
                                   context
                                       .read<ModelDashboard>()
-                                      .refreshTodaySchedule(
-                                          account: auth.account!);
+                                      .refreshTodaySchedule(account: account);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text(loc.eventAddOk)));
                                 }

@@ -273,11 +273,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     final tileWidth = imageRect.width / ctrl.colsCount;
     final tileHeight = imageRect.height / ctrl.rowsCount;
 
-    return Stack(
-      children: ctrl.pieces.map((piece) {
-        return AnimatedBuilder(
-          animation: ctrl,
-          builder: (_, __) {
+    return AnimatedBuilder(
+      animation: ctrl,
+      builder: (_, __) {
+        return Stack(
+          children: ctrl.pieces.map((piece) {
             final row = piece.currentIndex ~/ ctrl.colsCount;
             final col = piece.currentIndex % ctrl.colsCount;
             Offset offset = ctrl.dragOffsets[piece.currentIndex] ?? Offset.zero;
@@ -339,9 +339,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               height: tileHeight,
               child: tileChild,
             );
-          },
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 

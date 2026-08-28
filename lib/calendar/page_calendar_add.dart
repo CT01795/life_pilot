@@ -204,17 +204,15 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
                   Selector<ControllerPageCalendarAdd, int>(
                     selector: (_, ctl) => ctl.subEvents.length,
                     builder: (_, length, __) {
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: length,
-                        itemBuilder: (_, index) {
-                          return _buildSubEventCard(
+                      return Column(
+                        children: List.generate(
+                          length,
+                          (index) => _buildSubEventCard(
                               loc: loc,
                               ctl: controllerAdd,
                               index: index,
-                              fields: fields);
-                        },
+                              fields: fields),
+                        ),
                       );
                     },
                   ),

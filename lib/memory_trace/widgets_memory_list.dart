@@ -28,24 +28,26 @@ class WidgetsMemoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final viewModels =
-        controllerEvent.buildViewModels(events: filteredEvents, loc: loc);
 
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
       cacheExtent: 180,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: viewModels.length,
+      itemCount: filteredEvents.length,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
-        EventViewModel eventViewModel = viewModels[index];
+        final event = filteredEvents[index];
+        final eventViewModel = controllerEvent.buildViewModel(
+          event: event,
+          loc: loc,
+        );
         controllerEvent.preloadWeatherForEvent(eventViewModel);
         final date = eventViewModel.startDate;
         final previousDate =
-            index == 0 ? null : viewModels[index - 1].startDate;
+            index == 0 ? null : filteredEvents[index - 1].startDate;
         final showDateHeader = date != null && !_sameDay(date, previousDate);
 
         return Column(

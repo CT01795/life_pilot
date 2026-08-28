@@ -22,25 +22,21 @@ class _PageHomeState extends State<PageHome> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final auth = context.read<ModelAuthView>();
-
+      final account = context.read<ModelAuthView>().account;
       final dashboard = context.read<ModelDashboard>();
 
-      await dashboard.loadEventCities(auth.account ?? '');
-      
-      await dashboard.loadPlaceCities(auth.account ?? '');
+      if (account == null || account.isEmpty) return;
 
-      if (auth.account == null) return;
-
-      await dashboard.refreshAll(
-        account: auth.account!,
-      );
+      await Future.wait<void>([
+        dashboard.loadEventCities(account),
+        dashboard.loadPlaceCities(account),
+        dashboard.refreshAll(account: account),
+      ]);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final dashboard = context.watch<ModelDashboard>();
     return RefreshIndicator(
       onRefresh: () async {
         final account = context.read<ModelAuthView>().account;
@@ -49,9 +45,9 @@ class _PageHomeState extends State<PageHome> {
           return;
         }
 
-        await dashboard.refreshAll(
-          account: account,
-        );
+        await context.read<ModelDashboard>().refreshAll(
+              account: account,
+            );
       },
       child: ListView(
         padding: Insets.all12,

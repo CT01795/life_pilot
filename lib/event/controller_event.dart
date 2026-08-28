@@ -125,8 +125,7 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   void _invalidateViewModelCache() {
-    _cachedViewModels = null;
-    _lastEvents = null;
+    _viewModelCache.clear();
   }
 
   bool canDelete({required String account}) {
@@ -380,28 +379,25 @@ class ControllerEvent extends ChangeNotifier {
     return _tableName != TableNames.recommendPlaces;
   }
 
-  List<EventViewModel>? _cachedViewModels;
-  List<EventItem>? _lastEvents;
-
-  List<EventViewModel> buildViewModels({
-    required List<EventItem> events,
-    required AppLocalizations loc,
-  }) {
-    if (_cachedViewModels != null && identical(_lastEvents, events)) {
-      return _cachedViewModels!;
-    }
-
-    _lastEvents = events;
-
-    _cachedViewModels =
-        events.map((event) => buildViewModel(event: event, loc: loc)).toList();
-    return _cachedViewModels!;
-  }
+  final Map<
+      String,
+      ({
+        EventItem event,
+        AppLocalizations loc,
+        EventViewModel viewModel,
+      })> _viewModelCache = {};
 
   EventViewModel buildViewModel({
     required EventItem event,
     required AppLocalizations loc,
   }) {
+    final cached = _viewModelCache[event.id];
+    if (cached != null &&
+        identical(cached.event, event) &&
+        identical(cached.loc, loc)) {
+      return cached.viewModel;
+    }
+
     EventViewModel tmp = EventViewModel.buildEventViewModel(
       event: event,
       parentLocation: '',
@@ -413,6 +409,11 @@ class ControllerEvent extends ChangeNotifier {
       tableName: _tableName,
     );
 
+    _viewModelCache[event.id] = (
+      event: event,
+      loc: loc,
+      viewModel: tmp,
+    );
     return tmp;
   }
 

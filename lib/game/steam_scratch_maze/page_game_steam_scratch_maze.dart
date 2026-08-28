@@ -16,8 +16,6 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/steam_scratch_maze/widgets_game_steam_scratch_maze_game_board.dart';
 import 'package:provider/provider.dart';
 
-import '../../utils/logger.dart';
-
 class PageGameSteamScratchMaze extends StatefulWidget {
   final String gameId;
   final int gameLevel;
@@ -64,6 +62,14 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
     // 監聽遊戲事件
     game.eventStream.listen((event) async {
       if (mounted) showGameDialog(event);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final maxBlocks = game.level.treasure.y +
+          game.level.treasure.x +
+          game.level.obstacles.length;
+      editorKeyMaze.currentState?.setMaxBlocks(maxBlocks);
     });
   }
 
@@ -290,16 +296,6 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
   @override
   Widget build(BuildContext context) {
     // ---- 1. 計算 maxBlocks ----
-    final maxBlocks = game.level.treasure.y +
-        game.level.treasure.x +
-        game.level.obstacles.length;
-
-    // ---- 2. 在每次 build 完成後更新到 iframe ----
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      logger.i("📢 editorKeyMaze.currentState = ${editorKeyMaze.currentState}");
-      editorKeyMaze.currentState?.setMaxBlocks(maxBlocks);
-    });
-
     return Scaffold(
       appBar: AppBar(
           leading: IconButton(

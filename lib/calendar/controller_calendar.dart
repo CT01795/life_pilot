@@ -147,14 +147,33 @@ class ControllerCalendar extends ChangeNotifier {
   }
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
+    final context = app_navigator.navigatorKey.currentContext;
+    if (context == null) return;
+
+    final loc = AppLocalizations.of(context);
+    if (loc == null) return;
+
     final safeList = List<EventItem>.from(events); // ⭐ 複製！
     final seenLocations = <String>{};
+    final weatherCandidates = <EventViewModel>[];
     const maxPreloadedLocations = 8;
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    final rangeEndExclusive = today.add(const Duration(days: 7));
 
     for (final e in safeList) {
+      final startDate = e.startDate;
+      if (startDate == null) continue;
+      final eventStart = DateTimeFormatter.dateOnly(startDate);
+      final eventEnd = DateTimeFormatter.dateOnly(e.endDate ?? startDate);
+      if (_tableName != TableNames.recommendPlaces &&
+          (!eventStart.isBefore(rangeEndExclusive) ||
+              eventEnd.isBefore(today))) {
+        continue;
+      }
+
       final vm = buildViewModel(
         event: e,
-        loc: AppLocalizations.of(app_navigator.navigatorKey.currentContext!)!,
+        loc: loc,
       );
 
       if (vm.locationDisplay.isEmpty ||
@@ -162,16 +181,23 @@ class ControllerCalendar extends ChangeNotifier {
         continue;
       }
 
-      final requested = await _serviceWeather.preloadWeather(
-        [vm],
-        tableName: _tableName,
-      );
-
-      if (requested) {
-        await Future.delayed(const Duration(seconds: 1));
-      }
+      weatherCandidates.add(vm);
       if (seenLocations.length >= maxPreloadedLocations) break;
     }
+
+    final requested = await Future.wait(
+      weatherCandidates.map(
+        (event) => _serviceWeather.preloadWeather(
+          [event],
+          tableName: _tableName,
+        ),
+      ),
+    );
+    if (requested.any((value) => value)) notifyListeners();
+  }
+
+  Future<void> preloadWeatherForDay(List<EventItem> events) async {
+    await _warmUpWeather(events);
   }
 
   EventViewModel buildViewModel({

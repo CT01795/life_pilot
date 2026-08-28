@@ -60,6 +60,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
       animation: controller,
       builder: (context, _) {
         final loc = AppLocalizations.of(context)!;
+        final isCompact = MediaQuery.sizeOf(context).width < 600;
         // ✅ 判斷遊戲是否完成
         if (controller.isFinished && !_hasPopped) {
           _hasPopped = true;
@@ -128,22 +129,24 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                       mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Transform.scale(
-                          scale: 4, // 放大，可自行調整
-                          alignment: Alignment.centerLeft, // 左對齊
-                          child: InkWell(
-                            onTap: () => controller
-                                .speak(controller.currentQuestion.question),
-                            child:
-                                Icon(Icons.volume_up, color: Color(0xFF212121)),
+                        IconButton(
+                          tooltip: loc.speakingText,
+                          onPressed: () => controller
+                              .speak(controller.currentQuestion.question),
+                          icon: const Icon(
+                            Icons.volume_up,
+                            color: Color(0xFF212121),
                           ),
+                          iconSize: isCompact ? 30 : 36,
                         ),
-                        Gaps.w60,
+                        Gaps.w8,
                         Expanded(
                           child: Text(
                             controller.currentQuestion.question,
                             style: TextStyle(
-                                fontSize: 40, color: Color(0xFF212121)),
+                              fontSize: isCompact ? 26 : 36,
+                              color: const Color(0xFF212121),
+                            ),
                             textAlign: TextAlign.start,
                             softWrap: true, // 允許換行
                             overflow: TextOverflow.visible,

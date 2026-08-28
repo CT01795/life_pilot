@@ -23,7 +23,13 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final dashboard = context.watch<ModelDashboard>();
+    final accountName = context.select<ModelDashboard, String?>(
+      (dashboard) => dashboard.setting.pointAccountName,
+    );
+    final accountId = context.select<ModelDashboard, String?>(
+      (dashboard) => dashboard.setting.pointAccountId,
+    );
+    final dashboard = context.read<ModelDashboard>();
     final auth = context.read<ModelAuthView>();
 
     return Tooltip(
@@ -33,7 +39,7 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
           Icons.stars,
         ),
         label: Text(
-          dashboard.setting.pointAccountName ?? loc.selectAccount,
+          accountName ?? loc.selectAccount,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -83,7 +89,7 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                           loc.selectAccount,
                         ),
                         children: [
-                          if (dashboard.setting.pointAccountId != null)
+                          if (accountId != null)
                             SimpleDialogOption(
                               onPressed: () => Navigator.pop(
                                 context,

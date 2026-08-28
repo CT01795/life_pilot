@@ -8,6 +8,7 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/widgets_event_country_dropdown.dart';
+import 'package:life_pilot/event/widgets_event_image.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -256,17 +257,15 @@ class _PageEventAddState extends State<PageEventAdd> {
                   Selector<ControllerPageEventAdd, int>(
                     selector: (_, ctl) => ctl.subEvents.length,
                     builder: (_, length, __) {
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: length,
-                        itemBuilder: (_, index) {
-                          return _buildSubEventCard(
+                      return Column(
+                        children: List.generate(
+                          length,
+                          (index) => _buildSubEventCard(
                               loc: loc,
                               ctl: controllerAdd,
                               index: index,
-                              fields: fields);
-                        },
+                              fields: fields),
+                        ),
                       );
                     },
                   ),
@@ -296,9 +295,11 @@ class _PageEventAddState extends State<PageEventAdd> {
   }
 
   Widget _buildOptionalImagePicker(AppLocalizations loc) {
-    return Consumer<ControllerPageEventAdd>(
-      builder: (_, ctl, __) {
-        final imageValue = ctl.masterGraphUrl?.trim();
+    return Selector<ControllerPageEventAdd, String?>(
+      selector: (_, ctl) => ctl.masterGraphUrl,
+      builder: (context, value, __) {
+        final ctl = context.read<ControllerPageEventAdd>();
+        final imageValue = value?.trim();
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           clipBehavior: Clip.antiAlias,
@@ -306,7 +307,7 @@ class _PageEventAddState extends State<PageEventAdd> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (imageValue != null && imageValue.isNotEmpty)
-                SizedBox(height: 190, child: _eventImage(imageValue)),
+                WidgetsEventImage(value: imageValue, height: 190),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -348,21 +349,6 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
     if (image == null) return;
     ctl.setMasterGraphUrl(base64Encode(await image.readAsBytes()));
-  }
-
-  Widget _eventImage(String value) {
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return Image.network(value, fit: BoxFit.cover);
-    }
-    final encoded = value.contains(',') ? value.split(',').last : value;
-    try {
-      return Image.memory(base64Decode(encoded), fit: BoxFit.cover);
-    } catch (_) {
-      return const ColoredBox(
-        color: Color(0xFFF1F3F5),
-        child: Center(child: Icon(Icons.broken_image_outlined)),
-      );
-    }
   }
 
   String _imageLabel() =>
