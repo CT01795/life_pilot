@@ -299,6 +299,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get todayPoints => '오늘의 핵심 포인트';
 
   @override
+  String get totalAmount => '총 금액';
+
+  @override
+  String get totalPoints => '총 포인트';
+
+  @override
   String get pointsRecord => '포인트 기록';
 
   @override

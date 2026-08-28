@@ -299,6 +299,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get todayPoints => '今日のポイント';
 
   @override
+  String get totalAmount => '合計金額';
+
+  @override
+  String get totalPoints => '合計ポイント';
+
+  @override
   String get pointsRecord => 'ポイント記録';
 
   @override

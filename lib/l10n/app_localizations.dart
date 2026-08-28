@@ -675,6 +675,18 @@ abstract class AppLocalizations {
   /// **'Today\'s Points'**
   String get todayPoints;
 
+  /// Total amount of the selected account
+  ///
+  /// In en, this message translates to:
+  /// **'Total Amount'**
+  String get totalAmount;
+
+  /// Total points of the selected account
+  ///
+  /// In en, this message translates to:
+  /// **'Total Points'**
+  String get totalPoints;
+
   /// Label for PointsRecord
   ///
   /// In en, this message translates to:

@@ -10,6 +10,9 @@ class DashboardState {
   final List<RecommendedPlace> recommendPlaces;
   final List<IncomeExpenseItem> todayIncomeExpense;
   final List<PointRecordItem> todayPoints;
+  final int accountingTotal;
+  final String accountingCurrency;
+  final int pointsTotal;
 
   const DashboardState({
     required this.todayEvents,
@@ -17,6 +20,9 @@ class DashboardState {
     required this.recommendPlaces,
     required this.todayIncomeExpense,
     required this.todayPoints,
+    required this.accountingTotal,
+    required this.accountingCurrency,
+    required this.pointsTotal,
   });
 
   factory DashboardState.empty() {
@@ -26,6 +32,9 @@ class DashboardState {
       recommendPlaces: [],
       todayIncomeExpense: [],
       todayPoints: [],
+      accountingTotal: 0,
+      accountingCurrency: 'TWD',
+      pointsTotal: 0,
     );
   }
 
@@ -35,18 +44,19 @@ class DashboardState {
     List<RecommendedPlace>? recommendPlaces,
     List<IncomeExpenseItem>? todayIncomeExpense,
     List<PointRecordItem>? todayPoints,
-  }){
+    int? accountingTotal,
+    String? accountingCurrency,
+    int? pointsTotal,
+  }) {
     return DashboardState(
-      todayEvents:
-          todayEvents ?? this.todayEvents,
-      recommendEvents:
-          recommendEvents ?? this.recommendEvents,
-      recommendPlaces:
-          recommendPlaces ?? this.recommendPlaces,
-      todayIncomeExpense:
-          todayIncomeExpense ?? this.todayIncomeExpense,
-      todayPoints:
-          todayPoints ?? this.todayPoints,
+      todayEvents: todayEvents ?? this.todayEvents,
+      recommendEvents: recommendEvents ?? this.recommendEvents,
+      recommendPlaces: recommendPlaces ?? this.recommendPlaces,
+      todayIncomeExpense: todayIncomeExpense ?? this.todayIncomeExpense,
+      todayPoints: todayPoints ?? this.todayPoints,
+      accountingTotal: accountingTotal ?? this.accountingTotal,
+      accountingCurrency: accountingCurrency ?? this.accountingCurrency,
+      pointsTotal: pointsTotal ?? this.pointsTotal,
     );
   }
 }

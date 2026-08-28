@@ -299,6 +299,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get todayPoints => '今日積分';
 
   @override
+  String get totalAmount => '總金額';
+
+  @override
+  String get totalPoints => '總積分';
+
+  @override
   String get pointsRecord => '積分';
 
   @override

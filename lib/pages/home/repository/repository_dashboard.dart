@@ -180,11 +180,11 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense(
+  Future<AccountingDashboardSummary> loadAccountingSummary(
       {required String accountId}) async {
     final accountResult = await supabase
         .from(TableNames.accountingAccount)
-        .select('id,main_currency')
+        .select('id,main_currency,balance')
         .eq(
           Fields.id,
           accountId,
@@ -193,7 +193,7 @@ class DashboardRepository {
         .maybeSingle();
 
     if (accountResult == null) {
-      return [];
+      return const AccountingDashboardSummary.empty();
     }
     //final accountId = accountResult[Fields.id];
     final currency = accountResult['main_currency'];
@@ -224,17 +224,23 @@ class DashboardRepository {
         )
         .order('date', ascending: false);
 
-    return (result as List)
+    final records = (result as List)
         .map(
           (e) => IncomeExpenseItem.fromJson(e),
         )
         .toList();
+    return AccountingDashboardSummary(
+      records: records,
+      total: (accountResult['balance'] ?? 0).toInt(),
+      currency: currency ?? 'TWD',
+    );
   }
 
-  Future<List<PointRecordItem>> loadPoints({required String accountId}) async {
+  Future<PointDashboardSummary> loadPointSummary(
+      {required String accountId}) async {
     final accountResult = await supabase
         .from(TableNames.pointRecordAccount)
-        .select(Fields.id)
+        .select('id,points')
         .eq(
           Fields.id,
           accountId,
@@ -243,7 +249,7 @@ class DashboardRepository {
         .maybeSingle();
 
     if (accountResult == null) {
-      return [];
+      return const PointDashboardSummary.empty();
     }
     //final accountId = accountResult[Fields.id];
     final now = DateTime.now();
@@ -272,10 +278,14 @@ class DashboardRepository {
         )
         .order('date', ascending: false);
 
-    return (result as List)
+    final records = (result as List)
         .map(
           (e) => PointRecordItem.fromJson(e),
         )
         .toList();
+    return PointDashboardSummary(
+      records: records,
+      total: (accountResult['points'] ?? 0).toInt(),
+    );
   }
 }

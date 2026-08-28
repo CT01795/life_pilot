@@ -5,6 +5,7 @@ import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:uuid/uuid.dart';
@@ -65,18 +66,42 @@ class ServiceAccounting {
 
   Future<List<ModelAccountingAccount>> fetchAccounts({
     required String user,
-    required String category, // personal / project
+    String? category, // null = all categories
+    int? projectLimit,
   }) async {
     try {
-      final response = await supabase
-          .from(TableNames.accountingAccount)
-          .select()
-          .eq('category', category)
-          .eq(Fields.createdBy, user)
-          .eq(Fields.isValid, true)
-          .order(Fields.account, ascending: true);
+      final List<dynamic> list;
+      if (category == null && projectLimit != null) {
+        final responses = await Future.wait([
+          supabase
+              .from(TableNames.accountingAccount)
+              .select()
+              .eq(Fields.createdBy, user)
+              .eq(Fields.isValid, true)
+              .eq('category', AccountCategory.personal.name)
+              .order(Fields.account, ascending: true),
+          supabase
+              .from(TableNames.accountingAccount)
+              .select()
+              .eq(Fields.createdBy, user)
+              .eq(Fields.isValid, true)
+              .eq('category', AccountCategory.project.name)
+              .order(Fields.createdAt, ascending: false)
+              .limit(projectLimit),
+        ]);
+        list = [...responses[0], ...responses[1]];
+      } else {
+        var query = supabase
+            .from(TableNames.accountingAccount)
+            .select()
+            .eq(Fields.createdBy, user)
+            .eq(Fields.isValid, true);
+        if (category != null) {
+          query = query.eq('category', category);
+        }
+        list = await query.order(Fields.account, ascending: true);
+      }
 
-      final list = (response as List);
       return Future.wait(
         list.map((e) async {
           final bytes = await compute<String?, Uint8List?>(

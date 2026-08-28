@@ -28,13 +28,16 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
       (m) => m.setting.accountingAccountId != null,
     );
 
-    final total = records.fold<int>(
+    final todayTotal = records.fold<int>(
       0,
       (sum, e) => sum + e.value,
     );
-
-    String currency =
-        records.isNotEmpty ? (records[0].currency ?? 'TWD') : 'TWD';
+    final accountTotal = context.select<ModelDashboard, int>(
+      (m) => m.state.accountingTotal,
+    );
+    final currency = context.select<ModelDashboard, String>(
+      (m) => m.state.accountingCurrency,
+    );
 
     final formatter = NumberFormat('#,###');
 
@@ -60,12 +63,26 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
               Gaps.h16,
               ListTile(
                 dense: true,
+                title: Text(
+                  loc.totalAmount,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                trailing: Text(
+                  '${formatter.format(accountTotal)} $currency',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: accountTotal < 0 ? Colors.red : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              ListTile(
+                dense: true,
                 title: Text(loc.todayIncomeExpense,
                     style: Theme.of(context).textTheme.titleMedium),
                 trailing: Text(
-                  '${formatter.format(total)} $currency',
+                  '${formatter.format(todayTotal)} $currency',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: total < 0
+                        color: todayTotal < 0
                             ? Colors.red // 收入
                             : Colors.black, // 支出
                         fontWeight: FontWeight.bold,

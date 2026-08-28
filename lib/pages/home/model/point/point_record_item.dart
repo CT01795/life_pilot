@@ -38,3 +38,17 @@ class PointRecordItem {
     );
   }
 }
+
+class PointDashboardSummary {
+  final List<PointRecordItem> records;
+  final int total;
+
+  const PointDashboardSummary({
+    required this.records,
+    required this.total,
+  });
+
+  const PointDashboardSummary.empty()
+      : records = const [],
+        total = 0;
+}

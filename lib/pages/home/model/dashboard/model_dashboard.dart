@@ -155,13 +155,15 @@ class ModelDashboard extends ChangeNotifier {
         ),
         _loadSection(
           DashboardSection.accounting,
-          () => repository.loadTodayIncomeExpense(
+          () => repository.loadAccountingSummary(
             accountId: setting.accountingAccountId ?? '',
           ),
         ),
         _loadSection(
           DashboardSection.points,
-          () => repository.loadPoints(accountId: setting.pointAccountId ?? ''),
+          () => repository.loadPointSummary(
+            accountId: setting.pointAccountId ?? '',
+          ),
         ),
       ]);
       if (!_isCurrentRequest(account, generation)) return;
@@ -176,11 +178,24 @@ class ModelDashboard extends ChangeNotifier {
             ? result[2] as List<RecommendedPlace>? ?? _state.recommendPlaces
             : _state.recommendPlaces,
         todayIncomeExpense: accountingRequest == _accountingRequest
-            ? result[3] as List<IncomeExpenseItem>? ?? _state.todayIncomeExpense
+            ? (result[3] as AccountingDashboardSummary?)?.records ??
+                _state.todayIncomeExpense
             : _state.todayIncomeExpense,
+        accountingTotal: accountingRequest == _accountingRequest
+            ? (result[3] as AccountingDashboardSummary?)?.total ??
+                _state.accountingTotal
+            : _state.accountingTotal,
+        accountingCurrency: accountingRequest == _accountingRequest
+            ? (result[3] as AccountingDashboardSummary?)?.currency ??
+                _state.accountingCurrency
+            : _state.accountingCurrency,
         todayPoints: pointsRequest == _pointsRequest
-            ? result[4] as List<PointRecordItem>? ?? _state.todayPoints
+            ? (result[4] as PointDashboardSummary?)?.records ??
+                _state.todayPoints
             : _state.todayPoints,
+        pointsTotal: pointsRequest == _pointsRequest
+            ? (result[4] as PointDashboardSummary?)?.total ?? _state.pointsTotal
+            : _state.pointsTotal,
       );
     } finally {
       if (_isCurrentRequest(account, generation)) {
@@ -292,14 +307,18 @@ class ModelDashboard extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final todayIncomeExpense = await repository.loadTodayIncomeExpense(
+      final summary = await repository.loadAccountingSummary(
         accountId: accountId,
       );
 
       if (request != _accountingRequest) return;
 
       _failedSections.remove(DashboardSection.accounting);
-      _state = _state.copyWith(todayIncomeExpense: todayIncomeExpense);
+      _state = _state.copyWith(
+        todayIncomeExpense: summary.records,
+        accountingTotal: summary.total,
+        accountingCurrency: summary.currency,
+      );
     } finally {
       if (request == _accountingRequest) {
         _loading = false;
@@ -316,12 +335,15 @@ class ModelDashboard extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final todayPoints = await repository.loadPoints(accountId: accountId);
+      final summary = await repository.loadPointSummary(accountId: accountId);
 
       if (request != _pointsRequest) return;
 
       _failedSections.remove(DashboardSection.points);
-      _state = _state.copyWith(todayPoints: todayPoints);
+      _state = _state.copyWith(
+        todayPoints: summary.records,
+        pointsTotal: summary.total,
+      );
     } finally {
       if (request == _pointsRequest) {
         _loading = false;
@@ -425,11 +447,18 @@ class ModelDashboard extends ChangeNotifier {
     if (accountId == null) {
       _accountingRequest++;
       _failedSections.remove(DashboardSection.accounting);
-      _state = _state.copyWith(todayIncomeExpense: const []);
+      _state = _state.copyWith(
+        todayIncomeExpense: const [],
+        accountingTotal: 0,
+        accountingCurrency: 'TWD',
+      );
       notifyListeners();
     } else {
       _failedSections.remove(DashboardSection.accounting);
-      _state = _state.copyWith(todayIncomeExpense: const []);
+      _state = _state.copyWith(
+        todayIncomeExpense: const [],
+        accountingTotal: 0,
+      );
       notifyListeners();
       await refreshAccounting(accountId: accountId);
     }
@@ -456,11 +485,17 @@ class ModelDashboard extends ChangeNotifier {
     if (accountId == null) {
       _pointsRequest++;
       _failedSections.remove(DashboardSection.points);
-      _state = _state.copyWith(todayPoints: const []);
+      _state = _state.copyWith(
+        todayPoints: const [],
+        pointsTotal: 0,
+      );
       notifyListeners();
     } else {
       _failedSections.remove(DashboardSection.points);
-      _state = _state.copyWith(todayPoints: const []);
+      _state = _state.copyWith(
+        todayPoints: const [],
+        pointsTotal: 0,
+      );
       notifyListeners();
       await refreshPoints(accountId: accountId);
     }

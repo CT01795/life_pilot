@@ -299,6 +299,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayPoints => 'Today\'s Points';
 
   @override
+  String get totalAmount => 'Total Amount';
+
+  @override
+  String get totalPoints => 'Total Points';
+
+  @override
   String get pointsRecord => 'Points Record';
 
   @override

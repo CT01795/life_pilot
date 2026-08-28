@@ -28,9 +28,12 @@ class PointSummaryCard extends StatelessWidget {
       (m) => m.setting.pointAccountId != null,
     );
 
-    final total = records.fold<int>(
+    final todayTotal = records.fold<int>(
       0,
       (sum, e) => sum + e.value,
+    );
+    final pointsTotal = context.select<ModelDashboard, int>(
+      (m) => m.state.pointsTotal,
     );
 
     final formatter = NumberFormat('#,###');
@@ -57,12 +60,26 @@ class PointSummaryCard extends StatelessWidget {
               Gaps.h16,
               ListTile(
                 dense: true,
+                title: Text(
+                  loc.totalPoints,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                trailing: Text(
+                  formatter.format(pointsTotal),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: pointsTotal < 0 ? Colors.red : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              ListTile(
+                dense: true,
                 title: Text(loc.todayPoints,
                     style: Theme.of(context).textTheme.titleMedium),
                 trailing: Text(
-                  formatter.format(total),
+                  formatter.format(todayTotal),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: total < 0 ? Colors.red : Colors.black,
+                        color: todayTotal < 0 ? Colors.red : Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                 ),

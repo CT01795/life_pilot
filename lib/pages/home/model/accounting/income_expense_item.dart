@@ -38,3 +38,20 @@ class IncomeExpenseItem {
     );
   }
 }
+
+class AccountingDashboardSummary {
+  final List<IncomeExpenseItem> records;
+  final int total;
+  final String currency;
+
+  const AccountingDashboardSummary({
+    required this.records,
+    required this.total,
+    required this.currency,
+  });
+
+  const AccountingDashboardSummary.empty()
+      : records = const [],
+        total = 0,
+        currency = 'TWD';
+}

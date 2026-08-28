@@ -51,7 +51,7 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                   final accounts =
                       await context.read<ServicePointRecord>().fetchAccounts(
                             user: auth.account ?? '',
-                            category: AccountCategory.personal.name,
+                            projectLimit: 2,
                           );
 
                   if (!context.mounted) return;
@@ -105,7 +105,13 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                             ),
                           ...accounts.map((a) {
                             return SimpleDialogOption(
-                              child: Text(a.accountName),
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(a.accountName),
+                                subtitle: Text(
+                                  _categoryLabel(loc, a.category),
+                                ),
+                              ),
                               onPressed: () {
                                 Navigator.pop(
                                   context,
@@ -149,5 +155,13 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
               },
       ),
     );
+  }
+
+  String _categoryLabel(AppLocalizations loc, String category) {
+    return switch (category) {
+      'project' => loc.accountProject,
+      'master' => loc.accountMaster,
+      _ => loc.accountPersonal,
+    };
   }
 }
