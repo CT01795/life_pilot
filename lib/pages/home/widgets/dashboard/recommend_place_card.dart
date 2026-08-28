@@ -9,6 +9,7 @@ import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/place_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -35,6 +36,9 @@ class RecommendPlaceCard extends StatelessWidget {
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.recommendPlaces),
     );
+    final isLoading = context.select<ModelDashboard, bool>(
+      (m) => m.isLoading(DashboardSection.recommendPlaces),
+    );
 
     return Card(
       color: Color(0xFFD9E8D5),
@@ -49,12 +53,16 @@ class RecommendPlaceCard extends StatelessWidget {
               trailing: PlaceCitySelectorButton(),
             ),
             Gaps.h16,
+            if (isLoading && places.isNotEmpty) const LinearProgressIndicator(),
             if (hasLoadFailed)
               DashboardLoadFailure(
-                onRetry: () => context.read<ModelDashboard>().refreshAll(
+                onRetry: () => context.read<ModelDashboard>().retrySection(
+                      section: DashboardSection.recommendPlaces,
                       account: account!,
                     ),
               )
+            else if (isLoading && places.isEmpty)
+              const DashboardSectionLoading()
             else if (places.isEmpty)
               ListTile(
                 leading: Icon(Icons.info_outline),

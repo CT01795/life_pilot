@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/service/calendar_service.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -34,6 +35,9 @@ class TodayScheduleCard extends StatelessWidget {
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.todaySchedule),
     );
+    final isLoading = context.select<ModelDashboard, bool>(
+      (m) => m.isLoading(DashboardSection.todaySchedule),
+    );
 
     return Card(
       color: Color(0xFFD6E4F0),
@@ -51,12 +55,16 @@ class TodayScheduleCard extends StatelessWidget {
               ),
             ]),
             Gaps.h16,
+            if (isLoading && events.isNotEmpty) const LinearProgressIndicator(),
             if (hasLoadFailed)
               DashboardLoadFailure(
-                onRetry: () => context.read<ModelDashboard>().refreshAll(
+                onRetry: () => context.read<ModelDashboard>().retrySection(
+                      section: DashboardSection.todaySchedule,
                       account: account!,
                     ),
               )
+            else if (isLoading && events.isEmpty)
+              const DashboardSectionLoading()
             else if (events.isEmpty)
               ListTile(
                 leading: Icon(Icons.info_outline),

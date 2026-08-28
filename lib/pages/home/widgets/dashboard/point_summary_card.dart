@@ -7,6 +7,7 @@ import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/point_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -23,6 +24,9 @@ class PointSummaryCard extends StatelessWidget {
     );
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.points),
+    );
+    final isLoading = context.select<ModelDashboard, bool>(
+      (m) => m.isLoading(DashboardSection.points),
     );
     final hasSelectedAccount = context.select<ModelDashboard, bool>(
       (m) => m.setting.pointAccountId != null,
@@ -85,12 +89,17 @@ class PointSummaryCard extends StatelessWidget {
                 ),
               ),
               const Divider(),
+              if (isLoading && records.isNotEmpty)
+                const LinearProgressIndicator(),
               if (hasLoadFailed)
                 DashboardLoadFailure(
-                  onRetry: () => context.read<ModelDashboard>().refreshAll(
+                  onRetry: () => context.read<ModelDashboard>().retrySection(
+                        section: DashboardSection.points,
                         account: context.read<ModelAuthView>().account!,
                       ),
                 )
+              else if (isLoading && records.isEmpty)
+                const DashboardSectionLoading()
               else if (records.isEmpty)
                 ListTile(
                   leading: const Icon(Icons.info_outline),

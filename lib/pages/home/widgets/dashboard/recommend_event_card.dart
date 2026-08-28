@@ -10,6 +10,7 @@ import 'package:life_pilot/pages/home/widgets/dashboard/event_city_selector_butt
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -34,6 +35,9 @@ class RecommendEventCard extends StatelessWidget {
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.recommendEvents),
     );
+    final isLoading = context.select<ModelDashboard, bool>(
+      (m) => m.isLoading(DashboardSection.recommendEvents),
+    );
 
     return Card(
       color: Color(0xFFF1E1CF),
@@ -48,12 +52,16 @@ class RecommendEventCard extends StatelessWidget {
               trailing: EventCitySelectorButton(),
             ),
             Gaps.h16,
+            if (isLoading && events.isNotEmpty) const LinearProgressIndicator(),
             if (hasLoadFailed)
               DashboardLoadFailure(
-                onRetry: () => context.read<ModelDashboard>().refreshAll(
+                onRetry: () => context.read<ModelDashboard>().retrySection(
+                      section: DashboardSection.recommendEvents,
                       account: account!,
                     ),
               )
+            else if (isLoading && events.isEmpty)
+              const DashboardSectionLoading()
             else if (events.isEmpty)
               ListTile(
                 leading: const Icon(Icons.info_outline),

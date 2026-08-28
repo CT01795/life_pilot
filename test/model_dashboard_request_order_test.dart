@@ -16,7 +16,7 @@ void main() {
   test('latest recommendation request wins when an older request finishes last',
       () async {
     final repository = _RecommendationOrderRepository();
-    final model = _model(repository);
+    final model = _model(repository)..switchAccount('user');
 
     final firstRequest = model.refreshRecommendEvent(account: 'user');
     final secondRequest = model.refreshRecommendEvent(account: 'user');
@@ -44,6 +44,21 @@ void main() {
     await fullRefresh;
 
     expect(model.state.todayIncomeExpense.single.description, 'new');
+  });
+
+  test('request from the previous user cannot update the dashboard', () async {
+    final repository = _AccountSwitchRepository();
+    final model = _model(repository)..switchAccount('first-user');
+
+    final oldRequest = model.refreshRecommendEvent(account: 'first-user');
+    await Future<void>.delayed(Duration.zero);
+    model.switchAccount('second-user');
+
+    repository.oldEvents.complete([_event('old-user-event')]);
+    await oldRequest;
+
+    expect(model.state.recommendEvents, isEmpty);
+    expect(model.isLoading(DashboardSection.recommendEvents), isFalse);
   });
 
   test('clearing dashboard accounts removes saved selections and records',
@@ -97,6 +112,34 @@ void main() {
     expect(model.state.todayPoints.single.description, 'record');
     expect(repository.savedSetting?.accountingAccountId, 'account');
     expect(repository.savedSetting?.pointAccountId, 'points');
+  });
+
+  test('section refreshes reuse loaded settings without another settings query',
+      () async {
+    final repository = _SectionRefreshRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    await model.refreshTodaySchedule(account: 'user');
+    await model.refreshRecommendEvent(account: 'user');
+    await model.refreshRecommendPlace(account: 'user');
+
+    expect(repository.settingLoadCount, 0);
+    expect(repository.eventCity, model.setting.recommendEventCity);
+    expect(repository.placeCity, model.setting.recommendPlaceCity);
+  });
+
+  test('full refresh starts today schedule while settings are loading',
+      () async {
+    final repository = _ParallelInitialLoadRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    final refresh = model.refreshAll(account: 'user');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.todayEventsStarted, isTrue);
+
+    repository.setting.complete(_setting());
+    await refresh;
   });
 }
 
@@ -156,16 +199,105 @@ class _RefreshOrderRepository extends DashboardRepository {
   @override
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async => [];
 
-  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense(
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary(
       {required String accountId}) {
     _accountingCalls++;
     return _accountingCalls == 1
-        ? oldAccounting.future
-        : Future.value([_income('new')]);
+        ? oldAccounting.future.then(
+            (records) => AccountingDashboardSummary(
+              records: records,
+              total: 1,
+              currency: 'TWD',
+            ),
+          )
+        : Future.value(
+            AccountingDashboardSummary(
+              records: [_income('new')],
+              total: 1,
+              currency: 'TWD',
+            ),
+          );
   }
 
-  Future<List<PointRecordItem>> loadPoints({required String accountId}) async =>
-      [];
+  @override
+  Future<PointDashboardSummary> loadPointSummary(
+          {required String accountId}) async =>
+      const PointDashboardSummary.empty();
+}
+
+class _AccountSwitchRepository extends DashboardRepository {
+  final oldEvents = Completer<List<RecommendedEvent>>();
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting(
+          {required String account}) async =>
+      _setting();
+
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) =>
+      oldEvents.future;
+}
+
+class _SectionRefreshRepository extends DashboardRepository {
+  int settingLoadCount = 0;
+  String? eventCity;
+  String? placeCity;
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting(
+      {required String account}) async {
+    settingLoadCount++;
+    return _setting();
+  }
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) async => [];
+
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
+    eventCity = city;
+    return [];
+  }
+
+  @override
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
+    placeCity = city;
+    return [];
+  }
+}
+
+class _ParallelInitialLoadRepository extends DashboardRepository {
+  final setting = Completer<DashboardSetting>();
+  bool todayEventsStarted = false;
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting({required String account}) =>
+      setting.future;
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) async {
+    todayEventsStarted = true;
+    return [];
+  }
+
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) async => [];
+
+  @override
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async => [];
+
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) async =>
+      const AccountingDashboardSummary.empty();
+
+  @override
+  Future<PointDashboardSummary> loadPointSummary({
+    required String accountId,
+  }) async =>
+      const PointDashboardSummary.empty();
 }
 
 class _ClearSelectionRepository extends DashboardRepository {
@@ -179,11 +311,24 @@ class _ClearSelectionRepository extends DashboardRepository {
     savedSetting = setting;
   }
 
-  Future<List<IncomeExpenseItem>> loadTodayIncomeExpense({
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary({
     required String accountId,
   }) async =>
-      [_income('record')];
+      AccountingDashboardSummary(
+        records: [_income('record')],
+        total: 1,
+        currency: 'TWD',
+      );
 
-  Future<List<PointRecordItem>> loadPoints({required String accountId}) async =>
-      [PointRecordItem(description: 'record', type: 'point', value: 1)];
+  @override
+  Future<PointDashboardSummary> loadPointSummary({
+    required String accountId,
+  }) async =>
+      PointDashboardSummary(
+        records: [
+          PointRecordItem(description: 'record', type: 'point', value: 1),
+        ],
+        total: 1,
+      );
 }

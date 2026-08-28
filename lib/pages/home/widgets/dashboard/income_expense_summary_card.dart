@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/account_selector_button.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
     );
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.accounting),
+    );
+    final isLoading = context.select<ModelDashboard, bool>(
+      (m) => m.isLoading(DashboardSection.accounting),
     );
     final hasSelectedAccount = context.select<ModelDashboard, bool>(
       (m) => m.setting.accountingAccountId != null,
@@ -90,12 +94,17 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 ),
               ),
               const Divider(),
+              if (isLoading && records.isNotEmpty)
+                const LinearProgressIndicator(),
               if (hasLoadFailed)
                 DashboardLoadFailure(
-                  onRetry: () => context.read<ModelDashboard>().refreshAll(
+                  onRetry: () => context.read<ModelDashboard>().retrySection(
+                        section: DashboardSection.accounting,
                         account: context.read<ModelAuthView>().account!,
                       ),
                 )
+              else if (isLoading && records.isEmpty)
+                const DashboardSectionLoading()
               else if (records.isEmpty)
                 ListTile(
                   leading: const Icon(Icons.info_outline),
