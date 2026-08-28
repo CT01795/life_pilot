@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
 enum StockUpdateStatus { idle, updating, succeeded, failed }
 
-class ControllerStock extends ChangeNotifier {
+class ControllerStock extends SafeChangeNotifier {
   final ServiceStock service;
 
   List<ModelStock> stocks = [];
@@ -16,14 +16,16 @@ class ControllerStock extends ChangeNotifier {
   bool loading = true;
   bool loadFailed = false;
   StockUpdateStatus updateStatus = StockUpdateStatus.idle;
+  bool _isDisposed = false;
 
   ControllerStock(this.service);
 
   Future<void> load() async {
+    if (_isDisposed) return;
     loading = true;
     loadFailed = false;
     updateStatus = StockUpdateStatus.idle;
-    notifyListeners();
+    _notifyListenersIfActive();
 
     var initialSourceLoaded = false;
 
@@ -32,66 +34,75 @@ class ControllerStock extends ChangeNotifier {
       await _useStocksIfAvailable(
         await service.getSimpleStrategySupabase("From Supabase 1"),
       );
+      if (_isDisposed) return;
       initialSourceLoaded = true;
       loading = false;
-      notifyListeners();
+      _notifyListenersIfActive();
     } catch (ex) {
       logger.e(ex);
     }
+    if (_isDisposed) return;
 
     // 1️⃣ 先顯示現有資料（快速）
     try {
       await _useStocksIfAvailable(
         await service.getSimpleStrategy("Updating 2"),
       );
+      if (_isDisposed) return;
       initialSourceLoaded = true;
     } catch (ex) {
       logger.e(ex);
     }
+    if (_isDisposed) return;
 
     loading = false;
     if (!initialSourceLoaded && stocks.isEmpty) {
       loadFailed = true;
-      notifyListeners();
+      _notifyListenersIfActive();
       return;
     }
 
     updateStatus = StockUpdateStatus.updating;
-    notifyListeners();
+    _notifyListenersIfActive();
 
     try {
       // 2️⃣ 背景更新資料（不阻塞 UI）
       await service.loadRawData();
+      if (_isDisposed) return;
       await _useStocksIfAvailable(
         await service.getSimpleStrategy("Updated 3"),
       );
+      if (_isDisposed) return;
     } catch (ex) {
       logger.e(ex);
+      if (_isDisposed) return;
       updateStatus = StockUpdateStatus.failed;
-      notifyListeners();
+      _notifyListenersIfActive();
       return;
     }
     // 3️⃣ 更新完成後，再抓一次（刷新畫面🔥）
     updateStatus = StockUpdateStatus.succeeded;
-    notifyListeners();
+    _notifyListenersIfActive();
   }
 
   Future<void> _useStocksIfAvailable(List<ModelStock> availableStocks) async {
-    if (availableStocks.isEmpty) return;
+    if (_isDisposed || availableStocks.isEmpty) return;
 
     stocks = availableStocks;
     await buildDashboard(stocks.first.date);
   }
 
   Future<void> buildDashboard(DateTime? date) async {
+    if (_isDisposed) return;
     date = date ?? await service.getLatestDate();
-    if (date == null) {
+    if (_isDisposed || date == null) {
       return;
     }
     // ==========
     // 外資買超 Top30
     // ==========
     institutionals = await service.selectStockInstitutional(date);
+    if (_isDisposed) return;
     foreignBuyTop30 = [...institutionals];
 
     foreignBuyTop30.sort(
@@ -126,5 +137,15 @@ class ControllerStock extends ChangeNotifier {
     try {
       futures = await service.selectFutures(date);
     } catch (_) {}
+  }
+
+  void _notifyListenersIfActive() {
+    if (!_isDisposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 }

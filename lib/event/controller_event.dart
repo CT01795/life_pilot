@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
@@ -18,7 +19,7 @@ import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ControllerEvent extends ChangeNotifier {
+class ControllerEvent extends SafeChangeNotifier {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ControllerAuth auth;
@@ -36,6 +37,8 @@ class ControllerEvent extends ChangeNotifier {
   Object? _loadEventsError;
   final Set<String> _weatherPreloadAttemptedIds = {};
   Future<void> _weatherPreloadQueue = Future<void>.value();
+  int _publicEventServiceOperations = 0;
+  bool _publicEventServiceClosed = false;
   int _filterRevision = 0;
   Timer? _searchDebounce;
 
@@ -447,8 +450,10 @@ class ControllerEvent extends ChangeNotifier {
     if (_loadEventsError != null) return;
 
     if (isGetPublicEvents &&
+        !_disposed &&
         auth.isSysAdmin &&
         _tableName == TableNames.recommendEvents) {
+      _beginPublicEventServiceOperation();
       try {
         await _serviceEventPublic.fetchAndSaveAllEvents();
 
@@ -466,6 +471,8 @@ class ControllerEvent extends ChangeNotifier {
           error: error,
           stackTrace: stackTrace,
         );
+      } finally {
+        _endPublicEventServiceOperation();
       }
     }
   }
@@ -578,7 +585,8 @@ class ControllerEvent extends ChangeNotifier {
   }
 
   Future<void> checkPublicEventsUpdatedToday() async {
-    if (_tableName != TableNames.recommendEvents) return;
+    if (_tableName != TableNames.recommendEvents || _disposed) return;
+    _beginPublicEventServiceOperation();
     try {
       final status = await _serviceEventPublic.getRefreshStatus();
       _publicEventsUpdatedToday = status.updated;
@@ -591,6 +599,8 @@ class ControllerEvent extends ChangeNotifier {
       );
       _publicEventsUpdatedToday = false;
       _publicEventsRefreshRunning = false;
+    } finally {
+      _endPublicEventServiceOperation();
     }
     _hasCheckedPublicEventsUpdate = true;
     if (!_disposed) notifyListeners();
@@ -602,6 +612,7 @@ class ControllerEvent extends ChangeNotifier {
     }
 
     _isRefreshingPublicEvents = true;
+    _beginPublicEventServiceOperation();
     notifyListeners();
     try {
       final execution = await _serviceEventPublic.fetchAndSaveAllEvents();
@@ -631,8 +642,31 @@ class ControllerEvent extends ChangeNotifier {
       return false;
     } finally {
       _isRefreshingPublicEvents = false;
+      _endPublicEventServiceOperation();
       if (!_disposed) notifyListeners();
     }
+  }
+
+  void _beginPublicEventServiceOperation() {
+    _publicEventServiceOperations++;
+  }
+
+  void _endPublicEventServiceOperation() {
+    if (_publicEventServiceOperations > 0) {
+      _publicEventServiceOperations--;
+    }
+    _closePublicEventServiceIfIdle();
+  }
+
+  void _closePublicEventServiceIfIdle() {
+    if (!_disposed ||
+        !_ownsServiceEventPublic ||
+        _publicEventServiceClosed ||
+        _publicEventServiceOperations > 0) {
+      return;
+    }
+    _publicEventServiceClosed = true;
+    _serviceEventPublic.close();
   }
 
   bool _disposed = false;
@@ -640,7 +674,7 @@ class ControllerEvent extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _searchDebounce?.cancel();
-    if (_ownsServiceEventPublic) _serviceEventPublic.close();
+    _closePublicEventServiceIfIdle();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();

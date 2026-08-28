@@ -4,13 +4,14 @@ import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/auth/service_auth.dart';
 import 'package:life_pilot/auth/auth_session_sync.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ControllerAuth extends ChangeNotifier {
+class ControllerAuth extends SafeChangeNotifier {
   final ControllerCalendar? controllerCalendar;
   final ModelDashboard? modelDashboard;
   StreamSubscription<AuthState>? _authSubscription;

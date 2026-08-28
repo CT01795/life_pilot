@@ -1,12 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/nlp.dart';
 
-class ControllerAccountingDetail extends ChangeNotifier {
+class ControllerAccountingDetail extends SafeChangeNotifier {
   final ServiceAccounting _service;
   ControllerAuth? auth;
   final String accountId;

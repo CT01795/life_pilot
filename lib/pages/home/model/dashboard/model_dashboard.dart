@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_state.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
@@ -20,7 +20,7 @@ enum DashboardSection {
   points,
 }
 
-class ModelDashboard extends ChangeNotifier {
+class ModelDashboard extends SafeChangeNotifier {
   final DashboardRepository repository;
   final ProviderLocale localeProvider;
   int _accountGeneration = 0;

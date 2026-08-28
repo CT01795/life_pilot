@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -16,7 +16,7 @@ import 'package:charset/charset.dart';
 import 'package:uuid/uuid.dart';
 import 'package:excel/excel.dart';
 
-class ControllerAppBarActions extends ChangeNotifier {
+class ControllerAppBarActions extends SafeChangeNotifier {
   final ControllerAuth auth;
   final ServiceEvent _serviceEvent;
   final ModelEvent _modelEvent;
@@ -167,8 +167,8 @@ class ControllerAppBarActions extends ChangeNotifier {
     if (_isExporting) return loc.exportInProgress;
     _setState(exporting: true);
     try {
-      final events = await _serviceEvent
-          .getEvents(tableName: _tableName, inputUser: auth.currentAccount);
+      final events = await _serviceEvent.getEvents(
+          tableName: _tableName, inputUser: auth.currentAccount);
       if (events == null || events.isEmpty) {
         return loc.noEventsToExport;
       }

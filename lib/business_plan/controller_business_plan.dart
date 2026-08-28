@@ -4,11 +4,12 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:uuid/uuid.dart';
 
-class ControllerBusinessPlan extends ChangeNotifier {
+class ControllerBusinessPlan extends SafeChangeNotifier {
   final ServiceBusinessPlan _service;
   ControllerAuth? auth;
   bool hasLoadedOnce = false;

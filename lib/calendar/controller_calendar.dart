@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/controller_page_calendar_add.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
@@ -25,7 +26,7 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
-class ControllerCalendar extends ChangeNotifier {
+class ControllerCalendar extends SafeChangeNotifier {
   final tracting = EventTrackingService();
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;

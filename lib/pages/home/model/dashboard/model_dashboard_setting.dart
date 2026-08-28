@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ModelDashboardSetting extends ChangeNotifier {
+class ModelDashboardSetting extends SafeChangeNotifier {
   //==========================
   // 推薦地區
   //==========================

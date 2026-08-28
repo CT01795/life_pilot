@@ -4,13 +4,14 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
     if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
-class ControllerGameMarioTranslation extends ChangeNotifier {
+class ControllerGameMarioTranslation extends SafeChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;

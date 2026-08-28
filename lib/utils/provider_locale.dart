@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ProviderLocale extends ChangeNotifier {
+class ProviderLocale extends SafeChangeNotifier {
   Locale _locale;
 
   ProviderLocale({required Locale locale}) : _locale = locale;

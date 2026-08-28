@@ -1,12 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/nlp.dart';
 
-class ControllerPointRecordDetail extends ChangeNotifier {
+class ControllerPointRecordDetail extends SafeChangeNotifier {
   final ServicePointRecord service;
   ControllerAuth? auth;
   final String accountId;

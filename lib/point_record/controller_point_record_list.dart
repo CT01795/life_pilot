@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
-class ControllerPointRecordList extends ChangeNotifier {
+class ControllerPointRecordList extends SafeChangeNotifier {
   final ServicePointRecord service;
   ControllerAuth? auth;
 

@@ -1,9 +1,9 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
 enum EnumPolyominoTileType { empty, pipe, start, goal }
 
-class ModelGamePolyominoTile extends ChangeNotifier {
+class ModelGamePolyominoTile extends SafeChangeNotifier {
   EnumPolyominoTileType type;
   bool up = false;
   bool right = false;
@@ -31,7 +31,7 @@ class ModelGamePolyominoTile extends ChangeNotifier {
 }
 
 // PipeBlock：每格有自己的方向（up,right,down,left）
-class ModelGamePolyominoPipeBlock extends ChangeNotifier {
+class ModelGamePolyominoPipeBlock extends SafeChangeNotifier {
   final int id;
   List<Point<int>> cells; // (0,0) 起始
   List<List<bool>> connections; // 每個 cell 的 [up,right,down,left]

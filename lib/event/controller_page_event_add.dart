@@ -4,13 +4,14 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:uuid/uuid.dart';
 
-class ControllerPageEventAdd extends ChangeNotifier {
+class ControllerPageEventAdd extends SafeChangeNotifier {
   final ControllerAuth auth;
   final ServiceSpeech _serviceSpeech = ServiceSpeech();
 

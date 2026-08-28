@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ModelAuthView extends ChangeNotifier {
+class ModelAuthView extends SafeChangeNotifier {
   final ControllerAuth _auth;
 
   ModelAuthView(this._auth) {

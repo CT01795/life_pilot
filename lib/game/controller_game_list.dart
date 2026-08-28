@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/model_game_user.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ControllerGameList extends ChangeNotifier {
+class ControllerGameList extends SafeChangeNotifier {
   final ServiceGame serviceGame;
   final String userName;
 

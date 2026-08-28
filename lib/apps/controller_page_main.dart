@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ControllerPageMain extends ChangeNotifier {
+class ControllerPageMain extends SafeChangeNotifier {
   ControllerAuth _auth;
   AppLocalizations _loc;
   Locale _locale;
@@ -24,7 +25,7 @@ class ControllerPageMain extends ChangeNotifier {
         _loc = loc,
         _locale = initialLocale,
         _selectedPage = PageType.home;
-        
+
   // 📘 Getter 區
   ControllerAuth get auth => _auth;
   AppLocalizations get loc => _loc;

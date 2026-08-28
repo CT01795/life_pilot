@@ -1,10 +1,10 @@
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/puzzle_map/model_game_puzzle_map.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ControllerGamePuzzleMap extends ChangeNotifier {
+class ControllerGamePuzzleMap extends SafeChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;

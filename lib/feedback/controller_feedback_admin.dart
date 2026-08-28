@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ControllerFeedbackAdmin extends ChangeNotifier {
+class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final ServiceFeedback _service;
   final ControllerAuth auth;
 
-  ControllerFeedbackAdmin(ServiceFeedback service, this.auth): _service = service;
+  ControllerFeedbackAdmin(ServiceFeedback service, this.auth)
+      : _service = service;
   List<ModelFeedback> feedbackList = [];
   bool isLoading = false;
 
@@ -17,10 +18,10 @@ class ControllerFeedbackAdmin extends ChangeNotifier {
     notifyListeners();
 
     final res = await _service.loadFeedback();
-    feedbackList = (res as List<dynamic>?)
-            ?.map((e) {
-              return ModelFeedback.fromMap(e as Map<String, dynamic>);
-            }).toList() ?? [];
+    feedbackList = (res as List<dynamic>?)?.map((e) {
+          return ModelFeedback.fromMap(e as Map<String, dynamic>);
+        }).toList() ??
+        [];
 
     isLoading = false;
     notifyListeners();

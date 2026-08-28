@@ -4,16 +4,17 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 
-class ControllerFeedback extends ChangeNotifier {
+class ControllerFeedback extends SafeChangeNotifier {
   final ServiceFeedback _service;
   final ControllerAuth auth;
 
-  ControllerFeedback(ServiceFeedback service, this.auth): _service = service;
+  ControllerFeedback(ServiceFeedback service, this.auth) : _service = service;
 
   String subject = '';
   String content = '';
@@ -32,9 +33,8 @@ class ControllerFeedback extends ChangeNotifier {
     if (boundary == null) return;
 
     final image = await boundary.toImage(pixelRatio: 3.0);
-    final byteData =
-        await image.toByteData(format: ImageByteFormat.png);
-    if(byteData != null){
+    final byteData = await image.toByteData(format: ImageByteFormat.png);
+    if (byteData != null) {
       screenshot.add(byteData.buffer.asUint8List());
       notifyListeners();
     }
@@ -51,10 +51,10 @@ class ControllerFeedback extends ChangeNotifier {
 
     try {
       final ccList = ccRaw
-        ?.split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
+          ?.split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
       await _service.sendFeedback(
         account: auth.currentAccount ?? AuthConstants.guest,
         subject: subject,

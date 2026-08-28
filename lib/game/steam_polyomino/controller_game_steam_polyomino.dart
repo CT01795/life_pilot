@@ -1,11 +1,11 @@
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:life_pilot/game/steam_polyomino/model_game_steam_polyomino.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
-class ControllerGameSteamPolyomino extends ChangeNotifier {
+class ControllerGameSteamPolyomino extends SafeChangeNotifier {
   final String userName;
   final ServiceGame service;
   final String gameId;

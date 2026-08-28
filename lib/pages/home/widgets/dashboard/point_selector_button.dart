@@ -86,19 +86,22 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                     context: context,
                     builder: (dialogContext) {
                       final hasClearOption = accountId != null;
+                      final itemCount =
+                          accounts.length + (hasClearOption ? 1 : 0);
+                      final maxContentHeight =
+                          MediaQuery.sizeOf(dialogContext).height * 0.6;
+                      final contentHeight = (itemCount * 72.0)
+                          .clamp(72.0, maxContentHeight)
+                          .toDouble();
                       return AlertDialog(
                         title: Text(loc.selectAccount),
                         contentPadding:
                             const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                        content: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: 420,
-                            maxHeight: 480,
-                          ),
+                        content: SizedBox(
+                          width: 420,
+                          height: contentHeight,
                           child: ListView.separated(
-                            shrinkWrap: true,
-                            itemCount:
-                                accounts.length + (hasClearOption ? 1 : 0),
+                            itemCount: itemCount,
                             separatorBuilder: (_, __) =>
                                 const Divider(height: 1),
                             itemBuilder: (_, index) {

@@ -1,11 +1,11 @@
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/safe_change_notifier.dart';
 
 enum EnumMonominoTileDirection { up, down, left, right, empty }
 
-class ModelGameMonominoTile extends ChangeNotifier {
+class ModelGameMonominoTile extends SafeChangeNotifier {
   EnumMonominoTileDirection _direction = EnumMonominoTileDirection.empty;
   EnumMonominoTileDirection get direction => _direction;
   set direction(EnumMonominoTileDirection dir) {
@@ -48,7 +48,8 @@ class ModelGameMonominoLevel {
   List<Point<int>> solutionPath = [];
   Set<Point<int>> highlighted = {};
 
-  ModelGameMonominoLevel({required this.levelNumber, required this.rows, required this.cols}) {
+  ModelGameMonominoLevel(
+      {required this.levelNumber, required this.rows, required this.cols}) {
     remainingFixed = [];
     _generateLevel();
   }
@@ -56,7 +57,8 @@ class ModelGameMonominoLevel {
   List<Point<int>> getSolutionPath() => solutionPath;
 
   void _generateLevel() {
-    board = List.generate(rows, (_) => List.generate(cols, (_) => ModelGameMonominoTile()));
+    board = List.generate(
+        rows, (_) => List.generate(cols, (_) => ModelGameMonominoTile()));
     start = Point(0, 0);
     goal = Point(rows - 1, cols - 1);
     parent = {};
