@@ -68,21 +68,25 @@ class ServiceAccounting {
     required String user,
     String? category, // null = all categories
     int? projectLimit,
+    bool includeGraph = true,
   }) async {
     try {
+      final columns = includeGraph
+          ? '*'
+          : 'id,account,category,balance,main_currency,exchange_rate';
       final List<dynamic> list;
       if (category == null && projectLimit != null) {
         final responses = await Future.wait([
           supabase
               .from(TableNames.accountingAccount)
-              .select()
+              .select(columns)
               .eq(Fields.createdBy, user)
               .eq(Fields.isValid, true)
               .eq('category', AccountCategory.personal.name)
               .order(Fields.account, ascending: true),
           supabase
               .from(TableNames.accountingAccount)
-              .select()
+              .select(columns)
               .eq(Fields.createdBy, user)
               .eq(Fields.isValid, true)
               .eq('category', AccountCategory.project.name)
@@ -93,7 +97,7 @@ class ServiceAccounting {
       } else {
         var query = supabase
             .from(TableNames.accountingAccount)
-            .select()
+            .select(columns)
             .eq(Fields.createdBy, user)
             .eq(Fields.isValid, true);
         if (category != null) {
@@ -104,10 +108,13 @@ class ServiceAccounting {
 
       return Future.wait(
         list.map((e) async {
-          final bytes = await compute<String?, Uint8List?>(
-            decodeBase64InIsolate,
-            e['master_graph_url'],
-          );
+          final graph = e['master_graph_url'];
+          final bytes = graph == null
+              ? null
+              : await compute<String?, Uint8List?>(
+                  decodeBase64InIsolate,
+                  graph,
+                );
 
           return ModelAccountingAccount(
             id: e[Fields.id],

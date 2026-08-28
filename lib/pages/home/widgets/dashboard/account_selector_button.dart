@@ -52,6 +52,7 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
                       await context.read<ServiceAccounting>().fetchAccounts(
                             user: auth.account ?? '',
                             projectLimit: 2,
+                            includeGraph: false,
                           );
 
                   if (!context.mounted) return;

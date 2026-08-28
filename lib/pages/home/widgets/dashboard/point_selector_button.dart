@@ -52,6 +52,7 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                       await context.read<ServicePointRecord>().fetchAccounts(
                             user: auth.account ?? '',
                             projectLimit: 2,
+                            includeGraph: false,
                           );
 
                   if (!context.mounted) return;
