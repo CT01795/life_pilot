@@ -704,5 +704,22 @@
       "remaining": {"type": "int"},
       "coverage": {"type": "String"}
     }
-  }
+  },
+  "calendarSharing": "공유 캘린더",
+  "calendarInvite": "조회자 초대",
+  "calendarInviteHint": "이메일을 쉼표 또는 줄바꿈으로 구분해 입력하세요",
+  "calendarSentInvitations": "보낸 초대",
+  "calendarReceivedInvitations": "받은 초대",
+  "calendarInvitationPending": "대기 중",
+  "calendarInvitationAccepted": "수락됨",
+  "calendarInvitationDeclined": "거절됨",
+  "calendarInvitationRevoked": "공유 중지됨",
+  "calendarInvitationAccept": "수락",
+  "calendarInvitationDecline": "거절",
+  "calendarInvitationRevoke": "공유 중지",
+  "calendarInvitationSent": "초대를 보냈습니다.",
+  "calendarInvitationFailed": "캘린더 초대를 업데이트할 수 없습니다.",
+  "calendarSharedBy": "{account} 님이 공유",
+  "@calendarSharedBy": {"placeholders": {"account": {"type": "String"}}},
+  "calendarSharedReadOnly": "공유 캘린더 · 읽기 전용"
 }

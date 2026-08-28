@@ -6,7 +6,9 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/calendar/page_calendar_add.dart';
+import 'package:life_pilot/calendar/service_calendar_sharing.dart';
 import 'package:life_pilot/calendar/widgets_calendar.dart';
+import 'package:life_pilot/calendar/widgets_calendar_sharing_dialog.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:provider/provider.dart';
 
@@ -105,6 +107,16 @@ class _PageCalendarState extends State<PageCalendar> {
                       // 把業務邏輯交給 Controller
                     }
                   },
+                  onSharing: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => CalendarSharingDialog(
+                      service: ServiceCalendarSharing(),
+                      onSharingChanged: () async {
+                        controller.clearAll();
+                        await controller.reloadEvents();
+                      },
+                    ),
+                  ),
                   onMonthTap: () => _showMonthPicker(),
                 );
               }),

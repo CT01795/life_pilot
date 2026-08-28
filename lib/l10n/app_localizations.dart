@@ -2198,6 +2198,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved {saved}; {remaining} remaining; coverage {coverage}%.'**
   String mapCoordinateBackfillResult(int saved, int remaining, String coverage);
+
+  /// No description provided for @calendarSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar sharing'**
+  String get calendarSharing;
+
+  /// No description provided for @calendarInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite viewers'**
+  String get calendarInvite;
+
+  /// No description provided for @calendarInviteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter account emails, separated by commas or new lines'**
+  String get calendarInviteHint;
+
+  /// No description provided for @calendarSentInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent invitations'**
+  String get calendarSentInvitations;
+
+  /// No description provided for @calendarReceivedInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Received invitations'**
+  String get calendarReceivedInvitations;
+
+  /// No description provided for @calendarInvitationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get calendarInvitationPending;
+
+  /// No description provided for @calendarInvitationAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get calendarInvitationAccepted;
+
+  /// No description provided for @calendarInvitationDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get calendarInvitationDeclined;
+
+  /// No description provided for @calendarInvitationRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked'**
+  String get calendarInvitationRevoked;
+
+  /// No description provided for @calendarInvitationAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get calendarInvitationAccept;
+
+  /// No description provided for @calendarInvitationDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get calendarInvitationDecline;
+
+  /// No description provided for @calendarInvitationRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get calendarInvitationRevoke;
+
+  /// No description provided for @calendarInvitationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent.'**
+  String get calendarInvitationSent;
+
+  /// No description provided for @calendarInvitationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar invitation could not be updated.'**
+  String get calendarInvitationFailed;
+
+  /// No description provided for @calendarSharedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared by {account}'**
+  String calendarSharedBy(String account);
+
+  /// No description provided for @calendarSharedReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared calendar · Read only'**
+  String get calendarSharedReadOnly;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

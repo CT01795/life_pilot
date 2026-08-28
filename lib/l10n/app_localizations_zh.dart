@@ -1067,4 +1067,54 @@ class AppLocalizationsZh extends AppLocalizations {
   String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
     return '本次寫入 $saved 筆，剩餘 $remaining 筆，覆蓋率 $coverage%。';
   }
+
+  @override
+  String get calendarSharing => '共用行事曆';
+
+  @override
+  String get calendarInvite => '邀請查看者';
+
+  @override
+  String get calendarInviteHint => '輸入帳號 Email，多個帳號請用逗號或換行分隔';
+
+  @override
+  String get calendarSentInvitations => '邀請區塊';
+
+  @override
+  String get calendarReceivedInvitations => '接收區塊';
+
+  @override
+  String get calendarInvitationPending => '等待接受';
+
+  @override
+  String get calendarInvitationAccepted => '已接受';
+
+  @override
+  String get calendarInvitationDeclined => '已拒絕';
+
+  @override
+  String get calendarInvitationRevoked => '已停止分享';
+
+  @override
+  String get calendarInvitationAccept => '接受';
+
+  @override
+  String get calendarInvitationDecline => '拒絕';
+
+  @override
+  String get calendarInvitationRevoke => '停止分享';
+
+  @override
+  String get calendarInvitationSent => '邀請已送出。';
+
+  @override
+  String get calendarInvitationFailed => '無法更新行事曆邀請。';
+
+  @override
+  String calendarSharedBy(String account) {
+    return '由 $account 分享';
+  }
+
+  @override
+  String get calendarSharedReadOnly => '共用行事曆・只能查看';
 }

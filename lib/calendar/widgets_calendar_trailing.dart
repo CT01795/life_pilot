@@ -16,20 +16,25 @@ Widget widgetsCalendarTrailing({
     child: Row(
       mainAxisSize: MainAxisSize.min, // 避免 unbounded 爆錯
       children: [
-        if (controllerCalendar.auth !=  null && !controllerCalendar.auth!.isAnonymous)
+        if (controllerCalendar.auth != null &&
+            !controllerCalendar.auth!.isAnonymous)
           Selector<ControllerCalendar, bool>(
             selector: (_, controller) => controller.isEventSelected(event.id),
             builder: (_, isSelected, __) {
               return Tooltip(
-                message: loc.memoryAdd,
-                child: Checkbox(
-                  value: isSelected,
-                  onChanged: (value) => onMemoryCheckboxChanged(
-                    context: context, controller: controllerCalendar, value: value, event: event, loc: loc),
-                ));
+                  message: loc.memoryAdd,
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: (value) => onMemoryCheckboxChanged(
+                        context: context,
+                        controller: controllerCalendar,
+                        value: value,
+                        event: event,
+                        loc: loc),
+                  ));
             },
           ),
-        if (!event.isHoliday)
+        if (!event.isHoliday && controllerCalendar.isOwnEvent(event))
           // ⏰ 鬧鐘
           IconButton(
             icon: Icon(
@@ -53,13 +58,16 @@ Widget widgetsCalendarTrailing({
               //Navigator.pop(context); // ✅ 最後關閉 dialog
             },
           ),
-        if (controllerCalendar.auth !=  null && controllerCalendar.auth!.currentAccount == event.account)
+        if (controllerCalendar.isOwnEvent(event))
           IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: loc.edit,
-              onPressed: () => onEditPressed(
-                context: context, controller: controllerCalendar, event: event,),
-              ),
+            icon: const Icon(Icons.edit),
+            tooltip: loc.edit,
+            onPressed: () => onEditPressed(
+              context: context,
+              controller: controllerCalendar,
+              event: event,
+            ),
+          ),
       ],
     ),
   );

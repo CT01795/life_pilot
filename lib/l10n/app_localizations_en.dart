@@ -1067,4 +1067,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
     return 'Saved $saved; $remaining remaining; coverage $coverage%.';
   }
+
+  @override
+  String get calendarSharing => 'Calendar sharing';
+
+  @override
+  String get calendarInvite => 'Invite viewers';
+
+  @override
+  String get calendarInviteHint => 'Enter account emails, separated by commas or new lines';
+
+  @override
+  String get calendarSentInvitations => 'Sent invitations';
+
+  @override
+  String get calendarReceivedInvitations => 'Received invitations';
+
+  @override
+  String get calendarInvitationPending => 'Pending';
+
+  @override
+  String get calendarInvitationAccepted => 'Accepted';
+
+  @override
+  String get calendarInvitationDeclined => 'Declined';
+
+  @override
+  String get calendarInvitationRevoked => 'Revoked';
+
+  @override
+  String get calendarInvitationAccept => 'Accept';
+
+  @override
+  String get calendarInvitationDecline => 'Decline';
+
+  @override
+  String get calendarInvitationRevoke => 'Stop sharing';
+
+  @override
+  String get calendarInvitationSent => 'Invitation sent.';
+
+  @override
+  String get calendarInvitationFailed => 'Calendar invitation could not be updated.';
+
+  @override
+  String calendarSharedBy(String account) {
+    return 'Shared by $account';
+  }
+
+  @override
+  String get calendarSharedReadOnly => 'Shared calendar · Read only';
 }

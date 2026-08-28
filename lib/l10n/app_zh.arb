@@ -713,5 +713,22 @@
       "remaining": {"type": "int"},
       "coverage": {"type": "String"}
     }
-  }
+  },
+  "calendarSharing": "共用行事曆",
+  "calendarInvite": "邀請查看者",
+  "calendarInviteHint": "輸入帳號 Email，多個帳號請用逗號或換行分隔",
+  "calendarSentInvitations": "邀請區塊",
+  "calendarReceivedInvitations": "接收區塊",
+  "calendarInvitationPending": "等待接受",
+  "calendarInvitationAccepted": "已接受",
+  "calendarInvitationDeclined": "已拒絕",
+  "calendarInvitationRevoked": "已停止分享",
+  "calendarInvitationAccept": "接受",
+  "calendarInvitationDecline": "拒絕",
+  "calendarInvitationRevoke": "停止分享",
+  "calendarInvitationSent": "邀請已送出。",
+  "calendarInvitationFailed": "無法更新行事曆邀請。",
+  "calendarSharedBy": "由 {account} 分享",
+  "@calendarSharedBy": {"placeholders": {"account": {"type": "String"}}},
+  "calendarSharedReadOnly": "共用行事曆・只能查看"
 }

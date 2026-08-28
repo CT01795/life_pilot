@@ -20,6 +20,7 @@ class CalendarAppBar extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onToday;
   final VoidCallback onAdd;
+  final VoidCallback onSharing;
   final VoidCallback onMonthTap;
 
   const CalendarAppBar({
@@ -31,46 +32,110 @@ class CalendarAppBar extends StatelessWidget {
     required this.onNext,
     required this.onToday,
     required this.onAdd,
+    required this.onSharing,
     required this.onMonthTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double navIconSize = buttonSize * 1.2;
-    AppLocalizations loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // 手機縮小，桌面維持原本大小
+    final bool isSmallScreen = screenWidth < 500;
+
+    final double iconSize =
+        buttonSize;  //isSmallScreen ? buttonSize : buttonSize*1.2;
 
     Widget iconButton(
-            IconData icon, VoidCallback onTap, String tooltip, double size) =>
-        IconButton(
-          icon: Icon(icon, size: navIconSize, color: monthColor),
+      IconData icon,
+      VoidCallback onTap,
+      String tooltip,
+    ) {
+      return SizedBox(
+        width: isSmallScreen ? 40 : 48,
+        height: 48,
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+          ),
+          icon: Icon(
+            icon,
+            size: iconSize,
+            color: monthColor,
+          ),
           tooltip: tooltip,
           onPressed: onTap,
-        );
+        ),
+      );
+    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth,
-            navIconSize),
-        IconButton(
-          icon: Icon(Icons.today, size: buttonSize, color: monthColor),
-          tooltip: loc.today,
-          onPressed: onToday,
+        iconButton(
+          Icons.people_alt_outlined,
+          onSharing,
+          loc.calendarSharing,
         ),
+        Gaps.w8,
+        iconButton(
+          Icons.arrow_left_rounded,
+          onPrevious,
+          loc.previousMonth,
+        ),
+        Gaps.w8,
+        SizedBox(
+          width: isSmallScreen ? 40 : 48,
+          height: 48,
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
+            icon: Icon(
+              Icons.today,
+              size: iconSize,
+              color: monthColor,
+            ),
+            tooltip: loc.today,
+            onPressed: onToday,
+          ),
+        ),
+        Gaps.w8,
         GestureDetector(
           onTap: onMonthTap,
-          child: Text(
-            monthLabel,
-            style: TextStyle(
-              fontSize: buttonSize * 0.5,
-              color: monthColor,
-              fontWeight: FontWeight.bold,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 4 : 8,
+            ),
+            child: Text(
+              monthLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 18 : buttonSize * 0.5,
+                color: monthColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
         iconButton(
-            Icons.arrow_right_rounded, onNext, loc.nextMonth, navIconSize),
-        iconButton(Icons.add, onAdd, loc.add, buttonSize),
+          Icons.arrow_right_rounded,
+          onNext,
+          loc.nextMonth,
+        ),
+        Gaps.w8,
+        iconButton(
+          Icons.add,
+          onAdd,
+          loc.add,
+        ),
       ],
     );
   }
@@ -353,7 +418,8 @@ class WeekRow extends StatelessWidget {
                                 ? Colors.redAccent
                                 : (event.isHoliday
                                     ? Colors.transparent
-                                    : Colors.lightBlue),
+                                    : controllerCalendar
+                                        .eventOwnerColor(event)),
                             borderRadius: BorderRadiusDirectional.horizontal(
                               start: (start.isAtSameMomentAs(visibleStart)
                                   ? const Radius.circular(2)

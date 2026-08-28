@@ -85,34 +85,72 @@ class CalendarEventsDialog extends StatelessWidget {
                     tableName: tableName,
                   );
 
-                  return WidgetsCalendarCard(
-                    eventViewModel: eventViewModel,
-                    tableName: tableName,
-                    onTap: () => Navigator.pop(context),
-                    onDelete: event.isHoliday
-                        ? null
-                        : () async {
-                            await onDeletePressed(
-                              context: context,
-                              controller: controllerCalendar,
-                              event: event,
-                              loc: loc,
-                            );
-                          },
-                    onAccounting: () => context
-                        .read<ControllerAccountingList>()
-                        .handleAccounting(
-                          context: context,
-                          eventId: event.id,
+                  final isOwnEvent = controllerCalendar.isOwnEvent(event);
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: BorderDirectional(
+                        start: BorderSide(
+                          color: event.isHoliday
+                              ? Colors.transparent
+                              : controllerCalendar.eventOwnerColor(event),
+                          width: 5,
                         ),
-                    onOpenMap: () =>
-                        controllerCalendar.onOpenMap(eventViewModel),
-                    onOpenLink: () =>
-                        controllerCalendar.onOpenLink(eventViewModel),
-                    trailing: widgetsCalendarTrailing(
-                      context: context,
-                      controllerCalendar: controllerCalendar,
-                      event: event,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!isOwnEvent && !event.isHoliday)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                12, 8, 8, 0),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.lock_outline, size: 16),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    loc.calendarSharedBy(event.account ?? ''),
+                                    style:
+                                        Theme.of(context).textTheme.labelMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        WidgetsCalendarCard(
+                          eventViewModel: eventViewModel,
+                          tableName: tableName,
+                          onTap: () => Navigator.pop(context),
+                          onDelete: event.isHoliday || !isOwnEvent
+                              ? null
+                              : () async {
+                                  await onDeletePressed(
+                                    context: context,
+                                    controller: controllerCalendar,
+                                    event: event,
+                                    loc: loc,
+                                  );
+                                },
+                          onAccounting: isOwnEvent
+                              ? () => context
+                                  .read<ControllerAccountingList>()
+                                  .handleAccounting(
+                                    context: context,
+                                    eventId: event.id,
+                                  )
+                              : null,
+                          onOpenMap: () =>
+                              controllerCalendar.onOpenMap(eventViewModel),
+                          onOpenLink: () =>
+                              controllerCalendar.onOpenLink(eventViewModel),
+                          trailing: widgetsCalendarTrailing(
+                            context: context,
+                            controllerCalendar: controllerCalendar,
+                            event: event,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }),

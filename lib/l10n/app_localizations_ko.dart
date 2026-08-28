@@ -1067,4 +1067,54 @@ class AppLocalizationsKo extends AppLocalizations {
   String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
     return '$saved개 저장, $remaining개 남음, 적용률 $coverage%.';
   }
+
+  @override
+  String get calendarSharing => '공유 캘린더';
+
+  @override
+  String get calendarInvite => '조회자 초대';
+
+  @override
+  String get calendarInviteHint => '이메일을 쉼표 또는 줄바꿈으로 구분해 입력하세요';
+
+  @override
+  String get calendarSentInvitations => '보낸 초대';
+
+  @override
+  String get calendarReceivedInvitations => '받은 초대';
+
+  @override
+  String get calendarInvitationPending => '대기 중';
+
+  @override
+  String get calendarInvitationAccepted => '수락됨';
+
+  @override
+  String get calendarInvitationDeclined => '거절됨';
+
+  @override
+  String get calendarInvitationRevoked => '공유 중지됨';
+
+  @override
+  String get calendarInvitationAccept => '수락';
+
+  @override
+  String get calendarInvitationDecline => '거절';
+
+  @override
+  String get calendarInvitationRevoke => '공유 중지';
+
+  @override
+  String get calendarInvitationSent => '초대를 보냈습니다.';
+
+  @override
+  String get calendarInvitationFailed => '캘린더 초대를 업데이트할 수 없습니다.';
+
+  @override
+  String calendarSharedBy(String account) {
+    return '$account 님이 공유';
+  }
+
+  @override
+  String get calendarSharedReadOnly => '공유 캘린더 · 읽기 전용';
 }

@@ -1067,4 +1067,54 @@ class AppLocalizationsJa extends AppLocalizations {
   String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
     return '$saved件を保存、残り$remaining件、カバー率$coverage%。';
   }
+
+  @override
+  String get calendarSharing => '共有カレンダー';
+
+  @override
+  String get calendarInvite => '閲覧者を招待';
+
+  @override
+  String get calendarInviteHint => 'メールをカンマまたは改行で区切って入力';
+
+  @override
+  String get calendarSentInvitations => '送信した招待';
+
+  @override
+  String get calendarReceivedInvitations => '受信した招待';
+
+  @override
+  String get calendarInvitationPending => '承認待ち';
+
+  @override
+  String get calendarInvitationAccepted => '承認済み';
+
+  @override
+  String get calendarInvitationDeclined => '拒否済み';
+
+  @override
+  String get calendarInvitationRevoked => '共有停止';
+
+  @override
+  String get calendarInvitationAccept => '承認';
+
+  @override
+  String get calendarInvitationDecline => '拒否';
+
+  @override
+  String get calendarInvitationRevoke => '共有を停止';
+
+  @override
+  String get calendarInvitationSent => '招待を送信しました。';
+
+  @override
+  String get calendarInvitationFailed => 'カレンダーの招待を更新できませんでした。';
+
+  @override
+  String calendarSharedBy(String account) {
+    return '$account が共有';
+  }
+
+  @override
+  String get calendarSharedReadOnly => '共有カレンダー・閲覧のみ';
 }

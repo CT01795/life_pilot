@@ -704,5 +704,22 @@
       "remaining": {"type": "int"},
       "coverage": {"type": "String"}
     }
-  }
+  },
+  "calendarSharing": "共有カレンダー",
+  "calendarInvite": "閲覧者を招待",
+  "calendarInviteHint": "メールをカンマまたは改行で区切って入力",
+  "calendarSentInvitations": "送信した招待",
+  "calendarReceivedInvitations": "受信した招待",
+  "calendarInvitationPending": "承認待ち",
+  "calendarInvitationAccepted": "承認済み",
+  "calendarInvitationDeclined": "拒否済み",
+  "calendarInvitationRevoked": "共有停止",
+  "calendarInvitationAccept": "承認",
+  "calendarInvitationDecline": "拒否",
+  "calendarInvitationRevoke": "共有を停止",
+  "calendarInvitationSent": "招待を送信しました。",
+  "calendarInvitationFailed": "カレンダーの招待を更新できませんでした。",
+  "calendarSharedBy": "{account} が共有",
+  "@calendarSharedBy": {"placeholders": {"account": {"type": "String"}}},
+  "calendarSharedReadOnly": "共有カレンダー・閲覧のみ"
 }

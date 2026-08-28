@@ -704,5 +704,22 @@
       "remaining": {"type": "int"},
       "coverage": {"type": "String"}
     }
-  }
+  },
+  "calendarSharing": "Calendar sharing",
+  "calendarInvite": "Invite viewers",
+  "calendarInviteHint": "Enter account emails, separated by commas or new lines",
+  "calendarSentInvitations": "Sent invitations",
+  "calendarReceivedInvitations": "Received invitations",
+  "calendarInvitationPending": "Pending",
+  "calendarInvitationAccepted": "Accepted",
+  "calendarInvitationDeclined": "Declined",
+  "calendarInvitationRevoked": "Revoked",
+  "calendarInvitationAccept": "Accept",
+  "calendarInvitationDecline": "Decline",
+  "calendarInvitationRevoke": "Stop sharing",
+  "calendarInvitationSent": "Invitation sent.",
+  "calendarInvitationFailed": "Calendar invitation could not be updated.",
+  "calendarSharedBy": "Shared by {account}",
+  "@calendarSharedBy": {"placeholders": {"account": {"type": "String"}}},
+  "calendarSharedReadOnly": "Shared calendar · Read only"
 }

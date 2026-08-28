@@ -631,11 +631,33 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   void clearAll() => _modelCalendar.clearAll();
 
+  bool isOwnEvent(EventItem event) =>
+      auth?.currentAccount?.toLowerCase() == event.account?.toLowerCase();
+
+  Color eventOwnerColor(EventItem event) {
+    if (isOwnEvent(event)) return Colors.lightBlue;
+    const sharedColors = [
+      Color(0xFF7E57C2),
+      Color(0xFF00897B),
+      Color(0xFFEF6C00),
+      Color(0xFF5C6BC0),
+      Color(0xFFC2185B),
+      Color(0xFF558B2F),
+    ];
+    final account = event.account?.toLowerCase() ?? '';
+    final index = account.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+        sharedColors.length;
+    return sharedColors[index];
+  }
+
   bool canDelete({
     required String account,
   }) {
     if (auth == null) {
       return false;
+    }
+    if (_tableName == TableNames.calendarEvents) {
+      return auth!.currentAccount?.toLowerCase() == account.toLowerCase();
     }
     return auth!.currentAccount == account ||
         (auth!.isSysAdmin && _tableName != TableNames.memoryTrace);
