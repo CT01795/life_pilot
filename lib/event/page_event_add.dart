@@ -152,10 +152,10 @@ class _PageEventAddState extends State<PageEventAdd> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     Map<String, String> fields = {
+      EventFields.name: loc.activityName,
       EventFields.country: _countryLabel(),
       EventFields.city: loc.city,
       EventFields.location: loc.location,
-      EventFields.name: loc.activityName,
       EventFields.type: loc.keywords,
       EventFields.masterUrl: loc.masterUrl,
       EventFields.description: loc.description,
