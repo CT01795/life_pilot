@@ -16,6 +16,7 @@ class ControllerAuth extends SafeChangeNotifier {
   final ModelDashboard? modelDashboard;
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<void>? _externalSignedOutSubscription;
+  StreamSubscription<void>? _passwordRecoveryLinkSubscription;
   ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
   bool _initialized = false;
@@ -27,6 +28,14 @@ class ControllerAuth extends SafeChangeNotifier {
     _initialized = true;
     _listenAuthState();
     _listenExternalSignedOut();
+    _passwordRecoveryLinkSubscription =
+        ServiceAuth.passwordRecoveryLinks.listen((_) {
+      ServiceAuth.consumePasswordRecoveryLink();
+      _update(() => _currentPage = AuthPage.resetPassword);
+    });
+    if (ServiceAuth.consumePasswordRecoveryLink()) {
+      _currentPage = AuthPage.resetPassword;
+    }
   }
 
   void _listenAuthState() {
@@ -213,6 +222,7 @@ class ControllerAuth extends SafeChangeNotifier {
   void dispose() {
     _authSubscription?.cancel();
     _externalSignedOutSubscription?.cancel();
+    _passwordRecoveryLinkSubscription?.cancel();
     super.dispose();
   }
 }

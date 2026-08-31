@@ -1365,43 +1365,43 @@ abstract class AppLocalizations {
   /// **'High'**
   String get weatherMaximum;
 
-  /// No description provided for @weatherThunderstorm.
+  /// Label for weatherThunderstorm
   ///
   /// In en, this message translates to:
   /// **'Thunderstorm'**
   String get weatherThunderstorm;
 
-  /// No description provided for @weatherDrizzle.
+  /// Label for weatherDrizzle
   ///
   /// In en, this message translates to:
   /// **'Drizzle'**
   String get weatherDrizzle;
 
-  /// No description provided for @weatherRain.
+  /// Label for weatherRain
   ///
   /// In en, this message translates to:
   /// **'Rain'**
   String get weatherRain;
 
-  /// No description provided for @weatherSnow.
+  /// Label for weatherSnow
   ///
   /// In en, this message translates to:
   /// **'Snow'**
   String get weatherSnow;
 
-  /// No description provided for @weatherMist.
+  /// Label for weatherMist
   ///
   /// In en, this message translates to:
   /// **'Mist'**
   String get weatherMist;
 
-  /// No description provided for @weatherClear.
+  /// Label for weatherClear
   ///
   /// In en, this message translates to:
   /// **'Clear'**
   String get weatherClear;
 
-  /// No description provided for @weatherClouds.
+  /// Label for weatherClouds
   ///
   /// In en, this message translates to:
   /// **'Cloudy'**
@@ -2181,13 +2181,13 @@ abstract class AppLocalizations {
   /// **'Question status could not be updated. Please try again.'**
   String get questionStatusUpdateFailed;
 
-  /// No description provided for @mapCoordinateBackfill.
+  /// Label for mapCoordinateBackfill
   ///
   /// In en, this message translates to:
   /// **'Fill map coordinates'**
   String get mapCoordinateBackfill;
 
-  /// No description provided for @mapCoordinateBackfillFailed.
+  /// Label for mapCoordinateBackfillFailed
   ///
   /// In en, this message translates to:
   /// **'Could not fill map coordinates. Try again later.'**
@@ -2199,85 +2199,85 @@ abstract class AppLocalizations {
   /// **'Saved {saved}; {remaining} remaining; coverage {coverage}%.'**
   String mapCoordinateBackfillResult(int saved, int remaining, String coverage);
 
-  /// No description provided for @calendarSharing.
+  /// Label for calendarSharing
   ///
   /// In en, this message translates to:
   /// **'Calendar sharing'**
   String get calendarSharing;
 
-  /// No description provided for @calendarInvite.
+  /// Label for calendarInvite
   ///
   /// In en, this message translates to:
   /// **'Invite viewers'**
   String get calendarInvite;
 
-  /// No description provided for @calendarInviteHint.
+  /// Label for calendarInviteHint
   ///
   /// In en, this message translates to:
   /// **'Enter account emails, separated by commas or new lines'**
   String get calendarInviteHint;
 
-  /// No description provided for @calendarSentInvitations.
+  /// Label for calendarSentInvitations
   ///
   /// In en, this message translates to:
   /// **'Sent invitations'**
   String get calendarSentInvitations;
 
-  /// No description provided for @calendarReceivedInvitations.
+  /// Label for calendarReceivedInvitations
   ///
   /// In en, this message translates to:
   /// **'Received invitations'**
   String get calendarReceivedInvitations;
 
-  /// No description provided for @calendarInvitationPending.
+  /// Label for calendarInvitationPending
   ///
   /// In en, this message translates to:
   /// **'Pending'**
   String get calendarInvitationPending;
 
-  /// No description provided for @calendarInvitationAccepted.
+  /// Label for calendarInvitationAccepted
   ///
   /// In en, this message translates to:
   /// **'Accepted'**
   String get calendarInvitationAccepted;
 
-  /// No description provided for @calendarInvitationDeclined.
+  /// Label for calendarInvitationDeclined
   ///
   /// In en, this message translates to:
   /// **'Declined'**
   String get calendarInvitationDeclined;
 
-  /// No description provided for @calendarInvitationRevoked.
+  /// Label for calendarInvitationRevoked
   ///
   /// In en, this message translates to:
   /// **'Revoked'**
   String get calendarInvitationRevoked;
 
-  /// No description provided for @calendarInvitationAccept.
+  /// Label for calendarInvitationAccept
   ///
   /// In en, this message translates to:
   /// **'Accept'**
   String get calendarInvitationAccept;
 
-  /// No description provided for @calendarInvitationDecline.
+  /// Label for calendarInvitationDecline
   ///
   /// In en, this message translates to:
   /// **'Decline'**
   String get calendarInvitationDecline;
 
-  /// No description provided for @calendarInvitationRevoke.
+  /// Label for calendarInvitationRevoke
   ///
   /// In en, this message translates to:
   /// **'Stop sharing'**
   String get calendarInvitationRevoke;
 
-  /// No description provided for @calendarInvitationSent.
+  /// Label for calendarInvitationSent
   ///
   /// In en, this message translates to:
   /// **'Invitation sent.'**
   String get calendarInvitationSent;
 
-  /// No description provided for @calendarInvitationFailed.
+  /// Label for calendarInvitationFailed
   ///
   /// In en, this message translates to:
   /// **'Calendar invitation could not be updated.'**
@@ -2289,11 +2289,53 @@ abstract class AppLocalizations {
   /// **'Shared by {account}'**
   String calendarSharedBy(String account);
 
-  /// No description provided for @calendarSharedReadOnly.
+  /// Label for calendarSharedReadOnly
   ///
   /// In en, this message translates to:
   /// **'Shared calendar · Read only'**
   String get calendarSharedReadOnly;
+
+  /// Label for calendarShareEvents
+  ///
+  /// In en, this message translates to:
+  /// **'Choose events to share'**
+  String get calendarShareEvents;
+
+  /// Label for calendarNoShareableEvents
+  ///
+  /// In en, this message translates to:
+  /// **'There are no events available to share.'**
+  String get calendarNoShareableEvents;
+
+  /// Label for calendarStopReceiving
+  ///
+  /// In en, this message translates to:
+  /// **'Stop viewing'**
+  String get calendarStopReceiving;
+
+  /// Label for calendarShareAllEvents
+  ///
+  /// In en, this message translates to:
+  /// **'Share all events'**
+  String get calendarShareAllEvents;
+
+  /// No description provided for @calendarNoSharedEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No events are currently shared.'**
+  String get calendarNoSharedEvents;
+
+  /// No description provided for @calendarCancelSingleShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing this event'**
+  String get calendarCancelSingleShare;
+
+  /// No description provided for @calendarCancelAllShares.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing all events'**
+  String get calendarCancelAllShares;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

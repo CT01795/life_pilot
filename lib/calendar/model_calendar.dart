@@ -49,6 +49,10 @@ class ModelCalendar {
     _events = list;
   }
 
+  List<EventItem> eventsForMonth(DateTime month) {
+    return flatMonthEventsCache[month.toMonthKey()] ?? const <EventItem>[];
+  }
+
   //--------------------------- 核心方法 ---------------------------
   // 取得完整月曆格子（含上月與下月填充週）
   List<List<DateTime>> getWeeks(DateTime month) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -5,6 +7,24 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceAuth {
+  static bool _pendingPasswordRecovery = false;
+  static final StreamController<void> _passwordRecoveryController =
+      StreamController<void>.broadcast();
+
+  static Stream<void> get passwordRecoveryLinks =>
+      _passwordRecoveryController.stream;
+
+  static void markPasswordRecoveryLink() {
+    _pendingPasswordRecovery = true;
+    _passwordRecoveryController.add(null);
+  }
+
+  static bool consumePasswordRecoveryLink() {
+    final pending = _pendingPasswordRecovery;
+    _pendingPasswordRecovery = false;
+    return pending;
+  }
+
   static final RegExp _emailPattern = RegExp(
     r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
   );

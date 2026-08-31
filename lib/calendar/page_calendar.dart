@@ -111,6 +111,7 @@ class _PageCalendarState extends State<PageCalendar> {
                     context: context,
                     builder: (_) => CalendarSharingDialog(
                       service: ServiceCalendarSharing(),
+                      visibleEvents: List<EventItem>.from(controller.events),
                       onSharingChanged: () async {
                         controller.clearAll();
                         await controller.reloadEvents();

@@ -1117,4 +1117,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarSharedReadOnly => 'Shared calendar · Read only';
+
+  @override
+  String get calendarShareEvents => 'Choose events to share';
+
+  @override
+  String get calendarNoShareableEvents => 'There are no events available to share.';
+
+  @override
+  String get calendarStopReceiving => 'Stop viewing';
+
+  @override
+  String get calendarShareAllEvents => 'Share all events';
+
+  @override
+  String get calendarNoSharedEvents => 'No events are currently shared.';
+
+  @override
+  String get calendarCancelSingleShare => 'Stop sharing this event';
+
+  @override
+  String get calendarCancelAllShares => 'Stop sharing all events';
 }

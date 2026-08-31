@@ -42,7 +42,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   // 狀態
   // ------------------------
-  int _reloadToken = 0;
+  final Map<String, int> _reloadTokensByMonth = {};
   bool _isChangingMonth = false;
 
   late ServiceEventTransfer _serviceEventTransfer;
@@ -120,8 +120,10 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 核心事件載入與刷新
   // ------------------------
   Future<void> reloadEvents({bool notify = true, DateTime? month}) async {
-    final targetMonth = month ?? currentMonth; // <-- 正確！不要用 DateTime.now
-    final int myToken = ++_reloadToken; // 每次呼叫都生成新的 token
+    final targetMonth = DateTimeFormatter.monthOnly(month ?? currentMonth);
+    final monthKey = targetMonth.toMonthKey();
+    final myToken = (_reloadTokensByMonth[monthKey] ?? 0) + 1;
+    _reloadTokensByMonth[monthKey] = myToken;
     List<EventItem> result = await _modelCalendar.loadEventsFromService(
       serviceEvent: _serviceEvent,
       month: targetMonth,
@@ -134,15 +136,18 @@ class ControllerCalendar extends SafeChangeNotifier {
     _warmUpWeather(result);
 
     // ❗只允許最新請求寫入 model
-    if (_reloadToken != myToken) {
+    if (_reloadTokensByMonth[monthKey] != myToken) {
       return;
     }
     if (result.isEmpty) {
       result = [];
     }
     _modelCalendar.cacheMonthEvents(targetMonth, result);
-    _modelCalendar.setEvents(result);
-    if (notify) {
+    final isCurrentMonth = currentMonth.toMonthKey() == monthKey;
+    if (isCurrentMonth) {
+      _modelCalendar.setEvents(result);
+    }
+    if (notify && isCurrentMonth) {
       notifyListeners();
     }
   }
@@ -508,6 +513,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 拿到該月每週對應的事件層級（含排版 rowIndex）
   Map<int, List<EventWithRow>> getWeekEventRows({required DateTime month}) {
     final calendarWeeks = _modelCalendar.getWeeks(month);
+    final monthEvents = _modelCalendar.eventsForMonth(month);
     final weekEventRows = <int, List<EventWithRow>>{};
 
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
@@ -515,7 +521,7 @@ class ControllerCalendar extends SafeChangeNotifier {
       final weekStart = week.first;
       final weekEnd = week.last;
 
-      final eventsThisWeek = events.where((event) {
+      final eventsThisWeek = monthEvents.where((event) {
         final start = DateTimeFormatter.dateOnly(event.startDate!);
         final end =
             DateTimeFormatter.dateOnly(event.endDate ?? event.startDate!);

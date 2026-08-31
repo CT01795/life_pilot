@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/service_calendar_sharing.dart';
+import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 
 class CalendarSharingDialog extends StatefulWidget {
   const CalendarSharingDialog({
     required this.service,
+    required this.visibleEvents,
     required this.onSharingChanged,
     super.key,
   });
 
   final ServiceCalendarSharing service;
+  final List<EventItem> visibleEvents;
   final Future<void> Function() onSharingChanged;
 
   @override
@@ -20,11 +23,12 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   final _emailsController = TextEditingController();
   late Future<CalendarSharingState> _state;
   bool _submitting = false;
+  final Set<String> _selectedEventIds = {};
 
   @override
   void initState() {
     super.initState();
-    _state = widget.service.load();
+    _state = _loadState();
   }
 
   @override
@@ -33,7 +37,19 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     super.dispose();
   }
 
-  void _reload() => setState(() => _state = widget.service.load());
+  Future<CalendarSharingState> _loadState() async {
+    final state = await widget.service.load(
+      visibleEvents: widget.visibleEvents,
+    );
+    if (mounted &&
+        _emailsController.text.trim().isEmpty &&
+        state.sent.isNotEmpty) {
+      _emailsController.text = state.sent.first.invitedEmail;
+    }
+    return state;
+  }
+
+  void _reload() => setState(() => _state = _loadState());
 
   Future<void> _run(Future<void> Function() action) async {
     if (_submitting) return;
@@ -60,9 +76,8 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         .map((email) => email.trim().toLowerCase())
         .where((email) => email.isNotEmpty)
         .toSet();
-    if (emails.isEmpty) return;
-    await _run(() => widget.service.inviteAll(emails));
-    if (mounted) _emailsController.clear();
+    if (emails.isEmpty || _selectedEventIds.isEmpty) return;
+    await _run(() => widget.service.inviteAll(emails, _selectedEventIds));
   }
 
   @override
@@ -109,24 +124,121 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                     ),
                     onSubmitted: (_) => _invite(),
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    loc.calendarShareEvents,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  if (state.shareableEvents.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(loc.calendarNoShareableEvents),
+                    )
+                  else ...[
+                    CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: state.shareableEvents.every(
+                        (event) => _selectedEventIds.contains(event.id),
+                      ),
+                      title: Text(loc.calendarShareAllEvents),
+                      onChanged: _submitting
+                          ? null
+                          : (selected) => setState(() {
+                                if (selected == true) {
+                                  _selectedEventIds.addAll(
+                                    state.shareableEvents
+                                        .map((event) => event.id),
+                                  );
+                                } else {
+                                  _selectedEventIds.clear();
+                                }
+                              }),
+                    ),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 220),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: state.shareableEvents.length,
+                        itemBuilder: (context, index) {
+                          final event = state.shareableEvents[index];
+                          final date = event.startDate == null
+                              ? ''
+                              : MaterialLocalizations.of(context)
+                                  .formatShortDate(event.startDate!.toLocal());
+                          return CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            value: _selectedEventIds.contains(event.id),
+                            title: Text(event.name),
+                            subtitle: date.isEmpty ? null : Text(date),
+                            onChanged: _submitting
+                                ? null
+                                : (selected) => setState(() {
+                                      if (selected == true) {
+                                        _selectedEventIds.add(event.id);
+                                      } else {
+                                        _selectedEventIds.remove(event.id);
+                                      }
+                                    }),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   _sectionTitle(context, loc.calendarSentInvitations),
-                  ...state.sent.map((item) => ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.upload_outlined),
-                        title: Text(item.invitedEmail),
-                        subtitle: Text(_statusLabel(loc, item.status)),
-                        trailing: item.isPending || item.isAccepted
-                            ? TextButton(
-                                onPressed: _submitting
-                                    ? null
-                                    : () => _run(
-                                          () => widget.service.revoke(item.id),
+                  ...state.sent.map((item) {
+                    final sharedEvents = state.eventsForInvitation(item.id);
+                    return ExpansionTile(
+                      leading: const Icon(Icons.upload_outlined),
+                      title: Text(item.invitedEmail),
+                      subtitle: Text(_statusLabel(loc, item.status)),
+                      children: [
+                        if (sharedEvents.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Text(loc.calendarNoSharedEvents),
+                          ),
+                        ...sharedEvents.map((event) {
+                          final date = event.startDate == null
+                              ? ''
+                              : MaterialLocalizations.of(context)
+                                  .formatShortDate(event.startDate!.toLocal());
+                          return ListTile(
+                            dense: true,
+                            title: Text(event.name),
+                            subtitle: date.isEmpty ? null : Text(date),
+                            trailing: IconButton(
+                              tooltip: loc.calendarCancelSingleShare,
+                              onPressed: _submitting
+                                  ? null
+                                  : () => _run(
+                                        () => widget.service.removeSharedEvent(
+                                          invitationId: item.id,
+                                          eventId: event.eventId,
                                         ),
-                                child: Text(loc.calendarInvitationRevoke),
-                              )
-                            : null,
-                      )),
+                                      ),
+                              icon: const Icon(Icons.remove_circle_outline),
+                            ),
+                          );
+                        }),
+                        if (item.isPending || item.isAccepted)
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: TextButton.icon(
+                              onPressed: _submitting
+                                  ? null
+                                  : () => _run(
+                                        () => widget.service.revoke(item.id),
+                                      ),
+                              icon: const Icon(Icons.link_off),
+                              label: Text(loc.calendarCancelAllShares),
+                            ),
+                          ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 12),
                   _sectionTitle(context, loc.calendarReceivedInvitations),
                   ...state.received.map((item) => ListTile(
@@ -160,7 +272,19 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                                   ),
                                 ],
                               )
-                            : null,
+                            : item.isAccepted
+                                ? TextButton(
+                                    onPressed: _submitting
+                                        ? null
+                                        : () => _run(
+                                              () => widget.service.respond(
+                                                invitationId: item.id,
+                                                accept: false,
+                                              ),
+                                            ),
+                                    child: Text(loc.calendarStopReceiving),
+                                  )
+                                : null,
                       )),
                 ],
               ),

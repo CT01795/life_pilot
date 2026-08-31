@@ -1117,4 +1117,25 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get calendarSharedReadOnly => '공유 캘린더 · 읽기 전용';
+
+  @override
+  String get calendarShareEvents => '공유할 일정 선택';
+
+  @override
+  String get calendarNoShareableEvents => '공유할 수 있는 일정이 없습니다.';
+
+  @override
+  String get calendarStopReceiving => '보기 중지';
+
+  @override
+  String get calendarShareAllEvents => '모든 일정 공유';
+
+  @override
+  String get calendarNoSharedEvents => '현재 공유 중인 일정이 없습니다.';
+
+  @override
+  String get calendarCancelSingleShare => '이 일정 공유 중지';
+
+  @override
+  String get calendarCancelAllShares => '모든 공유 중지';
 }

@@ -1117,4 +1117,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get calendarSharedReadOnly => '共用行事曆・只能查看';
+
+  @override
+  String get calendarShareEvents => '選擇要分享的事件';
+
+  @override
+  String get calendarNoShareableEvents => '目前沒有可分享的事件。';
+
+  @override
+  String get calendarStopReceiving => '停止查看';
+
+  @override
+  String get calendarShareAllEvents => '分享全部事件';
+
+  @override
+  String get calendarNoSharedEvents => '目前沒有已分享的事件。';
+
+  @override
+  String get calendarCancelSingleShare => '取消分享這個事件';
+
+  @override
+  String get calendarCancelAllShares => '取消全部分享';
 }
