@@ -12,19 +12,24 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       : _service = service;
   List<ModelFeedback> feedbackList = [];
   bool isLoading = false;
+  Object? loadError;
 
   Future<void> loadFeedback() async {
     isLoading = true;
+    loadError = null;
     notifyListeners();
-
-    final res = await _service.loadFeedback();
-    feedbackList = (res as List<dynamic>?)?.map((e) {
-          return ModelFeedback.fromMap(e as Map<String, dynamic>);
-        }).toList() ??
-        [];
-
-    isLoading = false;
-    notifyListeners();
+    try {
+      final res = await _service.loadFeedback();
+      feedbackList = (res as List<dynamic>?)?.map((e) {
+            return ModelFeedback.fromMap(e as Map<String, dynamic>);
+          }).toList() ??
+          [];
+    } catch (error) {
+      loadError = error;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> markAsDone(ModelFeedback feedback, String adminAccount) async {

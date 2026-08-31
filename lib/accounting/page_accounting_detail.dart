@@ -255,6 +255,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         .toList();
     return Expanded(
       child: ListView.builder(
+        cacheExtent: 240,
+        addAutomaticKeepAlives: false,
         itemCount: visibleRecords.length,
         itemBuilder: (context, index) {
           final record = visibleRecords[index];

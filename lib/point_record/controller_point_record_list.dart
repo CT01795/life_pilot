@@ -142,6 +142,8 @@ class _AccountListViewState extends State<_AccountListView> {
           children: [
             Expanded(
               child: ListView.builder(
+                cacheExtent: 240,
+                addAutomaticKeepAlives: false,
                 itemCount: accounts.length,
                 itemBuilder: (_, index) {
                   final account = accounts[index];

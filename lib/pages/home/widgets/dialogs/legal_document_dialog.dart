@@ -20,12 +20,23 @@ class LegalDocumentDialog extends StatefulWidget {
 
 class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
   final ScrollController _scrollController = ScrollController();
+  late Future<String> _documentFuture;
   bool _hasReportedReadComplete = false;
 
   @override
   void initState() {
     super.initState();
+    _documentFuture = rootBundle.loadString(widget.assetPath);
     _scrollController.addListener(_checkReadComplete);
+  }
+
+  @override
+  void didUpdateWidget(covariant LegalDocumentDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.assetPath != widget.assetPath) {
+      _documentFuture = rootBundle.loadString(widget.assetPath);
+      _hasReportedReadComplete = false;
+    }
   }
 
   @override
@@ -71,7 +82,7 @@ class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720, maxHeight: 520),
         child: FutureBuilder<String>(
-          future: rootBundle.loadString(widget.assetPath),
+          future: _documentFuture,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const Center(child: Text('Unable to load this document.'));

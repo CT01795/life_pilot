@@ -24,6 +24,8 @@ class PageFeedbackBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ControllerFeedback>();
+    final screenshotCacheSize =
+        (100 * MediaQuery.devicePixelRatioOf(context)).round();
 
     return Scaffold(
       body: Padding(
@@ -59,6 +61,9 @@ class PageFeedbackBody extends StatelessWidget {
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
+                              cacheWidth: screenshotCacheSize,
+                              cacheHeight: screenshotCacheSize,
+                              filterQuality: FilterQuality.low,
                             ),
                           ))
                       .toList(),

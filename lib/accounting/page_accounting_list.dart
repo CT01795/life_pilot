@@ -118,6 +118,8 @@ class _PageAccountingListState extends State<PageAccountingList>
               }
 
               return ListView.builder(
+                cacheExtent: 240,
+                addAutomaticKeepAlives: false,
                 itemCount: accounts.length,
                 itemBuilder: (context, index) {
                   return _AccountCard(
@@ -394,6 +396,7 @@ class AccountImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheSize = (120 * MediaQuery.devicePixelRatioOf(context)).round();
     return Container(
       width: 120,
       height: 120,
@@ -404,10 +407,13 @@ class AccountImage extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: imageBytes != null
-            ? Image(
-                image: MemoryImage(imageBytes!),
+            ? Image.memory(
+                imageBytes!,
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
+                cacheWidth: cacheSize,
+                cacheHeight: cacheSize,
+                filterQuality: FilterQuality.low,
               )
             : Center(
                 child: Text(
