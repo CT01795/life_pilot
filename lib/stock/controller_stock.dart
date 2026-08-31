@@ -15,13 +15,26 @@ class ControllerStock extends SafeChangeNotifier {
   List<ModelInstitutional> foreignSellTop30 = [];
   bool loading = true;
   bool loadFailed = false;
+  bool dateLoading = false;
+  DateTime? selectedDate;
+  DateTime? latestAvailableDate;
   StockUpdateStatus updateStatus = StockUpdateStatus.idle;
   bool _isDisposed = false;
+  int _dataRequestId = 0;
 
   ControllerStock(this.service);
 
+  bool get canSelectDate =>
+      !_isDisposed &&
+      !loading &&
+      !dateLoading &&
+      stocks.isNotEmpty &&
+      (updateStatus == StockUpdateStatus.succeeded ||
+          updateStatus == StockUpdateStatus.failed);
+
   Future<void> load() async {
     if (_isDisposed) return;
+    final requestId = ++_dataRequestId;
     loading = true;
     loadFailed = false;
     updateStatus = StockUpdateStatus.idle;
@@ -33,27 +46,29 @@ class ControllerStock extends SafeChangeNotifier {
     try {
       await _useStocksIfAvailable(
         await service.getSimpleStrategySupabase("From Supabase 1"),
+        requestId,
       );
-      if (_isDisposed) return;
+      if (_isDisposed || requestId != _dataRequestId) return;
       initialSourceLoaded = true;
       loading = false;
       _notifyListenersIfActive();
     } catch (ex) {
       logger.e(ex);
     }
-    if (_isDisposed) return;
+    if (_isDisposed || requestId != _dataRequestId) return;
 
     // 1️⃣ 先顯示現有資料（快速）
     try {
       await _useStocksIfAvailable(
         await service.getSimpleStrategy("Updating 2"),
+        requestId,
       );
-      if (_isDisposed) return;
+      if (_isDisposed || requestId != _dataRequestId) return;
       initialSourceLoaded = true;
     } catch (ex) {
       logger.e(ex);
     }
-    if (_isDisposed) return;
+    if (_isDisposed || requestId != _dataRequestId) return;
 
     loading = false;
     if (!initialSourceLoaded && stocks.isEmpty) {
@@ -68,41 +83,79 @@ class ControllerStock extends SafeChangeNotifier {
     try {
       // 2️⃣ 背景更新資料（不阻塞 UI）
       await service.loadRawData();
-      if (_isDisposed) return;
+      if (_isDisposed || requestId != _dataRequestId) return;
       await _useStocksIfAvailable(
         await service.getSimpleStrategy("Updated 3"),
+        requestId,
       );
-      if (_isDisposed) return;
+      if (_isDisposed || requestId != _dataRequestId) return;
     } catch (ex) {
       logger.e(ex);
-      if (_isDisposed) return;
+      if (_isDisposed || requestId != _dataRequestId) return;
       updateStatus = StockUpdateStatus.failed;
       _notifyListenersIfActive();
       return;
     }
     // 3️⃣ 更新完成後，再抓一次（刷新畫面🔥）
+    if (requestId != _dataRequestId) return;
     updateStatus = StockUpdateStatus.succeeded;
     _notifyListenersIfActive();
   }
 
-  Future<void> _useStocksIfAvailable(List<ModelStock> availableStocks) async {
-    if (_isDisposed || availableStocks.isEmpty) return;
+  Future<void> _useStocksIfAvailable(
+      List<ModelStock> availableStocks, int requestId) async {
+    if (_isDisposed || requestId != _dataRequestId || availableStocks.isEmpty) {
+      return;
+    }
 
     stocks = availableStocks;
-    await buildDashboard(stocks.first.date);
+    selectedDate = stocks.first.date;
+    final availableDate = stocks.first.date;
+    if (latestAvailableDate == null ||
+        availableDate.isAfter(latestAvailableDate!)) {
+      latestAvailableDate = availableDate;
+    }
+    await buildDashboard(stocks.first.date, requestId: requestId);
   }
 
-  Future<void> buildDashboard(DateTime? date) async {
+  Future<void> loadDate(DateTime date) async {
+    if (_isDisposed || dateLoading) return;
+    final requestId = ++_dataRequestId;
+    dateLoading = true;
+    loadFailed = false;
+    _notifyListenersIfActive();
+    try {
+      stocks = await service.getSimpleStrategyForDate(date);
+      if (_isDisposed || requestId != _dataRequestId) return;
+      selectedDate = date;
+      await buildDashboard(date, requestId: requestId);
+      if (_isDisposed || requestId != _dataRequestId) return;
+      loadFailed = stocks.isEmpty;
+    } catch (error, stackTrace) {
+      logger.e('Load stocks by date failed',
+          error: error, stackTrace: stackTrace);
+      if (_isDisposed || requestId != _dataRequestId) return;
+      loadFailed = true;
+    } finally {
+      if (!_isDisposed) {
+        dateLoading = false;
+        _notifyListenersIfActive();
+      }
+    }
+  }
+
+  Future<void> buildDashboard(DateTime? date, {int? requestId}) async {
     if (_isDisposed) return;
+    requestId ??= _dataRequestId;
     date = date ?? await service.getLatestDate();
-    if (_isDisposed || date == null) {
+    if (_isDisposed || requestId != _dataRequestId || date == null) {
       return;
     }
     // ==========
     // 外資買超 Top30
     // ==========
     institutionals = await service.selectStockInstitutional(date);
-    if (_isDisposed) return;
+    if (_isDisposed || requestId != _dataRequestId) return;
     foreignBuyTop30 = [...institutionals];
 
     foreignBuyTop30.sort(
@@ -136,6 +189,7 @@ class ControllerStock extends SafeChangeNotifier {
 
     try {
       futures = await service.selectFutures(date);
+      if (_isDisposed || requestId != _dataRequestId) return;
     } catch (_) {}
   }
 

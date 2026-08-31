@@ -651,6 +651,48 @@ abstract class AppLocalizations {
   /// **'Journey'**
   String get accountProject;
 
+  /// Label for group point accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get pointGroup;
+
+  /// No description provided for @stockSelectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock date'**
+  String get stockSelectDate;
+
+  /// No description provided for @statusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get statusInProgress;
+
+  /// No description provided for @statusNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get statusNotStarted;
+
+  /// No description provided for @statusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get statusCompleted;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get noData;
+
   /// Label for accountMaster
   ///
   /// In en, this message translates to:
@@ -1040,6 +1082,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start time'**
   String get startTime;
+
+  /// Label for attraction business hours
+  ///
+  /// In en, this message translates to:
+  /// **'Business hours'**
+  String get businessHours;
 
   /// Label for endDate
   ///
@@ -1941,6 +1989,12 @@ abstract class AppLocalizations {
   /// **'Uncategorized'**
   String get recordCategoryUncategorized;
 
+  /// Record category always included regardless of date
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved'**
+  String get recordCategoryReserved;
+
   /// Label for recordCategoryFood
   ///
   /// In en, this message translates to:
@@ -2319,19 +2373,19 @@ abstract class AppLocalizations {
   /// **'Share all events'**
   String get calendarShareAllEvents;
 
-  /// No description provided for @calendarNoSharedEvents.
+  /// Label for calendarNoSharedEvents
   ///
   /// In en, this message translates to:
   /// **'No events are currently shared.'**
   String get calendarNoSharedEvents;
 
-  /// No description provided for @calendarCancelSingleShare.
+  /// Label for calendarCancelSingleShare
   ///
   /// In en, this message translates to:
   /// **'Stop sharing this event'**
   String get calendarCancelSingleShare;
 
-  /// No description provided for @calendarCancelAllShares.
+  /// Label for calendarCancelAllShares
   ///
   /// In en, this message translates to:
   /// **'Stop sharing all events'**

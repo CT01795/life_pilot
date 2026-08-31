@@ -27,6 +27,7 @@ class PageFeedbackAdmin extends StatelessWidget {
           ControllerFeedbackAdmin(ServiceFeedback(), auth)..loadFeedback(),
       child: Consumer<ControllerFeedbackAdmin>(
         builder: (context, controller, _) {
+          final visibleFeedback = controller.visibleFeedback;
           return Scaffold(
             body: controller.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -48,28 +49,83 @@ class PageFeedbackAdmin extends StatelessWidget {
                         ),
                       )
                     : ListView.separated(
-                        itemCount: controller.feedbackList.length,
+                        itemCount: visibleFeedback.length +
+                            1 +
+                            ((controller.hasMore || controller.isLoadingMore)
+                                ? 1
+                                : 0),
                         separatorBuilder: (_, __) => const Divider(),
                         itemBuilder: (context, index) {
-                          final feedback = controller.feedbackList[index];
+                          if (index == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Wrap(
+                                spacing: 8,
+                                children: [
+                                  for (final entry in {
+                                    'in_progress': loc.statusInProgress,
+                                    'pending': loc.statusPending,
+                                    'completed': loc.statusCompleted,
+                                  }.entries)
+                                    FilterChip(
+                                      label: Text(entry.value),
+                                      selected: controller.selectedStatuses
+                                          .contains(entry.key),
+                                      onSelected: (_) =>
+                                          controller.toggleStatus(entry.key),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }
+                          index--;
+                          if (index == visibleFeedback.length) {
+                            return Center(
+                              child: controller.isLoadingMore
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : TextButton(
+                                      onPressed: controller.loadMore,
+                                      child: Text(loc.clickHereToSeeMore),
+                                    ),
+                            );
+                          }
+                          final feedback = visibleFeedback[index];
                           return Selector<ControllerFeedbackAdmin, bool>(
-                              selector: (_, c) =>
-                                  c.feedbackList[index].isOk ?? false,
-                              builder: (_, isOk, __) {
+                              selector: (_, c) => feedback.isOk ?? false,
+                              builder: (context, isOk, child) {
                                 return ListTile(
                                   title: Text(feedback.subject),
                                   subtitle: Text(feedback.content),
-                                  trailing: isOk == true
-                                      ? const Icon(Icons.check,
-                                          color: Colors.green)
-                                      : ElevatedButton(
-                                          onPressed: () =>
-                                              controller.markAsDone(
-                                                  feedback,
-                                                  auth.currentAccount ??
-                                                      AuthConstants.guest),
-                                          child: const Text('Mark Done'),
-                                        ),
+                                  trailing: DropdownButton<String>(
+                                    value: feedback.status,
+                                    items: [
+                                      DropdownMenuItem(
+                                        value: 'in_progress',
+                                        child: Text(loc.statusInProgress),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'pending',
+                                        child: Text(loc.statusPending),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'completed',
+                                        child: Text(loc.statusCompleted),
+                                      ),
+                                    ],
+                                    onChanged: (status) {
+                                      if (status != null) {
+                                        controller.updateStatus(
+                                          feedback,
+                                          status,
+                                          auth.currentAccount ??
+                                              AuthConstants.guest,
+                                        );
+                                      }
+                                    },
+                                  ),
                                   onTap: () async {
                                     showDialog(
                                       context: context,

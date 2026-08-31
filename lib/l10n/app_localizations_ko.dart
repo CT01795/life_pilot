@@ -287,6 +287,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountProject => '여행';
 
   @override
+  String get pointGroup => '그룹';
+
+  @override
+  String get stockSelectDate => '주식 날짜';
+
+  @override
+  String get statusInProgress => '진행 중';
+
+  @override
+  String get statusNotStarted => '시작 전';
+
+  @override
+  String get statusCompleted => '완료';
+
+  @override
+  String get statusPending => '미처리';
+
+  @override
+  String get noData => '데이터가 없습니다';
+
+  @override
   String get accountMaster => '그룹';
 
   @override
@@ -480,6 +501,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get startTime => '시작 시간';
+
+  @override
+  String get businessHours => '영업시간';
 
   @override
   String get endDate => '종료 날짜';
@@ -934,6 +958,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get recordCategoryUncategorized => '미분류';
+
+  @override
+  String get recordCategoryReserved => '보존 항목';
 
   @override
   String get recordCategoryFood => '식';

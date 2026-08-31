@@ -187,6 +187,83 @@ class ServiceGame {
     return data.map((e) => ModelGameUser.fromMap(e)).toList();
   }
 
+  Future<List<ModelGameUser>> fetchUserProgressPage({
+    required String userName,
+    required String gameType,
+    required String gameName,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    bool includeLatestFallback = false,
+  }) async {
+    final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
+    final rows = await supabase
+        .from(TableNames.gameUser)
+        .select('*, game_list!inner(game_type, game_name, level)')
+        .ilike('name', userName)
+        .eq('game_list.game_type', gameType)
+        .eq('game_list.game_name', gameName)
+        .gte(Fields.createdAt, dateFrom.toUtc().toIso8601String())
+        .lt(Fields.createdAt, upperBound.toUtc().toIso8601String())
+        .order(Fields.createdAt, ascending: false);
+    final result = List<Map<String, dynamic>>.from(rows);
+    if (includeLatestFallback && result.isEmpty) {
+      final fallback = await supabase
+          .from(TableNames.gameUser)
+          .select('*, game_list!inner(game_type, game_name, level)')
+          .ilike('name', userName)
+          .eq('game_list.game_type', gameType)
+          .eq('game_list.game_name', gameName)
+          .order(Fields.createdAt, ascending: false)
+          .limit(1);
+      result.addAll(List<Map<String, dynamic>>.from(fallback));
+    }
+    return result.map(_mapProgressWithGame).toList();
+  }
+
+  Future<bool> hasUserProgressBefore({
+    required String userName,
+    required String gameType,
+    required String gameName,
+    required DateTime before,
+  }) async {
+    final rows = await supabase
+        .from(TableNames.gameUser)
+        .select('id, game_list!inner(game_type, game_name)')
+        .ilike('name', userName)
+        .eq('game_list.game_type', gameType)
+        .eq('game_list.game_name', gameName)
+        .lt(Fields.createdAt, before.toUtc().toIso8601String())
+        .limit(1);
+    return rows.isNotEmpty;
+  }
+
+  Future<DateTime?> latestUserProgressDateBefore({
+    required String userName,
+    required String gameType,
+    required String gameName,
+    required DateTime before,
+  }) async {
+    final rows = await supabase
+        .from(TableNames.gameUser)
+        .select('created_at, game_list!inner(game_type, game_name)')
+        .ilike('name', userName)
+        .eq('game_list.game_type', gameType)
+        .eq('game_list.game_name', gameName)
+        .lt(Fields.createdAt, before.toUtc().toIso8601String())
+        .order(Fields.createdAt, ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return DateTime.tryParse(rows.first[Fields.createdAt]?.toString() ?? '')
+        ?.toLocal();
+  }
+
+  ModelGameUser _mapProgressWithGame(Map<String, dynamic> row) {
+    final game = row['game_list'] is Map
+        ? Map<String, dynamic>.from(row['game_list'] as Map)
+        : <String, dynamic>{};
+    return ModelGameUser.fromMap({...row, ...game});
+  }
+
   Future<void> addGrammarQuestion({
     required String question,
     required String answer,

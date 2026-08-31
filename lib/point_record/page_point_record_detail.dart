@@ -249,8 +249,25 @@ class _PagePointRecordDetailViewState
       child: ListView.builder(
         cacheExtent: 240,
         addAutomaticKeepAlives: false,
-        itemCount: visibleRecords.length,
+        itemCount: visibleRecords.length +
+            ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index == visibleRecords.length) {
+            return Center(
+              child: controller.isLoadingMore
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(),
+                    )
+                  : TextButton(
+                      onPressed: () => controller.loadMore(
+                        inputAccountId: widget.account.id,
+                      ),
+                      child: Text(
+                          AppLocalizations.of(context)!.clickHereToSeeMore),
+                    ),
+            );
+          }
           final record = visibleRecords[index];
           return ListTile(
             key: ValueKey(record.id),

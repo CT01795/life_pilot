@@ -117,7 +117,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
             indicatorColor: Colors.white, // 底線顏色
             tabs: [
               Tab(text: loc.accountPersonal),
-              Tab(text: loc.accountProject),
+              Tab(text: loc.pointGroup),
               //Tab(text: loc.accountMaster),
             ],
           ),

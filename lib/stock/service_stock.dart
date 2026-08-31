@@ -645,6 +645,19 @@ class ServiceStock {
     }
   }
 
+  Future<List<ModelStock>> getSimpleStrategyForDate(DateTime date) async {
+    final allStocks = await getByDate(date);
+    if (allStocks.isEmpty) return [];
+    final selected = <String, ModelStock>{
+      for (final stock in filterRisingStocks(allStocks))
+        stock.securityCode: stock,
+    };
+    for (final stock in _rankStocks(allStocks).take(200)) {
+      selected.putIfAbsent(stock.securityCode, () => stock);
+    }
+    return selected.values.toList();
+  }
+
   Future<List<ModelStock>> getSimpleStrategySupabase(String level) async {
     // 1️⃣ 找最新日期
     DateTime? latestDate = await getLatestDate();

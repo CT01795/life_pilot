@@ -23,20 +23,97 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
   int todayTotal = 0;
   int? total;
   bool isLoading = false;
+  bool isLoadingMore = false;
+  bool hasMore = false;
+  DateTime? _loadedStartDate;
 
   Future<void> loadToday({String? inputAccountId}) async {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
-    todayRecords = await service.fetchTodayRecords(
-      accountId: inputAccountId ?? accountId,
-      type: currentType,
-    );
+    final targetAccountId = inputAccountId ?? accountId;
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      _loadedStartDate = today.subtract(const Duration(days: 29));
+      todayRecords = await service.fetchRecordsPage(
+        accountId: targetAccountId,
+        type: currentType,
+        dateFrom: _loadedStartDate!,
+        dateTo: today,
+        includeLatestFallback: true,
+      );
+      _sortAndDeduplicate();
+      final regularRecords = todayRecords
+          .where((record) => record.primaryCategory != 'reserved')
+          .toList();
+      if (regularRecords.isNotEmpty &&
+          regularRecords.every(
+            (record) => record.localTime.isBefore(_loadedStartDate!),
+          )) {
+        _loadedStartDate = regularRecords
+            .map((record) => record.localTime)
+            .reduce((a, b) => a.isAfter(b) ? a : b);
+      }
+      hasMore = await service.hasRecordsBefore(
+        accountId: targetAccountId,
+        type: currentType,
+        before: _loadedStartDate!,
+      );
+      _calculateTotals(inputAccountId: inputAccountId);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
-    _calculateTotals(inputAccountId: inputAccountId);
-
-    isLoading = false;
+  Future<void> loadMore({String? inputAccountId}) async {
+    if (isLoadingMore || !hasMore || _loadedStartDate == null) return;
+    isLoadingMore = true;
     notifyListeners();
+    final targetAccountId = inputAccountId ?? accountId;
+    try {
+      final latestOlder = await service.latestRecordDateBefore(
+        accountId: targetAccountId,
+        type: currentType,
+        before: _loadedStartDate!,
+      );
+      if (latestOlder == null) {
+        hasMore = false;
+        return;
+      }
+      final dateTo = DateTime(
+        latestOlder.year,
+        latestOlder.month,
+        latestOlder.day,
+      );
+      final dateFrom = dateTo.subtract(const Duration(days: 29));
+      todayRecords.addAll(await service.fetchRecordsPage(
+        accountId: targetAccountId,
+        type: currentType,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      ));
+      _loadedStartDate = dateFrom;
+      _sortAndDeduplicate();
+      hasMore = await service.hasRecordsBefore(
+        accountId: targetAccountId,
+        type: currentType,
+        before: dateFrom,
+      );
+    } finally {
+      isLoadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  void _sortAndDeduplicate() {
+    final unique = <String, ModelPointRecordDetail>{};
+    for (final record in todayRecords) {
+      unique[record.id] = record;
+    }
+    todayRecords = unique.values.toList()
+      ..sort((a, b) => b.localTime.compareTo(a.localTime));
   }
 
   void _calculateTotals({String? inputAccountId}) {

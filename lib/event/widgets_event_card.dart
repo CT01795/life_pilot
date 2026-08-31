@@ -398,6 +398,12 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                     widget.eventViewModel.locationDisplay,
                     onTap: widget.onOpenMap,
                   ),
+          if (widget.tableName == TableNames.recommendPlaces &&
+              widget.eventViewModel.businessHours.isNotEmpty)
+            infoRow(
+              Icons.schedule_rounded,
+              '${loc.businessHours}: ${widget.eventViewModel.businessHours}',
+            ),
           if (widget.eventViewModel.dateRange.isEmpty &&
               widget.eventViewModel.tags.isNotEmpty)
             Padding(

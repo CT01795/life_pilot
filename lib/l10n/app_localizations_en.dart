@@ -287,6 +287,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountProject => 'Journey';
 
   @override
+  String get pointGroup => 'Group';
+
+  @override
+  String get stockSelectDate => 'Stock date';
+
+  @override
+  String get statusInProgress => 'In progress';
+
+  @override
+  String get statusNotStarted => 'Not started';
+
+  @override
+  String get statusCompleted => 'Completed';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get noData => 'No data';
+
+  @override
   String get accountMaster => 'Master';
 
   @override
@@ -480,6 +501,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startTime => 'Start time';
+
+  @override
+  String get businessHours => 'Business hours';
 
   @override
   String get endDate => 'End date';
@@ -934,6 +958,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordCategoryUncategorized => 'Uncategorized';
+
+  @override
+  String get recordCategoryReserved => 'Reserved';
 
   @override
   String get recordCategoryFood => 'Food';

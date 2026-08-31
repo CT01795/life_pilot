@@ -34,11 +34,41 @@ class WidgetsMemoryList extends StatelessWidget {
       controller: scrollController,
       cacheExtent: 180,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: filteredEvents.length,
+      itemCount:
+          filteredEvents.length + (controllerEvent.hasMoreMemory ? 1 : 0),
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
+        if (index == filteredEvents.length) {
+          return Selector<ControllerEvent, bool>(
+            selector: (_, controller) => controller.isLoadingMoreMemory,
+            builder: (context, isLoading, _) => Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+              child: OutlinedButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        try {
+                          await controllerEvent.loadMoreMemoryEvents();
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(loc.dashboardLoadFailed)),
+                          );
+                        }
+                      },
+                icon: isLoading
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.history_rounded),
+                label: Text(loc.clickHereToSeeMore),
+              ),
+            ),
+          );
+        }
         final event = filteredEvents[index];
         final eventViewModel = controllerEvent.buildViewModel(
           event: event,

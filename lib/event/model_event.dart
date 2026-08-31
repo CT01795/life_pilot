@@ -144,8 +144,10 @@ class ModelEvent {
   int _compareRecommendedEventDate(EventItem left, EventItem right) {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     DateTime effectiveDate(EventItem event) {
-      final start = event.startDate ?? today;
-      return start.isBefore(today) ? (event.endDate ?? today) : start;
+      final start = DateTimeFormatter.dateOnly(event.startDate ?? today);
+      return start.isBefore(today)
+          ? DateTimeFormatter.dateOnly(event.endDate ?? today)
+          : start;
     }
 
     var comparison = effectiveDate(left).compareTo(effectiveDate(right));
@@ -153,21 +155,17 @@ class ModelEvent {
     comparison = _timeSortValue(left.startTime)
         .compareTo(_timeSortValue(right.startTime));
     if (comparison != 0) return comparison;
-    comparison = (left.endDate ?? left.startDate ?? today)
-        .compareTo(right.endDate ?? right.startDate ?? today);
-    if (comparison != 0) return comparison;
-    comparison =
-        _timeSortValue(left.endTime).compareTo(_timeSortValue(right.endTime));
-    if (comparison != 0) return comparison;
     comparison = left.city.compareTo(right.city);
+    if (comparison != 0) return comparison;
+    comparison = left.location.compareTo(right.location);
     return comparison != 0 ? comparison : left.name.compareTo(right.name);
   }
 
   int _compareAttraction(EventItem left, EventItem right) {
-    final cityComparison = left.city.compareTo(right.city);
-    return cityComparison != 0
-        ? cityComparison
-        : left.name.compareTo(right.name);
+    var comparison = left.city.compareTo(right.city);
+    if (comparison != 0) return comparison;
+    comparison = left.location.compareTo(right.location);
+    return comparison != 0 ? comparison : left.name.compareTo(right.name);
   }
 
   int _timeSortValue(dynamic time) =>
@@ -183,6 +181,26 @@ class ModelEvent {
       return;
     }
     _events = list;
+    _invalidateFilteredEvents();
+  }
+
+  void appendMemoryEvents(List<EventItem> list) {
+    final existingIds = _events.map((event) => event.id).toSet();
+    _events.addAll(list.where((event) => existingIds.add(event.id)));
+    sortMemoryEvents();
+  }
+
+  void sortMemoryEvents() {
+    _events.sort((left, right) {
+      final leftDate = left.startDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final rightDate =
+          right.startDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      var comparison = rightDate.compareTo(leftDate);
+      if (comparison != 0) return comparison;
+      comparison = _timeSortValue(right.startTime)
+          .compareTo(_timeSortValue(left.startTime));
+      return comparison != 0 ? comparison : left.name.compareTo(right.name);
+    });
     _invalidateFilteredEvents();
   }
 

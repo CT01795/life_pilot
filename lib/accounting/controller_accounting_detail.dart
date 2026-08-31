@@ -10,12 +10,14 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   final ServiceAccounting _service;
   ControllerAuth? auth;
   final String accountId;
+  final bool loadAllRecords;
   num? currentExchangeRate;
 
   ControllerAccountingDetail(
       {required ServiceAccounting service,
       required this.auth,
       required this.accountId,
+      this.loadAllRecords = false,
       this.currentExchangeRate})
       : _service = service;
 
@@ -26,20 +28,101 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   int? total;
   String? _currentCurrency;
   bool isLoading = false;
+  bool isLoadingMore = false;
+  bool hasMore = false;
+  DateTime? _loadedStartDate;
 
   Future<void> loadToday({String? inputAccountId}) async {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
-    todayRecords = await _service.fetchTodayRecords(
-      accountId: inputAccountId ?? accountId,
-      type: currentType,
-    );
+    final targetAccountId = inputAccountId ?? accountId;
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      _loadedStartDate = loadAllRecords
+          ? DateTime.fromMillisecondsSinceEpoch(0)
+          : today.subtract(const Duration(days: 29));
+      todayRecords = await _service.fetchRecordsPage(
+        accountId: targetAccountId,
+        type: currentType,
+        dateFrom: _loadedStartDate!,
+        dateTo: today,
+        includeLatestFallback: !loadAllRecords,
+        includeReservedRecords: true,
+      );
+      _sortAndDeduplicate();
+      final regularRecords = todayRecords
+          .where((record) => record.primaryCategory != 'reserved')
+          .toList();
+      if (regularRecords.isNotEmpty &&
+          regularRecords.every(
+            (record) => record.localTime.isBefore(_loadedStartDate!),
+          )) {
+        _loadedStartDate = regularRecords
+            .map((record) => record.localTime)
+            .reduce((a, b) => a.isAfter(b) ? a : b);
+      }
+      hasMore = !loadAllRecords &&
+          await _service.hasRecordsBefore(
+            accountId: targetAccountId,
+            type: currentType,
+            before: _loadedStartDate!,
+          );
+      _calculateTotals(inputAccountId: inputAccountId);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
-    _calculateTotals(inputAccountId: inputAccountId);
-
-    isLoading = false;
+  Future<void> loadMore({String? inputAccountId}) async {
+    if (isLoadingMore || !hasMore || _loadedStartDate == null) return;
+    isLoadingMore = true;
     notifyListeners();
+    final targetAccountId = inputAccountId ?? accountId;
+    try {
+      final latestOlder = await _service.latestRecordDateBefore(
+        accountId: targetAccountId,
+        type: currentType,
+        before: _loadedStartDate!,
+      );
+      if (latestOlder == null) {
+        hasMore = false;
+        return;
+      }
+      final dateTo = DateTime(
+        latestOlder.year,
+        latestOlder.month,
+        latestOlder.day,
+      );
+      final dateFrom = dateTo.subtract(const Duration(days: 29));
+      todayRecords.addAll(await _service.fetchRecordsPage(
+        accountId: targetAccountId,
+        type: currentType,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      ));
+      _loadedStartDate = dateFrom;
+      _sortAndDeduplicate();
+      hasMore = await _service.hasRecordsBefore(
+        accountId: targetAccountId,
+        type: currentType,
+        before: dateFrom,
+      );
+    } finally {
+      isLoadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  void _sortAndDeduplicate() {
+    final unique = <String, ModelAccountingDetail>{};
+    for (final record in todayRecords) {
+      unique[record.id] = record;
+    }
+    todayRecords = unique.values.toList()
+      ..sort((a, b) => b.localTime.compareTo(a.localTime));
   }
 
   Future<void> _calculateTotals({String? inputAccountId}) async {

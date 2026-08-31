@@ -287,6 +287,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountProject => '旅程';
 
   @override
+  String get pointGroup => '團體';
+
+  @override
+  String get stockSelectDate => '股票日期';
+
+  @override
+  String get statusInProgress => '進行中';
+
+  @override
+  String get statusNotStarted => '尚未開始';
+
+  @override
+  String get statusCompleted => '已完成';
+
+  @override
+  String get statusPending => '尚未處理';
+
+  @override
+  String get noData => '沒有資料';
+
+  @override
   String get accountMaster => '總帳戶';
 
   @override
@@ -480,6 +501,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get startTime => '開始時間';
+
+  @override
+  String get businessHours => '營業時間';
 
   @override
   String get endDate => '結束日期';
@@ -934,6 +958,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recordCategoryUncategorized => '未分類';
+
+  @override
+  String get recordCategoryReserved => '保留項';
 
   @override
   String get recordCategoryFood => '食';

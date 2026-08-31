@@ -4,6 +4,7 @@ import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/page_plan_preview.dart';
 import 'package:life_pilot/business_plan/page_plan_select_template.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class PageBusinessPlan extends StatelessWidget {
@@ -56,43 +57,119 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (c.plans.isEmpty) {
-      return const Center(child: Text('No plans yet'));
-    }
+    final loc = AppLocalizations.of(context)!;
+    final visiblePlans = c.visiblePlans;
     return Scaffold(
-      body: ListView.builder(
-        itemCount: c.plans.length,
-        itemBuilder: (_, i) {
-          final plan = c.plans[i];
-          return ListTile(
-            title: InlineEditableTitle(
-              initialText: plan.title,
-              onSave: (newTitle) {
-                context
-                    .read<ControllerBusinessPlan>()
-                    .updateCurrentPlanTitle(plan, newTitle);
-              },
-              onEditingChanged: (editing) {
-                setState(() => isEditingTitle = editing);
-              },
-            ),
-            onTap: () async {
-              if (isEditingTitle) return; // 🔒 編輯中鎖定跳頁
-              final c = context.read<ControllerBusinessPlan>();
-              c.setCurrentPlanSummary(plan);
-              c.loadPlanDetailIfNeeded(plan.id);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider.value(
-                    value: c,
-                    child: const PagePlanPreview(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                for (final entry in {
+                  'in_progress': loc.statusInProgress,
+                  'not_started': loc.statusNotStarted,
+                  'completed': loc.statusCompleted,
+                }.entries)
+                  FilterChip(
+                    label: Text(entry.value),
+                    selected: c.selectedStatuses.contains(entry.key),
+                    onSelected: (_) => c.toggleStatus(entry.key),
                   ),
-                ),
-              );
-            },
-          );
-        },
+              ],
+            ),
+          ),
+          Expanded(
+            child: visiblePlans.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(loc.noData),
+                        if (c.hasMorePlans) ...[
+                          const SizedBox(height: 8),
+                          c.isLoadingMorePlans
+                              ? const CircularProgressIndicator()
+                              : TextButton(
+                                  onPressed: c.loadMorePlans,
+                                  child: Text(loc.clickHereToSeeMore),
+                                ),
+                        ],
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: visiblePlans.length +
+                        ((c.hasMorePlans || c.isLoadingMorePlans) ? 1 : 0),
+                    itemBuilder: (_, i) {
+                      if (i == visiblePlans.length) {
+                        return Center(
+                          child: c.isLoadingMorePlans
+                              ? const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator(),
+                                )
+                              : TextButton(
+                                  onPressed: c.loadMorePlans,
+                                  child: Text(loc.clickHereToSeeMore),
+                                ),
+                        );
+                      }
+                      final plan = visiblePlans[i];
+                      return ListTile(
+                        title: InlineEditableTitle(
+                          initialText: plan.title,
+                          onSave: (newTitle) {
+                            context
+                                .read<ControllerBusinessPlan>()
+                                .updateCurrentPlanTitle(plan, newTitle);
+                          },
+                          onEditingChanged: (editing) {
+                            setState(() => isEditingTitle = editing);
+                          },
+                        ),
+                        subtitle: DropdownButton<String>(
+                          value: plan.status,
+                          isDense: true,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'in_progress',
+                              child: Text(loc.statusInProgress),
+                            ),
+                            DropdownMenuItem(
+                              value: 'not_started',
+                              child: Text(loc.statusNotStarted),
+                            ),
+                            DropdownMenuItem(
+                              value: 'completed',
+                              child: Text(loc.statusCompleted),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) c.updatePlanStatus(plan, value);
+                          },
+                        ),
+                        onTap: () async {
+                          if (isEditingTitle) return; // 🔒 編輯中鎖定跳頁
+                          final c = context.read<ControllerBusinessPlan>();
+                          c.setCurrentPlanSummary(plan);
+                          c.loadPlanDetailIfNeeded(plan.id);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChangeNotifierProvider.value(
+                                value: c,
+                                child: const PagePlanPreview(),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

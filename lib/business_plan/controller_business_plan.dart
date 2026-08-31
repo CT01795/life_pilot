@@ -30,6 +30,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
 
   bool isPlansLoading = false; // 列表用
   bool isTemplateLoading = false;
+  bool isLoadingMorePlans = false;
+  bool hasMorePlans = false;
+  DateTime? _plansStartDate;
+  final Set<String> selectedStatuses = {'in_progress', 'not_started'};
 
   // 單個 question 的 ValueNotifier
   final Map<String, ValueNotifier<String>> _answerNotifiers = {};
@@ -143,12 +147,103 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     isPlansLoading = true;
     safeNotify();
     try {
+      final now = DateTime.now();
+      final dateTo = DateTime(now.year, now.month, now.day + 1);
+      _plansStartDate = dateTo.subtract(const Duration(days: 360));
+      final user = auth?.currentAccount ?? AuthConstants.guest;
       plans = await _service.fetchPlans(
-          user: auth?.currentAccount ?? AuthConstants.guest);
+        user: user,
+        dateFrom: _plansStartDate!,
+        dateTo: dateTo,
+      );
+      _sortAndDeduplicatePlans();
+      hasMorePlans =
+          await _service.hasPlansBefore(user: user, before: _plansStartDate!);
     } finally {
       isPlansLoading = false;
       safeNotify();
     }
+  }
+
+  List<ModelBusinessPlan> get visiblePlans =>
+      plans.where((plan) => selectedStatuses.contains(plan.status)).toList();
+
+  void toggleStatus(String status) {
+    selectedStatuses.contains(status)
+        ? selectedStatuses.remove(status)
+        : selectedStatuses.add(status);
+    safeNotify();
+  }
+
+  Future<void> loadMorePlans() async {
+    if (isLoadingMorePlans || !hasMorePlans || _plansStartDate == null) return;
+    isLoadingMorePlans = true;
+    safeNotify();
+    try {
+      final user = auth?.currentAccount ?? AuthConstants.guest;
+      final latestOlder = await _service.latestPlanDateBefore(
+        user: user,
+        before: _plansStartDate!,
+      );
+      if (latestOlder == null) {
+        hasMorePlans = false;
+        return;
+      }
+      final dateTo = DateTime(
+        latestOlder.year,
+        latestOlder.month,
+        latestOlder.day + 1,
+      );
+      final dateFrom = dateTo.subtract(const Duration(days: 360));
+      plans.addAll(await _service.fetchPlans(
+        user: user,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      ));
+      _plansStartDate = dateFrom;
+      _sortAndDeduplicatePlans();
+      hasMorePlans =
+          await _service.hasPlansBefore(user: user, before: dateFrom);
+    } finally {
+      isLoadingMorePlans = false;
+      safeNotify();
+    }
+  }
+
+  Future<void> updatePlanStatus(ModelBusinessPlan plan, String status) async {
+    final index = plans.indexWhere((item) => item.id == plan.id);
+    if (index < 0) return;
+    final previous = plans[index];
+    plans[index] = previous.copyWith(status: status);
+    _sortAndDeduplicatePlans();
+    safeNotify();
+    try {
+      await _service.updatePlanStatus(planId: plan.id, status: status);
+    } catch (_) {
+      final rollbackIndex = plans.indexWhere((item) => item.id == plan.id);
+      if (rollbackIndex >= 0) plans[rollbackIndex] = previous;
+      _sortAndDeduplicatePlans();
+      safeNotify();
+      rethrow;
+    }
+  }
+
+  void _sortAndDeduplicatePlans() {
+    final unique = <String, ModelBusinessPlan>{
+      for (final plan in plans) plan.id: plan,
+    };
+    int rank(String status) => switch (status) {
+          'in_progress' => 0,
+          'not_started' => 1,
+          _ => 2,
+        };
+    plans = unique.values.toList()
+      ..sort((a, b) {
+        final statusOrder = rank(a.status).compareTo(rank(b.status));
+        return statusOrder != 0
+            ? statusOrder
+            : b.createdAt.compareTo(a.createdAt);
+      });
   }
 
   Future<void> loadPlanDetailIfNeeded(String inputPlanId) async {

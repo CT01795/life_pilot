@@ -241,43 +241,112 @@ class ServiceAccounting {
   }
 
   // ===== 明細 =====
-  Future<List<ModelAccountingDetail>> fetchTodayRecords(
-      {required String accountId, required String type}) async {
-    final res = await supabase.rpc(
-      'fetch_today_accountings',
-      params: {
-        'p_account_id': accountId,
-        'p_type': type,
-      },
-    );
-
-    if (res == null || res is! List) {
-      logger.e('fetchTodayRecords invalid response: $res');
-      return [];
-    }
-
-    return res.map((e) {
-      final detail = (e['detail'] as Map?) ?? {};
-
-      return ModelAccountingDetail(
-        id: detail[Fields.id]?.toString() ?? '',
-        accountId: detail['account_id']?.toString() ?? '',
-        createdAt:
-            DateTime.tryParse(detail[Fields.createdAt] ?? '') ?? DateTime.now(),
-        date: DateTime.tryParse(detail['date'] ?? '') ??
-            DateTime.tryParse(detail[Fields.createdAt] ?? '') ??
-            DateTime.now(),
-        primaryCategory:
-            detail['primary_category']?.toString() ?? 'uncategorized',
-        secondaryCategory: detail['group']?.toString(),
-        description: detail['description'] ?? '',
-        type: detail['type'] ?? '',
-        value: detail['value'] ?? 0,
-        currency: detail['currency'] ?? '',
-        exchangeRate: detail['exchange_rate'],
-        balance: e['balance'] ?? 0,
+  Future<List<ModelAccountingDetail>> fetchRecordsPage({
+    required String accountId,
+    required String type,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    bool includeLatestFallback = false,
+    bool includeReservedRecords = true,
+  }) async {
+    final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
+    var query = supabase
+        .from(TableNames.accountingDetail)
+        .select()
+        .eq('account_id', accountId)
+        .ilike('type', type);
+    if (includeReservedRecords) {
+      query = query.or(
+        'and(date.gte.${dateFrom.toUtc().toIso8601String()},date.lt.${upperBound.toUtc().toIso8601String()}),primary_category.eq.reserved',
       );
-    }).toList();
+    } else {
+      query = query
+          .gte('date', dateFrom.toUtc().toIso8601String())
+          .lt('date', upperBound.toUtc().toIso8601String());
+    }
+    final rows = await query.order('date', ascending: false);
+    final result = List<Map<String, dynamic>>.from(rows);
+    final hasRegularRecord =
+        result.any((row) => row['primary_category'] != 'reserved');
+    if (includeLatestFallback && !hasRegularRecord) {
+      final fallback = await supabase
+          .from(TableNames.accountingDetail)
+          .select()
+          .eq('account_id', accountId)
+          .ilike('type', type)
+          .neq('primary_category', 'reserved')
+          .order('date', ascending: false)
+          .limit(1);
+      result.addAll(List<Map<String, dynamic>>.from(fallback));
+    }
+    final totalRows = await supabase
+        .from(TableNames.accountingAccount)
+        .select('balance')
+        .eq(Fields.id, accountId)
+        .limit(1);
+    final balance = totalRows.isEmpty ? 0 : totalRows.first['balance'] ?? 0;
+    return result.map((detail) => _mapDetail(detail, balance)).toList();
+  }
+
+  Future<bool> hasRecordsBefore({
+    required String accountId,
+    required String type,
+    required DateTime before,
+  }) async {
+    final rows = await supabase
+        .from(TableNames.accountingDetail)
+        .select(Fields.id)
+        .eq('account_id', accountId)
+        .ilike('type', type)
+        .lt('date', before.toUtc().toIso8601String())
+        .neq('primary_category', 'reserved')
+        .limit(1);
+    return rows.isNotEmpty;
+  }
+
+  Future<DateTime?> latestRecordDateBefore({
+    required String accountId,
+    required String type,
+    required DateTime before,
+  }) async {
+    final rows = await supabase
+        .from(TableNames.accountingDetail)
+        .select('date')
+        .eq('account_id', accountId)
+        .ilike('type', type)
+        .lt('date', before.toUtc().toIso8601String())
+        .neq('primary_category', 'reserved')
+        .order('date', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return DateTime.tryParse(rows.first['date']?.toString() ?? '')?.toLocal();
+  }
+
+  ModelAccountingDetail _mapDetail(
+      Map<String, dynamic> detail, dynamic balance) {
+    return ModelAccountingDetail(
+      id: detail[Fields.id]?.toString() ?? '',
+      accountId: detail['account_id']?.toString() ?? '',
+      createdAt:
+          DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
+              DateTime.now(),
+      date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+          DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
+          DateTime.now(),
+      primaryCategory:
+          detail['primary_category']?.toString() ?? 'uncategorized',
+      secondaryCategory: detail['group']?.toString(),
+      description: detail['description']?.toString() ?? '',
+      type: detail['type']?.toString() ?? '',
+      value: detail['value'] is int
+          ? detail['value'] as int
+          : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+      currency: detail['currency']?.toString() ?? '',
+      exchangeRate: detail['exchange_rate'],
+      balance: balance is int
+          ? balance
+          : int.tryParse(balance?.toString() ?? '0') ?? 0,
+    );
   }
 
   Future<void> insertRecordsBatch(

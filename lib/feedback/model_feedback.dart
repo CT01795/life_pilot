@@ -16,6 +16,7 @@ class ModelFeedback {
   bool? isOk;
   String? dealBy;
   DateTime? dealAt;
+  String status;
 
   ModelFeedback({
     required this.id,
@@ -28,6 +29,7 @@ class ModelFeedback {
     this.isOk,
     this.dealBy,
     this.dealAt,
+    this.status = 'pending',
   });
 
   factory ModelFeedback.fromMap(Map<String, dynamic> map) {
@@ -48,6 +50,8 @@ class ModelFeedback {
       dealAt: map['deal_at'] != null && map['deal_at'].toString().isNotEmpty
           ? DateTime.parse(map['deal_at'])
           : null,
+      status: map['status']?.toString() ??
+          ((map['is_ok'] == true) ? 'completed' : 'pending'),
     );
   }
 
@@ -56,6 +60,7 @@ class ModelFeedback {
         'is_ok': isOk ?? false,
         'deal_by': dealBy,
         'deal_at': dealAt?.toUtc().toIso8601String(),
+        'status': status,
       };
 
   // 💡 懶加載 decode，第一次用時才 decode，之後 cache

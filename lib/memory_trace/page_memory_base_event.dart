@@ -262,7 +262,8 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                                   duration: const Duration(milliseconds: 180),
                                   switchInCurve: Curves.easeOut,
                                   switchOutCurve: Curves.easeOut,
-                                  child: visibleEvents.isEmpty
+                                  child: visibleEvents.isEmpty &&
+                                          !_controller.hasMoreMemory
                                       ? KeyedSubtree(
                                           key: const ValueKey('empty'),
                                           child: _buildEmptyState(loc),

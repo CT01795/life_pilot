@@ -14,6 +14,7 @@ import 'package:life_pilot/event/event_refresh_policy.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
@@ -41,6 +42,9 @@ class ControllerEvent extends SafeChangeNotifier {
   bool _publicEventServiceClosed = false;
   int _filterRevision = 0;
   Timer? _searchDebounce;
+  DateTime? _memoryLoadedStartDate;
+  bool _isLoadingMoreMemory = false;
+  bool _hasMoreMemory = true;
 
   ControllerEvent(
       {required this.auth,
@@ -82,6 +86,8 @@ class ControllerEvent extends SafeChangeNotifier {
   bool get isLoadingEvents => _isLoadingEvents;
   bool get hasLoadEventsError => _loadEventsError != null;
   int get filterRevision => _filterRevision;
+  bool get isLoadingMoreMemory => _isLoadingMoreMemory;
+  bool get hasMoreMemory => _hasMoreMemory;
   bool get hasActiveSearchFilters {
     final filter = _modelEvent.searchFilter;
     return filter.keywords.isNotEmpty ||
@@ -229,6 +235,7 @@ class ControllerEvent extends SafeChangeNotifier {
   }) async {
     if (updatedEvent == null) return;
     _modelEvent.updateEvent(updatedEvent);
+    _sortRecommendedContent();
     _invalidateViewModelCache();
     if (!_disposed) notifyListeners();
   }
@@ -427,11 +434,26 @@ class ControllerEvent extends SafeChangeNotifier {
     if (!_disposed) notifyListeners();
 
     try {
+      final today = DateTimeFormatter.dateOnly(DateTime.now());
+      final isMemoryTrace = _tableName == TableNames.memoryTrace;
+      final memoryStart = today.subtract(const Duration(days: 29));
       final list = await _serviceEvent.getEvents(
         tableName: _tableName,
         inputUser: auth.currentAccount,
+        dateS: isMemoryTrace ? memoryStart : null,
+        dateE: isMemoryTrace ? today : null,
       );
       _modelEvent.setEvents(list ?? []);
+      _sortRecommendedContent();
+      if (isMemoryTrace) {
+        _modelEvent.sortMemoryEvents();
+        _memoryLoadedStartDate = memoryStart;
+        _hasMoreMemory = await _serviceEvent.hasEventsBefore(
+          tableName: _tableName,
+          before: memoryStart,
+          inputUser: auth.currentAccount,
+        );
+      }
 
       // ✅ STOP UI card 不再觸發 weather
       _invalidateViewModelCache();
@@ -463,6 +485,7 @@ class ControllerEvent extends SafeChangeNotifier {
         );
 
         _modelEvent.setEvents(newList ?? []);
+        _sortRecommendedContent();
         _invalidateViewModelCache();
         if (!_disposed) notifyListeners();
       } catch (error, stackTrace) {
@@ -474,6 +497,50 @@ class ControllerEvent extends SafeChangeNotifier {
       } finally {
         _endPublicEventServiceOperation();
       }
+    }
+  }
+
+  Future<void> loadMoreMemoryEvents() async {
+    if (_tableName != TableNames.memoryTrace ||
+        _isLoadingMoreMemory ||
+        !_hasMoreMemory) {
+      return;
+    }
+    final loadedStart = _memoryLoadedStartDate ??
+        DateTimeFormatter.dateOnly(DateTime.now())
+            .subtract(const Duration(days: 29));
+    _isLoadingMoreMemory = true;
+    if (!_disposed) notifyListeners();
+    try {
+      final latestOlder = await _serviceEvent.latestEventDateBefore(
+        tableName: _tableName,
+        before: loadedStart,
+        inputUser: auth.currentAccount,
+      );
+      if (latestOlder == null) {
+        _hasMoreMemory = false;
+        return;
+      }
+      final rangeEnd = DateTimeFormatter.dateOnly(latestOlder);
+      final rangeStart = rangeEnd.subtract(const Duration(days: 29));
+      final olderEvents = await _serviceEvent.getEvents(
+            tableName: _tableName,
+            inputUser: auth.currentAccount,
+            dateS: rangeStart,
+            dateE: rangeEnd,
+          ) ??
+          [];
+      _modelEvent.appendMemoryEvents(olderEvents);
+      _memoryLoadedStartDate = rangeStart;
+      _hasMoreMemory = await _serviceEvent.hasEventsBefore(
+        tableName: _tableName,
+        before: rangeStart,
+        inputUser: auth.currentAccount,
+      );
+      _invalidateViewModelCache();
+    } finally {
+      _isLoadingMoreMemory = false;
+      if (!_disposed) notifyListeners();
     }
   }
 

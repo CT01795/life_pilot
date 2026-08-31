@@ -5,6 +5,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
@@ -30,12 +31,14 @@ class PageAccountingDetail extends StatelessWidget {
             service: service,
             auth: context.read<ControllerAuth>(),
             accountId: account.id,
+            loadAllRecords: account.category == AccountCategory.project.name,
           ),
           update: (_, auth, controller) {
             controller ??= ControllerAccountingDetail(
               service: service,
               auth: auth,
               accountId: account.id,
+              loadAllRecords: account.category == AccountCategory.project.name,
             );
             controller.auth = auth;
             return controller;
@@ -257,8 +260,25 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
       child: ListView.builder(
         cacheExtent: 240,
         addAutomaticKeepAlives: false,
-        itemCount: visibleRecords.length,
+        itemCount: visibleRecords.length +
+            ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index == visibleRecords.length) {
+            return Center(
+              child: controller.isLoadingMore
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(),
+                    )
+                  : TextButton(
+                      onPressed: () => controller.loadMore(
+                        inputAccountId: widget.account.id,
+                      ),
+                      child: Text(
+                          AppLocalizations.of(context)!.clickHereToSeeMore),
+                    ),
+            );
+          }
           final record = visibleRecords[index];
           return ListTile(
             key: ValueKey(record.id),

@@ -28,6 +28,8 @@ class PageStock extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(8),
             children: [
+              _buildDateSelector(context, controller),
+              Gaps.h8,
               if (controller.updateStatus != StockUpdateStatus.idle) ...[
                 _buildUpdateStatus(context, controller.updateStatus),
                 Gaps.h8,
@@ -54,6 +56,42 @@ class PageStock extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildDateSelector(BuildContext context, ControllerStock controller) {
+  final loc = AppLocalizations.of(context)!;
+  final selectedDate = controller.selectedDate ?? DateTime.now();
+  final latestAvailableDate = controller.latestAvailableDate ?? DateTime.now();
+  return Row(
+    children: [
+      Expanded(
+        child: OutlinedButton.icon(
+          onPressed: !controller.canSelectDate
+              ? null
+              : () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(2000),
+                    lastDate: latestAvailableDate,
+                  );
+                  if (picked != null) await controller.loadDate(picked);
+                },
+          icon: const Icon(Icons.calendar_month_outlined),
+          label: Text(
+            '${loc.stockSelectDate}: ${DateFormat('yyyy/MM/dd').format(selectedDate)}',
+          ),
+        ),
+      ),
+      if (controller.dateLoading) ...[
+        Gaps.w8,
+        const SizedBox.square(
+          dimension: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ],
+    ],
+  );
 }
 
 Widget _buildLoadFailure(

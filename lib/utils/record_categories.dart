@@ -2,9 +2,11 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 
 abstract final class RecordCategories {
   static const uncategorized = 'uncategorized';
+  static const reserved = 'reserved';
 
   static const accounting = <String>[
     uncategorized,
+    reserved,
     'food',
     'clothing',
     'housing',
@@ -15,6 +17,7 @@ abstract final class RecordCategories {
 
   static const points = <String>[
     uncategorized,
+    reserved,
     'virtue',
     'intelligence',
     'fitness',
@@ -24,6 +27,7 @@ abstract final class RecordCategories {
 
   static String label(AppLocalizations loc, String category) {
     return switch (category) {
+      reserved => loc.recordCategoryReserved,
       'food' => loc.recordCategoryFood,
       'clothing' => loc.recordCategoryClothing,
       'housing' => loc.recordCategoryHousing,

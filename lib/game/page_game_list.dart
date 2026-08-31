@@ -57,6 +57,9 @@ class _PageGameListState extends State<PageGameList> {
   bool _hasLoadError = false;
   bool _isOpeningGame = false;
   bool _isLoadingProgress = false;
+  bool _isLoadingMoreProgress = false;
+  bool _hasMoreProgress = false;
+  DateTime? _progressStartDate;
   late final bool _isQuestionBankAdmin;
 
   String get _effectiveQuestionBank =>
@@ -110,10 +113,39 @@ class _PageGameListState extends State<PageGameList> {
     if (mounted) setState(() => _isLoadingProgress = true);
     // 取得該遊戲所有關卡紀錄
     late final List<ModelGameUser> progress;
+    late final List<ModelGameUser> displayProgress;
+    late DateTime startDate;
+    late final bool hasMore;
     try {
       progress = await controllerGameList.loadUserProgress(
         requestedCategory,
         requestedGameName,
+      );
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      startDate = today.subtract(const Duration(days: 29));
+      displayProgress = await _serviceGame.fetchUserProgressPage(
+        userName: controllerGameList.userName,
+        gameType: requestedCategory,
+        gameName: requestedGameName,
+        dateFrom: startDate,
+        dateTo: today,
+        includeLatestFallback: true,
+      );
+      final fallbackDates = displayProgress
+          .map((item) => item.createdAt)
+          .whereType<DateTime>()
+          .where((date) => date.isBefore(startDate))
+          .toList();
+      if (displayProgress.isNotEmpty &&
+          fallbackDates.length == displayProgress.length) {
+        startDate = fallbackDates.reduce((a, b) => a.isAfter(b) ? a : b);
+      }
+      hasMore = await _serviceGame.hasUserProgressBefore(
+        userName: controllerGameList.userName,
+        gameType: requestedCategory,
+        gameName: requestedGameName,
+        before: startDate,
       );
     } catch (error, stackTrace) {
       logger.e('Load game progress failed',
@@ -133,7 +165,9 @@ class _PageGameListState extends State<PageGameList> {
     }
     setState(() {
       _isLoadingProgress = false;
-      userProgress = progress;
+      _progressStartDate = startDate;
+      _hasMoreProgress = hasMore;
+      userProgress = displayProgress;
 
       // 取得最高通關 level
       unlockedMaxLevel = controllerGameList.getHighestPassedLevel(progress) + 1;
@@ -146,6 +180,63 @@ class _PageGameListState extends State<PageGameList> {
         selectedLevel = levelList.last.level;
       }
     });
+  }
+
+  Future<void> _loadMoreProgress() async {
+    if (_isLoadingMoreProgress ||
+        !_hasMoreProgress ||
+        _progressStartDate == null ||
+        selectedCategory == null ||
+        selectedGameName == null) {
+      return;
+    }
+    setState(() => _isLoadingMoreProgress = true);
+    try {
+      final latestOlder = await _serviceGame.latestUserProgressDateBefore(
+        userName: controllerGameList.userName,
+        gameType: selectedCategory!,
+        gameName: selectedGameName!,
+        before: _progressStartDate!,
+      );
+      if (!mounted) return;
+      if (latestOlder == null) {
+        setState(() => _hasMoreProgress = false);
+        return;
+      }
+      final dateTo = DateTime(
+        latestOlder.year,
+        latestOlder.month,
+        latestOlder.day,
+      );
+      final dateFrom = dateTo.subtract(const Duration(days: 29));
+      final older = await _serviceGame.fetchUserProgressPage(
+        userName: controllerGameList.userName,
+        gameType: selectedCategory!,
+        gameName: selectedGameName!,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      );
+      final hasMore = await _serviceGame.hasUserProgressBefore(
+        userName: controllerGameList.userName,
+        gameType: selectedCategory!,
+        gameName: selectedGameName!,
+        before: dateFrom,
+      );
+      if (!mounted) return;
+      final unique = <String, ModelGameUser>{};
+      for (final item in [...userProgress, ...older]) {
+        unique[item.id ?? ''] = item;
+      }
+      setState(() {
+        _progressStartDate = dateFrom;
+        _hasMoreProgress = hasMore;
+        userProgress = unique.values.toList()
+          ..sort((a, b) => (b.createdAt ?? DateTime(0))
+              .compareTo(a.createdAt ?? DateTime(0)));
+      });
+    } finally {
+      if (mounted) setState(() => _isLoadingMoreProgress = false);
+    }
   }
 
   @override
@@ -962,8 +1053,24 @@ class _PageGameListState extends State<PageGameList> {
                       : ListView.builder(
                           cacheExtent: 240,
                           addAutomaticKeepAlives: false,
-                          itemCount: userProgress.length,
+                          itemCount: userProgress.length +
+                              ((_hasMoreProgress || _isLoadingMoreProgress)
+                                  ? 1
+                                  : 0),
                           itemBuilder: (context, index) {
+                            if (index == userProgress.length) {
+                              return Center(
+                                child: _isLoadingMoreProgress
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : TextButton(
+                                        onPressed: _loadMoreProgress,
+                                        child: Text(loc.clickHereToSeeMore),
+                                      ),
+                              );
+                            }
                             final item = userProgress[index];
                             final formattedDate = item.createdAt != null
                                 ? DateFormat(item.createdAt?.year == now.year

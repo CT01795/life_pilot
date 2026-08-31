@@ -287,6 +287,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountProject => '旅';
 
   @override
+  String get pointGroup => 'グループ';
+
+  @override
+  String get stockSelectDate => '株価日付';
+
+  @override
+  String get statusInProgress => '進行中';
+
+  @override
+  String get statusNotStarted => '未開始';
+
+  @override
+  String get statusCompleted => '完了';
+
+  @override
+  String get statusPending => '未処理';
+
+  @override
+  String get noData => 'データがありません';
+
+  @override
   String get accountMaster => 'グループ';
 
   @override
@@ -480,6 +501,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get startTime => '開始時間';
+
+  @override
+  String get businessHours => '営業時間';
 
   @override
   String get endDate => '終了日';
@@ -934,6 +958,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get recordCategoryUncategorized => '未分類';
+
+  @override
+  String get recordCategoryReserved => '保持項目';
 
   @override
   String get recordCategoryFood => '食';

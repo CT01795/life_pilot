@@ -432,6 +432,7 @@ class EventViewModel {
   final String locationDisplay;
   final String? masterUrl;
   final String description;
+  final String businessHours;
   final List<EventViewModel> subEvents;
   final bool canDelete;
   final bool showSubEvents;
@@ -469,6 +470,7 @@ class EventViewModel {
       required this.locationDisplay,
       this.masterUrl,
       this.description = '',
+      this.businessHours = '',
       this.subEvents = const [],
       this.canDelete = false,
       this.showSubEvents = true,
@@ -539,6 +541,13 @@ class EventViewModel {
         .take(3)
         .toList();
 
+    final businessHours = tableName == TableNames.recommendPlaces
+        ? [
+            event.startTime?.formatTimeString(),
+            event.endTime?.formatTimeString(),
+          ].whereType<String>().where((value) => value.isNotEmpty).join(' – ')
+        : '';
+
     return EventViewModel(
       event: event,
       id: event.id,
@@ -557,6 +566,7 @@ class EventViewModel {
       locationDisplay: locationDisplay,
       masterUrl: event.masterUrl,
       description: event.description,
+      businessHours: businessHours,
       subEvents: showSubEvents
           ? event.subEvents
               .map((sub) => buildEventViewModel(

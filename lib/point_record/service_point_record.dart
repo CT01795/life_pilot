@@ -293,6 +293,109 @@ class ServicePointRecord {
     }
   }
 
+  Future<List<ModelPointRecordDetail>> fetchRecordsPage({
+    required String accountId,
+    required String type,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    bool includeLatestFallback = false,
+    bool includeReservedRecords = true,
+  }) async {
+    final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
+    var query = supabase
+        .from(TableNames.pointRecordDetail)
+        .select()
+        .eq('account_id', accountId)
+        .ilike('type', type);
+    if (includeReservedRecords) {
+      query = query.or(
+        'and(date.gte.${dateFrom.toUtc().toIso8601String()},date.lt.${upperBound.toUtc().toIso8601String()}),primary_category.eq.reserved',
+      );
+    } else {
+      query = query
+          .gte('date', dateFrom.toUtc().toIso8601String())
+          .lt('date', upperBound.toUtc().toIso8601String());
+    }
+    final rows = await query.order('date', ascending: false);
+    final result = List<Map<String, dynamic>>.from(rows);
+    final hasRegularRecord =
+        result.any((row) => row['primary_category'] != 'reserved');
+    if (includeLatestFallback && !hasRegularRecord) {
+      final fallback = await supabase
+          .from(TableNames.pointRecordDetail)
+          .select()
+          .eq('account_id', accountId)
+          .ilike('type', type)
+          .neq('primary_category', 'reserved')
+          .order('date', ascending: false)
+          .limit(1);
+      result.addAll(List<Map<String, dynamic>>.from(fallback));
+    }
+    final totalRows = await supabase
+        .from(TableNames.pointRecordAccount)
+        .select('points')
+        .eq(Fields.id, accountId)
+        .limit(1);
+    final points = totalRows.isEmpty ? 0 : totalRows.first['points'] ?? 0;
+    return result.map((detail) {
+      return ModelPointRecordDetail(
+        id: detail[Fields.id]?.toString() ?? '',
+        accountId: detail['account_id']?.toString() ?? '',
+        createdAt:
+            DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
+                DateTime.now(),
+        date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+            DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
+            DateTime.now(),
+        primaryCategory:
+            detail['primary_category']?.toString() ?? 'uncategorized',
+        secondaryCategory: detail['group']?.toString(),
+        description: detail['description']?.toString() ?? '',
+        type: detail['type']?.toString() ?? '',
+        value: detail['value'] is int
+            ? detail['value'] as int
+            : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+        points: points is int
+            ? points
+            : int.tryParse(points?.toString() ?? '0') ?? 0,
+      );
+    }).toList();
+  }
+
+  Future<bool> hasRecordsBefore({
+    required String accountId,
+    required String type,
+    required DateTime before,
+  }) async {
+    final rows = await supabase
+        .from(TableNames.pointRecordDetail)
+        .select(Fields.id)
+        .eq('account_id', accountId)
+        .ilike('type', type)
+        .lt('date', before.toUtc().toIso8601String())
+        .neq('primary_category', 'reserved')
+        .limit(1);
+    return rows.isNotEmpty;
+  }
+
+  Future<DateTime?> latestRecordDateBefore({
+    required String accountId,
+    required String type,
+    required DateTime before,
+  }) async {
+    final rows = await supabase
+        .from(TableNames.pointRecordDetail)
+        .select('date')
+        .eq('account_id', accountId)
+        .ilike('type', type)
+        .lt('date', before.toUtc().toIso8601String())
+        .neq('primary_category', 'reserved')
+        .order('date', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return DateTime.tryParse(rows.first['date']?.toString() ?? '')?.toLocal();
+  }
+
   Future<void> insertRecordsBatch(
       {required String accountId,
       required String type,

@@ -100,7 +100,7 @@ class ServiceEvent {
     final inputDateS = (dateS ??
             (tableName == TableNames.memoryTrace
                 ? DateTime(today.year, today.month, today.day)
-                    .subtract(Duration(days: 60))
+                    .subtract(const Duration(days: 29))
                 : today))
         .formatDateString();
     final inputDateE =
@@ -136,6 +136,42 @@ class ServiceEvent {
       logger.e(ex, stackTrace: st);
       rethrow;
     }
+  }
+
+  Future<bool> hasEventsBefore({
+    required String tableName,
+    required DateTime before,
+    String? inputUser,
+  }) async {
+    var query = supabase
+        .from(tableName)
+        .select(Fields.id)
+        .lt(EventFields.startDate, before.formatDateString());
+    if (inputUser != null && inputUser.isNotEmpty) {
+      query = query.eq(Fields.account, inputUser);
+    }
+    final rows = await query.limit(1);
+    return rows.isNotEmpty;
+  }
+
+  Future<DateTime?> latestEventDateBefore({
+    required String tableName,
+    required DateTime before,
+    String? inputUser,
+  }) async {
+    var query = supabase
+        .from(tableName)
+        .select(EventFields.startDate)
+        .lt(EventFields.startDate, before.formatDateString());
+    if (inputUser != null && inputUser.isNotEmpty) {
+      query = query.eq(Fields.account, inputUser);
+    }
+    final rows =
+        await query.order(EventFields.startDate, ascending: false).limit(1);
+    if (rows.isEmpty) return null;
+    return DateTime.tryParse(
+      rows.first[EventFields.startDate]?.toString() ?? '',
+    )?.toLocal();
   }
 
   // 💾 儲存（新增或更新）事件 + 排程通知
