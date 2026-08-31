@@ -24,7 +24,12 @@ jobs:
           flutter-version: '3.35.4'
           cache: true
 
+      - name: Use public pub.dev access
+        run: dart pub token remove https://pub.dev || true
+
       - name: Install dependencies
+        env:
+          PUB_HOSTED_URL: https://pub.dev
         run: flutter pub get
 
       - name: Analyze

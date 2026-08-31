@@ -17,7 +17,12 @@ jobs:
         with:
           flutter-version: '3.35.4'  # 版本
 
+      - name: Use public pub.dev access
+        run: dart pub token remove https://pub.dev || true
+
       - name: Install dependencies
+        env:
+          PUB_HOSTED_URL: https://pub.dev
         run: flutter pub get
 
       - name: Build Web
