@@ -56,6 +56,7 @@ class _PageGameListState extends State<PageGameList> {
   int _progressRequestId = 0;
   bool _hasLoadError = false;
   bool _isOpeningGame = false;
+  bool _isLoadingProgress = false;
   late final bool _isQuestionBankAdmin;
 
   String get _effectiveQuestionBank =>
@@ -106,6 +107,7 @@ class _PageGameListState extends State<PageGameList> {
     final requestId = ++_progressRequestId;
     final requestedCategory = selectedCategory!;
     final requestedGameName = selectedGameName!;
+    if (mounted) setState(() => _isLoadingProgress = true);
     // 取得該遊戲所有關卡紀錄
     late final List<ModelGameUser> progress;
     try {
@@ -117,7 +119,7 @@ class _PageGameListState extends State<PageGameList> {
       logger.e('Load game progress failed',
           error: error, stackTrace: stackTrace);
       if (mounted && requestId == _progressRequestId) {
-        setState(() {});
+        setState(() => _isLoadingProgress = false);
         AppNavigator.showErrorBar(
           AppLocalizations.of(context)!.unknownError,
         );
@@ -130,6 +132,7 @@ class _PageGameListState extends State<PageGameList> {
       return;
     }
     setState(() {
+      _isLoadingProgress = false;
       userProgress = progress;
 
       // 取得最高通關 level
@@ -952,33 +955,39 @@ class _PageGameListState extends State<PageGameList> {
             ),
             const Divider(),
             Expanded(
-              child: userProgress.isEmpty
-                  ? Center(child: Text(loc.gameNoRecords))
-                  : ListView.builder(
-                      itemCount: userProgress.length,
-                      itemBuilder: (context, index) {
-                        final item = userProgress[index];
-                        final formattedDate = item.createdAt != null
-                            ? DateFormat(item.createdAt?.year == now.year
-                                    ? 'MM/dd HH:mm'
-                                    : 'yyyy/MM/dd HH:mm')
-                                .format(item.createdAt!)
-                            : '';
-                        // 判斷第一筆，設定文字顏色
-                        final textColor =
-                            index == 0 ? Colors.blue.shade700 : Colors.black;
-                        final textBold =
-                            index == 0 ? FontWeight.bold : FontWeight.normal;
-                        return ListTile(
-                          title: Text(
-                            '$formattedDate ${loc.gameLevel} ${item.level} '
-                            '=> ${loc.gameScore}: ${item.score}',
-                            style: TextStyle(
-                                color: textColor, fontWeight: textBold),
-                          ),
-                        );
-                      },
-                    ),
+              child: _isLoadingProgress
+                  ? const Center(child: CircularProgressIndicator())
+                  : userProgress.isEmpty
+                      ? Center(child: Text(loc.gameNoRecords))
+                      : ListView.builder(
+                          cacheExtent: 240,
+                          addAutomaticKeepAlives: false,
+                          itemCount: userProgress.length,
+                          itemBuilder: (context, index) {
+                            final item = userProgress[index];
+                            final formattedDate = item.createdAt != null
+                                ? DateFormat(item.createdAt?.year == now.year
+                                        ? 'MM/dd HH:mm'
+                                        : 'yyyy/MM/dd HH:mm')
+                                    .format(item.createdAt!)
+                                : '';
+                            // 判斷第一筆，設定文字顏色
+                            final textColor = index == 0
+                                ? Colors.blue.shade700
+                                : Colors.black;
+                            final textBold = index == 0
+                                ? FontWeight.bold
+                                : FontWeight.normal;
+                            return ListTile(
+                              title: Text(
+                                '$formattedDate ${loc.gameLevel} ${item.level} '
+                                '=> ${loc.gameScore}: ${item.score}',
+                                style: TextStyle(
+                                    color: textColor, fontWeight: textBold),
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
