@@ -513,51 +513,51 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 拿到該月每週對應的事件層級（含排版 rowIndex）
   Map<int, List<EventWithRow>> getWeekEventRows({required DateTime month}) {
     final calendarWeeks = _modelCalendar.getWeeks(month);
-    final monthEvents = _modelCalendar.eventsForMonth(month);
     final weekEventRows = <int, List<EventWithRow>>{};
 
     for (int weekIndex = 0; weekIndex < calendarWeeks.length; weekIndex++) {
-      final week = calendarWeeks[weekIndex];
-      final weekStart = week.first;
-      final weekEnd = week.last;
-
-      final eventsThisWeek = monthEvents.where((event) {
-        final start = DateTimeFormatter.dateOnly(event.startDate!);
-        final end =
-            DateTimeFormatter.dateOnly(event.endDate ?? event.startDate!);
-        return !(end.isBefore(weekStart) || start.isAfter(weekEnd));
-      }).toList();
-
-      final List<List<EventItem>> rows = [];
-
-      for (final event in eventsThisWeek) {
-        bool placed = false;
-
-        for (final row in rows) {
-          if (!row.any((e) => isOverlapping(a: e, b: event))) {
-            row.add(event);
-            placed = true;
-            break;
-          }
-        }
-
-        if (!placed) {
-          rows.add([event]);
-        }
-      }
-
-      final List<EventWithRow> layered = [];
-
-      for (int i = 0; i < rows.length; i++) {
-        for (final e in rows[i]) {
-          layered.add(EventWithRow(event: e, rowIndex: i));
-        }
-      }
-
-      weekEventRows[weekIndex] = layered;
+      weekEventRows[weekIndex] = getEventRowsForWeek(
+        month: month,
+        weekIndex: weekIndex,
+      );
     }
 
     return weekEventRows;
+  }
+
+  List<EventWithRow> getEventRowsForWeek({
+    required DateTime month,
+    required int weekIndex,
+  }) {
+    final calendarWeeks = _modelCalendar.getWeeks(month);
+    if (weekIndex < 0 || weekIndex >= calendarWeeks.length) return const [];
+
+    final week = calendarWeeks[weekIndex];
+    final weekStart = week.first;
+    final weekEnd = week.last;
+    final eventsThisWeek = _modelCalendar.eventsForMonth(month).where((event) {
+      final start = DateTimeFormatter.dateOnly(event.startDate!);
+      final end = DateTimeFormatter.dateOnly(event.endDate ?? event.startDate!);
+      return !(end.isBefore(weekStart) || start.isAfter(weekEnd));
+    });
+    final rows = <List<EventItem>>[];
+
+    for (final event in eventsThisWeek) {
+      final availableRow = rows.indexWhere(
+        (row) => !row.any((other) => isOverlapping(a: other, b: event)),
+      );
+      if (availableRow >= 0) {
+        rows[availableRow].add(event);
+      } else {
+        rows.add([event]);
+      }
+    }
+
+    return [
+      for (int rowIndex = 0; rowIndex < rows.length; rowIndex++)
+        for (final event in rows[rowIndex])
+          EventWithRow(event: event, rowIndex: rowIndex),
+    ];
   }
 
   // 工具方法：檢查兩個事件是否跨日重疊

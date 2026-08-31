@@ -175,16 +175,20 @@ class ServiceEventPublic {
 
       e.city = EventCityNormalizer.normalize(e.city);
       final tmpName = EventDeduplicationKey.byName(e);
+      final tmpNameIgnoringTime = EventDeduplicationKey.byNameIgnoringTime(e);
       final tmpId = EventDeduplicationKey.byId(e);
       final tmpSource = EventDeduplicationKey.bySource(e);
 
-      if (dbNameDateSet.contains(tmpName) ||
+      if ((e.startTime == null &&
+              dbNameDateSet.contains(tmpNameIgnoringTime)) ||
+          dbNameDateSet.contains(tmpName) ||
           dbNameDateSet.contains(tmpId) ||
           (tmpSource.isNotEmpty && dbNameDateSet.contains(tmpSource))) {
         continue;
       }
 
       dbNameDateSet.add(tmpName);
+      dbNameDateSet.add(tmpNameIgnoringTime);
       dbNameDateSet.add(tmpId);
       if (tmpSource.isNotEmpty) dbNameDateSet.add(tmpSource);
 
@@ -580,6 +584,10 @@ class ServiceEventPublic {
         .where((name) => name.isNotEmpty)
         .toSet();
     dbNameDateSet.addAll(historyList
+        .map(EventDeduplicationKey.byNameIgnoringTime)
+        .where((name) => name.isNotEmpty)
+        .toSet());
+    dbNameDateSet.addAll(historyList
         .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
         .toSet());
@@ -589,6 +597,10 @@ class ServiceEventPublic {
         .toSet());
     dbNameDateSet.addAll(deletedList
         .map(EventDeduplicationKey.byName)
+        .where((name) => name.isNotEmpty)
+        .toSet());
+    dbNameDateSet.addAll(deletedList
+        .map(EventDeduplicationKey.byNameIgnoringTime)
         .where((name) => name.isNotEmpty)
         .toSet());
     dbNameDateSet.addAll(deletedList

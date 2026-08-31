@@ -338,17 +338,56 @@ def _event_tombstone_keys(event: dict) -> set[tuple[str, ...]]:
     return keys
 
 
+def _event_identity_without_time(event: dict) -> tuple[str, ...]:
+    return (
+        "name-without-time",
+        re.sub(r"[\s_]+", "", str(event.get("name") or "")).lower(),
+        _normalize_event_date(event.get("start_date")),
+        _normalize_event_city(event.get("city")),
+        str(event.get("location") or "")
+        .replace("\u200b", "")
+        .strip()
+        .replace("\u81fa", "\u53f0"),
+    )
+
+
 def _exclude_deleted_public_events(
     events: list[dict], deleted_events: list[dict]
 ) -> list[dict]:
     deleted_keys = {
         key for deleted in deleted_events for key in _event_tombstone_keys(deleted)
     }
+    deleted_without_time = {
+        _event_identity_without_time(event) for event in deleted_events
+    }
     return [
         event
         for event in events
         if _event_tombstone_keys(event).isdisjoint(deleted_keys)
+        and (
+            _normalize_event_time(event.get("start_time")) != ""
+            or _event_identity_without_time(event) not in deleted_without_time
+        )
     ]
+
+
+def _exclude_existing_untimed_public_events(
+    events: list[dict], existing_events: list[dict]
+) -> list[dict]:
+    known_without_time = {
+        _event_identity_without_time(event) for event in existing_events
+    }
+    accepted: list[dict] = []
+    for event in events:
+        identity = _event_identity_without_time(event)
+        if (
+            _normalize_event_time(event.get("start_time")) == ""
+            and identity in known_without_time
+        ):
+            continue
+        accepted.append(event)
+        known_without_time.add(identity)
+    return accepted
 
 
 def _validated_public_event_source(source_url: object) -> str:
@@ -420,6 +459,19 @@ def _insert_public_events(events: list[dict], source_url: str) -> int:
             ).mappings()
         ]
         rows = _exclude_deleted_public_events(rows, deleted_rows)
+        existing_rows = [
+            dict(row)
+            for row in db.execute(
+                select(
+                    event_table.c.name,
+                    event_table.c.start_date,
+                    event_table.c.start_time,
+                    event_table.c.city,
+                    event_table.c.location,
+                )
+            ).mappings()
+        ]
+        rows = _exclude_existing_untimed_public_events(rows, existing_rows)
         inserted_rows = 0
         if rows:
             result = db.execute(

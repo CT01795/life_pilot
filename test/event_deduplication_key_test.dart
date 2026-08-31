@@ -53,6 +53,17 @@ void main() {
       );
     });
 
+    test('can compare the same event without considering start time', () {
+      expect(
+        EventDeduplicationKey.byNameIgnoringTime(
+          buildEvent(startTime: const TimeOfDay(hour: 19, minute: 30)),
+        ),
+        EventDeduplicationKey.byNameIgnoringTime(
+          buildEvent(startTime: null),
+        ),
+      );
+    });
+
     test('normalizes city and location for id keys', () {
       expect(
         EventDeduplicationKey.byId(buildEvent(city: '\u81FA\u5317\u5E02')),

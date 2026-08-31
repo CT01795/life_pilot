@@ -45,7 +45,7 @@ class CalendarAppBar extends StatelessWidget {
     final bool isSmallScreen = screenWidth < 500;
 
     final double iconSize =
-        buttonSize;  //isSmallScreen ? buttonSize : buttonSize*1.2;
+        buttonSize; //isSmallScreen ? buttonSize : buttonSize*1.2;
 
     Widget iconButton(
       IconData icon,
@@ -366,10 +366,10 @@ class WeekRow extends StatelessWidget {
           ),
           // 3. 使用 controller 已計算的事件分組來畫事件條
           Selector<ControllerCalendar, List<EventWithRow>>(
-              selector: (_, controller) =>
-                  controller.getWeekEventRows(
-                      month: displayedMonth)[weekIndex] ??
-                  [],
+              selector: (_, controller) => controller.getEventRowsForWeek(
+                    month: displayedMonth,
+                    weekIndex: weekIndex,
+                  ),
               shouldRebuild: (prev, next) => !listEquals(prev, next),
               builder: (context, weekEvents, _) {
                 return Stack(

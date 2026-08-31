@@ -15,6 +15,16 @@ class EventDeduplicationKey {
     ]);
   }
 
+  static String byNameIgnoringTime(EventItem event) {
+    return _join([
+      'name-without-time',
+      _normalizeName(event.name),
+      _formatDate(event),
+      EventCityNormalizer.normalize(event.city),
+      _normalizeLocation(event.location),
+    ]);
+  }
+
   static String byId(EventItem event) {
     return _join([
       event.id.trim(),

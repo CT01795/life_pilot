@@ -415,6 +415,42 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             [afternoon],
         )
 
+    def test_untimed_import_matches_existing_event_with_added_time(self):
+        from event.service_event import _exclude_existing_untimed_public_events
+
+        existing = {
+            "name": "Same event",
+            "start_date": "2026-08-24",
+            "start_time": "10:00",
+            "city": "\u53f0\u5317",
+            "location": "\u53f0\u5317\u8eca\u7ad9",
+        }
+        imported_without_time = {**existing, "start_time": None}
+
+        self.assertEqual(
+            _exclude_existing_untimed_public_events(
+                [imported_without_time], [existing]
+            ),
+            [],
+        )
+
+    def test_existing_event_does_not_block_another_timed_session(self):
+        from event.service_event import _exclude_existing_untimed_public_events
+
+        morning = {
+            "name": "Same event",
+            "start_date": "2026-08-24",
+            "start_time": "10:00",
+            "city": "\u53f0\u5317",
+            "location": "\u53f0\u5317\u8eca\u7ad9",
+        }
+        afternoon = {**morning, "start_time": "14:00"}
+
+        self.assertEqual(
+            _exclude_existing_untimed_public_events([afternoon], [morning]),
+            [afternoon],
+        )
+
     def test_public_event_import_rejects_unapproved_source(self):
         app.dependency_overrides[require_supabase_user] = lambda: {
             "id": "regular-user-id",
