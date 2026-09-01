@@ -28,7 +28,7 @@ class ControllerStock extends SafeChangeNotifier {
       !_isDisposed &&
       !loading &&
       !dateLoading &&
-      stocks.isNotEmpty &&
+      latestAvailableDate != null &&
       (updateStatus == StockUpdateStatus.succeeded ||
           updateStatus == StockUpdateStatus.failed);
 
@@ -123,11 +123,11 @@ class ControllerStock extends SafeChangeNotifier {
     final requestId = ++_dataRequestId;
     dateLoading = true;
     loadFailed = false;
+    selectedDate = date;
     _notifyListenersIfActive();
     try {
       stocks = await service.getSimpleStrategyForDate(date);
       if (_isDisposed || requestId != _dataRequestId) return;
-      selectedDate = date;
       await buildDashboard(date, requestId: requestId);
       if (_isDisposed || requestId != _dataRequestId) return;
       loadFailed = stocks.isEmpty;
@@ -135,6 +135,11 @@ class ControllerStock extends SafeChangeNotifier {
       logger.e('Load stocks by date failed',
           error: error, stackTrace: stackTrace);
       if (_isDisposed || requestId != _dataRequestId) return;
+      stocks = [];
+      institutionals = [];
+      foreignBuyTop30 = [];
+      foreignSellTop30 = [];
+      futures = [];
       loadFailed = true;
     } finally {
       if (!_isDisposed) {

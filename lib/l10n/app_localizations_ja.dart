@@ -917,7 +917,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stockLoadFailed => '株式データを読み込めませんでした。もう一度お試しください。';
 
   @override
-  String get stockRetry => '再読み込み';
+  String get stockRetry => '最新データを読み込む';
 
   @override
   String get stockDashboardTitle => '📊 市場ダッシュボード';

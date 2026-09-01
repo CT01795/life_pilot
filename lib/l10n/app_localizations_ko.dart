@@ -917,7 +917,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stockLoadFailed => '주식 데이터를 불러오지 못했습니다. 다시 시도해 주세요.';
 
   @override
-  String get stockRetry => '다시 불러오기';
+  String get stockRetry => '최신 데이터 불러오기';
 
   @override
   String get stockDashboardTitle => '📊 시장 대시보드';

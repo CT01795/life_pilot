@@ -657,37 +657,37 @@ abstract class AppLocalizations {
   /// **'Group'**
   String get pointGroup;
 
-  /// No description provided for @stockSelectDate.
+  /// Label for stockSelectDate
   ///
   /// In en, this message translates to:
   /// **'Stock date'**
   String get stockSelectDate;
 
-  /// No description provided for @statusInProgress.
+  /// Label for statusInProgress
   ///
   /// In en, this message translates to:
   /// **'In progress'**
   String get statusInProgress;
 
-  /// No description provided for @statusNotStarted.
+  /// Label for statusNotStarted
   ///
   /// In en, this message translates to:
   /// **'Not started'**
   String get statusNotStarted;
 
-  /// No description provided for @statusCompleted.
+  /// Label for statusCompleted
   ///
   /// In en, this message translates to:
   /// **'Completed'**
   String get statusCompleted;
 
-  /// No description provided for @statusPending.
+  /// Label for statusPending
   ///
   /// In en, this message translates to:
   /// **'Pending'**
   String get statusPending;
 
-  /// No description provided for @noData.
+  /// Label for noData
   ///
   /// In en, this message translates to:
   /// **'No data'**
@@ -1911,10 +1911,10 @@ abstract class AppLocalizations {
   /// **'Stock data could not be loaded. Please try again.'**
   String get stockLoadFailed;
 
-  /// Stock page retry button
+  /// Load the latest stock data button
   ///
   /// In en, this message translates to:
-  /// **'Try again'**
+  /// **'Load latest data'**
   String get stockRetry;
 
   /// Stock page dashboard title

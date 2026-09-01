@@ -917,7 +917,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stockLoadFailed => '股票資料載入失敗，請稍後再試。';
 
   @override
-  String get stockRetry => '重新載入';
+  String get stockRetry => '載入最新資料';
 
   @override
   String get stockDashboardTitle => '📊 市場儀表板';

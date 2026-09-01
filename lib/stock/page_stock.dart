@@ -22,7 +22,16 @@ class PageStock extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (controller.loadFailed && controller.stocks.isEmpty) {
-            return _buildLoadFailure(context, controller);
+            return ListView(
+              padding: const EdgeInsets.all(8),
+              children: [
+                if (controller.latestAvailableDate != null) ...[
+                  _buildDateSelector(context, controller),
+                  Gaps.h8,
+                ],
+                _buildLoadFailure(context, controller),
+              ],
+            );
           }
 
           return ListView(

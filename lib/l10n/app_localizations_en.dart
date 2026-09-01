@@ -917,7 +917,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockLoadFailed => 'Stock data could not be loaded. Please try again.';
 
   @override
-  String get stockRetry => 'Try again';
+  String get stockRetry => 'Load latest data';
 
   @override
   String get stockDashboardTitle => '📊 Market dashboard';

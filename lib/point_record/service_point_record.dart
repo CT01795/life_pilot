@@ -243,56 +243,6 @@ class ServicePointRecord {
   }
 
   // ===== 明細 =====
-  Future<List<ModelPointRecordDetail>> fetchTodayRecords(
-      {required String accountId, required String type}) async {
-    try {
-      final res = await supabase.rpc(
-        'fetch_today_point_records',
-        params: {
-          'p_account_id': accountId,
-          'p_type': type,
-        },
-      );
-
-      if (res == null || res is! List) {
-        logger.e('fetchTodayRecords invalid response: $res');
-        return [];
-      }
-
-      return res.map<ModelPointRecordDetail>((e) {
-        final rawDetail = e['detail'];
-
-        // 🔥 強制轉 Map（關鍵）
-        final detail = (rawDetail is Map) ? rawDetail : <String, dynamic>{};
-
-        return ModelPointRecordDetail(
-          id: detail[Fields.id]?.toString() ?? '',
-          accountId: detail['account_id']?.toString() ?? '',
-          createdAt:
-              DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
-                  DateTime.now(),
-          date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
-              DateTime.tryParse(
-                detail[Fields.createdAt]?.toString() ?? '',
-              ) ??
-              DateTime.now(),
-          primaryCategory:
-              detail['primary_category']?.toString() ?? 'uncategorized',
-          secondaryCategory: detail['group']?.toString(),
-          description: detail['description']?.toString() ?? '',
-          type: detail['type']?.toString() ?? '',
-          value: detail['value'] is int
-              ? detail['value']
-              : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
-          points: (e['points'] ?? 0) as int,
-        );
-      }).toList();
-    } catch (e, st) {
-      logger.e('fetchTodayRecords failed $e,$st');
-      rethrow;
-    }
-  }
-
   Future<List<ModelPointRecordDetail>> fetchRecordsPage({
     required String accountId,
     required String type,

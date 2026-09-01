@@ -562,14 +562,14 @@ class ServiceStock {
     return result["status"] == true;
   }
 
-  Future<List<ModelStock>> getByDate(DateTime date) async {
+  Future<List<ModelStock>> getByDateMac(DateTime date) async {
     final result = await api.post('stock/select_stock_daily_price_by_date', {
       'table_name': TableNames.stockDailyPrice,
-      'date': date.toUtc().toIso8601String(),
+      'date': DateTime.utc(date.year, date.month, date.day).toIso8601String(),
       'traded_number': 20000000,
     });
 
-    return result.map<ModelStock>((e) => ModelStock.fromJson(e)).toList();
+    return result.map<ModelStock>((row) => ModelStock.fromJson(row)).toList();
   }
 
   Future<DateTime?> getLatestDateMac() async {
@@ -584,14 +584,13 @@ class ServiceStock {
   }
 
   Future<DateTime?> getLatestDate() async {
-    final result = await apiSupabase.post('stock/select_latest_stock_date', {
-      'table_name': TableNames.stockDate,
-      'type': Source.updateStockTechnicalForDate
-    });
-    if (result["date"] == null) {
-      return null;
-    }
-    return DateTime.parse(result["date"]);
+    final result = await supabase
+        .from(TableNames.stockPredicted)
+        .select('date')
+        .order('date', ascending: false)
+        .limit(1);
+    if (result.isEmpty) return null;
+    return DateTime.tryParse(result.first['date']?.toString() ?? '');
   }
 
   Future<List<ModelStock>> getSimpleStrategy(String level) async {
@@ -603,7 +602,7 @@ class ServiceStock {
       }
 
       // 2️⃣ 抓該日全部股票
-      List<ModelStock> allStocks = await getByDate(latestDate);
+      List<ModelStock> allStocks = await getByDateMac(latestDate);
 
       /*close >= high20	今日收盤突破過去 20 日高點 → 剛起漲
         volume >= vol5*1.5	成交量放大 → 市場有力道
@@ -646,16 +645,7 @@ class ServiceStock {
   }
 
   Future<List<ModelStock>> getSimpleStrategyForDate(DateTime date) async {
-    final allStocks = await getByDate(date);
-    if (allStocks.isEmpty) return [];
-    final selected = <String, ModelStock>{
-      for (final stock in filterRisingStocks(allStocks))
-        stock.securityCode: stock,
-    };
-    for (final stock in _rankStocks(allStocks).take(200)) {
-      selected.putIfAbsent(stock.securityCode, () => stock);
-    }
-    return selected.values.toList();
+    return fetchStocksFromApi(date);
   }
 
   Future<List<ModelStock>> getSimpleStrategySupabase(String level) async {
@@ -703,24 +693,16 @@ class ServiceStock {
 
   Future<List<ModelStock>> fetchStocksFromApi(DateTime date) async {
     // 檢查同一天是否已經有資料
-    final existing = await apiSupabase.post('stock/select_stock_predicted', {
-      'table_name': TableNames.stockPredicted,
-      'date': date.toUtc().toIso8601String()
-    });
-    dynamic tmp;
-    if (existing["data"] == null || existing["data"].length == 0) {
-      try {
-        List<ModelStock>? apiStocks = await fetchStocksFromApiMac(date.toUtc());
-        if (apiStocks != null && apiStocks.isNotEmpty) {
-          await insertFromApi(apiStocks, date);
-        }
-      } catch (ex) {
-        logger.e(ex);
-      }
-      return [];
-    }
-    tmp = existing["data"];
-    return (tmp as List)
+    final dateFrom = DateTime.utc(date.year, date.month, date.day);
+    final dateTo = dateFrom.add(const Duration(days: 1));
+    final rows = await supabase
+        .from(TableNames.stockPredicted)
+        .select('data')
+        .gte('date', dateFrom.toIso8601String())
+        .lt('date', dateTo.toIso8601String())
+        .limit(1);
+    if (rows.isEmpty || rows.first['data'] is! List) return [];
+    return (rows.first['data'] as List)
         .map<ModelStock>(
             (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)))
         .toList();
