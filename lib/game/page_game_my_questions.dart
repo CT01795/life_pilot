@@ -304,34 +304,36 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           labelText: loc.search,
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_searchController.text.isNotEmpty)
+                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _searchController,
+                            builder: (context, value, _) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (value.text.isNotEmpty)
+                                  IconButton(
+                                    tooltip: loc.clear,
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () {
+                                            _searchController.clear();
+                                            setState(() {
+                                              _appliedKeyword = '';
+                                            });
+                                            _load();
+                                          },
+                                    icon: const Icon(Icons.clear),
+                                  ),
                                 IconButton(
-                                  tooltip: loc.clear,
-                                  onPressed: _isLoading
-                                      ? null
-                                      : () {
-                                          _searchController.clear();
-                                          setState(() {
-                                            _appliedKeyword = '';
-                                          });
-                                          _load();
-                                        },
-                                  icon: const Icon(Icons.clear),
+                                  tooltip: loc.search,
+                                  onPressed: _isLoading ? null : _applySearch,
+                                  icon: const Icon(Icons.search),
                                 ),
-                              IconButton(
-                                tooltip: loc.search,
-                                onPressed: _isLoading ? null : _applySearch,
-                                icon: const Icon(Icons.search),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           border: const OutlineInputBorder(),
                         ),
                         textInputAction: TextInputAction.search,
-                        onChanged: (_) => setState(() {}),
                         onSubmitted: (_) {
                           if (!_isLoading) _applySearch();
                         },
@@ -439,75 +441,82 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                             _updatingIds.contains(question.id);
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8),
-                          child: Card(
-                            child: ListTile(
-                              title: Text(question.question),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${loc.correctAnswer}: ${question.answer}',
-                                  ),
-                                  Text(
-                                    '${loc.questionGroup}: ${question.group}',
-                                  ),
-                                  Text('${loc.gameLevel}: ${question.level}'),
-                                  Text(
-                                    '${loc.questionStatus}: '
-                                    '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
-                                  ),
-                                  if (question.options?.isNotEmpty == true)
+                          child: RepaintBoundary(
+                            key: ValueKey(question.id),
+                            child: Card(
+                              child: ListTile(
+                                title: Text(
+                                  question.question,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      '${loc.answerOptions}: ${question.options}',
+                                      '${loc.correctAnswer}: ${question.answer}',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                ],
-                              ),
-                              trailing: isBusy
-                                  ? const SizedBox.square(
-                                      dimension: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                                    Text(
+                                      '${loc.questionGroup}: ${question.group}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text('${loc.gameLevel}: ${question.level}'),
+                                    Text(
+                                      '${loc.questionStatus}: '
+                                      '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
+                                    ),
+                                    if (question.options?.isNotEmpty == true)
+                                      Text(
+                                        '${loc.answerOptions}: ${question.options}',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    )
-                                  : Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          tooltip: loc.edit,
-                                          icon: const Icon(Icons.edit_outlined),
-                                          onPressed: _isLoading
-                                              ? null
-                                              : () => _edit(question),
+                                  ],
+                                ),
+                                trailing: isBusy
+                                    ? const SizedBox.square(
+                                        dimension: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
                                         ),
-                                        PopupMenuButton<String>(
-                                          enabled: !_isLoading,
-                                          onSelected: (action) {
-                                            if (action == 'toggle') {
-                                              _setActive(
-                                                question,
-                                                !question.isActive,
-                                              );
-                                            } else if (action == 'delete') {
-                                              _delete(question);
-                                            }
-                                          },
-                                          itemBuilder: (_) => [
-                                            PopupMenuItem(
-                                              value: 'toggle',
-                                              child: Text(
-                                                question.isActive
-                                                    ? loc.deactivateQuestion
-                                                    : loc.reactivateQuestion,
-                                              ),
+                                      )
+                                    : PopupMenuButton<String>(
+                                        enabled: !_isLoading,
+                                        onSelected: (action) {
+                                          if (action == 'edit') {
+                                            _edit(question);
+                                          } else if (action == 'toggle') {
+                                            _setActive(
+                                              question,
+                                              !question.isActive,
+                                            );
+                                          } else if (action == 'delete') {
+                                            _delete(question);
+                                          }
+                                        },
+                                        itemBuilder: (_) => [
+                                          PopupMenuItem(
+                                            value: 'edit',
+                                            child: Text(loc.edit),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'toggle',
+                                            child: Text(
+                                              question.isActive
+                                                  ? loc.deactivateQuestion
+                                                  : loc.reactivateQuestion,
                                             ),
-                                            PopupMenuItem(
-                                              value: 'delete',
-                                              child: Text(loc.delete),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text(loc.delete),
+                                          ),
+                                        ],
+                                      ),
+                              ),
                             ),
                           ),
                         );

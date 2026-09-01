@@ -242,33 +242,35 @@ class _PageState extends State<PageGameSocialQuestions> {
                         decoration: InputDecoration(
                           labelText: loc.searchKeywords,
                           border: const OutlineInputBorder(),
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_searchController.text.isNotEmpty)
+                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _searchController,
+                            builder: (context, value, _) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (value.text.isNotEmpty)
+                                  IconButton(
+                                    tooltip: loc.clear,
+                                    onPressed: _loading
+                                        ? null
+                                        : () {
+                                            _searchController.clear();
+                                            setState(() {
+                                              _appliedKeyword = '';
+                                            });
+                                            _load();
+                                          },
+                                    icon: const Icon(Icons.clear),
+                                  ),
                                 IconButton(
-                                  tooltip: loc.clear,
-                                  onPressed: _loading
-                                      ? null
-                                      : () {
-                                          _searchController.clear();
-                                          setState(() {
-                                            _appliedKeyword = '';
-                                          });
-                                          _load();
-                                        },
-                                  icon: const Icon(Icons.clear),
+                                  tooltip: loc.search,
+                                  onPressed: _loading ? null : _applySearch,
+                                  icon: const Icon(Icons.search),
                                 ),
-                              IconButton(
-                                tooltip: loc.search,
-                                onPressed: _loading ? null : _applySearch,
-                                icon: const Icon(Icons.search),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                         textInputAction: TextInputAction.search,
-                        onChanged: (_) => setState(() {}),
                         onSubmitted: (_) {
                           if (!_loading) _applySearch();
                         },
@@ -386,47 +388,51 @@ class _PageState extends State<PageGameSocialQuestions> {
 
   Widget _card(MySocialQuestion question, AppLocalizations loc) {
     final busy = _busyIds.contains(question.id);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(question.title),
-        subtitle: Text(
-          '${question.category}\n${question.scene}\n'
-          '${loc.questionStatus}: '
-          '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
+    return RepaintBoundary(
+      key: ValueKey(question.id),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          title: Text(
+            question.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            '${question.category}\n${question.scene}\n'
+            '${loc.questionStatus}: '
+            '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: busy
+              ? const SizedBox.square(
+                  dimension: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : PopupMenuButton<String>(
+                  enabled: !_loading,
+                  onSelected: (action) {
+                    if (action == 'edit') {
+                      _edit(question);
+                    } else if (action == 'toggle') {
+                      _toggle(question);
+                    } else if (action == 'delete') {
+                      _delete(question);
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'edit', child: Text(loc.edit)),
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: Text(question.isActive
+                          ? loc.deactivateQuestion
+                          : loc.reactivateQuestion),
+                    ),
+                    PopupMenuItem(value: 'delete', child: Text(loc.delete)),
+                  ],
+                ),
         ),
-        trailing: busy
-            ? const SizedBox.square(
-                dimension: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: loc.edit,
-                    onPressed: _loading ? null : () => _edit(question),
-                    icon: const Icon(Icons.edit_outlined),
-                  ),
-                  PopupMenuButton<String>(
-                    enabled: !_loading,
-                    onSelected: (action) => action == 'toggle'
-                        ? _toggle(question)
-                        : _delete(question),
-                    itemBuilder: (_) => [
-                      PopupMenuItem(
-                        value: 'toggle',
-                        child: Text(question.isActive
-                            ? loc.deactivateQuestion
-                            : loc.reactivateQuestion),
-                      ),
-                      PopupMenuItem(value: 'delete', child: Text(loc.delete)),
-                    ],
-                  ),
-                ],
-              ),
       ),
     );
   }

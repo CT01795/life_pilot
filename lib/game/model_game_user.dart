@@ -10,17 +10,16 @@ class ModelGameUser {
   String? gameName = '';
   int? level; // 追蹤使用者闖到哪一關
   bool? isPass;
-  ModelGameUser({
-    this.id,
-    this.userName,
-    this.gameId,
-    this.score,
-    this.createdAt,
-    this.gameType,
-    this.gameName,
-    this.level,
-    this.isPass
-  });
+  ModelGameUser(
+      {this.id,
+      this.userName,
+      this.gameId,
+      this.score,
+      this.createdAt,
+      this.gameType,
+      this.gameName,
+      this.level,
+      this.isPass});
 
   factory ModelGameUser.fromMap(Map<String, dynamic> map) {
     return ModelGameUser(
@@ -28,13 +27,14 @@ class ModelGameUser {
       userName: map['name'] ?? '',
       gameId: map['game_id'] ?? '',
       score: (map['score'] ?? 0).toDouble(),
-      createdAt:
-          map[Fields.createdAt] != null ? DateTime.parse(map[Fields.createdAt]) : null,
+      createdAt: map[Fields.createdAt] != null
+          ? DateTime.parse(map[Fields.createdAt].toString()).toLocal()
+          : null,
       gameType: map['game_type'] ?? '',
       gameName: map['game_name'] ?? '',
       level: map['level'] is int
-        ? map['level']
-        : int.tryParse(map['level']?.toString() ?? "1") ?? 1,
+          ? map['level']
+          : int.tryParse(map['level']?.toString() ?? "1") ?? 1,
       isPass: _parseBool(map['is_pass']),
     );
   }

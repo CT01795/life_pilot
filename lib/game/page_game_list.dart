@@ -404,10 +404,70 @@ class _PageGameListState extends State<PageGameList> {
     }
   }
 
+  Future<int?> _showLevelPicker(
+    List<ModelGameItem> levels,
+    int? currentLevel,
+    int unlockedMaxLevel,
+  ) async {
+    final loc = AppLocalizations.of(context)!;
+    final selectedIndex = levels.indexWhere(
+      (item) => item.level == currentLevel,
+    );
+    final scrollController = ScrollController(
+      initialScrollOffset: (selectedIndex < 0 ? 0 : selectedIndex) * 56.0,
+    );
+    try {
+      return await showModalBottomSheet<int>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => FractionallySizedBox(
+          heightFactor: 0.75,
+          child: Column(
+            children: [
+              Text(
+                loc.gameLevel,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Gaps.h8,
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemExtent: 56,
+                  itemCount: levels.length,
+                  itemBuilder: (context, index) {
+                    final level = levels[index].level;
+                    final locked = level > unlockedMaxLevel;
+                    return ListTile(
+                      enabled: !locked,
+                      title: Text('${loc.gameLevel} $level'),
+                      trailing: locked
+                          ? const Icon(Icons.lock_outline)
+                          : level == currentLevel
+                              ? const Icon(Icons.check)
+                              : null,
+                      onTap:
+                          locked ? null : () => Navigator.pop(context, level),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      scrollController.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final loc = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final localeName = Localizations.localeOf(context).toString();
+    final currentYearDateFormat = DateFormat('MM/dd HH:mm', localeName);
+    final previousYearDateFormat = DateFormat('yyyy/MM/dd HH:mm', localeName);
     if (controllerGameList.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -462,7 +522,11 @@ class _PageGameListState extends State<PageGameList> {
               items: controllerGameList.gamesByCategory.keys
                   .map((cat) => DropdownMenuItem(
                         value: cat,
-                        child: Text(cat),
+                        child: Text(
+                          cat,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ))
                   .toList(),
             ),
@@ -485,35 +549,41 @@ class _PageGameListState extends State<PageGameList> {
               items: gameMap?.keys
                   .map((gameName) => DropdownMenuItem(
                         value: gameName,
-                        child: Text(gameName),
+                        child: Text(
+                          gameName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ))
                   .toList(),
             ),
             Gaps.h16,
             // 關卡選單
-            DropdownButton<int>(
-              isExpanded: true,
-              value: selectedLevel,
-              onChanged: (value) {
-                if (value != null && value <= unlockedMaxLevel) {
-                  setState(() {
-                    selectedLevel = value;
-                  });
-                }
-              },
-              items: levelList?.map((g) {
-                final locked = g.level > unlockedMaxLevel;
-                return DropdownMenuItem<int>(
-                  value: g.level,
-                  enabled: !locked,
-                  child: Text(
-                    '${loc.gameLevel} ${g.level}${locked ? ' 🔒' : ''}',
-                    style: TextStyle(
-                      color: locked ? Colors.grey : Colors.black,
+            OutlinedButton(
+              onPressed: levelList == null
+                  ? null
+                  : () async {
+                      final value = await _showLevelPicker(
+                        levelList,
+                        selectedLevel,
+                        unlockedMaxLevel,
+                      );
+                      if (value != null && mounted) {
+                        setState(() => selectedLevel = value);
+                      }
+                    },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${loc.gameLevel} ${selectedLevel ?? ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                );
-              }).toList(),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
             ),
             if (_isQuestionBankAdmin) ...[
               Gaps.h8,
@@ -1073,24 +1143,39 @@ class _PageGameListState extends State<PageGameList> {
                             }
                             final item = userProgress[index];
                             final formattedDate = item.createdAt != null
-                                ? DateFormat(item.createdAt?.year == now.year
-                                        ? 'MM/dd HH:mm'
-                                        : 'yyyy/MM/dd HH:mm')
+                                ? (item.createdAt!.year == now.year
+                                        ? currentYearDateFormat
+                                        : previousYearDateFormat)
                                     .format(item.createdAt!)
                                 : '';
                             // 判斷第一筆，設定文字顏色
                             final textColor = index == 0
-                                ? Colors.blue.shade700
-                                : Colors.black;
+                                ? colorScheme.primary
+                                : colorScheme.onSurface;
                             final textBold = index == 0
                                 ? FontWeight.bold
                                 : FontWeight.normal;
                             return ListTile(
+                              leading: index == 0
+                                  ? Icon(
+                                      Icons.emoji_events_outlined,
+                                      color: colorScheme.primary,
+                                    )
+                                  : null,
                               title: Text(
-                                '$formattedDate ${loc.gameLevel} ${item.level} '
-                                '=> ${loc.gameScore}: ${item.score}',
+                                formattedDate,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                    color: textColor, fontWeight: textBold),
+                                  color: textColor,
+                                  fontWeight: textBold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${loc.gameLevel} ${item.level}  '
+                                '${loc.gameScore}: ${item.score}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             );
                           },

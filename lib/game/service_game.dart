@@ -368,7 +368,7 @@ class ServiceGame {
       'p_category': category,
       'p_status': status,
       'p_offset': offset,
-      'p_limit': 50,
+      'p_limit': 20,
     }) as List<dynamic>;
     final questions = rows.cast<Map<String, dynamic>>().map((row) {
       final choices =
@@ -581,7 +581,7 @@ class ServiceGame {
     String? group,
     String status = 'all',
     int offset = 0,
-    int limit = 50,
+    int limit = 20,
   }) async {
     if (supabase.auth.currentUser == null) {
       throw StateError('User must be signed in');
