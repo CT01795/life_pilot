@@ -923,10 +923,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stockDashboardTitle => '📊 市場儀表板';
 
   @override
-  String get stockForeignBuyTop30 => '外資買超排行';
+  String get stockForeignBuy => '外資買超排行';
 
   @override
-  String get stockForeignSellTop30 => '外資賣超排行';
+  String get stockForeignSell => '外資賣超排行';
 
   @override
   String get stockThousandLots => '仟張';

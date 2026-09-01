@@ -1927,13 +1927,13 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Net foreign buy ranking'**
-  String get stockForeignBuyTop30;
+  String get stockForeignBuy;
 
   /// Stock page foreign sell ranking title
   ///
   /// In en, this message translates to:
   /// **'Net foreign sell ranking'**
-  String get stockForeignSellTop30;
+  String get stockForeignSell;
 
   /// Stock page thousand lots unit
   ///

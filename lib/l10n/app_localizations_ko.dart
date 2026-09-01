@@ -923,10 +923,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stockDashboardTitle => '📊 시장 대시보드';
 
   @override
-  String get stockForeignBuyTop30 => '외국인 순매수 순위';
+  String get stockForeignBuy => '외국인 순매수 순위';
 
   @override
-  String get stockForeignSellTop30 => '외국인 순매도 순위';
+  String get stockForeignSell => '외국인 순매도 순위';
 
   @override
   String get stockThousandLots => '천 로트';

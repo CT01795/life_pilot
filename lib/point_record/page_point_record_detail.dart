@@ -180,8 +180,6 @@ class _PagePointRecordDetailViewState
           },
         ),
         title: Text(account.accountName),
-        backgroundColor: Colors.blueAccent, // 可自定義顏色
-        elevation: 2,
       ),
       body: Column(
         children: [
@@ -199,45 +197,57 @@ class _PagePointRecordDetailViewState
       ControllerPointRecordDetail controller) {
     final loc = AppLocalizations.of(context)!;
     int totalValue = controller.total ?? 0;
-    return Table(
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      columnWidths: const {
-        0: IntrinsicColumnWidth(), // 左文字自動寬度
-        1: IntrinsicColumnWidth(), // 幣別自動寬度
-        2: IntrinsicColumnWidth(), // 數值自動寬度
-      },
-      children: [
-        TableRow(
-          children: [
-            Text(' ${loc.recordTotal} ', style: const TextStyle(fontSize: 20)),
-            Text(
-              '${NumberFormat('#,###').format(totalValue)} ${loc.pointsUnit}'
-                  .trim(),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: totalValue >= 0 ? Colors.black : Colors.red,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Table(
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            columnWidths: const {
+              0: FlexColumnWidth(1),
+              1: FlexColumnWidth(2),
+            },
+            children: [
+              TableRow(
+                children: [
+                  Text(' ${loc.recordTotal} ',
+                      style: const TextStyle(fontSize: 20)),
+                  Text(
+                    '${NumberFormat('#,###').format(totalValue)} ${loc.pointsUnit}'
+                        .trim(),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: totalValue >= 0
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Colors.red,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ],
               ),
-              textAlign: TextAlign.right,
-            ),
-          ],
-        ),
-        TableRow(
-          children: [
-            Text(' ${loc.today} ', style: const TextStyle(fontSize: 20)),
-            Text(
-              '${NumberFormat('#,###').format(controller.todayTotal)} ${loc.pointsUnit}'
-                  .trim(),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: controller.todayTotal >= 0 ? Colors.green : Colors.red,
+              TableRow(
+                children: [
+                  Text(' ${loc.today} ', style: const TextStyle(fontSize: 20)),
+                  Text(
+                    '${NumberFormat('#,###').format(controller.todayTotal)} ${loc.pointsUnit}'
+                        .trim(),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: controller.todayTotal >= 0
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ],
               ),
-              textAlign: TextAlign.right,
-            ),
-          ],
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
@@ -271,24 +281,16 @@ class _PagePointRecordDetailViewState
           final record = visibleRecords[index];
           return ListTile(
             key: ValueKey(record.id),
-            title: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: "${record.displayTime}  ",
-                    style: TextStyle(fontSize: 12, color: Colors.grey), // 時間小一點
-                  ),
-                  TextSpan(
-                    text:
-                        '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]  ',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  TextSpan(
-                    text: record.description,
-                    style: TextStyle(color: Colors.black), // 描述正常大小
-                  ),
-                ],
-              ),
+            title: Text(
+              record.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              '${record.displayTime}  '
+              '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             trailing: Text(
               record.value > 0
@@ -328,8 +330,9 @@ class _PagePointRecordDetailViewState
       child: Row(
         children: [
           // 麥克風按鈕
-          FloatingActionButton(
-            child: const Icon(Icons.mic, size: 50),
+          FloatingActionButton.small(
+            tooltip: loc.pointsSpeechHint,
+            child: const Icon(Icons.mic),
             onPressed: () async {
               final speechController = context.read<ControllerSpeech>();
               final text = await speechController.recordAndTranscribe();

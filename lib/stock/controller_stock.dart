@@ -11,8 +11,8 @@ class ControllerStock extends SafeChangeNotifier {
   List<ModelStock> stocks = [];
   List<ModelFuture> futures = [];
   List<ModelInstitutional> institutionals = [];
-  List<ModelInstitutional> foreignBuyTop30 = [];
-  List<ModelInstitutional> foreignSellTop30 = [];
+  List<ModelInstitutional> foreignBuy = [];
+  List<ModelInstitutional> foreignSell = [];
   bool loading = true;
   bool loadFailed = false;
   bool dateLoading = false;
@@ -137,8 +137,8 @@ class ControllerStock extends SafeChangeNotifier {
       if (_isDisposed || requestId != _dataRequestId) return;
       stocks = [];
       institutionals = [];
-      foreignBuyTop30 = [];
-      foreignSellTop30 = [];
+      foreignBuy = [];
+      foreignSell = [];
       futures = [];
       loadFailed = true;
     } finally {
@@ -157,34 +157,34 @@ class ControllerStock extends SafeChangeNotifier {
       return;
     }
     // ==========
-    // 外資買超 Top30
+    // 外資買超
     // ==========
     institutionals = await service.selectStockInstitutional(date);
     if (_isDisposed || requestId != _dataRequestId) return;
-    foreignBuyTop30 = [...institutionals];
+    foreignBuy = [...institutionals];
 
-    foreignBuyTop30.sort(
+    foreignBuy.sort(
       (a, b) => b.foreignDiff.compareTo(
         a.foreignDiff,
       ),
     );
 
-    foreignBuyTop30 = foreignBuyTop30
+    foreignBuy = foreignBuy
         .where((e) => e.foreignDiff > 0)
         .toList(); //.take(30).toList();
 
     // ==========
-    // 外資賣超 Top30
+    // 外資賣超
     // ==========
-    foreignSellTop30 = [...institutionals];
+    foreignSell = [...institutionals];
 
-    foreignSellTop30.sort(
+    foreignSell.sort(
       (a, b) => a.foreignDiff.compareTo(
         b.foreignDiff,
       ),
     );
 
-    foreignSellTop30 = foreignSellTop30
+    foreignSell = foreignSell
         .where((e) => e.foreignDiff < 0)
         .toList(); //.take(30).toList();
 

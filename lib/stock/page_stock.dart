@@ -34,32 +34,44 @@ class PageStock extends StatelessWidget {
             );
           }
 
-          return ListView(
+          return ListView.builder(
             padding: const EdgeInsets.all(8),
-            children: [
-              _buildDateSelector(context, controller),
-              Gaps.h8,
-              if (controller.updateStatus != StockUpdateStatus.idle) ...[
-                _buildUpdateStatus(context, controller.updateStatus),
-                Gaps.h8,
-              ],
+            itemCount: controller.stocks.length + 1,
+            itemBuilder: (context, index) {
+              if (index > 0) {
+                final stockIndex = index - 1;
+                return _buildStockCard(
+                  context,
+                  controller.stocks[stockIndex],
+                  stockIndex,
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildDateSelector(context, controller),
+                  Gaps.h8,
+                  if (controller.updateStatus != StockUpdateStatus.idle) ...[
+                    _buildUpdateStatus(context, controller.updateStatus),
+                    Gaps.h8,
+                  ],
 
-              /// =========================
-              /// 📊 DASHBOARD（放最上面）
-              /// =========================
-              if (controller.stocks.isEmpty)
-                _buildEmptyState(context)
-              else ...[
-                _buildDashboard(context, controller),
-                Gaps.h8,
-              ],
+                  /// =========================
+                  /// 📊 DASHBOARD（放最上面）
+                  /// =========================
+                  if (controller.stocks.isEmpty)
+                    _buildEmptyState(context)
+                  else ...[
+                    _buildDashboard(context, controller),
+                    Gaps.h8,
+                  ],
 
-              /// =========================
-              /// 📈 STOCK LIST
-              /// =========================
-              for (int i = 0; i < controller.stocks.length; i++)
-                _buildStockCard(context, controller.stocks[i], i),
-            ],
+                  /// =========================
+                  /// 📈 STOCK LIST
+                  /// =========================
+                ],
+              );
+            },
           );
         },
       ),
@@ -71,35 +83,29 @@ Widget _buildDateSelector(BuildContext context, ControllerStock controller) {
   final loc = AppLocalizations.of(context)!;
   final selectedDate = controller.selectedDate ?? DateTime.now();
   final latestAvailableDate = controller.latestAvailableDate ?? DateTime.now();
-  return Row(
-    children: [
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: !controller.canSelectDate
-              ? null
-              : () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(2000),
-                    lastDate: latestAvailableDate,
-                  );
-                  if (picked != null) await controller.loadDate(picked);
-                },
-          icon: const Icon(Icons.calendar_month_outlined),
-          label: Text(
-            '${loc.stockSelectDate}: ${DateFormat('yyyy/MM/dd').format(selectedDate)}',
-          ),
-        ),
-      ),
-      if (controller.dateLoading) ...[
-        Gaps.w8,
-        const SizedBox.square(
-          dimension: 22,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ],
-    ],
+  return OutlinedButton.icon(
+    onPressed: !controller.canSelectDate
+        ? null
+        : () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: selectedDate,
+              firstDate: DateTime(2000),
+              lastDate: latestAvailableDate,
+            );
+            if (picked != null) await controller.loadDate(picked);
+          },
+    icon: controller.dateLoading
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.calendar_month_outlined),
+    label: Text(
+      '${loc.stockSelectDate}: ${DateFormat('yyyy/MM/dd').format(selectedDate)}',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    ),
   );
 }
 
@@ -207,6 +213,8 @@ Widget _buildUpdateStatus(BuildContext context, StockUpdateStatus status) {
 
 Widget _buildDashboard(BuildContext context, ControllerStock c) {
   final loc = AppLocalizations.of(context)!;
+  final integerFormat = NumberFormat('#,##0');
+  final onSurface = Theme.of(context).colorScheme.onSurface;
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,16 +228,16 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
         //.take(30).map(
         (e) => RichText(
           text: TextSpan(
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
-              color: Colors.black,
+              color: onSurface,
             ),
             children: [
               TextSpan(
                 text: "${e.productName?.trim()} ${e.identityType?.trim()} ",
               ),
               TextSpan(
-                text: "${NumberFormat('#,##0').format(e.oiNetQty)} ",
+                text: '${integerFormat.format(e.oiNetQty)} ',
                 style: TextStyle(
                   color: (e.oiNetQty ?? 0) >= 0 ? Colors.red : Colors.green,
                   fontWeight: FontWeight.bold,
@@ -239,7 +247,7 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
                 text: "Net:",
               ),
               TextSpan(
-                text: "${NumberFormat('#,##0').format(e.oiNetQtyDiff)} ",
+                text: '${integerFormat.format(e.oiNetQtyDiff)} ',
                 style: TextStyle(
                   color: (e.oiNetQtyDiff ?? 0) > 0 ? Colors.red : Colors.green,
                   fontWeight: FontWeight.bold,
@@ -250,89 +258,131 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
         ),
       ),
       Gaps.h32,
-      Text(loc.stockForeignBuyTop30),
-      ...c.foreignBuyTop30.map(
-        //.take(30).map(
-        (e) => RichText(
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 20,
-              color: Colors.black,
-            ),
-            children: [
-              TextSpan(
-                text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
-              ),
-              TextSpan(
-                text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: "Net:",
-              ),
-              TextSpan(
-                text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
-                style: TextStyle(
-                  color: e.foreignDiff < e.totalDiff ? Colors.red : Colors.blue,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: loc.stockThousandLots,
-              ),
-            ],
-          ),
-        ),
+      _ForeignRankingSection(
+        key: const ValueKey('foreign-buy-ranking'),
+        title: loc.stockForeignBuy,
+        items: c.foreignBuy,
+        isBuy: true,
       ),
       Gaps.h8,
-      Text(loc.stockForeignSellTop30),
-      ...c.foreignSellTop30.map(
-        //.take(30).map(
-        (e) => RichText(
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 20,
-              color: Colors.black,
-            ),
-            children: [
-              TextSpan(
-                text: "${e.stockNo.trim()} ${e.stockName.trim()} ",
-              ),
-              TextSpan(
-                text: "${NumberFormat('#,##0').format(e.foreignDiff / 1000)} ",
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: "Net:",
-              ),
-              TextSpan(
-                text: "${NumberFormat('#,##0').format(e.totalDiff / 1000)} ",
-                style: TextStyle(
-                  color:
-                      e.foreignDiff > e.totalDiff ? Colors.green : Colors.blue,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: loc.stockThousandLots,
-              ),
-            ],
-          ),
-        ),
+      _ForeignRankingSection(
+        key: const ValueKey('foreign-sell-ranking'),
+        title: loc.stockForeignSell,
+        items: c.foreignSell,
+        isBuy: false,
       ),
     ],
   );
 }
 
+class _ForeignRankingSection extends StatefulWidget {
+  const _ForeignRankingSection({
+    super.key,
+    required this.title,
+    required this.items,
+    required this.isBuy,
+  });
+
+  final String title;
+  final List<ModelInstitutional> items;
+  final bool isBuy;
+
+  @override
+  State<_ForeignRankingSection> createState() => _ForeignRankingSectionState();
+}
+
+class _ForeignRankingSectionState extends State<_ForeignRankingSection> {
+  static const int _initialCount = 10;
+  static const int _pageSize = 20;
+  int _visibleCount = _initialCount;
+
+  @override
+  void didUpdateWidget(covariant _ForeignRankingSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.items, widget.items)) {
+      _visibleCount = _initialCount;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final integerFormat = NumberFormat('#,##0');
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final itemCount = widget.items.length < _visibleCount
+        ? widget.items.length
+        : _visibleCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            Text(
+              '$itemCount / ${widget.items.length}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
+        Gaps.h8,
+        for (final item in widget.items.take(itemCount))
+          RichText(
+            text: TextSpan(
+              style: TextStyle(fontSize: 20, color: onSurface),
+              children: [
+                TextSpan(
+                  text: '${item.stockNo.trim()} ${item.stockName.trim()} ',
+                ),
+                TextSpan(
+                  text: '${integerFormat.format(item.foreignDiff / 1000)} ',
+                  style: TextStyle(
+                    color: widget.isBuy ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const TextSpan(text: 'Net:'),
+                TextSpan(
+                  text: '${integerFormat.format(item.totalDiff / 1000)} ',
+                  style: TextStyle(
+                    color: widget.isBuy
+                        ? (item.foreignDiff < item.totalDiff
+                            ? Colors.red
+                            : Colors.blue)
+                        : (item.foreignDiff > item.totalDiff
+                            ? Colors.green
+                            : Colors.blue),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextSpan(text: loc.stockThousandLots),
+              ],
+            ),
+          ),
+        if (itemCount < widget.items.length)
+          TextButton(
+            onPressed: () => setState(() => _visibleCount += _pageSize),
+            child: Text(loc.clickHereToSeeMore),
+          ),
+      ],
+    );
+  }
+}
+
 Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
   final loc = AppLocalizations.of(context)!;
-  bool isUp = stock.change != null && stock.change!.contains("+");
+  final colorScheme = Theme.of(context).colorScheme;
+  final isUp =
+      stock.change?.contains('+') == true || (stock.pctChange ?? 0) > 0;
   return Card(
     elevation: 2,
     margin: const EdgeInsets.symmetric(vertical: 6),
@@ -342,51 +392,55 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           /// 🔹 第一行：股號 + 名稱（可點擊）
-          GestureDetector(
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
             onTap: () async {
               final url = Uri.parse(
                   "https://tw.stock.yahoo.com/quote/${stock.securityCode}");
-
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              }
+              await launchUrl(url, mode: LaunchMode.externalApplication);
             },
-            child: Row(
-              children: [
-                Text(
-                  "${index + 1}. ",
-                ),
-                Gaps.w8,
-                Text(
-                  stock.securityCode,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    "${index + 1}. ",
                   ),
-                ),
-                Gaps.w8,
-                Expanded(
-                  child: Text(
-                    "${stock.securityName} ${stock.signalText ?? ''} ${stock.predPct?.toStringAsFixed(2) ?? ""}",
+                  Gaps.w8,
+                  Text(
+                    stock.securityCode,
                     style: TextStyle(
-                      color: stock.signal == 1
-                          ? Colors.red
-                          : (stock.signal == -1 ? Colors.green : Colors.black),
-                      fontWeight: stock.signal != 0
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
-                ),
-              ],
+                  Gaps.w8,
+                  Expanded(
+                    child: Text(
+                      "${stock.securityName} ${stock.signalText ?? ''} ${stock.predPct?.toStringAsFixed(2) ?? ""}",
+                      style: TextStyle(
+                        color: stock.signal == 1
+                            ? Colors.red
+                            : (stock.signal == -1
+                                ? Colors.green
+                                : colorScheme.onSurface),
+                        fontWeight: stock.signal != 0
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Gaps.h8,
 
           /// 🔹 第二行：收盤價 + 漲跌
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
             children: [
               Text(
                 loc.stockClosingPrice(
@@ -396,17 +450,14 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Gaps.w8,
-              Text(
-                "${stock.pctChange?.toStringAsFixed(2)}%",
-                style: TextStyle(
-                  color: isUp || (stock.pctChange ?? 0) > 0
-                      ? Colors.red
-                      : Colors.green,
-                  fontWeight: FontWeight.bold,
+              if (stock.pctChange != null)
+                Text(
+                  '${stock.pctChange!.toStringAsFixed(2)}%',
+                  style: TextStyle(
+                    color: isUp ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Gaps.w8,
               if (stock.peRatio != null && stock.peRatio != 0)
                 Text("P/E: ${stock.peRatio}"),
             ],
@@ -414,19 +465,18 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
           Gaps.h8,
 
           /// 🔹 第三行：其他資訊
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
             children: [
-              Text(
-                "RSI: ${stock.rsi?.toStringAsFixed(2)}",
-                style: TextStyle(
-                  color: stock.rsi == null || stock.rsi! < 50
-                      ? Colors.green
-                      : Colors.red,
-                  fontWeight: FontWeight.bold,
+              if (stock.rsi != null)
+                Text(
+                  'RSI: ${stock.rsi!.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: stock.rsi! < 50 ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Gaps.w8,
               Text(
                 loc.stockTradingVolume(
                   NumberFormat('#,##0')

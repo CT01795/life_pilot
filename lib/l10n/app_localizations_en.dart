@@ -923,10 +923,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockDashboardTitle => '📊 Market dashboard';
 
   @override
-  String get stockForeignBuyTop30 => 'Net foreign buy ranking';
+  String get stockForeignBuy => 'Net foreign buy ranking';
 
   @override
-  String get stockForeignSellTop30 => 'Net foreign sell ranking';
+  String get stockForeignSell => 'Net foreign sell ranking';
 
   @override
   String get stockThousandLots => ' thousand lots';
