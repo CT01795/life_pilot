@@ -205,8 +205,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             columnWidths: const {
               0: FlexColumnWidth(1.2),
-              1: FlexColumnWidth(0.8),
-              2: FlexColumnWidth(2),
+              1: FlexColumnWidth(1),
+              2: FlexColumnWidth(1.8),
             },
             children: [
               TableRow(
