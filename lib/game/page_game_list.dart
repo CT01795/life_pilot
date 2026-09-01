@@ -117,21 +117,25 @@ class _PageGameListState extends State<PageGameList> {
     late DateTime startDate;
     late final bool hasMore;
     try {
-      progress = await controllerGameList.loadUserProgress(
-        requestedCategory,
-        requestedGameName,
-      );
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       startDate = today.subtract(const Duration(days: 29));
-      displayProgress = await _serviceGame.fetchUserProgressPage(
-        userName: controllerGameList.userName,
-        gameType: requestedCategory,
-        gameName: requestedGameName,
-        dateFrom: startDate,
-        dateTo: today,
-        includeLatestFallback: true,
-      );
+      final results = await Future.wait<Object>([
+        controllerGameList.loadUserProgress(
+          requestedCategory,
+          requestedGameName,
+        ),
+        _serviceGame.fetchUserProgressPage(
+          userName: controllerGameList.userName,
+          gameType: requestedCategory,
+          gameName: requestedGameName,
+          dateFrom: startDate,
+          dateTo: today,
+          includeLatestFallback: true,
+        ),
+      ]);
+      progress = results[0] as List<ModelGameUser>;
+      displayProgress = results[1] as List<ModelGameUser>;
       final fallbackDates = displayProgress
           .map((item) => item.createdAt)
           .whereType<DateTime>()
