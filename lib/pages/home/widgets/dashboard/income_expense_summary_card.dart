@@ -19,6 +19,7 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final records = context.select<ModelDashboard, List<IncomeExpenseItem>>(
       (m) => m.state.todayIncomeExpense,
     );
@@ -32,9 +33,8 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
       (m) => m.setting.accountingAccountId != null,
     );
 
-    final todayTotal = records.fold<int>(
-      0,
-      (sum, e) => sum + e.value,
+    final todayTotal = context.select<ModelDashboard, int>(
+      (m) => m.state.todayAccountingTotal,
     );
     final accountTotal = context.select<ModelDashboard, int>(
       (m) => m.state.accountingTotal,
@@ -46,7 +46,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
     final formatter = NumberFormat('#,###');
 
     return Card(
-      color: Color(0xFFE5DDED),
+      color: colorScheme.brightness == Brightness.dark
+          ? colorScheme.surfaceContainerHigh
+          : const Color(0xFFE5DDED),
       elevation: 2,
       child: Padding(
         padding: Insets.all12,
@@ -74,7 +76,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 trailing: Text(
                   '${formatter.format(accountTotal)} $currency',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: accountTotal < 0 ? Colors.red : Colors.black,
+                        color: accountTotal < 0
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -87,8 +91,8 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                   '${formatter.format(todayTotal)} $currency',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: todayTotal < 0
-                            ? Colors.red // 收入
-                            : Colors.black, // 支出
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -111,27 +115,28 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                   title: Text(loc.noInfoAvailable),
                 )
               else
-                ...records.map(
-                  (record) => ListTile(
-                    dense: true,
-                    title: Text(record.description,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(
-                        record.group == null || record.group!.isEmpty
-                            ? ''
-                            : record.group!,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    trailing: Text(
-                      '${formatter.format(record.value)} $currency',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: record.value < 0
-                                ? Colors.red // 收入
-                                : Colors.black, // 支出
-                            fontWeight: FontWeight.bold,
-                          ),
+                ...records.take(5).map(
+                      (record) => ListTile(
+                        dense: true,
+                        title: Text(record.description,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        subtitle: Text(
+                            record.group == null || record.group!.isEmpty
+                                ? ''
+                                : record.group!,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        trailing: Text(
+                          '${formatter.format(record.value)} $currency',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: record.value < 0
+                                        ? colorScheme.error
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
             ],
             Align(
               alignment: Alignment.centerRight,

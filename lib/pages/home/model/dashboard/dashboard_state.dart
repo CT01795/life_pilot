@@ -11,8 +11,10 @@ class DashboardState {
   final List<IncomeExpenseItem> todayIncomeExpense;
   final List<PointRecordItem> todayPoints;
   final int accountingTotal;
+  final int todayAccountingTotal;
   final String accountingCurrency;
   final int pointsTotal;
+  final int todayPointsTotal;
 
   const DashboardState({
     required this.todayEvents,
@@ -21,8 +23,10 @@ class DashboardState {
     required this.todayIncomeExpense,
     required this.todayPoints,
     required this.accountingTotal,
+    required this.todayAccountingTotal,
     required this.accountingCurrency,
     required this.pointsTotal,
+    required this.todayPointsTotal,
   });
 
   factory DashboardState.empty() {
@@ -33,8 +37,10 @@ class DashboardState {
       todayIncomeExpense: [],
       todayPoints: [],
       accountingTotal: 0,
+      todayAccountingTotal: 0,
       accountingCurrency: 'TWD',
       pointsTotal: 0,
+      todayPointsTotal: 0,
     );
   }
 
@@ -45,8 +51,10 @@ class DashboardState {
     List<IncomeExpenseItem>? todayIncomeExpense,
     List<PointRecordItem>? todayPoints,
     int? accountingTotal,
+    int? todayAccountingTotal,
     String? accountingCurrency,
     int? pointsTotal,
+    int? todayPointsTotal,
   }) {
     return DashboardState(
       todayEvents: todayEvents ?? this.todayEvents,
@@ -55,8 +63,10 @@ class DashboardState {
       todayIncomeExpense: todayIncomeExpense ?? this.todayIncomeExpense,
       todayPoints: todayPoints ?? this.todayPoints,
       accountingTotal: accountingTotal ?? this.accountingTotal,
+      todayAccountingTotal: todayAccountingTotal ?? this.todayAccountingTotal,
       accountingCurrency: accountingCurrency ?? this.accountingCurrency,
       pointsTotal: pointsTotal ?? this.pointsTotal,
+      todayPointsTotal: todayPointsTotal ?? this.todayPointsTotal,
     );
   }
 }

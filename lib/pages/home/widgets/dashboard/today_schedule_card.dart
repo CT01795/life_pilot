@@ -24,14 +24,14 @@ class TodayScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final account = context.select<ModelAuthView, String?>(
       (auth) => auth.account,
     );
     final tracking = context.read<EventTrackingService>();
-    final allEvents = context.select<ModelDashboard, List<CalendarEvent>>(
+    final events = context.select<ModelDashboard, List<CalendarEvent>>(
       (m) => m.state.todayEvents,
     );
-    final events = allEvents.where((event) => !event.isCompleted).toList();
     final hasLoadFailed = context.select<ModelDashboard, bool>(
       (m) => m.hasFailed(DashboardSection.todaySchedule),
     );
@@ -40,7 +40,9 @@ class TodayScheduleCard extends StatelessWidget {
     );
 
     return Card(
-      color: Color(0xFFD6E4F0),
+      color: colorScheme.brightness == Brightness.dark
+          ? colorScheme.surfaceContainerHigh
+          : const Color(0xFFD6E4F0),
       child: Padding(
         padding: Insets.all12,
         child: Column(
@@ -71,181 +73,192 @@ class TodayScheduleCard extends StatelessWidget {
                 title: Text(loc.noInfoAvailable),
               )
             else
-              ...events.map(
-                (e) => ListTile(
-                  leading: Tooltip(
-                    message: loc.completeEventTitle,
-                    child: Transform.scale(
-                      scale: 1.5, // 放大倍率
-                      child: AsyncActionCheckbox(onAccepted: () async {
-                        final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                                  title: Text(
-                                    loc.completeEventTitle,
-                                  ),
-                                  content: Text(
-                                    loc.completeEventMessage,
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context, false);
-                                        },
-                                        child: Text(loc.cancel)),
-                                    TextButton(
-                                        onPressed: () async {
-                                          Navigator.pop(context, true);
-                                        },
-                                        child: Text(loc.confirm))
-                                  ],
-                                ));
-                        if (confirm != true) {
-                          return;
-                        }
-                        try {
-                          await context.read<ModelDashboard>().completeEvent(
-                                id: e.id,
-                                account: account!,
+              ...events.take(5).map(
+                    (e) => ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Tooltip(
+                        message: loc.completeEventTitle,
+                        child: Transform.scale(
+                          scale: 1.5, // 放大倍率
+                          child: AsyncActionCheckbox(onAccepted: () async {
+                            final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                      title: Text(
+                                        loc.completeEventTitle,
+                                      ),
+                                      content: Text(
+                                        loc.completeEventMessage,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context, false);
+                                            },
+                                            child: Text(loc.cancel)),
+                                        TextButton(
+                                            onPressed: () async {
+                                              Navigator.pop(context, true);
+                                            },
+                                            child: Text(loc.confirm))
+                                      ],
+                                    ));
+                            if (confirm != true) {
+                              return;
+                            }
+                            try {
+                              await context
+                                  .read<ModelDashboard>()
+                                  .completeEvent(
+                                    id: e.id,
+                                    account: account!,
+                                  );
+                            } catch (error, stackTrace) {
+                              logger.e(
+                                'Could not complete today schedule event.',
+                                error: error,
+                                stackTrace: stackTrace,
                               );
-                        } catch (error, stackTrace) {
-                          logger.e(
-                            'Could not complete today schedule event.',
-                            error: error,
-                            stackTrace: stackTrace,
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(loc.eventSaveFailed)),
-                            );
-                          }
-                          return;
-                        }
-                        final calendar = context.read<CalendarService>();
-                        try {
-                          final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                    content:
-                                        Text('${loc.memoryAdd}「${e.name}」？'),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context, false);
-                                          },
-                                          child: Text(loc.cancel)),
-                                      TextButton(
-                                          onPressed: () async {
-                                            Navigator.pop(context, true);
-                                          },
-                                          child: Text(loc.confirm))
-                                    ],
-                                  ));
-
-                          if (confirm == true) {
-                            await calendar.addCalendarEventToMemory(
-                                account: account, event: e, id: e.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(loc.memoryAddOk)));
-                          }
-                        } catch (error, stackTrace) {
-                          logger.e(
-                            'Could not add calendar event to memory.',
-                            error: error,
-                            stackTrace: stackTrace,
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(loc.eventSaveFailed)),
-                            );
-                          }
-                        }
-                        context
-                            .read<ModelDashboard>()
-                            .refreshTodaySchedule(account: account);
-                      }),
-                    ),
-                  ),
-                  title: Tooltip(
-                    message: e.masterUrl?.isNotEmpty == true
-                        ? loc.clickHereToSeeMore
-                        : '',
-                    child: InkWell(
-                      onTap: (e.masterUrl == null || e.masterUrl!.isEmpty)
-                          ? null
-                          : () async {
-                              await tracking.incrementEventCounter(
-                                eventId: e.id,
-                                eventName: e.name,
-                                column: 'page_views',
-                              );
-                              if (!await tracking.launchUrlLink(e.masterUrl) &&
-                                  context.mounted) {
+                              if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text(loc.externalLinkOpenFailed)),
+                                  SnackBar(content: Text(loc.eventSaveFailed)),
                                 );
                               }
-                            },
-                      child: Text(
-                        '${e.startDate?.formatDateString() == DateTime.now().formatDateString() ? '' : e.startDate?.formatDateString()} ${e.startTime?.formatTimeString() ?? ''} ${e.name}',
-                        style: TextStyle(
-                          color: (e.masterUrl == null || e.masterUrl!.isEmpty)
-                              ? Colors.black
-                              : Colors.blue,
+                              return;
+                            }
+                            final calendar = context.read<CalendarService>();
+                            try {
+                              final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                        content: Text(
+                                            '${loc.memoryAdd}「${e.name}」？'),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context, false);
+                                              },
+                                              child: Text(loc.cancel)),
+                                          TextButton(
+                                              onPressed: () async {
+                                                Navigator.pop(context, true);
+                                              },
+                                              child: Text(loc.confirm))
+                                        ],
+                                      ));
+
+                              if (confirm == true) {
+                                await calendar.addCalendarEventToMemory(
+                                    account: account, event: e, id: e.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(loc.memoryAddOk)));
+                              }
+                            } catch (error, stackTrace) {
+                              logger.e(
+                                'Could not add calendar event to memory.',
+                                error: error,
+                                stackTrace: stackTrace,
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(loc.eventSaveFailed)),
+                                );
+                              }
+                            }
+                            context
+                                .read<ModelDashboard>()
+                                .refreshTodaySchedule(account: account);
+                          }),
+                        ),
+                      ),
+                      title: Tooltip(
+                        message: e.masterUrl?.isNotEmpty == true
+                            ? loc.clickHereToSeeMore
+                            : '',
+                        child: InkWell(
+                          onTap: (e.masterUrl == null || e.masterUrl!.isEmpty)
+                              ? null
+                              : () async {
+                                  await tracking.incrementEventCounter(
+                                    eventId: e.id,
+                                    eventName: e.name,
+                                    column: 'page_views',
+                                  );
+                                  if (!await tracking
+                                          .launchUrlLink(e.masterUrl) &&
+                                      context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(loc.externalLinkOpenFailed)),
+                                    );
+                                  }
+                                },
+                          child: Text(
+                            '${e.startDate?.formatDateString() == DateTime.now().formatDateString() ? '' : e.startDate?.formatDateString()} ${e.startTime?.formatTimeString() ?? ''} ${e.name}',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color:
+                                  (e.masterUrl == null || e.masterUrl!.isEmpty)
+                                      ? colorScheme.onSurface
+                                      : colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      subtitle: Tooltip(
+                        message: ((e.city != null && e.city!.isNotEmpty) ||
+                                (e.location != null && e.location!.isNotEmpty))
+                            ? loc.openMap
+                            : '',
+                        child: InkWell(
+                          onTap: ((e.city != null && e.city!.isNotEmpty) ||
+                                  (e.location != null &&
+                                      e.location!.isNotEmpty))
+                              ? () async {
+                                  await tracking.incrementEventCounter(
+                                    eventId: e.id,
+                                    eventName: e.name,
+                                    column: 'card_clicks',
+                                  );
+                                  if (!await tracking.onOpenMap(
+                                          e.city, e.location) &&
+                                      context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(loc.externalLinkOpenFailed)),
+                                    );
+                                  }
+                                }
+                              : null,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if ((e.city != null && e.city!.isNotEmpty) ||
+                                  (e.location != null &&
+                                      e.location!.isNotEmpty))
+                                const Icon(
+                                  Icons.location_on,
+                                ),
+                              Gaps.w8,
+                              Flexible(
+                                child: Text(
+                                  '${e.city ?? ''} ${e.location ?? ''}',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  subtitle: Tooltip(
-                    message: ((e.city != null && e.city!.isNotEmpty) ||
-                            (e.location != null && e.location!.isNotEmpty))
-                        ? loc.openMap
-                        : '',
-                    child: InkWell(
-                      onTap: ((e.city != null && e.city!.isNotEmpty) ||
-                              (e.location != null && e.location!.isNotEmpty))
-                          ? () async {
-                              await tracking.incrementEventCounter(
-                                eventId: e.id,
-                                eventName: e.name,
-                                column: 'card_clicks',
-                              );
-                              if (!await tracking.onOpenMap(
-                                      e.city, e.location) &&
-                                  context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text(loc.externalLinkOpenFailed)),
-                                );
-                              }
-                            }
-                          : null,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if ((e.city != null && e.city!.isNotEmpty) ||
-                              (e.location != null && e.location!.isNotEmpty))
-                            const Icon(
-                              Icons.location_on,
-                            ),
-                          Gaps.w8,
-                          Flexible(
-                            child: Text(
-                              '${e.city ?? ''} ${e.location ?? ''}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(

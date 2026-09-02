@@ -19,6 +19,7 @@ class PointSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final records = context.select<ModelDashboard, List<PointRecordItem>>(
       (m) => m.state.todayPoints,
     );
@@ -32,9 +33,8 @@ class PointSummaryCard extends StatelessWidget {
       (m) => m.setting.pointAccountId != null,
     );
 
-    final todayTotal = records.fold<int>(
-      0,
-      (sum, e) => sum + e.value,
+    final todayTotal = context.select<ModelDashboard, int>(
+      (m) => m.state.todayPointsTotal,
     );
     final pointsTotal = context.select<ModelDashboard, int>(
       (m) => m.state.pointsTotal,
@@ -43,7 +43,9 @@ class PointSummaryCard extends StatelessWidget {
     final formatter = NumberFormat('#,###');
 
     return Card(
-      color: Color(0xFFEDE6C8),
+      color: colorScheme.brightness == Brightness.dark
+          ? colorScheme.surfaceContainerHigh
+          : const Color(0xFFEDE6C8),
       elevation: 2,
       child: Padding(
         padding: Insets.all12,
@@ -71,7 +73,9 @@ class PointSummaryCard extends StatelessWidget {
                 trailing: Text(
                   formatter.format(pointsTotal),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: pointsTotal < 0 ? Colors.red : Colors.black,
+                        color: pointsTotal < 0
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -83,7 +87,9 @@ class PointSummaryCard extends StatelessWidget {
                 trailing: Text(
                   formatter.format(todayTotal),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: todayTotal < 0 ? Colors.red : Colors.black,
+                        color: todayTotal < 0
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -106,25 +112,28 @@ class PointSummaryCard extends StatelessWidget {
                   title: Text(loc.noInfoAvailable),
                 )
               else
-                ...records.map(
-                  (record) => ListTile(
-                    dense: true,
-                    title: Text(record.description,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(
-                        record.group == null || record.group!.isEmpty
-                            ? ''
-                            : record.group!,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    trailing: Text(
-                      formatter.format(record.value),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: record.value < 0 ? Colors.red : Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
+                ...records.take(5).map(
+                      (record) => ListTile(
+                        dense: true,
+                        title: Text(record.description,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        subtitle: Text(
+                            record.group == null || record.group!.isEmpty
+                                ? ''
+                                : record.group!,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        trailing: Text(
+                          formatter.format(record.value),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: record.value < 0
+                                        ? colorScheme.error
+                                        : colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
             ],
             Align(
               alignment: Alignment.centerRight,

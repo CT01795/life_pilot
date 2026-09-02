@@ -42,16 +42,19 @@ class IncomeExpenseItem {
 class AccountingDashboardSummary {
   final List<IncomeExpenseItem> records;
   final int total;
+  final int todayTotal;
   final String currency;
 
   const AccountingDashboardSummary({
     required this.records,
     required this.total,
+    this.todayTotal = 0,
     required this.currency,
   });
 
   const AccountingDashboardSummary.empty()
       : records = const [],
         total = 0,
+        todayTotal = 0,
         currency = 'TWD';
 }

@@ -42,13 +42,16 @@ class PointRecordItem {
 class PointDashboardSummary {
   final List<PointRecordItem> records;
   final int total;
+  final int todayTotal;
 
   const PointDashboardSummary({
     required this.records,
     required this.total,
+    this.todayTotal = 0,
   });
 
   const PointDashboardSummary.empty()
       : records = const [],
-        total = 0;
+        total = 0,
+        todayTotal = 0;
 }

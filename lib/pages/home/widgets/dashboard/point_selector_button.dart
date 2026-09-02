@@ -35,9 +35,14 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
     return Tooltip(
       message: loc.selectAccount,
       child: ActionChip(
-        avatar: const Icon(
-          Icons.stars,
-        ),
+        avatar: _isLoading
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(
+                Icons.stars,
+              ),
         label: Text(
           accountName ?? loc.selectAccount,
           maxLines: 1,

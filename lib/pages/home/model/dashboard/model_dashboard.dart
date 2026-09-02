@@ -212,6 +212,11 @@ class ModelDashboard extends SafeChangeNotifier {
             ? (configuredSections[2] as AccountingDashboardSummary?)?.total ??
                 _state.accountingTotal
             : _state.accountingTotal,
+        todayAccountingTotal: accountingRequest == _accountingRequest
+            ? (configuredSections[2] as AccountingDashboardSummary?)
+                    ?.todayTotal ??
+                _state.todayAccountingTotal
+            : _state.todayAccountingTotal,
         accountingCurrency: accountingRequest == _accountingRequest
             ? (configuredSections[2] as AccountingDashboardSummary?)
                     ?.currency ??
@@ -225,6 +230,10 @@ class ModelDashboard extends SafeChangeNotifier {
             ? (configuredSections[3] as PointDashboardSummary?)?.total ??
                 _state.pointsTotal
             : _state.pointsTotal,
+        todayPointsTotal: pointsRequest == _pointsRequest
+            ? (configuredSections[3] as PointDashboardSummary?)?.todayTotal ??
+                _state.todayPointsTotal
+            : _state.todayPointsTotal,
       );
     } finally {
       if (_isCurrentRequest(account, generation)) {
@@ -403,6 +412,7 @@ class ModelDashboard extends SafeChangeNotifier {
       _state = _state.copyWith(
         todayIncomeExpense: summary.records,
         accountingTotal: summary.total,
+        todayAccountingTotal: summary.todayTotal,
         accountingCurrency: summary.currency,
       );
     } finally {
@@ -440,6 +450,7 @@ class ModelDashboard extends SafeChangeNotifier {
       _state = _state.copyWith(
         todayPoints: summary.records,
         pointsTotal: summary.total,
+        todayPointsTotal: summary.todayTotal,
       );
     } finally {
       if (_isCurrentRequest(account, generation)) {
@@ -550,6 +561,7 @@ class ModelDashboard extends SafeChangeNotifier {
       _state = _state.copyWith(
         todayIncomeExpense: const [],
         accountingTotal: 0,
+        todayAccountingTotal: 0,
         accountingCurrency: 'TWD',
       );
       notifyListeners();
@@ -558,6 +570,7 @@ class ModelDashboard extends SafeChangeNotifier {
       _state = _state.copyWith(
         todayIncomeExpense: const [],
         accountingTotal: 0,
+        todayAccountingTotal: 0,
       );
       notifyListeners();
       await refreshAccounting(accountId: accountId);
@@ -588,6 +601,7 @@ class ModelDashboard extends SafeChangeNotifier {
       _state = _state.copyWith(
         todayPoints: const [],
         pointsTotal: 0,
+        todayPointsTotal: 0,
       );
       notifyListeners();
     } else {
@@ -595,6 +609,7 @@ class ModelDashboard extends SafeChangeNotifier {
       _state = _state.copyWith(
         todayPoints: const [],
         pointsTotal: 0,
+        todayPointsTotal: 0,
       );
       notifyListeners();
       await refreshPoints(accountId: accountId);

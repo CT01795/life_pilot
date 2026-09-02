@@ -35,9 +35,14 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
     return Tooltip(
       message: loc.selectAccount,
       child: ActionChip(
-        avatar: const Icon(
-          Icons.account_balance_wallet,
-        ),
+        avatar: _isLoading
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(
+                Icons.account_balance_wallet,
+              ),
         label: Text(
           accountName ?? loc.selectAccount,
           maxLines: 1,

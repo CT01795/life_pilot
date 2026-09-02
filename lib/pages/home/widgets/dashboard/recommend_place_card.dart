@@ -26,6 +26,7 @@ class RecommendPlaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final account = context.select<ModelAuthView, String?>(
       (auth) => auth.account,
     );
@@ -41,7 +42,9 @@ class RecommendPlaceCard extends StatelessWidget {
     );
 
     return Card(
-      color: Color(0xFFD9E8D5),
+      color: colorScheme.brightness == Brightness.dark
+          ? colorScheme.surfaceContainerHigh
+          : const Color(0xFFD9E8D5),
       child: Padding(
         padding: Insets.all12,
         child: Column(
@@ -71,6 +74,7 @@ class RecommendPlaceCard extends StatelessWidget {
             else
               ...places.take(5).map(
                     (e) => ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       leading: Tooltip(
                         message: loc.addToSchedule,
                         child: Transform.scale(
@@ -162,11 +166,13 @@ class RecommendPlaceCard extends StatelessWidget {
                                 },
                           child: Text(
                             '${e.startTime?.formatTimeString() ?? ''} ${e.name}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color:
                                   (e.masterUrl == null || e.masterUrl!.isEmpty)
-                                      ? Colors.black
-                                      : Colors.blue,
+                                      ? colorScheme.onSurface
+                                      : colorScheme.primary,
                             ),
                           ),
                         ),
@@ -210,8 +216,10 @@ class RecommendPlaceCard extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   '${e.city ?? ''} ${e.location ?? ''}',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ),

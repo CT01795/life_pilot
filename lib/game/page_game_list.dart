@@ -110,7 +110,12 @@ class _PageGameListState extends State<PageGameList> {
     final requestId = ++_progressRequestId;
     final requestedCategory = selectedCategory!;
     final requestedGameName = selectedGameName!;
-    if (mounted) setState(() => _isLoadingProgress = true);
+    if (mounted) {
+      setState(() {
+        _isLoadingProgress = true;
+        _isLoadingMoreProgress = false;
+      });
+    }
     // 取得該遊戲所有關卡紀錄
     late final List<ModelGameUser> progress;
     late final List<ModelGameUser> displayProgress;
@@ -194,15 +199,19 @@ class _PageGameListState extends State<PageGameList> {
         selectedGameName == null) {
       return;
     }
+    final requestId = _progressRequestId;
+    final requestedCategory = selectedCategory!;
+    final requestedGameName = selectedGameName!;
+    final requestedStartDate = _progressStartDate!;
     setState(() => _isLoadingMoreProgress = true);
     try {
       final latestOlder = await _serviceGame.latestUserProgressDateBefore(
         userName: controllerGameList.userName,
-        gameType: selectedCategory!,
-        gameName: selectedGameName!,
-        before: _progressStartDate!,
+        gameType: requestedCategory,
+        gameName: requestedGameName,
+        before: requestedStartDate,
       );
-      if (!mounted) return;
+      if (!mounted || requestId != _progressRequestId) return;
       if (latestOlder == null) {
         setState(() => _hasMoreProgress = false);
         return;
@@ -213,20 +222,24 @@ class _PageGameListState extends State<PageGameList> {
         latestOlder.day,
       );
       final dateFrom = dateTo.subtract(const Duration(days: 29));
-      final older = await _serviceGame.fetchUserProgressPage(
-        userName: controllerGameList.userName,
-        gameType: selectedCategory!,
-        gameName: selectedGameName!,
-        dateFrom: dateFrom,
-        dateTo: dateTo,
-      );
-      final hasMore = await _serviceGame.hasUserProgressBefore(
-        userName: controllerGameList.userName,
-        gameType: selectedCategory!,
-        gameName: selectedGameName!,
-        before: dateFrom,
-      );
-      if (!mounted) return;
+      final results = await Future.wait<Object>([
+        _serviceGame.fetchUserProgressPage(
+          userName: controllerGameList.userName,
+          gameType: requestedCategory,
+          gameName: requestedGameName,
+          dateFrom: dateFrom,
+          dateTo: dateTo,
+        ),
+        _serviceGame.hasUserProgressBefore(
+          userName: controllerGameList.userName,
+          gameType: requestedCategory,
+          gameName: requestedGameName,
+          before: dateFrom,
+        ),
+      ]);
+      if (!mounted || requestId != _progressRequestId) return;
+      final older = results[0] as List<ModelGameUser>;
+      final hasMore = results[1] as bool;
       final unique = <String, ModelGameUser>{};
       for (final item in [...userProgress, ...older]) {
         unique[item.id ?? ''] = item;
@@ -238,8 +251,21 @@ class _PageGameListState extends State<PageGameList> {
           ..sort((a, b) => (b.createdAt ?? DateTime(0))
               .compareTo(a.createdAt ?? DateTime(0)));
       });
+    } catch (error, stackTrace) {
+      logger.e(
+        'Load more game progress failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (mounted && requestId == _progressRequestId) {
+        AppNavigator.showErrorBar(
+          AppLocalizations.of(context)!.unknownError,
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isLoadingMoreProgress = false);
+      if (mounted && requestId == _progressRequestId) {
+        setState(() => _isLoadingMoreProgress = false);
+      }
     }
   }
 
@@ -508,9 +534,13 @@ class _PageGameListState extends State<PageGameList> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 遊戲類別下拉選單
-            DropdownButton<String>(
+            DropdownButtonFormField<String>(
+              key: ValueKey('category|$selectedCategory'),
               isExpanded: true,
-              value: selectedCategory,
+              initialValue: selectedCategory,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) async {
                 if (value != null) {
                   setState(() {
@@ -536,9 +566,13 @@ class _PageGameListState extends State<PageGameList> {
             ),
             Gaps.h16,
             // 遊戲名稱
-            DropdownButton<String>(
+            DropdownButtonFormField<String>(
+              key: ValueKey('game|$selectedGameName'),
               isExpanded: true,
-              value: selectedGameName,
+              initialValue: selectedGameName,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) async {
                 if (value != null && selectedCategory != null) {
                   setState(() {
@@ -564,6 +598,9 @@ class _PageGameListState extends State<PageGameList> {
             Gaps.h16,
             // 關卡選單
             OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+              ),
               onPressed: levelList == null
                   ? null
                   : () async {
@@ -716,6 +753,10 @@ class _PageGameListState extends State<PageGameList> {
                   ? () async {
                       setState(() => _isOpeningGame = true);
                       final game = selectedGameItem!;
+                      controllerGameList.invalidateUserProgress(
+                        game.gameType,
+                        game.gameName,
+                      );
                       if (_effectiveQuestionBank == 'mine' &&
                           _supportsQuestionBank) {
                         try {
@@ -1120,70 +1161,97 @@ class _PageGameListState extends State<PageGameList> {
             ),
             const Divider(),
             Expanded(
-              child: _isLoadingProgress
-                  ? const Center(child: CircularProgressIndicator())
-                  : userProgress.isEmpty
-                      ? Center(child: Text(loc.gameNoRecords))
-                      : ListView.builder(
-                          cacheExtent: 240,
-                          addAutomaticKeepAlives: false,
-                          itemCount: userProgress.length +
-                              ((_hasMoreProgress || _isLoadingMoreProgress)
-                                  ? 1
-                                  : 0),
-                          itemBuilder: (context, index) {
-                            if (index == userProgress.length) {
-                              return Center(
-                                child: _isLoadingMoreProgress
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(16),
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : TextButton(
-                                        onPressed: _loadMoreProgress,
-                                        child: Text(loc.clickHereToSeeMore),
-                                      ),
-                              );
-                            }
-                            final item = userProgress[index];
-                            final formattedDate = item.createdAt != null
-                                ? (item.createdAt!.year == now.year
-                                        ? currentYearDateFormat
-                                        : previousYearDateFormat)
-                                    .format(item.createdAt!)
-                                : '';
-                            // 判斷第一筆，設定文字顏色
-                            final textColor = index == 0
-                                ? colorScheme.primary
-                                : colorScheme.onSurface;
-                            final textBold = index == 0
-                                ? FontWeight.bold
-                                : FontWeight.normal;
-                            return ListTile(
-                              leading: index == 0
-                                  ? Icon(
-                                      Icons.emoji_events_outlined,
-                                      color: colorScheme.primary,
-                                    )
-                                  : null,
-                              title: Text(
-                                formattedDate,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontWeight: textBold,
-                                ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _isLoadingProgress
+                    ? const Center(
+                        key: ValueKey('loading'),
+                        child: CircularProgressIndicator(),
+                      )
+                    : userProgress.isEmpty
+                        ? Center(
+                            key: const ValueKey('empty'),
+                            child: Text(loc.gameNoRecords),
+                          )
+                        : Scrollbar(
+                            key: ValueKey(
+                              'progress|$selectedCategory|$selectedGameName',
+                            ),
+                            child: ListView.builder(
+                              key: ValueKey(
+                                '$selectedCategory|$selectedGameName',
                               ),
-                              subtitle: Text(
-                                '${loc.gameLevel} ${item.level}  '
-                                '${loc.gameScore}: ${item.score}',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          },
-                        ),
+                              itemExtent: 72,
+                              cacheExtent: 240,
+                              addAutomaticKeepAlives: false,
+                              itemCount: userProgress.length +
+                                  ((_hasMoreProgress || _isLoadingMoreProgress)
+                                      ? 1
+                                      : 0),
+                              itemBuilder: (context, index) {
+                                if (index == userProgress.length) {
+                                  return Center(
+                                    child: _isLoadingMoreProgress
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(16),
+                                            child: CircularProgressIndicator(),
+                                          )
+                                        : TextButton(
+                                            onPressed: _loadMoreProgress,
+                                            child: Text(loc.clickHereToSeeMore),
+                                          ),
+                                  );
+                                }
+                                final item = userProgress[index];
+                                final formattedDate = item.createdAt != null
+                                    ? (item.createdAt!.year == now.year
+                                            ? currentYearDateFormat
+                                            : previousYearDateFormat)
+                                        .format(item.createdAt!)
+                                    : '';
+                                // 判斷第一筆，設定文字顏色
+                                final textColor = index == 0
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurface;
+                                final textBold = index == 0
+                                    ? FontWeight.bold
+                                    : FontWeight.normal;
+                                return ListTile(
+                                  leading: index == 0
+                                      ? Icon(
+                                          Icons.emoji_events_outlined,
+                                          color: colorScheme.primary,
+                                        )
+                                      : null,
+                                  title: Text(
+                                    formattedDate,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: textBold,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${loc.gameLevel} ${item.level}  '
+                                    '${loc.gameScore}: ${item.score}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: item.isPass == true
+                                      ? Tooltip(
+                                          message: loc.statusCompleted,
+                                          child: Icon(
+                                            Icons.check_circle,
+                                            color: colorScheme.primary,
+                                          ),
+                                        )
+                                      : null,
+                                );
+                              },
+                            ),
+                          ),
+              ),
             ),
           ],
         ),

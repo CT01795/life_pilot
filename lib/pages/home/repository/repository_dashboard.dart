@@ -23,8 +23,12 @@ class DashboardRepository {
 
     final result = await supabase
         .from(TableNames.calendarEvents)
-        .select()
+        .select(
+          'id,name,start_date,start_time,end_date,end_time,city,location,'
+          'type,is_free,description,master_url,is_completed',
+        )
         .eq(Fields.account, account)
+        .eq('is_completed', false)
         .gte(
           'start_date',
           today.toUtc().toIso8601String(),
@@ -40,7 +44,8 @@ class DashboardRepository {
         .order(
           'start_time',
           ascending: true,
-        );
+        )
+        .limit(5);
 
     return (result as List)
         .map(
@@ -208,7 +213,7 @@ class DashboardRepository {
     );
     final result = await supabase
         .from(TableNames.accountingDetail)
-        .select()
+        .select('description,value,currency,created_at,date,group')
         .eq(
           'account_id',
           accountId,
@@ -224,7 +229,9 @@ class DashboardRepository {
         )
         .order('date', ascending: false);
 
-    final records = (result as List)
+    final rows = result as List;
+    final records = rows
+        .take(5)
         .map(
           (e) => IncomeExpenseItem.fromJson(e),
         )
@@ -232,6 +239,10 @@ class DashboardRepository {
     return AccountingDashboardSummary(
       records: records,
       total: (accountResult['balance'] ?? 0).toInt(),
+      todayTotal: rows.fold<int>(
+        0,
+        (sum, row) => sum + ((row['value'] ?? 0) as num).toInt(),
+      ),
       currency: currency ?? 'TWD',
     );
   }
@@ -263,7 +274,7 @@ class DashboardRepository {
     );
     final result = await supabase
         .from(TableNames.pointRecordDetail)
-        .select()
+        .select('description,type,value,created_at,date,group')
         .eq(
           'account_id',
           accountId,
@@ -278,7 +289,9 @@ class DashboardRepository {
         )
         .order('date', ascending: false);
 
-    final records = (result as List)
+    final rows = result as List;
+    final records = rows
+        .take(5)
         .map(
           (e) => PointRecordItem.fromJson(e),
         )
@@ -286,6 +299,10 @@ class DashboardRepository {
     return PointDashboardSummary(
       records: records,
       total: (accountResult['points'] ?? 0).toInt(),
+      todayTotal: rows.fold<int>(
+        0,
+        (sum, row) => sum + ((row['value'] ?? 0) as num).toInt(),
+      ),
     );
   }
 }

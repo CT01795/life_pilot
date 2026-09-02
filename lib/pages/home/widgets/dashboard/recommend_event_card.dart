@@ -24,6 +24,7 @@ class RecommendEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final account = context.select<ModelAuthView, String?>(
       (auth) => auth.account,
     );
@@ -40,7 +41,9 @@ class RecommendEventCard extends StatelessWidget {
     );
 
     return Card(
-      color: Color(0xFFF1E1CF),
+      color: colorScheme.brightness == Brightness.dark
+          ? colorScheme.surfaceContainerHigh
+          : const Color(0xFFF1E1CF),
       child: Padding(
         padding: Insets.all12,
         child: Column(
@@ -70,6 +73,7 @@ class RecommendEventCard extends StatelessWidget {
             else
               ...events.take(5).map(
                     (e) => ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       leading: Tooltip(
                         message: loc.addToSchedule,
                         child: Transform.scale(
@@ -161,11 +165,13 @@ class RecommendEventCard extends StatelessWidget {
                                 },
                           child: Text(
                             '${(e.startDate!.isBefore(today) ? '～ ${e.endDate?.formatDateString()}' : e.startDate?.formatDateString())} ${e.startTime?.formatTimeString() ?? ''}\n${e.name}',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color:
                                   (e.masterUrl == null || e.masterUrl!.isEmpty)
-                                      ? Colors.black
-                                      : Colors.blue,
+                                      ? colorScheme.onSurface
+                                      : colorScheme.primary,
                             ),
                           ),
                         ),
@@ -209,8 +215,10 @@ class RecommendEventCard extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   '${e.city ?? ''} ${e.location ?? ''}',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ),

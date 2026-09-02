@@ -50,17 +50,29 @@ class _PageHomeState extends State<PageHome> {
             );
       },
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: Insets.all12,
         children: [
-          TodayScheduleCard(),
-          Gaps.h16,
-          RecommendEventCard(),
-          Gaps.h16,
-          RecommendPlaceCard(),
-          Gaps.h16,
-          IncomeExpenseSummaryCard(),
-          Gaps.h16,
-          PointSummaryCard(),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TodayScheduleCard(),
+                  Gaps.h16,
+                  RecommendEventCard(),
+                  Gaps.h16,
+                  RecommendPlaceCard(),
+                  Gaps.h16,
+                  IncomeExpenseSummaryCard(),
+                  Gaps.h16,
+                  PointSummaryCard(),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

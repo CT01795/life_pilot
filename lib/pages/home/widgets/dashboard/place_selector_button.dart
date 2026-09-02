@@ -21,51 +21,61 @@ class PlaceCitySelectorButton extends StatelessWidget {
     );
     final dashboard = context.read<ModelDashboard>();
     final auth = context.read<ModelAuthView>();
+    final isLoading = context.select<ModelDashboard, bool>(
+      (dashboard) => dashboard.isLoading(DashboardSection.recommendPlaces),
+    );
 
     return Tooltip(
       message: loc.selectCity,
       child: OutlinedButton.icon(
-        icon: const Icon(
-          Icons.location_on,
-        ),
+        icon: isLoading
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(
+                Icons.location_on,
+              ),
         label: Text(
           selectedCity,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        onPressed: () async {
-          final city = await showSearch<String>(
-            context: context,
-            delegate: CitySearchDelegate(
-              cities,
-            ),
-          );
+        onPressed: isLoading
+            ? null
+            : () async {
+                final city = await showSearch<String>(
+                  context: context,
+                  delegate: CitySearchDelegate(
+                    cities,
+                  ),
+                );
 
-          if (city == null) {
-            return;
-          }
+                if (city == null || city.trim().isEmpty) {
+                  return;
+                }
 
-          if (auth.account == null) {
-            return;
-          }
+                if (auth.account == null) {
+                  return;
+                }
 
-          if (city == selectedCity) {
-            return;
-          }
+                if (city == selectedCity) {
+                  return;
+                }
 
-          try {
-            await dashboard.changePlaceCity(
-              account: auth.account!,
-              city: city,
-            );
-          } catch (_) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
-              );
-            }
-          }
-        },
+                try {
+                  await dashboard.changePlaceCity(
+                    account: auth.account!,
+                    city: city,
+                  );
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
+                    );
+                  }
+                }
+              },
       ),
     );
   }

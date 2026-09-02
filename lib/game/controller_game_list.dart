@@ -48,6 +48,8 @@ class ControllerGameList extends SafeChangeNotifier {
       String gameType, String gameName) async {
     // 組 key
     final key = '$gameType|$gameName';
+    final cached = _userProgressCache[key];
+    if (cached != null) return cached;
 
     isLoading = true;
     _notifyIfActive();
@@ -66,6 +68,10 @@ class ControllerGameList extends SafeChangeNotifier {
         _notifyIfActive();
       }
     }
+  }
+
+  void invalidateUserProgress(String gameType, String gameName) {
+    _userProgressCache.remove('$gameType|$gameName');
   }
 
   void _notifyIfActive() {
