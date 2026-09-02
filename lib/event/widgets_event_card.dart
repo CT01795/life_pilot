@@ -79,10 +79,14 @@ class WidgetsEventCard extends StatelessWidget {
     );
   }
 
-  static Widget tags({required List<String>? typeList}) {
+  static Widget tags({
+    required BuildContext context,
+    required List<String>? typeList,
+  }) {
     if (typeList == null) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
+    final colorScheme = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8,
       runSpacing: 4,
@@ -90,13 +94,13 @@ class WidgetsEventCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8F1FF),
+            color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(99),
           ),
           child: Text(
             type,
-            style: const TextStyle(
-              color: Color(0xFF315C9B),
+            style: TextStyle(
+              color: colorScheme.onPrimaryContainer,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -155,6 +159,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate =
         widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
@@ -257,11 +262,11 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           Expanded(
               child: Text(
             widget.eventViewModel.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 18,
               height: 1.25,
-              color: Color(0xFF1C2733),
+              color: colorScheme.onSurface,
             ),
             softWrap: true, // 允許換行
             overflow: TextOverflow.visible, // 文字超過不截斷
@@ -287,13 +292,13 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF5C6F82)),
+              Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
-                    color: Color(0xFF46586A),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
                     height: 1.3,
                   ),
                 ),
@@ -309,25 +314,25 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF0EC),
+          color: colorScheme.tertiaryContainer,
           borderRadius: BorderRadius.circular(12),
-          border: const Border(
-            left: BorderSide(color: Color(0xFFE9573F), width: 4),
+          border: Border(
+            left: BorderSide(color: colorScheme.tertiary, width: 4),
           ),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.event_available_rounded,
               size: 20,
-              color: Color(0xFFD84532),
+              color: colorScheme.onTertiaryContainer,
             ),
             const SizedBox(width: 9),
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(
-                  color: Color(0xFF8A3025),
+                style: TextStyle(
+                  color: colorScheme.onTertiaryContainer,
                   fontWeight: FontWeight.w800,
                   height: 1.3,
                 ),
@@ -347,27 +352,31 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           margin: const EdgeInsets.only(bottom: 4),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE8F7F2), Color(0xFFEAF4FB)],
-            ),
+            color: colorScheme.secondaryContainer,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              const Icon(Icons.explore_rounded,
-                  color: Color(0xFF167D72), size: 22),
+              Icon(
+                Icons.explore_rounded,
+                color: colorScheme.onSecondaryContainer,
+                size: 22,
+              ),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
-                    color: Color(0xFF17675F),
+                  style: TextStyle(
+                    color: colorScheme.onSecondaryContainer,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              const Icon(Icons.directions_rounded,
-                  color: Color(0xFF347F9B), size: 19),
+              Icon(
+                Icons.directions_rounded,
+                color: colorScheme.onSecondaryContainer,
+                size: 19,
+              ),
             ],
           ),
         ),
@@ -387,8 +396,10 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
               widget.eventViewModel.tags.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 9),
-              child:
-                  WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
+              child: WidgetsEventCard.tags(
+                context: context,
+                typeList: widget.eventViewModel.tags,
+              ),
             ),
           if (widget.eventViewModel.hasLocation)
             widget.tableName == TableNames.recommendPlaces
@@ -408,8 +419,10 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
               widget.eventViewModel.tags.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 7),
-              child:
-                  WidgetsEventCard.tags(typeList: widget.eventViewModel.tags),
+              child: WidgetsEventCard.tags(
+                context: context,
+                typeList: widget.eventViewModel.tags,
+              ),
             ),
           if (widget.eventViewModel.description.isNotEmpty)
             Padding(
@@ -418,8 +431,8 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                 widget.eventViewModel.description,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF5D6874),
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
                   height: 1.45,
                 ),
               ),
@@ -454,10 +467,10 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFFE4EAF0)),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: colorScheme.surface,
+      surfaceTintColor: colorScheme.surfaceTint,
       elevation: 1.5,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -512,7 +525,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                 // 🗑 Delete（只有 canDelete）
                 if (widget.eventViewModel.canDelete && widget.onDelete != null)
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    icon: Icon(Icons.delete, color: colorScheme.error),
                     tooltip: loc.delete,
                     onPressed: widget.onDelete,
                   ),

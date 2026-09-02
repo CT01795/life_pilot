@@ -90,10 +90,31 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         child: FutureBuilder<CalendarSharingState>(
           future: _state,
           builder: (context, snapshot) {
-            if (!snapshot.hasData) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
                 height: 160,
                 child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return SizedBox(
+                height: 180,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.cloud_off_outlined, size: 40),
+                      const SizedBox(height: 8),
+                      Text(loc.calendarInvitationFailed),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _reload,
+                        icon: const Icon(Icons.refresh),
+                        label: Text(loc.retry),
+                      ),
+                    ],
+                  ),
+                ),
               );
             }
             final state = snapshot.data!;
@@ -104,6 +125,10 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
+                  if (_submitting) ...[
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 12),
+                  ],
                   Text(loc.calendarInvite,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
@@ -155,10 +180,16 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                                 }
                               }),
                     ),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 220),
+                    SizedBox(
+                      height: (state.shareableEvents.length * 72.0)
+                          .clamp(72.0, 220.0),
                       child: ListView.builder(
-                        shrinkWrap: true,
+                        primary: false,
+                        itemExtent: 72,
+                        cacheExtent: 144,
+                        addAutomaticKeepAlives: false,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         itemCount: state.shareableEvents.length,
                         itemBuilder: (context, index) {
                           final event = state.shareableEvents[index];
@@ -241,51 +272,77 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                   }),
                   const SizedBox(height: 12),
                   _sectionTitle(context, loc.calendarReceivedInvitations),
-                  ...state.received.map((item) => ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.download_outlined),
-                        title: Text(item.sharedBy),
-                        subtitle: Text(_statusLabel(loc, item.status)),
-                        trailing: item.isPending
-                            ? Wrap(
-                                spacing: 4,
+                  ...state.received.map(
+                    (item) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.download_outlined),
+                          title: Text(
+                            item.sharedBy,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(_statusLabel(loc, item.status)),
+                        ),
+                        if (item.isPending || item.isAccepted)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(
+                              start: 56,
+                              end: 8,
+                              bottom: 8,
+                            ),
+                            child: Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                alignment: WrapAlignment.end,
                                 children: [
-                                  TextButton(
-                                    onPressed: _submitting
-                                        ? null
-                                        : () =>
-                                            _run(() => widget.service.respond(
+                                  if (item.isPending) ...[
+                                    TextButton(
+                                      onPressed: _submitting
+                                          ? null
+                                          : () => _run(
+                                                () => widget.service.respond(
                                                   invitationId: item.id,
                                                   accept: false,
-                                                )),
-                                    child: Text(loc.calendarInvitationDecline),
-                                  ),
-                                  FilledButton(
-                                    onPressed: _submitting
-                                        ? null
-                                        : () =>
-                                            _run(() => widget.service.respond(
+                                                ),
+                                              ),
+                                      child:
+                                          Text(loc.calendarInvitationDecline),
+                                    ),
+                                    FilledButton(
+                                      onPressed: _submitting
+                                          ? null
+                                          : () => _run(
+                                                () => widget.service.respond(
                                                   invitationId: item.id,
                                                   accept: true,
-                                                )),
-                                    child: Text(loc.calendarInvitationAccept),
-                                  ),
-                                ],
-                              )
-                            : item.isAccepted
-                                ? TextButton(
-                                    onPressed: _submitting
-                                        ? null
-                                        : () => _run(
-                                              () => widget.service.respond(
-                                                invitationId: item.id,
-                                                accept: false,
+                                                ),
                                               ),
-                                            ),
-                                    child: Text(loc.calendarStopReceiving),
-                                  )
-                                : null,
-                      )),
+                                      child: Text(loc.calendarInvitationAccept),
+                                    ),
+                                  ] else
+                                    TextButton(
+                                      onPressed: _submitting
+                                          ? null
+                                          : () => _run(
+                                                () => widget.service.respond(
+                                                  invitationId: item.id,
+                                                  accept: false,
+                                                ),
+                                              ),
+                                      child: Text(loc.calendarStopReceiving),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        const Divider(height: 1),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );

@@ -22,43 +22,51 @@ class WidgetsEventDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: Insets.h6,
-      child: Stack(
-        children: [
-          SingleChildScrollView(
-            child: WidgetsEventCard(
-              controllerEvent: controllerEvent,
-              eventViewModel: eventViewModel,
-              tableName: tableName,
-              onTap: () => Navigator.pop(context),
-              onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
-              onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 760,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+        ),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: WidgetsEventCard(
+                controllerEvent: controllerEvent,
+                eventViewModel: eventViewModel,
+                tableName: tableName,
+                onTap: () => Navigator.pop(context),
+                onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
+                onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
+              ),
             ),
-          ),
-          PositionedDirectional(
-            end: Gaps.w8.width,
-            top: Gaps.h48.height,
-            child: _buildCloseButton(context: context, loc: loc),
-          ),
-        ],
+            PositionedDirectional(
+              end: Gaps.w8.width,
+              top: Gaps.h8.height,
+              child: _buildCloseButton(context: context, loc: loc),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCloseButton(
       {required BuildContext context, required AppLocalizations loc}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
             blurRadius: 4,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
+            color: colorScheme.shadow.withValues(alpha: 0.2),
           ),
         ],
       ),
       child: IconButton(
-        icon: const Icon(Icons.close),
+        icon: Icon(Icons.close, color: colorScheme.onSurface),
         tooltip: loc.close,
         onPressed: () => Navigator.of(context).pop(),
       ),

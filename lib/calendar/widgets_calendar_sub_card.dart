@@ -32,16 +32,24 @@ class WidgetsCalendarSubCard extends StatelessWidget {
           Text("👉 ${event.name}",
               style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(event.dateRange),
-          if(event.tags.isNotEmpty)
-            WidgetsCalendarCard.tags(typeList: event.tags),
+          if (event.tags.isNotEmpty)
+            WidgetsCalendarCard.tags(
+              context: context,
+              typeList: event.tags,
+            ),
           if (event.hasLocation)
-            Text(event.locationDisplay,
+            Text(
+              event.locationDisplay,
               softWrap: true, // 允許換行
               overflow: TextOverflow.visible, // 文字超過不截斷
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsCalendarCard.link(text: loc.clickHereToSeeMore, onTap: onOpenLink,),
+            WidgetsCalendarCard.link(
+              context: context,
+              text: loc.clickHereToSeeMore,
+              onTap: onOpenLink,
+            ),
         ],
       ),
     );

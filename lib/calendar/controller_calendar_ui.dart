@@ -180,11 +180,10 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
     builder: (_) {
       return AlertDialog(
         //title: Text(loc.set_alarm),
-        backgroundColor: Colors.white,
         content: StatefulBuilder(
           builder: (context, setState) {
             return SizedBox(
-              width: MediaQuery.of(context).size.width,
+              width: 420,
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start, // ⬅️ 靠左對齊
@@ -196,9 +195,13 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
                           style: TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
                       Gaps.w16,
                       Expanded(
-                        child: DropdownButton<CalendarRepeatRule>(
-                          value: selectedRepeat,
+                        child: DropdownButtonFormField<CalendarRepeatRule>(
+                          initialValue: selectedRepeat,
                           isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
                           onChanged: (value) {
                             if (value != null) {
                               setState(() {
@@ -247,17 +250,17 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
         ),
         actions: [
           TextButton(
-            onPressed: () async {
+            onPressed: () => Navigator.pop(context, null),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
               Navigator.pop(context, {
                 "repeat": selectedRepeat,
                 "reminders": selectedReminders.toList(),
               });
             },
-            child: Text(loc.confirm, style: TextStyle(color: Colors.red)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: Text(loc.cancel, style: TextStyle(color: Colors.black)),
+            child: Text(loc.confirm),
           ),
         ],
       );

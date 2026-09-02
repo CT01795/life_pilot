@@ -51,25 +51,31 @@ class WidgetsCalendarCard extends StatelessWidget {
   }
 
   static Widget link({
+    required BuildContext context,
     required String text,
     required VoidCallback? onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.blue,
+        style: TextStyle(
+          color: colorScheme.primary,
           decoration: TextDecoration.underline,
         ),
       ),
     );
   }
 
-  static Widget tags({required List<String>? typeList}) {
+  static Widget tags({
+    required BuildContext context,
+    required List<String>? typeList,
+  }) {
     if (typeList == null) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
+    final colorScheme = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8,
       runSpacing: 4,
@@ -77,13 +83,13 @@ class WidgetsCalendarCard extends StatelessWidget {
         return Container(
           padding: Insets.h8v4,
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            border: Border.all(color: Colors.blue),
+            color: colorScheme.primaryContainer,
+            border: Border.all(color: colorScheme.primary),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
             type,
-            style: const TextStyle(color: Colors.blue),
+            style: TextStyle(color: colorScheme.onPrimaryContainer),
           ),
         );
       }).toList(),
@@ -151,7 +157,9 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                 decoration:
                     todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
                         ? BoxDecoration(
-                            color: Colors.grey.shade300,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
                             shape: BoxShape.circle,
                           )
                         : null,
@@ -164,16 +172,23 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                 if (!context.mounted) return;
                 showDialog(
                   context: context,
-                  builder: (_) => AlertDialog(
-                    title: Text(loc.weatherForecast),
-                    content: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.6,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: forecast.map((w) {
+                  builder: (dialogContext) {
+                    final maxHeight =
+                        MediaQuery.sizeOf(dialogContext).height * 0.6;
+                    final contentHeight = (forecast.length * 104.0)
+                        .clamp(120.0, maxHeight)
+                        .toDouble();
+                    return AlertDialog(
+                      title: Text(loc.weatherForecast),
+                      content: SizedBox(
+                        width: 420,
+                        height: contentHeight,
+                        child: ListView.builder(
+                          itemCount: forecast.length,
+                          cacheExtent: 208,
+                          addAutomaticKeepAlives: false,
+                          itemBuilder: (context, index) {
+                            final w = forecast[index];
                             String tmp =
                                 '${loc.weatherTemperature}: ${w.temp.toStringAsFixed(1)}°C';
                             if (w.temp.toStringAsFixed(1) !=
@@ -194,7 +209,9 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                                 decoration:
                                     w.main == 'Clouds' || w.main == 'Rain'
                                         ? BoxDecoration(
-                                            color: Colors.grey.shade300,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
                                             shape: BoxShape.circle,
                                           )
                                         : null,
@@ -205,17 +222,17 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                                   '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
                               subtitle: Text(tmp),
                             );
-                          }).toList(),
+                          },
                         ),
                       ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(loc.close),
-                      ),
-                    ],
-                  ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: Text(loc.close),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
@@ -249,20 +266,24 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
           if (widget.eventViewModel.dateRange.isNotEmpty)
             Text(widget.eventViewModel.dateRange),
           if (widget.eventViewModel.tags.isNotEmpty)
-            WidgetsCalendarCard.tags(typeList: widget.eventViewModel.tags),
+            WidgetsCalendarCard.tags(
+              context: context,
+              typeList: widget.eventViewModel.tags,
+            ),
           if (widget.eventViewModel.hasLocation)
             InkWell(
               onTap: widget.onOpenMap,
               child: Text(
                 widget.eventViewModel.locationDisplay,
-                style: const TextStyle(
-                  color: Colors.blue,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
           if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsCalendarCard.link(
+              context: context,
               text: loc.clickHereToSeeMore,
               onTap: widget.onOpenLink,
             ),
@@ -312,7 +333,10 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                 // 🗑 Delete（只有 canDelete）
                 if (widget.eventViewModel.canDelete && widget.onDelete != null)
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    icon: Icon(
+                      Icons.delete,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                     tooltip: loc.delete,
                     onPressed: widget.onDelete,
                   ),

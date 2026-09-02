@@ -32,16 +32,21 @@ class WidgetsEventSubCard extends StatelessWidget {
           Text("👉 ${event.name}",
               style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(event.dateRange),
-          if(event.tags.isNotEmpty)
-            WidgetsEventCard.tags(typeList: event.tags),
+          if (event.tags.isNotEmpty)
+            WidgetsEventCard.tags(
+              context: context,
+              typeList: event.tags,
+            ),
           if (event.hasLocation)
-            Text(event.locationDisplay,
+            Text(
+              event.locationDisplay,
               softWrap: true, // 允許換行
               overflow: TextOverflow.visible, // 文字超過不截斷
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsEventCard.link(text: loc.clickHereToSeeMore, onTap: onOpenLink),
+            WidgetsEventCard.link(
+                text: loc.clickHereToSeeMore, onTap: onOpenLink),
         ],
       ),
     );
