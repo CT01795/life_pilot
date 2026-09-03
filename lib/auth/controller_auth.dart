@@ -97,7 +97,10 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
     if (!_isLoggedIn || _isAnonymous) return;
     try {
-      _subscription = await _loadSubscriptionUsage();
+      _subscription = _preferredStorage == DataStorageLocation.local &&
+              _subscription.usage.isNotEmpty
+          ? await _withLocalUsage(_subscription)
+          : await _loadSubscriptionUsage();
       if (notify) notifyListeners();
     } catch (error, stackTrace) {
       logger.e('Failed to refresh subscription usage',
@@ -112,47 +115,60 @@ class ControllerAuth extends SafeChangeNotifier {
       return cloud;
     }
 
-    Future<int> count(String resource) => LocalDataStore.instance.count(
-          owner: account,
-          resource: resource,
-        );
-    final counts = await Future.wait<int>([
-      count(TableNames.calendarEvents),
-      count(TableNames.accountingDetail),
-      count(TableNames.pointRecordDetail),
-      count(TableNames.memoryTrace),
-      count('game_grammar'),
-      count('game_sentence'),
-      count('game_translation'),
-      count(TableNames.gameSocialScenarios),
-    ]);
-    final localUsage = Map<String, SubscriptionUsage>.from(cloud.usage)
+    return _withLocalUsage(cloud);
+  }
+
+  Future<SubscriptionSnapshot> _withLocalUsage(
+    SubscriptionSnapshot base,
+  ) async {
+    final account = _currentAccount;
+    if (account == null) return base;
+
+    final resources = [
+      TableNames.calendarEvents,
+      TableNames.accountingDetail,
+      TableNames.pointRecordDetail,
+      TableNames.memoryTrace,
+      'game_grammar',
+      'game_sentence',
+      'game_translation',
+      TableNames.gameSocialScenarios,
+    ];
+    final counts = await LocalDataStore.instance.countByResources(
+      owner: account,
+      resources: resources,
+    );
+    int count(String resource) => counts[resource] ?? 0;
+    final localUsage = Map<String, SubscriptionUsage>.from(base.usage)
       ..['calendar_events'] = SubscriptionUsage(
         resource: 'calendar_events',
-        used: counts[0],
+        used: count(TableNames.calendarEvents),
         quota: -1,
       )
       ..['accounting_detail'] = SubscriptionUsage(
         resource: 'accounting_detail',
-        used: counts[1],
+        used: count(TableNames.accountingDetail),
         quota: -1,
       )
       ..['point_record_detail'] = SubscriptionUsage(
         resource: 'point_record_detail',
-        used: counts[2],
+        used: count(TableNames.pointRecordDetail),
         quota: -1,
       )
       ..['memory_trace'] = SubscriptionUsage(
         resource: 'memory_trace',
-        used: counts[3],
+        used: count(TableNames.memoryTrace),
         quota: -1,
       )
       ..['game_questions'] = SubscriptionUsage(
         resource: 'game_questions',
-        used: counts.skip(4).fold(0, (sum, value) => sum + value),
+        used: count('game_grammar') +
+            count('game_sentence') +
+            count('game_translation') +
+            count(TableNames.gameSocialScenarios),
         quota: -1,
       );
-    return cloud.copyWithUsage(localUsage);
+    return base.copyWithUsage(localUsage);
   }
 
   Future<void> setPreferredStorage(DataStorageLocation location) async {

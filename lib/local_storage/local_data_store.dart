@@ -142,4 +142,27 @@ class LocalDataStore {
       ]),
     );
   }
+
+  Future<Map<String, int>> countByResources({
+    required String owner,
+    required Iterable<String> resources,
+  }) async {
+    final requested = resources.toSet();
+    final counts = <String, int>{for (final resource in requested) resource: 0};
+    if (requested.isEmpty) return counts;
+
+    final snapshots = await _records.find(
+      await _db,
+      finder: Finder(
+        filter: Filter.equals('owner', owner.toLowerCase()),
+      ),
+    );
+    for (final snapshot in snapshots) {
+      final resource = snapshot.value['resource']?.toString();
+      if (resource != null && requested.contains(resource)) {
+        counts[resource] = counts[resource]! + 1;
+      }
+    }
+    return counts;
+  }
 }

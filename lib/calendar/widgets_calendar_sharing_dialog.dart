@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/service_calendar_sharing.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:provider/provider.dart';
 
 class CalendarSharingDialog extends StatefulWidget {
   const CalendarSharingDialog({
@@ -56,6 +60,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     setState(() => _submitting = true);
     try {
       await action();
+      await context.read<ControllerAuth>().refreshSubscriptionUsage();
       await widget.onSharingChanged();
       if (mounted) _reload();
     } catch (_) {
@@ -118,6 +123,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
               );
             }
             final state = snapshot.data!;
+            final auth = context.watch<ControllerAuth>();
             return ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * 0.7,
@@ -125,6 +131,10 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
+                  if (auth.preferredStorage == DataStorageLocation.cloud)
+                    const SubscriptionUsageBanner(
+                      resource: 'calendar_shares',
+                    ),
                   if (_submitting) ...[
                     const LinearProgressIndicator(),
                     const SizedBox(height: 12),

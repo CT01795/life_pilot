@@ -4,6 +4,9 @@ import 'package:life_pilot/game/social/page_game_social_question_create.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:provider/provider.dart';
 
 enum _StatusFilter { all, active, inactive }
 
@@ -199,6 +202,8 @@ class _PageState extends State<PageGameSocialQuestions> {
       if (!mounted) return;
       await _load();
       if (!mounted) return;
+      await context.read<ControllerAuth>().refreshSubscriptionUsage();
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(loc.questionDeleted)));
     } catch (error, stackTrace) {
@@ -233,6 +238,9 @@ class _PageState extends State<PageGameSocialQuestions> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      const SubscriptionUsageBanner(
+                        resource: 'game_questions',
+                      ),
                       if (_loading) ...[
                         const LinearProgressIndicator(),
                         Gaps.h16,
