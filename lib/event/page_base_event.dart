@@ -12,6 +12,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 import '../utils/widgets/widgets_appbar.dart';
 
@@ -107,6 +108,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
     );
 
     if (newEvent != null) {
+      await widget.auth.refreshSubscriptionUsage();
       await _controller.loadEvents(isGetPublicEvents: true);
     }
   }
@@ -249,6 +251,11 @@ class _GenericEventPageState extends State<GenericEventPage> {
                   )
                 : Column(
                     children: [
+                      if (_controller.fromTableName ==
+                          TableNames.calendarEvents)
+                        const SubscriptionUsageBanner(
+                          resource: 'calendar_events',
+                        ),
                       AnimatedBuilder(
                         animation: _appBarHandler,
                         builder: (_, __) => Selector<ControllerEvent, int>(

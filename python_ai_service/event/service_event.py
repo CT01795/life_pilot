@@ -99,6 +99,22 @@ def _cleanup_recommended_events_once_per_day() -> bool:
                 "((now() at time zone 'Asia/Taipei')::date - 2)::date)"
             )
         )
+        subscription_cleanup_count = db.execute(
+            text("select public.cleanup_expired_subscription_overages()")
+        ).scalar()
+        if subscription_cleanup_count:
+            logger.info(
+                "Cleaned expired subscription overages for %s account(s)",
+                subscription_cleanup_count,
+            )
+        answer_cleanup_count = db.execute(
+            text("select public.cleanup_expired_game_answer_history()")
+        ).scalar()
+        if answer_cleanup_count:
+            logger.info(
+                "Cleaned %s expired cloud game answer record(s)",
+                answer_cleanup_count,
+            )
         db.execute(
             text(
                 "insert into public.recommended_event_url "

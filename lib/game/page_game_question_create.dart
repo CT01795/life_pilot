@@ -5,6 +5,9 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:provider/provider.dart';
 
 enum _QuestionKind { grammar, sentence, speaking, translation }
 
@@ -456,6 +459,9 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
           break;
       }
       if (!mounted) return;
+      if (widget.existingQuestion == null) {
+        await context.read<ControllerAuth>().refreshSubscriptionUsage();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -478,10 +484,11 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
           SnackBar(content: Text(error.message)),
         );
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
+        final message = subscriptionErrorMessage(loc, error);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.unknownError)),
+          SnackBar(content: Text(message.isEmpty ? loc.unknownError : message)),
         );
       }
     } finally {
@@ -511,6 +518,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.all(16),
               children: [
+                if (widget.existingQuestion == null)
+                  const SubscriptionUsageBanner(resource: 'game_questions'),
                 Card(
                   color: Theme.of(context).colorScheme.secondaryContainer,
                   child: Padding(

@@ -41,19 +41,19 @@ class CalendarEvent {
     Map<String, dynamic> json,
   ) {
     return CalendarEvent(
-      id: json[Fields.id] as String,
-      name: json['name'] ?? '',
+      id: json[Fields.id]?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
       startDate: DateTimeParser.parseDate(json['start_date']),
       startTime: DateTimeParser.parseTime(json['start_time']),
       endDate: DateTimeParser.parseDate(json['end_date']),
       endTime: DateTimeParser.parseTime(json['end_time']),
-      city: json['city'],
-      location: json['location'],
-      type: json['type'],
-      isFree: json['is_free'] ?? false,
-      description: json['description'],
-      masterUrl: json['master_url'],
-      isCompleted: json['is_completed'],
+      city: json['city']?.toString(),
+      location: json['location']?.toString(),
+      type: json['type']?.toString(),
+      isFree: json['is_free'] == true,
+      description: json['description']?.toString(),
+      masterUrl: json['master_url']?.toString(),
+      isCompleted: json['is_completed'] == true,
     );
   }
 

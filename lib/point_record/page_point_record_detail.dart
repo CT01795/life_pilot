@@ -11,6 +11,7 @@ import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/record_categories.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 class PagePointRecordDetail extends StatelessWidget {
   final ModelPointRecordAccount account;
@@ -184,6 +185,7 @@ class _PagePointRecordDetailViewState
       body: Column(
         children: [
           Gaps.h8,
+          const SubscriptionUsageBanner(resource: 'point_record_detail'),
           _buildSummary(context, account, controller),
           _buildMicButton(context, controller),
           const Divider(),
@@ -292,13 +294,23 @@ class _PagePointRecordDetailViewState
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Text(
-              record.value > 0
-                  ? '+${numberFormatter.format(record.value)}'
-                  : numberFormatter.format(record.value),
-              style: TextStyle(
-                  color: record.value >= 0 ? Colors.green : Colors.red,
-                  fontSize: 18),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  record.value > 0
+                      ? '+${numberFormatter.format(record.value)}'
+                      : numberFormatter.format(record.value),
+                  style: TextStyle(
+                      color: record.value >= 0 ? Colors.green : Colors.red,
+                      fontSize: 18),
+                ),
+                IconButton(
+                  tooltip: AppLocalizations.of(context)!.delete,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _deleteRecord(controller, record.id),
+                ),
+              ],
             ),
             onTap: () async {
               final updated = await _showEditDetailDialog(
@@ -320,6 +332,33 @@ class _PagePointRecordDetailViewState
         },
       ),
     );
+  }
+
+  Future<void> _deleteRecord(
+    ControllerPointRecordDetail controller,
+    String detailId,
+  ) async {
+    final loc = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(loc.confirmDelete),
+            content: Text(loc.subscriptionDeleteRecordHint),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(loc.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(loc.delete),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+    await controller.deletePointRecordDetail(detailId);
   }
 
   Widget _buildMicButton(
@@ -365,7 +404,18 @@ class _PagePointRecordDetailViewState
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
 
-              await controller.commitRecords(previews);
+              try {
+                await controller.commitRecords(previews);
+              } catch (error) {
+                if (!context.mounted) return;
+                final message = subscriptionErrorMessage(loc, error);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message.isEmpty ? loc.unknownError : message),
+                  ),
+                );
+                return;
+              }
 
               // 清空輸入框
               setState(() {

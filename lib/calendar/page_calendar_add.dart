@@ -12,6 +12,7 @@ import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 class PageCalendarAdd extends StatefulWidget {
   final ControllerCalendar controllerCalendar;
@@ -132,8 +133,11 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
         EventSaveError.duplicate => loc.eventAlreadyExists,
       };
       AppNavigator.showErrorBar(message);
-    } catch (_) {
-      AppNavigator.showErrorBar(loc.eventSaveFailed);
+    } catch (error) {
+      final message = subscriptionErrorMessage(loc, error);
+      AppNavigator.showErrorBar(
+        message.isNotEmpty ? message : loc.eventSaveFailed,
+      );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

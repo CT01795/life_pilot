@@ -7,8 +7,18 @@ import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 
 class DashboardRepository {
+  String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
+
+  Future<bool> get _storesLocally async {
+    final owner = _localOwner;
+    return owner != null &&
+        await LocalDataStore.instance.preferredLocation(owner) ==
+            DataStorageLocation.local;
+  }
+
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
     final now = DateTime.now();
     final today = DateTime(
@@ -20,6 +30,22 @@ class DashboardRepository {
     final tomorrow = today.add(
       const Duration(days: 3),
     );
+
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.calendarEvents,
+      );
+      final filtered = rows.where((row) {
+        if (row['is_completed'] == true) return false;
+        final date =
+            DateTime.tryParse(row['start_date']?.toString() ?? '')?.toLocal();
+        return date != null && !date.isBefore(today) && date.isBefore(tomorrow);
+      }).toList()
+        ..sort((a, b) => (a['start_date']?.toString() ?? '')
+            .compareTo(b['start_date']?.toString() ?? ''));
+      return filtered.take(5).map(CalendarEvent.fromJson).toList();
+    }
 
     final result = await supabase
         .from(TableNames.calendarEvents)
@@ -83,6 +109,24 @@ class DashboardRepository {
     required String id,
     required String account,
   }) async {
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: account,
+        resource: TableNames.calendarEvents,
+      );
+      final matches = rows.where((row) => row[Fields.id]?.toString() == id);
+      if (matches.isEmpty) return;
+      final updated = Map<String, Object?>.from(matches.first)
+        ..['is_completed'] = true;
+      await LocalDataStore.instance.put(
+        owner: account,
+        resource: TableNames.calendarEvents,
+        id: id,
+        data: updated,
+        syncState: LocalSyncState.modifiedLocally,
+      );
+      return;
+    }
     await supabase
         .from(TableNames.calendarEvents)
         .update({
@@ -102,6 +146,19 @@ class DashboardRepository {
   Future<DashboardSetting> loadDashboardSetting({
     required String account,
   }) async {
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: account,
+        resource: TableNames.dashboardSetting,
+      );
+      if (rows.isNotEmpty) {
+        final saved = DashboardSetting.fromJson(rows.first);
+        if (saved.accountingAccountId != null || saved.pointAccountId != null) {
+          return saved;
+        }
+      }
+      return _recoverLocalDashboardSetting(account);
+    }
     final result = await supabase
         .from(TableNames.dashboardSetting)
         .select()
@@ -123,10 +180,71 @@ class DashboardRepository {
     return DashboardSetting.fromJson(result);
   }
 
+  Future<DashboardSetting> _recoverLocalDashboardSetting(String account) async {
+    Map<String, dynamic>? cloudSetting;
+    try {
+      cloudSetting = await supabase
+          .from(TableNames.dashboardSetting)
+          .select()
+          .eq(Fields.account, account)
+          .maybeSingle();
+    } catch (_) {
+      // The local dashboard can still recover from the transferred accounts.
+    }
+
+    final accountingAccounts = await LocalDataStore.instance.list(
+      owner: account,
+      resource: TableNames.accountingAccount,
+    );
+    final pointAccounts = await LocalDataStore.instance.list(
+      owner: account,
+      resource: TableNames.pointRecordAccount,
+    );
+    Map<String, dynamic>? firstValid(List<Map<String, dynamic>> rows) {
+      for (final row in rows) {
+        if (row[Fields.isValid] == true) return row;
+      }
+      return null;
+    }
+
+    final accounting = firstValid(accountingAccounts);
+    final points = firstValid(pointAccounts);
+    final setting = DashboardSetting(
+      recommendEventCity:
+          cloudSetting?['recommend_event_city']?.toString() ?? '台北',
+      recommendPlaceCity:
+          cloudSetting?['recommend_place_city']?.toString() ?? '台北',
+      language: cloudSetting?['language']?.toString() ?? 'zh',
+      accountingAccountId: accounting?[Fields.id]?.toString(),
+      accountingAccountName: accounting?[Fields.account]?.toString(),
+      pointAccountId: points?[Fields.id]?.toString(),
+      pointAccountName: points?[Fields.account]?.toString(),
+    );
+    await LocalDataStore.instance.put(
+      owner: account,
+      resource: TableNames.dashboardSetting,
+      id: account.toLowerCase(),
+      data: {Fields.account: account, ...setting.toJson()},
+    );
+    return setting;
+  }
+
   Future<void> saveDashboardSetting({
     required String account,
     required DashboardSetting setting,
   }) async {
+    if (await _storesLocally) {
+      await LocalDataStore.instance.put(
+        owner: account,
+        resource: TableNames.dashboardSetting,
+        id: account.toLowerCase(),
+        data: {
+          Fields.account: account,
+          ...setting.toJson(),
+        },
+      );
+      return;
+    }
     await supabase.from(TableNames.dashboardSetting).upsert({
       Fields.account: account,
       ...setting.toJson(),
@@ -187,6 +305,34 @@ class DashboardRepository {
 
   Future<AccountingDashboardSummary> loadAccountingSummary(
       {required String accountId}) async {
+    if (accountId.isEmpty) return const AccountingDashboardSummary.empty();
+    if (await _storesLocally) {
+      final accounts = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.accountingAccount,
+      );
+      final account = accounts
+          .where((row) =>
+              row[Fields.id]?.toString() == accountId &&
+              row[Fields.isValid] == true)
+          .firstOrNull;
+      if (account == null) return const AccountingDashboardSummary.empty();
+      final currency = account['main_currency']?.toString() ?? 'TWD';
+      final rows = await _todayLocalDetails(
+        resource: TableNames.accountingDetail,
+        accountId: accountId,
+        currency: currency,
+      );
+      return AccountingDashboardSummary(
+        records: rows.take(5).map(IncomeExpenseItem.fromJson).toList(),
+        total: (account['balance'] as num?)?.toInt() ?? 0,
+        todayTotal: rows.fold<int>(
+          0,
+          (sum, row) => sum + ((row['value'] as num?)?.toInt() ?? 0),
+        ),
+        currency: currency,
+      );
+    }
     final accountResult = await supabase
         .from(TableNames.accountingAccount)
         .select('id,main_currency,balance')
@@ -249,6 +395,31 @@ class DashboardRepository {
 
   Future<PointDashboardSummary> loadPointSummary(
       {required String accountId}) async {
+    if (accountId.isEmpty) return const PointDashboardSummary.empty();
+    if (await _storesLocally) {
+      final accounts = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.pointRecordAccount,
+      );
+      final account = accounts
+          .where((row) =>
+              row[Fields.id]?.toString() == accountId &&
+              row[Fields.isValid] == true)
+          .firstOrNull;
+      if (account == null) return const PointDashboardSummary.empty();
+      final rows = await _todayLocalDetails(
+        resource: TableNames.pointRecordDetail,
+        accountId: accountId,
+      );
+      return PointDashboardSummary(
+        records: rows.take(5).map(PointRecordItem.fromJson).toList(),
+        total: (account['points'] as num?)?.toInt() ?? 0,
+        todayTotal: rows.fold<int>(
+          0,
+          (sum, row) => sum + ((row['value'] as num?)?.toInt() ?? 0),
+        ),
+      );
+    }
     final accountResult = await supabase
         .from(TableNames.pointRecordAccount)
         .select('id,points')
@@ -304,5 +475,30 @@ class DashboardRepository {
         (sum, row) => sum + ((row['value'] ?? 0) as num).toInt(),
       ),
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _todayLocalDetails({
+    required String resource,
+    required String accountId,
+    String? currency,
+  }) async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+    final rows = await LocalDataStore.instance.list(
+      owner: _localOwner!,
+      resource: resource,
+    );
+    final result = rows.where((row) {
+      if (row['account_id']?.toString() != accountId) return false;
+      if (currency != null && row['currency']?.toString() != currency) {
+        return false;
+      }
+      final date = DateTime.tryParse(row['date']?.toString() ?? '')?.toLocal();
+      return date != null && !date.isBefore(start) && date.isBefore(end);
+    }).toList()
+      ..sort((a, b) =>
+          (b['date']?.toString() ?? '').compareTo(a['date']?.toString() ?? ''));
+    return result;
   }
 }

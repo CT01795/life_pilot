@@ -284,8 +284,8 @@ class EventItem implements EventBase {
       likeCounts: json[EventFields.likeCounts],
       dislikeCounts: json[EventFields.dislikeCounts],
       source: json[EventFields.source],
-      lat: json[EventFields.lat],
-      lng: json[EventFields.lng],
+      lat: (json[EventFields.lat] as num?)?.toDouble(),
+      lng: (json[EventFields.lng] as num?)?.toDouble(),
       mapLat: (json[EventFields.mapLat] as num?)?.toDouble(),
       mapLng: (json[EventFields.mapLng] as num?)?.toDouble(),
       subEvents: subEventsJson is List

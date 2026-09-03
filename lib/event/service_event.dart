@@ -11,6 +11,7 @@ import 'package:life_pilot/utils/event_city_normalizer.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 
 class ServiceEvent {
   ServiceEvent();
@@ -107,6 +108,39 @@ class ServiceEvent {
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
 
+    final isPersonalResource = tableName == TableNames.calendarEvents ||
+        tableName == TableNames.memoryTrace;
+    final useLocal = isPersonalResource &&
+        inputUser != null &&
+        inputUser.isNotEmpty &&
+        await LocalDataStore.instance.preferredLocation(inputUser) ==
+            DataStorageLocation.local;
+    if (useLocal) {
+      final localRows = await LocalDataStore.instance
+          .list(
+            owner: inputUser,
+            resource: tableName,
+          )
+          .timeout(const Duration(seconds: 15));
+      return localRows
+          .map((row) => EventItem.fromJson(json: row))
+          .where((event) {
+        if (id != null && id.isNotEmpty) return event.id == id;
+        final eventDate = event.startDate == null
+            ? null
+            : DateTimeFormatter.dateOnly(event.startDate!.toLocal());
+        if (eventDate == null) return true;
+        final start = DateTimeFormatter.dateOnly(dateS ??
+            (tableName == TableNames.memoryTrace
+                ? today.subtract(const Duration(days: 29))
+                : today));
+        final end = DateTimeFormatter.dateOnly(
+          dateE ?? DateTime(today.year + 2, today.month, today.day),
+        );
+        return !eventDate.isBefore(start) && !eventDate.isAfter(end);
+      }).toList();
+    }
+
     try {
       final response = await supabase.rpc(
         'get_filtered_$tableName',
@@ -143,6 +177,21 @@ class ServiceEvent {
     required DateTime before,
     String? inputUser,
   }) async {
+    if (inputUser != null &&
+        inputUser.isNotEmpty &&
+        await LocalDataStore.instance.preferredLocation(inputUser) ==
+            DataStorageLocation.local) {
+      final rows = await LocalDataStore.instance.list(
+        owner: inputUser,
+        resource: tableName,
+      );
+      return rows.any((row) {
+        final date = DateTime.tryParse(
+          row[EventFields.startDate]?.toString() ?? '',
+        );
+        return date != null && date.isBefore(before);
+      });
+    }
     var query = supabase
         .from(tableName)
         .select(Fields.id)
@@ -159,6 +208,24 @@ class ServiceEvent {
     required DateTime before,
     String? inputUser,
   }) async {
+    if (inputUser != null &&
+        inputUser.isNotEmpty &&
+        await LocalDataStore.instance.preferredLocation(inputUser) ==
+            DataStorageLocation.local) {
+      final rows = await LocalDataStore.instance.list(
+        owner: inputUser,
+        resource: tableName,
+      );
+      final dates = rows
+          .map((row) => DateTime.tryParse(
+                row[EventFields.startDate]?.toString() ?? '',
+              ))
+          .whereType<DateTime>()
+          .where((date) => date.isBefore(before))
+          .toList()
+        ..sort((left, right) => right.compareTo(left));
+      return dates.isEmpty ? null : dates.first;
+    }
     var query = supabase
         .from(tableName)
         .select(EventFields.startDate)
@@ -214,6 +281,30 @@ class ServiceEvent {
 
       event.account = currentAccount;
       event.isApproved = false;
+      final isPersonalLocalResource = tableName == TableNames.calendarEvents ||
+          tableName == TableNames.memoryTrace;
+      final storageLocation = isPersonalLocalResource
+          ? await LocalDataStore.instance.preferredLocation(currentAccount)
+          : DataStorageLocation.cloud;
+      final alreadyStoredLocally = isPersonalLocalResource &&
+          await LocalDataStore.instance.contains(
+            owner: currentAccount,
+            resource: tableName,
+            id: event.id,
+          );
+      if (storageLocation == DataStorageLocation.local ||
+          alreadyStoredLocally) {
+        await LocalDataStore.instance.put(
+          owner: currentAccount,
+          resource: tableName,
+          id: event.id,
+          data: event.toJson(),
+          syncState: isNew && !alreadyStoredLocally
+              ? LocalSyncState.localOnly
+              : LocalSyncState.modifiedLocally,
+        );
+        return;
+      }
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
         await supabase.from(tableName).insert([
@@ -252,6 +343,18 @@ class ServiceEvent {
       required String tableName}) async {
     try {
       final data = event.toJson();
+      if (await LocalDataStore.instance.contains(
+        owner: currentAccount,
+        resource: tableName,
+        id: event.id,
+      )) {
+        await LocalDataStore.instance.delete(
+          owner: currentAccount,
+          resource: tableName,
+          id: event.id,
+        );
+        return;
+      }
       if (tableName == TableNames.recommendEvents) {
         await supabase.from(TableNames.recommendEventsDeleted).insert([data]);
       }

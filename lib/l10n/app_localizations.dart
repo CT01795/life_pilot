@@ -2390,6 +2390,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stop sharing all events'**
   String get calendarCancelAllShares;
+
+  /// No description provided for @subscriptionUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {used} / {quota}'**
+  String subscriptionUsage(int used, int quota);
+
+  /// Label for subscriptionQuotaReached
+  ///
+  /// In en, this message translates to:
+  /// **'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.'**
+  String get subscriptionQuotaReached;
+
+  /// No description provided for @subscriptionQuotaReachedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud limit reached: {used} of {quota} records are in use, so {remaining} more can be added. Delete an older record, switch to this device, or upgrade to Plus.'**
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining);
+
+  /// Label for subscriptionImagePlusOnly
+  ///
+  /// In en, this message translates to:
+  /// **'Photo uploads are available with Plus.'**
+  String get subscriptionImagePlusOnly;
+
+  /// Label for subscriptionDeleteRecordHint
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting this record will also recalculate today and total values.'**
+  String get subscriptionDeleteRecordHint;
+
+  /// Label for dataStorageTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Where should new personal data be saved?'**
+  String get dataStorageTitle;
+
+  /// Label for dataStorageCloud
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get dataStorageCloud;
+
+  /// Label for dataStorageLocal
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get dataStorageLocal;
+
+  /// Label for dataStorageLocalWarning
+  ///
+  /// In en, this message translates to:
+  /// **'Local data is visible only on this device, browser, and browser profile. It will not automatically appear on another device, browser, or profile. Removing the app or clearing site or browser data may permanently delete it. It can be moved to the cloud when it fits your plan limits.'**
+  String get dataStorageLocalWarning;
+
+  /// Label for dataStorageCloudWarning
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data is available across devices and is subject to your plan limits.'**
+  String get dataStorageCloudWarning;
+
+  /// Label for dataMoveToLocal
+  ///
+  /// In en, this message translates to:
+  /// **'Move cloud data to this device'**
+  String get dataMoveToLocal;
+
+  /// Label for dataMoveToLocalConfirm
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data will be copied and verified before it is removed from the cloud. It will then be visible only on this device, browser, and browser profile. It will not automatically appear elsewhere, and removing the app or clearing site data may permanently delete it. Continue?'**
+  String get dataMoveToLocalConfirm;
+
+  /// Label for dataMoveToLocalSuccess
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data was moved to this device.'**
+  String get dataMoveToLocalSuccess;
+
+  /// Label for dataMoveToLocalFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Some data could not be moved. Cloud originals were retained.'**
+  String get dataMoveToLocalFailed;
+
+  /// Label for dataUploadToCloud
+  ///
+  /// In en, this message translates to:
+  /// **'Upload local data to cloud (Admin)'**
+  String get dataUploadToCloud;
+
+  /// Move local data to cloud action
+  ///
+  /// In en, this message translates to:
+  /// **'Move local data to cloud'**
+  String get dataUploadToCloudAction;
+
+  /// Label for dataUploadToCloudConfirm
+  ///
+  /// In en, this message translates to:
+  /// **'All local data will first be checked against your current plan limits. Local copies are deleted and cloud mode is enabled only after the entire upload is verified. If it exceeds a limit or fails, local mode remains active. Continue?'**
+  String get dataUploadToCloudConfirm;
+
+  /// Label for dataUploadToCloudSuccess
+  ///
+  /// In en, this message translates to:
+  /// **'Local data was uploaded to the cloud.'**
+  String get dataUploadToCloudSuccess;
+
+  /// Label for dataUploadToCloudFailed
+  ///
+  /// In en, this message translates to:
+  /// **'The upload was cancelled. All local records remain on this device.'**
+  String get dataUploadToCloudFailed;
+
+  /// No description provided for @dataUploadQuotaExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload cancelled: {resource} currently uses {used} cloud records; this upload adds {incoming}, but the plan limit is {quota}.'**
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota);
+
+  /// No description provided for @subscriptionRenewalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.'**
+  String get subscriptionRenewalRequired;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

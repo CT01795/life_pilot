@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/controller_event.dart';
@@ -23,15 +22,11 @@ class PageMemoryTrace extends StatefulWidget {
 
 class _PageMemoryTraceState extends State<PageMemoryTrace> {
   late final ControllerEvent _controllerEvent;
-  late final ControllerAccountingList _accountController;
-  bool _accountsLoaded = false;
 
   @override
   void initState() {
     super.initState();
     final context = this.context; // ✅ 避免多次 lookup
-    _accountController = context.read<ControllerAccountingList>();
-
     _controllerEvent = ControllerEvent(
       auth: context.read<ControllerAuth>(),
       serviceEvent: context.read<ServiceEvent>(),
@@ -40,24 +35,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
       toTableName: '',
       modelEvent: ModelEvent(),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadAccounts();
-      }
-    });
-  }
-
-  Future<void> _loadAccounts() async {
-    if (_accountController.accounts.isNotEmpty) {
-      setState(() {
-        _accountsLoaded = true;
-      });
-    } else if (!_accountsLoaded) {
-      await _accountController.loadAccounts(inputCategory: 'project');
-      setState(() {
-        _accountsLoaded = true;
-      });
-    }
   }
 
   @override
@@ -71,10 +48,6 @@ class _PageMemoryTraceState extends State<PageMemoryTrace> {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     // 如果帳戶還沒載入，先顯示 loading
-    if (!_accountsLoaded) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     // ✅ 這裡不會因為語言切換而重建 ControllerEvent
     // ✅ 但 build() 會重跑，因此 loc 會更新、文字立即刷新
     return ChangeNotifierProvider.value(

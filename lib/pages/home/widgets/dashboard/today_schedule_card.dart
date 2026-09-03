@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -120,8 +121,14 @@ class TodayScheduleCard extends StatelessWidget {
                                 stackTrace: stackTrace,
                               );
                               if (context.mounted) {
+                                final message =
+                                    subscriptionErrorMessage(loc, error);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(loc.eventSaveFailed)),
+                                  SnackBar(
+                                    content: Text(message.isNotEmpty
+                                        ? message
+                                        : loc.eventSaveFailed),
+                                  ),
                                 );
                               }
                               return;
@@ -160,8 +167,14 @@ class TodayScheduleCard extends StatelessWidget {
                                 stackTrace: stackTrace,
                               );
                               if (context.mounted) {
+                                final message =
+                                    subscriptionErrorMessage(loc, error);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(loc.eventSaveFailed)),
+                                  SnackBar(
+                                    content: Text(message.isNotEmpty
+                                        ? message
+                                        : loc.eventSaveFailed),
+                                  ),
                                 );
                               }
                             }

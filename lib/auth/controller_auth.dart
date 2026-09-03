@@ -10,6 +10,9 @@ import 'package:life_pilot/auth/auth_session_sync.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/subscription/model_subscription_usage.dart';
+import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 
 class ControllerAuth extends SafeChangeNotifier {
   final ControllerCalendar? controllerCalendar;
@@ -71,16 +74,64 @@ class ControllerAuth extends SafeChangeNotifier {
   bool _isLoggedIn = false;
   bool _isAnonymous = false;
   String? _currentAccount;
+  SubscriptionSnapshot _subscription = SubscriptionSnapshot.free;
+  DataStorageLocation _preferredStorage = DataStorageLocation.cloud;
+  bool _hasStorageChoice = false;
   AuthPage _currentPage = AuthPage.login;
 
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _isLoggedIn;
   bool get isAnonymous => _isAnonymous;
   String? get currentAccount => _currentAccount;
+  SubscriptionSnapshot get subscription => _subscription;
+  bool get isPlus => isSysAdmin || _subscription.isPlus;
+  DataStorageLocation get preferredStorage => _preferredStorage;
+  bool get storesNewDataLocally =>
+      _preferredStorage == DataStorageLocation.local;
+  bool get hasStorageChoice => _hasStorageChoice;
   bool get hasServerAdminRole =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
   bool get isSysAdmin => hasServerAdminRole;
   AuthPage get currentPage => _currentPage;
+
+  Future<void> refreshSubscriptionUsage({bool notify = true}) async {
+    if (!_isLoggedIn || _isAnonymous) return;
+    try {
+      _subscription = await ServiceSubscription().fetchMyUsage();
+      if (notify) notifyListeners();
+    } catch (error, stackTrace) {
+      logger.e('Failed to refresh subscription usage',
+          error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> setPreferredStorage(DataStorageLocation location) async {
+    final account = _currentAccount;
+    if (account == null || _isAnonymous) return;
+    await LocalDataStore.instance.setPreferredLocation(account, location);
+    _preferredStorage = location;
+    _hasStorageChoice = true;
+    notifyListeners();
+    modelDashboard?.switchAccount(account);
+    controllerCalendar?.clearAll();
+    try {
+      await Future.wait<void>([
+        if (modelDashboard != null) ...[
+          modelDashboard!.loadEventCities(account),
+          modelDashboard!.loadPlaceCities(account),
+          modelDashboard!.refreshAll(account: account),
+        ],
+        if (controllerCalendar != null)
+          controllerCalendar!.loadCalendarEvents(month: DateTime.now()),
+      ]);
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to refresh data after changing storage location',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
 
   final Map<String, String> _registerMap = {
     AuthConstants.email: '',
@@ -105,6 +156,9 @@ class ControllerAuth extends SafeChangeNotifier {
       _isLoggedIn = false;
       _isAnonymous = false;
       _currentAccount = null;
+      _subscription = SubscriptionSnapshot.free;
+      _preferredStorage = DataStorageLocation.cloud;
+      _hasStorageChoice = false;
       _currentPage = AuthPage.login;
     }, notify: false);
 
@@ -133,6 +187,13 @@ class ControllerAuth extends SafeChangeNotifier {
       }
     }, notify: false);
 
+    if (_isLoggedIn && !_isAnonymous) {
+      final storedLocation =
+          await LocalDataStore.instance.preferredLocation(_currentAccount!);
+      _hasStorageChoice = storedLocation != null;
+      _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
+    }
+
     // 🧹 若帳號不同，清空並重新載入日曆資料
     if (!_isLoggedIn) {
       controllerCalendar?.clearAll();
@@ -141,6 +202,16 @@ class ControllerAuth extends SafeChangeNotifier {
       controllerCalendar?.clearAll();
       modelDashboard?.switchAccount(_currentAccount);
       await controllerCalendar?.loadCalendarEvents(month: DateTime.now());
+    }
+
+    if (_isLoggedIn && !_isAnonymous) {
+      try {
+        _subscription = await ServiceSubscription().fetchMyUsage();
+      } catch (error, stackTrace) {
+        logger.e('Failed to load subscription usage',
+            error: error, stackTrace: stackTrace);
+        _subscription = SubscriptionSnapshot.free;
+      }
     }
 
     _update(() => _isLoading = false);
@@ -190,6 +261,9 @@ class ControllerAuth extends SafeChangeNotifier {
       _isLoggedIn = false;
       _isAnonymous = false;
       _currentAccount = null;
+      _subscription = SubscriptionSnapshot.free;
+      _preferredStorage = DataStorageLocation.cloud;
+      _hasStorageChoice = false;
       _currentPage = AuthPage.login;
     }, notify: false);
 

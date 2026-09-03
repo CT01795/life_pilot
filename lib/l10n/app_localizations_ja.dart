@@ -1165,4 +1165,73 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get calendarCancelAllShares => 'すべての共有を停止';
+
+  @override
+  String subscriptionUsage(int used, int quota) {
+    return '使用済み $used／$quota';
+  }
+
+  @override
+  String get subscriptionQuotaReached => '現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。';
+
+  @override
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
+    return 'クラウド上限に達しました。$quota 件中 $used 件を使用中で、あと $remaining 件追加できます。古いデータを削除するか、このデバイスへ切り替えるか、Plusへアップグレードしてください。';
+  }
+
+  @override
+  String get subscriptionImagePlusOnly => '画像のアップロードはPlusで利用できます。';
+
+  @override
+  String get subscriptionDeleteRecordHint => '削除すると今日の小計と合計も再計算されます。';
+
+  @override
+  String get dataStorageTitle => '新しい個人データの保存先';
+
+  @override
+  String get dataStorageCloud => 'クラウド';
+
+  @override
+  String get dataStorageLocal => 'このデバイス';
+
+  @override
+  String get dataStorageLocalWarning => 'ローカルデータは、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示できます。別のデバイス、ブラウザ、プロファイルには自動表示されません。アプリの削除やサイト／ブラウザデータの消去で永久に失われる可能性があります。プラン上限内であればクラウドへ戻せます。';
+
+  @override
+  String get dataStorageCloudWarning => 'クラウドデータは複数端末で利用でき、プランの上限が適用されます。';
+
+  @override
+  String get dataMoveToLocal => 'クラウドデータをこのデバイスへ移動';
+
+  @override
+  String get dataMoveToLocalConfirm => 'コピーと検証後にクラウドから削除され、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示されます。別の環境には自動表示されず、サイトデータを消去すると永久に失われる可能性があります。続行しますか？';
+
+  @override
+  String get dataMoveToLocalSuccess => 'クラウドデータをこのデバイスへ移動しました。';
+
+  @override
+  String get dataMoveToLocalFailed => '一部のデータを移動できなかったため、クラウドの元データを保持しました。';
+
+  @override
+  String get dataUploadToCloud => 'ローカルデータをクラウドへアップロード（管理者）';
+
+  @override
+  String get dataUploadToCloudAction => 'ローカルデータをクラウドへ移動';
+
+  @override
+  String get dataUploadToCloudConfirm => 'クラウドと競合しないデータのみアップロードします。失敗したデータはこの端末に残ります。続行しますか？';
+
+  @override
+  String get dataUploadToCloudSuccess => 'ローカルデータをクラウドへアップロードしました。';
+
+  @override
+  String get dataUploadToCloudFailed => '一部のデータをアップロードできなかったため、この端末に保持しました。';
+
+  @override
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    return 'アップロードをキャンセルしました：$resource はクラウドで $used 件使用中です。今回 $incoming 件を追加すると、プラン上限 $quota 件を超えます。';
+  }
+
+  @override
+  String get subscriptionRenewalRequired => '有料期間が終了しました。更新するか、すべてのクラウドデータをこの端末へ移動するまでクラウドは読み取り専用です。';
 }

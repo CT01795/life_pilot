@@ -108,6 +108,11 @@ class ControllerEvent extends SafeChangeNotifier {
         event: newEvent,
         isNew: isNew,
         tableName: _tableName);
+    if (isNew &&
+        (_tableName == TableNames.calendarEvents ||
+            _tableName == TableNames.memoryTrace)) {
+      await auth.refreshSubscriptionUsage();
+    }
   }
 
   // ✅ 刪除事件，並更新列表與通知 UI
@@ -116,6 +121,10 @@ class ControllerEvent extends SafeChangeNotifier {
         currentAccount: auth.currentAccount ?? '',
         event: event,
         tableName: _tableName);
+    if (_tableName == TableNames.calendarEvents ||
+        _tableName == TableNames.memoryTrace) {
+      await auth.refreshSubscriptionUsage();
+    }
 
     // 移除事件並更新快取
     _modelEvent
@@ -269,6 +278,7 @@ class ControllerEvent extends SafeChangeNotifier {
     );
     _modelEvent.toggleEventSelection(event.id, targetEvent != null);
     if (targetEvent != null && _toTableName == TableNames.calendarEvents) {
+      await auth.refreshSubscriptionUsage();
       // 🔹 呼叫 function 更新資料庫
       await tracking.incrementEventCounter(
           eventId: event.id,
@@ -441,9 +451,25 @@ class ControllerEvent extends SafeChangeNotifier {
         tableName: _tableName,
         inputUser: auth.currentAccount,
         dateS: isMemoryTrace ? memoryStart : null,
-        dateE: isMemoryTrace ? today : null,
       );
-      _modelEvent.setEvents(list ?? []);
+      var loadedEvents = list ?? [];
+      if (isMemoryTrace && loadedEvents.isEmpty) {
+        final latestOlder = await _serviceEvent.latestEventDateBefore(
+          tableName: _tableName,
+          before: memoryStart,
+          inputUser: auth.currentAccount,
+        );
+        if (latestOlder != null) {
+          loadedEvents = await _serviceEvent.getEvents(
+                tableName: _tableName,
+                inputUser: auth.currentAccount,
+                dateS: latestOlder,
+                dateE: latestOlder,
+              ) ??
+              [];
+        }
+      }
+      _modelEvent.setEvents(loadedEvents);
       _sortRecommendedContent();
       if (isMemoryTrace) {
         _modelEvent.sortMemoryEvents();

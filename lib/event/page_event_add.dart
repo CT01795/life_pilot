@@ -17,6 +17,8 @@ import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 class PageEventAdd extends StatefulWidget {
   final ControllerEvent controllerEvent;
@@ -141,8 +143,11 @@ class _PageEventAddState extends State<PageEventAdd> {
         EventSaveError.duplicate => loc.eventAlreadyExists,
       };
       AppNavigator.showErrorBar(message);
-    } catch (_) {
-      AppNavigator.showErrorBar(loc.eventSaveFailed);
+    } catch (error) {
+      final subscriptionMessage = subscriptionErrorMessage(loc, error);
+      AppNavigator.showErrorBar(subscriptionMessage.isNotEmpty
+          ? subscriptionMessage
+          : loc.eventSaveFailed);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -248,7 +253,22 @@ class _PageEventAddState extends State<PageEventAdd> {
                     TableNames.recommendPlaces,
                     TableNames.memoryTrace,
                   }.contains(controllerAdd.tableName))
-                    _buildOptionalImagePicker(loc),
+                    if (context.watch<ControllerAuth>().isPlus ||
+                        context.watch<ControllerAuth>().storesNewDataLocally)
+                      _buildOptionalImagePicker(loc)
+                    else
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.lock_outline),
+                          title: Text(loc.subscriptionImagePlusOnly),
+                        ),
+                      ),
+                  if (controllerAdd.tableName == TableNames.calendarEvents)
+                    const SubscriptionUsageBanner(
+                      resource: 'calendar_events',
+                    ),
+                  if (controllerAdd.tableName == TableNames.memoryTrace)
+                    const SubscriptionUsageBanner(resource: 'memory_trace'),
                   _buildDateTimeRow(loc: loc, ctl: controllerAdd),
                   ..._buildTextFields(
                       loc: loc, ctl: controllerAdd, fields: fields),

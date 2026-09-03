@@ -1165,4 +1165,73 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get calendarCancelAllShares => '모든 공유 중지';
+
+  @override
+  String subscriptionUsage(int used, int quota) {
+    return '사용 $used／$quota';
+  }
+
+  @override
+  String get subscriptionQuotaReached => '현재 요금제의 한도에 도달했습니다. 기존 데이터를 삭제한 후 추가하거나 Plus로 업그레이드하세요.';
+
+  @override
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
+    return '클라우드 한도에 도달했습니다. $quota개 중 $used개를 사용 중이며 $remaining개를 더 추가할 수 있습니다. 기존 데이터를 삭제하거나 이 기기로 전환하거나 Plus로 업그레이드하세요.';
+  }
+
+  @override
+  String get subscriptionImagePlusOnly => '이미지 업로드는 Plus에서 사용할 수 있습니다.';
+
+  @override
+  String get subscriptionDeleteRecordHint => '삭제하면 오늘 소계와 총계도 다시 계산됩니다.';
+
+  @override
+  String get dataStorageTitle => '새 개인 데이터를 어디에 저장할까요?';
+
+  @override
+  String get dataStorageCloud => '클라우드';
+
+  @override
+  String get dataStorageLocal => '이 기기';
+
+  @override
+  String get dataStorageLocalWarning => '로컬 데이터는 이 기기, 브라우저 및 현재 브라우저 프로필에서만 볼 수 있습니다. 다른 기기, 브라우저 또는 프로필에는 자동으로 나타나지 않습니다. 앱을 삭제하거나 사이트 또는 브라우저 데이터를 지우면 영구적으로 사라질 수 있습니다. 요금제 한도 내에서는 클라우드로 다시 이동할 수 있습니다.';
+
+  @override
+  String get dataStorageCloudWarning => '클라우드 데이터는 여러 기기에서 사용할 수 있으며 요금제 한도가 적용됩니다.';
+
+  @override
+  String get dataMoveToLocal => '클라우드 데이터를 이 기기로 이동';
+
+  @override
+  String get dataMoveToLocalConfirm => '복사와 확인 후 클라우드에서 삭제되며 이 기기, 브라우저 및 현재 브라우저 프로필에서만 볼 수 있습니다. 다른 환경에는 자동으로 나타나지 않으며 사이트 데이터를 지우면 영구적으로 사라질 수 있습니다. 계속할까요?';
+
+  @override
+  String get dataMoveToLocalSuccess => '클라우드 데이터를 이 기기로 이동했습니다.';
+
+  @override
+  String get dataMoveToLocalFailed => '일부 데이터를 이동하지 못해 클라우드 원본을 유지했습니다.';
+
+  @override
+  String get dataUploadToCloud => '로컬 데이터를 클라우드에 업로드(관리자)';
+
+  @override
+  String get dataUploadToCloudAction => '로컬 데이터를 클라우드로 이동';
+
+  @override
+  String get dataUploadToCloudConfirm => '클라우드 데이터와 충돌하지 않는 항목만 업로드합니다. 실패한 항목은 이 기기에 남습니다. 계속할까요?';
+
+  @override
+  String get dataUploadToCloudSuccess => '로컬 데이터를 클라우드에 업로드했습니다.';
+
+  @override
+  String get dataUploadToCloudFailed => '일부 로컬 데이터를 업로드하지 못해 이 기기에 유지했습니다.';
+
+  @override
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    return '업로드 취소: $resource은(는) 현재 클라우드에서 $used개를 사용 중이며, 이번 $incoming개를 추가하면 요금제 한도 $quota개를 초과합니다.';
+  }
+
+  @override
+  String get subscriptionRenewalRequired => '유료 기간이 종료되었습니다. 갱신하거나 모든 클라우드 데이터를 이 기기로 이동할 때까지 클라우드는 읽기 전용입니다.';
 }

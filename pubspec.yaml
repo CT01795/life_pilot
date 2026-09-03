@@ -66,6 +66,8 @@ dependencies:
   flame: ^1.35.1
   audioplayers: ^6.6.0
   google_maps_flutter: ^2.5.0
+  sembast: ^3.7.2
+  sembast_web: ^2.4.0
 
 dev_dependencies:
   flutter_test:

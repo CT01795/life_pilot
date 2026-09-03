@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
@@ -12,6 +14,9 @@ import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/widgets_event_image.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 class PageMemoryAdd extends StatefulWidget {
   final ControllerEvent controllerEvent;
@@ -30,6 +35,7 @@ class PageMemoryAdd extends StatefulWidget {
 }
 
 class _PageMemoryAddState extends State<PageMemoryAdd> {
+  final ImagePicker _imagePicker = ImagePicker();
   late final ControllerPageEventAdd controllerAdd;
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
@@ -133,8 +139,10 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
         EventSaveError.duplicate => loc.eventAlreadyExists,
       };
       AppNavigator.showErrorBar(message);
-    } catch (_) {
-      AppNavigator.showErrorBar(loc.eventSaveFailed);
+    } catch (error) {
+      final message = subscriptionErrorMessage(loc, error);
+      AppNavigator.showErrorBar(
+          message.isEmpty ? loc.eventSaveFailed : message);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -189,6 +197,18 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
                 controller: _scrollController,
                 padding: Insets.directionalL4R4T4B8,
                 children: [
+                  if (widget.existingEvent == null)
+                    const SubscriptionUsageBanner(resource: 'memory_trace'),
+                  if (context.watch<ControllerAuth>().isPlus ||
+                      context.watch<ControllerAuth>().storesNewDataLocally)
+                    _buildOptionalImagePicker(loc)
+                  else
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.lock_outline),
+                        title: Text(loc.subscriptionImagePlusOnly),
+                      ),
+                    ),
                   _buildDateTimeRow(loc: loc, ctl: controllerAdd),
                   ..._buildTextFields(
                       loc: loc, ctl: controllerAdd, fields: fields),
@@ -232,6 +252,57 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
             ),
           ),
         ));
+  }
+
+  Widget _buildOptionalImagePicker(AppLocalizations loc) {
+    return Selector<ControllerPageEventAdd, String?>(
+      selector: (_, ctl) => ctl.masterGraphUrl,
+      builder: (context, value, __) {
+        final ctl = context.read<ControllerPageEventAdd>();
+        final imageValue = value?.trim();
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (imageValue != null && imageValue.isNotEmpty)
+                WidgetsEventImage(value: imageValue, height: 190),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Expanded(child: Icon(Icons.photo_outlined)),
+                    if (imageValue != null && imageValue.isNotEmpty)
+                      IconButton(
+                        tooltip: loc.delete,
+                        onPressed: () => ctl.setMasterGraphUrl(null),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    OutlinedButton.icon(
+                      onPressed: () => _pickImage(ctl),
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: Text(imageValue == null || imageValue.isEmpty
+                          ? loc.add
+                          : loc.edit),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ControllerPageEventAdd ctl) async {
+    final image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 82,
+    );
+    if (image == null) return;
+    ctl.setMasterGraphUrl(base64Encode(await image.readAsBytes()));
   }
 
   String _countryLabel() =>

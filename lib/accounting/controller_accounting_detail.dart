@@ -177,6 +177,8 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       currency: previews.first.currency,
     );
 
+    await auth?.refreshSubscriptionUsage();
+
     await loadToday(inputAccountId: inputAccountId ?? accountId);
   }
 
@@ -195,6 +197,12 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
       newPrimaryCategory: preview.primaryCategory,
       newSecondaryCategory: preview.secondaryCategory,
     );
+    await loadToday();
+  }
+
+  Future<void> deleteAccountingDetail(String detailId) async {
+    await _service.deleteAccountingDetail(detailId: detailId);
+    await auth?.refreshSubscriptionUsage();
     await loadToday();
   }
 }

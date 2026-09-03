@@ -12,6 +12,7 @@ import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/utils/record_categories.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 class PageAccountingDetail extends StatelessWidget {
   final ModelAccountingAccount account;
@@ -181,6 +182,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
       body: Column(
         children: [
           Gaps.h8,
+          const SubscriptionUsageBanner(resource: 'accounting_detail'),
           _buildSummary(context, account, controller),
           _buildMicButton(context, controller),
           const Divider(),
@@ -306,13 +308,23 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Text(
-              record.value > 0
-                  ? '+${numberFormatter.format(record.value)} ${record.currency}'
-                  : '${numberFormatter.format(record.value)} ${record.currency}',
-              style: TextStyle(
-                  color: record.value >= 0 ? Colors.green : Colors.red,
-                  fontSize: 18),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  record.value > 0
+                      ? '+${numberFormatter.format(record.value)} ${record.currency}'
+                      : '${numberFormatter.format(record.value)} ${record.currency}',
+                  style: TextStyle(
+                      color: record.value >= 0 ? Colors.green : Colors.red,
+                      fontSize: 18),
+                ),
+                IconButton(
+                  tooltip: AppLocalizations.of(context)!.delete,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _deleteRecord(controller, record.id),
+                ),
+              ],
             ),
             onTap: () async {
               final updated = await _showEditDetailDialog(
@@ -337,6 +349,33 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         },
       ),
     );
+  }
+
+  Future<void> _deleteRecord(
+    ControllerAccountingDetail controller,
+    String detailId,
+  ) async {
+    final loc = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(loc.confirmDelete),
+            content: Text(loc.subscriptionDeleteRecordHint),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(loc.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(loc.delete),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+    await controller.deleteAccountingDetail(detailId);
   }
 
   Widget _buildMicButton(
@@ -383,7 +422,18 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
-              await controller.commitRecords(previews);
+              try {
+                await controller.commitRecords(previews);
+              } catch (error) {
+                if (!context.mounted) return;
+                final message = subscriptionErrorMessage(loc, error);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message.isEmpty ? loc.unknownError : message),
+                  ),
+                );
+                return;
+              }
 
               // 清空輸入框
               setState(() {

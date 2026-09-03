@@ -3,6 +3,9 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:provider/provider.dart';
 
 class PageGameSocialQuestionCreate extends StatefulWidget {
   const PageGameSocialQuestionCreate({
@@ -205,6 +208,9 @@ class _PageGameSocialQuestionCreateState
         );
       }
       if (!mounted) return;
+      if (widget.existingQuestion == null) {
+        await context.read<ControllerAuth>().refreshSubscriptionUsage();
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(widget.existingQuestion == null
             ? loc.questionAdded
@@ -216,10 +222,11 @@ class _PageGameSocialQuestionCreateState
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(loc.duplicateQuestion)));
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(loc.unknownError)));
+        final message = subscriptionErrorMessage(loc, error);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(message.isEmpty ? loc.unknownError : message)));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -245,6 +252,8 @@ class _PageGameSocialQuestionCreateState
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.all(16),
               children: [
+                if (widget.existingQuestion == null)
+                  const SubscriptionUsageBanner(resource: 'game_questions'),
                 Card(
                   color: Theme.of(context).colorScheme.secondaryContainer,
                   child: Padding(

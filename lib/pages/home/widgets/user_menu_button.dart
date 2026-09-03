@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/apps/page_settings.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/draggable_resizable_dialog.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/legal_document_dialog.dart';
 import 'package:life_pilot/feedback/controller_feedback.dart';
@@ -48,6 +49,20 @@ class UserMenuButton extends StatelessWidget {
             _openLegalDocument(
               context,
               assetPath: 'web/terms.html',
+            );
+            break;
+          case "dataStorage":
+            await showDialog<void>(
+              context: context,
+              builder: (dialogContext) => Dialog(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 560,
+                    maxHeight: 680,
+                  ),
+                  child: const PageSettings(),
+                ),
+              ),
             );
             break;
           case "requestAccountDeletion":
@@ -128,6 +143,22 @@ class UserMenuButton extends StatelessWidget {
               Text(
                 loc.termsOfService,
                 style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: "dataStorage",
+          child: Row(
+            children: [
+              const Icon(Icons.storage_outlined, color: Colors.white),
+              Gaps.w8,
+              Expanded(
+                child: Text(
+                  loc.settings,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),

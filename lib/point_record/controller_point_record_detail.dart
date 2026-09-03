@@ -155,6 +155,8 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
       records: previews,
     );
 
+    await auth?.refreshSubscriptionUsage();
+
     await loadToday(inputAccountId: inputAccountId ?? accountId);
   }
 
@@ -169,6 +171,12 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
       newPrimaryCategory: preview.primaryCategory,
       newSecondaryCategory: preview.secondaryCategory,
     );
+    await loadToday();
+  }
+
+  Future<void> deletePointRecordDetail(String detailId) async {
+    await service.deletePointRecordDetail(detailId: detailId);
+    await auth?.refreshSubscriptionUsage();
     await loadToday();
   }
 }

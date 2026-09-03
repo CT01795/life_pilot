@@ -9,8 +9,18 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:uuid/uuid.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 
 class ServicePointRecord {
+  String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
+
+  Future<bool> get _storesLocally async {
+    final owner = _localOwner;
+    if (owner == null) return false;
+    return await LocalDataStore.instance.preferredLocation(owner) ==
+        DataStorageLocation.local;
+  }
+
   String currentTable = TableNames.pointRecordAccount;
   ServicePointRecord();
 
@@ -32,6 +42,22 @@ class ServicePointRecord {
   Future<ModelPointRecordAccount?> findAccountByEventId(
       {required String eventId, required String user}) async {
     try {
+      if (await _storesLocally) {
+        final rows = await LocalDataStore.instance
+            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
+        final response = rows
+            .where((row) =>
+                row[Fields.id]?.toString() == eventId &&
+                row[Fields.isValid] == true)
+            .firstOrNull;
+        if (response == null) return null;
+        return ModelPointRecordAccount(
+            id: response[Fields.id],
+            accountName: response[Fields.account],
+            category: response['category'],
+            masterGraphUrl: parseMasterGraph(response['master_graph_url']),
+            points: (response['points'] as num?)?.toInt() ?? 0);
+      }
       final response = await supabase
           .from(currentTable)
           .select()
@@ -72,6 +98,45 @@ class ServicePointRecord {
     bool includeGraph = true,
   }) async {
     try {
+      if (await _storesLocally) {
+        var rows = await LocalDataStore.instance
+            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
+        final details = await LocalDataStore.instance
+            .list(owner: _localOwner!, resource: TableNames.pointRecordDetail);
+        rows = rows
+            .where((row) =>
+                row[Fields.isValid] == true &&
+                (category == null || row['category']?.toString() == category))
+            .toList();
+        if (category == null && projectLimit != null) {
+          final personal =
+              rows.where((r) => r['category'] == AccountCategory.personal.name);
+          final projects = rows
+              .where((r) => r['category'] == AccountCategory.project.name)
+              .toList()
+            ..sort((a, b) => (b[Fields.createdAt]?.toString() ?? '')
+                .compareTo(a[Fields.createdAt]?.toString() ?? ''));
+          rows = [...personal, ...projects.take(projectLimit)];
+        }
+        return rows
+            .map((e) => ModelPointRecordAccount(
+                id: e[Fields.id],
+                accountName: e[Fields.account],
+                category: e['category'],
+                masterGraphUrl: includeGraph
+                    ? parseMasterGraph(e['master_graph_url'])
+                    : null,
+                points: details
+                    .where((d) =>
+                        d['account_id']?.toString() == e[Fields.id]?.toString())
+                    .fold<int>(
+                        0,
+                        (sum, d) =>
+                            sum +
+                            (int.tryParse(d['value']?.toString() ?? '0') ??
+                                0))))
+            .toList();
+      }
       final columns = includeGraph ? '*' : 'id,account,category,points';
       final List<dynamic> list;
       if (category == null && projectLimit != null) {
@@ -135,6 +200,37 @@ class ServicePointRecord {
       required String category,
       String? eventId}) async {
     try {
+      if (await _storesLocally) {
+        final id = eventId ?? const Uuid().v4();
+        final now = DateTime.now().toUtc().toIso8601String();
+        final existing = (await LocalDataStore.instance.list(
+                owner: _localOwner!, resource: TableNames.pointRecordAccount))
+            .any((r) =>
+                r[Fields.account]?.toString().toLowerCase() ==
+                    name.toLowerCase() &&
+                r['category'] == category &&
+                r[Fields.isValid] == true);
+        if (existing) throw Exception('Account already exists');
+        await LocalDataStore.instance.put(
+            owner: _localOwner!,
+            resource: TableNames.pointRecordAccount,
+            id: id,
+            data: {
+              Fields.id: id,
+              Fields.account: name,
+              Fields.createdBy: user,
+              'category': category,
+              'points': 0,
+              Fields.isValid: true,
+              Fields.createdAt: now
+            });
+        return ModelPointRecordAccount(
+            id: id,
+            accountName: name,
+            category: category,
+            masterGraphUrl: null,
+            points: 0);
+      }
       // 查詢是否已存在
       final exist = await supabase
           .from(TableNames.pointRecordAccount)
@@ -192,6 +288,22 @@ class ServicePointRecord {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
+      if (await LocalDataStore.instance.contains(
+          owner: _localOwner ?? '',
+          resource: TableNames.pointRecordAccount,
+          id: accountId)) {
+        final rows = await LocalDataStore.instance
+            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
+        final row =
+            rows.firstWhere((r) => r[Fields.id]?.toString() == accountId);
+        await LocalDataStore.instance.put(
+            owner: _localOwner!,
+            resource: TableNames.pointRecordAccount,
+            id: accountId,
+            data: {...row, Fields.isValid: false},
+            syncState: LocalSyncState.modifiedLocally);
+        return;
+      }
       final result = await supabase
           .from(TableNames.pointRecordAccount)
           .update({
@@ -221,6 +333,22 @@ class ServicePointRecord {
   Future<Uint8List> uploadAccountImageBytesDirect(
       String accountId, Uint8List imageBytes) async {
     try {
+      if (await LocalDataStore.instance.contains(
+          owner: _localOwner ?? '',
+          resource: TableNames.pointRecordAccount,
+          id: accountId)) {
+        final rows = await LocalDataStore.instance
+            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
+        final row =
+            rows.firstWhere((r) => r[Fields.id]?.toString() == accountId);
+        await LocalDataStore.instance.put(
+            owner: _localOwner!,
+            resource: TableNames.pointRecordAccount,
+            id: accountId,
+            data: {...row, 'master_graph_url': base64Encode(imageBytes)},
+            syncState: LocalSyncState.modifiedLocally);
+        return imageBytes;
+      }
       // 不管 Web / Mobile 都轉 base64
       // Mobile / Web 統一存 bytea (Uint8List)
       final result = await supabase
@@ -251,6 +379,60 @@ class ServicePointRecord {
     bool includeLatestFallback = false,
     bool includeReservedRecords = true,
   }) async {
+    if (await _storesLocally) {
+      final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
+      final rows = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.pointRecordDetail,
+      );
+      final accountRows = rows.where((row) =>
+          row['account_id']?.toString() == accountId &&
+          row['type']?.toString().toLowerCase() == type.toLowerCase());
+      final points = accountRows.fold<int>(
+        0,
+        (sum, row) =>
+            sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+      );
+      final filtered = accountRows.where((row) {
+        if (includeReservedRecords && row['primary_category'] == 'reserved') {
+          return true;
+        }
+        final date = DateTime.tryParse(row['date']?.toString() ?? '');
+        return date != null &&
+            !date.isBefore(dateFrom) &&
+            date.isBefore(upperBound);
+      }).toList()
+        ..sort((a, b) => (b['date']?.toString() ?? '')
+            .compareTo(a['date']?.toString() ?? ''));
+      if (includeLatestFallback &&
+          !filtered.any((row) => row['primary_category'] != 'reserved')) {
+        final fallback = accountRows
+            .where((row) => row['primary_category'] != 'reserved')
+            .toList()
+          ..sort((a, b) => (b['date']?.toString() ?? '')
+              .compareTo(a['date']?.toString() ?? ''));
+        if (fallback.isNotEmpty) filtered.add(fallback.first);
+      }
+      return filtered.map((detail) {
+        return ModelPointRecordDetail(
+          id: detail[Fields.id]?.toString() ?? '',
+          accountId: detail['account_id']?.toString() ?? '',
+          createdAt: DateTime.tryParse(
+                detail[Fields.createdAt]?.toString() ?? '',
+              ) ??
+              DateTime.now(),
+          date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+              DateTime.now(),
+          primaryCategory:
+              detail['primary_category']?.toString() ?? 'uncategorized',
+          secondaryCategory: detail['group']?.toString(),
+          description: detail['description']?.toString() ?? '',
+          type: detail['type']?.toString() ?? '',
+          value: int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+          points: points,
+        );
+      }).toList();
+    }
     final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
     var query = supabase
         .from(TableNames.pointRecordDetail)
@@ -268,6 +450,26 @@ class ServicePointRecord {
     }
     final rows = await query.order('date', ascending: false);
     final result = List<Map<String, dynamic>>.from(rows);
+    final owner = _localOwner;
+    if (owner != null && await _storesLocally) {
+      final localRows = await LocalDataStore.instance.list(
+        owner: owner,
+        resource: TableNames.pointRecordDetail,
+      );
+      result.addAll(localRows.where((row) {
+        if (row['account_id']?.toString() != accountId ||
+            row['type']?.toString().toLowerCase() != type.toLowerCase()) {
+          return false;
+        }
+        if (includeReservedRecords && row['primary_category'] == 'reserved') {
+          return true;
+        }
+        final date = DateTime.tryParse(row['date']?.toString() ?? '');
+        return date != null &&
+            !date.isBefore(dateFrom) &&
+            date.isBefore(upperBound);
+      }));
+    }
     final hasRegularRecord =
         result.any((row) => row['primary_category'] != 'reserved');
     if (includeLatestFallback && !hasRegularRecord) {
@@ -286,8 +488,30 @@ class ServicePointRecord {
         .select('points')
         .eq(Fields.id, accountId)
         .limit(1);
-    final points = totalRows.isEmpty ? 0 : totalRows.first['points'] ?? 0;
-    return result.map((detail) {
+    var points = totalRows.isEmpty
+        ? 0
+        : int.tryParse(totalRows.first['points']?.toString() ?? '0') ?? 0;
+    if (owner != null && await _storesLocally) {
+      final allLocal = await LocalDataStore.instance.list(
+        owner: owner,
+        resource: TableNames.pointRecordDetail,
+      );
+      points += allLocal
+          .where((row) =>
+              row['account_id']?.toString() == accountId &&
+              row['type']?.toString() == type)
+          .fold<int>(
+            0,
+            (sum, row) =>
+                sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+          );
+    }
+    final unique = <String, Map<String, dynamic>>{
+      for (final row in result) row[Fields.id].toString(): row,
+    }.values.toList()
+      ..sort((a, b) =>
+          (b['date']?.toString() ?? '').compareTo(a['date']?.toString() ?? ''));
+    return unique.map((detail) {
       return ModelPointRecordDetail(
         id: detail[Fields.id]?.toString() ?? '',
         accountId: detail['account_id']?.toString() ?? '',
@@ -305,9 +529,7 @@ class ServicePointRecord {
         value: detail['value'] is int
             ? detail['value'] as int
             : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
-        points: points is int
-            ? points
-            : int.tryParse(points?.toString() ?? '0') ?? 0,
+        points: points,
       );
     }).toList();
   }
@@ -317,6 +539,20 @@ class ServicePointRecord {
     required String type,
     required DateTime before,
   }) async {
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.pointRecordDetail,
+      );
+      return rows.any((row) {
+        final date = DateTime.tryParse(row['date']?.toString() ?? '');
+        return row['account_id']?.toString() == accountId &&
+            row['type']?.toString().toLowerCase() == type.toLowerCase() &&
+            row['primary_category'] != 'reserved' &&
+            date != null &&
+            date.isBefore(before);
+      });
+    }
     final rows = await supabase
         .from(TableNames.pointRecordDetail)
         .select(Fields.id)
@@ -333,6 +569,23 @@ class ServicePointRecord {
     required String type,
     required DateTime before,
   }) async {
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.pointRecordDetail,
+      );
+      final dates = rows
+          .where((row) =>
+              row['account_id']?.toString() == accountId &&
+              row['type']?.toString().toLowerCase() == type.toLowerCase() &&
+              row['primary_category'] != 'reserved')
+          .map((row) => DateTime.tryParse(row['date']?.toString() ?? ''))
+          .whereType<DateTime>()
+          .where((date) => date.isBefore(before))
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
+      return dates.isEmpty ? null : dates.first.toLocal();
+    }
     final rows = await supabase
         .from(TableNames.pointRecordDetail)
         .select('date')
@@ -351,6 +604,30 @@ class ServicePointRecord {
       required String type,
       required List<PointRecordPreview> records}) async {
     try {
+      if (await _storesLocally) {
+        final owner = _localOwner!;
+        final now = DateTime.now();
+        for (final record in records) {
+          final id = const Uuid().v4();
+          await LocalDataStore.instance.put(
+            owner: owner,
+            resource: TableNames.pointRecordDetail,
+            id: id,
+            data: {
+              Fields.id: id,
+              'account_id': accountId,
+              'type': type,
+              'description': record.description,
+              'value': record.value,
+              'primary_category': record.primaryCategory,
+              'group': record.secondaryCategory?.trim() ?? '',
+              'date': (record.date ?? now).toUtc().toIso8601String(),
+              Fields.createdAt: now.toUtc().toIso8601String(),
+            },
+          );
+        }
+        return;
+      }
       await supabase.rpc(
         'add_point_records_batch',
         params: {
@@ -385,6 +662,34 @@ class ServicePointRecord {
     String? newSecondaryCategory,
   }) async {
     try {
+      final owner = _localOwner;
+      if (owner != null &&
+          await LocalDataStore.instance.contains(
+            owner: owner,
+            resource: TableNames.pointRecordDetail,
+            id: detailId,
+          )) {
+        final rows = await LocalDataStore.instance.list(
+          owner: owner,
+          resource: TableNames.pointRecordDetail,
+        );
+        final row = rows.firstWhere((item) => item[Fields.id] == detailId);
+        await LocalDataStore.instance.put(
+          owner: owner,
+          resource: TableNames.pointRecordDetail,
+          id: detailId,
+          data: {
+            ...row,
+            'value': newValue,
+            'description': newDescription,
+            'date': newDate.toUtc().toIso8601String(),
+            'primary_category': newPrimaryCategory,
+            'group': newSecondaryCategory?.trim() ?? '',
+          },
+          syncState: LocalSyncState.modifiedLocally,
+        );
+        return;
+      }
       await supabase.rpc(
         'update_point_record_detail',
         params: {
@@ -400,5 +705,26 @@ class ServicePointRecord {
       logger.e('updatePointRecordDetail failed $e\n$st');
       rethrow;
     }
+  }
+
+  Future<void> deletePointRecordDetail({required String detailId}) async {
+    final owner = _localOwner;
+    if (owner != null &&
+        await LocalDataStore.instance.contains(
+          owner: owner,
+          resource: TableNames.pointRecordDetail,
+          id: detailId,
+        )) {
+      await LocalDataStore.instance.delete(
+        owner: owner,
+        resource: TableNames.pointRecordDetail,
+        id: detailId,
+      );
+      return;
+    }
+    await supabase.rpc(
+      'delete_my_point_record_detail',
+      params: {'p_detail_id': detailId},
+    );
   }
 }

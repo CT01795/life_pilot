@@ -1165,4 +1165,73 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get calendarCancelAllShares => '取消全部分享';
+
+  @override
+  String subscriptionUsage(int used, int quota) {
+    return '已使用 $used／$quota';
+  }
+
+  @override
+  String get subscriptionQuotaReached => '目前方案的資料額度已滿，請先刪除舊資料後再新增，或升級 Plus。';
+
+  @override
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
+    return '雲端額度已滿：目前已使用 $used／$quota 筆，還可新增 $remaining 筆。請先刪除舊資料、改存此裝置，或升級 Plus。';
+  }
+
+  @override
+  String get subscriptionImagePlusOnly => '圖片上傳功能僅提供給 Plus 使用者。';
+
+  @override
+  String get subscriptionDeleteRecordHint => '刪除後會同步重新計算今日小計與總計。';
+
+  @override
+  String get dataStorageTitle => '新增的個人資料要儲存在哪裡？';
+
+  @override
+  String get dataStorageCloud => '雲端';
+
+  @override
+  String get dataStorageLocal => '此裝置';
+
+  @override
+  String get dataStorageLocalWarning => '本機資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到。換裝置、換瀏覽器或換瀏覽器設定檔時不會自動出現；解除安裝 App、清除網站或瀏覽器資料可能永久遺失。資料在方案額度內時可移回雲端。';
+
+  @override
+  String get dataStorageCloudWarning => '雲端資料可跨裝置使用，並受到目前方案額度限制。';
+
+  @override
+  String get dataMoveToLocal => '將雲端資料移到此裝置';
+
+  @override
+  String get dataMoveToLocalConfirm => '系統會先複製並驗證資料，再從雲端刪除。完成後資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到；換裝置、換瀏覽器或清除網站資料時不會自動出現，且可能永久遺失。確定繼續嗎？';
+
+  @override
+  String get dataMoveToLocalSuccess => '雲端資料已移到此裝置。';
+
+  @override
+  String get dataMoveToLocalFailed => '部分資料無法搬移，雲端原始資料已保留。';
+
+  @override
+  String get dataUploadToCloud => '將本機資料上傳雲端（管理員）';
+
+  @override
+  String get dataUploadToCloudAction => '將本機資料移到雲端';
+
+  @override
+  String get dataUploadToCloudConfirm => '系統會先檢查全部本機資料是否符合目前方案額度。只有整批上傳並驗證成功後，才會刪除這台裝置的本機資料並切換為雲端模式；若超額或失敗則維持本機模式。確定繼續嗎？';
+
+  @override
+  String get dataUploadToCloudSuccess => '本機資料已上傳雲端。';
+
+  @override
+  String get dataUploadToCloudFailed => '部分本機資料無法上傳，已保留在這台裝置。';
+
+  @override
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    return '已取消上傳：$resource 雲端目前已有 $used 筆，本次要上傳 $incoming 筆，但方案額度為 $quota 筆。';
+  }
+
+  @override
+  String get subscriptionRenewalRequired => '付費期間已結束，雲端資料目前為唯讀。請續訂，或將全部雲端資料安全搬移到這台裝置。';
 }

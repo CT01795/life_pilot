@@ -10,6 +10,8 @@ import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 
 import '../utils/widgets/widgets_appbar.dart';
 
@@ -54,6 +56,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   bool _showMap = false;
   String? _selectedCity;
   final ScrollController _cityScrollController = ScrollController();
+  late DataStorageLocation _loadedStorage;
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
 
   ControllerEvent get _controller => widget.controllerEvent;
@@ -69,6 +72,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   @override
   void initState() {
     super.initState();
+    _loadedStorage = widget.auth.preferredStorage;
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
       modelEvent: widget.controllerEvent.modelEvent, // 使用頁面同一個 model
@@ -100,6 +104,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
     );
 
     if (newEvent != null) {
+      await widget.auth.refreshSubscriptionUsage();
       await _controller.loadEvents(isGetPublicEvents: false);
     }
   }
@@ -136,6 +141,17 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final storage = context.select<ControllerAuth, DataStorageLocation>(
+      (auth) => auth.preferredStorage,
+    );
+    if (storage != _loadedStorage) {
+      _loadedStorage = storage;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _controller.loadEvents(isGetPublicEvents: false);
+        }
+      });
+    }
     final loadState = context.select<ControllerEvent, (bool, bool)>(
       (controller) => (
         controller.isLoadingEvents,
@@ -176,6 +192,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                   )
                 : Column(
                     children: [
+                      const SubscriptionUsageBanner(resource: 'memory_trace'),
                       AnimatedBuilder(
                         animation: _appBarHandler,
                         builder: (_, __) => Selector<ControllerEvent, int>(

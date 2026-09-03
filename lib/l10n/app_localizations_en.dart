@@ -1165,4 +1165,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarCancelAllShares => 'Stop sharing all events';
+
+  @override
+  String subscriptionUsage(int used, int quota) {
+    return 'Used $used / $quota';
+  }
+
+  @override
+  String get subscriptionQuotaReached => 'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.';
+
+  @override
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
+    return 'Cloud limit reached: $used of $quota records are in use, so $remaining more can be added. Delete an older record, switch to this device, or upgrade to Plus.';
+  }
+
+  @override
+  String get subscriptionImagePlusOnly => 'Photo uploads are available with Plus.';
+
+  @override
+  String get subscriptionDeleteRecordHint => 'Deleting this record will also recalculate today and total values.';
+
+  @override
+  String get dataStorageTitle => 'Where should new personal data be saved?';
+
+  @override
+  String get dataStorageCloud => 'Cloud';
+
+  @override
+  String get dataStorageLocal => 'This device';
+
+  @override
+  String get dataStorageLocalWarning => 'Local data is visible only on this device, browser, and browser profile. It will not automatically appear on another device, browser, or profile. Removing the app or clearing site or browser data may permanently delete it. It can be moved to the cloud when it fits your plan limits.';
+
+  @override
+  String get dataStorageCloudWarning => 'Cloud data is available across devices and is subject to your plan limits.';
+
+  @override
+  String get dataMoveToLocal => 'Move cloud data to this device';
+
+  @override
+  String get dataMoveToLocalConfirm => 'Cloud data will be copied and verified before it is removed from the cloud. It will then be visible only on this device, browser, and browser profile. It will not automatically appear elsewhere, and removing the app or clearing site data may permanently delete it. Continue?';
+
+  @override
+  String get dataMoveToLocalSuccess => 'Cloud data was moved to this device.';
+
+  @override
+  String get dataMoveToLocalFailed => 'Some data could not be moved. Cloud originals were retained.';
+
+  @override
+  String get dataUploadToCloud => 'Upload local data to cloud (Admin)';
+
+  @override
+  String get dataUploadToCloudAction => 'Move local data to cloud';
+
+  @override
+  String get dataUploadToCloudConfirm => 'All local data will first be checked against your current plan limits. Local copies are deleted and cloud mode is enabled only after the entire upload is verified. If it exceeds a limit or fails, local mode remains active. Continue?';
+
+  @override
+  String get dataUploadToCloudSuccess => 'Local data was uploaded to the cloud.';
+
+  @override
+  String get dataUploadToCloudFailed => 'The upload was cancelled. All local records remain on this device.';
+
+  @override
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    return 'Upload cancelled: $resource currently uses $used cloud records; this upload adds $incoming, but the plan limit is $quota.';
+  }
+
+  @override
+  String get subscriptionRenewalRequired => 'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.';
 }
