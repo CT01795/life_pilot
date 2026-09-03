@@ -137,6 +137,10 @@ class ServiceLocalDataTransfer {
     String account,
   ) async {
     final payload = <Map<String, Object?>>[];
+    final dashboardSettings = await LocalDataStore.instance.list(
+      owner: account,
+      resource: TableNames.dashboardSetting,
+    );
     for (final resource in _resources) {
       final rows = await LocalDataStore.instance.list(
         owner: account,
@@ -155,14 +159,18 @@ class ServiceLocalDataTransfer {
         payload.add({'table_name': resource, 'record': normalizedRow});
       }
     }
-    if (payload.isEmpty) {
+    if (payload.isEmpty && dashboardSettings.isEmpty) {
       await LocalDataStore.instance.deleteAllRecords(owner: account);
       return const LocalDataTransferResult(moved: 0, failed: 0);
     }
     try {
       final restored = await supabase.rpc(
-        'restore_local_personal_records_admin',
-        params: {'p_records': payload},
+        'restore_local_personal_records_with_setting',
+        params: {
+          'p_records': payload,
+          'p_dashboard_setting':
+              dashboardSettings.isEmpty ? null : dashboardSettings.first,
+        },
       );
       final restoredCount = int.tryParse(restored.toString()) ?? 0;
       if (restoredCount != payload.length) {

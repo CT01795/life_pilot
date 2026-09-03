@@ -780,6 +780,8 @@
   "@calendarCancelAllShares": {"description": "Label for calendarCancelAllShares"},
   "subscriptionUsage": "使用済み {used}／{quota}",
   "@subscriptionUsage": {"placeholders": {"used": {"type": "int"}, "quota": {"type": "int"}}},
+  "subscriptionLocalUsage": "このデバイス：{used} 件／無制限",
+  "@subscriptionLocalUsage": {"placeholders": {"used": {"type": "int"}}},
   "subscriptionQuotaReached": "現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。",
   "@subscriptionQuotaReached": {"description": "Label for subscriptionQuotaReached"},
   "subscriptionQuotaReachedDetail": "クラウド上限に達しました。{quota} 件中 {used} 件を使用中で、あと {remaining} 件追加できます。古いデータを削除するか、このデバイスへ切り替えるか、Plusへアップグレードしてください。",

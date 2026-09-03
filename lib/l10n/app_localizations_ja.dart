@@ -1172,6 +1172,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String subscriptionLocalUsage(int used) {
+    return 'このデバイス：$used 件／無制限';
+  }
+
+  @override
   String get subscriptionQuotaReached => '現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。';
 
   @override

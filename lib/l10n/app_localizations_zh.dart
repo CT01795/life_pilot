@@ -1172,6 +1172,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String subscriptionLocalUsage(int used) {
+    return '此裝置已使用 $used 筆／不限量';
+  }
+
+  @override
   String get subscriptionQuotaReached => '目前方案的資料額度已滿，請先刪除舊資料後再新增，或升級 Plus。';
 
   @override

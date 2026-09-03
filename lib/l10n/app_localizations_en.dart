@@ -1172,6 +1172,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String subscriptionLocalUsage(int used) {
+    return 'Stored on this device: $used / Unlimited';
+  }
+
+  @override
   String get subscriptionQuotaReached => 'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.';
 
   @override

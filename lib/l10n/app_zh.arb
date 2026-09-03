@@ -780,6 +780,8 @@
   "@calendarCancelAllShares": {"description": "Label for calendarCancelAllShares"},
   "subscriptionUsage": "已使用 {used}／{quota}",
   "@subscriptionUsage": {"placeholders": {"used": {"type": "int"}, "quota": {"type": "int"}}},
+  "subscriptionLocalUsage": "此裝置已使用 {used} 筆／不限量",
+  "@subscriptionLocalUsage": {"placeholders": {"used": {"type": "int"}}},
   "subscriptionQuotaReached": "目前方案的資料額度已滿，請先刪除舊資料後再新增，或升級 Plus。",
   "@subscriptionQuotaReached": {"description": "Label for subscriptionQuotaReached"},
   "subscriptionQuotaReachedDetail": "雲端額度已滿：目前已使用 {used}／{quota} 筆，還可新增 {remaining} 筆。請先刪除舊資料、改存此裝置，或升級 Plus。",

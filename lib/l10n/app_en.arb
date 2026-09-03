@@ -780,6 +780,8 @@
   "@calendarCancelAllShares": {"description": "Label for calendarCancelAllShares"},
   "subscriptionUsage": "Used {used} / {quota}",
   "@subscriptionUsage": {"placeholders": {"used": {"type": "int"}, "quota": {"type": "int"}}},
+  "subscriptionLocalUsage": "Stored on this device: {used} / Unlimited",
+  "@subscriptionLocalUsage": {"placeholders": {"used": {"type": "int"}}},
   "subscriptionQuotaReached": "This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.",
   "@subscriptionQuotaReached": {"description": "Label for subscriptionQuotaReached"},
   "subscriptionQuotaReachedDetail": "Cloud limit reached: {used} of {quota} records are in use, so {remaining} more can be added. Delete an older record, switch to this device, or upgrade to Plus.",

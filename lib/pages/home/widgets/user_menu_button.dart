@@ -60,7 +60,7 @@ class UserMenuButton extends StatelessWidget {
                     maxWidth: 560,
                     maxHeight: 680,
                   ),
-                  child: const PageSettings(),
+                  child: const PageSettings(closeOnStorageChange: true),
                 ),
               ),
             );

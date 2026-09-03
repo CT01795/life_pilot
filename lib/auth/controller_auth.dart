@@ -97,12 +97,62 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
     if (!_isLoggedIn || _isAnonymous) return;
     try {
-      _subscription = await ServiceSubscription().fetchMyUsage();
+      _subscription = await _loadSubscriptionUsage();
       if (notify) notifyListeners();
     } catch (error, stackTrace) {
       logger.e('Failed to refresh subscription usage',
           error: error, stackTrace: stackTrace);
     }
+  }
+
+  Future<SubscriptionSnapshot> _loadSubscriptionUsage() async {
+    final cloud = await ServiceSubscription().fetchMyUsage();
+    final account = _currentAccount;
+    if (_preferredStorage != DataStorageLocation.local || account == null) {
+      return cloud;
+    }
+
+    Future<int> count(String resource) => LocalDataStore.instance.count(
+          owner: account,
+          resource: resource,
+        );
+    final counts = await Future.wait<int>([
+      count(TableNames.calendarEvents),
+      count(TableNames.accountingDetail),
+      count(TableNames.pointRecordDetail),
+      count(TableNames.memoryTrace),
+      count('game_grammar'),
+      count('game_sentence'),
+      count('game_translation'),
+      count(TableNames.gameSocialScenarios),
+    ]);
+    final localUsage = Map<String, SubscriptionUsage>.from(cloud.usage)
+      ..['calendar_events'] = SubscriptionUsage(
+        resource: 'calendar_events',
+        used: counts[0],
+        quota: -1,
+      )
+      ..['accounting_detail'] = SubscriptionUsage(
+        resource: 'accounting_detail',
+        used: counts[1],
+        quota: -1,
+      )
+      ..['point_record_detail'] = SubscriptionUsage(
+        resource: 'point_record_detail',
+        used: counts[2],
+        quota: -1,
+      )
+      ..['memory_trace'] = SubscriptionUsage(
+        resource: 'memory_trace',
+        used: counts[3],
+        quota: -1,
+      )
+      ..['game_questions'] = SubscriptionUsage(
+        resource: 'game_questions',
+        used: counts.skip(4).fold(0, (sum, value) => sum + value),
+        quota: -1,
+      );
+    return cloud.copyWithUsage(localUsage);
   }
 
   Future<void> setPreferredStorage(DataStorageLocation location) async {
@@ -112,6 +162,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _preferredStorage = location;
     _hasStorageChoice = true;
     notifyListeners();
+    await refreshSubscriptionUsage();
     modelDashboard?.switchAccount(account);
     controllerCalendar?.clearAll();
     try {
@@ -206,7 +257,7 @@ class ControllerAuth extends SafeChangeNotifier {
 
     if (_isLoggedIn && !_isAnonymous) {
       try {
-        _subscription = await ServiceSubscription().fetchMyUsage();
+        _subscription = await _loadSubscriptionUsage();
       } catch (error, stackTrace) {
         logger.e('Failed to load subscription usage',
             error: error, stackTrace: stackTrace);

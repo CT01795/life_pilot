@@ -2397,6 +2397,12 @@ abstract class AppLocalizations {
   /// **'Used {used} / {quota}'**
   String subscriptionUsage(int used, int quota);
 
+  /// No description provided for @subscriptionLocalUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on this device: {used} / Unlimited'**
+  String subscriptionLocalUsage(int used);
+
   /// Label for subscriptionQuotaReached
   ///
   /// In en, this message translates to:

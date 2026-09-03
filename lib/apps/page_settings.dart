@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 
 class PageSettings extends StatefulWidget {
-  const PageSettings({super.key});
+  const PageSettings({this.closeOnStorageChange = false, super.key});
+
+  final bool closeOnStorageChange;
 
   @override
   State<PageSettings> createState() => _PageSettingsState();
@@ -62,6 +64,9 @@ class _PageSettingsState extends State<PageSettings> {
       AppNavigator.showSnackBar(
         upload ? loc.dataUploadToCloudSuccess : loc.dataMoveToLocalSuccess,
       );
+      if (widget.closeOnStorageChange && mounted) {
+        Navigator.of(context).pop();
+      }
       return;
     }
     final friendlyMessage = upload

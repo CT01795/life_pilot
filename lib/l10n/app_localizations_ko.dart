@@ -1172,6 +1172,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String subscriptionLocalUsage(int used) {
+    return '이 기기: $used개／무제한';
+  }
+
+  @override
   String get subscriptionQuotaReached => '현재 요금제의 한도에 도달했습니다. 기존 데이터를 삭제한 후 추가하거나 Plus로 업그레이드하세요.';
 
   @override

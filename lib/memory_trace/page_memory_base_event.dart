@@ -90,8 +90,17 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
 
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
-    _hasLoaded = true;
+    if (mounted) {
+      setState(() => _hasLoaded = true);
+    } else {
+      _hasLoaded = true;
+    }
     await _controller.loadEvents(isGetPublicEvents: false);
+  }
+
+  Future<void> _reloadAfterStorageChange() async {
+    if (mounted) setState(() => _hasLoaded = false);
+    await _safeLoadEvents();
   }
 
   Future<void> _onAddPressed(BuildContext context) async {
@@ -148,7 +157,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
       _loadedStorage = storage;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _controller.loadEvents(isGetPublicEvents: false);
+          _reloadAfterStorageChange();
         }
       });
     }

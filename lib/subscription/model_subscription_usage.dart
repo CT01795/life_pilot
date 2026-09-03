@@ -9,7 +9,8 @@ class SubscriptionUsage {
   final int used;
   final int quota;
 
-  bool get isFull => used >= quota;
+  bool get isUnlimited => quota < 0;
+  bool get isFull => !isUnlimited && used >= quota;
 
   factory SubscriptionUsage.fromJson(Map<String, dynamic> json) {
     return SubscriptionUsage(
@@ -39,4 +40,16 @@ class SubscriptionSnapshot {
 
   bool get isPlus => plan == 'plus';
   SubscriptionUsage? operator [](String resource) => usage[resource];
+
+  SubscriptionSnapshot copyWithUsage(
+    Map<String, SubscriptionUsage> newUsage,
+  ) {
+    return SubscriptionSnapshot(
+      plan: plan,
+      usage: newUsage,
+      status: status,
+      currentPeriodEnd: currentPeriodEnd,
+      cancelAtPeriodEnd: cancelAtPeriodEnd,
+    );
+  }
 }

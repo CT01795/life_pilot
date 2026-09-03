@@ -37,7 +37,11 @@ class SubscriptionUsageBanner extends StatelessWidget {
                   size: 18),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(loc.subscriptionUsage(usage.used, usage.quota)),
+                child: Text(
+                  usage.isUnlimited
+                      ? loc.subscriptionLocalUsage(usage.used)
+                      : loc.subscriptionUsage(usage.used, usage.quota),
+                ),
               ),
             ],
           ),
