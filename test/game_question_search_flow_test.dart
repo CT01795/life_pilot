@@ -7,6 +7,8 @@ import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/social/page_game_social_question_create.dart';
 import 'package:life_pilot/game/social/page_game_social_questions.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   testWidgets('question search applies only after submit and combines category',
@@ -155,16 +157,19 @@ void main() {
   });
 }
 
-Widget _app(Widget home) => MaterialApp(
-      locale: const Locale('zh'),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: home,
+Widget _app(Widget home) => ChangeNotifierProvider<ControllerAuth>(
+      create: (_) => _FakeControllerAuth(),
+      child: MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: home,
+      ),
     );
 
 class _FakeGameService extends ServiceGame {
@@ -230,4 +235,9 @@ class _SuccessfulCreatePage extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _FakeControllerAuth extends ControllerAuth {
+  @override
+  bool get isSysAdmin => false;
 }
