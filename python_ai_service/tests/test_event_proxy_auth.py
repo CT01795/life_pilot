@@ -348,11 +348,20 @@ class EventProxyAuthorizationTest(unittest.TestCase):
         status_result = MagicMock()
         status_result.scalar.return_value = False
         cleanup_result = MagicMock()
+
+        subscription_cleanup_result = MagicMock()
+        subscription_cleanup_result.scalar.return_value = 0
+
+        answer_cleanup_result = MagicMock()
+        answer_cleanup_result.scalar.return_value = 0
+
         marker_result = MagicMock()
         db.execute.side_effect = [
             lock_result,
             status_result,
             cleanup_result,
+            subscription_cleanup_result,
+            answer_cleanup_result,
             marker_result,
         ]
 
@@ -360,10 +369,18 @@ class EventProxyAuthorizationTest(unittest.TestCase):
             cleaned = _cleanup_recommended_events_once_per_day()
 
         self.assertTrue(cleaned)
-        self.assertEqual(db.execute.call_count, 4)
+        self.assertEqual(db.execute.call_count, 6)
         executed_sql = [str(call.args[0]) for call in db.execute.call_args_list]
         self.assertIn("cleanup_recommended_events", executed_sql[2])
-        self.assertIn("recommended_event_url", executed_sql[3])
+        self.assertIn(
+            "cleanup_expired_subscription_overages",
+            executed_sql[3],
+        )
+        self.assertIn(
+            "cleanup_expired_game_answer_history",
+            executed_sql[4],
+        )
+        self.assertIn("recommended_event_url", executed_sql[5])
         db.commit.assert_called_once_with()
         db.close.assert_called_once_with()
 
