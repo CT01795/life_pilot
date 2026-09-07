@@ -62,8 +62,15 @@ class _GenericEventPageState extends State<GenericEventPage> {
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
   bool _isBackfillingCoordinates = false;
   int _coordinateBackfillOffset = 0;
+  EventRegionData? _regionData;
 
   ControllerEvent get _controller => widget.controllerEvent;
+
+  EventRegionData _regionsFor(List<EventItem> events) {
+    final cached = _regionData;
+    if (cached != null && identical(cached.source, events)) return cached;
+    return _regionData = EventRegionData.fromEvents(events);
+  }
 
   late final ControllerAppBarActions _appBarHandler;
 
@@ -229,9 +236,10 @@ class _GenericEventPageState extends State<GenericEventPage> {
           onAdd: () => _onAddPressed(context),
           loc: loc,
         ),
-        body: (!_hasLoaded || pageState.loading)
+        body: (!_hasLoaded ||
+                (pageState.loading && !_controller.hasLoadedEventsSuccessfully))
             ? const Center(child: CircularProgressIndicator())
-            : pageState.error
+            : pageState.error && !_controller.hasLoadedEventsSuccessfully
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -251,6 +259,8 @@ class _GenericEventPageState extends State<GenericEventPage> {
                   )
                 : Column(
                     children: [
+                      if (pageState.loading) const LinearProgressIndicator(),
+                      if (pageState.error) _buildBackgroundLoadError(loc),
                       if (_controller.fromTableName ==
                           TableNames.calendarEvents)
                         const SubscriptionUsageBanner(
@@ -268,28 +278,11 @@ class _GenericEventPageState extends State<GenericEventPage> {
                       Expanded(
                           // ✅ 讓 ListView 可以使用剩餘高度
                           child: Selector<ControllerEvent, List<EventItem>>(
-                        key: ValueKey((_showMap, _selectedCity)),
                         selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
                         builder: (_, filteredEvents, __) {
-                          final cityCounts = <String, int>{};
-                          for (final event in filteredEvents) {
-                            final city = eventRegionKey(event.city);
-                            if (city.isNotEmpty) {
-                              cityCounts.update(
-                                city,
-                                (count) => count + 1,
-                                ifAbsent: () => 1,
-                              );
-                            }
-                          }
-                          final cities = cityCounts.keys.toList()
-                            ..sort((left, right) {
-                              final countComparison = cityCounts[right]!
-                                  .compareTo(cityCounts[left]!);
-                              return countComparison != 0
-                                  ? countComparison
-                                  : left.compareTo(right);
-                            });
+                          final regionData = _regionsFor(filteredEvents);
+                          final cityCounts = regionData.counts;
+                          final cities = regionData.sortedRegions;
                           final effectiveCity = _selectedCity != null &&
                                   cities.contains(_selectedCity)
                               ? _selectedCity
@@ -309,11 +302,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
                           }
                           final visibleEvents = effectiveCity == null
                               ? filteredEvents
-                              : filteredEvents
-                                  .where((event) =>
-                                      eventRegionKey(event.city) ==
-                                      effectiveCity)
-                                  .toList();
+                              : regionData.eventsFor(effectiveCity);
                           return Column(
                             children: [
                               if (widget.enableCityFilter && cities.isNotEmpty)
@@ -351,7 +340,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                           ? KeyedSubtree(
                                               key: const ValueKey('map'),
                                               child: WidgetsEventMap(
-                                                events: filteredEvents,
+                                                regionData: regionData,
                                                 onCitySelected: _showCityList,
                                               ),
                                             )
@@ -437,6 +426,21 @@ class _GenericEventPageState extends State<GenericEventPage> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackgroundLoadError(AppLocalizations loc) {
+    return Material(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.cloud_off_outlined),
+        title: Text(loc.dashboardLoadFailed),
+        trailing: TextButton(
+          onPressed: () => _controller.loadEvents(isGetPublicEvents: false),
+          child: Text(loc.retry),
         ),
       ),
     );

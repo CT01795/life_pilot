@@ -15,6 +15,8 @@ class ModelEvent {
   final Set<String> removedEventIds = {};
   List<EventItem>? _filteredEventsCache;
   AppLocalizations? _filteredEventsLoc;
+  final Map<EventItem, ({AppLocalizations loc, String text})> _searchTextCache =
+      {};
 
   // ignore: deprecated_member_use
   static final RegExp ageSingle = RegExp(r'^(\d+)y$'); // 例如 "18y"
@@ -45,7 +47,7 @@ class ModelEvent {
 
     if (index != -1) {
       _events[index] = updatedEvent;
-      _invalidateFilteredEvents();
+      _invalidateEventData();
     }
   }
 
@@ -113,7 +115,7 @@ class ModelEvent {
   //--------------------------- 核心方法 ---------------------------
   void removeEvent(EventItem event) {
     _events.removeWhere((e) => e.id == event.id);
-    _invalidateFilteredEvents();
+    _invalidateEventData();
   }
 
   void sortRecommendedContent({required bool isEvent}) {
@@ -173,7 +175,7 @@ class ModelEvent {
 
   void clearAll() {
     _events.clear();
-    _invalidateFilteredEvents();
+    _invalidateEventData();
   }
 
   void setEvents(List<EventItem> list) {
@@ -181,7 +183,7 @@ class ModelEvent {
       return;
     }
     _events = list;
-    _invalidateFilteredEvents();
+    _invalidateEventData();
   }
 
   void appendMemoryEvents(List<EventItem> list) {
@@ -209,6 +211,41 @@ class ModelEvent {
     _filteredEventsLoc = null;
   }
 
+  void _invalidateEventData() {
+    _searchTextCache.clear();
+    _invalidateFilteredEvents();
+  }
+
+  String _searchableText(EventItem event, AppLocalizations loc) {
+    final cached = _searchTextCache[event];
+    if (cached != null && identical(cached.loc, loc)) return cached.text;
+
+    final values = <String>[
+      event.city,
+      event.location,
+      event.name,
+      event.type,
+      event.description,
+      event.unit,
+      if (event.isFree != null) event.isFree! ? loc.free : loc.pay,
+      if (event.isOutdoor != null) event.isOutdoor! ? loc.outdoor : loc.indoor,
+      for (final subEvent in event.subEvents) ...[
+        subEvent.city,
+        subEvent.location,
+        subEvent.name,
+        subEvent.type,
+        subEvent.description,
+        subEvent.unit,
+        if (subEvent.isFree != null) subEvent.isFree! ? loc.free : loc.pay,
+        if (subEvent.isOutdoor != null)
+          subEvent.isOutdoor! ? loc.outdoor : loc.indoor,
+      ],
+    ];
+    final text = values.join('\n').toLowerCase();
+    _searchTextCache[event] = (loc: loc, text: text);
+    return text;
+  }
+
   List<EventItem> _filterEvents({
     required List<EventItem> events,
     required SearchFilter inFilter,
@@ -234,22 +271,9 @@ class ModelEvent {
     }
     return events.where((e) {
       if (removedEventIds.contains(e.id)) return false;
-      String isFree = e.isFree == null ? '' : (e.isFree! ? loc.free : loc.pay);
-      String isOutdoor =
-          e.isOutdoor == null ? '' : (e.isOutdoor! ? loc.outdoor : loc.indoor);
+      final searchableText = _searchableText(e, loc);
       bool matchesKeywords = keywords.every((word) {
-        bool matchedText = e.city.toLowerCase().contains(word) ||
-            e.location.toLowerCase().contains(word) ||
-            e.name.toLowerCase().contains(word) ||
-            e.type.toLowerCase().contains(word) ||
-            e.description.toLowerCase().contains(word) ||
-            //e.fee.toLowerCase().contains(word) ||
-            e.unit.toLowerCase().contains(word) ||
-            isFree.toLowerCase().contains(word) ||
-            isOutdoor.toLowerCase().contains(word);
-        if (matchedText) {
-          return matchedText;
-        }
+        if (searchableText.contains(word)) return true;
         // 🔹 年齡判斷
         final ageSingleMatch = ModelEvent.ageSingle.firstMatch(word);
         final ageRangeMatch = ModelEvent.ageRange.firstMatch(word);
@@ -289,23 +313,6 @@ class ModelEvent {
         }
 
         bool matchedSubEvents = e.subEvents.any((se) {
-          String sIsFree =
-              se.isFree == null ? '' : (se.isFree! ? loc.free : loc.pay);
-          String sIsOutdoor = se.isOutdoor == null
-              ? ''
-              : (se.isOutdoor! ? loc.outdoor : loc.indoor);
-          bool matchedSEText = se.city.toLowerCase().contains(word) ||
-              se.location.toLowerCase().contains(word) ||
-              se.name.toLowerCase().contains(word) ||
-              se.type.toLowerCase().contains(word) ||
-              se.description.toLowerCase().contains(word) ||
-              //se.fee.toLowerCase().contains(word) ||
-              se.unit.toLowerCase().contains(word) ||
-              sIsFree.toLowerCase().contains(word) ||
-              sIsOutdoor.toLowerCase().contains(word);
-          if (matchedSEText) {
-            return matchedSEText;
-          }
           // 子事件年齡判斷
           if (ageRangeMatch != null) {
             final num kwStart = num.parse(ageRangeMatch.group(1)!);
@@ -342,21 +349,24 @@ class ModelEvent {
         });
         return matchedSubEvents;
       });
-      DateTime? startDate = DateTimeFormatter.dateOnly(e.startDate!);
-      DateTime? endDate = e.endDate ?? startDate;
-      endDate = DateTimeFormatter.dateOnly(endDate);
+      final startDate =
+          e.startDate == null ? null : DateTimeFormatter.dateOnly(e.startDate!);
+      final endDate = e.endDate == null
+          ? startDate
+          : DateTimeFormatter.dateOnly(e.endDate!);
       bool matchesDate = true;
       final startDateFilter = inFilter.startDate;
       final endDateFilter = inFilter.endDate;
-      if (startDateFilter != null &&
-          endDate.isBefore(startDateFilter) &&
-          endDate != startDateFilter) {
+      if ((startDateFilter != null || endDateFilter != null) &&
+          (startDate == null || endDate == null)) {
         matchesDate = false;
-      }
-      if (endDateFilter != null &&
-          startDate.isAfter(endDateFilter) &&
-          startDate != endDateFilter) {
-        matchesDate = false;
+      } else {
+        if (startDateFilter != null && endDate!.isBefore(startDateFilter)) {
+          matchesDate = false;
+        }
+        if (endDateFilter != null && startDate!.isAfter(endDateFilter)) {
+          matchesDate = false;
+        }
       }
 
       return matchesKeywords && matchesDate;

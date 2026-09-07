@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,56 @@ Uint8List? _decodeBase64Image(String encoded) {
     return base64Decode(encoded);
   } catch (_) {
     return null;
+  }
+}
+
+class _DecodedImageEntry {
+  _DecodedImageEntry(this.future);
+
+  final Future<Uint8List?> future;
+  int byteLength = 0;
+}
+
+class _DecodedImageCache {
+  static const int _maxEntries = 8;
+  static const int _maxBytes = 24 * 1024 * 1024;
+  static final LinkedHashMap<String, _DecodedImageEntry> _entries =
+      LinkedHashMap<String, _DecodedImageEntry>();
+  static int _totalBytes = 0;
+
+  static Future<Uint8List?> decode(String imageValue) {
+    final cached = _entries.remove(imageValue);
+    if (cached != null) {
+      _entries[imageValue] = cached;
+      return cached.future;
+    }
+
+    final encoded = imageValue.contains(',')
+        ? imageValue.substring(imageValue.indexOf(',') + 1)
+        : imageValue;
+    final entry = _DecodedImageEntry(compute(_decodeBase64Image, encoded));
+    _entries[imageValue] = entry;
+    _trim();
+    entry.future.then((bytes) {
+      if (!identical(_entries[imageValue], entry)) return;
+      if (bytes == null) {
+        _entries.remove(imageValue);
+        return;
+      }
+      entry.byteLength = bytes.lengthInBytes;
+      _totalBytes += entry.byteLength;
+      _trim();
+    });
+    return entry.future;
+  }
+
+  static void _trim() {
+    while (_entries.length > _maxEntries ||
+        (_totalBytes > _maxBytes && _entries.length > 1)) {
+      final oldestKey = _entries.keys.first;
+      final removed = _entries.remove(oldestKey);
+      _totalBytes -= removed?.byteLength ?? 0;
+    }
   }
 }
 
@@ -134,9 +185,6 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
       return _decodeFuture!;
     }
     _decodedValue = imageValue;
-    final encoded = imageValue.contains(',')
-        ? imageValue.substring(imageValue.indexOf(',') + 1)
-        : imageValue;
-    return _decodeFuture = compute(_decodeBase64Image, encoded);
+    return _decodeFuture = _DecodedImageCache.decode(imageValue);
   }
 }

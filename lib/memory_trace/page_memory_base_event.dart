@@ -57,9 +57,16 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
   String? _selectedCity;
   final ScrollController _cityScrollController = ScrollController();
   late DataStorageLocation _loadedStorage;
+  EventRegionData? _regionData;
   bool _hasLoaded = false; // ✅ 避免重複觸發 loadEvents()
 
   ControllerEvent get _controller => widget.controllerEvent;
+
+  EventRegionData _regionsFor(List<EventItem> events) {
+    final cached = _regionData;
+    if (cached != null && identical(cached.source, events)) return cached;
+    return _regionData = EventRegionData.fromEvents(events);
+  }
 
   late final ControllerAppBarActions _appBarHandler;
 
@@ -179,9 +186,10 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
           onToggleMap: () => setState(() => _showMap = !_showMap),
           loc: loc,
         ),
-        body: (!_hasLoaded || loadState.$1)
+        body: (!_hasLoaded ||
+                (loadState.$1 && !_controller.hasLoadedEventsSuccessfully))
             ? const Center(child: CircularProgressIndicator())
-            : loadState.$2
+            : loadState.$2 && !_controller.hasLoadedEventsSuccessfully
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -201,6 +209,8 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                   )
                 : Column(
                     children: [
+                      if (loadState.$1) const LinearProgressIndicator(),
+                      if (loadState.$2) _buildBackgroundLoadError(loc),
                       const SubscriptionUsageBanner(resource: 'memory_trace'),
                       AnimatedBuilder(
                         animation: _appBarHandler,
@@ -214,28 +224,11 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                       Expanded(
                           // ✅ 讓 ListView 可以使用剩餘高度
                           child: Selector<ControllerEvent, List<EventItem>>(
-                        key: ValueKey((_showMap, _selectedCity)),
                         selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
                         builder: (_, filteredEvents, __) {
-                          final cityCounts = <String, int>{};
-                          for (final event in filteredEvents) {
-                            final city = eventRegionKey(event.city);
-                            if (city.isNotEmpty) {
-                              cityCounts.update(
-                                city,
-                                (count) => count + 1,
-                                ifAbsent: () => 1,
-                              );
-                            }
-                          }
-                          final cities = cityCounts.keys.toList()
-                            ..sort((left, right) {
-                              final countComparison = cityCounts[right]!
-                                  .compareTo(cityCounts[left]!);
-                              return countComparison != 0
-                                  ? countComparison
-                                  : left.compareTo(right);
-                            });
+                          final regionData = _regionsFor(filteredEvents);
+                          final cityCounts = regionData.counts;
+                          final cities = regionData.sortedRegions;
                           final effectiveCity = _selectedCity != null &&
                                   cityCounts.containsKey(_selectedCity)
                               ? _selectedCity
@@ -255,11 +248,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                           }
                           final visibleEvents = effectiveCity == null
                               ? filteredEvents
-                              : filteredEvents
-                                  .where((event) =>
-                                      eventRegionKey(event.city) ==
-                                      effectiveCity)
-                                  .toList();
+                              : regionData.eventsFor(effectiveCity);
                           return Column(
                             children: [
                               if (cities.isNotEmpty)
@@ -298,7 +287,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                                           ? KeyedSubtree(
                                               key: const ValueKey('map'),
                                               child: WidgetsEventMap(
-                                                events: filteredEvents,
+                                                regionData: regionData,
                                                 onCitySelected: _showCityList,
                                               ),
                                             )
@@ -340,6 +329,21 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackgroundLoadError(AppLocalizations loc) {
+    return Material(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.cloud_off_outlined),
+        title: Text(loc.dashboardLoadFailed),
+        trailing: TextButton(
+          onPressed: () => _controller.loadEvents(isGetPublicEvents: false),
+          child: Text(loc.retry),
         ),
       ),
     );

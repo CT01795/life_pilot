@@ -3,12 +3,12 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/event_city_normalizer.dart';
 
 class WidgetsEventMap extends StatelessWidget {
-  final List<EventItem> events;
+  final EventRegionData regionData;
   final ValueChanged<String> onCitySelected;
 
   const WidgetsEventMap({
     super.key,
-    required this.events,
+    required this.regionData,
     required this.onCitySelected,
   });
 
@@ -39,13 +39,7 @@ class WidgetsEventMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counts = <String, int>{};
-    for (final event in events) {
-      final region = eventRegionKey(event.city);
-      if (region.isNotEmpty) {
-        counts.update(region, (value) => value + 1, ifAbsent: () => 1);
-      }
-    }
+    final counts = regionData.counts;
     final mapCounts = Map.fromEntries(counts.entries.where(
       (entry) =>
           _positions.containsKey(entry.key) &&
@@ -155,6 +149,45 @@ class WidgetsEventMap extends StatelessWidget {
       ),
     );
   }
+}
+
+class EventRegionData {
+  EventRegionData._({
+    required this.source,
+    required this.counts,
+    required this.eventsByRegion,
+    required this.sortedRegions,
+  });
+
+  factory EventRegionData.fromEvents(List<EventItem> events) {
+    final counts = <String, int>{};
+    final eventsByRegion = <String, List<EventItem>>{};
+    for (final event in events) {
+      final region = eventRegionKey(event.city);
+      if (region.isEmpty) continue;
+      counts.update(region, (value) => value + 1, ifAbsent: () => 1);
+      eventsByRegion.putIfAbsent(region, () => []).add(event);
+    }
+    final sortedRegions = counts.keys.toList()
+      ..sort((left, right) {
+        final countComparison = counts[right]!.compareTo(counts[left]!);
+        return countComparison != 0 ? countComparison : left.compareTo(right);
+      });
+    return EventRegionData._(
+      source: events,
+      counts: counts,
+      eventsByRegion: eventsByRegion,
+      sortedRegions: sortedRegions,
+    );
+  }
+
+  final List<EventItem> source;
+  final Map<String, int> counts;
+  final Map<String, List<EventItem>> eventsByRegion;
+  final List<String> sortedRegions;
+
+  List<EventItem> eventsFor(String? region) =>
+      region == null ? source : eventsByRegion[region] ?? const [];
 }
 
 String eventRegionKey(String city) {

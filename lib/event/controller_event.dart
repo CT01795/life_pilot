@@ -35,9 +35,12 @@ class ControllerEvent extends SafeChangeNotifier {
   final tracking = EventTrackingService();
   final Future<void> Function()? onCalendarReload;
   bool _isLoadingEvents = false;
+  bool _hasLoadedEventsSuccessfully = false;
   Object? _loadEventsError;
   final Set<String> _weatherPreloadAttemptedIds = {};
+  final Map<String, EventViewModel> _pendingWeatherPreloads = {};
   Future<void> _weatherPreloadQueue = Future<void>.value();
+  Timer? _weatherPreloadDebounce;
   int _publicEventServiceOperations = 0;
   bool _publicEventServiceClosed = false;
   int _filterRevision = 0;
@@ -84,6 +87,7 @@ class ControllerEvent extends SafeChangeNotifier {
   ScrollController get scrollController => _scrollController;
   TextEditingController get searchController => _searchController;
   bool get isLoadingEvents => _isLoadingEvents;
+  bool get hasLoadedEventsSuccessfully => _hasLoadedEventsSuccessfully;
   bool get hasLoadEventsError => _loadEventsError != null;
   int get filterRevision => _filterRevision;
   bool get isLoadingMoreMemory => _isLoadingMoreMemory;
@@ -130,7 +134,7 @@ class ControllerEvent extends SafeChangeNotifier {
     _modelEvent
       ..removeEvent(event)
       ..markRemoved(event.id);
-    _invalidateViewModelCache();
+    _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
   }
 
@@ -138,12 +142,16 @@ class ControllerEvent extends SafeChangeNotifier {
     event.isApproved = true;
     event.account = AuthConstants.systemEventOwnerEmail;
     await _serviceEvent.approvalEvent(event: event, tableName: _tableName);
-    _invalidateViewModelCache();
+    _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
   }
 
   void _invalidateViewModelCache() {
     _viewModelCache.clear();
+  }
+
+  void _invalidateViewModel(String eventId) {
+    _viewModelCache.remove(eventId);
   }
 
   bool canDelete({required String account}) {
@@ -157,7 +165,7 @@ class ControllerEvent extends SafeChangeNotifier {
     event.isLike = event.isLike == true ? false : true;
     event.isDislike = event.isLike == true ? false : event.isDislike;
     _sortRecommendedContent();
-    _invalidateViewModelCache();
+    _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
     try {
       await _serviceEvent.updateLikeEvent(
@@ -175,7 +183,7 @@ class ControllerEvent extends SafeChangeNotifier {
       event.isLike = previousLike;
       event.isDislike = previousDislike;
       _sortRecommendedContent();
-      _invalidateViewModelCache();
+      _invalidateViewModel(event.id);
       if (!_disposed) notifyListeners();
       rethrow;
     }
@@ -187,7 +195,7 @@ class ControllerEvent extends SafeChangeNotifier {
     event.isDislike = event.isDislike == true ? false : true;
     event.isLike = event.isDislike == true ? false : event.isLike;
     _sortRecommendedContent();
-    _invalidateViewModelCache();
+    _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
     try {
       await _serviceEvent.updateLikeEvent(
@@ -205,7 +213,7 @@ class ControllerEvent extends SafeChangeNotifier {
       event.isLike = previousLike;
       event.isDislike = previousDislike;
       _sortRecommendedContent();
-      _invalidateViewModelCache();
+      _invalidateViewModel(event.id);
       if (!_disposed) notifyListeners();
       rethrow;
     }
@@ -245,7 +253,10 @@ class ControllerEvent extends SafeChangeNotifier {
     if (updatedEvent == null) return;
     _modelEvent.updateEvent(updatedEvent);
     _sortRecommendedContent();
-    _invalidateViewModelCache();
+    _invalidateViewModel(event.id);
+    if (updatedEvent.id != event.id) {
+      _invalidateViewModel(updatedEvent.id);
+    }
     if (!_disposed) notifyListeners();
   }
 
@@ -284,7 +295,7 @@ class ControllerEvent extends SafeChangeNotifier {
           eventId: event.id,
           eventName: event.name, // 或者用 eventViewModel.name
           column: 'saves'); //收藏到行事曆
-      _invalidateViewModelCache();
+      _invalidateViewModel(event.id);
     }
     if (!_disposed) notifyListeners();
     return targetEvent;
@@ -470,6 +481,7 @@ class ControllerEvent extends SafeChangeNotifier {
         }
       }
       _modelEvent.setEvents(loadedEvents);
+      _hasLoadedEventsSuccessfully = true;
       _sortRecommendedContent();
       if (isMemoryTrace) {
         _modelEvent.sortMemoryEvents();
@@ -511,6 +523,7 @@ class ControllerEvent extends SafeChangeNotifier {
         );
 
         _modelEvent.setEvents(newList ?? []);
+        _hasLoadedEventsSuccessfully = true;
         _sortRecommendedContent();
         _invalidateViewModelCache();
         if (!_disposed) notifyListeners();
@@ -563,7 +576,6 @@ class ControllerEvent extends SafeChangeNotifier {
         before: rangeStart,
         inputUser: auth.currentAccount,
       );
-      _invalidateViewModelCache();
     } finally {
       _isLoadingMoreMemory = false;
       if (!_disposed) notifyListeners();
@@ -572,21 +584,30 @@ class ControllerEvent extends SafeChangeNotifier {
 
   void preloadWeatherForEvent(EventViewModel event) {
     if (!_weatherPreloadAttemptedIds.add(event.id)) return;
+    _pendingWeatherPreloads[event.id] = event;
+    _weatherPreloadDebounce?.cancel();
+    _weatherPreloadDebounce = Timer(
+      const Duration(milliseconds: 80),
+      _flushWeatherPreloads,
+    );
+  }
+
+  void _flushWeatherPreloads() {
+    if (_disposed || _pendingWeatherPreloads.isEmpty) return;
+    final events = _pendingWeatherPreloads.values.toList(growable: false);
+    _pendingWeatherPreloads.clear();
     _weatherPreloadQueue = _weatherPreloadQueue
-        .then((_) => _preloadWeatherForEvent(event))
+        .then((_) => _preloadWeatherForEvents(events))
         .catchError((_) {});
   }
 
-  Future<void> _preloadWeatherForEvent(EventViewModel event) async {
+  Future<void> _preloadWeatherForEvents(List<EventViewModel> events) async {
     if (_disposed) return;
     final requested = await _serviceWeather.preloadWeather(
-      [event],
+      events,
       tableName: _tableName,
     );
-    if (requested) {
-      if (!_disposed) notifyListeners();
-      await Future.delayed(const Duration(seconds: 1));
-    }
+    if (requested && !_disposed) notifyListeners();
   }
 
   // ------------------ controller event card ------------------
@@ -767,6 +788,8 @@ class ControllerEvent extends SafeChangeNotifier {
   void dispose() {
     _disposed = true;
     _searchDebounce?.cancel();
+    _weatherPreloadDebounce?.cancel();
+    _pendingWeatherPreloads.clear();
     _closePublicEventServiceIfIdle();
     _searchController.dispose();
     _scrollController.dispose();
