@@ -13,6 +13,7 @@ class ModelFeedback {
   final DateTime createdAt;
   List<Uint8List>? screenshotDecodeRawData; // decode cache
   Future<List<Uint8List>>? _screenshotDecodeFuture;
+  final Map<int, Future<Uint8List?>> _screenshotDecodeFutures = {};
   bool? isOk;
   String? dealBy;
   DateTime? dealAt;
@@ -75,6 +76,23 @@ class ModelFeedback {
     if (screenshotDecodeRawData != null) return screenshotDecodeRawData!;
     if (screenshot == null) return [];
     return _screenshotDecodeFuture ??= _decodeScreenshots();
+  }
+
+  Future<Uint8List?> decodeScreenshotAsync(int index) {
+    final screenshots = screenshot;
+    if (screenshots == null || index < 0 || index >= screenshots.length) {
+      return Future.value();
+    }
+    return _screenshotDecodeFutures.putIfAbsent(
+      index,
+      () async {
+        try {
+          return await compute(decodeBase64, screenshots[index]);
+        } catch (_) {
+          return null;
+        }
+      },
+    );
   }
 
   Future<List<Uint8List>> _decodeScreenshots() async {

@@ -75,22 +75,31 @@ class CalendarShareInvitation {
 }
 
 class CalendarSharingState {
-  const CalendarSharingState({
+  CalendarSharingState({
     required this.sent,
     required this.received,
     required this.shareableEvents,
     required this.sharedEvents,
-  });
+  }) : _sharedEventsByInvitation = _groupSharedEvents(sharedEvents);
 
   final List<CalendarShareInvitation> sent;
   final List<CalendarShareInvitation> received;
   final List<CalendarShareableEvent> shareableEvents;
   final List<SharedCalendarEvent> sharedEvents;
+  final Map<String, List<SharedCalendarEvent>> _sharedEventsByInvitation;
 
   List<SharedCalendarEvent> eventsForInvitation(String invitationId) =>
-      sharedEvents
-          .where((event) => event.invitationId == invitationId)
-          .toList();
+      _sharedEventsByInvitation[invitationId] ?? const [];
+
+  static Map<String, List<SharedCalendarEvent>> _groupSharedEvents(
+    List<SharedCalendarEvent> events,
+  ) {
+    final grouped = <String, List<SharedCalendarEvent>>{};
+    for (final event in events) {
+      grouped.putIfAbsent(event.invitationId, () => []).add(event);
+    }
+    return grouped;
+  }
 }
 
 class ServiceCalendarSharing {
@@ -99,7 +108,7 @@ class ServiceCalendarSharing {
   }) async {
     final currentEmail = supabase.auth.currentUser?.email?.toLowerCase();
     if (currentEmail == null || currentEmail.isEmpty) {
-      return const CalendarSharingState(
+      return CalendarSharingState(
         sent: [],
         received: [],
         shareableEvents: [],

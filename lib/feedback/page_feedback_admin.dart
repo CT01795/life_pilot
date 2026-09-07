@@ -143,72 +143,91 @@ class PageFeedbackAdmin extends StatelessWidget {
                                               if (feedback.screenshot != null &&
                                                   feedback
                                                       .screenshot!.isNotEmpty)
-                                                FutureBuilder<List<Uint8List>>(
-                                                  future: feedback
-                                                      .decodeScreenshotsAsync(),
-                                                  builder: (context, snapshot) {
-                                                    if (snapshot.hasError) {
-                                                      return Icon(
-                                                        Icons
-                                                            .broken_image_outlined,
-                                                        size: 44,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .error,
-                                                      );
-                                                    }
-                                                    if (!snapshot.hasData) {
-                                                      return const Padding(
-                                                        padding:
-                                                            EdgeInsets.all(8),
-                                                        child:
-                                                            CircularProgressIndicator(),
-                                                      );
-                                                    }
-
-                                                    final images =
-                                                        snapshot.data!;
-                                                    final thumbnailCacheSize = (120 *
-                                                            MediaQuery
-                                                                .devicePixelRatioOf(
-                                                                    context))
-                                                        .round();
-                                                    return Wrap(
-                                                      spacing: 8,
-                                                      runSpacing: 8,
-                                                      children:
-                                                          images.map((bytes) {
-                                                        return GestureDetector(
-                                                          onTap: () =>
-                                                              showDialog(
-                                                            context: context,
-                                                            builder: (_) =>
-                                                                Dialog(
-                                                              child:
-                                                                  InteractiveViewer(
-                                                                child: Image
-                                                                    .memory(
-                                                                        bytes),
+                                                SizedBox(
+                                                  height: 120,
+                                                  child: ListView.separated(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    itemCount: feedback
+                                                        .screenshot!.length,
+                                                    separatorBuilder: (_, __) =>
+                                                        Gaps.w8,
+                                                    itemBuilder:
+                                                        (context, index) {
+                                                      return FutureBuilder<
+                                                          Uint8List?>(
+                                                        future: feedback
+                                                            .decodeScreenshotAsync(
+                                                                index),
+                                                        builder: (context,
+                                                            snapshot) {
+                                                          final bytes =
+                                                              snapshot.data;
+                                                          if (snapshot
+                                                                  .connectionState !=
+                                                              ConnectionState
+                                                                  .done) {
+                                                            return const SizedBox
+                                                                .square(
+                                                              dimension: 120,
+                                                              child: Center(
+                                                                child:
+                                                                    CircularProgressIndicator(),
+                                                              ),
+                                                            );
+                                                          }
+                                                          if (bytes == null) {
+                                                            return SizedBox
+                                                                .square(
+                                                              dimension: 120,
+                                                              child: Icon(
+                                                                Icons
+                                                                    .broken_image_outlined,
+                                                                size: 44,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .error,
+                                                              ),
+                                                            );
+                                                          }
+                                                          final cacheSize = (120 *
+                                                                  MediaQuery
+                                                                      .devicePixelRatioOf(
+                                                                          context))
+                                                              .round();
+                                                          return GestureDetector(
+                                                            onTap: () =>
+                                                                showDialog(
+                                                              context: context,
+                                                              builder: (_) =>
+                                                                  Dialog(
+                                                                child:
+                                                                    InteractiveViewer(
+                                                                  child: Image
+                                                                      .memory(
+                                                                          bytes),
+                                                                ),
                                                               ),
                                                             ),
-                                                          ),
-                                                          child: Image.memory(
-                                                            bytes,
-                                                            width: 120,
-                                                            height: 120,
-                                                            fit: BoxFit.cover,
-                                                            cacheWidth:
-                                                                thumbnailCacheSize,
-                                                            cacheHeight:
-                                                                thumbnailCacheSize,
-                                                            filterQuality:
-                                                                FilterQuality
-                                                                    .low,
-                                                          ),
-                                                        );
-                                                      }).toList(),
-                                                    );
-                                                  },
+                                                            child: Image.memory(
+                                                              bytes,
+                                                              width: 120,
+                                                              height: 120,
+                                                              fit: BoxFit.cover,
+                                                              cacheWidth:
+                                                                  cacheSize,
+                                                              cacheHeight:
+                                                                  cacheSize,
+                                                              filterQuality:
+                                                                  FilterQuality
+                                                                      .low,
+                                                            ),
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               Gaps.h8,
                                               if (feedback.isOk == true)
