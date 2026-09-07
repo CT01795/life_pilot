@@ -6,6 +6,7 @@ import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart'
     show DateTimeCompare, DateTimeFormatter;
@@ -40,6 +41,9 @@ class CalendarAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
+    final storage = context.select<ControllerAuth, DataStorageLocation>(
+      (auth) => auth.preferredStorage,
+    );
 
     // 手機縮小，桌面維持原本大小
     final bool isSmallScreen = screenWidth < 500;
@@ -76,12 +80,14 @@ class CalendarAppBar extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        iconButton(
-          Icons.people_alt_outlined,
-          onSharing,
-          loc.calendarSharing,
-        ),
-        Gaps.w8,
+        if (storage == DataStorageLocation.cloud) ...[
+          iconButton(
+            Icons.people_alt_outlined,
+            onSharing,
+            loc.calendarSharing,
+          ),
+          Gaps.w8,
+        ],
         iconButton(
           Icons.arrow_left_rounded,
           onPrevious,

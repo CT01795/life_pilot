@@ -100,14 +100,12 @@ class ServiceLocalDataTransfer {
         );
         dashboardSettingSaved = true;
       }
-      if (staged.isNotEmpty) {
-        final deleted = await supabase.rpc(
-          'delete_cloud_records_after_local_copy',
-          params: {'p_records': staged},
-        );
-        if ((int.tryParse(deleted.toString()) ?? -1) != staged.length) {
-          throw StateError('cloud_delete_incomplete');
-        }
+      final deleted = await supabase.rpc(
+        'delete_cloud_records_and_revoke_shares_after_local_copy',
+        params: {'p_records': staged},
+      );
+      if ((int.tryParse(deleted.toString()) ?? -1) != staged.length) {
+        throw StateError('cloud_delete_incomplete');
       }
       return LocalDataTransferResult(moved: staged.length, failed: 0);
     } catch (error) {

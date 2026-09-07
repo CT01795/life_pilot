@@ -12,6 +12,7 @@ class LocalDataStore {
   static final _records = stringMapStoreFactory.store('records');
   static final _settings = stringMapStoreFactory.store('settings');
   Future<Database>? _databaseFuture;
+  final Map<String, Future<List<Map<String, dynamic>>>> _listCache = {};
 
   Future<Database> get _db async {
     final opening = _databaseFuture ??= openLifePilotLocalDatabase();
@@ -25,6 +26,18 @@ class LocalDataStore {
 
   String _recordKey(String owner, String resource, String id) =>
       '${owner.toLowerCase()}::$resource::$id';
+
+  String _resourceCacheKey(String owner, String resource) =>
+      '${owner.toLowerCase()}::$resource';
+
+  void _invalidateResource(String owner, String resource) {
+    _listCache.remove(_resourceCacheKey(owner, resource));
+  }
+
+  void _invalidateOwner(String owner) {
+    final prefix = '${owner.toLowerCase()}::';
+    _listCache.removeWhere((key, _) => key.startsWith(prefix));
+  }
 
   Future<DataStorageLocation?> preferredLocation(String owner) async {
     final value = await _settings
@@ -64,12 +77,30 @@ class LocalDataStore {
       'original_cloud_id': originalCloudId,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
+    _invalidateResource(owner, resource);
   }
 
   Future<List<Map<String, dynamic>>> list({
     required String owner,
     required String resource,
   }) async {
+    final cacheKey = _resourceCacheKey(owner, resource);
+    final request = _listCache[cacheKey] ??= _loadList(owner, resource);
+    try {
+      final rows = await request;
+      return rows.map(Map<String, dynamic>.from).toList();
+    } catch (_) {
+      if (identical(_listCache[cacheKey], request)) {
+        _listCache.remove(cacheKey);
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadList(
+    String owner,
+    String resource,
+  ) async {
     final snapshots = await _records
         .find(
           await _db,
@@ -85,7 +116,7 @@ class LocalDataStore {
         .map((snapshot) => Map<String, dynamic>.from(
               snapshot.value['data']! as Map,
             ))
-        .toList();
+        .toList(growable: false);
   }
 
   Future<void> delete({
@@ -94,20 +125,26 @@ class LocalDataStore {
     required String id,
   }) async {
     await _records.record(_recordKey(owner, resource, id)).delete(await _db);
+    _invalidateResource(owner, resource);
   }
 
   Future<void> deleteMany({
     required String owner,
     required Iterable<({String resource, String id})> records,
   }) async {
+    final recordList = records.toList(growable: false);
     final database = await _db;
     await database.transaction((transaction) async {
-      for (final record in records) {
+      for (final record in recordList) {
         await _records
             .record(_recordKey(owner, record.resource, record.id))
             .delete(transaction);
       }
     });
+    for (final resource
+        in recordList.map((record) => record.resource).toSet()) {
+      _invalidateResource(owner, resource);
+    }
   }
 
   Future<void> deleteAllRecords({required String owner}) async {
@@ -117,6 +154,7 @@ class LocalDataStore {
         filter: Filter.equals('owner', owner.toLowerCase()),
       ),
     );
+    _invalidateOwner(owner);
   }
 
   Future<bool> contains({
