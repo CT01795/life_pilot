@@ -2436,7 +2436,7 @@ abstract class AppLocalizations {
   /// Label for dataStorageTitle
   ///
   /// In en, this message translates to:
-  /// **'Where should new personal data be saved?'**
+  /// **'Storage'**
   String get dataStorageTitle;
 
   /// Label for dataStorageCloud
@@ -2738,6 +2738,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlimited local answer history'**
   String get subscriptionLocalAnswerHistory;
+
+  /// Label for adminPricingTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Create pricing version'**
+  String get adminPricingTitle;
+
+  /// Label for adminPricingSubtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to future payments and add-ons only'**
+  String get adminPricingSubtitle;
+
+  /// Label for adminPricingRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a version name and all numbers'**
+  String get adminPricingRequired;
+
+  /// Label for adminPricingCreated
+  ///
+  /// In en, this message translates to:
+  /// **'New pricing version created; existing benefits are unchanged'**
+  String get adminPricingCreated;
+
+  /// No description provided for @adminPricingCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Creation failed: {error}'**
+  String adminPricingCreateFailed(String error);
+
+  /// Label for adminPricingVersionName
+  ///
+  /// In en, this message translates to:
+  /// **'Version name'**
+  String get adminPricingVersionName;
+
+  /// Label for adminPricingVersionHint
+  ///
+  /// In en, this message translates to:
+  /// **'Example: 2026-Q4'**
+  String get adminPricingVersionHint;
+
+  /// Label for adminPricingEffectiveDate
+  ///
+  /// In en, this message translates to:
+  /// **'Effective date'**
+  String get adminPricingEffectiveDate;
+
+  /// Label for adminPricingCreate
+  ///
+  /// In en, this message translates to:
+  /// **'Create version'**
+  String get adminPricingCreate;
+
+  /// Label for adminPricingQuarterlyPrice
+  ///
+  /// In en, this message translates to:
+  /// **'Quarterly price (TWD)'**
+  String get adminPricingQuarterlyPrice;
+
+  /// Label for adminPricingCalendarQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar records'**
+  String get adminPricingCalendarQuota;
+
+  /// Label for adminPricingAccountingQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Accounting records'**
+  String get adminPricingAccountingQuota;
+
+  /// Label for adminPricingPointQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Point records'**
+  String get adminPricingPointQuota;
+
+  /// Label for adminPricingMemoryQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Memories'**
+  String get adminPricingMemoryQuota;
+
+  /// Label for adminPricingGameQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Custom questions'**
+  String get adminPricingGameQuota;
+
+  /// Label for adminPricingShareQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar shares'**
+  String get adminPricingShareQuota;
+
+  /// Label for adminPricingImageQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Images (MB)'**
+  String get adminPricingImageQuota;
+
+  /// Label for adminPricingAnswerDays
+  ///
+  /// In en, this message translates to:
+  /// **'Answer history days'**
+  String get adminPricingAnswerDays;
+
+  /// Label for adminSubscriptionTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Manage subscription'**
+  String get adminSubscriptionTitle;
+
+  /// Label for adminSubscriptionSubtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Apply the pricing and quota purchased'**
+  String get adminSubscriptionSubtitle;
+
+  /// Label for adminSubscriptionEmail
+  ///
+  /// In en, this message translates to:
+  /// **'User email'**
+  String get adminSubscriptionEmail;
+
+  /// Label for adminSubscriptionPlan
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get adminSubscriptionPlan;
+
+  /// Label for adminSubscriptionFree
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get adminSubscriptionFree;
+
+  /// Label for adminSubscriptionPaid
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get adminSubscriptionPaid;
+
+  /// Message for adminSubscriptionNoPricing
+  ///
+  /// In en, this message translates to:
+  /// **'Create a pricing version first'**
+  String get adminSubscriptionNoPricing;
+
+  /// Label for adminSubscriptionSaved
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription saved'**
+  String get adminSubscriptionSaved;
+
+  /// No description provided for @adminSubscriptionSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save failed: {error}'**
+  String adminSubscriptionSaveFailed(String error);
+
+  /// Label for adminSubscriptionNoExpiry
+  ///
+  /// In en, this message translates to:
+  /// **'The free plan has no expiry date'**
+  String get adminSubscriptionNoExpiry;
+
+  /// Label for adminSubscriptionInactiveWarning
+  ///
+  /// In en, this message translates to:
+  /// **'The account and cloud data are removed after 3 months without changes.'**
+  String get adminSubscriptionInactiveWarning;
+
+  /// Label for adminSubscriptionAddQuota
+  ///
+  /// In en, this message translates to:
+  /// **'Add quota without replacing current benefits'**
+  String get adminSubscriptionAddQuota;
+
+  /// Label for adminSubscriptionAddQuotaHint
+  ///
+  /// In en, this message translates to:
+  /// **'The new quota is added to unexpired quota'**
+  String get adminSubscriptionAddQuotaHint;
+
+  /// Label for adminSubscriptionStoragePlan
+  ///
+  /// In en, this message translates to:
+  /// **'Storage plan'**
+  String get adminSubscriptionStoragePlan;
+
+  /// Label for adminSubscriptionCloud
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get adminSubscriptionCloud;
+
+  /// Label for adminSubscriptionLocal
+  ///
+  /// In en, this message translates to:
+  /// **'Local unlimited'**
+  String get adminSubscriptionLocal;
+
+  /// Label for adminSubscriptionPricingVersion
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing version'**
+  String get adminSubscriptionPricingVersion;
+
+  /// Label for adminSubscriptionMultiplier
+  ///
+  /// In en, this message translates to:
+  /// **'Quota multiplier'**
+  String get adminSubscriptionMultiplier;
+
+  /// No description provided for @adminSubscriptionTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}×'**
+  String adminSubscriptionTimes(int count);
+
+  /// Label for adminSubscriptionExpiry
+  ///
+  /// In en, this message translates to:
+  /// **'Benefit expiry'**
+  String get adminSubscriptionExpiry;
+
+  /// Label for adminSubscriptionNote
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get adminSubscriptionNote;
+
+  /// Label for adminSubscriptionSave
+  ///
+  /// In en, this message translates to:
+  /// **'Save subscription'**
+  String get adminSubscriptionSave;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -93,6 +93,8 @@ class ServiceEvent {
     DateTime? dateE,
     String? id,
     String? inputUser,
+    int? limit,
+    int offset = 0,
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     if (tableName == TableNames.recommendEvents) {
@@ -125,20 +127,23 @@ class ServiceEvent {
       return localRows
           .map((row) => EventItem.fromJson(json: row))
           .where((event) {
-        if (id != null && id.isNotEmpty) return event.id == id;
-        final eventDate = event.startDate == null
-            ? null
-            : DateTimeFormatter.dateOnly(event.startDate!.toLocal());
-        if (eventDate == null) return true;
-        final start = DateTimeFormatter.dateOnly(dateS ??
-            (tableName == TableNames.memoryTrace
-                ? today.subtract(const Duration(days: 29))
-                : today));
-        final end = DateTimeFormatter.dateOnly(
-          dateE ?? DateTime(today.year + 2, today.month, today.day),
-        );
-        return !eventDate.isBefore(start) && !eventDate.isAfter(end);
-      }).toList();
+            if (id != null && id.isNotEmpty) return event.id == id;
+            final eventDate = event.startDate == null
+                ? null
+                : DateTimeFormatter.dateOnly(event.startDate!.toLocal());
+            if (eventDate == null) return true;
+            final start = DateTimeFormatter.dateOnly(dateS ??
+                (tableName == TableNames.memoryTrace
+                    ? today.subtract(const Duration(days: 29))
+                    : today));
+            final end = DateTimeFormatter.dateOnly(
+              dateE ?? DateTime(today.year + 2, today.month, today.day),
+            );
+            return !eventDate.isBefore(start) && !eventDate.isAfter(end);
+          })
+          .skip(offset)
+          .take(limit ?? localRows.length)
+          .toList();
     }
 
     try {
@@ -153,6 +158,8 @@ class ServiceEvent {
             if (tableName != TableNames.recommendEvents &&
                 tableName != TableNames.recommendPlaces)
               'inputuser': inputUser,
+            if (limit != null) 'inputlimit': limit,
+            if (limit != null) 'inputoffset': offset,
           }
         },
       );

@@ -1194,7 +1194,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionDeleteRecordHint => '削除すると今日の小計と合計も再計算されます。';
 
   @override
-  String get dataStorageTitle => '新しい個人データの保存先';
+  String get dataStorageTitle => '保存先';
 
   @override
   String get dataStorageCloud => 'クラウド';
@@ -1351,4 +1351,130 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionLocalAnswerHistory => '本体の解答履歴は無制限';
+
+  @override
+  String get adminPricingTitle => '料金版を作成';
+
+  @override
+  String get adminPricingSubtitle => '今後の支払いと追加購入にのみ適用';
+
+  @override
+  String get adminPricingRequired => '版名とすべての数値を入力してください';
+
+  @override
+  String get adminPricingCreated => '新しい料金版を作成しました。既存の特典は変わりません';
+
+  @override
+  String adminPricingCreateFailed(String error) {
+    return '作成失敗：$error';
+  }
+
+  @override
+  String get adminPricingVersionName => '版名';
+
+  @override
+  String get adminPricingVersionHint => '例：2026-Q4';
+
+  @override
+  String get adminPricingEffectiveDate => '適用日';
+
+  @override
+  String get adminPricingCreate => '版を作成';
+
+  @override
+  String get adminPricingQuarterlyPrice => '四半期料金（TWD）';
+
+  @override
+  String get adminPricingCalendarQuota => '予定件数';
+
+  @override
+  String get adminPricingAccountingQuota => '家計簿明細';
+
+  @override
+  String get adminPricingPointQuota => 'ポイント明細';
+
+  @override
+  String get adminPricingMemoryQuota => '思い出';
+
+  @override
+  String get adminPricingGameQuota => '自作問題';
+
+  @override
+  String get adminPricingShareQuota => '共有人数';
+
+  @override
+  String get adminPricingImageQuota => '画像容量（MB）';
+
+  @override
+  String get adminPricingAnswerDays => '解答履歴の日数';
+
+  @override
+  String get adminSubscriptionTitle => '購読管理';
+
+  @override
+  String get adminSubscriptionSubtitle => '購入時の料金と上限を適用';
+
+  @override
+  String get adminSubscriptionEmail => 'ユーザーEmail';
+
+  @override
+  String get adminSubscriptionPlan => 'プラン';
+
+  @override
+  String get adminSubscriptionFree => '無料';
+
+  @override
+  String get adminSubscriptionPaid => '有料';
+
+  @override
+  String get adminSubscriptionNoPricing => '先に料金版を作成してください';
+
+  @override
+  String get adminSubscriptionSaved => '購読設定を保存しました';
+
+  @override
+  String adminSubscriptionSaveFailed(String error) {
+    return '保存失敗：$error';
+  }
+
+  @override
+  String get adminSubscriptionNoExpiry => '無料版に期限はありません';
+
+  @override
+  String get adminSubscriptionInactiveWarning => '3か月間変更がない場合、アカウントとクラウドデータを削除します。';
+
+  @override
+  String get adminSubscriptionAddQuota => '現在の特典を残して上限を追加';
+
+  @override
+  String get adminSubscriptionAddQuotaHint => '新しい上限を未期限切れの上限に加算します';
+
+  @override
+  String get adminSubscriptionStoragePlan => '保存プラン';
+
+  @override
+  String get adminSubscriptionCloud => 'クラウド';
+
+  @override
+  String get adminSubscriptionLocal => '本体無制限';
+
+  @override
+  String get adminSubscriptionPricingVersion => '料金版';
+
+  @override
+  String get adminSubscriptionMultiplier => '上限倍率';
+
+  @override
+  String adminSubscriptionTimes(int count) {
+    return '$count倍';
+  }
+
+  @override
+  String get adminSubscriptionExpiry => '特典期限';
+
+  @override
+  String get adminSubscriptionNote => '補足';
+
+  @override
+  String get adminSubscriptionSave => '購読を保存';
 }

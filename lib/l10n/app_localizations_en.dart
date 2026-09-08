@@ -1194,7 +1194,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionDeleteRecordHint => 'Deleting this record will also recalculate today and total values.';
 
   @override
-  String get dataStorageTitle => 'Where should new personal data be saved?';
+  String get dataStorageTitle => 'Storage';
 
   @override
   String get dataStorageCloud => 'Cloud';
@@ -1351,4 +1351,130 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionLocalAnswerHistory => 'Unlimited local answer history';
+
+  @override
+  String get adminPricingTitle => 'Create pricing version';
+
+  @override
+  String get adminPricingSubtitle => 'Applies to future payments and add-ons only';
+
+  @override
+  String get adminPricingRequired => 'Enter a version name and all numbers';
+
+  @override
+  String get adminPricingCreated => 'New pricing version created; existing benefits are unchanged';
+
+  @override
+  String adminPricingCreateFailed(String error) {
+    return 'Creation failed: $error';
+  }
+
+  @override
+  String get adminPricingVersionName => 'Version name';
+
+  @override
+  String get adminPricingVersionHint => 'Example: 2026-Q4';
+
+  @override
+  String get adminPricingEffectiveDate => 'Effective date';
+
+  @override
+  String get adminPricingCreate => 'Create version';
+
+  @override
+  String get adminPricingQuarterlyPrice => 'Quarterly price (TWD)';
+
+  @override
+  String get adminPricingCalendarQuota => 'Calendar records';
+
+  @override
+  String get adminPricingAccountingQuota => 'Accounting records';
+
+  @override
+  String get adminPricingPointQuota => 'Point records';
+
+  @override
+  String get adminPricingMemoryQuota => 'Memories';
+
+  @override
+  String get adminPricingGameQuota => 'Custom questions';
+
+  @override
+  String get adminPricingShareQuota => 'Calendar shares';
+
+  @override
+  String get adminPricingImageQuota => 'Images (MB)';
+
+  @override
+  String get adminPricingAnswerDays => 'Answer history days';
+
+  @override
+  String get adminSubscriptionTitle => 'Manage subscription';
+
+  @override
+  String get adminSubscriptionSubtitle => 'Apply the pricing and quota purchased';
+
+  @override
+  String get adminSubscriptionEmail => 'User email';
+
+  @override
+  String get adminSubscriptionPlan => 'Plan';
+
+  @override
+  String get adminSubscriptionFree => 'Free';
+
+  @override
+  String get adminSubscriptionPaid => 'Paid';
+
+  @override
+  String get adminSubscriptionNoPricing => 'Create a pricing version first';
+
+  @override
+  String get adminSubscriptionSaved => 'Subscription saved';
+
+  @override
+  String adminSubscriptionSaveFailed(String error) {
+    return 'Save failed: $error';
+  }
+
+  @override
+  String get adminSubscriptionNoExpiry => 'The free plan has no expiry date';
+
+  @override
+  String get adminSubscriptionInactiveWarning => 'The account and cloud data are removed after 3 months without changes.';
+
+  @override
+  String get adminSubscriptionAddQuota => 'Add quota without replacing current benefits';
+
+  @override
+  String get adminSubscriptionAddQuotaHint => 'The new quota is added to unexpired quota';
+
+  @override
+  String get adminSubscriptionStoragePlan => 'Storage plan';
+
+  @override
+  String get adminSubscriptionCloud => 'Cloud';
+
+  @override
+  String get adminSubscriptionLocal => 'Local unlimited';
+
+  @override
+  String get adminSubscriptionPricingVersion => 'Pricing version';
+
+  @override
+  String get adminSubscriptionMultiplier => 'Quota multiplier';
+
+  @override
+  String adminSubscriptionTimes(int count) {
+    return '$count×';
+  }
+
+  @override
+  String get adminSubscriptionExpiry => 'Benefit expiry';
+
+  @override
+  String get adminSubscriptionNote => 'Note';
+
+  @override
+  String get adminSubscriptionSave => 'Save subscription';
 }

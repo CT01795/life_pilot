@@ -31,11 +31,40 @@ class WidgetsEventList extends StatelessWidget {
       controller: scrollController,
       cacheExtent: 180,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: filteredEvents.length,
+      itemCount: filteredEvents.length +
+          (controllerEvent.usesCloudPagination && controllerEvent.hasMoreEvents
+              ? 1
+              : 0),
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
       addSemanticIndexes: false,
       itemBuilder: (context, index) {
+        if (index == filteredEvents.length) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+            child: OutlinedButton.icon(
+              onPressed: controllerEvent.isLoadingMoreEvents
+                  ? null
+                  : () async {
+                      try {
+                        await controllerEvent.loadMoreRecommendedEvents();
+                      } catch (_) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(loc.dashboardLoadFailed)),
+                        );
+                      }
+                    },
+              icon: controllerEvent.isLoadingMoreEvents
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.expand_more_rounded),
+              label: Text(loc.clickHereToSeeMore),
+            ),
+          );
+        }
         final eventViewModel = controllerEvent.buildViewModel(
           event: filteredEvents[index],
           loc: loc,

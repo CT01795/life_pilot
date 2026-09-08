@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
 
@@ -38,11 +39,12 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   }
 
   Future<void> _save(List<SubscriptionPricingVersion> versions) async {
+    final loc = AppLocalizations.of(context)!;
     if (_email.text.trim().isEmpty || _saving) return;
     final selectedVersion =
         _versionId ?? (versions.isEmpty ? null : versions.first.id);
     if (_plan == 'plus' && selectedVersion == null) {
-      _show('請先建立收費版本');
+      _show(loc.adminSubscriptionNoPricing);
       return;
     }
     setState(() => _saving = true);
@@ -69,10 +71,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
         );
       }
       if (!mounted) return;
-      _show('使用者訂閱設定已儲存');
+      _show(loc.adminSubscriptionSaved);
       widget.onSaved?.call();
     } catch (error) {
-      if (mounted) _show('儲存失敗：$error');
+      if (mounted) _show(loc.adminSubscriptionSaveFailed(error.toString()));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -83,6 +85,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return FutureBuilder<List<SubscriptionPricingVersion>>(
       future: _versions,
       builder: (context, snapshot) {
@@ -94,16 +97,16 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
           child: ExpansionTile(
             leading:
                 const CircleAvatar(child: Icon(Icons.manage_accounts_outlined)),
-            title: const Text('管理使用者訂閱'),
-            subtitle: const Text('套用付款當下的收費版本與額度'),
+            title: Text(loc.adminSubscriptionTitle),
+            subtitle: Text(loc.adminSubscriptionSubtitle),
             childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
               TextField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: '使用者 Email',
-                  prefixIcon: Icon(Icons.alternate_email),
+                decoration: InputDecoration(
+                  labelText: loc.adminSubscriptionEmail,
+                  prefixIcon: const Icon(Icons.alternate_email),
                 ),
               ),
               Gaps.h12,
@@ -112,15 +115,17 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     ? DropdownButtonFormField<String>(
                         initialValue: _plan,
                         isExpanded: true,
-                        decoration: const InputDecoration(labelText: '方案'),
-                        items: const [
+                        decoration: InputDecoration(
+                          labelText: loc.adminSubscriptionPlan,
+                        ),
+                        items: [
                           DropdownMenuItem(
                             value: 'free',
-                            child: Text('免費版'),
+                            child: Text(loc.adminSubscriptionFree),
                           ),
                           DropdownMenuItem(
                             value: 'plus',
-                            child: Text('付費版'),
+                            child: Text(loc.adminSubscriptionPaid),
                           ),
                         ],
                         onChanged: (value) {
@@ -128,30 +133,36 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                         },
                       )
                     : SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'free', label: Text('免費版')),
-                          ButtonSegment(value: 'plus', label: Text('付費版')),
+                        segments: [
+                          ButtonSegment(
+                            value: 'free',
+                            label: Text(loc.adminSubscriptionFree),
+                          ),
+                          ButtonSegment(
+                            value: 'plus',
+                            label: Text(loc.adminSubscriptionPaid),
+                          ),
                         ],
                         selected: {_plan},
                         onSelectionChanged: (value) => _setPlan(value.first),
                       ),
               ),
               if (_plan == 'free')
-                const Padding(
-                  padding: EdgeInsets.only(top: 12),
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.info_outline),
-                    title: Text('免費版沒有到期日'),
-                    subtitle: Text('連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。'),
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(loc.adminSubscriptionNoExpiry),
+                    subtitle: Text(loc.adminSubscriptionInactiveWarning),
                   ),
                 )
               else ...[
                 Gaps.h12,
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('增加額度，不覆蓋尚未到期的權益'),
-                  subtitle: const Text('開啟後會將這筆新版額度與舊版額度相加'),
+                  title: Text(loc.adminSubscriptionAddQuota),
+                  subtitle: Text(loc.adminSubscriptionAddQuotaHint),
                   value: _additive,
                   onChanged: (value) => setState(() => _additive = value),
                 ),
@@ -160,15 +171,17 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                       ? DropdownButtonFormField<String>(
                           initialValue: _storagePlan,
                           isExpanded: true,
-                          decoration: const InputDecoration(labelText: '儲存方案'),
-                          items: const [
+                          decoration: InputDecoration(
+                            labelText: loc.adminSubscriptionStoragePlan,
+                          ),
+                          items: [
                             DropdownMenuItem(
                               value: 'cloud',
-                              child: Text('雲端版'),
+                              child: Text(loc.adminSubscriptionCloud),
                             ),
                             DropdownMenuItem(
                               value: 'local',
-                              child: Text('本機不限量'),
+                              child: Text(loc.adminSubscriptionLocal),
                             ),
                           ],
                           onChanged: (value) {
@@ -178,16 +191,16 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                           },
                         )
                       : SegmentedButton<String>(
-                          segments: const [
+                          segments: [
                             ButtonSegment(
                               value: 'cloud',
-                              icon: Icon(Icons.cloud_outlined),
-                              label: Text('雲端版'),
+                              icon: const Icon(Icons.cloud_outlined),
+                              label: Text(loc.adminSubscriptionCloud),
                             ),
                             ButtonSegment(
                               value: 'local',
-                              icon: Icon(Icons.devices_outlined),
-                              label: Text('本機不限量'),
+                              icon: const Icon(Icons.devices_outlined),
+                              label: Text(loc.adminSubscriptionLocal),
                             ),
                           ],
                           selected: {_storagePlan},
@@ -200,8 +213,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   key: ValueKey(selectedVersion),
                   initialValue: selectedVersion,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                      labelText: '收費版本', prefixIcon: Icon(Icons.history)),
+                  decoration: InputDecoration(
+                    labelText: loc.adminSubscriptionPricingVersion,
+                    prefixIcon: const Icon(Icons.history),
+                  ),
                   items: versions
                       .map((version) => DropdownMenuItem(
                             value: version.id,
@@ -230,20 +245,24 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                 DropdownButtonFormField<int>(
                   initialValue: _multiplier,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                      labelText: '購買額度倍率',
-                      prefixIcon: Icon(Icons.multiple_stop)),
+                  decoration: InputDecoration(
+                    labelText: loc.adminSubscriptionMultiplier,
+                    prefixIcon: const Icon(Icons.multiple_stop),
+                  ),
                   items: List.generate(
-                      10,
-                      (index) => DropdownMenuItem(
-                          value: index + 1, child: Text('${index + 1} 倍'))),
+                    10,
+                    (index) => DropdownMenuItem(
+                      value: index + 1,
+                      child: Text(loc.adminSubscriptionTimes(index + 1)),
+                    ),
+                  ),
                   onChanged: (value) =>
                       setState(() => _multiplier = value ?? 1),
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.event_available_outlined),
-                  title: const Text('本次權益到期日'),
+                  title: Text(loc.adminSubscriptionExpiry),
                   subtitle: Text(_expiry == null
                       ? '-'
                       : MaterialLocalizations.of(context)
@@ -254,8 +273,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
               TextField(
                 controller: _note,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                    labelText: '補充說明', alignLabelWithHint: true),
+                decoration: InputDecoration(
+                  labelText: loc.adminSubscriptionNote,
+                  alignLabelWithHint: true,
+                ),
               ),
               Gaps.h16,
               SizedBox(
@@ -267,7 +288,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.save_outlined),
-                  label: const Text('儲存訂閱設定'),
+                  label: Text(loc.adminSubscriptionSave),
                 ),
               ),
             ],

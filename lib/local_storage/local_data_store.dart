@@ -30,6 +30,41 @@ class LocalDataStore {
   String _resourceCacheKey(String owner, String resource) =>
       '${owner.toLowerCase()}::$resource';
 
+  String _countKey(String owner, String resource) =>
+      '${owner.toLowerCase()}::record_count::$resource';
+
+  Future<void> _setCount(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    int value,
+  ) =>
+      _settings.record(_countKey(owner, resource)).put(database, {
+        'value': value < 0 ? 0 : value,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+  Future<int?> _cachedCount(
+    DatabaseClient database,
+    String owner,
+    String resource,
+  ) async {
+    final row =
+        await _settings.record(_countKey(owner, resource)).get(database);
+    return (row?['value'] as num?)?.toInt();
+  }
+
+  Future<void> _adjustCount(
+    DatabaseClient database,
+    String owner,
+    String resource,
+    int delta,
+  ) async {
+    final cached = await _cachedCount(database, owner, resource);
+    if (cached == null) return;
+    await _setCount(database, owner, resource, cached + delta);
+  }
+
   void _invalidateResource(String owner, String resource) {
     _listCache.remove(_resourceCacheKey(owner, resource));
   }
@@ -68,14 +103,20 @@ class LocalDataStore {
     LocalSyncState syncState = LocalSyncState.localOnly,
     String? originalCloudId,
   }) async {
-    await _records.record(_recordKey(owner, resource, id)).put(await _db, {
-      'owner': owner.toLowerCase(),
-      'resource': resource,
-      'id': id,
-      'data': data,
-      'sync_state': syncState.name,
-      'original_cloud_id': originalCloudId,
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    final database = await _db;
+    await database.transaction((transaction) async {
+      final record = _records.record(_recordKey(owner, resource, id));
+      final existed = await record.exists(transaction);
+      await record.put(transaction, {
+        'owner': owner.toLowerCase(),
+        'resource': resource,
+        'id': id,
+        'data': data,
+        'sync_state': syncState.name,
+        'original_cloud_id': originalCloudId,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+      if (!existed) await _adjustCount(transaction, owner, resource, 1);
     });
     _invalidateResource(owner, resource);
   }
@@ -124,7 +165,13 @@ class LocalDataStore {
     required String resource,
     required String id,
   }) async {
-    await _records.record(_recordKey(owner, resource, id)).delete(await _db);
+    final database = await _db;
+    await database.transaction((transaction) async {
+      final record = _records.record(_recordKey(owner, resource, id));
+      final existed = await record.exists(transaction);
+      await record.delete(transaction);
+      if (existed) await _adjustCount(transaction, owner, resource, -1);
+    });
     _invalidateResource(owner, resource);
   }
 
@@ -135,10 +182,18 @@ class LocalDataStore {
     final recordList = records.toList(growable: false);
     final database = await _db;
     await database.transaction((transaction) async {
+      final deletedByResource = <String, int>{};
       for (final record in recordList) {
-        await _records
-            .record(_recordKey(owner, record.resource, record.id))
-            .delete(transaction);
+        final stored =
+            _records.record(_recordKey(owner, record.resource, record.id));
+        if (await stored.exists(transaction)) {
+          await stored.delete(transaction);
+          deletedByResource.update(record.resource, (value) => value + 1,
+              ifAbsent: () => 1);
+        }
+      }
+      for (final entry in deletedByResource.entries) {
+        await _adjustCount(transaction, owner, entry.key, -entry.value);
       }
     });
     for (final resource
@@ -148,12 +203,23 @@ class LocalDataStore {
   }
 
   Future<void> deleteAllRecords({required String owner}) async {
-    await _records.delete(
-      await _db,
-      finder: Finder(
-        filter: Filter.equals('owner', owner.toLowerCase()),
-      ),
-    );
+    final database = await _db;
+    await database.transaction((transaction) async {
+      await _records.delete(
+        transaction,
+        finder: Finder(
+          filter: Filter.equals('owner', owner.toLowerCase()),
+        ),
+      );
+      await _settings.delete(
+        transaction,
+        finder: Finder(
+          filter: Filter.custom((record) => record.key
+              .toString()
+              .startsWith('${owner.toLowerCase()}::record_count::')),
+        ),
+      );
+    });
     _invalidateOwner(owner);
   }
 
@@ -172,35 +238,37 @@ class LocalDataStore {
     required String owner,
     required String resource,
   }) async {
-    return _records.count(
-      await _db,
-      filter: Filter.and([
-        Filter.equals('owner', owner.toLowerCase()),
-        Filter.equals('resource', resource),
-      ]),
-    );
+    final database = await _db;
+    final cached = await _cachedCount(database, owner, resource);
+    if (cached != null) return cached;
+
+    return database.transaction((transaction) async {
+      final existing = await _cachedCount(transaction, owner, resource);
+      if (existing != null) return existing;
+      final value = await _records.count(
+        transaction,
+        filter: Filter.and([
+          Filter.equals('owner', owner.toLowerCase()),
+          Filter.equals('resource', resource),
+        ]),
+      );
+      await _setCount(transaction, owner, resource, value);
+      return value;
+    });
   }
 
   Future<Map<String, int>> countByResources({
     required String owner,
     required Iterable<String> resources,
   }) async {
-    final requested = resources.toSet();
-    final counts = <String, int>{for (final resource in requested) resource: 0};
-    if (requested.isEmpty) return counts;
-
-    final snapshots = await _records.find(
-      await _db,
-      finder: Finder(
-        filter: Filter.equals('owner', owner.toLowerCase()),
-      ),
+    final requested = resources.toSet().toList(growable: false);
+    if (requested.isEmpty) return const {};
+    final values = await Future.wait(
+      requested.map((resource) => count(owner: owner, resource: resource)),
     );
-    for (final snapshot in snapshots) {
-      final resource = snapshot.value['resource']?.toString();
-      if (resource != null && requested.contains(resource)) {
-        counts[resource] = counts[resource]! + 1;
-      }
-    }
-    return counts;
+    return {
+      for (var index = 0; index < requested.length; index++)
+        requested[index]: values[index],
+    };
   }
 }

@@ -9,6 +9,7 @@ import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/question_display.dart';
 import 'package:life_pilot/game/mario_translation/word_item.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'player.dart';
@@ -33,6 +34,7 @@ class PageGameMarioTranslation extends FlameGame
   late QuestionDisplay questionTitle;
   late QuestionDisplay questionText;
   late QuestionDisplay scoreText;
+  late AppLocalizations loc;
 
   // 世界大小
   double screenW = 800;
@@ -76,6 +78,7 @@ class PageGameMarioTranslation extends FlameGame
 
   @override
   Future<void> onLoad() async {
+    loc = AppLocalizations.of(context)!;
     screenW = camera.viewport.size.x;
     screenH = camera.viewport.size.y;
     sizeX = 50;
@@ -113,7 +116,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 分數 HUD
     scoreText = QuestionDisplay(
-        text: "分數: ${controller.score}",
+        text: "${loc.gameScore}: ${controller.score}",
         controller: controller,
         positionX: 40,
         positionY: 50,
@@ -126,7 +129,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 題目 HUD
     questionTitle = QuestionDisplay(
-        text: "題目: ",
+        text: "${loc.question}: ",
         controller: controller,
         positionX: 40,
         positionY: 100,
@@ -139,7 +142,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 題目 HUD
     questionText = QuestionDisplay(
-        text: controller.currentQuestion?.question ?? "載入中...",
+        text: controller.currentQuestion?.question ?? '',
         controller: controller,
         positionX: 120,
         positionY: 100,
@@ -230,7 +233,7 @@ class PageGameMarioTranslation extends FlameGame
               nextRound();
             }
             questionText.updateText(q.question);
-            scoreText.updateText("分數: ${controller.score}");
+            scoreText.updateText("${loc.gameScore}: ${controller.score}");
           }
           if (controller.isFinished) {
             Future.microtask(() => Navigator.pop(context, true));
@@ -247,7 +250,7 @@ class PageGameMarioTranslation extends FlameGame
     await controller.loadNextQuestion();
 
     questionText.updateText(controller.currentQuestion?.question ?? '');
-    scoreText.updateText("分數: ${controller.score}");
+    scoreText.updateText("${loc.gameScore}: ${controller.score}");
 
     spawnEnemy();
   }

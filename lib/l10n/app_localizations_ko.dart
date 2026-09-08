@@ -1194,7 +1194,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionDeleteRecordHint => '삭제하면 오늘 소계와 총계도 다시 계산됩니다.';
 
   @override
-  String get dataStorageTitle => '새 개인 데이터를 어디에 저장할까요?';
+  String get dataStorageTitle => '저장 위치';
 
   @override
   String get dataStorageCloud => '클라우드';
@@ -1351,4 +1351,130 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionLocalAnswerHistory => '기기 답변 기록 무제한';
+
+  @override
+  String get adminPricingTitle => '요금 버전 생성';
+
+  @override
+  String get adminPricingSubtitle => '이후 결제와 추가 구매에만 적용';
+
+  @override
+  String get adminPricingRequired => '버전 이름과 모든 숫자를 입력하세요';
+
+  @override
+  String get adminPricingCreated => '새 요금 버전이 생성되었습니다. 기존 혜택은 유지됩니다';
+
+  @override
+  String adminPricingCreateFailed(String error) {
+    return '생성 실패: $error';
+  }
+
+  @override
+  String get adminPricingVersionName => '버전 이름';
+
+  @override
+  String get adminPricingVersionHint => '예: 2026-Q4';
+
+  @override
+  String get adminPricingEffectiveDate => '적용일';
+
+  @override
+  String get adminPricingCreate => '버전 생성';
+
+  @override
+  String get adminPricingQuarterlyPrice => '분기 요금 (TWD)';
+
+  @override
+  String get adminPricingCalendarQuota => '일정 수';
+
+  @override
+  String get adminPricingAccountingQuota => '회계 내역';
+
+  @override
+  String get adminPricingPointQuota => '포인트 내역';
+
+  @override
+  String get adminPricingMemoryQuota => '추억';
+
+  @override
+  String get adminPricingGameQuota => '사용자 문제';
+
+  @override
+  String get adminPricingShareQuota => '일정 공유 인원';
+
+  @override
+  String get adminPricingImageQuota => '이미지 용량 (MB)';
+
+  @override
+  String get adminPricingAnswerDays => '답변 기록 일수';
+
+  @override
+  String get adminSubscriptionTitle => '구독 관리';
+
+  @override
+  String get adminSubscriptionSubtitle => '구매 당시 요금과 한도 적용';
+
+  @override
+  String get adminSubscriptionEmail => '사용자 이메일';
+
+  @override
+  String get adminSubscriptionPlan => '요금제';
+
+  @override
+  String get adminSubscriptionFree => '무료';
+
+  @override
+  String get adminSubscriptionPaid => '유료';
+
+  @override
+  String get adminSubscriptionNoPricing => '먼저 요금 버전을 생성하세요';
+
+  @override
+  String get adminSubscriptionSaved => '구독 설정을 저장했습니다';
+
+  @override
+  String adminSubscriptionSaveFailed(String error) {
+    return '저장 실패: $error';
+  }
+
+  @override
+  String get adminSubscriptionNoExpiry => '무료 요금제는 만료일이 없습니다';
+
+  @override
+  String get adminSubscriptionInactiveWarning => '3개월간 변경이 없으면 계정과 클라우드 데이터가 삭제됩니다.';
+
+  @override
+  String get adminSubscriptionAddQuota => '현재 혜택을 유지하고 한도 추가';
+
+  @override
+  String get adminSubscriptionAddQuotaHint => '새 한도를 만료되지 않은 한도에 더합니다';
+
+  @override
+  String get adminSubscriptionStoragePlan => '저장 요금제';
+
+  @override
+  String get adminSubscriptionCloud => '클라우드';
+
+  @override
+  String get adminSubscriptionLocal => '기기 무제한';
+
+  @override
+  String get adminSubscriptionPricingVersion => '요금 버전';
+
+  @override
+  String get adminSubscriptionMultiplier => '한도 배수';
+
+  @override
+  String adminSubscriptionTimes(int count) {
+    return '$count배';
+  }
+
+  @override
+  String get adminSubscriptionExpiry => '혜택 만료일';
+
+  @override
+  String get adminSubscriptionNote => '추가 설명';
+
+  @override
+  String get adminSubscriptionSave => '구독 저장';
 }

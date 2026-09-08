@@ -192,6 +192,12 @@ class ModelEvent {
     sortMemoryEvents();
   }
 
+  void appendEvents(List<EventItem> list) {
+    final existingIds = _events.map((event) => event.id).toSet();
+    _events.addAll(list.where((event) => existingIds.add(event.id)));
+    _invalidateEventData();
+  }
+
   void sortMemoryEvents() {
     _events.sort((left, right) {
       final leftDate = left.startDate ?? DateTime.fromMillisecondsSinceEpoch(0);

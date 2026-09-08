@@ -9,7 +9,6 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
-import 'package:life_pilot/subscription/page_subscription_plans.dart';
 
 class PageSettings extends StatefulWidget {
   const PageSettings({this.closeOnStorageChange = false, super.key});
@@ -129,17 +128,6 @@ class _PageSettingsState extends State<PageSettings> {
               ? null
               : (value) {
                   if (value == auth.preferredStorage) return;
-                  if (value == DataStorageLocation.local &&
-                      !auth.isSysAdmin &&
-                      (!auth.isPlus ||
-                          auth.subscription.storagePlan != 'local')) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const PageSubscriptionPlans(),
-                      ),
-                    );
-                    return;
-                  }
                   _move(upload: value == DataStorageLocation.cloud);
                 },
         ),

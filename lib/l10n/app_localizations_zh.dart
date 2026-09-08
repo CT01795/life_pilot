@@ -1351,4 +1351,130 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subscriptionLocalAnswerHistory => '本機答題紀錄不限量';
+
+  @override
+  String get adminPricingTitle => '建立收費版本';
+
+  @override
+  String get adminPricingSubtitle => '新版本只影響之後付款或加購的權益';
+
+  @override
+  String get adminPricingRequired => '請填寫版本名稱與所有數字';
+
+  @override
+  String get adminPricingCreated => '新收費版本已建立；舊版本與既有使用者權益保持不變';
+
+  @override
+  String adminPricingCreateFailed(String error) {
+    return '建立失敗：$error';
+  }
+
+  @override
+  String get adminPricingVersionName => '版本名稱';
+
+  @override
+  String get adminPricingVersionHint => '例如 2026-Q4';
+
+  @override
+  String get adminPricingEffectiveDate => '生效日期';
+
+  @override
+  String get adminPricingCreate => '建立新版本';
+
+  @override
+  String get adminPricingQuarterlyPrice => '每季價格（TWD）';
+
+  @override
+  String get adminPricingCalendarQuota => '行事曆筆數';
+
+  @override
+  String get adminPricingAccountingQuota => '記帳明細';
+
+  @override
+  String get adminPricingPointQuota => '積分明細';
+
+  @override
+  String get adminPricingMemoryQuota => '回憶紀錄';
+
+  @override
+  String get adminPricingGameQuota => '自建遊戲題目';
+
+  @override
+  String get adminPricingShareQuota => '行事曆分享人數';
+
+  @override
+  String get adminPricingImageQuota => '圖片容量（MB）';
+
+  @override
+  String get adminPricingAnswerDays => '答題紀錄保留天數';
+
+  @override
+  String get adminSubscriptionTitle => '管理使用者訂閱';
+
+  @override
+  String get adminSubscriptionSubtitle => '套用付款當下的收費版本與額度';
+
+  @override
+  String get adminSubscriptionEmail => '使用者 Email';
+
+  @override
+  String get adminSubscriptionPlan => '方案';
+
+  @override
+  String get adminSubscriptionFree => '免費版';
+
+  @override
+  String get adminSubscriptionPaid => '付費版';
+
+  @override
+  String get adminSubscriptionNoPricing => '請先建立收費版本';
+
+  @override
+  String get adminSubscriptionSaved => '使用者訂閱設定已儲存';
+
+  @override
+  String adminSubscriptionSaveFailed(String error) {
+    return '儲存失敗：$error';
+  }
+
+  @override
+  String get adminSubscriptionNoExpiry => '免費版沒有到期日';
+
+  @override
+  String get adminSubscriptionInactiveWarning => '連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。';
+
+  @override
+  String get adminSubscriptionAddQuota => '增加額度，不覆蓋尚未到期的權益';
+
+  @override
+  String get adminSubscriptionAddQuotaHint => '開啟後會將這筆新版額度與舊版額度相加';
+
+  @override
+  String get adminSubscriptionStoragePlan => '儲存方案';
+
+  @override
+  String get adminSubscriptionCloud => '雲端版';
+
+  @override
+  String get adminSubscriptionLocal => '本機不限量';
+
+  @override
+  String get adminSubscriptionPricingVersion => '收費版本';
+
+  @override
+  String get adminSubscriptionMultiplier => '購買額度倍率';
+
+  @override
+  String adminSubscriptionTimes(int count) {
+    return '$count 倍';
+  }
+
+  @override
+  String get adminSubscriptionExpiry => '本次權益到期日';
+
+  @override
+  String get adminSubscriptionNote => '補充說明';
+
+  @override
+  String get adminSubscriptionSave => '儲存訂閱設定';
 }

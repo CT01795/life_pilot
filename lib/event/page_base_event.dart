@@ -334,7 +334,12 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                   child: visibleEvents.isEmpty
                                       ? KeyedSubtree(
                                           key: const ValueKey('empty'),
-                                          child: _buildEmptyState(loc),
+                                          child: _buildEmptyState(
+                                            loc,
+                                            canLoadMore: _controller
+                                                    .usesCloudPagination &&
+                                                _controller.hasMoreEvents,
+                                          ),
                                         )
                                       : _showMap
                                           ? KeyedSubtree(
@@ -406,7 +411,10 @@ class _GenericEventPageState extends State<GenericEventPage> {
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations loc) {
+  Widget _buildEmptyState(
+    AppLocalizations loc, {
+    bool canLoadMore = false,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -423,6 +431,28 @@ class _GenericEventPageState extends State<GenericEventPage> {
                 onPressed: _controller.clearSearchFilters,
                 icon: const Icon(Icons.filter_alt_off_rounded),
                 label: Text(loc.clear),
+              ),
+            ],
+            if (canLoadMore) ...[
+              Gaps.h16,
+              OutlinedButton.icon(
+                onPressed: _controller.isLoadingMoreEvents
+                    ? null
+                    : () async {
+                        try {
+                          await _controller.loadMoreRecommendedEvents();
+                        } catch (_) {
+                          if (!mounted) return;
+                          AppNavigator.showSnackBar(loc.dashboardLoadFailed);
+                        }
+                      },
+                icon: _controller.isLoadingMoreEvents
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.expand_more_rounded),
+                label: Text(loc.clickHereToSeeMore),
               ),
             ],
           ],

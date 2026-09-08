@@ -15,7 +15,7 @@ import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 
 class ControllerAuth extends SafeChangeNotifier {
-  final ControllerCalendar? controllerCalendar;
+  ControllerCalendar? controllerCalendar;
   final ModelDashboard? modelDashboard;
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<void>? _externalSignedOutSubscription;

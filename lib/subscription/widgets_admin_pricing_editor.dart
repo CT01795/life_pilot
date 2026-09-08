@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
 
@@ -40,10 +41,11 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   int? _number(String key) => int.tryParse(_values[key]!.text.trim());
 
   Future<void> _save() async {
+    final loc = AppLocalizations.of(context)!;
     final values = {for (final key in _values.keys) key: _number(key)};
     if (_name.text.trim().isEmpty ||
         values.values.any((value) => value == null)) {
-      _message('請填寫版本名稱與所有數字');
+      _message(loc.adminPricingRequired);
       return;
     }
     setState(() => _saving = true);
@@ -55,11 +57,11 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
         quotas: values.map((key, value) => MapEntry(key, value!)),
       );
       if (!mounted) return;
-      _message('新收費版本已建立；舊版本與既有使用者權益保持不變');
+      _message(loc.adminPricingCreated);
       _name.clear();
       widget.onSaved?.call();
     } catch (error) {
-      if (mounted) _message('建立失敗：$error');
+      if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -70,37 +72,38 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
 
   @override
   Widget build(BuildContext context) {
-    const labels = {
-      'price': '每季價格（TWD）',
-      'calendar': '行事曆筆數',
-      'accounting': '記帳明細',
-      'point': '積分明細',
-      'memory': '回憶紀錄',
-      'game': '自建遊戲題目',
-      'share': '行事曆分享人數',
-      'image': '圖片容量（MB）',
-      'answerDays': '答題紀錄保留天數',
+    final loc = AppLocalizations.of(context)!;
+    final labels = {
+      'price': loc.adminPricingQuarterlyPrice,
+      'calendar': loc.adminPricingCalendarQuota,
+      'accounting': loc.adminPricingAccountingQuota,
+      'point': loc.adminPricingPointQuota,
+      'memory': loc.adminPricingMemoryQuota,
+      'game': loc.adminPricingGameQuota,
+      'share': loc.adminPricingShareQuota,
+      'image': loc.adminPricingImageQuota,
+      'answerDays': loc.adminPricingAnswerDays,
     };
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         leading: const CircleAvatar(child: Icon(Icons.price_change_outlined)),
-        title: const Text('建立收費版本'),
-        subtitle: const Text('新版本只影響之後付款或加購的權益'),
+        title: Text(loc.adminPricingTitle),
+        subtitle: Text(loc.adminPricingSubtitle),
         childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(
-              labelText: '版本名稱',
-              hintText: '例如 2026-Q4',
-              prefixIcon: Icon(Icons.label_outline),
+            decoration: InputDecoration(
+              labelText: loc.adminPricingVersionName,
+              hintText: loc.adminPricingVersionHint,
+              prefixIcon: const Icon(Icons.label_outline),
             ),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.event_outlined),
-            title: const Text('生效日期'),
+            title: Text(loc.adminPricingEffectiveDate),
             subtitle: Text(MaterialLocalizations.of(context)
                 .formatMediumDate(_effectiveAt)),
             onTap: _pickEffectiveDate,
@@ -139,7 +142,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
             child: FilledButton.icon(
               onPressed: _saving ? null : _save,
               icon: const Icon(Icons.add_chart_outlined),
-              label: const Text('建立新版本'),
+              label: Text(loc.adminPricingCreate),
             ),
           ),
         ],

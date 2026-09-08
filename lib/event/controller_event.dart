@@ -46,8 +46,13 @@ class ControllerEvent extends SafeChangeNotifier {
   int _filterRevision = 0;
   Timer? _searchDebounce;
   DateTime? _memoryLoadedStartDate;
+  DateTime? _memoryLoadedEndDate;
   bool _isLoadingMoreMemory = false;
   bool _hasMoreMemory = true;
+  static const int _cloudPageSize = 50;
+  int _nextCloudOffset = 0;
+  bool _isLoadingMoreEvents = false;
+  bool _hasMoreEvents = true;
 
   ControllerEvent(
       {required this.auth,
@@ -92,6 +97,11 @@ class ControllerEvent extends SafeChangeNotifier {
   int get filterRevision => _filterRevision;
   bool get isLoadingMoreMemory => _isLoadingMoreMemory;
   bool get hasMoreMemory => _hasMoreMemory;
+  bool get isLoadingMoreEvents => _isLoadingMoreEvents;
+  bool get hasMoreEvents => _hasMoreEvents;
+  bool get usesCloudPagination =>
+      !auth.storesNewDataLocally &&
+      (_isRecommendedContent || _tableName == TableNames.memoryTrace);
   bool get hasActiveSearchFilters {
     final filter = _modelEvent.searchFilter;
     return filter.keywords.isNotEmpty ||
@@ -458,12 +468,24 @@ class ControllerEvent extends SafeChangeNotifier {
       final today = DateTimeFormatter.dateOnly(DateTime.now());
       final isMemoryTrace = _tableName == TableNames.memoryTrace;
       final memoryStart = today.subtract(const Duration(days: 29));
+      _memoryLoadedEndDate = isMemoryTrace ? today : null;
       final list = await _serviceEvent.getEvents(
         tableName: _tableName,
         inputUser: auth.currentAccount,
         dateS: isMemoryTrace ? memoryStart : null,
+        limit: usesCloudPagination ? _cloudPageSize + 1 : null,
       );
       var loadedEvents = list ?? [];
+      if (usesCloudPagination) {
+        _hasMoreEvents = loadedEvents.length > _cloudPageSize;
+        if (_hasMoreEvents) {
+          loadedEvents = loadedEvents.take(_cloudPageSize).toList();
+        }
+        _nextCloudOffset = loadedEvents.length;
+      } else {
+        _hasMoreEvents = false;
+        _nextCloudOffset = 0;
+      }
       if (isMemoryTrace && loadedEvents.isEmpty) {
         final latestOlder = await _serviceEvent.latestEventDateBefore(
           tableName: _tableName,
@@ -471,13 +493,22 @@ class ControllerEvent extends SafeChangeNotifier {
           inputUser: auth.currentAccount,
         );
         if (latestOlder != null) {
+          _memoryLoadedEndDate = latestOlder;
           loadedEvents = await _serviceEvent.getEvents(
                 tableName: _tableName,
                 inputUser: auth.currentAccount,
                 dateS: latestOlder,
                 dateE: latestOlder,
+                limit: usesCloudPagination ? _cloudPageSize + 1 : null,
               ) ??
               [];
+          if (usesCloudPagination) {
+            _hasMoreEvents = loadedEvents.length > _cloudPageSize;
+            if (_hasMoreEvents) {
+              loadedEvents = loadedEvents.take(_cloudPageSize).toList();
+            }
+            _nextCloudOffset = loadedEvents.length;
+          }
         }
       }
       _modelEvent.setEvents(loadedEvents);
@@ -486,11 +517,22 @@ class ControllerEvent extends SafeChangeNotifier {
       if (isMemoryTrace) {
         _modelEvent.sortMemoryEvents();
         _memoryLoadedStartDate = memoryStart;
-        _hasMoreMemory = await _serviceEvent.hasEventsBefore(
-          tableName: _tableName,
-          before: memoryStart,
-          inputUser: auth.currentAccount,
-        );
+        if (loadedEvents.isNotEmpty &&
+            loadedEvents.every((event) =>
+                event.startDate != null &&
+                event.startDate!.isBefore(memoryStart))) {
+          _memoryLoadedStartDate = DateTimeFormatter.dateOnly(
+            loadedEvents.map((event) => event.startDate!).reduce(
+                  (left, right) => left.isBefore(right) ? left : right,
+                ),
+          );
+        }
+        _hasMoreMemory = (usesCloudPagination && _hasMoreEvents) ||
+            await _serviceEvent.hasEventsBefore(
+              tableName: _tableName,
+              before: _memoryLoadedStartDate ?? memoryStart,
+              inputUser: auth.currentAccount,
+            );
       }
 
       // ✅ STOP UI card 不再觸發 weather
@@ -520,9 +562,17 @@ class ControllerEvent extends SafeChangeNotifier {
         final newList = await _serviceEvent.getEvents(
           tableName: _tableName,
           inputUser: auth.currentAccount,
+          limit: usesCloudPagination ? _cloudPageSize + 1 : null,
         );
-
-        _modelEvent.setEvents(newList ?? []);
+        var refreshedEvents = newList ?? [];
+        if (usesCloudPagination) {
+          _hasMoreEvents = refreshedEvents.length > _cloudPageSize;
+          if (_hasMoreEvents) {
+            refreshedEvents = refreshedEvents.take(_cloudPageSize).toList();
+          }
+          _nextCloudOffset = refreshedEvents.length;
+        }
+        _modelEvent.setEvents(refreshedEvents);
         _hasLoadedEventsSuccessfully = true;
         _sortRecommendedContent();
         _invalidateViewModelCache();
@@ -551,6 +601,22 @@ class ControllerEvent extends SafeChangeNotifier {
     _isLoadingMoreMemory = true;
     if (!_disposed) notifyListeners();
     try {
+      if (usesCloudPagination && _hasMoreEvents) {
+        var nextPage = await _serviceEvent.getEvents(
+              tableName: _tableName,
+              inputUser: auth.currentAccount,
+              dateS: loadedStart,
+              dateE: _memoryLoadedEndDate,
+              limit: _cloudPageSize + 1,
+              offset: _nextCloudOffset,
+            ) ??
+            [];
+        _hasMoreEvents = nextPage.length > _cloudPageSize;
+        if (_hasMoreEvents) nextPage = nextPage.take(_cloudPageSize).toList();
+        _nextCloudOffset += nextPage.length;
+        _modelEvent.appendMemoryEvents(nextPage);
+        if (_hasMoreEvents) return;
+      }
       final latestOlder = await _serviceEvent.latestEventDateBefore(
         tableName: _tableName,
         before: loadedStart,
@@ -567,17 +633,57 @@ class ControllerEvent extends SafeChangeNotifier {
             inputUser: auth.currentAccount,
             dateS: rangeStart,
             dateE: rangeEnd,
+            limit: usesCloudPagination ? _cloudPageSize + 1 : null,
           ) ??
           [];
-      _modelEvent.appendMemoryEvents(olderEvents);
+      var visibleOlderEvents = olderEvents;
+      if (usesCloudPagination) {
+        _hasMoreEvents = olderEvents.length > _cloudPageSize;
+        if (_hasMoreEvents) {
+          visibleOlderEvents = olderEvents.take(_cloudPageSize).toList();
+        }
+        _nextCloudOffset = visibleOlderEvents.length;
+      }
+      _modelEvent.appendMemoryEvents(visibleOlderEvents);
       _memoryLoadedStartDate = rangeStart;
-      _hasMoreMemory = await _serviceEvent.hasEventsBefore(
-        tableName: _tableName,
-        before: rangeStart,
-        inputUser: auth.currentAccount,
-      );
+      _memoryLoadedEndDate = rangeEnd;
+      _hasMoreMemory = _hasMoreEvents ||
+          await _serviceEvent.hasEventsBefore(
+            tableName: _tableName,
+            before: rangeStart,
+            inputUser: auth.currentAccount,
+          );
     } finally {
       _isLoadingMoreMemory = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreRecommendedEvents() async {
+    if (!_isRecommendedContent ||
+        !usesCloudPagination ||
+        _isLoadingMoreEvents ||
+        !_hasMoreEvents) {
+      return;
+    }
+    _isLoadingMoreEvents = true;
+    if (!_disposed) notifyListeners();
+    try {
+      var nextPage = await _serviceEvent.getEvents(
+            tableName: _tableName,
+            inputUser: auth.currentAccount,
+            limit: _cloudPageSize + 1,
+            offset: _nextCloudOffset,
+          ) ??
+          [];
+      _hasMoreEvents = nextPage.length > _cloudPageSize;
+      if (_hasMoreEvents) nextPage = nextPage.take(_cloudPageSize).toList();
+      _nextCloudOffset += nextPage.length;
+      _modelEvent.appendEvents(nextPage);
+      _sortRecommendedContent();
+      _invalidateViewModelCache();
+    } finally {
+      _isLoadingMoreEvents = false;
       if (!_disposed) notifyListeners();
     }
   }
