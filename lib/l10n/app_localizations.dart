@@ -2517,11 +2517,215 @@ abstract class AppLocalizations {
   /// **'Upload cancelled: {resource} currently uses {used} cloud records; this upload adds {incoming}, but the plan limit is {quota}.'**
   String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota);
 
-  /// No description provided for @subscriptionRenewalRequired.
+  /// Label for subscriptionRenewalRequired
   ///
   /// In en, this message translates to:
   /// **'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.'**
   String get subscriptionRenewalRequired;
+
+  /// Label for subscriptionPlansTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Plans and subscription'**
+  String get subscriptionPlansTitle;
+
+  /// Label for subscriptionCurrentFree
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan: Free'**
+  String get subscriptionCurrentFree;
+
+  /// Label for subscriptionCurrentPlus
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan: Plus'**
+  String get subscriptionCurrentPlus;
+
+  /// No description provided for @subscriptionValidUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid until {date}'**
+  String subscriptionValidUntil(String date);
+
+  /// Label for subscriptionFreeName
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get subscriptionFreeName;
+
+  /// Label for subscriptionFreePrice
+  ///
+  /// In en, this message translates to:
+  /// **'NT\$0'**
+  String get subscriptionFreePrice;
+
+  /// Label for subscriptionPlusName
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Plus'**
+  String get subscriptionPlusName;
+
+  /// Label for subscriptionPlusPrice
+  ///
+  /// In en, this message translates to:
+  /// **'From NT\$129 / quarter'**
+  String get subscriptionPlusPrice;
+
+  /// Label for subscriptionFreePersonalRecords
+  ///
+  /// In en, this message translates to:
+  /// **'30 cloud records each for calendar, accounting, points, and memories'**
+  String get subscriptionFreePersonalRecords;
+
+  /// Label for subscriptionPlusPersonalRecords
+  ///
+  /// In en, this message translates to:
+  /// **'300 cloud records each for calendar, accounting, points, and memories'**
+  String get subscriptionPlusPersonalRecords;
+
+  /// Label for subscriptionFreeGameQuestions
+  ///
+  /// In en, this message translates to:
+  /// **'50 custom game questions'**
+  String get subscriptionFreeGameQuestions;
+
+  /// Label for subscriptionPlusGameQuestions
+  ///
+  /// In en, this message translates to:
+  /// **'500 custom game questions'**
+  String get subscriptionPlusGameQuestions;
+
+  /// Label for subscriptionFreeSharing
+  ///
+  /// In en, this message translates to:
+  /// **'Share your calendar with up to 2 people'**
+  String get subscriptionFreeSharing;
+
+  /// Label for subscriptionPlusSharing
+  ///
+  /// In en, this message translates to:
+  /// **'Share your calendar with up to 5 people'**
+  String get subscriptionPlusSharing;
+
+  /// Label for subscriptionFreeImages
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud photo uploads are not included'**
+  String get subscriptionFreeImages;
+
+  /// Label for subscriptionPlusImages
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 300 MB of memory and event photos'**
+  String get subscriptionPlusImages;
+
+  /// Label for subscriptionFreeAnswerHistory
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud answer history retained for 30 days'**
+  String get subscriptionFreeAnswerHistory;
+
+  /// Label for subscriptionPlusAnswerHistory
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud answer history retained for 1 year'**
+  String get subscriptionPlusAnswerHistory;
+
+  /// Label for subscriptionCommonFeatures
+  ///
+  /// In en, this message translates to:
+  /// **'Included with both plans'**
+  String get subscriptionCommonFeatures;
+
+  /// Label for subscriptionCommonFeaturesDetail
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar, accounting, points, recommended events and attractions, and the administrator question bank. Local-device data remains unlimited. Stocks and Business Plan are administrator-only.'**
+  String get subscriptionCommonFeaturesDetail;
+
+  /// Label for subscriptionPurchaseComingSoon
+  ///
+  /// In en, this message translates to:
+  /// **'In-app subscription coming soon'**
+  String get subscriptionPurchaseComingSoon;
+
+  /// Label for subscriptionPurchaseExplanation
+  ///
+  /// In en, this message translates to:
+  /// **'Plus cannot be purchased yet. Once store billing is available, this page will show the official price, renewal terms, purchase, restore, and subscription management actions.'**
+  String get subscriptionPurchaseExplanation;
+
+  /// Label for subscriptionInactiveAccountWarning
+  ///
+  /// In en, this message translates to:
+  /// **'Free accounts have no expiry date. If no data is added or changed for 3 months, the account and its cloud data will be automatically removed.'**
+  String get subscriptionInactiveAccountWarning;
+
+  /// Label for subscriptionPricingVersion
+  ///
+  /// In en, this message translates to:
+  /// **'Current version'**
+  String get subscriptionPricingVersion;
+
+  /// Label for subscriptionEffectiveDate
+  ///
+  /// In en, this message translates to:
+  /// **'Effective date'**
+  String get subscriptionEffectiveDate;
+
+  /// Label for subscriptionQuotaMultiplier
+  ///
+  /// In en, this message translates to:
+  /// **'Quota multiplier'**
+  String get subscriptionQuotaMultiplier;
+
+  /// Label for subscriptionQuarterlyPayment
+  ///
+  /// In en, this message translates to:
+  /// **'Quarterly payment'**
+  String get subscriptionQuarterlyPayment;
+
+  /// Label for subscriptionActualQuotaTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your current version and usage'**
+  String get subscriptionActualQuotaTitle;
+
+  /// Label for subscriptionImageStorage
+  ///
+  /// In en, this message translates to:
+  /// **'Photo storage'**
+  String get subscriptionImageStorage;
+
+  /// Label for subscriptionNextVersionTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Latest version for your next payment'**
+  String get subscriptionNextVersionTitle;
+
+  /// No description provided for @subscriptionVersionOffer.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} · Effective {date} · NT\${price} per quarter'**
+  String subscriptionVersionOffer(String version, String date, int price);
+
+  /// Label for subscriptionLocalPaidName
+  ///
+  /// In en, this message translates to:
+  /// **'Device Plus'**
+  String get subscriptionLocalPaidName;
+
+  /// Label for subscriptionLocalPaidPrice
+  ///
+  /// In en, this message translates to:
+  /// **'NT\$129 / quarter'**
+  String get subscriptionLocalPaidPrice;
+
+  /// Label for subscriptionLocalPaidFeature
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited records and photos on this device; data does not automatically appear on other devices'**
+  String get subscriptionLocalPaidFeature;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

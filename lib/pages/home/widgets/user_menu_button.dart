@@ -8,6 +8,7 @@ import 'package:life_pilot/feedback/controller_feedback.dart';
 import 'package:life_pilot/feedback/page_feedback.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/subscription/page_subscription_plans.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +63,13 @@ class UserMenuButton extends StatelessWidget {
                   ),
                   child: const PageSettings(closeOnStorageChange: true),
                 ),
+              ),
+            );
+            break;
+          case "subscriptionPlans":
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PageSubscriptionPlans(),
               ),
             );
             break;
@@ -143,6 +151,22 @@ class UserMenuButton extends StatelessWidget {
               Text(
                 loc.termsOfService,
                 style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: "subscriptionPlans",
+          child: Row(
+            children: [
+              const Icon(Icons.workspace_premium_outlined, color: Colors.white),
+              Gaps.w8,
+              Expanded(
+                child: Text(
+                  loc.subscriptionPlansTitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),

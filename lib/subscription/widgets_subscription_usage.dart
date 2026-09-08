@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class SubscriptionUsageBanner extends StatelessWidget {
@@ -35,7 +36,7 @@ class SubscriptionUsageBanner extends StatelessWidget {
             children: [
               Icon(full ? Icons.warning_amber_rounded : Icons.data_usage,
                   size: 18),
-              const SizedBox(width: 8),
+              Gaps.w8,
               Expanded(
                 child: Text(
                   usage.isUnlimited

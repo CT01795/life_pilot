@@ -293,7 +293,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
+              Gaps.w8,
               Expanded(
                 child: Text(
                   text,
@@ -327,7 +327,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
               size: 20,
               color: colorScheme.onTertiaryContainer,
             ),
-            const SizedBox(width: 9),
+            Gaps.w8,
             Expanded(
               child: Text(
                 text,
@@ -362,7 +362,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                 color: colorScheme.onSecondaryContainer,
                 size: 22,
               ),
-              const SizedBox(width: 9),
+              Gaps.w8,
               Expanded(
                 child: Text(
                   text,
@@ -389,7 +389,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          const SizedBox(height: 10),
+          Gaps.h8,
           if (widget.eventViewModel.dateRange.isNotEmpty)
             dateBanner(widget.eventViewModel.dateRange),
           if (widget.eventViewModel.dateRange.isNotEmpty &&

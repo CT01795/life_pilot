@@ -245,7 +245,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(loc.dashboardLoadFailed),
-                        const SizedBox(height: 12),
+                        Gaps.h16,
                         FilledButton.icon(
                           onPressed: () async {
                             _hasLoaded = false;
@@ -415,10 +415,10 @@ class _GenericEventPageState extends State<GenericEventPage> {
           children: [
             const Icon(Icons.search_off_rounded,
                 size: 48, color: Color(0xFF829097)),
-            const SizedBox(height: 12),
+            Gaps.h16,
             Text(widget.emptyText, textAlign: TextAlign.center),
             if (_controller.hasActiveSearchFilters) ...[
-              const SizedBox(height: 16),
+              Gaps.h16,
               OutlinedButton.icon(
                 onPressed: _controller.clearSearchFilters,
                 icon: const Icon(Icons.filter_alt_off_rounded),

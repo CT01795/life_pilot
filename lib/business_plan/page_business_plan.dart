@@ -5,6 +5,7 @@ import 'package:life_pilot/business_plan/page_plan_preview.dart';
 import 'package:life_pilot/business_plan/page_plan_select_template.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class PageBusinessPlan extends StatelessWidget {
@@ -88,7 +89,7 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
                       children: [
                         Text(loc.noData),
                         if (c.hasMorePlans) ...[
-                          const SizedBox(height: 8),
+                          Gaps.h8,
                           c.isLoadingMorePlans
                               ? const CircularProgressIndicator()
                               : TextButton(

@@ -38,6 +38,10 @@ class ServiceEventPublic {
   final Duration perEventDelay;
   final EventHttpRequester _http;
   final bool _ownsHttpRequester;
+  int _refreshAttemptedSources = 0;
+  int _refreshSuccessfulSources = 0;
+  int _refreshFailedSources = 0;
+  int _refreshCandidateRows = 0;
   ServiceEventPublic({
     this.perEventDelay = const Duration(seconds: 1),
     EventHttpRequester? httpRequester,
@@ -139,7 +143,14 @@ class ServiceEventPublic {
   }
 
   Future<bool> checkEventsUrl(String url, DateTime today) async {
-    return !await checkIfUrlExists(url, today);
+    final shouldRun = !await checkIfUrlExists(url, today);
+    if (shouldRun) _refreshAttemptedSources++;
+    return shouldRun;
+  }
+
+  void _recordSourceFailure(String url, Object error) {
+    _refreshFailedSources++;
+    logger.e('Public event source failed: $url', error: error);
   }
 
   Future<void> _markEventsUrlCompleted(String url, DateTime today) async {
@@ -158,7 +169,6 @@ class ServiceEventPublic {
     String url,
     DateTime checkedAt,
   ) async {
-    if (events.isEmpty) return dbNameDateSet;
     final List<EventItem> newEvents = [];
 
     for (final e in events) {
@@ -249,6 +259,12 @@ class ServiceEventPublic {
         rethrow;
       }
     }
+    _refreshSuccessfulSources++;
+    _refreshCandidateRows += newEvents.length;
+    logger.i(
+      'Public event source completed: $url; fetched=${events.length}; '
+      'candidates=${newEvents.length}',
+    );
     return dbNameDateSet;
   }
 
@@ -538,7 +554,22 @@ class ServiceEventPublic {
       (_) => _heartbeatRefresh(refreshToken),
     );
     try {
+      _refreshAttemptedSources = 0;
+      _refreshSuccessfulSources = 0;
+      _refreshFailedSources = 0;
+      _refreshCandidateRows = 0;
       await _fetchAndSaveAllEvents();
+      logger.i(
+        'Public event refresh summary: attempted=$_refreshAttemptedSources; '
+        'successful=$_refreshSuccessfulSources; failed=$_refreshFailedSources; '
+        'candidates=$_refreshCandidateRows',
+      );
+      if (_refreshSuccessfulSources == 0) {
+        throw StateError(
+          'No public event source completed successfully; '
+          'the daily completion marker was not written.',
+        );
+      }
       await _finishRefresh(refreshToken, completed: true);
       return PublicEventRefreshExecution.performed;
     } catch (error, stackTrace) {
@@ -625,7 +656,7 @@ class ServiceEventPublic {
         dbNameDateSet = await _insertIfNotExists(
             strolltimesList, dbNameDateSet, strolltimesWeekendUrl, today);
       } on Exception catch (ex) {
-        logger.e(ex);
+        _recordSourceFailure(strolltimesWeekendUrl, ex);
       }
     }
     //==================================== 取得外部資源事件 strolltimes.com/events-data ====================================
@@ -642,7 +673,7 @@ class ServiceEventPublic {
               strolltimesList, dbNameDateSet, strolltimesEventsUrl, today);
         }
       } on Exception catch (ex) {
-        logger.e(ex);
+        _recordSourceFailure(strolltimesEventsUrl, ex);
       }
     }
     //==================================== 取得外部資源事件 cloud.culture.tw ====================================
@@ -677,7 +708,7 @@ class ServiceEventPublic {
           dbNameDateSet = await _insertIfNotExists(
               cloudCultureList, dbNameDateSet, cloudCultureUrl, today);
         } on Exception catch (ex) {
-          logger.e(ex);
+          _recordSourceFailure(cloudCultureUrl, ex);
         }
       }
     }
@@ -695,7 +726,7 @@ class ServiceEventPublic {
         dbNameDateSet = await _insertIfNotExists(
             accupassList, dbNameDateSet, accupassUrl, today);
       } catch (ex) {
-        logger.e(ex);
+        _recordSourceFailure(accupassUrl, ex);
       }
     }
 
@@ -713,7 +744,7 @@ class ServiceEventPublic {
           dbNameDateSet = await _insertIfNotExists(
               paperWindmillList, dbNameDateSet, paperWindmillUrl, today);
         } catch (ex) {
-          logger.e(ex);
+          _recordSourceFailure(paperWindmillUrl, ex);
         }
       }
     }
@@ -732,7 +763,7 @@ class ServiceEventPublic {
           dbNameDateSet = await _insertIfNotExists(
               moclUrlList, dbNameDateSet, moclUrl, today);
         } catch (ex) {
-          logger.e(ex);
+          _recordSourceFailure(moclUrl, ex);
         }
       }
     }
@@ -755,7 +786,7 @@ class ServiceEventPublic {
           pageIndex = pageIndex + 1;
           isBreakTime = taiwanNetList.isEmpty && pageIndex >= 15;
         } catch (ex) {
-          logger.e(ex);
+          _recordSourceFailure(taiwanNetUrl, ex);
           isBreakTime = true;
         }
       } else {
@@ -774,7 +805,7 @@ class ServiceEventPublic {
         dbNameDateSet =
             await _insertIfNotExists(ntpcList, dbNameDateSet, ntpcUrl, today);
       } catch (ex) {
-        logger.e(ex);
+        _recordSourceFailure(ntpcUrl, ex);
       }
     }
 
@@ -792,7 +823,7 @@ class ServiceEventPublic {
         dbNameDateSet = await _insertIfNotExists(
             taipeiOpenDataList, dbNameDateSet, taipeiOpenDataUrl, today);
       } catch (ex) {
-        logger.e(ex);
+        _recordSourceFailure(taipeiOpenDataUrl, ex);
       }
     }
   }

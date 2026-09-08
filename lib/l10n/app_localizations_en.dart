@@ -1239,4 +1239,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionRenewalRequired => 'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.';
+
+  @override
+  String get subscriptionPlansTitle => 'Plans and subscription';
+
+  @override
+  String get subscriptionCurrentFree => 'Current plan: Free';
+
+  @override
+  String get subscriptionCurrentPlus => 'Current plan: Plus';
+
+  @override
+  String subscriptionValidUntil(String date) {
+    return 'Valid until $date';
+  }
+
+  @override
+  String get subscriptionFreeName => 'Free';
+
+  @override
+  String get subscriptionFreePrice => 'NT\$0';
+
+  @override
+  String get subscriptionPlusName => 'Cloud Plus';
+
+  @override
+  String get subscriptionPlusPrice => 'From NT\$129 / quarter';
+
+  @override
+  String get subscriptionFreePersonalRecords => '30 cloud records each for calendar, accounting, points, and memories';
+
+  @override
+  String get subscriptionPlusPersonalRecords => '300 cloud records each for calendar, accounting, points, and memories';
+
+  @override
+  String get subscriptionFreeGameQuestions => '50 custom game questions';
+
+  @override
+  String get subscriptionPlusGameQuestions => '500 custom game questions';
+
+  @override
+  String get subscriptionFreeSharing => 'Share your calendar with up to 2 people';
+
+  @override
+  String get subscriptionPlusSharing => 'Share your calendar with up to 5 people';
+
+  @override
+  String get subscriptionFreeImages => 'Cloud photo uploads are not included';
+
+  @override
+  String get subscriptionPlusImages => 'Up to 300 MB of memory and event photos';
+
+  @override
+  String get subscriptionFreeAnswerHistory => 'Cloud answer history retained for 30 days';
+
+  @override
+  String get subscriptionPlusAnswerHistory => 'Cloud answer history retained for 1 year';
+
+  @override
+  String get subscriptionCommonFeatures => 'Included with both plans';
+
+  @override
+  String get subscriptionCommonFeaturesDetail => 'Calendar, accounting, points, recommended events and attractions, and the administrator question bank. Local-device data remains unlimited. Stocks and Business Plan are administrator-only.';
+
+  @override
+  String get subscriptionPurchaseComingSoon => 'In-app subscription coming soon';
+
+  @override
+  String get subscriptionPurchaseExplanation => 'Plus cannot be purchased yet. Once store billing is available, this page will show the official price, renewal terms, purchase, restore, and subscription management actions.';
+
+  @override
+  String get subscriptionInactiveAccountWarning => 'Free accounts have no expiry date. If no data is added or changed for 3 months, the account and its cloud data will be automatically removed.';
+
+  @override
+  String get subscriptionPricingVersion => 'Current version';
+
+  @override
+  String get subscriptionEffectiveDate => 'Effective date';
+
+  @override
+  String get subscriptionQuotaMultiplier => 'Quota multiplier';
+
+  @override
+  String get subscriptionQuarterlyPayment => 'Quarterly payment';
+
+  @override
+  String get subscriptionActualQuotaTitle => 'Your current version and usage';
+
+  @override
+  String get subscriptionImageStorage => 'Photo storage';
+
+  @override
+  String get subscriptionNextVersionTitle => 'Latest version for your next payment';
+
+  @override
+  String subscriptionVersionOffer(String version, String date, int price) {
+    return '$version · Effective $date · NT\$$price per quarter';
+  }
+
+  @override
+  String get subscriptionLocalPaidName => 'Device Plus';
+
+  @override
+  String get subscriptionLocalPaidPrice => 'NT\$129 / quarter';
+
+  @override
+  String get subscriptionLocalPaidFeature => 'Unlimited records and photos on this device; data does not automatically appear on other devices';
 }

@@ -113,7 +113,7 @@ class CalendarEventsDialog extends StatelessWidget {
                               child: Row(
                                 children: [
                                   const Icon(Icons.lock_outline, size: 16),
-                                  const SizedBox(width: 6),
+                                  Gaps.w8,
                                   Expanded(
                                     child: Text(
                                       loc.calendarSharedBy(event.account ?? ''),

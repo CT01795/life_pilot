@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class AdminSubscriptionEditor extends StatefulWidget {
-  const AdminSubscriptionEditor({super.key});
+  const AdminSubscriptionEditor({this.onSaved, super.key});
+
+  final VoidCallback? onSaved;
 
   @override
   State<AdminSubscriptionEditor> createState() =>
@@ -12,149 +15,219 @@ class AdminSubscriptionEditor extends StatefulWidget {
 class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   final _email = TextEditingController();
   final _note = TextEditingController();
-  final _quotaControllers = <String, TextEditingController>{
-    for (final key in [
-      'calendar',
-      'accounting',
-      'point',
-      'memory',
-      'game',
-      'share',
-      'image'
-    ])
-      key: TextEditingController(),
-  };
+  late Future<List<SubscriptionPricingVersion>> _versions;
   String _plan = 'plus';
-  DateTime _expiry = DateTime.now().add(const Duration(days: 365));
-  bool _unlimited = false;
+  String _storagePlan = 'cloud';
+  String? _versionId;
+  int _multiplier = 1;
+  DateTime? _expiry = DateTime.now().add(const Duration(days: 90));
   bool _saving = false;
+  bool _additive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _versions = ServiceSubscription().fetchPricingVersions();
+  }
 
   @override
   void dispose() {
     _email.dispose();
     _note.dispose();
-    for (final controller in _quotaControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
-  int? _quota(String key) => int.tryParse(_quotaControllers[key]!.text.trim());
-
-  Future<void> _save() async {
+  Future<void> _save(List<SubscriptionPricingVersion> versions) async {
     if (_email.text.trim().isEmpty || _saving) return;
+    final selectedVersion =
+        _versionId ?? (versions.isEmpty ? null : versions.first.id);
+    if (_plan == 'plus' && selectedVersion == null) {
+      _show('请先建立收费版本');
+      return;
+    }
     setState(() => _saving = true);
     try {
-      await ServiceSubscription().setUserSubscriptionAsAdmin(
-        email: _email.text,
-        plan: _plan,
-        expiresAt: _expiry,
-        note: _note.text,
-        unlimited: _unlimited,
-        quotas: {for (final key in _quotaControllers.keys) key: _quota(key)},
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('使用者訂閱設定已儲存')),
+      final service = ServiceSubscription();
+      if (_additive && _plan == 'plus') {
+        await service.addUserEntitlementAsAdmin(
+          email: _email.text,
+          storagePlan: _storagePlan,
+          pricingVersionId: selectedVersion!,
+          multiplier: _multiplier,
+          endsAt: _expiry!,
+          note: _note.text,
+        );
+      } else {
+        await service.setUserSubscriptionV2AsAdmin(
+          email: _email.text,
+          plan: _plan,
+          storagePlan: _storagePlan,
+          pricingVersionId: _plan == 'free' ? null : selectedVersion,
+          multiplier: _multiplier,
+          expiresAt: _plan == 'free' ? null : _expiry,
+          note: _note.text,
         );
       }
+      if (!mounted) return;
+      _show('使用者订阅设定已储存');
+      widget.onSaved?.call();
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('儲存失敗：$error')),
-        );
-      }
+      if (mounted) _show('储存失败：$error');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
+  void _show(String message) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(message)));
+
   @override
   Widget build(BuildContext context) {
-    const labels = {
-      'calendar': '行事曆',
-      'accounting': '記帳',
-      'point': '積分',
-      'memory': '回憶',
-      'game': '自建題目',
-      'share': '分享人數',
-      'image': '圖片 MB',
-    };
-    return Card(
-      child: ExpansionTile(
-        leading: const Icon(Icons.admin_panel_settings_outlined),
-        title: const Text('管理使用者訂閱'),
-        subtitle: const Text('設定到期日、備註與自訂額度'),
-        childrenPadding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-              controller: _email,
-              decoration: const InputDecoration(labelText: '使用者 Email')),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _plan,
-            decoration: const InputDecoration(labelText: '方案'),
-            items: const [
-              DropdownMenuItem(value: 'free', child: Text('免費版')),
-              DropdownMenuItem(value: 'plus', child: Text('Plus')),
+    return FutureBuilder<List<SubscriptionPricingVersion>>(
+      future: _versions,
+      builder: (context, snapshot) {
+        final versions = snapshot.data ?? const <SubscriptionPricingVersion>[];
+        final selectedVersion =
+            _versionId ?? (versions.isEmpty ? null : versions.first.id);
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: ExpansionTile(
+            leading:
+                const CircleAvatar(child: Icon(Icons.manage_accounts_outlined)),
+            title: const Text('管理使用者订阅'),
+            subtitle: const Text('套用付款当下的收费版本与额度'),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            children: [
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: '使用者 Email',
+                  prefixIcon: Icon(Icons.alternate_email),
+                ),
+              ),
+              Gaps.h12,
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'free', label: Text('免费版')),
+                  ButtonSegment(value: 'plus', label: Text('付费版')),
+                ],
+                selected: {_plan},
+                onSelectionChanged: (value) => setState(() {
+                  _plan = value.first;
+                  _expiry = _plan == 'free'
+                      ? null
+                      : (_expiry ??
+                          DateTime.now().add(const Duration(days: 90)));
+                }),
+              ),
+              if (_plan == 'free')
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.info_outline),
+                    title: Text('免费版没有到期日'),
+                    subtitle: Text('连续 3 个月未新增或修改资料，帐号及云端资料会自动清除。'),
+                  ),
+                )
+              else ...[
+                Gaps.h12,
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('增加额度，不覆盖尚未到期的权益'),
+                  subtitle: const Text('开启后会将这笔新版额度与旧版额度相加'),
+                  value: _additive,
+                  onChanged: (value) => setState(() => _additive = value),
+                ),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                        value: 'cloud',
+                        icon: Icon(Icons.cloud_outlined),
+                        label: Text('云端版')),
+                    ButtonSegment(
+                        value: 'local',
+                        icon: Icon(Icons.devices_outlined),
+                        label: Text('本机不限量')),
+                  ],
+                  selected: {_storagePlan},
+                  onSelectionChanged: (value) =>
+                      setState(() => _storagePlan = value.first),
+                ),
+                Gaps.h12,
+                DropdownButtonFormField<String>(
+                  key: ValueKey(selectedVersion),
+                  initialValue: selectedVersion,
+                  decoration: const InputDecoration(
+                      labelText: '收费版本', prefixIcon: Icon(Icons.history)),
+                  items: versions
+                      .map((version) => DropdownMenuItem(
+                            value: version.id,
+                            child: Text(
+                                '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
+                                overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() => _versionId = value),
+                ),
+                Gaps.h12,
+                DropdownButtonFormField<int>(
+                  initialValue: _multiplier,
+                  decoration: const InputDecoration(
+                      labelText: '购买额度倍率',
+                      prefixIcon: Icon(Icons.multiple_stop)),
+                  items: List.generate(
+                      10,
+                      (index) => DropdownMenuItem(
+                          value: index + 1, child: Text('${index + 1} 倍'))),
+                  onChanged: (value) =>
+                      setState(() => _multiplier = value ?? 1),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event_available_outlined),
+                  title: const Text('本次权益到期日'),
+                  subtitle: Text(_expiry == null
+                      ? '-'
+                      : MaterialLocalizations.of(context)
+                          .formatMediumDate(_expiry!)),
+                  onTap: _pickExpiry,
+                ),
+              ],
+              TextField(
+                controller: _note,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                    labelText: '补充说明', alignLabelWithHint: true),
+              ),
+              Gaps.h16,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : () => _save(versions),
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.save_outlined),
+                  label: const Text('储存订阅设定'),
+                ),
+              ),
             ],
-            onChanged: (value) => setState(() => _plan = value ?? 'plus'),
           ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('訂閱到期日'),
-            subtitle: Text(
-                '${_expiry.year}-${_expiry.month.toString().padLeft(2, '0')}-${_expiry.day.toString().padLeft(2, '0')}'),
-            trailing: const Icon(Icons.calendar_month_outlined),
-            onTap: () async {
-              final value = await showDatePicker(
-                context: context,
-                initialDate: _expiry,
-                firstDate: DateTime.now().subtract(const Duration(days: 1)),
-                lastDate: DateTime.now().add(const Duration(days: 36500)),
-              );
-              if (value != null) setState(() => _expiry = value);
-            },
-          ),
-          TextField(
-              controller: _note,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: '補充說明')),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('無限額度'),
-            subtitle: const Text('開啟後忽略下方個別額度'),
-            value: _unlimited,
-            onChanged: (value) => setState(() => _unlimited = value),
-          ),
-          if (!_unlimited)
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: _quotaControllers.entries
-                  .map((entry) => SizedBox(
-                        width: 150,
-                        child: TextField(
-                          controller: entry.value,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                              labelText: '${labels[entry.key]}（留空沿用方案）'),
-                        ),
-                      ))
-                  .toList(),
-            ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.save_outlined),
-            label: const Text('儲存訂閱設定'),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  Future<void> _pickExpiry() async {
+    final value = await showDatePicker(
+      context: context,
+      initialDate: _expiry ?? DateTime.now().add(const Duration(days: 90)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 36500)),
+    );
+    if (value != null) setState(() => _expiry = value);
   }
 }

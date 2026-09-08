@@ -5,6 +5,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class CalendarSharingDialog extends StatefulWidget {
@@ -110,9 +111,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.cloud_off_outlined, size: 40),
-                      const SizedBox(height: 8),
+                      Gaps.h8,
                       Text(loc.calendarInvitationFailed),
-                      const SizedBox(height: 8),
+                      Gaps.h8,
                       OutlinedButton.icon(
                         onPressed: _reload,
                         icon: const Icon(Icons.refresh),
@@ -138,11 +139,11 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                     ),
                   if (_submitting) ...[
                     const LinearProgressIndicator(),
-                    const SizedBox(height: 12),
+                    Gaps.h16,
                   ],
                   Text(loc.calendarInvite,
                       style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
+                  Gaps.h8,
                   TextField(
                     controller: _emailsController,
                     enabled: !_submitting,
@@ -160,7 +161,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                     ),
                     onSubmitted: (_) => _invite(),
                   ),
-                  const SizedBox(height: 12),
+                  Gaps.h16,
                   Text(
                     loc.calendarShareEvents,
                     style: Theme.of(context).textTheme.titleSmall,
@@ -228,7 +229,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  Gaps.h16,
                   _sectionTitle(context, loc.calendarSentInvitations),
                   ...state.sent.map((item) {
                     final isExpanded =
@@ -299,7 +300,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                           : const [],
                     );
                   }),
-                  const SizedBox(height: 12),
+                  Gaps.h16,
                   _sectionTitle(context, loc.calendarReceivedInvitations),
                   ...state.received.map(
                     (item) => Column(

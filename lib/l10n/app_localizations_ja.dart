@@ -1239,4 +1239,110 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionRenewalRequired => '有料期間が終了しました。更新するか、すべてのクラウドデータをこの端末へ移動するまでクラウドは読み取り専用です。';
+
+  @override
+  String get subscriptionPlansTitle => 'プランとサブスクリプション';
+
+  @override
+  String get subscriptionCurrentFree => '現在のプラン：無料';
+
+  @override
+  String get subscriptionCurrentPlus => '現在のプラン：Plus';
+
+  @override
+  String subscriptionValidUntil(String date) {
+    return '有効期限：$date';
+  }
+
+  @override
+  String get subscriptionFreeName => '無料プラン';
+
+  @override
+  String get subscriptionFreePrice => 'NT\$0';
+
+  @override
+  String get subscriptionPlusName => 'クラウド Plus';
+
+  @override
+  String get subscriptionPlusPrice => '四半期 NT\$129から';
+
+  @override
+  String get subscriptionFreePersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各30件';
+
+  @override
+  String get subscriptionPlusPersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
+
+  @override
+  String get subscriptionFreeGameQuestions => '自作ゲーム問題50問';
+
+  @override
+  String get subscriptionPlusGameQuestions => '自作ゲーム問題500問';
+
+  @override
+  String get subscriptionFreeSharing => 'カレンダー共有は2人まで';
+
+  @override
+  String get subscriptionPlusSharing => 'カレンダー共有は5人まで';
+
+  @override
+  String get subscriptionFreeImages => 'クラウド画像アップロードなし';
+
+  @override
+  String get subscriptionPlusImages => '思い出・イベント画像を合計300 MBまで';
+
+  @override
+  String get subscriptionFreeAnswerHistory => 'クラウド解答履歴を30日間保存';
+
+  @override
+  String get subscriptionPlusAnswerHistory => 'クラウド解答履歴を1年間保存';
+
+  @override
+  String get subscriptionCommonFeatures => '両プランに含まれる機能';
+
+  @override
+  String get subscriptionCommonFeaturesDetail => 'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とBusiness Planは管理者専用です。';
+
+  @override
+  String get subscriptionPurchaseComingSoon => 'アプリ内サブスクリプションは近日公開';
+
+  @override
+  String get subscriptionPurchaseExplanation => '現在Plusは購入できません。ストア決済開始後、このページに正式価格、更新条件、購入、購入の復元、サブスクリプション管理を表示します。';
+
+  @override
+  String get subscriptionInactiveAccountWarning => '無料アカウントに有効期限はありません。3か月間データの追加・変更がない場合、アカウントとクラウドデータは自動的に削除されます。';
+
+  @override
+  String get subscriptionPricingVersion => '現在のバージョン';
+
+  @override
+  String get subscriptionEffectiveDate => '適用開始日';
+
+  @override
+  String get subscriptionQuotaMultiplier => '容量倍率';
+
+  @override
+  String get subscriptionQuarterlyPayment => '四半期料金';
+
+  @override
+  String get subscriptionActualQuotaTitle => '現在のバージョンと利用量';
+
+  @override
+  String get subscriptionImageStorage => '画像容量';
+
+  @override
+  String get subscriptionNextVersionTitle => '次回支払いに適用される最新版';
+
+  @override
+  String subscriptionVersionOffer(String version, String date, int price) {
+    return '$version・$date適用・四半期NT\$$price';
+  }
+
+  @override
+  String get subscriptionLocalPaidName => 'デバイス Plus';
+
+  @override
+  String get subscriptionLocalPaidPrice => '四半期 NT\$129';
+
+  @override
+  String get subscriptionLocalPaidFeature => 'このデバイスの記録と画像は無制限。他のデバイスには自動表示されません';
 }

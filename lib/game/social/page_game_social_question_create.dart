@@ -262,7 +262,7 @@ class _PageGameSocialQuestionCreateState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.lightbulb_outline),
-                        const SizedBox(width: 12),
+                        Gaps.w12,
                         Expanded(
                           child: Text(
                             '${loc.question} → ${loc.description} → '

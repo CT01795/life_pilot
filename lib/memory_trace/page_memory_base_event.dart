@@ -7,6 +7,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/page_memory_add.dart';
 import 'package:life_pilot/event/widgets_event_map.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
@@ -195,7 +196,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(loc.dashboardLoadFailed),
-                        const SizedBox(height: 12),
+                        Gaps.h12,
                         FilledButton.icon(
                           onPressed: () async {
                             _hasLoaded = false;
@@ -318,10 +319,10 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
           children: [
             const Icon(Icons.search_off_rounded,
                 size: 48, color: Color(0xFF829097)),
-            const SizedBox(height: 12),
+            Gaps.h12,
             Text(widget.emptyText, textAlign: TextAlign.center),
             if (_controller.hasActiveSearchFilters) ...[
-              const SizedBox(height: 16),
+              Gaps.h16,
               OutlinedButton.icon(
                 onPressed: _controller.clearSearchFilters,
                 icon: const Icon(Icons.filter_alt_off_rounded),

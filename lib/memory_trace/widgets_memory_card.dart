@@ -263,7 +263,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, size: 18, color: const Color(0xFF8A668F)),
-              const SizedBox(width: 8),
+              Gaps.w8,
               Expanded(
                 child: Text(
                   text,
@@ -285,7 +285,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          const SizedBox(height: 10),
+          Gaps.h12,
           if (widget.eventViewModel.dateRange.isNotEmpty)
             infoRow(
                 Icons.calendar_month_rounded, widget.eventViewModel.dateRange),

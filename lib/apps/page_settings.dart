@@ -5,8 +5,11 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/local_storage/service_local_data_transfer.dart';
 import 'package:life_pilot/local_storage/widgets_data_storage_choice.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
+import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
+import 'package:life_pilot/subscription/page_subscription_plans.dart';
 
 class PageSettings extends StatefulWidget {
   const PageSettings({this.closeOnStorageChange = false, super.key});
@@ -116,22 +119,43 @@ class _PageSettingsState extends State<PageSettings> {
       padding: const EdgeInsets.all(16),
       children: [
         Text(loc.settings, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 12),
+        Gaps.h16,
         DataStorageChoice(
           value: auth.preferredStorage,
           onChanged: auth.isAnonymous
               ? null
               : (value) {
                   if (value == auth.preferredStorage) return;
+                  if (value == DataStorageLocation.local &&
+                      !auth.isSysAdmin &&
+                      (!auth.isPlus ||
+                          auth.subscription.storagePlan != 'local')) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PageSubscriptionPlans(),
+                      ),
+                    );
+                    return;
+                  }
                   _move(upload: value == DataStorageLocation.cloud);
                 },
         ),
         if (auth.isSysAdmin) ...[
-          const SizedBox(height: 12),
-          const AdminSubscriptionEditor(),
+          Gaps.h16,
+          AdminPricingVersionEditor(
+            onSaved: widget.closeOnStorageChange
+                ? () => Navigator.of(context).pop()
+                : null,
+          ),
+          Gaps.h16,
+          AdminSubscriptionEditor(
+            onSaved: widget.closeOnStorageChange
+                ? () => Navigator.of(context).pop()
+                : null,
+          ),
         ],
         if (_transferring) ...[
-          const SizedBox(height: 12),
+          Gaps.h16,
           const Center(child: CircularProgressIndicator()),
         ],
       ],

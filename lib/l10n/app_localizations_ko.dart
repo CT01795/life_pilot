@@ -1239,4 +1239,110 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionRenewalRequired => '유료 기간이 종료되었습니다. 갱신하거나 모든 클라우드 데이터를 이 기기로 이동할 때까지 클라우드는 읽기 전용입니다.';
+
+  @override
+  String get subscriptionPlansTitle => '요금제 및 구독';
+
+  @override
+  String get subscriptionCurrentFree => '현재 요금제: 무료';
+
+  @override
+  String get subscriptionCurrentPlus => '현재 요금제: Plus';
+
+  @override
+  String subscriptionValidUntil(String date) {
+    return '유효 기간: $date';
+  }
+
+  @override
+  String get subscriptionFreeName => '무료';
+
+  @override
+  String get subscriptionFreePrice => 'NT\$0';
+
+  @override
+  String get subscriptionPlusName => '클라우드 Plus';
+
+  @override
+  String get subscriptionPlusPrice => '분기 NT\$129부터';
+
+  @override
+  String get subscriptionFreePersonalRecords => '캘린더, 회계, 포인트, 추억 클라우드 데이터 각 30개';
+
+  @override
+  String get subscriptionPlusPersonalRecords => '캘린더, 회계, 포인트, 추억 클라우드 데이터 각 300개';
+
+  @override
+  String get subscriptionFreeGameQuestions => '사용자 게임 문제 50개';
+
+  @override
+  String get subscriptionPlusGameQuestions => '사용자 게임 문제 500개';
+
+  @override
+  String get subscriptionFreeSharing => '캘린더를 최대 2명과 공유';
+
+  @override
+  String get subscriptionPlusSharing => '캘린더를 최대 5명과 공유';
+
+  @override
+  String get subscriptionFreeImages => '클라우드 이미지 업로드 미제공';
+
+  @override
+  String get subscriptionPlusImages => '추억 및 이벤트 이미지 최대 300 MB';
+
+  @override
+  String get subscriptionFreeAnswerHistory => '클라우드 상세 답변 기록 30일 보관';
+
+  @override
+  String get subscriptionPlusAnswerHistory => '클라우드 상세 답변 기록 1년 보관';
+
+  @override
+  String get subscriptionCommonFeatures => '두 요금제 모두 제공';
+
+  @override
+  String get subscriptionCommonFeaturesDetail => '캘린더, 회계, 포인트, 추천 이벤트와 장소, 관리자 문제 은행. 기기 저장 데이터는 무제한입니다. 주식과 Business Plan은 관리자 전용입니다.';
+
+  @override
+  String get subscriptionPurchaseComingSoon => '인앱 구독 출시 예정';
+
+  @override
+  String get subscriptionPurchaseExplanation => '현재 Plus를 구매할 수 없습니다. 스토어 결제가 시작되면 이 페이지에 공식 가격, 갱신 조건, 구매, 구매 복원 및 구독 관리 기능이 표시됩니다.';
+
+  @override
+  String get subscriptionInactiveAccountWarning => '무료 계정은 만료일이 없습니다. 3개월 동안 데이터를 추가하거나 변경하지 않으면 계정과 클라우드 데이터가 자동 삭제됩니다.';
+
+  @override
+  String get subscriptionPricingVersion => '현재 버전';
+
+  @override
+  String get subscriptionEffectiveDate => '적용일';
+
+  @override
+  String get subscriptionQuotaMultiplier => '한도 배수';
+
+  @override
+  String get subscriptionQuarterlyPayment => '분기 결제액';
+
+  @override
+  String get subscriptionActualQuotaTitle => '현재 버전 및 실제 한도';
+
+  @override
+  String get subscriptionImageStorage => '이미지 용량';
+
+  @override
+  String get subscriptionNextVersionTitle => '다음 결제에 적용될 최신 버전';
+
+  @override
+  String subscriptionVersionOffer(String version, String date, int price) {
+    return '$version · $date 적용 · 분기 NT\$$price';
+  }
+
+  @override
+  String get subscriptionLocalPaidName => '기기 Plus';
+
+  @override
+  String get subscriptionLocalPaidPrice => '분기 NT\$129';
+
+  @override
+  String get subscriptionLocalPaidFeature => '이 기기의 기록과 이미지는 무제한이며 다른 기기에 자동 표시되지 않습니다';
 }

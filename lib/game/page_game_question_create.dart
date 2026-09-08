@@ -528,7 +528,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.lightbulb_outline),
-                        const SizedBox(width: 12),
+                        Gaps.h16,
                         Expanded(child: Text(_creationHelp(loc))),
                       ],
                     ),
@@ -710,7 +710,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                       if (value != null) setState(() => _level = value);
                     },
                   ),
-                const SizedBox(height: 24),
+                Gaps.h24,
                 FilledButton(
                   onPressed: _isSaving ? null : _save,
                   child: _isSaving

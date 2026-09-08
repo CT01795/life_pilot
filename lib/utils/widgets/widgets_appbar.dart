@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class AppBarMenuAction {
   final IconData icon;
@@ -155,7 +156,7 @@ List<Widget> _buildActions({
                       )
                     else
                       Icon(action.icon, size: 20),
-                    const SizedBox(width: 12),
+                    Gaps.w12,
                     Expanded(child: Text(action.label)),
                   ],
                 ),

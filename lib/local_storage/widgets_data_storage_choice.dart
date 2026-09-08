@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class DataStorageChoice extends StatelessWidget {
   const DataStorageChoice(
@@ -21,7 +22,7 @@ class DataStorageChoice extends StatelessWidget {
           children: [
             Text(loc.dataStorageTitle,
                 style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            Gaps.h8,
             _StorageOption(
               icon: Icons.cloud_outlined,
               label: loc.dataStorageCloud,
@@ -29,7 +30,7 @@ class DataStorageChoice extends StatelessWidget {
               enabled: onChanged != null,
               onTap: () => onChanged?.call(DataStorageLocation.cloud),
             ),
-            const SizedBox(height: 6),
+            Gaps.h8,
             _StorageOption(
               icon: Icons.devices_outlined,
               label: loc.dataStorageLocal,
@@ -37,13 +38,13 @@ class DataStorageChoice extends StatelessWidget {
               enabled: onChanged != null,
               onTap: () => onChanged?.call(DataStorageLocation.local),
             ),
-            const SizedBox(height: 8),
+            Gaps.h8,
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(isLocal ? Icons.info_outline : Icons.cloud_done_outlined,
                     size: 18, color: Theme.of(context).colorScheme.secondary),
-                const SizedBox(width: 8),
+                Gaps.w8,
                 Expanded(
                   child: Text(
                     isLocal

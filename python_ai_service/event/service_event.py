@@ -115,6 +115,14 @@ def _cleanup_recommended_events_once_per_day() -> bool:
                 "Cleaned %s expired cloud game answer record(s)",
                 answer_cleanup_count,
             )
+        inactive_account_count = db.execute(
+            text("select public.cleanup_inactive_free_accounts()")
+        ).scalar()
+        if inactive_account_count:
+            logger.info(
+                "Removed %s inactive free account(s)",
+                inactive_account_count,
+            )
         db.execute(
             text(
                 "insert into public.recommended_event_url "

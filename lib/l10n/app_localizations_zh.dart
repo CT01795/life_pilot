@@ -1239,4 +1239,110 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subscriptionRenewalRequired => '付費期間已結束，雲端資料目前為唯讀。請續訂，或將全部雲端資料安全搬移到這台裝置。';
+
+  @override
+  String get subscriptionPlansTitle => '方案與訂閱';
+
+  @override
+  String get subscriptionCurrentFree => '目前方案：免費版';
+
+  @override
+  String get subscriptionCurrentPlus => '目前方案：Plus';
+
+  @override
+  String subscriptionValidUntil(String date) {
+    return '有效期限至 $date';
+  }
+
+  @override
+  String get subscriptionFreeName => '免費版';
+
+  @override
+  String get subscriptionFreePrice => 'NT\$0';
+
+  @override
+  String get subscriptionPlusName => '雲端 Plus';
+
+  @override
+  String get subscriptionPlusPrice => '每季 NT\$129 起';
+
+  @override
+  String get subscriptionFreePersonalRecords => '行事曆、記帳、積分、回憶各 30 筆雲端資料';
+
+  @override
+  String get subscriptionPlusPersonalRecords => '行事曆、記帳、積分、回憶各 300 筆雲端資料';
+
+  @override
+  String get subscriptionFreeGameQuestions => '自建遊戲題目 50 題';
+
+  @override
+  String get subscriptionPlusGameQuestions => '自建遊戲題目 500 題';
+
+  @override
+  String get subscriptionFreeSharing => '行事曆最多分享給 2 人';
+
+  @override
+  String get subscriptionPlusSharing => '行事曆最多分享給 5 人';
+
+  @override
+  String get subscriptionFreeImages => '不提供雲端圖片上傳';
+
+  @override
+  String get subscriptionPlusImages => '回憶與活動圖片合計最多 300 MB';
+
+  @override
+  String get subscriptionFreeAnswerHistory => '雲端詳細答題紀錄保留 30 天';
+
+  @override
+  String get subscriptionPlusAnswerHistory => '雲端詳細答題紀錄保留 1 年';
+
+  @override
+  String get subscriptionCommonFeatures => '兩種方案皆可使用';
+
+  @override
+  String get subscriptionCommonFeaturesDetail => '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與 Business Plan 僅限管理者。';
+
+  @override
+  String get subscriptionPurchaseComingSoon => 'App 內訂閱即將開放';
+
+  @override
+  String get subscriptionPurchaseExplanation => '目前尚不能購買 Plus。商店付款功能上線後，此頁會顯示正式價格、續訂條款，以及購買、恢復購買與管理訂閱功能。';
+
+  @override
+  String get subscriptionInactiveAccountWarning => '免費帳戶沒有到期日；若連續 3 個月沒有新增或修改資料，帳戶及雲端資料將由系統自動清除。';
+
+  @override
+  String get subscriptionPricingVersion => '目前版本';
+
+  @override
+  String get subscriptionEffectiveDate => '生效日期';
+
+  @override
+  String get subscriptionQuotaMultiplier => '額度倍率';
+
+  @override
+  String get subscriptionQuarterlyPayment => '每季費用';
+
+  @override
+  String get subscriptionActualQuotaTitle => '目前版本與實際額度';
+
+  @override
+  String get subscriptionImageStorage => '圖片容量';
+
+  @override
+  String get subscriptionNextVersionTitle => '下次付款適用的最新版本';
+
+  @override
+  String subscriptionVersionOffer(String version, String date, int price) {
+    return '$version・$date 生效・每季 NT\$$price';
+  }
+
+  @override
+  String get subscriptionLocalPaidName => '本機 Plus';
+
+  @override
+  String get subscriptionLocalPaidPrice => '每季 NT\$129';
+
+  @override
+  String get subscriptionLocalPaidFeature => '此裝置上的紀錄與圖片不限量；資料不會自動出現在其他裝置';
 }
