@@ -256,32 +256,52 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                                   padding: const EdgeInsets.all(12),
                                   child: Text(loc.calendarNoSharedEvents),
                                 ),
-                              ...sharedEvents.map((event) {
-                                final date = event.startDate == null
-                                    ? ''
-                                    : MaterialLocalizations.of(context)
-                                        .formatShortDate(
-                                            event.startDate!.toLocal());
-                                return ListTile(
-                                  dense: true,
-                                  title: Text(event.name),
-                                  subtitle: date.isEmpty ? null : Text(date),
-                                  trailing: IconButton(
-                                    tooltip: loc.calendarCancelSingleShare,
-                                    onPressed: _submitting
-                                        ? null
-                                        : () => _run(
-                                              () => widget.service
-                                                  .removeSharedEvent(
-                                                invitationId: item.id,
-                                                eventId: event.eventId,
-                                              ),
-                                            ),
-                                    icon:
-                                        const Icon(Icons.remove_circle_outline),
+                              if (sharedEvents.isNotEmpty)
+                                SizedBox(
+                                  height: (sharedEvents.length * 64.0)
+                                      .clamp(64.0, 256.0),
+                                  child: ListView.builder(
+                                    primary: false,
+                                    itemExtent: 64,
+                                    cacheExtent: 64,
+                                    addAutomaticKeepAlives: false,
+                                    itemCount: sharedEvents.length,
+                                    itemBuilder: (context, index) {
+                                      final event = sharedEvents[index];
+                                      final date = event.startDate == null
+                                          ? ''
+                                          : MaterialLocalizations.of(context)
+                                              .formatShortDate(
+                                                  event.startDate!.toLocal());
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text(
+                                          event.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        subtitle:
+                                            date.isEmpty ? null : Text(date),
+                                        trailing: IconButton(
+                                          tooltip:
+                                              loc.calendarCancelSingleShare,
+                                          onPressed: _submitting
+                                              ? null
+                                              : () => _run(
+                                                    () => widget.service
+                                                        .removeSharedEvent(
+                                                      invitationId: item.id,
+                                                      eventId: event.eventId,
+                                                    ),
+                                                  ),
+                                          icon: const Icon(
+                                            Icons.remove_circle_outline,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                );
-                              }),
+                                ),
                               if (item.isPending || item.isAccepted)
                                 Align(
                                   alignment: AlignmentDirectional.centerEnd,
