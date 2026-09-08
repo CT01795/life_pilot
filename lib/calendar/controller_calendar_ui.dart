@@ -183,7 +183,7 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
         content: StatefulBuilder(
           builder: (context, setState) {
             return SizedBox(
-              width: 420,
+              width: MediaQuery.sizeOf(context).width.clamp(0, 420).toDouble(),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start, // ⬅️ 靠左對齊

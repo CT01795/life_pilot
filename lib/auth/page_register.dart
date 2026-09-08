@@ -337,7 +337,9 @@ class _PageRegisterState extends State<PageRegister> {
                       ],
                     ),
                     Gaps.h16,
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         ElevatedButton(
                           onPressed: _isSubmitting
@@ -353,7 +355,6 @@ class _PageRegisterState extends State<PageRegister> {
                                 )
                               : Text(loc.register),
                         ),
-                        Gaps.w8,
                         TextButton(
                           onPressed: _goBack,
                           child: Text(loc.back),

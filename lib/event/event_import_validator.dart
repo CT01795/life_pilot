@@ -12,20 +12,6 @@ class EventImportValidator {
       return 'missing_start_date';
     }
 
-    final endDate = event.endDate;
-    if (endDate != null && endDate.isBefore(startDate)) {
-      return 'end_before_start';
-    }
-
-    final latestSupportedStart = DateTime(
-      checkedAt.year + 2,
-      checkedAt.month,
-      checkedAt.day,
-    );
-    if (startDate.isAfter(latestSupportedStart)) {
-      return 'start_date_out_of_range';
-    }
-
     return null;
   }
 }

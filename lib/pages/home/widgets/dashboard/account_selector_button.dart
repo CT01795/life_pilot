@@ -103,7 +103,10 @@ class _AccountSelectorButtonState extends State<AccountSelectorButton> {
                         contentPadding:
                             const EdgeInsets.fromLTRB(12, 8, 12, 12),
                         content: SizedBox(
-                          width: 420,
+                          width: MediaQuery.sizeOf(dialogContext)
+                              .width
+                              .clamp(0, 420)
+                              .toDouble(),
                           height: contentHeight,
                           child: ListView.separated(
                             itemCount: itemCount,

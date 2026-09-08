@@ -5,8 +5,21 @@ import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
-class PageSubscriptionPlans extends StatelessWidget {
+class PageSubscriptionPlans extends StatefulWidget {
   const PageSubscriptionPlans({super.key});
+
+  @override
+  State<PageSubscriptionPlans> createState() => _PageSubscriptionPlansState();
+}
+
+class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
+  late final Future<List<SubscriptionPricingVersion>> _pricingVersions;
+
+  @override
+  void initState() {
+    super.initState();
+    _pricingVersions = ServiceSubscription().fetchPricingVersions();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +57,39 @@ class PageSubscriptionPlans extends StatelessWidget {
             ),
           ),
           Gaps.h16,
+          if (subscription.usage.isNotEmpty) ...[
+            Gaps.h16,
+            Text(
+              loc.subscriptionActualQuotaTitle,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            Gaps.h8,
+            Card(
+              child: Column(
+                children: subscription.usage.values.map((usage) {
+                  final label = _resourceLabel(loc, usage.resource);
+                  final used = usage.resource == 'image_bytes'
+                      ? '${(usage.used / 1024 / 1024).toStringAsFixed(1)} MB'
+                      : usage.used.toString();
+                  final quota = usage.resource == 'image_bytes'
+                      ? '${(usage.quota / 1024 / 1024).toStringAsFixed(0)} MB'
+                      : usage.quota.toString();
+                  return ListTile(
+                    dense: true,
+                    leading: usage.isUnlimited
+                        ? const Icon(Icons.all_inclusive)
+                        : null,
+                    title: Text(label),
+                    trailing: Text(
+                      usage.isUnlimited ? '$used / ∞' : '$used / $quota',
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
           if (subscription.isPlus) ...[
+            Gaps.h16,
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -109,45 +154,8 @@ class PageSubscriptionPlans extends StatelessWidget {
             ),
             Gaps.h8,
           ],
-          if (subscription.usage.isNotEmpty) ...[
-            Text(
-              loc.subscriptionActualQuotaTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            Gaps.h8,
-            Card(
-              child: Column(
-                children: subscription.usage.values.map((usage) {
-                  final label = switch (usage.resource) {
-                    'calendar_events' => loc.personalEvent,
-                    'accounting_detail' => loc.accountRecords,
-                    'point_record_detail' => loc.pointsRecord,
-                    'memory_trace' => loc.memoryTrace,
-                    'game_questions' => loc.game,
-                    'calendar_shares' => loc.calendarSharing,
-                    'image_bytes' => loc.subscriptionImageStorage,
-                    _ => usage.resource,
-                  };
-                  final used = usage.resource == 'image_bytes'
-                      ? '${(usage.used / 1024 / 1024).toStringAsFixed(1)} MB'
-                      : usage.used.toString();
-                  final quota = usage.resource == 'image_bytes'
-                      ? '${(usage.quota / 1024 / 1024).toStringAsFixed(0)} MB'
-                      : usage.quota.toString();
-                  return ListTile(
-                    dense: true,
-                    title: Text(label),
-                    trailing: Text(
-                      usage.isUnlimited ? '$used / ∞' : '$used / $quota',
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            Gaps.h16,
-          ],
           FutureBuilder<List<SubscriptionPricingVersion>>(
-            future: ServiceSubscription().fetchPricingVersions(),
+            future: _pricingVersions,
             builder: (context, snapshot) {
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const SizedBox.shrink();
@@ -164,44 +172,55 @@ class PageSubscriptionPlans extends StatelessWidget {
           ),
           LayoutBuilder(
             builder: (context, constraints) {
-              final cards = [
-                _PlanCard(
-                  title: loc.subscriptionFreeName,
-                  price: loc.subscriptionFreePrice,
-                  features: [
-                    loc.subscriptionFreePersonalRecords,
-                    loc.subscriptionFreeGameQuestions,
-                    loc.subscriptionFreeSharing,
-                    loc.subscriptionFreeImages,
-                    loc.subscriptionFreeAnswerHistory,
-                  ],
-                  selected: !subscription.isPlus,
-                ),
-                _PlanCard(
-                  title: loc.subscriptionPlusName,
-                  price: loc.subscriptionPlusPrice,
-                  features: [
-                    loc.subscriptionPlusPersonalRecords,
-                    loc.subscriptionPlusGameQuestions,
-                    loc.subscriptionPlusSharing,
-                    loc.subscriptionPlusImages,
-                    loc.subscriptionPlusAnswerHistory,
-                  ],
-                  selected: subscription.isPlus &&
-                      subscription.storagePlan == 'cloud',
-                  highlighted: true,
-                ),
-                _PlanCard(
-                  title: loc.subscriptionLocalPaidName,
-                  price: loc.subscriptionLocalPaidPrice,
-                  features: [
-                    loc.subscriptionLocalPaidFeature,
-                    loc.subscriptionFreeAnswerHistory,
-                  ],
-                  selected: subscription.isPlus &&
-                      subscription.storagePlan == 'local',
-                ),
-              ];
+              final freeCard = _PlanCard(
+                title: loc.subscriptionFreeName,
+                price: loc.subscriptionFreePrice,
+                features: [
+                  loc.subscriptionFreePersonalRecords,
+                  loc.subscriptionFreeGameQuestions,
+                  loc.subscriptionFreeSharing,
+                  loc.subscriptionFreeImages,
+                  loc.subscriptionFreeAnswerHistory,
+                ],
+                selected: !subscription.isPlus,
+              );
+              final cloudPlusCard = _PlanCard(
+                title: loc.subscriptionPlusName,
+                price: loc.subscriptionPlusPrice,
+                features: [
+                  loc.subscriptionPlusPersonalRecords,
+                  loc.subscriptionPlusGameQuestions,
+                  loc.subscriptionPlusSharing,
+                  loc.subscriptionPlusImages,
+                  loc.subscriptionPlusAnswerHistory,
+                ],
+                selected:
+                    subscription.isPlus && subscription.storagePlan == 'cloud',
+                highlighted: true,
+              );
+              final localPlusCard = _PlanCard(
+                title: loc.subscriptionLocalPaidName,
+                price: loc.subscriptionLocalPaidPrice,
+                features: [
+                  loc.subscriptionLocalPaidFeature,
+                  loc.subscriptionLocalAnswerHistory,
+                ],
+                selected:
+                    subscription.isPlus && subscription.storagePlan == 'local',
+              );
+              final currentCard = subscription.isPlus
+                  ? (subscription.storagePlan == 'local'
+                      ? localPlusCard
+                      : cloudPlusCard)
+                  : freeCard;
+              final cards = subscription.isPlus
+                  ? <Widget>[
+                      currentCard,
+                      freeCard,
+                      if (!identical(currentCard, cloudPlusCard)) cloudPlusCard,
+                      if (!identical(currentCard, localPlusCard)) localPlusCard,
+                    ]
+                  : <Widget>[freeCard, cloudPlusCard, localPlusCard];
               if (constraints.maxWidth >= 900) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,23 +243,6 @@ class PageSubscriptionPlans extends StatelessWidget {
                 ],
               );
             },
-          ),
-          Gaps.h16,
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    loc.subscriptionCommonFeatures,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Gaps.h8,
-                  Text(loc.subscriptionCommonFeaturesDetail),
-                ],
-              ),
-            ),
           ),
           Gaps.h16,
           FilledButton.icon(

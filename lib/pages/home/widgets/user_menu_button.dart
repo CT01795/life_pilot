@@ -179,7 +179,7 @@ class UserMenuButton extends StatelessWidget {
               Gaps.w8,
               Expanded(
                 child: Text(
-                  loc.settings,
+                  loc.dataStorageTitle,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white),
                 ),

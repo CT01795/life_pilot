@@ -95,6 +95,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myQuestionBank => '내 문제 은행';
 
   @override
+  String get localQuestionBankOnly => '기기 모드에서는 이 기기의 개인 문제 은행만 사용할 수 있으며 관리자 문제 은행은 사용할 수 없습니다.';
+
+  @override
   String get addQuestion => '문제 추가';
 
   @override
@@ -1244,7 +1247,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionPlansTitle => '요금제 및 구독';
 
   @override
-  String get subscriptionCurrentFree => '현재 요금제: 무료';
+  String get subscriptionCurrentFree => '현재 요금제: 클라우드 무료';
 
   @override
   String get subscriptionCurrentPlus => '현재 요금제: Plus';
@@ -1255,7 +1258,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get subscriptionFreeName => '무료';
+  String get subscriptionFreeName => '클라우드 무료';
 
   @override
   String get subscriptionFreePrice => 'NT\$0';
@@ -1267,31 +1270,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionPlusPrice => '분기 NT\$129부터';
 
   @override
-  String get subscriptionFreePersonalRecords => '캘린더, 회계, 포인트, 추억 클라우드 데이터 각 30개';
+  String get subscriptionFreePersonalRecords => '클라우드 저장: 캘린더, 회계, 포인트, 추억 각 최대 30개';
 
   @override
   String get subscriptionPlusPersonalRecords => '캘린더, 회계, 포인트, 추억 클라우드 데이터 각 300개';
 
   @override
-  String get subscriptionFreeGameQuestions => '사용자 게임 문제 50개';
+  String get subscriptionFreeGameQuestions => '클라우드 사용자 게임 문제 최대 50개';
 
   @override
   String get subscriptionPlusGameQuestions => '사용자 게임 문제 500개';
 
   @override
-  String get subscriptionFreeSharing => '캘린더를 최대 2명과 공유';
+  String get subscriptionFreeSharing => '클라우드 캘린더를 최대 2명과 공유';
 
   @override
   String get subscriptionPlusSharing => '캘린더를 최대 5명과 공유';
 
   @override
-  String get subscriptionFreeImages => '클라우드 이미지 업로드 미제공';
+  String get subscriptionFreeImages => '클라우드 이미지 업로드 기능은 포함되지 않음';
 
   @override
   String get subscriptionPlusImages => '추억 및 이벤트 이미지 최대 300 MB';
 
   @override
-  String get subscriptionFreeAnswerHistory => '클라우드 상세 답변 기록 30일 보관';
+  String get subscriptionFreeAnswerHistory => '클라우드 상세 답변 기록은 최근 30일간 보관';
 
   @override
   String get subscriptionPlusAnswerHistory => '클라우드 상세 답변 기록 1년 보관';
@@ -1345,4 +1348,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => '이 기기의 기록과 이미지는 무제한이며 다른 기기에 자동 표시되지 않습니다';
+
+  @override
+  String get subscriptionLocalAnswerHistory => '기기 답변 기록 무제한';
 }

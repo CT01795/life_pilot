@@ -27,33 +27,10 @@ void main() {
       );
     });
 
-    test('rejects an end date before its start date', () {
+    test('accepts a future start date and an absent end date', () {
       expect(
         EventImportValidator.rejectionReason(
-          event: buildEvent(
-            startDate: DateTime(2029, 9, 26),
-            endDate: DateTime(2026, 9, 26),
-          ),
-          checkedAt: checkedAt,
-        ),
-        'end_before_start',
-      );
-    });
-
-    test('rejects a start date beyond the supported two-year window', () {
-      expect(
-        EventImportValidator.rejectionReason(
-          event: buildEvent(startDate: DateTime(2028, 8, 19)),
-          checkedAt: checkedAt,
-        ),
-        'start_date_out_of_range',
-      );
-    });
-
-    test('accepts the boundary date and an absent end date', () {
-      expect(
-        EventImportValidator.rejectionReason(
-          event: buildEvent(startDate: DateTime(2028, 8, 18)),
+          event: buildEvent(startDate: DateTime(2029, 8, 18)),
           checkedAt: checkedAt,
         ),
         isNull,

@@ -43,7 +43,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     final values = {for (final key in _values.keys) key: _number(key)};
     if (_name.text.trim().isEmpty ||
         values.values.any((value) => value == null)) {
-      _message('请填写版本名称与所有数字');
+      _message('請填寫版本名稱與所有數字');
       return;
     }
     setState(() => _saving = true);
@@ -55,11 +55,11 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
         quotas: values.map((key, value) => MapEntry(key, value!)),
       );
       if (!mounted) return;
-      _message('新收费版本已建立；旧版本与既有使用者权益保持不变');
+      _message('新收費版本已建立；舊版本與既有使用者權益保持不變');
       _name.clear();
       widget.onSaved?.call();
     } catch (error) {
-      if (mounted) _message('建立失败：$error');
+      if (mounted) _message('建立失敗：$error');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -71,28 +71,28 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   @override
   Widget build(BuildContext context) {
     const labels = {
-      'price': '每季价格（TWD）',
-      'calendar': '行事历笔数',
-      'accounting': '记帐明细',
-      'point': '积分明细',
-      'memory': '回忆纪录',
-      'game': '自建游戏题目',
-      'share': '行事历分享人数',
-      'image': '图片容量（MB）',
-      'answerDays': '答题纪录保留天数',
+      'price': '每季價格（TWD）',
+      'calendar': '行事曆筆數',
+      'accounting': '記帳明細',
+      'point': '積分明細',
+      'memory': '回憶紀錄',
+      'game': '自建遊戲題目',
+      'share': '行事曆分享人數',
+      'image': '圖片容量（MB）',
+      'answerDays': '答題紀錄保留天數',
     };
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         leading: const CircleAvatar(child: Icon(Icons.price_change_outlined)),
-        title: const Text('建立收费版本'),
-        subtitle: const Text('新版本只影响之后付款或加购的权益'),
+        title: const Text('建立收費版本'),
+        subtitle: const Text('新版本只影響之後付款或加購的權益'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         children: [
           TextField(
             controller: _name,
             decoration: const InputDecoration(
-              labelText: '版本名称',
+              labelText: '版本名稱',
               hintText: '例如 2026-Q4',
               prefixIcon: Icon(Icons.label_outline),
             ),
@@ -105,20 +105,33 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
                 .formatMediumDate(_effectiveAt)),
             onTap: _pickEffectiveDate,
           ),
-          GridView.count(
-            crossAxisCount: MediaQuery.sizeOf(context).width >= 600 ? 3 : 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.4,
-            children: _values.entries
-                .map((entry) => TextField(
-                      controller: entry.value,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: labels[entry.key]),
-                    ))
-                .toList(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 720
+                  ? 3
+                  : constraints.maxWidth >= 440
+                      ? 2
+                      : 1;
+              return GridView.builder(
+                itemCount: _values.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  mainAxisExtent: 68,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                ),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final entry = _values.entries.elementAt(index);
+                  return TextField(
+                    controller: entry.value,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(labelText: labels[entry.key]),
+                  );
+                },
+              );
+            },
           ),
           Gaps.h16,
           SizedBox(

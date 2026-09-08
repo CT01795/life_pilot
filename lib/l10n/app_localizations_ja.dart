@@ -95,6 +95,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get myQuestionBank => '自分の問題集';
 
   @override
+  String get localQuestionBankOnly => '本体モードでは、この端末の個人問題集のみ使用できます。管理者問題集は利用できません。';
+
+  @override
   String get addQuestion => '問題を追加';
 
   @override
@@ -1244,7 +1247,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionPlansTitle => 'プランとサブスクリプション';
 
   @override
-  String get subscriptionCurrentFree => '現在のプラン：無料';
+  String get subscriptionCurrentFree => '現在のプラン：クラウド無料';
 
   @override
   String get subscriptionCurrentPlus => '現在のプラン：Plus';
@@ -1255,7 +1258,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get subscriptionFreeName => '無料プラン';
+  String get subscriptionFreeName => 'クラウド無料プラン';
 
   @override
   String get subscriptionFreePrice => 'NT\$0';
@@ -1267,31 +1270,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionPlusPrice => '四半期 NT\$129から';
 
   @override
-  String get subscriptionFreePersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各30件';
+  String get subscriptionFreePersonalRecords => 'クラウド保存：カレンダー、家計簿、ポイント、思い出を各30件まで';
 
   @override
   String get subscriptionPlusPersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
 
   @override
-  String get subscriptionFreeGameQuestions => '自作ゲーム問題50問';
+  String get subscriptionFreeGameQuestions => 'クラウドの自作ゲーム問題は50問まで';
 
   @override
   String get subscriptionPlusGameQuestions => '自作ゲーム問題500問';
 
   @override
-  String get subscriptionFreeSharing => 'カレンダー共有は2人まで';
+  String get subscriptionFreeSharing => 'クラウドカレンダーの共有は2人まで';
 
   @override
   String get subscriptionPlusSharing => 'カレンダー共有は5人まで';
 
   @override
-  String get subscriptionFreeImages => 'クラウド画像アップロードなし';
+  String get subscriptionFreeImages => 'クラウド画像アップロード機能は含まれません';
 
   @override
   String get subscriptionPlusImages => '思い出・イベント画像を合計300 MBまで';
 
   @override
-  String get subscriptionFreeAnswerHistory => 'クラウド解答履歴を30日間保存';
+  String get subscriptionFreeAnswerHistory => 'クラウドの詳細解答履歴は直近30日間保存';
 
   @override
   String get subscriptionPlusAnswerHistory => 'クラウド解答履歴を1年間保存';
@@ -1345,4 +1348,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => 'このデバイスの記録と画像は無制限。他のデバイスには自動表示されません';
+
+  @override
+  String get subscriptionLocalAnswerHistory => '本体の解答履歴は無制限';
 }

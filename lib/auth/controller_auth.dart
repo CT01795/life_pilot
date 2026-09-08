@@ -243,8 +243,6 @@ class ControllerAuth extends SafeChangeNotifier {
     final oldAccount = _currentAccount; // 👈 比對用
 
     // 有時在剛登入／註冊完畢會延遲更新；
-    await Future.delayed(const Duration(milliseconds: 250));
-
     _update(() {
       _isLoggedIn = user != null;
       _isAnonymous = user?.isAnonymous ?? false;
@@ -271,17 +269,26 @@ class ControllerAuth extends SafeChangeNotifier {
       await controllerCalendar?.loadCalendarEvents(month: DateTime.now());
     }
 
-    if (_isLoggedIn && !_isAnonymous) {
-      try {
-        _subscription = await _loadSubscriptionUsage();
-      } catch (error, stackTrace) {
-        logger.e('Failed to load subscription usage',
-            error: error, stackTrace: stackTrace);
-        _subscription = SubscriptionSnapshot.free;
-      }
-    }
-
     _update(() => _isLoading = false);
+
+    if (_isLoggedIn && !_isAnonymous) {
+      unawaited(_refreshSubscriptionAfterStartup());
+    }
+  }
+
+  Future<void> _refreshSubscriptionAfterStartup() async {
+    try {
+      final loaded = await _loadSubscriptionUsage();
+      if (notifierDisposed || !_isLoggedIn || _isAnonymous) return;
+      _subscription = loaded;
+      notifyListeners();
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to load subscription usage after startup',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   // =========================================================

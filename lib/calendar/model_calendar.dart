@@ -96,13 +96,21 @@ class ModelCalendar {
       final start = weeks.first.first;
       final end = weeks.last.last;
 
-      final serverEvents = await serviceEvent.getEvents(
-          tableName: tableName, dateS: start, dateE: end, inputUser: user);
-
-      final holidays = await ServiceCalendar.fetchHolidays(
-          start.subtract(Duration(days: 2)),
-          end.add(Duration(days: 2)),
-          locale);
+      final results = await Future.wait<Object?>([
+        serviceEvent.getEvents(
+          tableName: tableName,
+          dateS: start,
+          dateE: end,
+          inputUser: user,
+        ),
+        ServiceCalendar.fetchHolidays(
+          start.subtract(const Duration(days: 2)),
+          end.add(const Duration(days: 2)),
+          locale,
+        ),
+      ]);
+      final serverEvents = results[0] as List<EventItem>?;
+      final holidays = results[1] as List<EventItem>;
 
       if (isDisposed) return [];
 

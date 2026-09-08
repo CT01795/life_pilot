@@ -1227,7 +1227,8 @@ class ServiceGame {
   Future<ModelGameGrammarQuestion> fetchGrammarQuestion(
       String userName, int level,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_grammarQuestionTable))
           .where((row) =>
               row['is_active'] == true &&
@@ -1244,6 +1245,7 @@ class ServiceGame {
         );
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     final result = await supabase.rpc(
       'get_grammar_question',
       params: {
@@ -1286,7 +1288,8 @@ class ServiceGame {
   //------------------------- Sentence -------------------------
   Future<ModelGameSentence> fetchSentenceQuestion(String userName, int level,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_sentenceQuestionTable))
           .where((row) =>
               row['is_active'] == true &&
@@ -1304,6 +1307,7 @@ class ServiceGame {
         );
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     final result = await supabase.rpc(
       'get_sentence_question',
       params: {
@@ -1345,7 +1349,8 @@ class ServiceGame {
   //------------------------- Speaking -------------------------
   Future<ModelGameSpeaking> fetchSpeakingQuestion(String userName, int level,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_sentenceQuestionTable))
           .where((row) =>
               row['is_active'] == true &&
@@ -1361,6 +1366,7 @@ class ServiceGame {
         );
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     final result = await supabase.rpc(
       'get_speaking_question',
       params: {
@@ -1403,7 +1409,8 @@ class ServiceGame {
   //------------------------- Social -------------------------
   Future<ModelGameSocial> fetchSocialQuestion(String userName, int level,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(TableNames.gameSocialScenarios))
           .where((row) =>
               row['is_active'] == true &&
@@ -1432,6 +1439,7 @@ class ServiceGame {
         }
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     final result = await supabase.rpc(
       'get_social_with_options',
       params: {
@@ -1490,7 +1498,8 @@ class ServiceGame {
   Future<ModelGameMarioTranslation> fetchMarioTranslationQuestion(
       String userName, int level,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_translationQuestionTable))
           .where((row) =>
               row['is_active'] == true &&
@@ -1511,6 +1520,7 @@ class ServiceGame {
         );
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     final result = await supabase.rpc(
       'get_translation_with_options',
       params: {
@@ -1541,7 +1551,8 @@ class ServiceGame {
   Future<ModelGameTranslation> fetchTranslationQuestion(
       String userName, int level, String gameName,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_translationQuestionTable))
           .where((row) =>
               row['is_active'] == true &&
@@ -1564,6 +1575,7 @@ class ServiceGame {
         );
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     String functionName = 'get_translation_with_options';
     if (gameName.contains("日")) {
       functionName = 'get_translationjp_with_options';
@@ -1631,7 +1643,8 @@ class ServiceGame {
   Future<ModelGameWordSearch> fetchWordSearchQuestion(
       String userName, int level,
       {String questionBank = 'admin'}) async {
-    if (questionBank == 'my') {
+    final localMode = await _storesLocally;
+    if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_translationQuestionTable))
           .where((row) =>
               row['is_active'] == true &&
@@ -1648,6 +1661,7 @@ class ServiceGame {
         );
       }
     }
+    if (localMode) throw StateError('local_question_bank_empty');
     final result = await supabase.rpc(
       'get_next_word_question',
       params: {

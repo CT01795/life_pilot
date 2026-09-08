@@ -23,6 +23,7 @@ class PageAccountingList extends StatefulWidget {
 class _PageAccountingListState extends State<PageAccountingList>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _didLoadInitialData = false;
 
   @override
   void initState() {
@@ -31,9 +32,6 @@ class _PageAccountingListState extends State<PageAccountingList>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = 0;
     final controller = context.read<ControllerAccountingList>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.setCategory(AccountCategory.personal.name);
-    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
       switch (_tabController.index) {
@@ -59,13 +57,14 @@ class _PageAccountingListState extends State<PageAccountingList>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_didLoadInitialData) return;
+    _didLoadInitialData = true;
     final controller = context.read<ControllerAccountingList>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_tabController.index == 0 &&
-          controller.category != AccountCategory.personal.name) {
-        await controller.setCategory(AccountCategory.personal.name);
-      }
+      if (!mounted) return;
+      await controller.setCategory(AccountCategory.personal.name);
+      if (!mounted) return;
       await controller.askMainCurrency(context: context);
     });
   }

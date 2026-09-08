@@ -267,6 +267,12 @@ abstract class AppLocalizations {
   /// **'My question bank'**
   String get myQuestionBank;
 
+  /// Local question bank restriction
+  ///
+  /// In en, this message translates to:
+  /// **'Local mode only uses your question bank on this device. The admin question bank is unavailable.'**
+  String get localQuestionBankOnly;
+
   /// Label for addQuestion
   ///
   /// In en, this message translates to:
@@ -2532,7 +2538,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionCurrentFree
   ///
   /// In en, this message translates to:
-  /// **'Current plan: Free'**
+  /// **'Current plan: Cloud Free'**
   String get subscriptionCurrentFree;
 
   /// Label for subscriptionCurrentPlus
@@ -2550,13 +2556,13 @@ abstract class AppLocalizations {
   /// Label for subscriptionFreeName
   ///
   /// In en, this message translates to:
-  /// **'Free'**
+  /// **'Cloud Free'**
   String get subscriptionFreeName;
 
   /// Label for subscriptionFreePrice
   ///
   /// In en, this message translates to:
-  /// **'NT\$0'**
+  /// **'Free'**
   String get subscriptionFreePrice;
 
   /// Label for subscriptionPlusName
@@ -2574,7 +2580,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionFreePersonalRecords
   ///
   /// In en, this message translates to:
-  /// **'30 cloud records each for calendar, accounting, points, and memories'**
+  /// **'Cloud storage: up to 30 records each for calendar, accounting, points, and memories'**
   String get subscriptionFreePersonalRecords;
 
   /// Label for subscriptionPlusPersonalRecords
@@ -2586,7 +2592,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionFreeGameQuestions
   ///
   /// In en, this message translates to:
-  /// **'50 custom game questions'**
+  /// **'Up to 50 custom game questions in the cloud'**
   String get subscriptionFreeGameQuestions;
 
   /// Label for subscriptionPlusGameQuestions
@@ -2598,7 +2604,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionFreeSharing
   ///
   /// In en, this message translates to:
-  /// **'Share your calendar with up to 2 people'**
+  /// **'Share your cloud calendar with up to 2 people'**
   String get subscriptionFreeSharing;
 
   /// Label for subscriptionPlusSharing
@@ -2622,7 +2628,7 @@ abstract class AppLocalizations {
   /// Label for subscriptionFreeAnswerHistory
   ///
   /// In en, this message translates to:
-  /// **'Cloud answer history retained for 30 days'**
+  /// **'Cloud answer history retained for the latest 30 days'**
   String get subscriptionFreeAnswerHistory;
 
   /// Label for subscriptionPlusAnswerHistory
@@ -2726,6 +2732,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlimited records and photos on this device; data does not automatically appear on other devices'**
   String get subscriptionLocalPaidFeature;
+
+  /// Local answer history retention
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited local answer history'**
+  String get subscriptionLocalAnswerHistory;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

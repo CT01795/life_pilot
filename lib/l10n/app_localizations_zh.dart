@@ -95,6 +95,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get myQuestionBank => '我的題庫';
 
   @override
+  String get localQuestionBankOnly => '本機模式只使用此裝置的個人題庫，無法讀取管理者題庫。';
+
+  @override
   String get addQuestion => '新增題目';
 
   @override
@@ -1191,7 +1194,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionDeleteRecordHint => '刪除後會同步重新計算今日小計與總計。';
 
   @override
-  String get dataStorageTitle => '新增的個人資料要儲存在哪裡？';
+  String get dataStorageTitle => '儲存位置';
 
   @override
   String get dataStorageCloud => '雲端';
@@ -1244,7 +1247,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionPlansTitle => '方案與訂閱';
 
   @override
-  String get subscriptionCurrentFree => '目前方案：免費版';
+  String get subscriptionCurrentFree => '目前方案：雲端免費版';
 
   @override
   String get subscriptionCurrentPlus => '目前方案：Plus';
@@ -1255,10 +1258,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get subscriptionFreeName => '免費版';
+  String get subscriptionFreeName => '雲端免費版';
 
   @override
-  String get subscriptionFreePrice => 'NT\$0';
+  String get subscriptionFreePrice => '免費';
 
   @override
   String get subscriptionPlusName => '雲端 Plus';
@@ -1267,31 +1270,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionPlusPrice => '每季 NT\$129 起';
 
   @override
-  String get subscriptionFreePersonalRecords => '行事曆、記帳、積分、回憶各 30 筆雲端資料';
+  String get subscriptionFreePersonalRecords => '雲端保存：行事曆、記帳、積分、回憶各最多 30 筆';
 
   @override
   String get subscriptionPlusPersonalRecords => '行事曆、記帳、積分、回憶各 300 筆雲端資料';
 
   @override
-  String get subscriptionFreeGameQuestions => '自建遊戲題目 50 題';
+  String get subscriptionFreeGameQuestions => '雲端自建遊戲題目最多 50 題';
 
   @override
   String get subscriptionPlusGameQuestions => '自建遊戲題目 500 題';
 
   @override
-  String get subscriptionFreeSharing => '行事曆最多分享給 2 人';
+  String get subscriptionFreeSharing => '雲端行事曆最多分享給 2 人';
 
   @override
   String get subscriptionPlusSharing => '行事曆最多分享給 5 人';
 
   @override
-  String get subscriptionFreeImages => '不提供雲端圖片上傳';
+  String get subscriptionFreeImages => '不包含雲端圖片上傳功能';
 
   @override
   String get subscriptionPlusImages => '回憶與活動圖片合計最多 300 MB';
 
   @override
-  String get subscriptionFreeAnswerHistory => '雲端詳細答題紀錄保留 30 天';
+  String get subscriptionFreeAnswerHistory => '雲端詳細答題紀錄保留最近 30 天';
 
   @override
   String get subscriptionPlusAnswerHistory => '雲端詳細答題紀錄保留 1 年';
@@ -1345,4 +1348,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => '此裝置上的紀錄與圖片不限量；資料不會自動出現在其他裝置';
+
+  @override
+  String get subscriptionLocalAnswerHistory => '本機答題紀錄不限量';
 }

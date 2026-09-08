@@ -336,6 +336,7 @@ class ControllerCalendar extends SafeChangeNotifier {
         ..add(nextStart.toMonthKey());
     }
 
+    if (futures.isEmpty) return;
     await Future.wait(futures);
 
     clearAll();

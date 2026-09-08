@@ -93,7 +93,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     return AlertDialog(
       title: Text(loc.calendarSharing),
       content: SizedBox(
-        width: 560,
+        width: MediaQuery.sizeOf(context).width.clamp(0, 560).toDouble(),
         child: FutureBuilder<CalendarSharingState>(
           future: _state,
           builder: (context, snapshot) {

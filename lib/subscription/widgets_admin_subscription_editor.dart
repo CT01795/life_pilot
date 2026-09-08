@@ -42,7 +42,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     final selectedVersion =
         _versionId ?? (versions.isEmpty ? null : versions.first.id);
     if (_plan == 'plus' && selectedVersion == null) {
-      _show('请先建立收费版本');
+      _show('請先建立收費版本');
       return;
     }
     setState(() => _saving = true);
@@ -69,10 +69,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
         );
       }
       if (!mounted) return;
-      _show('使用者订阅设定已储存');
+      _show('使用者訂閱設定已儲存');
       widget.onSaved?.call();
     } catch (error) {
-      if (mounted) _show('储存失败：$error');
+      if (mounted) _show('儲存失敗：$error');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -94,8 +94,8 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
           child: ExpansionTile(
             leading:
                 const CircleAvatar(child: Icon(Icons.manage_accounts_outlined)),
-            title: const Text('管理使用者订阅'),
-            subtitle: const Text('套用付款当下的收费版本与额度'),
+            title: const Text('管理使用者訂閱'),
+            subtitle: const Text('套用付款當下的收費版本與額度'),
             childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
               TextField(
@@ -107,19 +107,34 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                 ),
               ),
               Gaps.h12,
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'free', label: Text('免费版')),
-                  ButtonSegment(value: 'plus', label: Text('付费版')),
-                ],
-                selected: {_plan},
-                onSelectionChanged: (value) => setState(() {
-                  _plan = value.first;
-                  _expiry = _plan == 'free'
-                      ? null
-                      : (_expiry ??
-                          DateTime.now().add(const Duration(days: 90)));
-                }),
+              LayoutBuilder(
+                builder: (context, constraints) => constraints.maxWidth < 320
+                    ? DropdownButtonFormField<String>(
+                        initialValue: _plan,
+                        isExpanded: true,
+                        decoration: const InputDecoration(labelText: '方案'),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'free',
+                            child: Text('免費版'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'plus',
+                            child: Text('付費版'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) _setPlan(value);
+                        },
+                      )
+                    : SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'free', label: Text('免費版')),
+                          ButtonSegment(value: 'plus', label: Text('付費版')),
+                        ],
+                        selected: {_plan},
+                        onSelectionChanged: (value) => _setPlan(value.first),
+                      ),
               ),
               if (_plan == 'free')
                 const Padding(
@@ -127,55 +142,96 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.info_outline),
-                    title: Text('免费版没有到期日'),
-                    subtitle: Text('连续 3 个月未新增或修改资料，帐号及云端资料会自动清除。'),
+                    title: Text('免費版沒有到期日'),
+                    subtitle: Text('連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。'),
                   ),
                 )
               else ...[
                 Gaps.h12,
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('增加额度，不覆盖尚未到期的权益'),
-                  subtitle: const Text('开启后会将这笔新版额度与旧版额度相加'),
+                  title: const Text('增加額度，不覆蓋尚未到期的權益'),
+                  subtitle: const Text('開啟後會將這筆新版額度與舊版額度相加'),
                   value: _additive,
                   onChanged: (value) => setState(() => _additive = value),
                 ),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(
-                        value: 'cloud',
-                        icon: Icon(Icons.cloud_outlined),
-                        label: Text('云端版')),
-                    ButtonSegment(
-                        value: 'local',
-                        icon: Icon(Icons.devices_outlined),
-                        label: Text('本机不限量')),
-                  ],
-                  selected: {_storagePlan},
-                  onSelectionChanged: (value) =>
-                      setState(() => _storagePlan = value.first),
+                LayoutBuilder(
+                  builder: (context, constraints) => constraints.maxWidth < 380
+                      ? DropdownButtonFormField<String>(
+                          initialValue: _storagePlan,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: '儲存方案'),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'cloud',
+                              child: Text('雲端版'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'local',
+                              child: Text('本機不限量'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _storagePlan = value);
+                            }
+                          },
+                        )
+                      : SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'cloud',
+                              icon: Icon(Icons.cloud_outlined),
+                              label: Text('雲端版'),
+                            ),
+                            ButtonSegment(
+                              value: 'local',
+                              icon: Icon(Icons.devices_outlined),
+                              label: Text('本機不限量'),
+                            ),
+                          ],
+                          selected: {_storagePlan},
+                          onSelectionChanged: (value) =>
+                              setState(() => _storagePlan = value.first),
+                        ),
                 ),
                 Gaps.h12,
                 DropdownButtonFormField<String>(
                   key: ValueKey(selectedVersion),
                   initialValue: selectedVersion,
+                  isExpanded: true,
                   decoration: const InputDecoration(
-                      labelText: '收费版本', prefixIcon: Icon(Icons.history)),
+                      labelText: '收費版本', prefixIcon: Icon(Icons.history)),
                   items: versions
                       .map((version) => DropdownMenuItem(
                             value: version.id,
                             child: Text(
-                                '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
-                                overflow: TextOverflow.ellipsis),
+                              '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ))
+                      .toList(),
+                  selectedItemBuilder: (context) => versions
+                      .map(
+                        (version) => Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (value) => setState(() => _versionId = value),
                 ),
                 Gaps.h12,
                 DropdownButtonFormField<int>(
                   initialValue: _multiplier,
+                  isExpanded: true,
                   decoration: const InputDecoration(
-                      labelText: '购买额度倍率',
+                      labelText: '購買額度倍率',
                       prefixIcon: Icon(Icons.multiple_stop)),
                   items: List.generate(
                       10,
@@ -187,7 +243,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.event_available_outlined),
-                  title: const Text('本次权益到期日'),
+                  title: const Text('本次權益到期日'),
                   subtitle: Text(_expiry == null
                       ? '-'
                       : MaterialLocalizations.of(context)
@@ -199,7 +255,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                 controller: _note,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                    labelText: '补充说明', alignLabelWithHint: true),
+                    labelText: '補充說明', alignLabelWithHint: true),
               ),
               Gaps.h16,
               SizedBox(
@@ -211,7 +267,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.save_outlined),
-                  label: const Text('储存订阅设定'),
+                  label: const Text('儲存訂閱設定'),
                 ),
               ),
             ],
@@ -229,5 +285,14 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       lastDate: DateTime.now().add(const Duration(days: 36500)),
     );
     if (value != null) setState(() => _expiry = value);
+  }
+
+  void _setPlan(String value) {
+    setState(() {
+      _plan = value;
+      _expiry = _plan == 'free'
+          ? null
+          : (_expiry ?? DateTime.now().add(const Duration(days: 90)));
+    });
   }
 }

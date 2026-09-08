@@ -9,7 +9,7 @@ class SubscriptionUsage {
   final int used;
   final int quota;
 
-  bool get isUnlimited => quota < 0;
+  bool get isUnlimited => quota < 0 || quota >= 9000000000000000000;
   bool get isFull => !isUnlimited && used >= quota;
 
   factory SubscriptionUsage.fromJson(Map<String, dynamic> json) {

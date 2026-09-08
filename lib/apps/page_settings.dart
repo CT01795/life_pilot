@@ -118,7 +118,10 @@ class _PageSettingsState extends State<PageSettings> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(loc.settings, style: Theme.of(context).textTheme.headlineSmall),
+        Text(
+          loc.dataStorageTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         Gaps.h16,
         DataStorageChoice(
           value: auth.preferredStorage,

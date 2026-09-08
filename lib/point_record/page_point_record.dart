@@ -55,6 +55,7 @@ class _PagePointRecordBody extends StatefulWidget {
 class _PagePointRecordState extends State<_PagePointRecordBody>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _didLoadInitialData = false;
 
   @override
   void initState() {
@@ -63,9 +64,6 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = 0;
     final controller = context.read<ControllerPointRecordList>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.setCategory(AccountCategory.personal.name);
-    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
 
@@ -92,13 +90,13 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_didLoadInitialData) return;
+    _didLoadInitialData = true;
     final controller = context.read<ControllerPointRecordList>();
     // 延後到 build 完成再呼叫
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_tabController.index == 0 &&
-          controller.category != AccountCategory.personal.name) {
-        await controller.setCategory(AccountCategory.personal.name);
-      }
+      if (!mounted) return;
+      await controller.setCategory(AccountCategory.personal.name);
     });
   }
 

@@ -61,9 +61,11 @@ class _PageGameListState extends State<PageGameList> {
   bool _hasMoreProgress = false;
   DateTime? _progressStartDate;
   late final bool _isQuestionBankAdmin;
+  late final bool _isLocalStorage;
 
-  String get _effectiveQuestionBank =>
-      _isQuestionBankAdmin && selectedQuestionBank == 'mine'
+  String get _effectiveQuestionBank => _isLocalStorage
+      ? 'my'
+      : _isQuestionBankAdmin && selectedQuestionBank == 'mine'
           ? 'admin'
           : selectedQuestionBank;
 
@@ -71,6 +73,8 @@ class _PageGameListState extends State<PageGameList> {
   void initState() {
     super.initState();
     final auth = context.read<ControllerAuth>();
+    _isLocalStorage = auth.storesNewDataLocally;
+    if (_isLocalStorage) selectedQuestionBank = 'mine';
     final currentAccount = auth.currentAccount ?? AuthConstants.guest;
     _isQuestionBankAdmin = currentAccount.trim().toLowerCase() ==
         AuthConstants.systemEventOwnerEmail.toLowerCase();
@@ -636,29 +640,39 @@ class _PageGameListState extends State<PageGameList> {
             ],
             Gaps.h16,
             if (_supportsQuestionBank) ...[
-              DropdownButtonFormField<String>(
-                key: ValueKey(selectedQuestionBank),
-                initialValue: selectedQuestionBank,
-                decoration: InputDecoration(
-                  labelText: loc.questionBank,
-                  border: const OutlineInputBorder(),
+              if (_isLocalStorage)
+                Card(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  child: ListTile(
+                    leading: const Icon(Icons.smartphone_outlined),
+                    title: Text(loc.myQuestionBank),
+                    subtitle: Text(loc.localQuestionBankOnly),
+                  ),
+                )
+              else
+                DropdownButtonFormField<String>(
+                  key: ValueKey(selectedQuestionBank),
+                  initialValue: selectedQuestionBank,
+                  decoration: InputDecoration(
+                    labelText: loc.questionBank,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'admin',
+                      child: Text(loc.adminQuestionBank),
+                    ),
+                    DropdownMenuItem(
+                      value: 'mine',
+                      child: Text(loc.myQuestionBank),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedQuestionBank = value);
+                    }
+                  },
                 ),
-                items: [
-                  DropdownMenuItem(
-                    value: 'admin',
-                    child: Text(loc.adminQuestionBank),
-                  ),
-                  DropdownMenuItem(
-                    value: 'mine',
-                    child: Text(loc.myQuestionBank),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => selectedQuestionBank = value);
-                  }
-                },
-              ),
               Gaps.h8,
               if (_isSocialGame && _showQuestionManagementActions)
                 Row(

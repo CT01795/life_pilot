@@ -23,20 +23,20 @@ extension PageTypeExtension on PageType {
   }
 
   static Map<PageType, String> _titlesForLocale(AppLocalizations loc) => {
-    PageType.home: loc.home,
-    PageType.personalEvent: loc.personalEvent,
-    PageType.stock: loc.stock,
-    PageType.settings: loc.settings,
-    PageType.recommendEvent: loc.recommendEvent,
-    PageType.recommendPlaces: loc.recommendPlaces,
-    PageType.memoryTrace: loc.memoryTrace,
-    PageType.accountRecords: loc.accountRecords,
-    PageType.pointsRecord: loc.pointsRecord,
-    PageType.game: loc.game,
-    PageType.ai: loc.ai,
-    PageType.feedbackAdmin: loc.feedback,
-    PageType.businessPlan: loc.businessPlan,
-  };
+        PageType.home: loc.home,
+        PageType.personalEvent: loc.personalEvent,
+        PageType.stock: loc.stock,
+        PageType.settings: loc.dataStorageTitle,
+        PageType.recommendEvent: loc.recommendEvent,
+        PageType.recommendPlaces: loc.recommendPlaces,
+        PageType.memoryTrace: loc.memoryTrace,
+        PageType.accountRecords: loc.accountRecords,
+        PageType.pointsRecord: loc.pointsRecord,
+        PageType.game: loc.game,
+        PageType.ai: loc.ai,
+        PageType.feedbackAdmin: loc.feedback,
+        PageType.businessPlan: loc.businessPlan,
+      };
 }
 
 // -------------------- Calendar --------------------
@@ -64,14 +64,14 @@ extension CalendarRepeatRuleExtension on CalendarRepeatRule {
 
   // 對應唯一 key（儲存或序列化使用）
   String get key => switch (this) {
-    CalendarRepeatRule.once => 'once',
-    CalendarRepeatRule.everyDay => 'every_day',
-    CalendarRepeatRule.everyWeek => 'every_week',
-    CalendarRepeatRule.everyTwoWeeks => 'every_two_weeks',
-    CalendarRepeatRule.everyMonth => 'every_month',
-    CalendarRepeatRule.everyTwoMonths => 'every_two_months',
-    CalendarRepeatRule.everyYear => 'every_year',
-  };
+        CalendarRepeatRule.once => 'once',
+        CalendarRepeatRule.everyDay => 'every_day',
+        CalendarRepeatRule.everyWeek => 'every_week',
+        CalendarRepeatRule.everyTwoWeeks => 'every_two_weeks',
+        CalendarRepeatRule.everyMonth => 'every_month',
+        CalendarRepeatRule.everyTwoMonths => 'every_two_months',
+        CalendarRepeatRule.everyYear => 'every_year',
+      };
 
   // 從 key 還原 RepeatRule
   static CalendarRepeatRule fromKey(String? key) {
@@ -84,27 +84,34 @@ extension CalendarRepeatRuleExtension on CalendarRepeatRule {
 
   // 取得下一個日期（用於重複事件生成）
   DateTime getNextDate(DateTime date) => switch (this) {
-    CalendarRepeatRule.once || CalendarRepeatRule.everyDay => date.add(const Duration(days: 1)),
-    CalendarRepeatRule.everyWeek => date.add(const Duration(days: 7)),
-    CalendarRepeatRule.everyTwoWeeks => date.add(const Duration(days: 14)),
-    CalendarRepeatRule.everyMonth => DateTime(date.year, date.month + 1, date.day),
-    CalendarRepeatRule.everyTwoMonths => DateTime(date.year, date.month + 2, date.day),
-    CalendarRepeatRule.everyYear => DateTime(date.year + 1, date.month, date.day),
-  };
+        CalendarRepeatRule.once ||
+        CalendarRepeatRule.everyDay =>
+          date.add(const Duration(days: 1)),
+        CalendarRepeatRule.everyWeek => date.add(const Duration(days: 7)),
+        CalendarRepeatRule.everyTwoWeeks => date.add(const Duration(days: 14)),
+        CalendarRepeatRule.everyMonth =>
+          DateTime(date.year, date.month + 1, date.day),
+        CalendarRepeatRule.everyTwoMonths =>
+          DateTime(date.year, date.month + 2, date.day),
+        CalendarRepeatRule.everyYear =>
+          DateTime(date.year + 1, date.month, date.day),
+      };
 }
 
 extension CalendarReminderOptionLabel on CalendarReminderOption {
   String label(AppLocalizations loc) => switch (this) {
-    CalendarReminderOption.fifteenMin => loc.reminderOptions15MinutesBefore,
-    CalendarReminderOption.thirtyMin => loc.reminderOptions30MinutesBefore,
-    CalendarReminderOption.oneHour => loc.reminderOptionsOneHourBefore,
-    CalendarReminderOption.sameDay8am => loc.reminderOptionsDefaultSameDay8am,
-    CalendarReminderOption.dayBefore8am => loc.reminderOptionsDefaultDayBefore8am,
-    CalendarReminderOption.twoDays => loc.reminderOptionsTwoDaysBefore,
-    CalendarReminderOption.oneWeek => loc.reminderOptionsOneWeekBefore,
-    CalendarReminderOption.twoWeeks => loc.reminderOptionsTwoWeeksBefore,
-    CalendarReminderOption.oneMonth => loc.reminderOptionsOneMonthBefore,
-  };
+        CalendarReminderOption.fifteenMin => loc.reminderOptions15MinutesBefore,
+        CalendarReminderOption.thirtyMin => loc.reminderOptions30MinutesBefore,
+        CalendarReminderOption.oneHour => loc.reminderOptionsOneHourBefore,
+        CalendarReminderOption.sameDay8am =>
+          loc.reminderOptionsDefaultSameDay8am,
+        CalendarReminderOption.dayBefore8am =>
+          loc.reminderOptionsDefaultDayBefore8am,
+        CalendarReminderOption.twoDays => loc.reminderOptionsTwoDaysBefore,
+        CalendarReminderOption.oneWeek => loc.reminderOptionsOneWeekBefore,
+        CalendarReminderOption.twoWeeks => loc.reminderOptionsTwoWeeksBefore,
+        CalendarReminderOption.oneMonth => loc.reminderOptionsOneMonthBefore,
+      };
 }
 
 // -------------------- DateTime Extensions --------------------
@@ -137,4 +144,3 @@ extension StringTimeOfDay on String {
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 }
-

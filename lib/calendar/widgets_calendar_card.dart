@@ -181,7 +181,10 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                     return AlertDialog(
                       title: Text(loc.weatherForecast),
                       content: SizedBox(
-                        width: 420,
+                        width: MediaQuery.sizeOf(dialogContext)
+                            .width
+                            .clamp(0, 420)
+                            .toDouble(),
                         height: contentHeight,
                         child: ListView.builder(
                           itemCount: forecast.length,

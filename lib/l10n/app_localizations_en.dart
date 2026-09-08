@@ -95,6 +95,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myQuestionBank => 'My question bank';
 
   @override
+  String get localQuestionBankOnly => 'Local mode only uses your question bank on this device. The admin question bank is unavailable.';
+
+  @override
   String get addQuestion => 'Add question';
 
   @override
@@ -1244,7 +1247,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionPlansTitle => 'Plans and subscription';
 
   @override
-  String get subscriptionCurrentFree => 'Current plan: Free';
+  String get subscriptionCurrentFree => 'Current plan: Cloud Free';
 
   @override
   String get subscriptionCurrentPlus => 'Current plan: Plus';
@@ -1255,10 +1258,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get subscriptionFreeName => 'Free';
+  String get subscriptionFreeName => 'Cloud Free';
 
   @override
-  String get subscriptionFreePrice => 'NT\$0';
+  String get subscriptionFreePrice => 'Free';
 
   @override
   String get subscriptionPlusName => 'Cloud Plus';
@@ -1267,19 +1270,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionPlusPrice => 'From NT\$129 / quarter';
 
   @override
-  String get subscriptionFreePersonalRecords => '30 cloud records each for calendar, accounting, points, and memories';
+  String get subscriptionFreePersonalRecords => 'Cloud storage: up to 30 records each for calendar, accounting, points, and memories';
 
   @override
   String get subscriptionPlusPersonalRecords => '300 cloud records each for calendar, accounting, points, and memories';
 
   @override
-  String get subscriptionFreeGameQuestions => '50 custom game questions';
+  String get subscriptionFreeGameQuestions => 'Up to 50 custom game questions in the cloud';
 
   @override
   String get subscriptionPlusGameQuestions => '500 custom game questions';
 
   @override
-  String get subscriptionFreeSharing => 'Share your calendar with up to 2 people';
+  String get subscriptionFreeSharing => 'Share your cloud calendar with up to 2 people';
 
   @override
   String get subscriptionPlusSharing => 'Share your calendar with up to 5 people';
@@ -1291,7 +1294,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionPlusImages => 'Up to 300 MB of memory and event photos';
 
   @override
-  String get subscriptionFreeAnswerHistory => 'Cloud answer history retained for 30 days';
+  String get subscriptionFreeAnswerHistory => 'Cloud answer history retained for the latest 30 days';
 
   @override
   String get subscriptionPlusAnswerHistory => 'Cloud answer history retained for 1 year';
@@ -1345,4 +1348,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => 'Unlimited records and photos on this device; data does not automatically appear on other devices';
+
+  @override
+  String get subscriptionLocalAnswerHistory => 'Unlimited local answer history';
 }
