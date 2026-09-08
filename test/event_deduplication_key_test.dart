@@ -70,26 +70,5 @@ void main() {
         EventDeduplicationKey.byId(buildEvent(city: 'Taipei City')),
       );
     });
-
-    test('keeps different sessions from the same source URL separate', () {
-      expect(
-        EventDeduplicationKey.bySource(
-          buildEvent(startTime: const TimeOfDay(hour: 19, minute: 30)),
-        ),
-        isNot(EventDeduplicationKey.bySource(buildEvent())),
-      );
-    });
-
-    test('matches events without a start time by their source fields', () {
-      expect(
-        EventDeduplicationKey.bySource(buildEvent(startTime: null)),
-        EventDeduplicationKey.bySource(buildEvent(startTime: null)),
-      );
-    });
-
-    test('does not create a source key when master URL is missing', () {
-      expect(
-          EventDeduplicationKey.bySource(buildEvent(masterUrl: '')), isEmpty);
-    });
   });
 }

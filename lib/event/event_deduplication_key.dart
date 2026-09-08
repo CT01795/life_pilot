@@ -34,18 +34,6 @@ class EventDeduplicationKey {
     ]);
   }
 
-  static String bySource(EventItem event) {
-    final masterUrl = event.masterUrl?.trim() ?? '';
-    if (masterUrl.isEmpty) return '';
-    return _join([
-      masterUrl,
-      _formatDate(event),
-      _formatTime(event),
-      EventCityNormalizer.normalize(event.city),
-      _normalizeLocation(event.location),
-    ]);
-  }
-
   static String _normalizeName(String value) =>
       value.replaceAll(RegExp(r'[\s_]+'), '').toLowerCase();
 

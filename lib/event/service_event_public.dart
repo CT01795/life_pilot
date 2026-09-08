@@ -170,6 +170,11 @@ class ServiceEventPublic {
     DateTime checkedAt,
   ) async {
     final List<EventItem> newEvents = [];
+    final rejectionCounts = <String, int>{};
+
+    void recordRejection(String reason) {
+      rejectionCounts.update(reason, (count) => count + 1, ifAbsent: () => 1);
+    }
 
     for (final e in events) {
       final rejectionReason = EventImportValidator.rejectionReason(
@@ -177,6 +182,7 @@ class ServiceEventPublic {
         checkedAt: checkedAt,
       );
       if (rejectionReason != null) {
+        recordRejection(rejectionReason);
         logger.w(
           'Skipped invalid imported event: $rejectionReason (${e.name})',
         );
@@ -187,20 +193,23 @@ class ServiceEventPublic {
       final tmpName = EventDeduplicationKey.byName(e);
       final tmpNameIgnoringTime = EventDeduplicationKey.byNameIgnoringTime(e);
       final tmpId = EventDeduplicationKey.byId(e);
-      final tmpSource = EventDeduplicationKey.bySource(e);
 
-      if ((e.startTime == null &&
-              dbNameDateSet.contains(tmpNameIgnoringTime)) ||
-          dbNameDateSet.contains(tmpName) ||
-          dbNameDateSet.contains(tmpId) ||
-          (tmpSource.isNotEmpty && dbNameDateSet.contains(tmpSource))) {
+      final duplicateReason =
+          e.startTime == null && dbNameDateSet.contains(tmpNameIgnoringTime)
+              ? 'duplicate_name_without_time'
+              : dbNameDateSet.contains(tmpName)
+                  ? 'duplicate_name'
+                  : dbNameDateSet.contains(tmpId)
+                      ? 'duplicate_id'
+                      : null;
+      if (duplicateReason != null) {
+        recordRejection(duplicateReason);
         continue;
       }
 
       dbNameDateSet.add(tmpName);
       dbNameDateSet.add(tmpNameIgnoringTime);
       dbNameDateSet.add(tmpId);
-      if (tmpSource.isNotEmpty) dbNameDateSet.add(tmpSource);
 
       // ✅ await 放這裡
       e.source = url;
@@ -263,7 +272,7 @@ class ServiceEventPublic {
     _refreshCandidateRows += newEvents.length;
     logger.i(
       'Public event source completed: $url; fetched=${events.length}; '
-      'candidates=${newEvents.length}',
+      'candidates=${newEvents.length}; rejected=$rejectionCounts',
     );
     return dbNameDateSet;
   }
@@ -622,10 +631,6 @@ class ServiceEventPublic {
         .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
         .toSet());
-    dbNameDateSet.addAll(historyList
-        .map(EventDeduplicationKey.bySource)
-        .where((source) => source.isNotEmpty)
-        .toSet());
     dbNameDateSet.addAll(deletedList
         .map(EventDeduplicationKey.byName)
         .where((name) => name.isNotEmpty)
@@ -637,10 +642,6 @@ class ServiceEventPublic {
     dbNameDateSet.addAll(deletedList
         .map(EventDeduplicationKey.byId)
         .where((id) => id.isNotEmpty)
-        .toSet());
-    dbNameDateSet.addAll(deletedList
-        .map(EventDeduplicationKey.bySource)
-        .where((source) => source.isNotEmpty)
         .toSet());
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
@@ -749,25 +750,6 @@ class ServiceEventPublic {
       }
     }
 
-    //==================================== 取得文化部活動 ====================================
-    final types = ["B2", "I7", "I8"];
-    final formatToday = DateFormat("yyyy-MM-dd").format(today);
-    for (String tmpType in types) {
-      String moclUrl =
-          "https://event.moc.gov.tw/sp.asp?xdurl=ccEvent2016/eventSearchList.asp&ev_char1=$tmpType&ev_start=$formatToday&action=query&ctNode=676&mp=1&pageSize=100";
-      if (await checkEventsUrl(moclUrl, today)) {
-        try {
-          List<EventItem> moclUrlList =
-              await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];
-
-          dbNameDateSet = await _insertIfNotExists(
-              moclUrlList, dbNameDateSet, moclUrl, today);
-        } catch (ex) {
-          _recordSourceFailure(moclUrl, ex);
-        }
-      }
-    }
-
     //==================================== 取得交通部觀光署-觀光資訊網活動 ====================================
     bool isBreakTime = false;
     int pageIndex = 1;
@@ -824,6 +806,25 @@ class ServiceEventPublic {
             taipeiOpenDataList, dbNameDateSet, taipeiOpenDataUrl, today);
       } catch (ex) {
         _recordSourceFailure(taipeiOpenDataUrl, ex);
+      }
+    }
+
+    //==================================== 取得文化部活動 ====================================
+    final types = ["B2", "I7", "I8"];
+    final formatToday = DateFormat("yyyy-MM-dd").format(today);
+    for (String tmpType in types) {
+      String moclUrl =
+          "https://event.moc.gov.tw/sp.asp?xdurl=ccEvent2016/eventSearchList.asp&ev_char1=$tmpType&ev_start=$formatToday&action=query&ctNode=676&mp=1&pageSize=100";
+      if (await checkEventsUrl(moclUrl, today)) {
+        try {
+          List<EventItem> moclUrlList =
+              await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];
+
+          dbNameDateSet = await _insertIfNotExists(
+              moclUrlList, dbNameDateSet, moclUrl, today);
+        } catch (ex) {
+          _recordSourceFailure(moclUrl, ex);
+        }
       }
     }
   }
@@ -1566,7 +1567,17 @@ class ServiceEventPublic {
     if (res.statusCode != 200) {
       return [];
     }
-    final List<dynamic> data = jsonDecode(res.body); //res.body
+    final responseBody = res.body.trim();
+    if (responseBody.isEmpty) {
+      logger.w('Cloud Culture returned an empty response: $url');
+      return [];
+    }
+    final decoded = jsonDecode(responseBody);
+    if (decoded is! List) {
+      logger.w('Cloud Culture returned a non-list response: $url');
+      return [];
+    }
+    final List<dynamic> data = decoded;
     Set<String> tmpSet = {};
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
