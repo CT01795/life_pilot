@@ -22,6 +22,7 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
+import 'package:life_pilot/utils/service/network_availability.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -158,7 +159,7 @@ class ControllerCalendar extends SafeChangeNotifier {
     }
 
     // ✅ STOP UI card 不再觸發 weather
-    _warmUpWeather(result);
+    unawaited(_warmUpWeather(result));
 
     // ❗只允許最新請求寫入 model
     if (_reloadTokensByMonth[monthKey] != myToken) {
@@ -178,6 +179,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   }
 
   Future<void> _warmUpWeather(List<EventItem> events) async {
+    if (!await hasNetworkConnection()) return;
     final context = app_navigator.navigatorKey.currentContext;
     if (context == null) return;
 

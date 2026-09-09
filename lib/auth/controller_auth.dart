@@ -97,8 +97,7 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
     if (!_isLoggedIn || _isAnonymous) return;
     try {
-      _subscription = _preferredStorage == DataStorageLocation.local &&
-              _subscription.usage.isNotEmpty
+      _subscription = _preferredStorage == DataStorageLocation.local
           ? await _withLocalUsage(_subscription)
           : await _loadSubscriptionUsage();
       if (notify) notifyListeners();

@@ -122,6 +122,7 @@ class ServiceGame {
   static const _grammarQuestionTable = 'game_grammar';
   static const _sentenceQuestionTable = 'game_sentence';
   static const _translationQuestionTable = 'game_translation';
+  static const localGameListCache = 'local_game_list_cache';
 
   String get _ownerEmail =>
       supabase.auth.currentUser?.email?.toLowerCase() ??
@@ -216,6 +217,14 @@ class ServiceGame {
   }
 
   Future<List<ModelGameItem>> fetchGames() async {
+    if (await _storesLocally) {
+      final cached = await LocalDataStore.instance.list(
+        owner: _ownerEmail,
+        resource: localGameListCache,
+      );
+      if (cached.isNotEmpty) return _mapAndSortGames(cached);
+    }
+
     final data = await supabase
         .from(TableNames.gameList)
         .select()
@@ -224,15 +233,38 @@ class ServiceGame {
         .order('level', ascending: true);
 
     // 轉成 GameItem
-    return (data as List<dynamic>).map((e) {
-      final map = e as Map<String, dynamic>;
-      return ModelGameItem(
-        id: map[Fields.id] as String,
-        gameType: map['game_type'] as String,
-        gameName: map['game_name'] as String,
-        level: int.tryParse(map['level']?.toString() ?? '') ?? 1,
+    final rows = (data as List<dynamic>)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
+    await cacheGameList(rows);
+    return _mapAndSortGames(rows);
+  }
+
+  Future<void> cacheGameList(Iterable<Map<String, dynamic>> rows) async {
+    await Future.wait(rows.map((row) {
+      final id = row[Fields.id]?.toString() ?? '';
+      if (id.isEmpty) return Future<void>.value();
+      return LocalDataStore.instance.put(
+        owner: _ownerEmail,
+        resource: localGameListCache,
+        id: id,
+        data: Map<String, Object?>.from(row),
       );
-    }).toList();
+    }));
+  }
+
+  List<ModelGameItem> _mapAndSortGames(
+    Iterable<Map<String, dynamic>> rows,
+  ) {
+    final games = rows.map(ModelGameItem.fromMap).toList();
+    games.sort((a, b) {
+      final typeOrder = a.gameType.compareTo(b.gameType);
+      if (typeOrder != 0) return typeOrder;
+      final nameOrder = a.gameName.compareTo(b.gameName);
+      if (nameOrder != 0) return nameOrder;
+      return a.level.compareTo(b.level);
+    });
+    return games;
   }
 
   // 查詢目前使用者的分數紀錄
@@ -492,13 +524,13 @@ class ServiceGame {
     required List<Map<String, dynamic>> choices,
   }) async {
     try {
-      if (await LocalDataStore.instance.contains(
-        owner: _ownerEmail,
-        resource: TableNames.gameSocialScenarios,
-        id: id,
-      )) {
+      if (await _storesLocally) {
         final rows = await _localQuestions(TableNames.gameSocialScenarios);
-        final row = rows.firstWhere((item) => item[Fields.id] == id);
+        final row =
+            rows.where((item) => item[Fields.id]?.toString() == id).firstOrNull;
+        if (row == null) {
+          throw StateError('Local social question not found.');
+        }
         final duplicate = rows.any((item) =>
             item[Fields.id]?.toString() != id &&
             item['category']?.toString().trim().toLowerCase() ==
@@ -652,13 +684,13 @@ class ServiceGame {
     required String id,
     required bool isActive,
   }) async {
-    if (await LocalDataStore.instance.contains(
-      owner: _ownerEmail,
-      resource: TableNames.gameSocialScenarios,
-      id: id,
-    )) {
+    if (await _storesLocally) {
       final rows = await _localQuestions(TableNames.gameSocialScenarios);
-      final row = rows.firstWhere((item) => item[Fields.id] == id);
+      final row =
+          rows.where((item) => item[Fields.id]?.toString() == id).firstOrNull;
+      if (row == null) {
+        throw StateError('Local social question not found.');
+      }
       await LocalDataStore.instance.put(
         owner: _ownerEmail,
         resource: TableNames.gameSocialScenarios,
@@ -675,11 +707,15 @@ class ServiceGame {
   }
 
   Future<void> deleteMySocialQuestion(String id) async {
-    if (await LocalDataStore.instance.contains(
-      owner: _ownerEmail,
-      resource: TableNames.gameSocialScenarios,
-      id: id,
-    )) {
+    if (await _storesLocally) {
+      final exists = await LocalDataStore.instance.contains(
+        owner: _ownerEmail,
+        resource: TableNames.gameSocialScenarios,
+        id: id,
+      );
+      if (!exists) {
+        throw StateError('Local social question not found.');
+      }
       await LocalDataStore.instance.delete(
         owner: _ownerEmail,
         resource: TableNames.gameSocialScenarios,
@@ -972,6 +1008,17 @@ class ServiceGame {
     if (supabase.auth.currentUser == null) {
       throw StateError('User must be signed in');
     }
+    if (await _storesLocally) {
+      final groups = (await _localQuestions(_questionTableForGame(gameName)))
+          .map((row) => row['group']?.toString().trim() ?? '')
+          .where(
+            (group) => group.isNotEmpty && _groupMatchesGame(gameName, group),
+          )
+          .toSet()
+          .toList()
+        ..sort();
+      return groups;
+    }
     final rows = await supabase.rpc(
       'get_question_bank_groups',
       params: {
@@ -995,6 +1042,7 @@ class ServiceGame {
     required String gameName,
     required String group,
   }) async {
+    if (await _storesLocally) return null;
     final randomKey = Random.secure().nextDouble();
     var rows = await supabase
         .from(_questionTableForGame(gameName))
@@ -1031,11 +1079,15 @@ class ServiceGame {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
     final tableName = _questionTableForGame(gameName);
-    if (await LocalDataStore.instance.contains(
-      owner: _ownerEmail,
-      resource: tableName,
-      id: questionId,
-    )) {
+    if (await _storesLocally) {
+      final exists = await LocalDataStore.instance.contains(
+        owner: _ownerEmail,
+        resource: tableName,
+        id: questionId,
+      );
+      if (!exists) {
+        throw StateError('Local question not found.');
+      }
       await LocalDataStore.instance.delete(
         owner: _ownerEmail,
         resource: tableName,
@@ -1070,13 +1122,14 @@ class ServiceGame {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
     final tableName = _questionTableForGame(gameName);
-    if (await LocalDataStore.instance.contains(
-      owner: _ownerEmail,
-      resource: tableName,
-      id: questionId,
-    )) {
+    if (await _storesLocally) {
       final rows = await _localQuestions(tableName);
-      final row = rows.firstWhere((item) => item[Fields.id] == questionId);
+      final row = rows
+          .where((item) => item[Fields.id]?.toString() == questionId)
+          .firstOrNull;
+      if (row == null) {
+        throw StateError('Local question not found.');
+      }
       await LocalDataStore.instance.put(
         owner: _ownerEmail,
         resource: tableName,
@@ -1172,13 +1225,13 @@ class ServiceGame {
     if (userId == null) throw StateError('User must be signed in');
 
     try {
-      if (await LocalDataStore.instance.contains(
-        owner: _ownerEmail,
-        resource: tableName,
-        id: id,
-      )) {
+      if (await _storesLocally) {
         final rows = await _localQuestions(tableName);
-        final row = rows.firstWhere((item) => item[Fields.id] == id);
+        final row =
+            rows.where((item) => item[Fields.id]?.toString() == id).firstOrNull;
+        if (row == null) {
+          throw StateError('Local question not found.');
+        }
         if (await _hasLocalDuplicate(
           tableName: tableName,
           question: question,
@@ -1611,6 +1664,7 @@ class ServiceGame {
   }
 
   Future<Set<String>> getSynonyms(String question) async {
+    if (await _storesLocally) return const <String>{};
     final response = await supabase
         .from(TableNames.gameTranslationSynonyms)
         .select('answer')

@@ -1,4 +1,5 @@
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
 
 class CalendarShareableEvent {
@@ -103,18 +104,22 @@ class CalendarSharingState {
 }
 
 class ServiceCalendarSharing {
+  Future<String> _requireCloudMode() async {
+    final email = supabase.auth.currentUser?.email?.trim().toLowerCase();
+    if (email == null || email.isEmpty) {
+      throw StateError('User must be signed in.');
+    }
+    final storage = await LocalDataStore.instance.preferredLocation(email);
+    if (storage == DataStorageLocation.local) {
+      throw StateError('Calendar sharing is unavailable in local mode.');
+    }
+    return email;
+  }
+
   Future<CalendarSharingState> load({
     required Iterable<EventItem> visibleEvents,
   }) async {
-    final currentEmail = supabase.auth.currentUser?.email?.toLowerCase();
-    if (currentEmail == null || currentEmail.isEmpty) {
-      return CalendarSharingState(
-        sent: [],
-        received: [],
-        shareableEvents: [],
-        sharedEvents: [],
-      );
-    }
+    final currentEmail = await _requireCloudMode();
 
     final response = await supabase
         .from('calendar_share_invitations')
@@ -166,6 +171,7 @@ class ServiceCalendarSharing {
     Iterable<String> emails,
     Iterable<String> eventIds,
   ) async {
+    await _requireCloudMode();
     for (final email in emails) {
       await supabase.rpc(
         'invite_calendar_viewer',
@@ -181,6 +187,7 @@ class ServiceCalendarSharing {
     required String invitationId,
     required bool accept,
   }) async {
+    await _requireCloudMode();
     await supabase.rpc(
       'respond_calendar_invitation',
       params: {
@@ -191,6 +198,7 @@ class ServiceCalendarSharing {
   }
 
   Future<void> revoke(String invitationId) async {
+    await _requireCloudMode();
     await supabase.rpc(
       'revoke_calendar_invitation',
       params: {'p_invitation_id': invitationId},
@@ -201,6 +209,7 @@ class ServiceCalendarSharing {
     required String invitationId,
     required String eventId,
   }) async {
+    await _requireCloudMode();
     await supabase.rpc(
       'remove_calendar_shared_event',
       params: {

@@ -369,11 +369,21 @@ class ServiceEvent {
       required String tableName}) async {
     try {
       final data = event.toJson();
-      if (await LocalDataStore.instance.contains(
-        owner: currentAccount,
-        resource: tableName,
-        id: event.id,
-      )) {
+      final isPersonalLocalResource = tableName == TableNames.calendarEvents ||
+          tableName == TableNames.memoryTrace;
+      final storageLocation = isPersonalLocalResource
+          ? await LocalDataStore.instance.preferredLocation(currentAccount)
+          : DataStorageLocation.cloud;
+      final existsLocally = isPersonalLocalResource &&
+          await LocalDataStore.instance.contains(
+            owner: currentAccount,
+            resource: tableName,
+            id: event.id,
+          );
+      if (storageLocation == DataStorageLocation.local) {
+        if (!existsLocally) {
+          throw StateError('Local event not found.');
+        }
         await LocalDataStore.instance.delete(
           owner: currentAccount,
           resource: tableName,

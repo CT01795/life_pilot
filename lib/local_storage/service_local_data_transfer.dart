@@ -1,4 +1,5 @@
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 
@@ -39,6 +40,10 @@ class ServiceLocalDataTransfer {
     final staged = <Map<String, Object?>>[];
     var dashboardSettingSaved = false;
     try {
+      final gameList = List<Map<String, dynamic>>.from(
+        await supabase.from(TableNames.gameList).select(),
+      );
+      await ServiceGame().cacheGameList(gameList);
       final dashboardSetting = await supabase
           .from(TableNames.dashboardSetting)
           .select()
