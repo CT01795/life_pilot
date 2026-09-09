@@ -239,41 +239,63 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> checkLoginStatus() async {
     _update(() => _isLoading = true, notify: false);
 
-    final user = supabase.auth.currentUser;
-    final oldAccount = _currentAccount; // 👈 比對用
+    try {
+      final user = supabase.auth.currentUser;
+      final oldAccount = _currentAccount; // 👈 比對用
 
-    // 有時在剛登入／註冊完畢會延遲更新；
-    _update(() {
-      _isLoggedIn = user != null;
-      _isAnonymous = user?.isAnonymous ?? false;
-      _currentAccount = _isAnonymous ? AuthConstants.guest : user?.email;
-      if (_currentPage != AuthPage.resetPassword) {
-        _currentPage = _isLoggedIn ? AuthPage.pageMain : AuthPage.login;
+      // 有時在剛登入／註冊完畢會延遲更新；
+      _update(() {
+        _isLoggedIn = user != null;
+        _isAnonymous = user?.isAnonymous ?? false;
+        _currentAccount = _isAnonymous ? AuthConstants.guest : user?.email;
+        if (_currentPage != AuthPage.resetPassword) {
+          _currentPage = _isLoggedIn ? AuthPage.pageMain : AuthPage.login;
+        }
+      }, notify: false);
+
+      if (_isLoggedIn && !_isAnonymous) {
+        final storedLocation =
+            await LocalDataStore.instance.preferredLocation(_currentAccount!);
+        _hasStorageChoice = storedLocation != null;
+        _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
       }
-    }, notify: false);
 
-    if (_isLoggedIn && !_isAnonymous) {
-      final storedLocation =
-          await LocalDataStore.instance.preferredLocation(_currentAccount!);
-      _hasStorageChoice = storedLocation != null;
-      _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
+      // 🧹 若帳號不同，清空並重新載入日曆資料
+      if (!_isLoggedIn) {
+        controllerCalendar?.clearAll();
+        modelDashboard?.switchAccount(null);
+      } else if (_currentAccount != oldAccount) {
+        controllerCalendar?.clearAll();
+        modelDashboard?.switchAccount(_currentAccount);
+        if (_preferredStorage == DataStorageLocation.cloud) {
+          await controllerCalendar?.syncCompletedEventReminders();
+        }
+        unawaited(_loadCalendarAfterLogin());
+      }
+
+      if (_isLoggedIn && !_isAnonymous) {
+        unawaited(_refreshSubscriptionAfterStartup());
+      }
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to restore login state',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _update(() => _isLoading = false);
     }
+  }
 
-    // 🧹 若帳號不同，清空並重新載入日曆資料
-    if (!_isLoggedIn) {
-      controllerCalendar?.clearAll();
-      modelDashboard?.switchAccount(null);
-    } else if (_currentAccount != oldAccount) {
-      controllerCalendar?.clearAll();
-      modelDashboard?.switchAccount(_currentAccount);
+  Future<void> _loadCalendarAfterLogin() async {
+    try {
       await controllerCalendar?.loadCalendarEvents(month: DateTime.now());
-      await controllerCalendar?.syncCompletedEventReminders();
-    }
-
-    _update(() => _isLoading = false);
-
-    if (_isLoggedIn && !_isAnonymous) {
-      unawaited(_refreshSubscriptionAfterStartup());
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to load calendar after restoring login state',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

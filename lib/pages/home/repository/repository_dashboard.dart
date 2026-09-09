@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/utils/service/network_availability.dart';
 
 class DashboardRepository {
   String? get _localOwner => supabase.auth.currentUser?.email?.toLowerCase();
@@ -17,6 +18,12 @@ class DashboardRepository {
     return owner != null &&
         await LocalDataStore.instance.preferredLocation(owner) ==
             DataStorageLocation.local;
+  }
+
+  Future<void> _requireNetworkForLocalCloudContent() async {
+    if (await _storesLocally && !await hasNetworkConnection()) {
+      throw StateError('Network is unavailable for cloud content.');
+    }
   }
 
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
@@ -84,6 +91,23 @@ class DashboardRepository {
     String eventId,
     String account,
   ) async {
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: _localOwner ?? account.toLowerCase(),
+        resource: TableNames.calendarEvents,
+      );
+      final filtered =
+          rows.where((row) => row[Fields.id]?.toString() == eventId).toList()
+            ..sort((a, b) {
+              final dateComparison = (a['start_date']?.toString() ?? '')
+                  .compareTo(b['start_date']?.toString() ?? '');
+              if (dateComparison != 0) return dateComparison;
+              return (a['start_time']?.toString() ?? '')
+                  .compareTo(b['start_time']?.toString() ?? '');
+            });
+      return filtered.map(CalendarEvent.fromJson).toList();
+    }
+
     final result = await supabase
         .from(TableNames.calendarEvents)
         .select()
@@ -181,17 +205,8 @@ class DashboardRepository {
   }
 
   Future<DashboardSetting> _recoverLocalDashboardSetting(String account) async {
-    Map<String, dynamic>? cloudSetting;
-    try {
-      cloudSetting = await supabase
-          .from(TableNames.dashboardSetting)
-          .select()
-          .eq(Fields.account, account)
-          .maybeSingle();
-    } catch (_) {
-      // The local dashboard can still recover from the transferred accounts.
-    }
-
+    // Local mode must remain independent from Supabase. If the transferred
+    // dashboard setting is incomplete, rebuild it from local account rows.
     final accountingAccounts = await LocalDataStore.instance.list(
       owner: account,
       resource: TableNames.accountingAccount,
@@ -210,11 +225,9 @@ class DashboardRepository {
     final accounting = firstValid(accountingAccounts);
     final points = firstValid(pointAccounts);
     final setting = DashboardSetting(
-      recommendEventCity:
-          cloudSetting?['recommend_event_city']?.toString() ?? '台北',
-      recommendPlaceCity:
-          cloudSetting?['recommend_place_city']?.toString() ?? '台北',
-      language: cloudSetting?['language']?.toString() ?? 'zh',
+      recommendEventCity: '台北',
+      recommendPlaceCity: '台北',
+      language: 'zh',
       accountingAccountId: accounting?[Fields.id]?.toString(),
       accountingAccountName: accounting?[Fields.account]?.toString(),
       pointAccountId: points?[Fields.id]?.toString(),
@@ -252,6 +265,7 @@ class DashboardRepository {
   }
 
   Future<List<DashboardCity>> loadEventCities() async {
+    await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc('get_event_city_counts');
 
     return (result as List)
@@ -262,6 +276,7 @@ class DashboardRepository {
   }
 
   Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
+    await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc(
       'get_home_recommended_events',
       params: {
@@ -278,6 +293,7 @@ class DashboardRepository {
   }
 
   Future<List<DashboardCity>> loadPlaceCities() async {
+    await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc('get_place_city_counts');
 
     return (result as List)
@@ -288,6 +304,7 @@ class DashboardRepository {
   }
 
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
+    await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc(
       'get_home_recommended_places',
       params: {

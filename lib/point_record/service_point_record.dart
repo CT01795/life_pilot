@@ -288,10 +288,7 @@ class ServicePointRecord {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      if (await LocalDataStore.instance.contains(
-          owner: _localOwner ?? '',
-          resource: TableNames.pointRecordAccount,
-          id: accountId)) {
+      if (await _storesLocally) {
         final rows = await LocalDataStore.instance
             .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
         final row =
@@ -333,10 +330,7 @@ class ServicePointRecord {
   Future<Uint8List> uploadAccountImageBytesDirect(
       String accountId, Uint8List imageBytes) async {
     try {
-      if (await LocalDataStore.instance.contains(
-          owner: _localOwner ?? '',
-          resource: TableNames.pointRecordAccount,
-          id: accountId)) {
+      if (await _storesLocally) {
         final rows = await LocalDataStore.instance
             .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
         final row =
@@ -663,12 +657,10 @@ class ServicePointRecord {
   }) async {
     try {
       final owner = _localOwner;
-      if (owner != null &&
-          await LocalDataStore.instance.contains(
-            owner: owner,
-            resource: TableNames.pointRecordDetail,
-            id: detailId,
-          )) {
+      if (await _storesLocally) {
+        if (owner == null) {
+          throw StateError('Local point owner is unavailable.');
+        }
         final rows = await LocalDataStore.instance.list(
           owner: owner,
           resource: TableNames.pointRecordDetail,
@@ -709,12 +701,10 @@ class ServicePointRecord {
 
   Future<void> deletePointRecordDetail({required String detailId}) async {
     final owner = _localOwner;
-    if (owner != null &&
-        await LocalDataStore.instance.contains(
-          owner: owner,
-          resource: TableNames.pointRecordDetail,
-          id: detailId,
-        )) {
+    if (await _storesLocally) {
+      if (owner == null) {
+        throw StateError('Local point owner is unavailable.');
+      }
       await LocalDataStore.instance.delete(
         owner: owner,
         resource: TableNames.pointRecordDetail,

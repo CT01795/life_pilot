@@ -129,7 +129,10 @@ class ServiceAccounting {
                     : null,
                 balance: details
                     .where((d) =>
-                        d['account_id']?.toString() == e[Fields.id]?.toString())
+                        d['account_id']?.toString() ==
+                            e[Fields.id]?.toString() &&
+                        d['currency']?.toString() ==
+                            e['main_currency']?.toString())
                     .fold<int>(
                         0,
                         (sum, d) =>
@@ -306,10 +309,7 @@ class ServiceAccounting {
 
   Future<void> deleteAccount({required String accountId}) async {
     try {
-      if (await LocalDataStore.instance.contains(
-          owner: _localOwner ?? '',
-          resource: TableNames.accountingAccount,
-          id: accountId)) {
+      if (await _storesLocally) {
         final rows = await LocalDataStore.instance
             .list(owner: _localOwner!, resource: TableNames.accountingAccount);
         final row =
@@ -341,10 +341,7 @@ class ServiceAccounting {
     // 不管 Web / Mobile 都轉 base64
     // Mobile / Web 統一存 bytea (Uint8List)
     try {
-      if (await LocalDataStore.instance.contains(
-          owner: _localOwner ?? '',
-          resource: TableNames.accountingAccount,
-          id: accountId)) {
+      if (await _storesLocally) {
         final rows = await LocalDataStore.instance
             .list(owner: _localOwner!, resource: TableNames.accountingAccount);
         final row =
@@ -653,12 +650,10 @@ class ServiceAccounting {
   }) async {
     try {
       final owner = _localOwner;
-      if (owner != null &&
-          await LocalDataStore.instance.contains(
-            owner: owner,
-            resource: TableNames.accountingDetail,
-            id: detailId,
-          )) {
+      if (await _storesLocally) {
+        if (owner == null) {
+          throw StateError('Local accounting owner is unavailable.');
+        }
         final rows = await LocalDataStore.instance.list(
           owner: owner,
           resource: TableNames.accountingDetail,
@@ -704,6 +699,26 @@ class ServiceAccounting {
     required String category,
   }) async {
     try {
+      if (await _storesLocally) {
+        final rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+        );
+        final matching = rows
+            .where(
+              (row) =>
+                  row[Fields.isValid] == true &&
+                  row['category']?.toString() == category,
+            )
+            .toList()
+          ..sort(
+            (a, b) => (b[Fields.createdAt]?.toString() ?? '')
+                .compareTo(a[Fields.createdAt]?.toString() ?? ''),
+          );
+        return matching.isEmpty
+            ? 'TWD'
+            : matching.first['main_currency']?.toString() ?? 'TWD';
+      }
       final response = await supabase
           .from(TableNames.accountingAccount)
           .select('main_currency')
@@ -726,6 +741,47 @@ class ServiceAccounting {
     required String currency,
   }) async {
     try {
+      if (await _storesLocally) {
+        final owner = _localOwner!;
+        final rows = await LocalDataStore.instance.list(
+          owner: owner,
+          resource: TableNames.accountingAccount,
+        );
+        final account = rows
+            .where((row) => row[Fields.id]?.toString() == accountId)
+            .firstOrNull;
+        if (account == null) {
+          throw StateError('Local accounting account not found.');
+        }
+        final details = await LocalDataStore.instance.list(
+          owner: owner,
+          resource: TableNames.accountingDetail,
+        );
+        final balance = details
+            .where(
+              (row) =>
+                  row['account_id']?.toString() == accountId &&
+                  row['currency']?.toString() == currency,
+            )
+            .fold<int>(
+              0,
+              (sum, row) =>
+                  sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+            );
+        await LocalDataStore.instance.put(
+          owner: owner,
+          resource: TableNames.accountingAccount,
+          id: accountId,
+          data: {
+            ...account,
+            'main_currency': currency,
+            'balance': balance,
+            'exchange_rate': null,
+          },
+          syncState: LocalSyncState.modifiedLocally,
+        );
+        return;
+      }
       await supabase.rpc(
         'switch_main_currency',
         params: {
@@ -741,12 +797,10 @@ class ServiceAccounting {
 
   Future<void> deleteAccountingDetail({required String detailId}) async {
     final owner = _localOwner;
-    if (owner != null &&
-        await LocalDataStore.instance.contains(
-          owner: owner,
-          resource: TableNames.accountingDetail,
-          id: detailId,
-        )) {
+    if (await _storesLocally) {
+      if (owner == null) {
+        throw StateError('Local accounting owner is unavailable.');
+      }
       await LocalDataStore.instance.delete(
         owner: owner,
         resource: TableNames.accountingDetail,
