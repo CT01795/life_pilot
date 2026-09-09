@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/service/service_notification/service_notification_platform.dart';
+import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -31,7 +32,9 @@ class NotificationServiceWeb implements ServiceNotificationPlatform {
   @override
   Future<void> cancelEventReminders(
       {required String eventId,
-      required List<CalendarReminderOption> reminderOptions}) async {}
+      required List<CalendarReminderOption> reminderOptions}) async {
+    cancelWebReminders();
+  }
 
   @override
   Future<List<EventNotification>> getTodayEventNotifications(
@@ -44,12 +47,7 @@ class NotificationServiceWeb implements ServiceNotificationPlatform {
       String title = '\t\t\t\t\t\t\t\tReminder:';
       final body = events
           .map((e) =>
-              '${!DateTimeCompare.isSameDayFutureTime(e.startDate, e.startTime, now) ? 
-                (!((e.endDate != null && DateTimeCompare.isSameDayFutureTime(e.endDate, e.endTime, now)) 
-                  || (e.endDate == null && e.endTime != null && DateTimeCompare.isSameDayFutureTime(e.startDate, e.endTime, now))) ? 
-                  now.formatDateString(passYear: true, formatShow: true) 
-                  : '${e.endDate == null ? e.startDate!.formatDateString(passYear: true, formatShow: true) : e.endDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}') 
-                : '${e.startDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}'} ${e.name}')
+              '${!DateTimeCompare.isSameDayFutureTime(e.startDate, e.startTime, now) ? (!((e.endDate != null && DateTimeCompare.isSameDayFutureTime(e.endDate, e.endTime, now)) || (e.endDate == null && e.endTime != null && DateTimeCompare.isSameDayFutureTime(e.startDate, e.endTime, now))) ? now.formatDateString(passYear: true, formatShow: true) : '${e.endDate == null ? e.startDate!.formatDateString(passYear: true, formatShow: true) : e.endDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}') : '${e.startDate!.formatDateString(passYear: true, formatShow: true)} ${e.startTime!.formatTimeString()}'} ${e.name}')
           .join('\n');
       returnList
           .add(EventNotification(title: title, body: body, message: close));

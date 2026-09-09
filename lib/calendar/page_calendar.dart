@@ -39,6 +39,7 @@ class _PageCalendarState extends State<PageCalendar> {
     // ⚡ async load，不阻塞 build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await controller.init();
+      await controller.syncCompletedEventReminders();
       await controller.showTodayNotifications();
     });
   }

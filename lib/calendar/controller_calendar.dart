@@ -12,6 +12,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
@@ -38,6 +39,8 @@ class ControllerCalendar extends SafeChangeNotifier {
   late String _toTableName;
   String closeText;
   Locale? _lastLocale;
+  Timer? _webNotificationTimer;
+  Future<void>? _completedReminderSync;
 
   // ------------------------
   // 狀態
@@ -399,8 +402,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ✅ 刪除事件，並更新列表與通知 UI
   Future<void> deleteEvent(EventItem event) async {
     await Future.wait([
-      _controllerNotification.cancelEventReminders(
-          eventId: event.id, reminderOptions: event.reminderOptions), // 取消通知
+      _controllerNotification.cancelAllEventReminders(eventId: event.id),
       _serviceEvent.deleteEvent(
           currentAccount: auth!.currentAccount ?? '',
           event: event,
@@ -483,10 +485,50 @@ class ControllerCalendar extends SafeChangeNotifier {
   }) async {
     if (_tableName != TableNames.calendarEvents) return;
     if (oldEvent != null) {
-      await _controllerNotification.cancelEventReminders(
-          eventId: oldEvent.id, reminderOptions: oldEvent.reminderOptions);
+      await _controllerNotification.cancelAllEventReminders(
+        eventId: oldEvent.id,
+      );
     }
     await _controllerNotification.scheduleEventReminders(event: newEvent);
+  }
+
+  Future<void> syncCompletedEventReminders() async {
+    if (kIsWeb || _tableName != TableNames.calendarEvents) return;
+    final account = auth?.currentAccount?.trim();
+    if (account == null || account.isEmpty || auth!.isAnonymous) return;
+
+    final activeSync = _completedReminderSync;
+    if (activeSync != null) return activeSync;
+
+    final sync = () async {
+      try {
+        final completedIds = auth!.preferredStorage == DataStorageLocation.local
+            ? _modelCalendar.events
+                .where((event) => event.isCompleted)
+                .map((event) => event.id)
+                .toList(growable: false)
+            : await _serviceEvent.getCompletedCalendarEventIds(
+                account: account,
+              );
+        await Future.wait(
+          completedIds.map(
+            (eventId) => _controllerNotification.cancelAllEventReminders(
+              eventId: eventId,
+            ),
+          ),
+        );
+      } catch (error, stackTrace) {
+        logger.e(
+          'Sync completed calendar reminders failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      } finally {
+        _completedReminderSync = null;
+      }
+    }();
+    _completedReminderSync = sync;
+    return sync;
   }
 
   Future<void> showTodayNotifications() async {
@@ -503,13 +545,20 @@ class ControllerCalendar extends SafeChangeNotifier {
 
     if (kIsWeb) {
       final showEvent = todayEvents[0];
-      Timer(
+      final reminderRevision = webReminderRevision;
+      _webNotificationTimer?.cancel();
+      _webNotificationTimer = Timer(
         const Duration(seconds: 1),
-        () => showWebOverlay(
-          title: showEvent.title,
-          body: showEvent.body,
-          tooltip: showEvent.message ?? '',
-        ),
+        () {
+          if (notifierDisposed || reminderRevision != webReminderRevision) {
+            return;
+          }
+          showWebOverlay(
+            title: showEvent.title,
+            body: showEvent.body,
+            tooltip: showEvent.message ?? '',
+          );
+        },
       );
     } else {
       // 非阻塞顯示多個事件
@@ -524,6 +573,12 @@ class ControllerCalendar extends SafeChangeNotifier {
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _webNotificationTimer?.cancel();
+    super.dispose();
   }
 
   // ------------------------

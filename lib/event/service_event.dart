@@ -22,6 +22,24 @@ class ServiceEvent {
   bool get _isCurrentUserAdmin =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
 
+  Future<List<String>> getCompletedCalendarEventIds({
+    required String account,
+  }) async {
+    final normalizedAccount = account.trim().toLowerCase();
+    if (normalizedAccount.isEmpty) return const [];
+
+    final response = await supabase
+        .from(TableNames.calendarEvents)
+        .select(Fields.id)
+        .eq('is_completed', true);
+
+    return (response as List)
+        .map((row) => (row as Map<String, dynamic>)[Fields.id]?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+  }
+
   Future<MapCoordinateBackfillResult> backfillMapCoordinates({
     required String tableName,
     int offset = 0,
@@ -172,6 +190,7 @@ class ServiceEvent {
         e.endDate = e.endDate?.toLocal();
         return e;
       }).toList();
+
       return events;
     } catch (ex, st) {
       logger.e(ex, stackTrace: st);

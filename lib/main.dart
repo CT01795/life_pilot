@@ -3,6 +3,7 @@ import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/apps/app_view.dart';
 import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/app_initializer.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
@@ -31,9 +32,11 @@ import 'utils/service/export/service_export.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await AppInitializer.init();
+
   // 只呼叫一次 NotificationService 的初始化
   final notificationService = getNotificationService();
-  notificationService.initialize();
+  await notificationService.initialize();
 
   runApp(
     MultiProvider(

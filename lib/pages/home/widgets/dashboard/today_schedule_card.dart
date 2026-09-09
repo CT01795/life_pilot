@@ -13,6 +13,7 @@ import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loadin
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../utils/logger.dart';
@@ -113,6 +114,11 @@ class TodayScheduleCard extends StatelessWidget {
                                   .completeEvent(
                                     id: e.id,
                                     account: account!,
+                                  );
+                              await context
+                                  .read<ControllerNotification>()
+                                  .cancelAllEventReminders(
+                                    eventId: e.id,
                                   );
                             } catch (error, stackTrace) {
                               logger.e(

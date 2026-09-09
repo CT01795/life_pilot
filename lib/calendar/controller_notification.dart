@@ -7,7 +7,7 @@ import 'package:life_pilot/utils/service/service_notification/service_notificati
 class ControllerNotification {
   final ServiceNotificationPlatform _service;
   ServiceNotificationPlatform get service => _service;
-  
+
   ControllerNotification({required ServiceNotificationPlatform service})
       : _service = service;
 
@@ -16,6 +16,10 @@ class ControllerNotification {
   }
 
   Future<void> scheduleEventReminders({required EventItem event}) async {
+    if (event.isCompleted) {
+      await cancelAllEventReminders(eventId: event.id);
+      return;
+    }
     await scheduleMultipleReminders(events: [event]);
   }
 
@@ -23,8 +27,15 @@ class ControllerNotification {
   Future<void> scheduleMultipleReminders({
     required List<EventItem> events,
   }) async {
-    final futures =
-        events.map((e) => _service.scheduleEventReminders(event: e)).toList();
+    final futures = events.map((event) {
+      if (event.isCompleted) {
+        return _service.cancelEventReminders(
+          eventId: event.id,
+          reminderOptions: CalendarReminderOption.values,
+        );
+      }
+      return _service.scheduleEventReminders(event: event);
+    }).toList();
     await Future.wait(futures);
   }
 
@@ -34,6 +45,13 @@ class ControllerNotification {
       required List<CalendarReminderOption> reminderOptions}) async {
     await _service.cancelEventReminders(
         eventId: eventId, reminderOptions: reminderOptions);
+  }
+
+  Future<void> cancelAllEventReminders({required String eventId}) async {
+    await _service.cancelEventReminders(
+      eventId: eventId,
+      reminderOptions: CalendarReminderOption.values,
+    );
   }
 
   // 顯示今日事件通知，先在 Controller 過濾，提高效能

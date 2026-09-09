@@ -267,6 +267,7 @@ class ControllerAuth extends SafeChangeNotifier {
       controllerCalendar?.clearAll();
       modelDashboard?.switchAccount(_currentAccount);
       await controllerCalendar?.loadCalendarEvents(month: DateTime.now());
+      await controllerCalendar?.syncCompletedEventReminders();
     }
 
     _update(() => _isLoading = false);

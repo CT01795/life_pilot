@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/auth/service_auth.dart';
 import 'package:life_pilot/auth/page_auth_check.dart';
+import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
@@ -17,24 +20,40 @@ class AppView extends StatefulWidget {
   State<AppView> createState() => _AppViewState();
 }
 
-class _AppViewState extends State<AppView> {
+class _AppViewState extends State<AppView> with WidgetsBindingObserver {
   final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _deepLinkSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     app_navigator.AppNavigator.initErrorHandling();
     _initDeepLink();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _deepLinkSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || kIsWeb || !mounted) return;
+    context.read<ControllerCalendar>().syncCompletedEventReminders();
   }
 
   Future<void> _initDeepLink() async {
     if (kIsWeb) {
       _handleDeepLink(Uri.base);
-    } else {
-      final initialUri = await _appLinks.getInitialLink();
-      if (initialUri != null) _handleDeepLink(initialUri);
+      return;
     }
-    _appLinks.uriLinkStream.listen(_handleDeepLink);
+
+    final initialUri = await _appLinks.getInitialLink();
+    if (initialUri != null) _handleDeepLink(initialUri);
+    _deepLinkSubscription = _appLinks.uriLinkStream.listen(_handleDeepLink);
   }
 
   void _handleDeepLink(Uri uri) {
@@ -44,7 +63,16 @@ class _AppViewState extends State<AppView> {
     final fragmentQuery = fragment.contains('?')
         ? fragment.substring(fragment.indexOf('?') + 1)
         : fragment;
-    final fragmentParameters = Uri.splitQueryString(fragmentQuery);
+    Map<String, String> fragmentParameters = const {};
+    try {
+      fragmentParameters = Uri.splitQueryString(fragmentQuery);
+    } on FormatException catch (error, stackTrace) {
+      logger.e(
+        'Invalid password recovery URL fragment',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
     final isRecovery = uri.host == 'reset-password' ||
         uri.path.contains('reset-password') ||
         uri.queryParameters['type'] == 'recovery' ||

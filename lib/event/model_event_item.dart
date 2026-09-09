@@ -33,6 +33,7 @@ abstract class EventBase {
   String? get account;
   CalendarRepeatRule get repeatOptions;
   List<CalendarReminderOption> get reminderOptions;
+  bool get isCompleted;
   bool get isHoliday;
   bool get isTaiwanHoliday;
   bool get isApproved;
@@ -98,6 +99,8 @@ class EventItem implements EventBase {
   CalendarRepeatRule repeatOptions;
   @override
   List<CalendarReminderOption> reminderOptions;
+  @override
+  bool isCompleted;
   @override
   bool isHoliday;
   @override
@@ -167,6 +170,7 @@ class EventItem implements EventBase {
     this.account,
     this.repeatOptions = CalendarRepeatRule.once,
     this.reminderOptions = const [CalendarReminderOption.dayBefore8am],
+    this.isCompleted = false,
     this.isHoliday = false,
     this.isTaiwanHoliday = false,
     this.isApproved = false,
@@ -217,6 +221,7 @@ class EventItem implements EventBase {
       EventFields.reminderOptions: reminderOptions
           .map((e) => CalendarReminderMapper.toKey(reminderOption: e))
           .toList(),
+      'is_completed': isCompleted,
       EventFields.isHoliday: isHoliday,
       EventFields.isTaiwanHoliday: isTaiwanHoliday,
       EventFields.isApproved: isApproved,
@@ -266,6 +271,7 @@ class EventItem implements EventBase {
           CalendarRepeatRuleExtension.fromKey(json[EventFields.repeatOptions]),
       reminderOptions: EventItem.parseReminderOptions(
           jsonValue: json[EventFields.reminderOptions]),
+      isCompleted: json['is_completed'] == true,
       isHoliday: json[EventFields.isHoliday] == true,
       isTaiwanHoliday: json[EventFields.isTaiwanHoliday] == true,
       isApproved: json[EventFields.isApproved] == true,
@@ -317,6 +323,7 @@ class EventItem implements EventBase {
     String? newAccount,
     CalendarRepeatRule? newRepeatOptions,
     List<CalendarReminderOption>? newReminderOptions,
+    bool? newIsCompleted,
     bool? newIsHoliday,
     bool? newIsTaiwanHoliday,
     bool? newIsApproved,
@@ -361,6 +368,7 @@ class EventItem implements EventBase {
       account: newAccount ?? account,
       repeatOptions: newRepeatOptions ?? repeatOptions,
       reminderOptions: newReminderOptions ?? reminderOptions,
+      isCompleted: newIsCompleted ?? isCompleted,
       isHoliday: newIsHoliday ?? isHoliday,
       isTaiwanHoliday: newIsTaiwanHoliday ?? isTaiwanHoliday,
       isApproved: newIsApproved ?? isApproved,
