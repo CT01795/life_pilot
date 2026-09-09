@@ -791,7 +791,7 @@ class _PageGameListState extends State<PageGameList> {
                               AppNavigator.showErrorBar(
                                 availability.requiresThreeInGroup
                                     ? loc.threeQuestionsRequired
-                                    : loc.myQuestionBankEmpty,
+                                    : loc.questionBankInsufficient,
                               );
                               setState(() => _isOpeningGame = false);
                             }

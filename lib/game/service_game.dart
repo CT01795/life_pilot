@@ -885,8 +885,7 @@ class ServiceGame {
 
     return QuestionBankAvailability(
       questionCount: questionCount,
-      canPlay: groupCounts.isNotEmpty &&
-          groupCounts.values.every((count) => count >= 3),
+      canPlay: questionCount >= 3,
       requiresThreeInGroup: true,
     );
   }

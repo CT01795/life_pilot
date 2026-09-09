@@ -188,7 +188,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myQuestionBankEmpty => '이 레벨에서 사용할 수 있는 문제가 없습니다. 먼저 문제를 추가하세요.';
 
   @override
-  String get threeQuestionsRequired => '내 문제 은행으로 플레이하려면 만든 모든 그룹에 문제가 3개 이상 있어야 합니다.';
+  String get threeQuestionsRequired => '현재 레벨에서 사용할 수 있는 문제가 전체 문제 은행에 3개 이상 필요합니다.';
+
+  @override
+  String get questionBankInsufficient => '선택한 문제 은행에 이 레벨에서 사용할 문제가 부족합니다.';
 
   @override
   String get myQuestions => '내 문제';

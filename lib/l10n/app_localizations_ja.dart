@@ -188,7 +188,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get myQuestionBankEmpty => 'このレベルで使用できる問題がありません。先に問題を追加してください。';
 
   @override
-  String get threeQuestionsRequired => '自分の問題集で遊ぶには、作成した各グループに3問以上必要です。';
+  String get threeQuestionsRequired => 'このレベルで使用できる問題が、問題集全体で3問以上必要です。';
+
+  @override
+  String get questionBankInsufficient => '選択した問題集には、このレベルで使用できる問題が足りません。';
 
   @override
   String get myQuestions => '自分の問題';

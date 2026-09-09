@@ -188,7 +188,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get myQuestionBankEmpty => '你的題庫在這個等級尚無可用題目，請先新增題目。';
 
   @override
-  String get threeQuestionsRequired => '使用我的題庫前，每個已建立的分類都必須至少有 3 題。';
+  String get threeQuestionsRequired => '目前題庫在這個關卡的可用題目合計至少需要 3 題。';
+
+  @override
+  String get questionBankInsufficient => '目前題庫在這個關卡的可用題數不足。';
 
   @override
   String get myQuestions => '我的題目';

@@ -188,7 +188,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myQuestionBankEmpty => 'Your question bank has no questions available for this level. Add a question first.';
 
   @override
-  String get threeQuestionsRequired => 'Each group in your question bank needs at least 3 questions before you can play.';
+  String get threeQuestionsRequired => 'This question bank needs at least 3 available questions for the current level.';
+
+  @override
+  String get questionBankInsufficient => 'The selected question bank does not have enough questions for this level.';
 
   @override
   String get myQuestions => 'My questions';

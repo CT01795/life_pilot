@@ -456,8 +456,14 @@ abstract class AppLocalizations {
   /// Label for threeQuestionsRequired
   ///
   /// In en, this message translates to:
-  /// **'Each group in your question bank needs at least 3 questions before you can play.'**
+  /// **'This question bank needs at least 3 available questions for the current level.'**
   String get threeQuestionsRequired;
+
+  /// Shown when the selected shared question bank cannot start the game
+  ///
+  /// In en, this message translates to:
+  /// **'The selected question bank does not have enough questions for this level.'**
+  String get questionBankInsufficient;
 
   /// Label for myQuestions
   ///
