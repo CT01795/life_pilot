@@ -19,9 +19,10 @@ class ServiceSubscription {
               Map<String, dynamic>.from(row as Map),
             ))
         .toList();
-    final plan = items.isEmpty
-        ? 'free'
-        : (rows.first as Map)['plan']?.toString() ?? 'free';
+    final plan = status['plan']?.toString() ??
+        (items.isEmpty
+            ? 'free'
+            : (rows.first as Map)['plan']?.toString() ?? 'free');
     return SubscriptionSnapshot(
       plan: plan,
       usage: {for (final item in items) item.resource: item},

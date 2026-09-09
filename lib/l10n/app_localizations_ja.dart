@@ -1221,6 +1221,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataMoveToLocalFailed => '一部のデータを移動できなかったため、クラウドの元データを保持しました。';
 
   @override
+  String get dataStorageLocalPlanRequired => 'デバイス Plus の支払いと管理者による有効化の後に切り替えてください。';
+
+  @override
   String get dataUploadToCloud => 'ローカルデータをクラウドへアップロード（管理者）';
 
   @override

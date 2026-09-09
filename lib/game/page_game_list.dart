@@ -61,7 +61,7 @@ class _PageGameListState extends State<PageGameList> {
   bool _hasMoreProgress = false;
   DateTime? _progressStartDate;
   late final bool _isQuestionBankAdmin;
-  late final bool _isLocalStorage;
+  bool _isLocalStorage = false;
 
   String get _effectiveQuestionBank => _isLocalStorage
       ? 'my'
@@ -73,8 +73,6 @@ class _PageGameListState extends State<PageGameList> {
   void initState() {
     super.initState();
     final auth = context.read<ControllerAuth>();
-    _isLocalStorage = auth.storesNewDataLocally;
-    if (_isLocalStorage) selectedQuestionBank = 'mine';
     final currentAccount = auth.currentAccount ?? AuthConstants.guest;
     _isQuestionBankAdmin = currentAccount.trim().toLowerCase() ==
         AuthConstants.systemEventOwnerEmail.toLowerCase();
@@ -84,6 +82,15 @@ class _PageGameListState extends State<PageGameList> {
     );
 
     _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final storesLocally = context.watch<ControllerAuth>().storesNewDataLocally;
+    if (_isLocalStorage == storesLocally) return;
+    _isLocalStorage = storesLocally;
+    if (storesLocally) selectedQuestionBank = 'mine';
   }
 
   Future<void> _loadData() async {
@@ -771,13 +778,13 @@ class _PageGameListState extends State<PageGameList> {
                         game.gameType,
                         game.gameName,
                       );
-                      if (_effectiveQuestionBank == 'mine' &&
-                          _supportsQuestionBank) {
+                      if (_supportsQuestionBank) {
                         try {
                           final availability =
-                              await _serviceGame.getMyQuestionBankAvailability(
+                              await _serviceGame.getQuestionBankAvailability(
                             gameName: game.gameName,
                             level: game.level,
+                            questionBank: _effectiveQuestionBank,
                           );
                           if (!availability.canPlay) {
                             if (mounted) {

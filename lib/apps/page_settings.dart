@@ -124,10 +124,19 @@ class _PageSettingsState extends State<PageSettings> {
         Gaps.h16,
         DataStorageChoice(
           value: auth.preferredStorage,
+          localEnabled: auth.preferredStorage == DataStorageLocation.local ||
+              auth.canUseLocalStorage,
           onChanged: auth.isAnonymous
               ? null
               : (value) {
                   if (value == auth.preferredStorage) return;
+                  if (value == DataStorageLocation.local &&
+                      !auth.canUseLocalStorage) {
+                    AppNavigator.showErrorBar(
+                      loc.dataStorageLocalPlanRequired,
+                    );
+                    return;
+                  }
                   _move(upload: value == DataStorageLocation.cloud);
                 },
         ),

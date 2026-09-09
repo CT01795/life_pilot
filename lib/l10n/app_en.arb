@@ -810,6 +810,8 @@
   "@dataMoveToLocalSuccess": {"description": "Label for dataMoveToLocalSuccess"},
   "dataMoveToLocalFailed": "Some data could not be moved. Cloud originals were retained.",
   "@dataMoveToLocalFailed": {"description": "Label for dataMoveToLocalFailed"},
+  "dataStorageLocalPlanRequired": "Complete Device Plus payment and wait for admin activation before switching.",
+  "@dataStorageLocalPlanRequired": {"description": "Shown when local storage is not included in the user's plan"},
   "dataUploadToCloud": "Upload local data to cloud (Admin)",
   "@dataUploadToCloud": {"description": "Label for dataUploadToCloud"},
   "dataUploadToCloudAction": "Move local data to cloud",

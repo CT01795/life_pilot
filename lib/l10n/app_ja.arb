@@ -810,6 +810,8 @@
   "@dataMoveToLocalSuccess": {"description": "Label for dataMoveToLocalSuccess"},
   "dataMoveToLocalFailed": "一部のデータを移動できなかったため、クラウドの元データを保持しました。",
   "@dataMoveToLocalFailed": {"description": "Label for dataMoveToLocalFailed"},
+  "dataStorageLocalPlanRequired": "デバイス Plus の支払いと管理者による有効化の後に切り替えてください。",
+  "@dataStorageLocalPlanRequired": {"description": "Shown when local storage is not included in the user's plan"},
   "dataUploadToCloud": "ローカルデータをクラウドへアップロード（管理者）",
   "@dataUploadToCloud": {"description": "Label for dataUploadToCloud"},
   "dataUploadToCloudAction": "ローカルデータをクラウドへ移動",

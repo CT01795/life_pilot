@@ -1221,6 +1221,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataMoveToLocalFailed => 'Some data could not be moved. Cloud originals were retained.';
 
   @override
+  String get dataStorageLocalPlanRequired => 'Complete Device Plus payment and wait for admin activation before switching.';
+
+  @override
   String get dataUploadToCloud => 'Upload local data to cloud (Admin)';
 
   @override

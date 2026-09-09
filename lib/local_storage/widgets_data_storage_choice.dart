@@ -5,10 +5,14 @@ import 'package:life_pilot/utils/const.dart';
 
 class DataStorageChoice extends StatelessWidget {
   const DataStorageChoice(
-      {required this.value, required this.onChanged, super.key});
+      {required this.value,
+      required this.onChanged,
+      this.localEnabled = true,
+      super.key});
 
   final DataStorageLocation value;
   final ValueChanged<DataStorageLocation>? onChanged;
+  final bool localEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +38,9 @@ class DataStorageChoice extends StatelessWidget {
             _StorageOption(
               icon: Icons.devices_outlined,
               label: loc.dataStorageLocal,
+              subtitle: localEnabled ? null : loc.dataStorageLocalPlanRequired,
               selected: value == DataStorageLocation.local,
-              enabled: onChanged != null,
+              enabled: onChanged != null && localEnabled,
               onTap: () => onChanged?.call(DataStorageLocation.local),
             ),
             Gaps.h8,
@@ -69,6 +74,7 @@ class _StorageOption extends StatelessWidget {
     required this.selected,
     required this.enabled,
     required this.onTap,
+    this.subtitle,
   });
 
   final IconData icon;
@@ -76,6 +82,7 @@ class _StorageOption extends StatelessWidget {
   final bool selected;
   final bool enabled;
   final VoidCallback onTap;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +101,7 @@ class _StorageOption extends StatelessWidget {
         onTap: enabled ? onTap : null,
         leading: Icon(icon),
         title: Text(label, maxLines: 2),
+        subtitle: subtitle == null ? null : Text(subtitle!),
         trailing: selected
             ? Icon(Icons.check_circle, color: colors.secondary)
             : const Icon(Icons.circle_outlined),

@@ -1221,6 +1221,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dataMoveToLocalFailed => '일부 데이터를 이동하지 못해 클라우드 원본을 유지했습니다.';
 
   @override
+  String get dataStorageLocalPlanRequired => '기기 Plus 결제를 완료하고 관리자가 활성화한 뒤 전환해 주세요.';
+
+  @override
   String get dataUploadToCloud => '로컬 데이터를 클라우드에 업로드(관리자)';
 
   @override

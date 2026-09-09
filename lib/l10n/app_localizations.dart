@@ -2487,6 +2487,12 @@ abstract class AppLocalizations {
   /// **'Some data could not be moved. Cloud originals were retained.'**
   String get dataMoveToLocalFailed;
 
+  /// Shown when local storage is not included in the user's plan
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Device Plus payment and wait for admin activation before switching.'**
+  String get dataStorageLocalPlanRequired;
+
   /// Label for dataUploadToCloud
   ///
   /// In en, this message translates to:

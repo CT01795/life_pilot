@@ -790,13 +790,17 @@ class ServiceGame {
     );
   }
 
-  Future<QuestionBankAvailability> getMyQuestionBankAvailability({
+  Future<QuestionBankAvailability> getQuestionBankAvailability({
     required String gameName,
     required int level,
+    required String questionBank,
   }) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) throw StateError('User must be signed in');
     final normalizedName = gameName.toLowerCase();
+    final bankOwnerId = questionBank == 'admin'
+        ? AuthConstants.systemQuestionBankOwnerId
+        : userId;
     if (normalizedName == 'social') {
       final localMode = await _storesLocally;
       final rows = localMode
@@ -804,7 +808,7 @@ class ServiceGame {
           : await supabase
               .from(TableNames.gameSocialScenarios)
               .select('id, ${TableNames.gameSocialChoices}(id)')
-              .eq('owner_id', userId)
+              .eq('owner_id', bankOwnerId)
               .eq('is_active', true)
               .lte('level', level);
       var completeQuestionCount = rows.where((row) {
@@ -841,10 +845,11 @@ class ServiceGame {
     final rows = localMode
         ? <dynamic>[]
         : await supabase.rpc(
-            'get_my_question_group_counts',
+            'get_question_bank_group_counts',
             params: {
               'p_table_name': tableName,
               'p_level': level,
+              'p_question_bank': questionBank == 'admin' ? 'admin' : 'mine',
             },
           ) as List<dynamic>;
     final groupCounts = <String, int>{};

@@ -85,6 +85,20 @@ class ControllerAuth extends SafeChangeNotifier {
   String? get currentAccount => _currentAccount;
   SubscriptionSnapshot get subscription => _subscription;
   bool get isPlus => isSysAdmin || _subscription.isPlus;
+  bool get canUseLocalStorage {
+    if (isSysAdmin) return true;
+    final now = DateTime.now();
+    final hasActiveLocalEntitlement = _subscription.entitlements.any(
+      (entitlement) =>
+          entitlement.storagePlan == 'local' && entitlement.endsAt.isAfter(now),
+    );
+    final periodEnd = _subscription.currentPeriodEnd;
+    final hasActiveLocalPlan = _subscription.isPlus &&
+        _subscription.storagePlan == 'local' &&
+        (periodEnd == null || periodEnd.isAfter(now));
+    return hasActiveLocalPlan || hasActiveLocalEntitlement;
+  }
+
   DataStorageLocation get preferredStorage => _preferredStorage;
   bool get storesNewDataLocally =>
       _preferredStorage == DataStorageLocation.local;

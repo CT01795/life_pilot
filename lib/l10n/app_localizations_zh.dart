@@ -1221,6 +1221,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataMoveToLocalFailed => '部分資料無法搬移，雲端原始資料已保留。';
 
   @override
+  String get dataStorageLocalPlanRequired => '請先完成本機 Plus 付款，並由管理者開通後再切換。';
+
+  @override
   String get dataUploadToCloud => '將本機資料上傳雲端（管理員）';
 
   @override

@@ -320,6 +320,26 @@ class ServiceAccounting {
             id: accountId,
             data: {...row, Fields.isValid: false},
             syncState: LocalSyncState.modifiedLocally);
+        final settings = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.dashboardSetting,
+        );
+        for (final setting in settings) {
+          if (setting['accounting_account_id']?.toString() != accountId) {
+            continue;
+          }
+          await LocalDataStore.instance.put(
+            owner: _localOwner!,
+            resource: TableNames.dashboardSetting,
+            id: _localOwner!,
+            data: {
+              ...setting,
+              'accounting_account_id': null,
+              'accounting_account_name': null,
+            },
+            syncState: LocalSyncState.modifiedLocally,
+          );
+        }
         return;
       }
       await supabase.from(TableNames.accountingAccount).update({
