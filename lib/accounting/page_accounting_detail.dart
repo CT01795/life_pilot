@@ -375,7 +375,17 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         ) ??
         false;
     if (!confirmed) return;
-    await controller.deleteAccountingDetail(detailId);
+    try {
+      await controller.deleteAccountingDetail(detailId);
+    } catch (error) {
+      if (!mounted) return;
+      final message = subscriptionErrorMessage(loc, error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message.isNotEmpty ? message : loc.unknownError),
+        ),
+      );
+    }
   }
 
   Widget _buildMicButton(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/accounting/model_accounting_preview.dart';
+import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
@@ -40,6 +43,15 @@ class TodayScheduleCard extends StatelessWidget {
     );
     final isLoading = context.select<ModelDashboard, bool>(
       (m) => m.isLoading(DashboardSection.todaySchedule),
+    );
+    final accountingAccountId = context.select<ModelDashboard, String?>(
+      (m) => m.setting.accountingAccountId,
+    );
+    final accountingAccountName = context.select<ModelDashboard, String?>(
+      (m) => m.setting.accountingAccountName,
+    );
+    final accountingCurrency = context.select<ModelDashboard, String>(
+      (m) => m.state.accountingCurrency,
     );
 
     return Card(
@@ -87,6 +99,8 @@ class TodayScheduleCard extends StatelessWidget {
                             final choice = await showEventCompletionSheet(
                               context,
                               eventName: e.name,
+                              accountingAccountName: accountingAccountName,
+                              accountingCurrency: accountingCurrency,
                             );
                             if (choice == null || !context.mounted) return;
                             try {
@@ -133,6 +147,52 @@ class TodayScheduleCard extends StatelessWidget {
                               } catch (error, stackTrace) {
                                 logger.e(
                                   'Could not add calendar event to memory.',
+                                  error: error,
+                                  stackTrace: stackTrace,
+                                );
+                                if (context.mounted) {
+                                  final message =
+                                      subscriptionErrorMessage(loc, error);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(message.isNotEmpty
+                                          ? message
+                                          : loc.eventSaveFailed),
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                            if (choice.expenseValue case final value?) {
+                              try {
+                                await ServiceAccounting().insertRecordsBatch(
+                                  accountId: accountingAccountId!,
+                                  type: 'balance',
+                                  records: [
+                                    AccountingPreview(
+                                      description: e.name,
+                                      value: -value,
+                                      currency: accountingCurrency,
+                                      exchangeRate: null,
+                                      date: DateTime.now(),
+                                      primaryCategory: choice.expenseCategory,
+                                    ),
+                                  ],
+                                  currency: accountingCurrency,
+                                );
+                                if (context.mounted) {
+                                  await context
+                                      .read<ControllerAuth>()
+                                      .refreshSubscriptionUsage();
+                                  await context
+                                      .read<ModelDashboard>()
+                                      .refreshAccounting(
+                                        accountId: accountingAccountId,
+                                      );
+                                }
+                              } catch (error, stackTrace) {
+                                logger.e(
+                                  'Could not add event expense.',
                                   error: error,
                                   stackTrace: stackTrace,
                                 );
