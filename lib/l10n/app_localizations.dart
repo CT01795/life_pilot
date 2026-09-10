@@ -2559,6 +2559,48 @@ abstract class AppLocalizations {
   /// **'Current plan: Plus'**
   String get subscriptionCurrentPlus;
 
+  /// Current cloud Plus plan
+  ///
+  /// In en, this message translates to:
+  /// **'Current: Cloud Plus'**
+  String get subscriptionCurrentCloudPlus;
+
+  /// No description provided for @dataClearLocalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear device data'**
+  String get dataClearLocalTitle;
+
+  /// No description provided for @dataClearLocalConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?'**
+  String get dataClearLocalConfirm;
+
+  /// No description provided for @dataClearLocalAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear device data'**
+  String get dataClearLocalAction;
+
+  /// No description provided for @dataClearLocalSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Device data cleared'**
+  String get dataClearLocalSuccess;
+
+  /// No description provided for @dataClearLocalFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not clear device data. Try again later.'**
+  String get dataClearLocalFailed;
+
+  /// Current local Plus plan
+  ///
+  /// In en, this message translates to:
+  /// **'Current: Local Plus'**
+  String get subscriptionCurrentLocalPlus;
+
   /// No description provided for @subscriptionValidUntil.
   ///
   /// In en, this message translates to:
@@ -2721,6 +2763,18 @@ abstract class AppLocalizations {
   /// **'Latest version for your next payment'**
   String get subscriptionNextVersionTitle;
 
+  /// Latest cloud pricing version
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud version for the next payment'**
+  String get subscriptionNextCloudVersionTitle;
+
+  /// Latest local pricing version
+  ///
+  /// In en, this message translates to:
+  /// **'Local Plus version for the next payment'**
+  String get subscriptionLatestLocalVersionTitle;
+
   /// No description provided for @subscriptionVersionOffer.
   ///
   /// In en, this message translates to:
@@ -2858,6 +2912,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Answer history days'**
   String get adminPricingAnswerDays;
+
+  /// No description provided for @adminPricingLocalZeroUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'For Local Plus, 0 in a quota field means unlimited.'**
+  String get adminPricingLocalZeroUnlimited;
+
+  /// No description provided for @subscriptionDowngradeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cloud data exceeds the free allowance. Remove or move the excess by {date}.'**
+  String subscriptionDowngradeWarning(String date);
+
+  /// No description provided for @subscriptionOverageItem.
+  ///
+  /// In en, this message translates to:
+  /// **'{resource}: {used}/{quota} (over by {excess})'**
+  String subscriptionOverageItem(String resource, int used, int quota, int excess);
 
   /// Label for adminSubscriptionTitle
   ///

@@ -15,11 +15,11 @@ class CalendarShareableEvent {
 
   factory CalendarShareableEvent.fromJson(Map<String, dynamic> json) {
     return CalendarShareableEvent(
-      id: json['id'] as String,
-      name: (json['name'] as String?)?.trim().isNotEmpty == true
-          ? json['name'] as String
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString().trim().isNotEmpty == true
+          ? json['name'].toString()
           : '-',
-      startDate: DateTime.tryParse(json['start_date'] as String? ?? ''),
+      startDate: DateTime.tryParse(json['start_date']?.toString() ?? ''),
     );
   }
 }
@@ -39,12 +39,12 @@ class SharedCalendarEvent {
 
   factory SharedCalendarEvent.fromJson(Map<String, dynamic> json) {
     return SharedCalendarEvent(
-      invitationId: json['invitation_id'] as String,
-      eventId: json['event_id'] as String,
-      name: (json['event_name'] as String?)?.trim().isNotEmpty == true
-          ? json['event_name'] as String
+      invitationId: json['invitation_id']?.toString() ?? '',
+      eventId: json['event_id']?.toString() ?? '',
+      name: json['event_name']?.toString().trim().isNotEmpty == true
+          ? json['event_name'].toString()
           : '-',
-      startDate: DateTime.tryParse(json['start_date'] as String? ?? ''),
+      startDate: DateTime.tryParse(json['start_date']?.toString() ?? ''),
     );
   }
 }
@@ -67,10 +67,10 @@ class CalendarShareInvitation {
 
   factory CalendarShareInvitation.fromJson(Map<String, dynamic> json) {
     return CalendarShareInvitation(
-      id: json['id'] as String,
-      sharedBy: json['shared_by'] as String,
-      invitedEmail: json['invited_email'] as String,
-      status: json['status'] as String,
+      id: json['id']?.toString() ?? '',
+      sharedBy: json['shared_by']?.toString() ?? '',
+      invitedEmail: json['invited_email']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
     );
   }
 }
@@ -133,13 +133,10 @@ class ServiceCalendarSharing {
         .map((row) => SharedCalendarEvent.fromJson(row as Map<String, dynamic>))
         .toList();
 
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
     final shareableEvents = visibleEvents
         .where((event) =>
             event.account?.trim().toLowerCase() == currentEmail &&
-            event.startDate != null &&
-            !(event.endDate ?? event.startDate!).isBefore(todayDate))
+            event.startDate != null)
         .map(
           (event) => CalendarShareableEvent(
             id: event.id,

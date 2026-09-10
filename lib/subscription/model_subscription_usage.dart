@@ -34,6 +34,7 @@ class SubscriptionSnapshot {
     this.pricingVersionName,
     this.pricingEffectiveAt,
     this.lastDataActivityAt,
+    this.downgradeGraceEndsAt,
     this.entitlements = const [],
   });
 
@@ -50,6 +51,7 @@ class SubscriptionSnapshot {
   final String? pricingVersionName;
   final DateTime? pricingEffectiveAt;
   final DateTime? lastDataActivityAt;
+  final DateTime? downgradeGraceEndsAt;
   final List<SubscriptionEntitlement> entitlements;
 
   bool get isPlus => plan == 'plus';
@@ -70,6 +72,7 @@ class SubscriptionSnapshot {
       pricingVersionName: pricingVersionName,
       pricingEffectiveAt: pricingEffectiveAt,
       lastDataActivityAt: lastDataActivityAt,
+      downgradeGraceEndsAt: downgradeGraceEndsAt,
       entitlements: entitlements,
     );
   }

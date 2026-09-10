@@ -259,8 +259,12 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                               if (sharedEvents.isNotEmpty)
                                 SizedBox(
                                   height: (sharedEvents.length * 64.0)
-                                      .clamp(64.0, 256.0),
+                                      .clamp(64.0, 256.0)
+                                      .toDouble(),
                                   child: ListView.builder(
+                                    key: PageStorageKey(
+                                      'calendar-share-events-${item.id}',
+                                    ),
                                     primary: false,
                                     itemExtent: 64,
                                     cacheExtent: 64,

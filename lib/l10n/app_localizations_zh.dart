@@ -1259,6 +1259,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCurrentPlus => '目前方案：Plus';
 
   @override
+  String get subscriptionCurrentCloudPlus => '目前方案：雲端 Plus';
+
+  @override
+  String get dataClearLocalTitle => '清除本機資料';
+
+  @override
+  String get dataClearLocalConfirm => '這會永久清除這台裝置上的所有個人資料，且無法復原。清除後可再嘗試切換至雲端。確定繼續嗎？';
+
+  @override
+  String get dataClearLocalAction => '清除本機資料';
+
+  @override
+  String get dataClearLocalSuccess => '本機資料已清除';
+
+  @override
+  String get dataClearLocalFailed => '無法清除本機資料，請稍後再試';
+
+  @override
+  String get subscriptionCurrentLocalPlus => '目前方案：本機 Plus';
+
+  @override
   String subscriptionValidUntil(String date) {
     return '有效期限至 $date';
   }
@@ -1342,6 +1363,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionNextVersionTitle => '下次付款適用的最新版本';
 
   @override
+  String get subscriptionNextCloudVersionTitle => '下次付款適用的雲端版本';
+
+  @override
+  String get subscriptionLatestLocalVersionTitle => '下次付款適用的本機 Plus 版本';
+
+  @override
   String subscriptionVersionOffer(String version, String date, int price) {
     return '$version・$date 生效・每季 NT\$$price';
   }
@@ -1413,6 +1440,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get adminPricingAnswerDays => '答題紀錄保留天數';
+
+  @override
+  String get adminPricingLocalZeroUnlimited => '本機 Plus 的額度欄位填 0 代表不限量。';
+
+  @override
+  String subscriptionDowngradeWarning(String date) {
+    return '雲端資料已超過免費額度，請在 $date 前移轉或清除超額資料。';
+  }
+
+  @override
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    return '$resource：已用 $used／額度 $quota，超出 $excess';
+  }
 
   @override
   String get adminSubscriptionTitle => '管理使用者訂閱';

@@ -1259,6 +1259,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionCurrentPlus => '현재 요금제: Plus';
 
   @override
+  String get subscriptionCurrentCloudPlus => '현재: 클라우드 Plus';
+
+  @override
+  String get dataClearLocalTitle => '기기 데이터 삭제';
+
+  @override
+  String get dataClearLocalConfirm => '이 기기의 모든 개인 데이터를 영구 삭제하며 복구할 수 없습니다. 삭제 후 클라우드 전환을 다시 시도할 수 있습니다. 계속할까요?';
+
+  @override
+  String get dataClearLocalAction => '기기 데이터 삭제';
+
+  @override
+  String get dataClearLocalSuccess => '기기 데이터를 삭제했습니다';
+
+  @override
+  String get dataClearLocalFailed => '기기 데이터를 삭제하지 못했습니다. 잠시 후 다시 시도하세요.';
+
+  @override
+  String get subscriptionCurrentLocalPlus => '현재: 로컬 Plus';
+
+  @override
   String subscriptionValidUntil(String date) {
     return '유효 기간: $date';
   }
@@ -1342,6 +1363,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionNextVersionTitle => '다음 결제에 적용될 최신 버전';
 
   @override
+  String get subscriptionNextCloudVersionTitle => '다음 결제에 적용되는 클라우드 버전';
+
+  @override
+  String get subscriptionLatestLocalVersionTitle => '다음 결제에 적용되는 로컬 Plus 버전';
+
+  @override
   String subscriptionVersionOffer(String version, String date, int price) {
     return '$version · $date 적용 · 분기 NT\$$price';
   }
@@ -1413,6 +1440,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get adminPricingAnswerDays => '답변 기록 일수';
+
+  @override
+  String get adminPricingLocalZeroUnlimited => '로컬 Plus에서 한도 항목의 0은 무제한을 의미합니다.';
+
+  @override
+  String subscriptionDowngradeWarning(String date) {
+    return '클라우드 데이터가 무료 한도를 초과했습니다. $date까지 초과 데이터를 이동하거나 삭제하세요.';
+  }
+
+  @override
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    return '$resource: $used/$quota ($excess개 초과)';
+  }
 
   @override
   String get adminSubscriptionTitle => '구독 관리';

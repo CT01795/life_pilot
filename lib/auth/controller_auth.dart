@@ -99,6 +99,15 @@ class ControllerAuth extends SafeChangeNotifier {
     return hasActiveLocalPlan || hasActiveLocalEntitlement;
   }
 
+  void _syncLocalCreatePermission() {
+    final account = _currentAccount;
+    if (account == null) return;
+    LocalDataStore.instance.setCreateAllowed(
+      account,
+      isSysAdmin || canUseLocalStorage,
+    );
+  }
+
   DataStorageLocation get preferredStorage => _preferredStorage;
   bool get storesNewDataLocally =>
       _preferredStorage == DataStorageLocation.local;
@@ -111,9 +120,8 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
     if (!_isLoggedIn || _isAnonymous) return;
     try {
-      _subscription = _preferredStorage == DataStorageLocation.local
-          ? await _withLocalUsage(_subscription)
-          : await _loadSubscriptionUsage();
+      _subscription = await _loadSubscriptionUsage();
+      _syncLocalCreatePermission();
       if (notify) notifyListeners();
     } catch (error, stackTrace) {
       logger.e('Failed to refresh subscription usage',
@@ -125,10 +133,59 @@ class ControllerAuth extends SafeChangeNotifier {
     final cloud = await ServiceSubscription().fetchMyUsage();
     final account = _currentAccount;
     if (_preferredStorage != DataStorageLocation.local || account == null) {
-      return cloud;
+      return _withCloudPresentation(cloud);
     }
 
     return _withLocalUsage(cloud);
+  }
+
+  SubscriptionSnapshot _withCloudPresentation(SubscriptionSnapshot base) {
+    final now = DateTime.now();
+    final cloudEntitlements = base.entitlements
+        .where(
+          (entitlement) =>
+              entitlement.storagePlan == 'cloud' &&
+              entitlement.endsAt.isAfter(now),
+        )
+        .toList(growable: false)
+      ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
+    final cloudEntitlement = cloudEntitlements.firstOrNull;
+    final basePeriodEnd = base.currentPeriodEnd;
+    final baseCloudPlus = base.isPlus &&
+        base.storagePlan == 'cloud' &&
+        (basePeriodEnd == null || basePeriodEnd.isAfter(now));
+
+    if (!baseCloudPlus && cloudEntitlement == null) {
+      return SubscriptionSnapshot(
+        plan: 'free',
+        usage: base.usage,
+        status: 'inactive',
+        storagePlan: 'cloud',
+        lastDataActivityAt: base.lastDataActivityAt,
+        downgradeGraceEndsAt: base.downgradeGraceEndsAt,
+        entitlements: base.entitlements,
+      );
+    }
+
+    return SubscriptionSnapshot(
+      plan: 'plus',
+      usage: base.usage,
+      status: baseCloudPlus ? base.status : 'active',
+      currentPeriodEnd:
+          cloudEntitlement?.endsAt ?? (baseCloudPlus ? basePeriodEnd : null),
+      cancelAtPeriodEnd: baseCloudPlus ? base.cancelAtPeriodEnd : false,
+      storagePlan: 'cloud',
+      quotaMultiplier: cloudEntitlement?.multiplier ?? base.quotaMultiplier,
+      quarterlyPricePaidTwd:
+          cloudEntitlement?.pricePaidTwd ?? base.quarterlyPricePaidTwd,
+      pricingVersionName:
+          cloudEntitlement?.versionName ?? base.pricingVersionName,
+      pricingEffectiveAt:
+          cloudEntitlement?.effectiveAt ?? base.pricingEffectiveAt,
+      lastDataActivityAt: base.lastDataActivityAt,
+      downgradeGraceEndsAt: base.downgradeGraceEndsAt,
+      entitlements: base.entitlements,
+    );
   }
 
   Future<SubscriptionSnapshot> _withLocalUsage(
@@ -152,36 +209,64 @@ class ControllerAuth extends SafeChangeNotifier {
       resources: resources,
     );
     int count(String resource) => counts[resource] ?? 0;
-    final localUsage = Map<String, SubscriptionUsage>.from(base.usage)
-      ..['calendar_events'] = SubscriptionUsage(
+    final localUsage = <String, SubscriptionUsage>{
+      'calendar_events': SubscriptionUsage(
         resource: 'calendar_events',
         used: count(TableNames.calendarEvents),
         quota: -1,
-      )
-      ..['accounting_detail'] = SubscriptionUsage(
+      ),
+      'accounting_detail': SubscriptionUsage(
         resource: 'accounting_detail',
         used: count(TableNames.accountingDetail),
         quota: -1,
-      )
-      ..['point_record_detail'] = SubscriptionUsage(
+      ),
+      'point_record_detail': SubscriptionUsage(
         resource: 'point_record_detail',
         used: count(TableNames.pointRecordDetail),
         quota: -1,
-      )
-      ..['memory_trace'] = SubscriptionUsage(
+      ),
+      'memory_trace': SubscriptionUsage(
         resource: 'memory_trace',
         used: count(TableNames.memoryTrace),
         quota: -1,
-      )
-      ..['game_questions'] = SubscriptionUsage(
+      ),
+      'game_questions': SubscriptionUsage(
         resource: 'game_questions',
         used: count('game_grammar') +
             count('game_sentence') +
             count('game_translation') +
             count(TableNames.gameSocialScenarios),
         quota: -1,
-      );
-    return base.copyWithUsage(localUsage);
+      ),
+    };
+
+    final localEntitlements = base.entitlements
+        .where((entitlement) => entitlement.storagePlan == 'local')
+        .toList(growable: false)
+      ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
+    final localEntitlement = localEntitlements.firstOrNull;
+    final baseIsLocal = base.storagePlan == 'local';
+
+    return SubscriptionSnapshot(
+      plan: baseIsLocal || localEntitlement != null ? 'plus' : base.plan,
+      usage: localUsage,
+      status: baseIsLocal || localEntitlement != null ? 'active' : base.status,
+      currentPeriodEnd: localEntitlement?.endsAt ??
+          (baseIsLocal ? base.currentPeriodEnd : null),
+      cancelAtPeriodEnd: baseIsLocal ? base.cancelAtPeriodEnd : false,
+      storagePlan: 'local',
+      quotaMultiplier: localEntitlement?.multiplier ??
+          (baseIsLocal ? base.quotaMultiplier : 1),
+      quarterlyPricePaidTwd: localEntitlement?.pricePaidTwd ??
+          (baseIsLocal ? base.quarterlyPricePaidTwd : null),
+      pricingVersionName: localEntitlement?.versionName ??
+          (baseIsLocal ? base.pricingVersionName : null),
+      pricingEffectiveAt: localEntitlement?.effectiveAt ??
+          (baseIsLocal ? base.pricingEffectiveAt : null),
+      lastDataActivityAt: base.lastDataActivityAt,
+      downgradeGraceEndsAt: base.downgradeGraceEndsAt,
+      entitlements: base.entitlements,
+    );
   }
 
   Future<void> setPreferredStorage(DataStorageLocation location) async {
@@ -227,6 +312,7 @@ class ControllerAuth extends SafeChangeNotifier {
   }
 
   void _handleSignedOut() {
+    final signedOutAccount = _currentAccount;
     if (_currentAccount != null && !_isAnonymous) {
       _registerMap[AuthConstants.email] = _currentAccount!;
     }
@@ -244,6 +330,9 @@ class ControllerAuth extends SafeChangeNotifier {
 
     modelDashboard?.switchAccount(null);
     controllerCalendar?.clearAll();
+    if (signedOutAccount != null) {
+      LocalDataStore.instance.clearCreatePermission(signedOutAccount);
+    }
     notifyListeners();
   }
 
@@ -271,6 +360,9 @@ class ControllerAuth extends SafeChangeNotifier {
             await LocalDataStore.instance.preferredLocation(_currentAccount!);
         _hasStorageChoice = storedLocation != null;
         _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
+        if (_preferredStorage == DataStorageLocation.local) {
+          LocalDataStore.instance.setCreateAllowed(_currentAccount!, false);
+        }
       }
 
       // 🧹 若帳號不同，清空並重新載入日曆資料
@@ -317,6 +409,7 @@ class ControllerAuth extends SafeChangeNotifier {
       final loaded = await _loadSubscriptionUsage();
       if (notifierDisposed || !_isLoggedIn || _isAnonymous) return;
       _subscription = loaded;
+      _syncLocalCreatePermission();
       notifyListeners();
     } catch (error, stackTrace) {
       logger.e(

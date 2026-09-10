@@ -13,6 +13,15 @@ class LocalDataStore {
   static final _settings = stringMapStoreFactory.store('settings');
   Future<Database>? _databaseFuture;
   final Map<String, Future<List<Map<String, dynamic>>>> _listCache = {};
+  final Map<String, bool> _createAllowed = {};
+
+  void setCreateAllowed(String owner, bool allowed) {
+    _createAllowed[owner.toLowerCase()] = allowed;
+  }
+
+  void clearCreatePermission(String owner) {
+    _createAllowed.remove(owner.toLowerCase());
+  }
 
   Future<Database> get _db async {
     final opening = _databaseFuture ??= openLifePilotLocalDatabase();
@@ -107,6 +116,9 @@ class LocalDataStore {
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
       final existed = await record.exists(transaction);
+      if (!existed && _createAllowed[owner.toLowerCase()] == false) {
+        throw StateError('local_subscription_expired_read_only');
+      }
       await record.put(transaction, {
         'owner': owner.toLowerCase(),
         'resource': resource,

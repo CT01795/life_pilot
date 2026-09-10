@@ -41,8 +41,13 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   Future<void> _save(List<SubscriptionPricingVersion> versions) async {
     final loc = AppLocalizations.of(context)!;
     if (_email.text.trim().isEmpty || _saving) return;
+    final matchingVersions = versions
+        .where((version) => version.storagePlan == _storagePlan)
+        .toList(growable: false);
     final selectedVersion =
-        _versionId ?? (versions.isEmpty ? null : versions.first.id);
+        matchingVersions.any((version) => version.id == _versionId)
+            ? _versionId
+            : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
     if (_plan == 'plus' && selectedVersion == null) {
       _show(loc.adminSubscriptionNoPricing);
       return;
@@ -90,8 +95,13 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       future: _versions,
       builder: (context, snapshot) {
         final versions = snapshot.data ?? const <SubscriptionPricingVersion>[];
+        final matchingVersions = versions
+            .where((version) => version.storagePlan == _storagePlan)
+            .toList(growable: false);
         final selectedVersion =
-            _versionId ?? (versions.isEmpty ? null : versions.first.id);
+            matchingVersions.any((version) => version.id == _versionId)
+                ? _versionId
+                : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
         return Card(
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
@@ -186,7 +196,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                           ],
                           onChanged: (value) {
                             if (value != null) {
-                              setState(() => _storagePlan = value);
+                              setState(() {
+                                _storagePlan = value;
+                                _versionId = null;
+                              });
                             }
                           },
                         )
@@ -204,8 +217,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                             ),
                           ],
                           selected: {_storagePlan},
-                          onSelectionChanged: (value) =>
-                              setState(() => _storagePlan = value.first),
+                          onSelectionChanged: (value) => setState(() {
+                            _storagePlan = value.first;
+                            _versionId = null;
+                          }),
                         ),
                 ),
                 Gaps.h12,
@@ -217,7 +232,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     labelText: loc.adminSubscriptionPricingVersion,
                     prefixIcon: const Icon(Icons.history),
                   ),
-                  items: versions
+                  items: matchingVersions
                       .map((version) => DropdownMenuItem(
                             value: version.id,
                             child: Text(
@@ -227,7 +242,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                             ),
                           ))
                       .toList(),
-                  selectedItemBuilder: (context) => versions
+                  selectedItemBuilder: (context) => matchingVersions
                       .map(
                         (version) => Align(
                           alignment: Alignment.centerLeft,
@@ -239,7 +254,9 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                         ),
                       )
                       .toList(),
-                  onChanged: (value) => setState(() => _versionId = value),
+                  onChanged: matchingVersions.isEmpty
+                      ? null
+                      : (value) => setState(() => _versionId = value),
                 ),
                 Gaps.h12,
                 DropdownButtonFormField<int>(

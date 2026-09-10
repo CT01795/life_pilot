@@ -27,10 +27,14 @@ class ControllerAccountingList extends SafeChangeNotifier {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
-    accounts = await _service.fetchAccounts(
-        user: auth?.currentAccount ?? '', category: inputCategory ?? category);
-    isLoading = false;
-    notifyListeners();
+    try {
+      accounts = await _service.fetchAccounts(
+          user: auth?.currentAccount ?? '',
+          category: inputCategory ?? category);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   String? mainCurrency;

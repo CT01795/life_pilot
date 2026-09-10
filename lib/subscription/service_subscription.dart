@@ -42,6 +42,9 @@ class ServiceSubscription {
       lastDataActivityAt: DateTime.tryParse(
         status['last_data_activity_at']?.toString() ?? '',
       ),
+      downgradeGraceEndsAt: DateTime.tryParse(
+        status['downgrade_grace_ends_at']?.toString() ?? '',
+      ),
       entitlements: entitlementRows
           .map((row) => SubscriptionEntitlement.fromJson(
                 Map<String, dynamic>.from(row as Map),
@@ -123,12 +126,14 @@ class ServiceSubscription {
 
   Future<void> createPricingVersionAsAdmin({
     required String name,
+    required String storagePlan,
     required DateTime effectiveAt,
     required int quarterlyPrice,
     required Map<String, int> quotas,
   }) async {
     await supabase.rpc('admin_create_subscription_pricing_version', params: {
       'p_version_name': name.trim(),
+      'p_storage_plan': storagePlan,
       'p_effective_at': effectiveAt.toUtc().toIso8601String(),
       'p_quarterly_price_twd': quarterlyPrice,
       'p_calendar_quota': quotas['calendar'],
@@ -147,6 +152,7 @@ class SubscriptionPricingVersion {
   const SubscriptionPricingVersion({
     required this.id,
     required this.name,
+    required this.storagePlan,
     required this.effectiveAt,
     required this.quarterlyPriceTwd,
     required this.quotas,
@@ -154,6 +160,7 @@ class SubscriptionPricingVersion {
 
   final String id;
   final String name;
+  final String storagePlan;
   final DateTime effectiveAt;
   final int quarterlyPriceTwd;
   final Map<String, int> quotas;
@@ -162,6 +169,7 @@ class SubscriptionPricingVersion {
       SubscriptionPricingVersion(
         id: json['id'].toString(),
         name: json['version_name']?.toString() ?? '',
+        storagePlan: json['storage_plan']?.toString() ?? 'cloud',
         effectiveAt: DateTime.parse(json['effective_at'].toString()),
         quarterlyPriceTwd: (json['quarterly_price_twd'] as num?)?.toInt() ?? 0,
         quotas: {

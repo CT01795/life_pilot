@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
@@ -14,17 +15,38 @@ class PageSubscriptionPlans extends StatefulWidget {
 
 class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   late final Future<List<SubscriptionPricingVersion>> _pricingVersions;
+  SubscriptionPricingVersion? _latestCloudVersion;
+  SubscriptionPricingVersion? _latestLocalVersion;
 
   @override
   void initState() {
     super.initState();
     _pricingVersions = ServiceSubscription().fetchPricingVersions();
+    _pricingVersions.then((versions) {
+      if (!mounted) return;
+      setState(() {
+        _latestCloudVersion = versions
+            .where((version) => version.storagePlan == 'cloud')
+            .firstOrNull;
+        _latestLocalVersion = versions
+            .where((version) => version.storagePlan == 'local')
+            .firstOrNull;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final subscription = context.watch<ControllerAuth>().subscription;
+    final auth = context.watch<ControllerAuth>();
+    final subscription = auth.subscription;
+    final currentStoragePlan = auth.preferredStorage.name;
+    final currentEntitlements = subscription.entitlements
+        .where((item) => item.storagePlan == currentStoragePlan)
+        .toList(growable: false);
+    final displayedEntitlements = currentEntitlements.length > 1
+        ? currentEntitlements
+        : const <SubscriptionEntitlement>[];
     final endDate = subscription.currentPeriodEnd;
     final dates = MaterialLocalizations.of(context);
     String? formatDate(DateTime? value) {
@@ -32,11 +54,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
       final local = value.toLocal();
       return local.year == DateTime.now().year
           ? dates.formatShortMonthDay(local)
-          : dates.formatMediumDate(local);
+          : dates.formatCompactDate(local);
     }
 
     final endLabel = formatDate(endDate);
     final pricingEffectiveLabel = formatDate(subscription.pricingEffectiveAt);
+    final graceLabel = formatDate(subscription.downgradeGraceEndsAt);
+    final overages = subscription.usage.values
+        .where((usage) => !usage.isUnlimited && usage.used > usage.quota)
+        .toList(growable: false);
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.subscriptionPlansTitle)),
@@ -49,13 +75,41 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 subscription.isPlus ? Icons.workspace_premium : Icons.person,
               ),
               title: Text(subscription.isPlus
-                  ? loc.subscriptionCurrentPlus
+                  ? (subscription.storagePlan == 'local'
+                      ? loc.subscriptionCurrentLocalPlus
+                      : loc.subscriptionCurrentCloudPlus)
                   : loc.subscriptionCurrentFree),
               subtitle: endLabel == null
                   ? Text(loc.subscriptionInactiveAccountWarning)
                   : Text(loc.subscriptionValidUntil(endLabel)),
             ),
           ),
+          if (graceLabel != null && overages.isNotEmpty) ...[
+            Gaps.h12,
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.subscriptionDowngradeWarning(graceLabel),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Gaps.h8,
+                    for (final usage in overages)
+                      Text(loc.subscriptionOverageItem(
+                        _resourceLabel(loc, usage.resource),
+                        usage.used,
+                        usage.quota,
+                        usage.used - usage.quota,
+                      )),
+                  ],
+                ),
+              ),
+            ),
+          ],
           Gaps.h16,
           if (subscription.usage.isNotEmpty) ...[
             Gaps.h16,
@@ -121,8 +175,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
             ),
             Gaps.h16,
           ],
-          if (subscription.entitlements.isNotEmpty) ...[
-            ...subscription.entitlements.map(
+          if (displayedEntitlements.isNotEmpty) ...[
+            ...displayedEntitlements.map(
               (entitlement) => Card(
                 child: ExpansionTile(
                   leading: const Icon(Icons.confirmation_number_outlined),
@@ -160,13 +214,40 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return const SizedBox.shrink();
               }
-              final latest = snapshot.data!.first;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _PricingVersionCard(
-                  version: latest,
-                  effectiveDate: formatDate(latest.effectiveAt)!,
-                ),
+              final latestCloud = snapshot.data!
+                  .where((version) => version.storagePlan == 'cloud')
+                  .firstOrNull;
+              final latestLocal = snapshot.data!
+                  .where((version) => version.storagePlan == 'local')
+                  .firstOrNull;
+              final cloudCard = latestCloud == null
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _PricingVersionCard(
+                        version: latestCloud,
+                        effectiveDate: formatDate(latestCloud.effectiveAt)!,
+                      ),
+                    );
+              final localCard = latestLocal == null
+                  ? null
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _PricingVersionCard(
+                        version: latestLocal,
+                        effectiveDate: formatDate(latestLocal.effectiveAt)!,
+                      ),
+                    );
+              return Column(
+                children: currentStoragePlan == 'local'
+                    ? [
+                        if (localCard != null) localCard,
+                        if (cloudCard != null) cloudCard,
+                      ]
+                    : [
+                        if (cloudCard != null) cloudCard,
+                        if (localCard != null) localCard,
+                      ],
               );
             },
           ),
@@ -186,21 +267,27 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               );
               final cloudPlusCard = _PlanCard(
                 title: loc.subscriptionPlusName,
-                price: loc.subscriptionPlusPrice,
-                features: [
-                  loc.subscriptionPlusPersonalRecords,
-                  loc.subscriptionPlusGameQuestions,
-                  loc.subscriptionPlusSharing,
-                  loc.subscriptionPlusImages,
-                  loc.subscriptionPlusAnswerHistory,
-                ],
+                price: _latestCloudVersion == null
+                    ? loc.subscriptionPlusPrice
+                    : 'NT\$${_latestCloudVersion!.quarterlyPriceTwd}',
+                features: _latestCloudVersion == null
+                    ? [
+                        loc.subscriptionPlusPersonalRecords,
+                        loc.subscriptionPlusGameQuestions,
+                        loc.subscriptionPlusSharing,
+                        loc.subscriptionPlusImages,
+                        loc.subscriptionPlusAnswerHistory,
+                      ]
+                    : _versionFeatures(loc, _latestCloudVersion!),
                 selected:
                     subscription.isPlus && subscription.storagePlan == 'cloud',
                 highlighted: true,
               );
               final localPlusCard = _PlanCard(
                 title: loc.subscriptionLocalPaidName,
-                price: loc.subscriptionLocalPaidPrice,
+                price: _latestLocalVersion == null
+                    ? loc.subscriptionLocalPaidPrice
+                    : 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
                 features: [
                   loc.subscriptionLocalPaidFeature,
                   loc.subscriptionLocalAnswerHistory,
@@ -274,6 +361,24 @@ String _resourceLabel(AppLocalizations loc, String resource) =>
       _ => resource,
     };
 
+List<String> _versionFeatures(
+  AppLocalizations loc,
+  SubscriptionPricingVersion version,
+) {
+  if (version.storagePlan == 'local') {
+    return [
+      loc.subscriptionLocalPaidFeature,
+      loc.subscriptionLocalAnswerHistory,
+    ];
+  }
+  return [
+    for (final entry in version.quotas.entries)
+      if (entry.key != 'answer_history_days')
+        '${_resourceLabel(loc, entry.key)}：${entry.key == 'image_bytes' ? '${entry.value ~/ 1024 ~/ 1024} MB' : entry.value}',
+    '${loc.subscriptionPlusAnswerHistory}：${version.quotas['answer_history_days'] ?? 0}',
+  ];
+}
+
 class _PricingVersionCard extends StatelessWidget {
   const _PricingVersionCard({
     required this.version,
@@ -292,7 +397,10 @@ class _PricingVersionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(loc.subscriptionNextVersionTitle,
+            Text(
+                version.storagePlan == 'local'
+                    ? loc.subscriptionLatestLocalVersionTitle
+                    : loc.subscriptionNextCloudVersionTitle,
                 style: Theme.of(context).textTheme.titleLarge),
             Gaps.h4,
             Text(loc.subscriptionVersionOffer(
@@ -301,22 +409,34 @@ class _PricingVersionCard extends StatelessWidget {
               version.quarterlyPriceTwd,
             )),
             const Divider(height: 24),
-            ...version.quotas.entries
-                .where((entry) => entry.key != 'answer_history_days')
-                .map((entry) {
-              final value = entry.key == 'image_bytes'
-                  ? '${entry.value ~/ 1024 ~/ 1024} MB'
-                  : entry.value.toString();
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(_resourceLabel(loc, entry.key))),
-                    Text(value),
-                  ],
-                ),
-              );
-            }),
+            if (version.storagePlan == 'local') ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.all_inclusive),
+                title: Text(loc.subscriptionLocalPaidFeature),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.history_outlined),
+                title: Text(loc.subscriptionLocalAnswerHistory),
+              ),
+            ] else
+              ...version.quotas.entries
+                  .where((entry) => entry.key != 'answer_history_days')
+                  .map((entry) {
+                final value = entry.key == 'image_bytes'
+                    ? '${entry.value ~/ 1024 ~/ 1024} MB'
+                    : entry.value.toString();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(_resourceLabel(loc, entry.key))),
+                      Text(value),
+                    ],
+                  ),
+                );
+              }),
           ],
         ),
       ),

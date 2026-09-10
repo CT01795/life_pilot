@@ -14,6 +14,17 @@ class AdminPricingVersionEditor extends StatefulWidget {
 }
 
 class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
+  static const _cloudQuotaDefaults = <String, String>{
+    'calendar': '300',
+    'accounting': '300',
+    'point': '300',
+    'memory': '300',
+    'game': '500',
+    'share': '5',
+    'image': '300',
+    'answerDays': '365',
+  };
+
   final _name = TextEditingController();
   final _values = <String, TextEditingController>{
     'price': TextEditingController(text: '129'),
@@ -27,6 +38,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     'answerDays': TextEditingController(text: '365'),
   };
   DateTime _effectiveAt = DateTime.now();
+  String _storagePlan = 'cloud';
   bool _saving = false;
 
   @override
@@ -40,6 +52,15 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
 
   int? _number(String key) => int.tryParse(_values[key]!.text.trim());
 
+  void _changeStoragePlan(String value) {
+    setState(() {
+      _storagePlan = value;
+      for (final entry in _cloudQuotaDefaults.entries) {
+        _values[entry.key]!.text = value == 'local' ? '0' : entry.value;
+      }
+    });
+  }
+
   Future<void> _save() async {
     final loc = AppLocalizations.of(context)!;
     final values = {for (final key in _values.keys) key: _number(key)};
@@ -52,6 +73,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     try {
       await ServiceSubscription().createPricingVersionAsAdmin(
         name: _name.text,
+        storagePlan: _storagePlan,
         effectiveAt: _effectiveAt,
         quarterlyPrice: values['price']!,
         quotas: values.map((key, value) => MapEntry(key, value!)),
@@ -108,6 +130,40 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
                 .formatMediumDate(_effectiveAt)),
             onTap: _pickEffectiveDate,
           ),
+          DropdownButtonFormField<String>(
+            initialValue: _storagePlan,
+            decoration: InputDecoration(
+              labelText: loc.adminSubscriptionStoragePlan,
+              prefixIcon: const Icon(Icons.storage_outlined),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'cloud',
+                child: Text(loc.dataStorageCloud),
+              ),
+              DropdownMenuItem(
+                value: 'local',
+                child: Text(loc.dataStorageLocal),
+              ),
+            ],
+            onChanged: _saving
+                ? null
+                : (value) => _changeStoragePlan(value ?? 'cloud'),
+          ),
+          if (_storagePlan == 'local') ...[
+            Gaps.h8,
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                loc.adminPricingLocalZeroUnlimited,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
+          Gaps.h12,
           LayoutBuilder(
             builder: (context, constraints) {
               final columns = constraints.maxWidth >= 720

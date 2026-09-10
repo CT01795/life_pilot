@@ -1259,6 +1259,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionCurrentPlus => 'Current plan: Plus';
 
   @override
+  String get subscriptionCurrentCloudPlus => 'Current: Cloud Plus';
+
+  @override
+  String get dataClearLocalTitle => 'Clear device data';
+
+  @override
+  String get dataClearLocalConfirm => 'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?';
+
+  @override
+  String get dataClearLocalAction => 'Clear device data';
+
+  @override
+  String get dataClearLocalSuccess => 'Device data cleared';
+
+  @override
+  String get dataClearLocalFailed => 'Could not clear device data. Try again later.';
+
+  @override
+  String get subscriptionCurrentLocalPlus => 'Current: Local Plus';
+
+  @override
   String subscriptionValidUntil(String date) {
     return 'Valid until $date';
   }
@@ -1342,6 +1363,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionNextVersionTitle => 'Latest version for your next payment';
 
   @override
+  String get subscriptionNextCloudVersionTitle => 'Cloud version for the next payment';
+
+  @override
+  String get subscriptionLatestLocalVersionTitle => 'Local Plus version for the next payment';
+
+  @override
   String subscriptionVersionOffer(String version, String date, int price) {
     return '$version · Effective $date · NT\$$price per quarter';
   }
@@ -1413,6 +1440,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminPricingAnswerDays => 'Answer history days';
+
+  @override
+  String get adminPricingLocalZeroUnlimited => 'For Local Plus, 0 in a quota field means unlimited.';
+
+  @override
+  String subscriptionDowngradeWarning(String date) {
+    return 'Your cloud data exceeds the free allowance. Remove or move the excess by $date.';
+  }
+
+  @override
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    return '$resource: $used/$quota (over by $excess)';
+  }
 
   @override
   String get adminSubscriptionTitle => 'Manage subscription';

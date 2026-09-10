@@ -1259,6 +1259,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionCurrentPlus => '現在のプラン：Plus';
 
   @override
+  String get subscriptionCurrentCloudPlus => '現在：クラウド Plus';
+
+  @override
+  String get dataClearLocalTitle => '端末データを削除';
+
+  @override
+  String get dataClearLocalConfirm => 'この端末の個人データをすべて完全に削除します。元に戻せません。削除後、クラウドへの切り替えを再試行できます。続行しますか？';
+
+  @override
+  String get dataClearLocalAction => '端末データを削除';
+
+  @override
+  String get dataClearLocalSuccess => '端末データを削除しました';
+
+  @override
+  String get dataClearLocalFailed => '端末データを削除できませんでした。後でもう一度お試しください。';
+
+  @override
+  String get subscriptionCurrentLocalPlus => '現在：ローカル Plus';
+
+  @override
   String subscriptionValidUntil(String date) {
     return '有効期限：$date';
   }
@@ -1342,6 +1363,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionNextVersionTitle => '次回支払いに適用される最新版';
 
   @override
+  String get subscriptionNextCloudVersionTitle => '次回の支払いに適用されるクラウド版';
+
+  @override
+  String get subscriptionLatestLocalVersionTitle => '次回の支払いに適用されるローカル Plus 版';
+
+  @override
   String subscriptionVersionOffer(String version, String date, int price) {
     return '$version・$date適用・四半期NT\$$price';
   }
@@ -1413,6 +1440,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get adminPricingAnswerDays => '解答履歴の日数';
+
+  @override
+  String get adminPricingLocalZeroUnlimited => 'ローカル Plus では、上限欄の 0 は無制限を意味します。';
+
+  @override
+  String subscriptionDowngradeWarning(String date) {
+    return 'クラウドデータが無料枠を超えています。$date までに超過分を移動または削除してください。';
+  }
+
+  @override
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    return '$resource：$used/$quota（$excess 件超過）';
+  }
 
   @override
   String get adminSubscriptionTitle => '購読管理';

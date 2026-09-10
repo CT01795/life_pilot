@@ -37,10 +37,14 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
-    accounts = await service.fetchAccounts(
-        user: auth?.currentAccount ?? '', category: inputCategory ?? category);
-    isLoading = false;
-    notifyListeners();
+    try {
+      accounts = await service.fetchAccounts(
+          user: auth?.currentAccount ?? '',
+          category: inputCategory ?? category);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<ModelPointRecordAccount> createAccount(
