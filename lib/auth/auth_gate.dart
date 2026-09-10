@@ -14,10 +14,13 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<ProviderLocale>(builder: (context, localeProvider, _) {
-      return Selector<ModelAuthView, AuthPage>(
-        selector: (_, model) => model.currentPage,
-        builder: (_, page, __) {
-          switch (page) {
+      return Selector<ModelAuthView, ({AuthPage page, String? account})>(
+        selector: (_, model) => (
+          page: model.currentPage,
+          account: model.account?.trim().toLowerCase(),
+        ),
+        builder: (_, session, __) {
+          switch (session.page) {
             case AuthPage.login:
               return PageLogin(
                 key: ValueKey(localeProvider.locale),
@@ -31,7 +34,9 @@ class AuthGate extends StatelessWidget {
                 key: ValueKey(localeProvider.locale),
               );
             case AuthPage.pageMain:
-              return const AppShell();
+              return AppShell(
+                key: ValueKey('app-shell-${session.account ?? ''}'),
+              );
           }
         },
       );

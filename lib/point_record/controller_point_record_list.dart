@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 class ControllerPointRecordList extends SafeChangeNotifier {
   final ServicePointRecord service;
   ControllerAuth? auth;
+  String? _accountKey;
+  int _accountGeneration = 0;
 
   String? _currentCategory;
   String get category => _currentCategory == null
@@ -28,23 +30,40 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   ControllerPointRecordList({
     required this.service,
     required this.auth,
-  });
+  }) : _accountKey = auth?.currentAccount?.trim().toLowerCase();
 
   List<ModelPointRecordAccount> accounts = [];
   bool isLoading = false;
 
   Future<void> loadAccounts({String? inputCategory}) async {
     if (isLoading) return;
+    final generation = _accountGeneration;
     isLoading = true;
     notifyListeners();
     try {
-      accounts = await service.fetchAccounts(
+      final loaded = await service.fetchAccounts(
           user: auth?.currentAccount ?? '',
           category: inputCategory ?? category);
+      if (generation != _accountGeneration) return;
+      accounts = loaded;
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (generation == _accountGeneration) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
+  }
+
+  void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
+    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    auth = nextAuth;
+    if (_accountKey == nextAccount) return;
+    _accountKey = nextAccount;
+    _accountGeneration++;
+    isLoading = false;
+    accounts = [];
+    _currentCategory = null;
+    if (notify) notifyListeners();
   }
 
   Future<ModelPointRecordAccount> createAccount(

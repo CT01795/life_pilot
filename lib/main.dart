@@ -107,7 +107,7 @@ void main() async {
               service: service,
               auth: auth,
             );
-            controller.auth = auth;
+            controller.updateAuth(auth, notify: false);
             return controller;
           },
         ),
@@ -126,7 +126,7 @@ void main() async {
               service: service,
               auth: auth,
             );
-            controller.auth = auth;
+            controller.updateAuth(auth, notify: false);
             return controller;
           },
         ),

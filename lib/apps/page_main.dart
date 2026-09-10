@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/business_plan/page_business_plan.dart';
 import 'package:life_pilot/accounting/page_accounting_list.dart';
 import 'package:life_pilot/pages/home/page_home.dart';
@@ -25,6 +26,7 @@ class PageMain extends StatefulWidget {
 
 class _PageMainState extends State<PageMain> {
   final Map<PageType, Widget> _pageMap = {};
+  String? _pageAccount;
 
   Widget _getPage(PageType type) {
     return _pageMap.putIfAbsent(
@@ -34,27 +36,38 @@ class _PageMainState extends State<PageMain> {
   }
 
   Widget _buildPage(PageType type) => switch (type) {
-    PageType.home => const PageHome(),
-    PageType.personalEvent => const PageCalendar(),
-    PageType.stock => const PageStock(),
-    PageType.settings => const PageSettings(),
-    PageType.recommendEvent => const PageRecommendEvent(),
-    PageType.recommendPlaces => const PageRecommendPlaces(),
-    PageType.memoryTrace => const PageMemoryTrace(),
-    PageType.accountRecords => const PageAccountingList(),
-    PageType.pointsRecord => const PagePointRecord(),
-    PageType.game => const PageGameList(),
-    PageType.ai => const PageAI(),
-    PageType.feedbackAdmin => const PageFeedbackAdmin(),
-    PageType.businessPlan => const PageBusinessPlan(),
-  };
-  
+        PageType.home => const PageHome(),
+        PageType.personalEvent => const PageCalendar(),
+        PageType.stock => const PageStock(),
+        PageType.settings => const PageSettings(),
+        PageType.recommendEvent => const PageRecommendEvent(),
+        PageType.recommendPlaces => const PageRecommendPlaces(),
+        PageType.memoryTrace => const PageMemoryTrace(),
+        PageType.accountRecords => const PageAccountingList(),
+        PageType.pointsRecord => const PagePointRecord(),
+        PageType.game => const PageGameList(),
+        PageType.ai => const PageAI(),
+        PageType.feedbackAdmin => const PageFeedbackAdmin(),
+        PageType.businessPlan => const PageBusinessPlan(),
+      };
+
   @override
   Widget build(BuildContext context) {
+    final account = context.select<ControllerAuth, String?>(
+      (auth) => auth.currentAccount?.trim().toLowerCase(),
+    );
     final selectedPage = context.select<ControllerPageMain, PageType>(
       (controller) => controller.selectedPage,
     );
 
-    return _getPage(selectedPage);
+    if (_pageAccount != account) {
+      _pageAccount = account;
+      _pageMap.clear();
+    }
+
+    return KeyedSubtree(
+      key: ValueKey('${account ?? 'signed-out'}:${selectedPage.name}'),
+      child: _getPage(selectedPage),
+    );
   }
 }

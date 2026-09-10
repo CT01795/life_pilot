@@ -14,27 +14,48 @@ import 'package:provider/provider.dart';
 class ControllerAccountingList extends SafeChangeNotifier {
   final ServiceAccounting _service;
   ControllerAuth? auth;
+  String? _accountKey;
+  int _accountGeneration = 0;
 
   ControllerAccountingList({
     required ServiceAccounting service,
     required this.auth,
-  }) : _service = service;
+  })  : _service = service,
+        _accountKey = auth?.currentAccount?.trim().toLowerCase();
 
   bool isLoading = false;
   List<ModelAccountingAccount> accounts = [];
 
   Future<void> loadAccounts({String? inputCategory}) async {
     if (isLoading) return;
+    final generation = _accountGeneration;
     isLoading = true;
     notifyListeners();
     try {
-      accounts = await _service.fetchAccounts(
+      final loaded = await _service.fetchAccounts(
           user: auth?.currentAccount ?? '',
           category: inputCategory ?? category);
+      if (generation != _accountGeneration) return;
+      accounts = loaded;
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (generation == _accountGeneration) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
+  }
+
+  void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
+    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    auth = nextAuth;
+    if (_accountKey == nextAccount) return;
+    _accountKey = nextAccount;
+    _accountGeneration++;
+    isLoading = false;
+    accounts = [];
+    mainCurrency = null;
+    _currentCategory = null;
+    if (notify) notifyListeners();
   }
 
   String? mainCurrency;
