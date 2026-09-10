@@ -2,6 +2,31 @@ import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/utils/api.dart';
 
 class ServiceSubscription {
+  Future<List<SubscriptionCleanupPreview>> fetchCleanupPreview({
+    String? email,
+  }) async {
+    final rows = await supabase.rpc(
+      'get_subscription_cleanup_preview',
+      params: {'p_email': email?.trim()},
+    );
+    return (rows as List<dynamic>)
+        .map((row) => SubscriptionCleanupPreview.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ))
+        .toList(growable: false);
+  }
+
+  Future<Map<String, dynamic>> cleanupData({
+    String? email,
+    required String mode,
+  }) async {
+    final result = await supabase.rpc(
+      'cleanup_subscription_data',
+      params: {'p_email': email?.trim(), 'p_mode': mode},
+    );
+    return Map<String, dynamic>.from(result as Map);
+  }
+
   Future<SubscriptionSnapshot> fetchMyUsage() async {
     final responses = await Future.wait([
       supabase.rpc('get_my_subscription_usage'),
@@ -146,6 +171,36 @@ class ServiceSubscription {
       'p_answer_history_days': quotas['answerDays'],
     });
   }
+}
+
+class SubscriptionCleanupPreview {
+  const SubscriptionCleanupPreview({
+    required this.email,
+    required this.resource,
+    required this.used,
+    required this.quota,
+    required this.excess,
+    this.graceEndsAt,
+  });
+
+  final String email;
+  final String resource;
+  final int used;
+  final int quota;
+  final int excess;
+  final DateTime? graceEndsAt;
+
+  factory SubscriptionCleanupPreview.fromJson(Map<String, dynamic> json) =>
+      SubscriptionCleanupPreview(
+        email: json['target_email']?.toString() ?? '',
+        resource: json['resource']?.toString() ?? '',
+        used: (json['used'] as num?)?.toInt() ?? 0,
+        quota: (json['quota'] as num?)?.toInt() ?? 0,
+        excess: (json['excess'] as num?)?.toInt() ?? 0,
+        graceEndsAt: DateTime.tryParse(
+          json['grace_ends_at']?.toString() ?? '',
+        ),
+      );
 }
 
 class SubscriptionPricingVersion {

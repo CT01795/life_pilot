@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
+import 'package:life_pilot/subscription/widgets_subscription_cleanup.dart';
 
 class PageSettings extends StatefulWidget {
   const PageSettings({this.closeOnStorageChange = false, super.key});
@@ -21,44 +22,6 @@ class PageSettings extends StatefulWidget {
 
 class _PageSettingsState extends State<PageSettings> {
   bool _transferring = false;
-
-  Future<void> _clearLocalData() async {
-    if (_transferring) return;
-    final auth = context.read<ControllerAuth>();
-    final account = auth.currentAccount;
-    if (account == null) return;
-    final loc = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(loc.dataClearLocalTitle),
-            content: Text(loc.dataClearLocalConfirm),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(loc.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(loc.dataClearLocalAction),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmed || !mounted) return;
-    setState(() => _transferring = true);
-    try {
-      await LocalDataStore.instance.deleteAllRecords(owner: account);
-      await auth.refreshSubscriptionUsage(notify: false);
-      if (!mounted) return;
-      AppNavigator.showSnackBar(loc.dataClearLocalSuccess);
-    } catch (_) {
-      if (mounted) AppNavigator.showErrorBar(loc.dataClearLocalFailed);
-    } finally {
-      if (mounted) setState(() => _transferring = false);
-    }
-  }
 
   Future<void> _move({required bool upload}) async {
     if (_transferring) return;
@@ -178,14 +141,8 @@ class _PageSettingsState extends State<PageSettings> {
                   _move(upload: value == DataStorageLocation.cloud);
                 },
         ),
-        if (auth.preferredStorage == DataStorageLocation.local) ...[
-          Gaps.h12,
-          OutlinedButton.icon(
-            onPressed: _transferring ? null : _clearLocalData,
-            icon: const Icon(Icons.delete_sweep_outlined),
-            label: Text(loc.dataClearLocalAction),
-          ),
-        ],
+        Gaps.h16,
+        const SubscriptionDataCleanup(),
         if (auth.isSysAdmin) ...[
           Gaps.h16,
           AdminPricingVersionEditor(

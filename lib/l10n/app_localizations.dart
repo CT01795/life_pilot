@@ -3062,6 +3062,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save subscription'**
   String get adminSubscriptionSave;
+
+  /// No description provided for @dataCleanupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data cleanup'**
+  String get dataCleanupTitle;
+
+  /// No description provided for @dataCleanupAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and clean up'**
+  String get dataCleanupAction;
+
+  /// No description provided for @dataCleanupTargetEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'User email (blank means yourself)'**
+  String get dataCleanupTargetEmail;
+
+  /// No description provided for @dataCleanupLocalExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Device data is unlimited. You can clear all personal data stored on this device.'**
+  String get dataCleanupLocalExplanation;
+
+  /// No description provided for @dataCleanupCloudExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Review current cloud overages, then remove only the excess or all personal cloud data.'**
+  String get dataCleanupCloudExplanation;
+
+  /// No description provided for @dataCleanupNoOverage.
+  ///
+  /// In en, this message translates to:
+  /// **'No cloud data currently exceeds the allowance.'**
+  String get dataCleanupNoOverage;
+
+  /// No description provided for @dataCleanupExcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove excess'**
+  String get dataCleanupExcess;
+
+  /// No description provided for @dataCleanupAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get dataCleanupAll;
+
+  /// No description provided for @dataCleanupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm deletion'**
+  String get dataCleanupConfirmTitle;
+
+  /// No description provided for @dataCleanupExcessConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete only records above the current allowance? This cannot be undone.'**
+  String get dataCleanupExcessConfirm;
+
+  /// No description provided for @dataCleanupAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all personal data in the selected storage? This cannot be undone.'**
+  String get dataCleanupAllConfirm;
+
+  /// No description provided for @dataCleanupSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Data cleanup completed'**
+  String get dataCleanupSuccess;
+
+  /// No description provided for @dataCleanupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Data cleanup failed'**
+  String get dataCleanupFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

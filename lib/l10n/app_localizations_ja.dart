@@ -1523,4 +1523,43 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get adminSubscriptionSave => '購読を保存';
+
+  @override
+  String get dataCleanupTitle => 'データ整理';
+
+  @override
+  String get dataCleanupAction => '確認して整理';
+
+  @override
+  String get dataCleanupTargetEmail => 'ユーザー Email（空欄は自分）';
+
+  @override
+  String get dataCleanupLocalExplanation => '端末データは無制限です。この端末の個人データをすべて削除できます。';
+
+  @override
+  String get dataCleanupCloudExplanation => 'クラウドの超過状況を確認し、超過分のみ、または全データを削除できます。';
+
+  @override
+  String get dataCleanupNoOverage => '現在、上限を超えたクラウドデータはありません。';
+
+  @override
+  String get dataCleanupExcess => '超過分を削除';
+
+  @override
+  String get dataCleanupAll => 'すべて削除';
+
+  @override
+  String get dataCleanupConfirmTitle => '削除の確認';
+
+  @override
+  String get dataCleanupExcessConfirm => '現在の上限を超えたデータのみ削除しますか？元に戻せません。';
+
+  @override
+  String get dataCleanupAllConfirm => '選択した保存先の個人データをすべて削除しますか？元に戻せません。';
+
+  @override
+  String get dataCleanupSuccess => 'データ整理が完了しました';
+
+  @override
+  String get dataCleanupFailed => 'データ整理に失敗しました';
 }

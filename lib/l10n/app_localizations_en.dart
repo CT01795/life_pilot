@@ -1523,4 +1523,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminSubscriptionSave => 'Save subscription';
+
+  @override
+  String get dataCleanupTitle => 'Data cleanup';
+
+  @override
+  String get dataCleanupAction => 'Review and clean up';
+
+  @override
+  String get dataCleanupTargetEmail => 'User email (blank means yourself)';
+
+  @override
+  String get dataCleanupLocalExplanation => 'Device data is unlimited. You can clear all personal data stored on this device.';
+
+  @override
+  String get dataCleanupCloudExplanation => 'Review current cloud overages, then remove only the excess or all personal cloud data.';
+
+  @override
+  String get dataCleanupNoOverage => 'No cloud data currently exceeds the allowance.';
+
+  @override
+  String get dataCleanupExcess => 'Remove excess';
+
+  @override
+  String get dataCleanupAll => 'Clear all';
+
+  @override
+  String get dataCleanupConfirmTitle => 'Confirm deletion';
+
+  @override
+  String get dataCleanupExcessConfirm => 'Delete only records above the current allowance? This cannot be undone.';
+
+  @override
+  String get dataCleanupAllConfirm => 'Delete all personal data in the selected storage? This cannot be undone.';
+
+  @override
+  String get dataCleanupSuccess => 'Data cleanup completed';
+
+  @override
+  String get dataCleanupFailed => 'Data cleanup failed';
 }

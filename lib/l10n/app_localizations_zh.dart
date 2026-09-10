@@ -1523,4 +1523,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get adminSubscriptionSave => '儲存訂閱設定';
+
+  @override
+  String get dataCleanupTitle => '清理資料';
+
+  @override
+  String get dataCleanupAction => '查看並清理';
+
+  @override
+  String get dataCleanupTargetEmail => '使用者 Email（留空為自己）';
+
+  @override
+  String get dataCleanupLocalExplanation => '本機資料不限量，可清除這台裝置上的全部個人資料。';
+
+  @override
+  String get dataCleanupCloudExplanation => '請先確認目前雲端超額項目，再選擇只清超額或清除全部個人資料。';
+
+  @override
+  String get dataCleanupNoOverage => '目前沒有超過額度的雲端資料。';
+
+  @override
+  String get dataCleanupExcess => '只清超額';
+
+  @override
+  String get dataCleanupAll => '全部清除';
+
+  @override
+  String get dataCleanupConfirmTitle => '確認刪除';
+
+  @override
+  String get dataCleanupExcessConfirm => '確定只刪除超過目前額度的資料嗎？刪除後無法復原。';
+
+  @override
+  String get dataCleanupAllConfirm => '確定清除所選儲存位置的全部個人資料嗎？刪除後無法復原。';
+
+  @override
+  String get dataCleanupSuccess => '資料清理完成';
+
+  @override
+  String get dataCleanupFailed => '資料清理失敗';
 }

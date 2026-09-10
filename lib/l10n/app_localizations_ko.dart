@@ -1523,4 +1523,43 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get adminSubscriptionSave => '구독 저장';
+
+  @override
+  String get dataCleanupTitle => '데이터 정리';
+
+  @override
+  String get dataCleanupAction => '확인 후 정리';
+
+  @override
+  String get dataCleanupTargetEmail => '사용자 Email (비워두면 본인)';
+
+  @override
+  String get dataCleanupLocalExplanation => '기기 데이터는 무제한입니다. 이 기기의 모든 개인 데이터를 삭제할 수 있습니다.';
+
+  @override
+  String get dataCleanupCloudExplanation => '클라우드 초과 현황을 확인한 뒤 초과분만 또는 전체 데이터를 삭제할 수 있습니다.';
+
+  @override
+  String get dataCleanupNoOverage => '현재 한도를 초과한 클라우드 데이터가 없습니다.';
+
+  @override
+  String get dataCleanupExcess => '초과분 삭제';
+
+  @override
+  String get dataCleanupAll => '전체 삭제';
+
+  @override
+  String get dataCleanupConfirmTitle => '삭제 확인';
+
+  @override
+  String get dataCleanupExcessConfirm => '현재 한도를 초과한 데이터만 삭제할까요? 복구할 수 없습니다.';
+
+  @override
+  String get dataCleanupAllConfirm => '선택한 저장소의 모든 개인 데이터를 삭제할까요? 복구할 수 없습니다.';
+
+  @override
+  String get dataCleanupSuccess => '데이터 정리가 완료되었습니다';
+
+  @override
+  String get dataCleanupFailed => '데이터 정리에 실패했습니다';
 }
