@@ -56,7 +56,7 @@ class ServiceAccounting {
             accountName: response[Fields.account],
             category: response['category'],
             masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-            balance: (response['balance'] as num?)?.toInt() ?? 0,
+            balance: (response['balance'] as num?) ?? 0,
             currency: response['main_currency'],
             exchangeRate: response['exchange_rate']);
       }
@@ -83,7 +83,7 @@ class ServiceAccounting {
         accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
-        balance: (response['balance'] ?? 0).toInt(),
+        balance: (response['balance'] as num?) ?? 0,
         currency: response['main_currency'],
         exchangeRate: response['exchange_rate'],
       );
@@ -133,11 +133,11 @@ class ServiceAccounting {
                             e[Fields.id]?.toString() &&
                         d['currency']?.toString() ==
                             e['main_currency']?.toString())
-                    .fold<int>(
+                    .fold<num>(
                         0,
                         (sum, d) =>
                             sum +
-                            (int.tryParse(d['value']?.toString() ?? '0') ?? 0)),
+                            (num.tryParse(d['value']?.toString() ?? '0') ?? 0)),
                 currency: e['main_currency'],
                 exchangeRate: e['exchange_rate']))
             .toList();
@@ -192,7 +192,7 @@ class ServiceAccounting {
             accountName: e[Fields.account],
             category: e['category'],
             masterGraphUrl: bytes,
-            balance: (e['balance'] ?? 0).toInt(),
+            balance: (e['balance'] as num?) ?? 0,
             currency: e['main_currency'],
             exchangeRate: e['exchange_rate'],
           );
@@ -297,7 +297,7 @@ class ServiceAccounting {
         accountName: result[Fields.account],
         category: result['category'],
         masterGraphUrl: bytes,
-        balance: (result['balance'] ?? 0).toInt(),
+        balance: (result['balance'] as num?) ?? 0,
         currency: result['main_currency'],
         exchangeRate: result['exchange_rate'],
       );
@@ -411,10 +411,10 @@ class ServiceAccounting {
       final accountRows = rows.where((row) =>
           row['account_id']?.toString() == accountId &&
           row['type']?.toString().toLowerCase() == type.toLowerCase());
-      final balance = accountRows.fold<int>(
+      final balance = accountRows.fold<num>(
         0,
         (sum, row) =>
-            sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+            sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
       );
       final filtered = accountRows.where((row) {
         if (includeReservedRecords && row['primary_category'] == 'reserved') {
@@ -495,7 +495,7 @@ class ServiceAccounting {
         .limit(1);
     var balance = totalRows.isEmpty
         ? 0
-        : int.tryParse(totalRows.first['balance']?.toString() ?? '0') ?? 0;
+        : num.tryParse(totalRows.first['balance']?.toString() ?? '0') ?? 0;
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,
@@ -505,10 +505,10 @@ class ServiceAccounting {
           .where((row) =>
               row['account_id']?.toString() == accountId &&
               row['type']?.toString() == type)
-          .fold<int>(
+          .fold<num>(
             0,
             (sum, row) =>
-                sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+                sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
           );
     }
     final unique = <String, Map<String, dynamic>>{
@@ -600,14 +600,13 @@ class ServiceAccounting {
       secondaryCategory: detail['group']?.toString(),
       description: detail['description']?.toString() ?? '',
       type: detail['type']?.toString() ?? '',
-      value: detail['value'] is int
-          ? detail['value'] as int
-          : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+      value: (detail['value'] as num?) ??
+          num.tryParse(detail['value']?.toString() ?? '0') ??
+          0,
       currency: detail['currency']?.toString() ?? '',
       exchangeRate: detail['exchange_rate'],
-      balance: balance is int
-          ? balance
-          : int.tryParse(balance?.toString() ?? '0') ?? 0,
+      balance:
+          (balance as num?) ?? num.tryParse(balance?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -661,7 +660,7 @@ class ServiceAccounting {
 
   Future<void> updateAccountingDetail({
     required String detailId,
-    required int newValue,
+    required num newValue,
     required String newCurrency,
     required String newDescription,
     required DateTime newDate,
@@ -783,10 +782,10 @@ class ServiceAccounting {
                   row['account_id']?.toString() == accountId &&
                   row['currency']?.toString() == currency,
             )
-            .fold<int>(
+            .fold<num>(
               0,
               (sum, row) =>
-                  sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+                  sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
             );
         await LocalDataStore.instance.put(
           owner: owner,

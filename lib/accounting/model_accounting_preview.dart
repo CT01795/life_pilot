@@ -1,7 +1,7 @@
 class AccountingPreview {
   String? id;
   String description;
-  int value;
+  num value;
   String? currency;
   num? exchangeRate;
   DateTime? date;
@@ -22,7 +22,7 @@ class AccountingPreview {
   AccountingPreview copyWith({
     String? id,
     String? description,
-    int? value,
+    num? value,
     String? currency,
     num? exchangeRate,
     DateTime? date,

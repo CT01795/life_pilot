@@ -24,8 +24,8 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   final String currentType = 'balance';
 
   List<ModelAccountingDetail> todayRecords = [];
-  int todayTotal = 0;
-  int? total;
+  num todayTotal = 0;
+  num? total;
   String? _currentCurrency;
   bool isLoading = false;
   bool isLoadingMore = false;

@@ -9,9 +9,9 @@ class ModelAccountingDetail {
   final String? secondaryCategory;
   final String description;
   final String type;
-  final int value;
+  final num value;
   final String currency;
-  int? balance;
+  num? balance;
   num? exchangeRate;
 
   late final DateTime localTime;
@@ -37,10 +37,10 @@ class ModelAccountingDetail {
 
   ModelAccountingDetail copyWith({
     String? description,
-    int? value,
+    num? value,
     String? currency,
     num? exchangeRate,
-    int? balance,
+    num? balance,
     DateTime? date,
     String? primaryCategory,
     String? secondaryCategory,

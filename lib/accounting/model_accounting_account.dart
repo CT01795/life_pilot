@@ -4,7 +4,7 @@ class ModelAccountingAccount {
   final String id;
   final String accountName;
   final Uint8List? masterGraphUrl;
-  final int balance;
+  final num balance;
   String? currency;
   num? exchangeRate; // 與主要幣別轉換用
   final String category; // personal / project
@@ -19,15 +19,14 @@ class ModelAccountingAccount {
     this.exchangeRate,
   });
 
-  ModelAccountingAccount copyWith({
-    String? id,
-    String? accountName,
-    String? category,
-    Uint8List? masterGraphUrl,
-    int? balance,
-    String? currency,
-    num? exchangeRate
-  }) {
+  ModelAccountingAccount copyWith(
+      {String? id,
+      String? accountName,
+      String? category,
+      Uint8List? masterGraphUrl,
+      num? balance,
+      String? currency,
+      num? exchangeRate}) {
     return ModelAccountingAccount(
       id: id ?? this.id,
       accountName: accountName ?? this.accountName,

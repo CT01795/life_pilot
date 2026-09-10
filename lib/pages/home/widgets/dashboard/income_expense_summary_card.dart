@@ -33,17 +33,17 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
       (m) => m.setting.accountingAccountId != null,
     );
 
-    final todayTotal = context.select<ModelDashboard, int>(
+    final todayTotal = context.select<ModelDashboard, num>(
       (m) => m.state.todayAccountingTotal,
     );
-    final accountTotal = context.select<ModelDashboard, int>(
+    final accountTotal = context.select<ModelDashboard, num>(
       (m) => m.state.accountingTotal,
     );
     final currency = context.select<ModelDashboard, String>(
       (m) => m.state.accountingCurrency,
     );
 
-    final formatter = NumberFormat('#,###');
+    final formatter = NumberFormat('#,##0.##');
 
     return Card(
       color: colorScheme.brightness == Brightness.dark

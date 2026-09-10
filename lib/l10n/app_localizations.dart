@@ -2163,6 +2163,30 @@ abstract class AppLocalizations {
   /// **'points'**
   String get pointsUnit;
 
+  /// Income direction for an event accounting record
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get eventIncome;
+
+  /// Expense direction for an event accounting record
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get eventExpense;
+
+  /// Increase points when completing an event
+  ///
+  /// In en, this message translates to:
+  /// **'Add points'**
+  String get eventPointIncrease;
+
+  /// Deduct points when completing an event
+  ///
+  /// In en, this message translates to:
+  /// **'Deduct points'**
+  String get eventPointDecrease;
+
   /// Recommended event refresh button
   ///
   /// In en, this message translates to:
@@ -2565,31 +2589,31 @@ abstract class AppLocalizations {
   /// **'Current: Cloud Plus'**
   String get subscriptionCurrentCloudPlus;
 
-  /// No description provided for @dataClearLocalTitle.
+  /// Label for dataClearLocalTitle
   ///
   /// In en, this message translates to:
   /// **'Clear device data'**
   String get dataClearLocalTitle;
 
-  /// No description provided for @dataClearLocalConfirm.
+  /// Label for dataClearLocalConfirm
   ///
   /// In en, this message translates to:
   /// **'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?'**
   String get dataClearLocalConfirm;
 
-  /// No description provided for @dataClearLocalAction.
+  /// Label for dataClearLocalAction
   ///
   /// In en, this message translates to:
   /// **'Clear device data'**
   String get dataClearLocalAction;
 
-  /// No description provided for @dataClearLocalSuccess.
+  /// Label for dataClearLocalSuccess
   ///
   /// In en, this message translates to:
   /// **'Device data cleared'**
   String get dataClearLocalSuccess;
 
-  /// No description provided for @dataClearLocalFailed.
+  /// Label for dataClearLocalFailed
   ///
   /// In en, this message translates to:
   /// **'Could not clear device data. Try again later.'**
@@ -2913,7 +2937,7 @@ abstract class AppLocalizations {
   /// **'Answer history days'**
   String get adminPricingAnswerDays;
 
-  /// No description provided for @adminPricingLocalZeroUnlimited.
+  /// Label for adminPricingLocalZeroUnlimited
   ///
   /// In en, this message translates to:
   /// **'For Local Plus, 0 in a quota field means unlimited.'**
@@ -3063,79 +3087,79 @@ abstract class AppLocalizations {
   /// **'Save subscription'**
   String get adminSubscriptionSave;
 
-  /// No description provided for @dataCleanupTitle.
+  /// Label for dataCleanupTitle
   ///
   /// In en, this message translates to:
   /// **'Data cleanup'**
   String get dataCleanupTitle;
 
-  /// No description provided for @dataCleanupAction.
+  /// Label for dataCleanupAction
   ///
   /// In en, this message translates to:
   /// **'Review and clean up'**
   String get dataCleanupAction;
 
-  /// No description provided for @dataCleanupTargetEmail.
+  /// Label for dataCleanupTargetEmail
   ///
   /// In en, this message translates to:
   /// **'User email (blank means yourself)'**
   String get dataCleanupTargetEmail;
 
-  /// No description provided for @dataCleanupLocalExplanation.
+  /// Label for dataCleanupLocalExplanation
   ///
   /// In en, this message translates to:
   /// **'Device data is unlimited. You can clear all personal data stored on this device.'**
   String get dataCleanupLocalExplanation;
 
-  /// No description provided for @dataCleanupCloudExplanation.
+  /// Label for dataCleanupCloudExplanation
   ///
   /// In en, this message translates to:
   /// **'Review current cloud overages, then remove only the excess or all personal cloud data.'**
   String get dataCleanupCloudExplanation;
 
-  /// No description provided for @dataCleanupNoOverage.
+  /// Label for dataCleanupNoOverage
   ///
   /// In en, this message translates to:
   /// **'No cloud data currently exceeds the allowance.'**
   String get dataCleanupNoOverage;
 
-  /// No description provided for @dataCleanupExcess.
+  /// Label for dataCleanupExcess
   ///
   /// In en, this message translates to:
   /// **'Remove excess'**
   String get dataCleanupExcess;
 
-  /// No description provided for @dataCleanupAll.
+  /// Label for dataCleanupAll
   ///
   /// In en, this message translates to:
   /// **'Clear all'**
   String get dataCleanupAll;
 
-  /// No description provided for @dataCleanupConfirmTitle.
+  /// Label for dataCleanupConfirmTitle
   ///
   /// In en, this message translates to:
   /// **'Confirm deletion'**
   String get dataCleanupConfirmTitle;
 
-  /// No description provided for @dataCleanupExcessConfirm.
+  /// Label for dataCleanupExcessConfirm
   ///
   /// In en, this message translates to:
   /// **'Delete only records above the current allowance? This cannot be undone.'**
   String get dataCleanupExcessConfirm;
 
-  /// No description provided for @dataCleanupAllConfirm.
+  /// Label for dataCleanupAllConfirm
   ///
   /// In en, this message translates to:
   /// **'Delete all personal data in the selected storage? This cannot be undone.'**
   String get dataCleanupAllConfirm;
 
-  /// No description provided for @dataCleanupSuccess.
+  /// Label for dataCleanupSuccess
   ///
   /// In en, this message translates to:
   /// **'Data cleanup completed'**
   String get dataCleanupSuccess;
 
-  /// No description provided for @dataCleanupFailed.
+  /// Label for dataCleanupFailed
   ///
   /// In en, this message translates to:
   /// **'Data cleanup failed'**

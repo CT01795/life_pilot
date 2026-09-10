@@ -195,7 +195,7 @@ class _AccountCard extends StatelessWidget {
           return const SizedBox.shrink();
           // 或 return Center(child: CircularProgressIndicator());
         }
-        final formatter = NumberFormat('#,###');
+        final formatter = NumberFormat('#,##0.####');
 
         return Card(
           color: Colors.grey[50],

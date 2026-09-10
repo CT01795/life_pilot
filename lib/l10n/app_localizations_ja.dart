@@ -1049,6 +1049,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pointsUnit => 'ポイント';
 
   @override
+  String get eventIncome => '収入';
+
+  @override
+  String get eventExpense => '支出';
+
+  @override
+  String get eventPointIncrease => '加点';
+
+  @override
+  String get eventPointDecrease => '減点';
+
+  @override
   String get eventRefresh => 'おすすめイベントを更新';
 
   @override

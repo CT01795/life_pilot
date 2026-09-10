@@ -2,7 +2,7 @@ import 'package:life_pilot/utils/const.dart';
 
 class IncomeExpenseItem {
   final String description;
-  final int value;
+  final num value;
   final String? currency;
   final DateTime? createdAt;
   final DateTime? date;
@@ -22,7 +22,7 @@ class IncomeExpenseItem {
   ) {
     return IncomeExpenseItem(
       description: json['description'] ?? '',
-      value: (json['value'] ?? 0) as int,
+      value: (json['value'] as num?) ?? 0,
       currency: json['currency'],
       createdAt: json[Fields.createdAt] != null
           ? DateTime.parse(
@@ -41,8 +41,8 @@ class IncomeExpenseItem {
 
 class AccountingDashboardSummary {
   final List<IncomeExpenseItem> records;
-  final int total;
-  final int todayTotal;
+  final num total;
+  final num todayTotal;
   final String currency;
 
   const AccountingDashboardSummary({

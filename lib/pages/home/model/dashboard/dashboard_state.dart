@@ -10,8 +10,8 @@ class DashboardState {
   final List<RecommendedPlace> recommendPlaces;
   final List<IncomeExpenseItem> todayIncomeExpense;
   final List<PointRecordItem> todayPoints;
-  final int accountingTotal;
-  final int todayAccountingTotal;
+  final num accountingTotal;
+  final num todayAccountingTotal;
   final String accountingCurrency;
   final int pointsTotal;
   final int todayPointsTotal;
@@ -50,8 +50,8 @@ class DashboardState {
     List<RecommendedPlace>? recommendPlaces,
     List<IncomeExpenseItem>? todayIncomeExpense,
     List<PointRecordItem>? todayPoints,
-    int? accountingTotal,
-    int? todayAccountingTotal,
+    num? accountingTotal,
+    num? todayAccountingTotal,
     String? accountingCurrency,
     int? pointsTotal,
     int? todayPointsTotal,

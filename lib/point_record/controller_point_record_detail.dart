@@ -138,10 +138,11 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     final results = NLP.parseMulti(text);
 
     return results
+        .where((result) => result.value == result.value.roundToDouble())
         .map(
           (r) => PointRecordPreview(
             description: r.description,
-            value: r.value,
+            value: r.value.toInt(),
           ),
         )
         .toList();

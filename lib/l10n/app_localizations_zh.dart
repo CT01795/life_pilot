@@ -1049,6 +1049,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pointsUnit => '點';
 
   @override
+  String get eventIncome => '收入';
+
+  @override
+  String get eventExpense => '支出';
+
+  @override
+  String get eventPointIncrease => '加分';
+
+  @override
+  String get eventPointDecrease => '減分';
+
+  @override
   String get eventRefresh => '更新推薦活動';
 
   @override

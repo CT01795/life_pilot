@@ -342,10 +342,10 @@ class DashboardRepository {
       );
       return AccountingDashboardSummary(
         records: rows.take(5).map(IncomeExpenseItem.fromJson).toList(),
-        total: (account['balance'] as num?)?.toInt() ?? 0,
-        todayTotal: rows.fold<int>(
+        total: (account['balance'] as num?) ?? 0,
+        todayTotal: rows.fold<num>(
           0,
-          (sum, row) => sum + ((row['value'] as num?)?.toInt() ?? 0),
+          (sum, row) => sum + ((row['value'] as num?) ?? 0),
         ),
         currency: currency,
       );
@@ -401,10 +401,10 @@ class DashboardRepository {
         .toList();
     return AccountingDashboardSummary(
       records: records,
-      total: (accountResult['balance'] ?? 0).toInt(),
-      todayTotal: rows.fold<int>(
+      total: (accountResult['balance'] as num?) ?? 0,
+      todayTotal: rows.fold<num>(
         0,
-        (sum, row) => sum + ((row['value'] ?? 0) as num).toInt(),
+        (sum, row) => sum + ((row['value'] as num?) ?? 0),
       ),
       currency: currency ?? 'TWD',
     );

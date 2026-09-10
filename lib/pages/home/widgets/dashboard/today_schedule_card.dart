@@ -14,6 +14,8 @@ import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.da
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/event_completion_sheet.dart';
+import 'package:life_pilot/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -52,6 +54,12 @@ class TodayScheduleCard extends StatelessWidget {
     );
     final accountingCurrency = context.select<ModelDashboard, String>(
       (m) => m.state.accountingCurrency,
+    );
+    final pointAccountId = context.select<ModelDashboard, String?>(
+      (m) => m.setting.pointAccountId,
+    );
+    final pointAccountName = context.select<ModelDashboard, String?>(
+      (m) => m.setting.pointAccountName,
     );
 
     return Card(
@@ -101,6 +109,7 @@ class TodayScheduleCard extends StatelessWidget {
                               eventName: e.name,
                               accountingAccountName: accountingAccountName,
                               accountingCurrency: accountingCurrency,
+                              pointAccountName: pointAccountName,
                             );
                             if (choice == null || !context.mounted) return;
                             try {
@@ -171,7 +180,7 @@ class TodayScheduleCard extends StatelessWidget {
                                   records: [
                                     AccountingPreview(
                                       description: e.name,
-                                      value: -value,
+                                      value: value,
                                       currency: accountingCurrency,
                                       exchangeRate: null,
                                       date: DateTime.now(),
@@ -193,6 +202,47 @@ class TodayScheduleCard extends StatelessWidget {
                               } catch (error, stackTrace) {
                                 logger.e(
                                   'Could not add event expense.',
+                                  error: error,
+                                  stackTrace: stackTrace,
+                                );
+                                if (context.mounted) {
+                                  final message =
+                                      subscriptionErrorMessage(loc, error);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(message.isNotEmpty
+                                          ? message
+                                          : loc.eventSaveFailed),
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                            if (choice.pointValue case final value?) {
+                              try {
+                                await ServicePointRecord().insertRecordsBatch(
+                                  accountId: pointAccountId!,
+                                  type: 'points',
+                                  records: [
+                                    PointRecordPreview(
+                                      description: e.name,
+                                      value: value,
+                                      date: DateTime.now(),
+                                      primaryCategory: choice.pointCategory,
+                                    ),
+                                  ],
+                                );
+                                if (context.mounted) {
+                                  await context
+                                      .read<ControllerAuth>()
+                                      .refreshSubscriptionUsage();
+                                  await context
+                                      .read<ModelDashboard>()
+                                      .refreshPoints(accountId: pointAccountId);
+                                }
+                              } catch (error, stackTrace) {
+                                logger.e(
+                                  'Could not add event point record.',
                                   error: error,
                                   stackTrace: stackTrace,
                                 );

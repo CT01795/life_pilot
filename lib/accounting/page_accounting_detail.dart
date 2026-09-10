@@ -5,6 +5,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
@@ -69,7 +70,7 @@ class _PageAccountingDetailView extends StatefulWidget {
 class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
-  final numberFormatter = NumberFormat('#,###');
+  final numberFormatter = NumberFormat('#,##0.####');
 
   @override
   void initState() {
@@ -196,7 +197,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
       ControllerAccountingDetail controller) {
     final loc = AppLocalizations.of(context)!;
     String currency = controller.currentCurrency ?? (account.currency ?? '');
-    int totalValue = controller.total ?? 0;
+    num totalValue = controller.total ?? 0;
 
     return Center(
       child: Padding(
@@ -223,7 +224,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                         )
                       : const SizedBox(),
                   Text(
-                    '${NumberFormat('#,###').format(totalValue)} ${loc.accountingUnit}'
+                    '${NumberFormat('#,##0.####').format(totalValue)} ${loc.accountingUnit}'
                         .trim(),
                     style: TextStyle(
                       fontSize: 20,
@@ -247,7 +248,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                         )
                       : const SizedBox(),
                   Text(
-                    '${NumberFormat('#,###').format(controller.todayTotal)} ${loc.accountingUnit}'
+                    '${NumberFormat('#,##0.####').format(controller.todayTotal)} ${loc.accountingUnit}'
                         .trim(),
                     style: TextStyle(
                       fontSize: 20,
@@ -460,8 +461,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   // 回傳修改後的 AccountingPreview，取消則回傳 null
   Future<AccountingPreview?> _showEditDetailDialog(
       BuildContext context, AccountingPreview record) async {
-    final valueController =
-        TextEditingController(text: record.value.toString());
+    final valueController = TextEditingController(
+      text: NumberFormat('#,##0.####').format(record.value),
+    );
     final descController = TextEditingController(text: record.description);
     String currency = record.currency ?? '';
     DateTime selectedDate = record.date ?? DateTime.now();
@@ -490,6 +492,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       controller: valueController,
                       decoration: InputDecoration(labelText: loc.recordValue),
                       keyboardType: TextInputType.number,
+                      inputFormatters: const [
+                        DecimalInputFormatter(allowNegative: true),
+                      ],
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -573,7 +578,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    final v = int.tryParse(valueController.text);
+                    final v = num.tryParse(
+                      valueController.text.replaceAll(',', ''),
+                    );
                     if (v == null || descController.text.trim().isEmpty) return;
                     Navigator.pop(
                       context,

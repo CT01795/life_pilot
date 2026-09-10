@@ -1,34 +1,25 @@
-// ignore_for_file: deprecated_member_use
-
 class NLP {
-  // ① 加 / 扣 + 數字（阿拉伯 or 中文）
   static final regex = RegExp(
-    r'([^，。,]*?)\s*(加|扣|\+|-)\s*(\d+|[一二三四五六七八九十兩]+)\s*(分|點|元)?',
+    r'([^，。,]*?)\s*(加|減|\+|-)\s*(\d+(?:\.\d{1,4})?|[一二三四五六七八九十兩]+)\s*(元|點|分)?',
   );
+
   static List<ParsedResult> parseMulti(String text) {
     final results = <ParsedResult>[];
 
-    for (final m in regex.allMatches(text)) {
-      String action = m.group(1)?.trim() ?? '';
-      final op = m.group(2)!;
+    for (final match in regex.allMatches(text)) {
+      var action = match.group(1)?.trim() ?? '';
+      final operation = match.group(2)!;
       if (action.isEmpty) {
-        action = op == "加" || op == "+" ? "Save" : "Spend";
+        action = operation == '加' || operation == '+' ? 'Save' : 'Spend';
       }
 
-      final rawNumber = m.group(3)!;
-
-      int? value = int.tryParse(rawNumber) ?? ChineseNumber.parse(rawNumber);
-
+      final rawNumber = match.group(3)!;
+      final num? value =
+          num.tryParse(rawNumber) ?? ChineseNumber.parse(rawNumber);
       if (value == null) continue;
 
-      final isAdd = op == '加' || op == '+';
-
-      results.add(
-        ParsedResult(
-          action,
-          isAdd ? value : -value,
-        ),
-      );
+      final isAdd = operation == '加' || operation == '+';
+      results.add(ParsedResult(action, isAdd ? value : -value));
     }
 
     return results;
@@ -36,10 +27,10 @@ class NLP {
 }
 
 class ParsedResult {
-  final String description;
-  final int value;
+  const ParsedResult(this.description, this.value);
 
-  ParsedResult(this.description, this.value);
+  final String description;
+  final num value;
 }
 
 class ChineseNumber {
@@ -60,7 +51,6 @@ class ChineseNumber {
 
   static int? parse(String text) {
     if (_map.containsKey(text)) return _map[text];
-
     if (text == '十') return 10;
     if (text.startsWith('十')) {
       return 10 + (_map[text.substring(1)] ?? 0);

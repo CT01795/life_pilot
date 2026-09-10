@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/utils/record_categories.dart';
 
 class EventCompletionChoice {
@@ -9,11 +10,15 @@ class EventCompletionChoice {
     required this.addToMemory,
     this.expenseValue,
     this.expenseCategory = RecordCategories.uncategorized,
+    this.pointValue,
+    this.pointCategory = RecordCategories.uncategorized,
   });
 
   final bool addToMemory;
-  final int? expenseValue;
+  final num? expenseValue;
   final String expenseCategory;
+  final int? pointValue;
+  final String pointCategory;
 }
 
 Future<EventCompletionChoice?> showEventCompletionSheet(
@@ -21,6 +26,7 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
   required String eventName,
   String? accountingAccountName,
   required String accountingCurrency,
+  String? pointAccountName,
 }) =>
     showModalBottomSheet<EventCompletionChoice>(
       context: context,
@@ -30,6 +36,7 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
         eventName: eventName,
         accountingAccountName: accountingAccountName,
         accountingCurrency: accountingCurrency,
+        pointAccountName: pointAccountName,
       ),
     );
 
@@ -38,11 +45,13 @@ class _EventCompletionSheet extends StatefulWidget {
     required this.eventName,
     required this.accountingAccountName,
     required this.accountingCurrency,
+    required this.pointAccountName,
   });
 
   final String eventName;
   final String? accountingAccountName;
   final String accountingCurrency;
+  final String? pointAccountName;
 
   @override
   State<_EventCompletionSheet> createState() => _EventCompletionSheetState();
@@ -50,13 +59,19 @@ class _EventCompletionSheet extends StatefulWidget {
 
 class _EventCompletionSheetState extends State<_EventCompletionSheet> {
   final _expenseController = TextEditingController();
-  bool _addToMemory = true;
+  final _pointController = TextEditingController();
+  bool _addToMemory = false;
   bool _addExpense = false;
+  bool _expenseIsIncome = false;
+  bool _addPoints = false;
+  bool _pointsArePositive = true;
   String _expenseCategory = RecordCategories.uncategorized;
+  String _pointCategory = RecordCategories.uncategorized;
 
   @override
   void dispose() {
     _expenseController.dispose();
+    _pointController.dispose();
     super.dispose();
   }
 
@@ -65,9 +80,13 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final expenseValue = int.tryParse(_expenseController.text.trim());
+    final expenseValue = num.tryParse(
+      _expenseController.text.trim().replaceAll(',', ''),
+    );
+    final pointValue = int.tryParse(_pointController.text.trim());
     final canSubmit =
-        !_addExpense || (expenseValue != null && expenseValue > 0);
+        (!_addExpense || (expenseValue != null && expenseValue > 0)) &&
+            (!_addPoints || (pointValue != null && pointValue > 0));
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -125,16 +144,38 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
           ),
           if (_addExpense) ...[
             Gaps.h8,
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: true,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text(loc.eventIncome),
+                ),
+                ButtonSegment(
+                  value: false,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  label: Text(loc.eventExpense),
+                ),
+              ],
+              selected: {_expenseIsIncome},
+              onSelectionChanged: (value) {
+                setState(() => _expenseIsIncome = value.first);
+              },
+            ),
+            Gaps.h12,
             TextField(
               controller: _expenseController,
               autofocus: false,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: const [DecimalInputFormatter()],
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 labelText: loc.recordValue,
                 suffixText: widget.accountingCurrency,
-                prefixIcon: const Icon(Icons.remove_circle_outline),
+                prefixIcon: Icon(_expenseIsIncome
+                    ? Icons.add_circle_outline
+                    : Icons.remove_circle_outline),
               ),
             ),
             Gaps.h12,
@@ -160,6 +201,74 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               },
             ),
           ],
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _addPoints,
+            title: Text(loc.pointsRecord),
+            subtitle: Text(
+              widget.pointAccountName ?? loc.accountListEmpty,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            secondary: const Icon(Icons.stars_outlined),
+            controlAffinity: ListTileControlAffinity.trailing,
+            onChanged: widget.pointAccountName == null
+                ? null
+                : (value) => setState(() => _addPoints = value ?? false),
+          ),
+          if (_addPoints) ...[
+            Gaps.h8,
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: true,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text(loc.eventPointIncrease),
+                ),
+                ButtonSegment(
+                  value: false,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  label: Text(loc.eventPointDecrease),
+                ),
+              ],
+              selected: {_pointsArePositive},
+              onSelectionChanged: (value) {
+                setState(() => _pointsArePositive = value.first);
+              },
+            ),
+            Gaps.h12,
+            TextField(
+              controller: _pointController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: loc.recordValue,
+                suffixText: loc.pointsUnit,
+                prefixIcon: Icon(_pointsArePositive
+                    ? Icons.add_circle_outline
+                    : Icons.remove_circle_outline),
+              ),
+            ),
+            Gaps.h12,
+            DropdownButtonFormField<String>(
+              initialValue: _pointCategory,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: loc.recordPrimaryCategory),
+              items: RecordCategories.points
+                  .where((category) => category != RecordCategories.reserved)
+                  .map(
+                    (category) => DropdownMenuItem(
+                      value: category,
+                      child: Text(RecordCategories.label(loc, category)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => _pointCategory = value);
+              },
+            ),
+          ],
           Gaps.h16,
           Row(
             children: [
@@ -177,8 +286,18 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
                             context,
                             EventCompletionChoice(
                               addToMemory: _addToMemory,
-                              expenseValue: _addExpense ? expenseValue : null,
+                              expenseValue: _addExpense
+                                  ? (_expenseIsIncome
+                                      ? expenseValue
+                                      : -expenseValue!)
+                                  : null,
                               expenseCategory: _expenseCategory,
+                              pointValue: _addPoints
+                                  ? (_pointsArePositive
+                                      ? pointValue
+                                      : -pointValue!)
+                                  : null,
+                              pointCategory: _pointCategory,
                             ),
                           )
                       : null,

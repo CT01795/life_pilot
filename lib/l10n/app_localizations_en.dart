@@ -1049,6 +1049,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pointsUnit => 'points';
 
   @override
+  String get eventIncome => 'Income';
+
+  @override
+  String get eventExpense => 'Expense';
+
+  @override
+  String get eventPointIncrease => 'Add points';
+
+  @override
+  String get eventPointDecrease => 'Deduct points';
+
+  @override
   String get eventRefresh => 'Update recommended events';
 
   @override
