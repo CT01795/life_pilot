@@ -15,7 +15,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.4'  # 版本
+          flutter-version: '3.41.6'  # 與本機開發及套件需求一致
 
       - name: Use public pub.dev access
         run: dart pub token remove https://pub.dev || true

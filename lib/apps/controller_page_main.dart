@@ -12,6 +12,8 @@ class ControllerPageMain extends SafeChangeNotifier {
   ControllerAuth _auth;
   AppLocalizations _loc;
   Locale _locale;
+  String? _accountKey;
+  bool _wasAdmin;
   late List<String> dbPages = [];
   PageType _selectedPage;
 
@@ -24,6 +26,8 @@ class ControllerPageMain extends SafeChangeNotifier {
   })  : _auth = auth,
         _loc = loc,
         _locale = initialLocale,
+        _accountKey = auth.currentAccount?.trim().toLowerCase(),
+        _wasAdmin = auth.isSysAdmin,
         _selectedPage = PageType.home;
 
   // 📘 Getter 區
@@ -90,9 +94,18 @@ class ControllerPageMain extends SafeChangeNotifier {
       AppLocalizations loc, Locale locale, ControllerAuth? auth) {
     bool changed = false;
 
-    if (auth != null && auth != _auth) {
+    if (auth != null) {
+      final nextAccount = auth.currentAccount?.trim().toLowerCase();
+      final nextIsAdmin = auth.isSysAdmin;
+      final sessionChanged =
+          nextAccount != _accountKey || nextIsAdmin != _wasAdmin;
       _auth = auth;
-      changed = true;
+      if (sessionChanged) {
+        _accountKey = nextAccount;
+        _wasAdmin = nextIsAdmin;
+        _selectedPage = PageType.home;
+        changed = true;
+      }
     }
     if (_loc != loc) {
       _loc = loc;
