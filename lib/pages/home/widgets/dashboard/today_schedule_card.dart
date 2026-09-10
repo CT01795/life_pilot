@@ -10,6 +10,7 @@ import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/event_completion_sheet.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -83,31 +84,11 @@ class TodayScheduleCard extends StatelessWidget {
                         child: Transform.scale(
                           scale: 1.5, // 放大倍率
                           child: AsyncActionCheckbox(onAccepted: () async {
-                            final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (_) => AlertDialog(
-                                      title: Text(
-                                        loc.completeEventTitle,
-                                      ),
-                                      content: Text(
-                                        loc.completeEventMessage,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context, false);
-                                            },
-                                            child: Text(loc.cancel)),
-                                        TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context, true);
-                                            },
-                                            child: Text(loc.confirm))
-                                      ],
-                                    ));
-                            if (confirm != true) {
-                              return;
-                            }
+                            final choice = await showEventCompletionSheet(
+                              context,
+                              eventName: e.name,
+                            );
+                            if (choice == null || !context.mounted) return;
                             try {
                               await context
                                   .read<ModelDashboard>()
@@ -139,49 +120,33 @@ class TodayScheduleCard extends StatelessWidget {
                               }
                               return;
                             }
-                            final calendar = context.read<CalendarService>();
-                            try {
-                              final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                        content: Text(
-                                            '${loc.memoryAdd}「${e.name}」？'),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context, false);
-                                              },
-                                              child: Text(loc.cancel)),
-                                          TextButton(
-                                              onPressed: () async {
-                                                Navigator.pop(context, true);
-                                              },
-                                              child: Text(loc.confirm))
-                                        ],
-                                      ));
-
-                              if (confirm == true) {
+                            if (choice.addToMemory) {
+                              final calendar = context.read<CalendarService>();
+                              try {
                                 await calendar.addCalendarEventToMemory(
                                     account: account, event: e, id: e.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(loc.memoryAddOk)));
-                              }
-                            } catch (error, stackTrace) {
-                              logger.e(
-                                'Could not add calendar event to memory.',
-                                error: error,
-                                stackTrace: stackTrace,
-                              );
-                              if (context.mounted) {
-                                final message =
-                                    subscriptionErrorMessage(loc, error);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(message.isNotEmpty
-                                        ? message
-                                        : loc.eventSaveFailed),
-                                  ),
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(loc.memoryAddOk)),
+                                  );
+                                }
+                              } catch (error, stackTrace) {
+                                logger.e(
+                                  'Could not add calendar event to memory.',
+                                  error: error,
+                                  stackTrace: stackTrace,
                                 );
+                                if (context.mounted) {
+                                  final message =
+                                      subscriptionErrorMessage(loc, error);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(message.isNotEmpty
+                                          ? message
+                                          : loc.eventSaveFailed),
+                                    ),
+                                  );
+                                }
                               }
                             }
                             context

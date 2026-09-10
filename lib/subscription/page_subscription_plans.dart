@@ -3,6 +3,8 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
+import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
@@ -14,15 +16,21 @@ class PageSubscriptionPlans extends StatefulWidget {
 }
 
 class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
-  late final Future<List<SubscriptionPricingVersion>> _pricingVersions;
+  late Future<List<SubscriptionPricingVersion>> _pricingVersions;
   SubscriptionPricingVersion? _latestCloudVersion;
   SubscriptionPricingVersion? _latestLocalVersion;
+  int _adminSubscriptionEditorRevision = 0;
 
   @override
   void initState() {
     super.initState();
-    _pricingVersions = ServiceSubscription().fetchPricingVersions();
-    _pricingVersions.then((versions) {
+    _reloadPricingVersions();
+  }
+
+  void _reloadPricingVersions() {
+    final future = ServiceSubscription().fetchPricingVersions();
+    _pricingVersions = future;
+    future.then((versions) {
       if (!mounted) return;
       setState(() {
         _latestCloudVersion = versions
@@ -31,6 +39,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
         _latestLocalVersion = versions
             .where((version) => version.storagePlan == 'local')
             .firstOrNull;
+        _adminSubscriptionEditorRevision++;
       });
     });
   }
@@ -343,6 +352,17 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          if (auth.isSysAdmin) ...[
+            Gaps.h24,
+            const Divider(),
+            Gaps.h8,
+            AdminPricingVersionEditor(onSaved: _reloadPricingVersions),
+            Gaps.h16,
+            AdminSubscriptionEditor(
+              key: ValueKey(_adminSubscriptionEditorRevision),
+              onSaved: () => auth.refreshSubscriptionUsage(),
+            ),
+          ],
         ],
       ),
     );

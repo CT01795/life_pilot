@@ -7,8 +7,6 @@ import 'package:life_pilot/local_storage/widgets_data_storage_choice.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
-import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
-import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/subscription/widgets_subscription_cleanup.dart';
 
 class PageSettings extends StatefulWidget {
@@ -143,20 +141,6 @@ class _PageSettingsState extends State<PageSettings> {
         ),
         Gaps.h16,
         const SubscriptionDataCleanup(),
-        if (auth.isSysAdmin) ...[
-          Gaps.h16,
-          AdminPricingVersionEditor(
-            onSaved: widget.closeOnStorageChange
-                ? () => Navigator.of(context).pop()
-                : null,
-          ),
-          Gaps.h16,
-          AdminSubscriptionEditor(
-            onSaved: widget.closeOnStorageChange
-                ? () => Navigator.of(context).pop()
-                : null,
-          ),
-        ],
         if (_transferring) ...[
           Gaps.h16,
           const Center(child: CircularProgressIndicator()),
