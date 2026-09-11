@@ -1153,6 +1153,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarInvitationSent => 'Invitation sent.';
 
   @override
+  String get calendarSharingUpdated => 'Calendar sharing updated.';
+
+  @override
   String get calendarInvitationFailed => 'Calendar invitation could not be updated.';
 
   @override
@@ -1167,7 +1170,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarShareEvents => 'Choose events to share';
 
   @override
+  String get scrollThisArea => 'Scroll within this area';
+
+  @override
   String get calendarNoShareableEvents => 'There are no events available to share.';
+
+  @override
+  String get calendarSelectEventRequired => 'Select at least one event to share.';
 
   @override
   String get calendarStopReceiving => 'Stop viewing';

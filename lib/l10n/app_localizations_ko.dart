@@ -1153,6 +1153,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get calendarInvitationSent => '초대를 보냈습니다.';
 
   @override
+  String get calendarSharingUpdated => '캘린더 공유가 업데이트되었습니다.';
+
+  @override
   String get calendarInvitationFailed => '캘린더 초대를 업데이트할 수 없습니다.';
 
   @override
@@ -1167,7 +1170,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get calendarShareEvents => '공유할 일정 선택';
 
   @override
+  String get scrollThisArea => '이 영역에서 위아래로 스크롤';
+
+  @override
   String get calendarNoShareableEvents => '공유할 수 있는 일정이 없습니다.';
+
+  @override
+  String get calendarSelectEventRequired => '공유할 일정을 하나 이상 선택하세요.';
 
   @override
   String get calendarStopReceiving => '보기 중지';

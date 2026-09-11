@@ -2367,6 +2367,12 @@ abstract class AppLocalizations {
   /// **'Invitation sent.'**
   String get calendarInvitationSent;
 
+  /// Confirmation shown after calendar sharing changes
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar sharing updated.'**
+  String get calendarSharingUpdated;
+
   /// Label for calendarInvitationFailed
   ///
   /// In en, this message translates to:
@@ -2391,11 +2397,23 @@ abstract class AppLocalizations {
   /// **'Choose events to share'**
   String get calendarShareEvents;
 
+  /// Hint identifying a vertically scrollable list area
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll within this area'**
+  String get scrollThisArea;
+
   /// Label for calendarNoShareableEvents
   ///
   /// In en, this message translates to:
   /// **'There are no events available to share.'**
   String get calendarNoShareableEvents;
+
+  /// Validation shown when no calendar event is selected for sharing
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one event to share.'**
+  String get calendarSelectEventRequired;
 
   /// Label for calendarStopReceiving
   ///

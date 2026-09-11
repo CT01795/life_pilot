@@ -1153,6 +1153,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get calendarInvitationSent => '招待を送信しました。';
 
   @override
+  String get calendarSharingUpdated => 'カレンダー共有を更新しました。';
+
+  @override
   String get calendarInvitationFailed => 'カレンダーの招待を更新できませんでした。';
 
   @override
@@ -1167,7 +1170,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get calendarShareEvents => '共有する予定を選択';
 
   @override
+  String get scrollThisArea => 'この範囲を上下にスクロール';
+
+  @override
   String get calendarNoShareableEvents => '共有できる予定はありません。';
+
+  @override
+  String get calendarSelectEventRequired => '共有する予定を1件以上選択してください。';
 
   @override
   String get calendarStopReceiving => '表示を停止';

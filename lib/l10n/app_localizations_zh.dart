@@ -1153,6 +1153,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get calendarInvitationSent => '邀請已送出。';
 
   @override
+  String get calendarSharingUpdated => '共用行事曆已更新。';
+
+  @override
   String get calendarInvitationFailed => '無法更新行事曆邀請。';
 
   @override
@@ -1167,7 +1170,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get calendarShareEvents => '選擇要分享的事件';
 
   @override
+  String get scrollThisArea => '在此區域上下滑動';
+
+  @override
   String get calendarNoShareableEvents => '目前沒有可分享的事件。';
+
+  @override
+  String get calendarSelectEventRequired => '請至少選擇一個要分享的事件。';
 
   @override
   String get calendarStopReceiving => '停止查看';
