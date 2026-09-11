@@ -10,12 +10,13 @@ class WidgetsMemorySubCard extends StatelessWidget {
   final VoidCallback onOpenLink;
   final EventViewModel event;
 
-  const WidgetsMemorySubCard(
-      {super.key,
-      required this.event,
-      this.onTap,
-      this.onDelete,
-      required this.onOpenLink});
+  const WidgetsMemorySubCard({
+    super.key,
+    required this.event,
+    this.onTap,
+    this.onDelete,
+    required this.onOpenLink,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,19 +29,25 @@ class WidgetsMemorySubCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("👉 ${event.name}",
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            "👉 ${event.name}",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           Text(event.dateRange),
-          if(event.tags.isNotEmpty)
-            WidgetsMemoryCard.tags(typeList: event.tags),
+          if (event.tags.isNotEmpty)
+            WidgetsMemoryCard.tags(context: context, typeList: event.tags),
           if (event.hasLocation)
-            Text(event.locationDisplay,
+            Text(
+              event.locationDisplay,
               softWrap: true, // 允許換行
               overflow: TextOverflow.visible, // 文字超過不截斷
               //overflow: TextOverflow.ellipsis,
             ),
           if (event.masterUrl?.isNotEmpty == true)
-            WidgetsMemoryCard.link(text: loc.clickHereToSeeMore, onTap: onOpenLink),
+            WidgetsMemoryCard.link(
+              text: loc.clickHereToSeeMore,
+              onTap: onOpenLink,
+            ),
         ],
       ),
     );

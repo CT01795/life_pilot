@@ -23,6 +23,7 @@ class WidgetsMemoryCard extends StatelessWidget {
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
+  final bool showFullDescription;
 
   const WidgetsMemoryCard({
     super.key,
@@ -36,6 +37,7 @@ class WidgetsMemoryCard extends StatelessWidget {
     required this.onOpenLink,
     this.trailing,
     this.showSubEvents = true,
+    this.showFullDescription = false,
   });
 
   @override
@@ -51,13 +53,11 @@ class WidgetsMemoryCard extends StatelessWidget {
       onOpenLink: onOpenLink,
       trailing: trailing,
       showSubEvents: showSubEvents,
+      showFullDescription: showFullDescription,
     );
   }
 
-  static Widget link({
-    required String text,
-    required VoidCallback onTap,
-  }) {
+  static Widget link({required String text, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Text(
@@ -70,10 +70,14 @@ class WidgetsMemoryCard extends StatelessWidget {
     );
   }
 
-  static Widget tags({required List<String>? typeList}) {
+  static Widget tags({
+    required BuildContext context,
+    required List<String>? typeList,
+  }) {
     if (typeList == null) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
+    final colorScheme = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8,
       runSpacing: 4,
@@ -81,13 +85,13 @@ class WidgetsMemoryCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3E9FA),
+            color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(99),
           ),
           child: Text(
             type,
-            style: const TextStyle(
-              color: Color(0xFF76528D),
+            style: TextStyle(
+              color: colorScheme.onPrimaryContainer,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -109,6 +113,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
   final Widget? trailing;
   final String tableName;
   final bool showSubEvents;
+  final bool showFullDescription;
 
   const _WidgetsMemoryCardBody({
     required this.controllerEvent,
@@ -121,6 +126,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
     required this.onOpenLink,
     this.trailing,
     this.showSubEvents = true,
+    this.showFullDescription = false,
   });
 
   @override
@@ -130,6 +136,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
 class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final eventDate =
         widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
@@ -143,8 +150,9 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather =
-        forecast != null && forecast.isNotEmpty ? forecast.first : null;
+    final todayWeather = forecast != null && forecast.isNotEmpty
+        ? forecast.first
+        : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -158,11 +166,11 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                 height: 42,
                 decoration:
                     todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
-                        ? BoxDecoration(
-                            color: Colors.grey.shade300,
-                            shape: BoxShape.circle,
-                          )
-                        : null,
+                    ? BoxDecoration(
+                        color: Colors.grey.shade300,
+                        shape: BoxShape.circle,
+                      )
+                    : null,
                 padding: const EdgeInsets.all(1),
                 child: WidgetsWeatherIcon(icon: todayWeather.icon),
               ),
@@ -201,16 +209,17 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                                 height: 42,
                                 decoration:
                                     w.main == 'Clouds' || w.main == 'Rain'
-                                        ? BoxDecoration(
-                                            color: Colors.grey.shade300,
-                                            shape: BoxShape.circle,
-                                          )
-                                        : null,
+                                    ? BoxDecoration(
+                                        color: Colors.grey.shade300,
+                                        shape: BoxShape.circle,
+                                      )
+                                    : null,
                                 padding: const EdgeInsets.all(1),
                                 child: WidgetsWeatherIcon(icon: w.icon),
                               ),
                               title: Text(
-                                  '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
+                                '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}',
+                              ),
                               subtitle: Text(tmp),
                             );
                           }).toList(),
@@ -230,18 +239,19 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
 
           Gaps.w8,
           Expanded(
-              child: Text(
-            widget.eventViewModel.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-              height: 1.25,
-              color: Color(0xFF31263A),
+            child: Text(
+              widget.eventViewModel.name,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                height: 1.25,
+                color: colorScheme.onSurface,
+              ),
+              softWrap: true, // 允許換行
+              overflow: TextOverflow.visible, // 文字超過不截斷
+              //overflow: TextOverflow.ellipsis, // 防止文字過長
             ),
-            softWrap: true, // 允許換行
-            overflow: TextOverflow.visible, // 文字超過不截斷
-            //overflow: TextOverflow.ellipsis, // 防止文字過長
-          )),
+          ),
           if (widget.trailing != null)
             Builder(
               builder: (context) {
@@ -262,13 +272,13 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF8A668F)),
+              Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
               Gaps.w8,
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
-                    color: Color(0xFF62536A),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
                     height: 1.3,
                   ),
                 ),
@@ -288,7 +298,9 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
           Gaps.h12,
           if (widget.eventViewModel.dateRange.isNotEmpty)
             infoRow(
-                Icons.calendar_month_rounded, widget.eventViewModel.dateRange),
+              Icons.calendar_month_rounded,
+              widget.eventViewModel.dateRange,
+            ),
           if (widget.eventViewModel.hasLocation)
             infoRow(
               Icons.place_rounded,
@@ -298,18 +310,22 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
           if (widget.eventViewModel.tags.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 7),
-              child:
-                  WidgetsMemoryCard.tags(typeList: widget.eventViewModel.tags),
+              child: WidgetsMemoryCard.tags(
+                context: context,
+                typeList: widget.eventViewModel.tags,
+              ),
             ),
           if (widget.eventViewModel.description.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 widget.eventViewModel.description,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF6D5D72),
+                maxLines: widget.showFullDescription ? null : 4,
+                overflow: widget.showFullDescription
+                    ? TextOverflow.visible
+                    : TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
                   height: 1.45,
                 ),
               ),
@@ -334,7 +350,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                     onOpenLink: widget.onOpenLink,
                   ),
               ],
-            )
+            ),
         ],
       ),
     );
@@ -344,10 +360,10 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFFEADFEB)),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
-      color: const Color(0xFFFFFBFF),
-      surfaceTintColor: Colors.white,
+      color: colorScheme.surface,
+      surfaceTintColor: colorScheme.surfaceTint,
       elevation: 1.5,
       child: Column(
         mainAxisSize: MainAxisSize.min,

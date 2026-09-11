@@ -124,8 +124,9 @@ class ModelEvent {
         _events[index].id: index,
     };
     _events.sort((left, right) {
-      final preferenceComparison =
-          _preferenceRank(left).compareTo(_preferenceRank(right));
+      final preferenceComparison = _preferenceRank(
+        left,
+      ).compareTo(_preferenceRank(right));
       if (preferenceComparison != 0) return preferenceComparison;
 
       final contentComparison = isEvent
@@ -147,15 +148,20 @@ class ModelEvent {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     DateTime effectiveDate(EventItem event) {
       final start = DateTimeFormatter.dateOnly(event.startDate ?? today);
-      return start.isBefore(today)
-          ? DateTimeFormatter.dateOnly(event.endDate ?? today)
-          : start;
+      return start.isBefore(today) ? today : start;
     }
 
     var comparison = effectiveDate(left).compareTo(effectiveDate(right));
     if (comparison != 0) return comparison;
-    comparison = _timeSortValue(left.startTime)
-        .compareTo(_timeSortValue(right.startTime));
+    comparison = _timeSortValue(
+      left.startTime,
+    ).compareTo(_timeSortValue(right.startTime));
+    if (comparison != 0) return comparison;
+    comparison = _effectiveEndDateSortValue(
+      left,
+    ).compareTo(_effectiveEndDateSortValue(right));
+    if (comparison != 0) return comparison;
+    comparison = left.country.compareTo(right.country);
     if (comparison != 0) return comparison;
     comparison = left.city.compareTo(right.city);
     if (comparison != 0) return comparison;
@@ -172,6 +178,10 @@ class ModelEvent {
 
   int _timeSortValue(dynamic time) =>
       time == null ? 24 * 60 : time.hour * 60 + time.minute;
+
+  int _effectiveEndDateSortValue(EventItem event) =>
+      (event.endDate ?? event.startDate)?.millisecondsSinceEpoch ??
+      8640000000000000;
 
   void clearAll() {
     _events.clear();
@@ -214,8 +224,9 @@ class ModelEvent {
           right.startDate ?? DateTime.fromMillisecondsSinceEpoch(0);
       var comparison = rightDate.compareTo(leftDate);
       if (comparison != 0) return comparison;
-      comparison = _timeSortValue(right.startTime)
-          .compareTo(_timeSortValue(left.startTime));
+      comparison = _timeSortValue(
+        right.startTime,
+      ).compareTo(_timeSortValue(left.startTime));
       return comparison != 0 ? comparison : left.name.compareTo(right.name);
     });
     _invalidateFilteredEvents();
@@ -271,8 +282,9 @@ class ModelEvent {
     final List<String> keywords = inFilter.keywords
         .toLowerCase()
         .split(
-            // ignore: deprecated_member_use
-            RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔 //.split(RegExp(r'\s+'))
+          // ignore: deprecated_member_use
+          RegExp(r'[,，\s]+'),
+        ) // ← 逗號（英文/中文）或任意空白都分隔 //.split(RegExp(r'\s+'))
         .map((s) => s.trim()) // 只修剪每個 tag 前後空白
         .where((word) => word.isNotEmpty)
         .toList();
@@ -364,8 +376,9 @@ class ModelEvent {
         });
         return matchedSubEvents;
       });
-      final startDate =
-          e.startDate == null ? null : DateTimeFormatter.dateOnly(e.startDate!);
+      final startDate = e.startDate == null
+          ? null
+          : DateTimeFormatter.dateOnly(e.startDate!);
       final endDate = e.endDate == null
           ? startDate
           : DateTimeFormatter.dateOnly(e.endDate!);

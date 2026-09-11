@@ -12,20 +12,13 @@ void main() {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final model = ModelEvent();
     model.setEvents([
-      _event(
-        id: 'neutral',
-        startDate: today,
-      ),
+      _event(id: 'neutral', startDate: today),
       _event(
         id: 'liked-later',
         isLike: true,
         startDate: today.add(const Duration(days: 2)),
       ),
-      _event(
-        id: 'disliked',
-        isDislike: true,
-        startDate: today,
-      ),
+      _event(id: 'disliked', isDislike: true, startDate: today),
       _event(
         id: 'liked-started',
         isLike: true,
@@ -36,13 +29,15 @@ void main() {
 
     model.sortRecommendedContent(isEvent: true);
 
-    expect(
-      model.getFilteredEvents(loc).map((event) => event.id),
-      ['liked-started', 'liked-later', 'neutral', 'disliked'],
-    );
+    expect(model.getFilteredEvents(loc).map((event) => event.id), [
+      'liked-started',
+      'liked-later',
+      'neutral',
+      'disliked',
+    ]);
   });
 
-  test('recommended event ties sort by time city location and name', () {
+  test('recommended event ties sort by time end date country and location', () {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final model = ModelEvent();
     model.setEvents([
@@ -55,12 +50,23 @@ void main() {
         startTime: const TimeOfDay(hour: 10, minute: 0),
       ),
       _event(
+        id: 'earlier-end-date',
+        country: 'TW',
+        city: 'Taipei',
+        location: 'Hall Z',
+        startDate: today.subtract(const Duration(days: 5)),
+        startTime: const TimeOfDay(hour: 10, minute: 0),
+        endDate: today,
+      ),
+      _event(
         id: 'location-b',
         name: 'A',
+        country: 'TW',
         city: 'Taipei',
         location: 'Hall B',
         startDate: today,
         startTime: const TimeOfDay(hour: 10, minute: 0),
+        endDate: today.add(const Duration(days: 2)),
       ),
       _event(
         id: 'earlier-time',
@@ -73,10 +79,12 @@ void main() {
 
     model.sortRecommendedContent(isEvent: true);
 
-    expect(
-      model.getFilteredEvents(loc).map((event) => event.id),
-      ['earlier-time', 'name-b', 'location-b'],
-    );
+    expect(model.getFilteredEvents(loc).map((event) => event.id), [
+      'earlier-time',
+      'name-b',
+      'earlier-end-date',
+      'location-b',
+    ]);
   });
 
   test('attractions sort by city location and name', () {
@@ -89,34 +97,34 @@ void main() {
 
     model.sortRecommendedContent(isEvent: false);
 
-    expect(
-      model.getFilteredEvents(loc).map((event) => event.id),
-      ['city-first', 'name-b', 'location-b'],
-    );
+    expect(model.getFilteredEvents(loc).map((event) => event.id), [
+      'city-first',
+      'name-b',
+      'location-b',
+    ]);
   });
 
   test('memory batches append without duplicates and remain newest first', () {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     final model = ModelEvent();
-    model.setEvents([
-      _event(id: 'newest', startDate: today),
-    ]);
+    model.setEvents([_event(id: 'newest', startDate: today)]);
 
     model.appendMemoryEvents([
       _event(id: 'older', startDate: today.subtract(const Duration(days: 20))),
       _event(id: 'newest', startDate: today),
     ]);
 
-    expect(
-      model.getFilteredEvents(loc).map((event) => event.id),
-      ['newest', 'older'],
-    );
+    expect(model.getFilteredEvents(loc).map((event) => event.id), [
+      'newest',
+      'older',
+    ]);
   });
 }
 
 EventItem _event({
   required String id,
   String name = 'Event',
+  String country = 'TW',
   String city = '',
   String location = '',
   DateTime? startDate,
@@ -128,6 +136,7 @@ EventItem _event({
   return EventItem(
     id: id,
     name: name,
+    country: country,
     city: city,
     location: location,
     startDate: startDate,
