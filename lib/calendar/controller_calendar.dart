@@ -48,7 +48,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   final Map<String, int> _reloadTokensByMonth = {};
   int _dataGeneration = 0;
-  String? _accountKey;
+  String? _dataScopeKey;
   bool _isChangingMonth = false;
 
   late ServiceEventTransfer _serviceEventTransfer;
@@ -96,7 +96,7 @@ class ControllerCalendar extends SafeChangeNotifier {
     _lastLocale = localeProvider.locale;
     _tableName = tableName;
     _toTableName = toTableName;
-    _accountKey = auth?.currentAccount?.trim().toLowerCase();
+    _dataScopeKey = _currentDataScopeKey(auth);
 
     localeProvider.addListener(() async {
       if (_lastLocale != localeProvider.locale) {
@@ -117,16 +117,20 @@ class ControllerCalendar extends SafeChangeNotifier {
   }
 
   void updateAuth(ControllerAuth value) {
-    final nextAccount = value.currentAccount?.trim().toLowerCase();
+    final nextScope = _currentDataScopeKey(value);
     auth = value;
-    if (_accountKey == nextAccount) return;
-    _accountKey = nextAccount;
+    if (_dataScopeKey == nextScope) return;
+    _dataScopeKey = nextScope;
     _serviceEventTransfer = ServiceEventTransfer(
       currentAccount: value.currentAccount ?? '',
       serviceEvent: _serviceEvent,
     );
     clearAll(notify: false);
   }
+
+  String _currentDataScopeKey(ControllerAuth? value) =>
+      '${value?.currentAccount?.trim().toLowerCase() ?? ''}|'
+      '${value?.preferredStorage.name ?? ''}';
 
   Future<void> init() async {
     _modelCalendar.isInitialized = true; // 提前鎖
@@ -140,7 +144,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   Future<void> reloadEvents({bool notify = true, DateTime? month}) async {
     final requestGeneration = _dataGeneration;
-    final requestAccount = auth?.currentAccount?.trim().toLowerCase();
+    final requestScope = _currentDataScopeKey(auth);
     final targetMonth = DateTimeFormatter.monthOnly(month ?? currentMonth);
     final monthKey = targetMonth.toMonthKey();
     final myToken = (_reloadTokensByMonth[monthKey] ?? 0) + 1;
@@ -154,7 +158,7 @@ class ControllerCalendar extends SafeChangeNotifier {
     );
 
     if (requestGeneration != _dataGeneration ||
-        requestAccount != auth?.currentAccount?.trim().toLowerCase()) {
+        requestScope != _currentDataScopeKey(auth)) {
       return;
     }
 

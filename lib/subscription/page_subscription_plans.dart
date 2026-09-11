@@ -248,15 +248,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       ),
                     );
               return Column(
-                children: currentStoragePlan == 'local'
+                children: (currentStoragePlan == 'local'
                     ? [
-                        if (localCard != null) localCard,
-                        if (cloudCard != null) cloudCard,
+                        ?localCard,
+                        ?cloudCard,
                       ]
                     : [
-                        if (cloudCard != null) cloudCard,
-                        if (localCard != null) localCard,
-                      ],
+                        ?cloudCard,
+                        ?localCard,
+                      ]),
               );
             },
           ),

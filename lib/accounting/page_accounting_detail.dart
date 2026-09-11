@@ -42,7 +42,7 @@ class PageAccountingDetail extends StatelessWidget {
               accountId: account.id,
               loadAllRecords: account.category == AccountCategory.project.name,
             );
-            controller.auth = auth;
+            controller.updateAuth(auth, notify: false);
             return controller;
           },
         ),

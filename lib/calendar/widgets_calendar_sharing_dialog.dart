@@ -231,172 +231,43 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                   ],
                   Gaps.h16,
                   _sectionTitle(context, loc.calendarSentInvitations),
-                  ...state.sent.map((item) {
-                    final isExpanded =
-                        _expandedSentInvitationIds.contains(item.id);
-                    final sharedEvents = isExpanded
-                        ? state.eventsForInvitation(item.id)
-                        : const <SharedCalendarEvent>[];
-                    return ExpansionTile(
-                      key: PageStorageKey('calendar-share-${item.id}'),
-                      leading: const Icon(Icons.upload_outlined),
-                      title: Text(item.invitedEmail),
-                      subtitle: Text(_statusLabel(loc, item.status)),
-                      onExpansionChanged: (expanded) => setState(() {
-                        if (expanded) {
-                          _expandedSentInvitationIds.add(item.id);
-                        } else {
-                          _expandedSentInvitationIds.remove(item.id);
-                        }
-                      }),
-                      children: isExpanded
-                          ? [
-                              if (sharedEvents.isEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Text(loc.calendarNoSharedEvents),
-                                ),
-                              if (sharedEvents.isNotEmpty)
-                                SizedBox(
-                                  height: (sharedEvents.length * 64.0)
-                                      .clamp(64.0, 256.0)
-                                      .toDouble(),
-                                  child: ListView.builder(
-                                    key: PageStorageKey(
-                                      'calendar-share-events-${item.id}',
-                                    ),
-                                    primary: false,
-                                    itemExtent: 64,
-                                    cacheExtent: 64,
-                                    addAutomaticKeepAlives: false,
-                                    itemCount: sharedEvents.length,
-                                    itemBuilder: (context, index) {
-                                      final event = sharedEvents[index];
-                                      final date = event.startDate == null
-                                          ? ''
-                                          : MaterialLocalizations.of(context)
-                                              .formatShortDate(
-                                                  event.startDate!.toLocal());
-                                      return ListTile(
-                                        dense: true,
-                                        title: Text(
-                                          event.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        subtitle:
-                                            date.isEmpty ? null : Text(date),
-                                        trailing: IconButton(
-                                          tooltip:
-                                              loc.calendarCancelSingleShare,
-                                          onPressed: _submitting
-                                              ? null
-                                              : () => _run(
-                                                    () => widget.service
-                                                        .removeSharedEvent(
-                                                      invitationId: item.id,
-                                                      eventId: event.eventId,
-                                                    ),
-                                                  ),
-                                          icon: const Icon(
-                                            Icons.remove_circle_outline,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              if (item.isPending || item.isAccepted)
-                                Align(
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: TextButton.icon(
-                                    onPressed: _submitting
-                                        ? null
-                                        : () => _run(
-                                              () => widget.service
-                                                  .revoke(item.id),
-                                            ),
-                                    icon: const Icon(Icons.link_off),
-                                    label: Text(loc.calendarCancelAllShares),
-                                  ),
-                                ),
-                            ]
-                          : const [],
-                    );
-                  }),
+                  if (state.sent.isNotEmpty)
+                    SizedBox(
+                      height: (state.sent.length * 72.0)
+                          .clamp(72.0, 300.0)
+                          .toDouble(),
+                      child: ListView.builder(
+                        primary: false,
+                        cacheExtent: 144,
+                        addAutomaticKeepAlives: false,
+                        itemCount: state.sent.length,
+                        itemBuilder: (context, index) => _sentInvitationTile(
+                          context,
+                          loc,
+                          state,
+                          state.sent[index],
+                        ),
+                      ),
+                    ),
                   Gaps.h16,
                   _sectionTitle(context, loc.calendarReceivedInvitations),
-                  ...state.received.map(
-                    (item) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ListTile(
-                          dense: true,
-                          leading: const Icon(Icons.download_outlined),
-                          title: Text(
-                            item.sharedBy,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(_statusLabel(loc, item.status)),
+                  if (state.received.isNotEmpty)
+                    SizedBox(
+                      height: (state.received.length * 88.0)
+                          .clamp(72.0, 280.0)
+                          .toDouble(),
+                      child: ListView.builder(
+                        primary: false,
+                        cacheExtent: 144,
+                        addAutomaticKeepAlives: false,
+                        itemCount: state.received.length,
+                        itemBuilder: (context, index) =>
+                            _receivedInvitationTile(
+                          loc,
+                          state.received[index],
                         ),
-                        if (item.isPending || item.isAccepted)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(
-                              start: 56,
-                              end: 8,
-                              bottom: 8,
-                            ),
-                            child: Align(
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                alignment: WrapAlignment.end,
-                                children: [
-                                  if (item.isPending) ...[
-                                    TextButton(
-                                      onPressed: _submitting
-                                          ? null
-                                          : () => _run(
-                                                () => widget.service.respond(
-                                                  invitationId: item.id,
-                                                  accept: false,
-                                                ),
-                                              ),
-                                      child:
-                                          Text(loc.calendarInvitationDecline),
-                                    ),
-                                    FilledButton(
-                                      onPressed: _submitting
-                                          ? null
-                                          : () => _run(
-                                                () => widget.service.respond(
-                                                  invitationId: item.id,
-                                                  accept: true,
-                                                ),
-                                              ),
-                                      child: Text(loc.calendarInvitationAccept),
-                                    ),
-                                  ] else
-                                    TextButton(
-                                      onPressed: _submitting
-                                          ? null
-                                          : () => _run(
-                                                () => widget.service.respond(
-                                                  invitationId: item.id,
-                                                  accept: false,
-                                                ),
-                                              ),
-                                      child: Text(loc.calendarStopReceiving),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        const Divider(height: 1),
-                      ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             );
@@ -411,6 +282,163 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
       ],
     );
   }
+
+  Widget _sentInvitationTile(
+    BuildContext context,
+    AppLocalizations loc,
+    CalendarSharingState state,
+    CalendarShareInvitation item,
+  ) {
+    final isExpanded = _expandedSentInvitationIds.contains(item.id);
+    final sharedEvents = isExpanded
+        ? state.eventsForInvitation(item.id)
+        : const <SharedCalendarEvent>[];
+    return ExpansionTile(
+      key: PageStorageKey('calendar-share-${item.id}'),
+      leading: const Icon(Icons.upload_outlined),
+      title: Text(item.invitedEmail, overflow: TextOverflow.ellipsis),
+      subtitle: Text(_statusLabel(loc, item.status)),
+      onExpansionChanged: (expanded) => setState(() {
+        if (expanded) {
+          _expandedSentInvitationIds.add(item.id);
+        } else {
+          _expandedSentInvitationIds.remove(item.id);
+        }
+      }),
+      children: isExpanded
+          ? [
+              if (sharedEvents.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(loc.calendarNoSharedEvents),
+                ),
+              if (sharedEvents.isNotEmpty)
+                SizedBox(
+                  height: (sharedEvents.length * 64.0)
+                      .clamp(64.0, 256.0)
+                      .toDouble(),
+                  child: ListView.builder(
+                    key: PageStorageKey('calendar-share-events-${item.id}'),
+                    primary: false,
+                    itemExtent: 64,
+                    cacheExtent: 64,
+                    addAutomaticKeepAlives: false,
+                    itemCount: sharedEvents.length,
+                    itemBuilder: (context, index) {
+                      final event = sharedEvents[index];
+                      final date = event.startDate == null
+                          ? ''
+                          : MaterialLocalizations.of(context)
+                              .formatShortDate(event.startDate!.toLocal());
+                      return ListTile(
+                        dense: true,
+                        title: Text(
+                          event.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: date.isEmpty ? null : Text(date),
+                        trailing: IconButton(
+                          tooltip: loc.calendarCancelSingleShare,
+                          onPressed: _submitting
+                              ? null
+                              : () => _run(
+                                    () => widget.service.removeSharedEvent(
+                                      invitationId: item.id,
+                                      eventId: event.eventId,
+                                    ),
+                                  ),
+                          icon: const Icon(Icons.remove_circle_outline),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              if (item.isPending || item.isAccepted)
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButton.icon(
+                    onPressed: _submitting
+                        ? null
+                        : () => _run(() => widget.service.revoke(item.id)),
+                    icon: const Icon(Icons.link_off),
+                    label: Text(loc.calendarCancelAllShares),
+                  ),
+                ),
+            ]
+          : const [],
+    );
+  }
+
+  Widget _receivedInvitationTile(
+    AppLocalizations loc,
+    CalendarShareInvitation item,
+  ) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.download_outlined),
+            title: Text(item.sharedBy, overflow: TextOverflow.ellipsis),
+            subtitle: Text(_statusLabel(loc, item.status)),
+          ),
+          if (item.isPending || item.isAccepted)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: 56,
+                end: 8,
+                bottom: 8,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    if (item.isPending) ...[
+                      TextButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => _run(
+                                  () => widget.service.respond(
+                                    invitationId: item.id,
+                                    accept: false,
+                                  ),
+                                ),
+                        child: Text(loc.calendarInvitationDecline),
+                      ),
+                      FilledButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => _run(
+                                  () => widget.service.respond(
+                                    invitationId: item.id,
+                                    accept: true,
+                                  ),
+                                ),
+                        child: Text(loc.calendarInvitationAccept),
+                      ),
+                    ] else
+                      TextButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => _run(
+                                  () => widget.service.respond(
+                                    invitationId: item.id,
+                                    accept: false,
+                                  ),
+                                ),
+                        child: Text(loc.calendarStopReceiving),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          const Divider(height: 1),
+        ],
+      );
 
   Widget _sectionTitle(BuildContext context, String text) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),

@@ -24,7 +24,7 @@ class PageBusinessPlan extends StatelessWidget {
             auth: context.read<ControllerAuth>(),
           ),
           update: (_, auth, controller) {
-            controller!.auth = auth;
+            controller!.updateAuth(auth, notify: false);
 
             if (!controller.hasLoadedOnce) {
               controller.hasLoadedOnce = true;

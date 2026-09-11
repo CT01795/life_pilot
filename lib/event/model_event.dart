@@ -178,6 +178,15 @@ class ModelEvent {
     _invalidateEventData();
   }
 
+  void resetForDataScope() {
+    _events.clear();
+    selectedEventIds.clear();
+    removedEventIds.clear();
+    _searchFilter.clear();
+    showSearchPanel = false;
+    _invalidateEventData();
+  }
+
   void setEvents(List<EventItem> list) {
     if (identical(_events, list)) {
       return;

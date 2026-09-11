@@ -35,7 +35,7 @@ class PagePointRecord extends StatelessWidget {
               service: service,
               auth: auth,
             );
-            controller.auth = auth;
+            controller.updateAuth(auth, notify: false);
             return controller;
           },
         ),

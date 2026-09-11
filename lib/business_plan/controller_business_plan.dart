@@ -12,13 +12,16 @@ import 'package:uuid/uuid.dart';
 class ControllerBusinessPlan extends SafeChangeNotifier {
   final ServiceBusinessPlan _service;
   ControllerAuth? auth;
+  String? _accountKey;
+  int _accountGeneration = 0;
   bool hasLoadedOnce = false;
   final Map<String, ModelBusinessPlan> _planCache = {};
 
   ControllerBusinessPlan({
     required ServiceBusinessPlan service,
     required this.auth,
-  }) : _service = service;
+  })  : _service = service,
+        _accountKey = auth?.currentAccount?.trim().toLowerCase();
 
   String? currentPlanId;
   ModelBusinessPlan? currentPlan;
@@ -41,6 +44,27 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   // -------------------------
   // Public Methods
   // -------------------------
+  void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
+    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    auth = nextAuth;
+    if (_accountKey == nextAccount) return;
+    _accountKey = nextAccount;
+    _accountGeneration++;
+    hasLoadedOnce = false;
+    currentPlanId = null;
+    currentPlan = null;
+    plans = [];
+    _planCache.clear();
+    _answerNotifiers.clear();
+    sectionIndex = 0;
+    questionIndex = 0;
+    isPlansLoading = false;
+    isLoadingMorePlans = false;
+    hasMorePlans = false;
+    _plansStartDate = null;
+    if (notify) safeNotify();
+  }
+
   void setCurrentPlanSummary(ModelBusinessPlan plan) {
     currentPlan = plan; // 只有 id / title
     currentPlanId = plan.id;
@@ -144,6 +168,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> loadPlans() async {
+    final generation = _accountGeneration;
     isPlansLoading = true;
     safeNotify();
     try {
@@ -151,17 +176,23 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       final dateTo = DateTime(now.year, now.month, now.day + 1);
       _plansStartDate = dateTo.subtract(const Duration(days: 360));
       final user = auth?.currentAccount ?? AuthConstants.guest;
-      plans = await _service.fetchPlans(
+      final loadedPlans = await _service.fetchPlans(
         user: user,
         dateFrom: _plansStartDate!,
         dateTo: dateTo,
       );
+      if (generation != _accountGeneration) return;
+      plans = loadedPlans;
       _sortAndDeduplicatePlans();
-      hasMorePlans =
+      final loadedHasMore =
           await _service.hasPlansBefore(user: user, before: _plansStartDate!);
+      if (generation != _accountGeneration) return;
+      hasMorePlans = loadedHasMore;
     } finally {
-      isPlansLoading = false;
-      safeNotify();
+      if (generation == _accountGeneration) {
+        isPlansLoading = false;
+        safeNotify();
+      }
     }
   }
 
@@ -177,6 +208,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
 
   Future<void> loadMorePlans() async {
     if (isLoadingMorePlans || !hasMorePlans || _plansStartDate == null) return;
+    final generation = _accountGeneration;
     isLoadingMorePlans = true;
     safeNotify();
     try {
@@ -185,6 +217,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         user: user,
         before: _plansStartDate!,
       );
+      if (generation != _accountGeneration) return;
       if (latestOlder == null) {
         hasMorePlans = false;
         return;
@@ -195,18 +228,24 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
         latestOlder.day + 1,
       );
       final dateFrom = dateTo.subtract(const Duration(days: 360));
-      plans.addAll(await _service.fetchPlans(
+      final loadedPlans = await _service.fetchPlans(
         user: user,
         dateFrom: dateFrom,
         dateTo: dateTo,
-      ));
+      );
+      if (generation != _accountGeneration) return;
+      plans.addAll(loadedPlans);
       _plansStartDate = dateFrom;
       _sortAndDeduplicatePlans();
-      hasMorePlans =
+      final loadedHasMore =
           await _service.hasPlansBefore(user: user, before: dateFrom);
+      if (generation != _accountGeneration) return;
+      hasMorePlans = loadedHasMore;
     } finally {
-      isLoadingMorePlans = false;
-      safeNotify();
+      if (generation == _accountGeneration) {
+        isLoadingMorePlans = false;
+        safeNotify();
+      }
     }
   }
 
