@@ -83,14 +83,18 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               leading: Icon(
                 subscription.isPlus ? Icons.workspace_premium : Icons.person,
               ),
-              title: Text(subscription.isPlus
-                  ? (subscription.storagePlan == 'local'
-                      ? loc.subscriptionCurrentLocalPlus
-                      : loc.subscriptionCurrentCloudPlus)
-                  : loc.subscriptionCurrentFree),
-              subtitle: endLabel == null
-                  ? Text(loc.subscriptionInactiveAccountWarning)
-                  : Text(loc.subscriptionValidUntil(endLabel)),
+              title: Text(
+                subscription.isPlus
+                    ? (subscription.storagePlan == 'local'
+                        ? loc.subscriptionCurrentLocalPlus
+                        : loc.subscriptionCurrentCloudPlus)
+                    : loc.subscriptionCurrentFree,
+              ),
+              subtitle: endLabel != null
+                  ? Text(loc.subscriptionValidUntil(endLabel))
+                  : subscription.isPlus
+                      ? null
+                      : Text(loc.subscriptionInactiveAccountWarning),
             ),
           ),
           if (graceLabel != null && overages.isNotEmpty) ...[
@@ -108,12 +112,14 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                     ),
                     Gaps.h8,
                     for (final usage in overages)
-                      Text(loc.subscriptionOverageItem(
-                        _resourceLabel(loc, usage.resource),
-                        usage.used,
-                        usage.quota,
-                        usage.used - usage.quota,
-                      )),
+                      Text(
+                        loc.subscriptionOverageItem(
+                          _resourceLabel(loc, usage.resource),
+                          usage.used,
+                          usage.quota,
+                          usage.used - usage.quota,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -189,11 +195,13 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               (entitlement) => Card(
                 child: ExpansionTile(
                   leading: const Icon(Icons.confirmation_number_outlined),
-                  title: Text(loc.subscriptionVersionOffer(
-                    entitlement.versionName,
-                    formatDate(entitlement.effectiveAt)!,
-                    entitlement.pricePaidTwd,
-                  )),
+                  title: Text(
+                    loc.subscriptionVersionOffer(
+                      entitlement.versionName,
+                      formatDate(entitlement.effectiveAt)!,
+                      entitlement.pricePaidTwd,
+                    ),
+                  ),
                   subtitle: Text(
                     '${entitlement.multiplier}× · '
                     '${loc.subscriptionValidUntil(formatDate(entitlement.endsAt)!)}',
@@ -207,7 +215,9 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                         : entry.value.toString();
                     return Row(
                       children: [
-                        Expanded(child: Text(_resourceLabel(loc, entry.key))),
+                        Expanded(
+                          child: Text(_resourceLabel(loc, entry.key)),
+                        ),
                         Text(value),
                       ],
                     );
@@ -275,7 +285,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 selected: !subscription.isPlus,
               );
               final cloudPlusCard = _PlanCard(
-                title: loc.subscriptionPlusName,
+                title: _latestCloudVersion == null
+                    ? loc.subscriptionPlusName
+                    : loc.subscriptionCloudVersionName(
+                        _latestCloudVersion!.name,
+                      ),
                 price: _latestCloudVersion == null
                     ? loc.subscriptionPlusPrice
                     : 'NT\$${_latestCloudVersion!.quarterlyPriceTwd}',
@@ -293,7 +307,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 highlighted: true,
               );
               final localPlusCard = _PlanCard(
-                title: loc.subscriptionLocalPaidName,
+                title: _latestLocalVersion == null
+                    ? loc.subscriptionLocalPaidName
+                    : loc.subscriptionLocalVersionName(
+                        _latestLocalVersion!.name,
+                      ),
                 price: _latestLocalVersion == null
                     ? loc.subscriptionLocalPaidPrice
                     : 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
@@ -330,13 +348,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 );
               }
               return Column(
-                children: [
-                  cards[0],
-                  Gaps.h12,
-                  cards[1],
-                  Gaps.h12,
-                  cards[2],
-                ],
+                children: [cards[0], Gaps.h12, cards[1], Gaps.h12, cards[2]],
               );
             },
           ),
@@ -418,16 +430,19 @@ class _PricingVersionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                version.storagePlan == 'local'
-                    ? loc.subscriptionLatestLocalVersionTitle
-                    : loc.subscriptionNextCloudVersionTitle,
-                style: Theme.of(context).textTheme.titleLarge),
+              version.storagePlan == 'local'
+                  ? loc.subscriptionNextLocalVersionName(version.name)
+                  : loc.subscriptionNextCloudVersionName(version.name),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             Gaps.h4,
-            Text(loc.subscriptionVersionOffer(
-              version.name,
-              effectiveDate,
-              version.quarterlyPriceTwd,
-            )),
+            Text(
+              loc.subscriptionVersionOffer(
+                version.name,
+                effectiveDate,
+                version.quarterlyPriceTwd,
+              ),
+            ),
             const Divider(height: 24),
             if (version.storagePlan == 'local') ...[
               ListTile(
@@ -518,8 +533,10 @@ class _PlanCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(title,
-                      style: Theme.of(context).textTheme.titleLarge),
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
                 if (selected) Icon(Icons.check_circle, color: colors.primary),
               ],

@@ -16,11 +16,11 @@ class WidgetsWeatherIcon extends StatelessWidget {
       'assets/weather_icons/$icon.png',
       width: size,
       height: size,
-      errorBuilder: (_, __, ___) => Image.network(
+      errorBuilder: (_, _, _) => Image.network(
         'https://openweathermap.org/img/wn/$icon.png',
         width: size,
         height: size,
-        errorBuilder: (_, __, ___) => SizedBox.square(dimension: size),
+        errorBuilder: (_, _, _) => SizedBox.square(dimension: size),
       ),
     );
   }

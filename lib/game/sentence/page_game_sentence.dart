@@ -83,7 +83,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
         ),
         title: AnimatedBuilder(
           animation: controller,
-          builder: (_, __) {
+          builder: (_, _) {
             return Text(
               "Word and sentence builder (${controller.score}/100)",
             );
@@ -92,7 +92,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
       ),
       body: AnimatedBuilder(
           animation: controller,
-          builder: (_, __) {
+          builder: (_, _) {
             final loc = AppLocalizations.of(context)!;
             if (controller.isFinished && !_hasPopped) {
               _hasPopped = true;

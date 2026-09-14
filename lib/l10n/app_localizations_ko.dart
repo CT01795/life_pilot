@@ -1170,6 +1170,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get calendarShareEvents => '공유할 일정 선택';
 
   @override
+  String get calendarSearchEmail => '이메일';
+
+  @override
+  String get calendarSearchEvent => '일정';
+
+  @override
   String get scrollThisArea => '이 영역에서 위아래로 스크롤';
 
   @override
@@ -1396,6 +1402,26 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidName => '기기 Plus';
+
+  @override
+  String subscriptionCloudVersionName(String version) {
+    return '클라우드 $version';
+  }
+
+  @override
+  String subscriptionLocalVersionName(String version) {
+    return '기기 $version';
+  }
+
+  @override
+  String subscriptionNextCloudVersionName(String version) {
+    return '다음 결제: 클라우드 $version';
+  }
+
+  @override
+  String subscriptionNextLocalVersionName(String version) {
+    return '다음 결제: 기기 $version';
+  }
 
   @override
   String get subscriptionLocalPaidPrice => '분기 NT\$129';

@@ -2397,6 +2397,18 @@ abstract class AppLocalizations {
   /// **'Choose events to share'**
   String get calendarShareEvents;
 
+  /// Search label for calendar invitation accounts
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get calendarSearchEmail;
+
+  /// Search label for calendar shareable events
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get calendarSearchEvent;
+
   /// Hint identifying a vertically scrollable list area
   ///
   /// In en, this message translates to:
@@ -2828,6 +2840,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Device Plus'**
   String get subscriptionLocalPaidName;
+
+  /// Cloud plan with pricing version
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud {version}'**
+  String subscriptionCloudVersionName(String version);
+
+  /// Local plan with pricing version
+  ///
+  /// In en, this message translates to:
+  /// **'Device {version}'**
+  String subscriptionLocalVersionName(String version);
+
+  /// Cloud pricing version for next payment
+  ///
+  /// In en, this message translates to:
+  /// **'Next payment: Cloud {version}'**
+  String subscriptionNextCloudVersionName(String version);
+
+  /// Local pricing version for next payment
+  ///
+  /// In en, this message translates to:
+  /// **'Next payment: Device {version}'**
+  String subscriptionNextLocalVersionName(String version);
 
   /// Label for subscriptionLocalPaidPrice
   ///

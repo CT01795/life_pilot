@@ -275,7 +275,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
     return AnimatedBuilder(
       animation: ctrl,
-      builder: (_, __) {
+      builder: (_, _) {
         return Stack(
           children: ctrl.pieces.map((piece) {
             final row = piece.currentIndex ~/ ctrl.colsCount;

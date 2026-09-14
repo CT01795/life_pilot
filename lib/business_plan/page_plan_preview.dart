@@ -66,7 +66,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
   Widget build(BuildContext context) {
     return Selector<ControllerBusinessPlan, ModelBusinessPlan?>(
       selector: (_, c) => c.currentPlan,
-      builder: (_, plan, __) {
+      builder: (_, plan, _) {
         if (plan == null) return const CircularProgressIndicator();
         return Scaffold(
           appBar: AppBar(
@@ -236,7 +236,7 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
           padding: const EdgeInsets.all(16),
           child: ValueListenableBuilder<String>(
             valueListenable: notifier,
-            builder: (_, answer, __) {
+            builder: (_, answer, _) {
               final previewText =
                   answer.isEmpty ? '（尚未填寫）' : _shortenHtml(answer, 50);
               return _expanded ? Html(data: answer) : Text(previewText);
@@ -277,7 +277,7 @@ class _EditablePlanTitleState extends State<EditablePlanTitle> {
   Widget build(BuildContext context) {
     return Selector<ControllerBusinessPlan, ModelBusinessPlan?>(
       selector: (_, c) => c.currentPlan,
-      builder: (_, plan, __) {
+      builder: (_, plan, _) {
         if (plan == null) return const SizedBox();
         return Text(plan.title);
       },

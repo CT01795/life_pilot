@@ -110,7 +110,7 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                           height: contentHeight,
                           child: ListView.separated(
                             itemCount: itemCount,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const Divider(height: 1),
                             itemBuilder: (_, index) {
                               if (hasClearOption && index == 0) {

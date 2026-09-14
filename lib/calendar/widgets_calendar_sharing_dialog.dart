@@ -26,10 +26,10 @@ class CalendarSharingDialog extends StatefulWidget {
 
 class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   final _emailsController = TextEditingController();
+  final _sentSearchController = TextEditingController();
+  final _receivedSearchController = TextEditingController();
+  final _eventSearchController = TextEditingController();
   final _dialogScrollController = ScrollController();
-  final _shareableEventsScrollController = ScrollController();
-  final _sentInvitationsScrollController = ScrollController();
-  final _receivedInvitationsScrollController = ScrollController();
   late Future<CalendarSharingState> _state;
   bool _submitting = false;
   String? _emailError;
@@ -46,10 +46,10 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   @override
   void dispose() {
     _emailsController.dispose();
+    _sentSearchController.dispose();
+    _receivedSearchController.dispose();
+    _eventSearchController.dispose();
     _dialogScrollController.dispose();
-    _shareableEventsScrollController.dispose();
-    _sentInvitationsScrollController.dispose();
-    _receivedInvitationsScrollController.dispose();
     super.dispose();
   }
 
@@ -89,9 +89,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     } catch (_) {
       if (mounted) {
         final loc = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.calendarInvitationFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.calendarInvitationFailed)));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -164,6 +164,25 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
             }
             final state = snapshot.data!;
             final auth = context.watch<ControllerAuth>();
+            final sent = state.sent
+                .where((item) => _matchesKeyword(
+                      item.invitedEmail,
+                      _sentSearchController.text,
+                    ))
+                .toList(growable: false);
+            final received = state.received
+                .where((item) => _matchesKeyword(
+                      item.sharedBy,
+                      _receivedSearchController.text,
+                    ))
+                .toList(growable: false);
+            final shareableEvents = state.shareableEvents
+                .where((event) => _matchesEventKeyword(
+                      context,
+                      event,
+                      _eventSearchController.text,
+                    ))
+                .toList(growable: false);
             return ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * 0.7,
@@ -174,209 +193,154 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                 thickness: 4,
                 radius: const Radius.circular(8),
                 child: ListView(
-                controller: _dialogScrollController,
-                shrinkWrap: true,
-                padding: const EdgeInsetsDirectional.only(end: 10),
-                children: [
-                  if (auth.preferredStorage == DataStorageLocation.cloud)
-                    const SubscriptionUsageBanner(
-                      resource: 'calendar_shares',
+                  controller: _dialogScrollController,
+                  shrinkWrap: true,
+                  padding: const EdgeInsetsDirectional.only(end: 10),
+                  children: [
+                    if (auth.preferredStorage == DataStorageLocation.cloud)
+                      const SubscriptionUsageBanner(
+                        resource: 'calendar_shares',
+                      ),
+                    if (_submitting) ...[
+                      const LinearProgressIndicator(),
+                      Gaps.h16,
+                    ],
+                    _sectionTitle(context, loc.calendarInvite),
+                    Gaps.h8,
+                    TextField(
+                      controller: _emailsController,
+                      enabled: !_submitting,
+                      minLines: 1,
+                      maxLines: 3,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        hintText: loc.calendarInviteHint,
+                        errorText: _emailError,
+                        suffixIcon: IconButton(
+                          tooltip: loc.calendarInvite,
+                          onPressed: _submitting ? null : _invite,
+                          icon: const Icon(Icons.send),
+                        ),
+                      ),
+                      onChanged: (_) {
+                        if (_emailError != null) {
+                          setState(() => _emailError = null);
+                        }
+                      },
+                      onSubmitted: (_) => _invite(),
                     ),
-                  if (_submitting) ...[
-                    const LinearProgressIndicator(),
+                    _emailChips(context),
                     Gaps.h16,
-                  ],
-                  _sectionTitle(context, loc.calendarInvite),
-                  Gaps.h8,
-                  TextField(
-                    controller: _emailsController,
-                    enabled: !_submitting,
-                    minLines: 1,
-                    maxLines: 3,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: loc.calendarInviteHint,
-                      errorText: _emailError,
-                      suffixIcon: IconButton(
-                        tooltip: loc.calendarInvite,
-                        onPressed: _submitting ? null : _invite,
-                        icon: const Icon(Icons.send),
-                      ),
-                    ),
-                    onChanged: (_) {
-                      if (_emailError != null) {
-                        setState(() => _emailError = null);
-                      }
-                    },
-                    onSubmitted: (_) => _invite(),
-                  ),
-                  _emailChips(context),
-                  Gaps.h16,
-                  _sectionTitle(
-                    context,
-                    loc.calendarShareEvents,
-                    count: state.shareableEvents.length,
-                  ),
-                  if (state.shareableEvents.isEmpty)
-                    _emptySection(context, loc.calendarNoShareableEvents)
-                  else ...[
-                    CheckboxListTile(
-                      contentPadding: const EdgeInsetsDirectional.only(
-                        start: 4,
-                        end: 12,
-                      ),
-                      value: state.shareableEvents.every(
-                        (event) => _selectedEventIds.contains(event.id),
-                      ),
-                      title: Text(loc.calendarShareAllEvents),
-                      onChanged: _submitting
-                          ? null
-                          : (selected) => setState(() {
-                                if (selected == true) {
-                                  _selectedEventIds.addAll(
-                                    state.shareableEvents
-                                        .map((event) => event.id),
-                                  );
-                                } else {
-                                  _selectedEventIds.clear();
-                                }
-                                _eventSelectionError = false;
-                              }),
-                    ),
-                    _scrollableListPanel(
+                    _expandableSection(
                       context: context,
-                      controller: _shareableEventsScrollController,
-                      height: (state.shareableEvents.length * 72.0)
-                          .clamp(72.0, 220.0),
-                      showHint: state.shareableEvents.length > 3,
-                      child: ListView.builder(
-                        controller: _shareableEventsScrollController,
-                        primary: false,
-                        padding: const EdgeInsetsDirectional.only(end: 12),
-                        itemExtent: 72,
-                        cacheExtent: 144,
-                        addAutomaticKeepAlives: false,
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        itemCount: state.shareableEvents.length,
-                        itemBuilder: (context, index) {
-                          final event = state.shareableEvents[index];
-                          final date = event.startDate == null
-                              ? ''
-                              : MaterialLocalizations.of(context)
-                                  .formatShortDate(event.startDate!.toLocal());
-                          return CheckboxListTile(
+                      title: loc.calendarSentInvitations,
+                      count: sent.length,
+                      children: [
+                        _keywordField(
+                          context: context,
+                          controller: _sentSearchController,
+                          label: loc.calendarSearchEmail,
+                        ),
+                        if (sent.isEmpty)
+                          _emptySection(context, loc.noData)
+                        else
+                          for (final invitation in sent)
+                            _sentInvitationTile(
+                              context,
+                              loc,
+                              state,
+                              invitation,
+                            ),
+                      ],
+                    ),
+                    Gaps.h16,
+                    _expandableSection(
+                      context: context,
+                      title: loc.calendarReceivedInvitations,
+                      count: received.length,
+                      children: [
+                        _keywordField(
+                          context: context,
+                          controller: _receivedSearchController,
+                          label: loc.calendarSearchEmail,
+                        ),
+                        if (received.isEmpty)
+                          _emptySection(context, loc.noData)
+                        else
+                          for (final invitation in received)
+                            _receivedInvitationTile(
+                              context,
+                              loc,
+                              invitation,
+                            ),
+                      ],
+                    ),
+                    Gaps.h16,
+                    _expandableSection(
+                      context: context,
+                      title: loc.calendarShareEvents,
+                      count: shareableEvents.length,
+                      children: [
+                        _keywordField(
+                          context: context,
+                          controller: _eventSearchController,
+                          label: loc.calendarSearchEvent,
+                        ),
+                        if (shareableEvents.isEmpty)
+                          _emptySection(
+                            context,
+                            loc.calendarNoShareableEvents,
+                          )
+                        else ...[
+                          CheckboxListTile(
                             contentPadding: const EdgeInsetsDirectional.only(
-                              start: 8,
-                              end: 16,
+                              start: 4,
+                              end: 12,
                             ),
-                            value: _selectedEventIds.contains(event.id),
-                            title: Text(
-                              event.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(fontWeight: FontWeight.w500),
+                            value: shareableEvents.every(
+                              (event) => _selectedEventIds.contains(event.id),
                             ),
-                            subtitle: date.isEmpty
-                                ? null
-                                : Text(
-                                    date,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
+                            title: Text(loc.calendarShareAllEvents),
                             onChanged: _submitting
                                 ? null
                                 : (selected) => setState(() {
                                       if (selected == true) {
-                                        _selectedEventIds.add(event.id);
+                                        _selectedEventIds.addAll(
+                                          shareableEvents.map(
+                                            (event) => event.id,
+                                          ),
+                                        );
                                       } else {
-                                        _selectedEventIds.remove(event.id);
+                                        _selectedEventIds.removeAll(
+                                          shareableEvents.map(
+                                            (event) => event.id,
+                                          ),
+                                        );
                                       }
                                       _eventSelectionError = false;
                                     }),
-                          );
-                        },
-                      ),
+                          ),
+                          for (final event in shareableEvents)
+                            _shareableEventTile(context, event),
+                        ],
+                      ],
                     ),
-                  ],
-                  if (_eventSelectionError)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: 12,
-                        top: 6,
-                      ),
-                      child: Text(
-                        loc.calendarSelectEventRequired,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                      ),
-                    ),
-                  Gaps.h16,
-                  _sectionTitle(
-                    context,
-                    loc.calendarSentInvitations,
-                    count: state.sent.length,
-                  ),
-                  if (state.sent.isEmpty)
-                    _emptySection(context, loc.noData)
-                  else
-                    _scrollableListPanel(
-                      context: context,
-                      controller: _sentInvitationsScrollController,
-                      height: (state.sent.length * 72.0)
-                          .clamp(72.0, 300.0)
-                          .toDouble(),
-                      showHint: state.sent.length > 4,
-                      child: ListView.builder(
-                        controller: _sentInvitationsScrollController,
-                        primary: false,
-                        padding: const EdgeInsetsDirectional.only(end: 12),
-                        cacheExtent: 144,
-                        addAutomaticKeepAlives: false,
-                        itemCount: state.sent.length,
-                        itemBuilder: (context, index) => _sentInvitationTile(
-                          context,
-                          loc,
-                          state,
-                          state.sent[index],
+                    if (_eventSelectionError)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 12,
+                          top: 6,
+                        ),
+                        child: Text(
+                          loc.calendarSelectEventRequired,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
                         ),
                       ),
-                    ),
-                  Gaps.h16,
-                  _sectionTitle(
-                    context,
-                    loc.calendarReceivedInvitations,
-                    count: state.received.length,
-                  ),
-                  if (state.received.isEmpty)
-                    _emptySection(context, loc.noData)
-                  else
-                    _scrollableListPanel(
-                      context: context,
-                      controller: _receivedInvitationsScrollController,
-                      height: (state.received.length * 88.0)
-                          .clamp(72.0, 280.0)
-                          .toDouble(),
-                      showHint: state.received.length > 3,
-                      child: ListView.builder(
-                        controller: _receivedInvitationsScrollController,
-                        primary: false,
-                        padding: const EdgeInsetsDirectional.only(end: 12),
-                        cacheExtent: 144,
-                        addAutomaticKeepAlives: false,
-                          itemCount: state.received.length,
-                          itemBuilder: (context, index) =>
-                              _receivedInvitationTile(
-                            context,
-                            loc,
-                            state.received[index],
-                          ),
-                      ),
-                    ),
-                ],
+                  ],
                 ),
               ),
             );
@@ -392,12 +356,119 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     );
   }
 
+  bool _matchesKeyword(String value, String keyword) {
+    final normalized = keyword.trim().toLowerCase();
+    return normalized.isEmpty || value.toLowerCase().contains(normalized);
+  }
+
+  bool _matchesEventKeyword(
+    BuildContext context,
+    CalendarShareableEvent event,
+    String keyword,
+  ) {
+    final normalized = keyword.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+    final date = event.startDate?.toLocal();
+    final values = <String>[
+      event.name,
+      if (date != null) ...[
+        MaterialLocalizations.of(context).formatShortDate(date),
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-'
+            '${date.day.toString().padLeft(2, '0')}',
+        '${date.year}/${date.month}/${date.day}',
+      ],
+    ];
+    return values.any((value) => value.toLowerCase().contains(normalized));
+  }
+
+  Widget _keywordField({
+    required BuildContext context,
+    required TextEditingController controller,
+    required String label,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: label,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: loc.clear,
+                  onPressed: () {
+                    controller.clear();
+                    setState(() {});
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+    );
+  }
+
+  Widget _shareableEventTile(
+    BuildContext context,
+    CalendarShareableEvent event,
+  ) {
+    final date = event.startDate == null
+        ? ''
+        : MaterialLocalizations.of(context)
+            .formatShortDate(event.startDate!.toLocal());
+    return CheckboxListTile(
+      contentPadding: const EdgeInsetsDirectional.only(start: 8, end: 16),
+      value: _selectedEventIds.contains(event.id),
+      title: Text(
+        event.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+      ),
+      subtitle: date.isEmpty
+          ? null
+          : Text(date, style: Theme.of(context).textTheme.bodySmall),
+      onChanged: _submitting
+          ? null
+          : (selected) => setState(() {
+                if (selected == true) {
+                  _selectedEventIds.add(event.id);
+                } else {
+                  _selectedEventIds.remove(event.id);
+                }
+                _eventSelectionError = false;
+              }),
+    );
+  }
+
   Widget _sentInvitationTile(
     BuildContext context,
     AppLocalizations loc,
     CalendarSharingState state,
     CalendarShareInvitation item,
   ) {
+    final canManage = item.isPending || item.isAccepted;
+    if (!canManage) {
+      return Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+            leading: _directionIcon(context, Icons.upload_outlined),
+            title: Text(item.invitedEmail, overflow: TextOverflow.ellipsis),
+            subtitle: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: _statusChip(context, loc, item.status),
+            ),
+          ),
+          const Divider(height: 1),
+        ],
+      );
+    }
     final isExpanded = _expandedSentInvitationIds.contains(item.id);
     final sharedEvents = isExpanded
         ? state.eventsForInvitation(item.id)
@@ -427,23 +498,14 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                   child: Text(loc.calendarNoSharedEvents),
                 ),
               if (sharedEvents.isNotEmpty)
-                SizedBox(
-                  height: (sharedEvents.length * 64.0)
-                      .clamp(64.0, 256.0)
-                      .toDouble(),
-                  child: ListView.builder(
-                    key: PageStorageKey('calendar-share-events-${item.id}'),
-                    primary: false,
-                    itemExtent: 64,
-                    cacheExtent: 64,
-                    addAutomaticKeepAlives: false,
-                    itemCount: sharedEvents.length,
-                    itemBuilder: (context, index) {
-                      final event = sharedEvents[index];
+                for (final event in sharedEvents)
+                  Builder(
+                    builder: (context) {
                       final date = event.startDate == null
                           ? ''
-                          : MaterialLocalizations.of(context)
-                              .formatShortDate(event.startDate!.toLocal());
+                          : MaterialLocalizations.of(
+                              context,
+                            ).formatShortDate(event.startDate!.toLocal());
                       return ListTile(
                         dense: true,
                         title: Text(
@@ -471,23 +533,21 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                       );
                     },
                   ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton.icon(
+                  onPressed: _submitting
+                      ? null
+                      : () => _confirmAndRun(
+                            context: context,
+                            title: loc.calendarCancelAllShares,
+                            subject: item.invitedEmail,
+                            action: () => widget.service.revoke(item.id),
+                          ),
+                  icon: const Icon(Icons.link_off),
+                  label: Text(loc.calendarCancelAllShares),
                 ),
-              if (item.isPending || item.isAccepted)
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: TextButton.icon(
-                    onPressed: _submitting
-                        ? null
-                        : () => _confirmAndRun(
-                              context: context,
-                              title: loc.calendarCancelAllShares,
-                              subject: item.invitedEmail,
-                              action: () => widget.service.revoke(item.id),
-                            ),
-                    icon: const Icon(Icons.link_off),
-                    label: Text(loc.calendarCancelAllShares),
-                  ),
-                ),
+              ),
             ]
           : const [],
     );
@@ -502,8 +562,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ListTile(
-            contentPadding:
-                const EdgeInsetsDirectional.only(start: 12, end: 8),
+            contentPadding: const EdgeInsetsDirectional.only(start: 12, end: 8),
             leading: _directionIcon(context, Icons.download_outlined),
             title: Text(item.sharedBy, overflow: TextOverflow.ellipsis),
             subtitle: Align(
@@ -680,10 +739,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
           colors.errorContainer.withValues(alpha: .65),
           colors.onErrorContainer,
         ),
-      'revoked' => (
-          colors.surfaceContainerHighest,
-          colors.onSurfaceVariant,
-        ),
+      'revoked' => (colors.surfaceContainerHighest, colors.onSurfaceVariant),
       _ => (
           colors.tertiaryContainer.withValues(alpha: .7),
           colors.onTertiaryContainer,
@@ -706,41 +762,35 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     );
   }
 
-  Widget _sectionTitle(
-    BuildContext context,
-    String text, {
-    int? count,
-  }) => Padding(
+  Widget _sectionTitle(BuildContext context, String text, {int? count}) =>
+      Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 text,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
             if (count != null)
               Container(
                 constraints: const BoxConstraints(minWidth: 28),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .secondaryContainer
-                      .withValues(alpha: .7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.secondaryContainer.withValues(alpha: .7),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '$count',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSecondaryContainer,
+                        color:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -753,10 +803,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color: Theme.of(context)
-              .colorScheme
-              .surfaceContainerLowest
-              .withValues(alpha: .5),
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerLowest.withValues(alpha: .5),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
@@ -768,87 +817,45 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         ),
       );
 
-  Widget _scrollableListPanel({
+  Widget _expandableSection({
     required BuildContext context,
-    required ScrollController controller,
-    required double height,
-    required bool showHint,
-    required Widget child,
+    required String title,
+    required int count,
+    required List<Widget> children,
+    bool initiallyExpanded = false,
   }) {
     final colors = Theme.of(context).colorScheme;
-    final loc = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (showHint)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(
-              top: 1,
-              end: 6,
-              bottom: 8,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(
-                  Icons.swipe_vertical_rounded,
-                  size: 15,
-                  color: colors.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  loc.scrollThisArea,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        SizedBox(
-          height: height,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: colors.outlineVariant.withValues(alpha: .65),
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(9),
-              child: ScrollbarTheme(
-                data: ScrollbarThemeData(
-                  thumbColor: WidgetStatePropertyAll(
-                    colors.primary.withValues(alpha: .65),
-                  ),
-                  trackColor: WidgetStatePropertyAll(
-                    colors.primary.withValues(alpha: .06),
-                  ),
-                  trackBorderColor:
-                      const WidgetStatePropertyAll(Colors.transparent),
-                  thickness: const WidgetStatePropertyAll(5),
-                  radius: const Radius.circular(8),
-                ),
-                child: Scrollbar(
-                  controller: controller,
-                  thumbVisibility: true,
-                  trackVisibility: true,
-                  child: ListTileTheme.merge(
-                    minVerticalPadding: 8,
-                    titleTextStyle:
-                        Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                    subtitleTextStyle: Theme.of(context).textTheme.bodySmall,
-                    child: child,
-                  ),
-                ),
+    return Card(
+      margin: EdgeInsets.zero,
+      color: colors.surfaceContainerLowest.withValues(alpha: .55),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        tilePadding: const EdgeInsetsDirectional.only(start: 16, end: 12),
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
-          ),
+            Container(
+              constraints: const BoxConstraints(minWidth: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: colors.secondaryContainer.withValues(alpha: .7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text('$count', textAlign: TextAlign.center),
+            ),
+          ],
         ),
-      ],
+        children: children,
+      ),
     );
   }
 

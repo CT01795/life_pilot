@@ -1170,6 +1170,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get calendarShareEvents => '選擇要分享的事件';
 
   @override
+  String get calendarSearchEmail => 'Email';
+
+  @override
+  String get calendarSearchEvent => '事件';
+
+  @override
   String get scrollThisArea => '在此區域上下滑動';
 
   @override
@@ -1396,6 +1402,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidName => '本機 Plus';
+
+  @override
+  String subscriptionCloudVersionName(String version) {
+    return '雲端 $version';
+  }
+
+  @override
+  String subscriptionLocalVersionName(String version) {
+    return '本機 $version';
+  }
+
+  @override
+  String subscriptionNextCloudVersionName(String version) {
+    return '下次付款適用：雲端 $version';
+  }
+
+  @override
+  String subscriptionNextLocalVersionName(String version) {
+    return '下次付款適用：本機 $version';
+  }
 
   @override
   String get subscriptionLocalPaidPrice => '每季 NT\$129';

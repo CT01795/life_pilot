@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/extension.dart';
 
 class CalendarEvent {
@@ -11,6 +12,7 @@ class CalendarEvent {
   final TimeOfDay? startTime;
   final DateTime? endDate;
   final TimeOfDay? endTime;
+  final String country;
   final String? city;
   final String? location;
   final String? type;
@@ -28,6 +30,7 @@ class CalendarEvent {
     this.startTime,
     this.endDate,
     this.endTime,
+    this.country = 'TW',
     this.city,
     this.location,
     this.type,
@@ -37,9 +40,7 @@ class CalendarEvent {
     this.isCompleted = false,
   });
 
-  factory CalendarEvent.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory CalendarEvent.fromJson(Map<String, dynamic> json) {
     return CalendarEvent(
       id: json[Fields.id]?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -47,6 +48,7 @@ class CalendarEvent {
       startTime: DateTimeParser.parseTime(json['start_time']),
       endDate: DateTimeParser.parseDate(json['end_date']),
       endTime: DateTimeParser.parseTime(json['end_time']),
+      country: EventCountry.normalize(json[EventFields.country]?.toString()),
       city: json['city']?.toString(),
       location: json['location']?.toString(),
       type: json['type']?.toString(),
@@ -65,6 +67,7 @@ class CalendarEvent {
       'start_time': startTime?.formatTimeString(),
       'end_date': endDate?.formatDateString(),
       'end_time': endTime?.formatTimeString(),
+      EventFields.country: country,
       'city': city,
       'location': location,
       'type': type,

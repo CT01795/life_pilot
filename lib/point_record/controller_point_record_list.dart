@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 class ControllerPointRecordList extends SafeChangeNotifier {
   final ServicePointRecord service;
   ControllerAuth? auth;
-  String? _accountKey;
+  String? _dataScopeKey;
   int _accountGeneration = 0;
 
   String? _currentCategory;
@@ -27,10 +27,13 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     await loadAccounts();
   }
 
-  ControllerPointRecordList({
-    required this.service,
-    required this.auth,
-  }) : _accountKey = auth?.currentAccount?.trim().toLowerCase();
+  ControllerPointRecordList({required this.service, required this.auth})
+      : _dataScopeKey = _scopeKey(auth);
+
+  static String _scopeKey(ControllerAuth? auth) =>
+      '${auth?.currentAccount?.trim().toLowerCase() ?? ''}|'
+      '${auth?.preferredStorage.name ?? ''}|'
+      '${auth?.personalDataRevision ?? 0}';
 
   List<ModelPointRecordAccount> accounts = [];
   bool isLoading = false;
@@ -42,8 +45,9 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     notifyListeners();
     try {
       final loaded = await service.fetchAccounts(
-          user: auth?.currentAccount ?? '',
-          category: inputCategory ?? category);
+        user: auth?.currentAccount ?? '',
+        category: inputCategory ?? category,
+      );
       if (generation != _accountGeneration) return;
       accounts = loaded;
     } finally {
@@ -55,10 +59,10 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   }
 
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
-    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    final nextScope = _scopeKey(nextAuth);
     auth = nextAuth;
-    if (_accountKey == nextAccount) return;
-    _accountKey = nextAccount;
+    if (_dataScopeKey == nextScope) return;
+    _dataScopeKey = nextScope;
     _accountGeneration++;
     isLoading = false;
     accounts = [];
@@ -66,14 +70,17 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     if (notify) notifyListeners();
   }
 
-  Future<ModelPointRecordAccount> createAccount(
-      {required String name, String? eventId}) async {
+  Future<ModelPointRecordAccount> createAccount({
+    required String name,
+    String? eventId,
+  }) async {
     final modelPointRecordAccount = await service.createAccount(
-        name: name,
-        user: auth?.currentAccount ?? '',
-        currency: null,
-        category: category,
-        eventId: eventId);
+      name: name,
+      user: auth?.currentAccount ?? '',
+      currency: null,
+      category: category,
+      eventId: eventId,
+    );
     // ⭐ 統一來源：重新拉一次
     await loadAccounts();
     return modelPointRecordAccount;
@@ -88,15 +95,15 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
 
     // 上傳圖片給後端，後端返回可訪問 URL
-    final newImage =
-        await service.uploadAccountImageBytesDirect(accountId, bytes);
+    final newImage = await service.uploadAccountImageBytesDirect(
+      accountId,
+      bytes,
+    );
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
 
-    accounts[index] = accounts[index].copyWith(
-      masterGraphUrl: newImage,
-    );
+    accounts[index] = accounts[index].copyWith(masterGraphUrl: newImage);
 
     notifyListeners();
   }
@@ -105,8 +112,9 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     return accounts.firstWhereOrNull((a) => a.id == id);
   }
 
-  Future<ModelPointRecordAccount?> findAccountByEventId(
-      {required String eventId}) async {
+  Future<ModelPointRecordAccount?> findAccountByEventId({
+    required String eventId,
+  }) async {
     return await service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',
@@ -121,9 +129,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     if (index == -1) return;
 
     final old = accounts[index];
-    accounts[index] = old.copyWith(
-      points: old.points + deltaPoints,
-    );
+    accounts[index] = old.copyWith(points: old.points + deltaPoints);
 
     notifyListeners();
   }
@@ -153,7 +159,7 @@ class _AccountListViewState extends State<_AccountListView> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ControllerPointRecordList>(
-      builder: (_, controller, __) {
+      builder: (_, controller, _) {
         final accounts = controller.accounts;
         final loc = AppLocalizations.of(context)!;
 
@@ -209,8 +215,9 @@ class _AccountListViewState extends State<_AccountListView> {
                           if (modelPointRecordAccount.category !=
                               widget.category) {
                             // 切換到正確 Tab
-                            final parentTabController =
-                                DefaultTabController.of(context);
+                            final parentTabController = DefaultTabController.of(
+                              context,
+                            );
                             int tabIndex = modelPointRecordAccount.category ==
                                     AccountCategory.personal.name
                                 ? 0
@@ -218,8 +225,9 @@ class _AccountListViewState extends State<_AccountListView> {
                             parentTabController.animateTo(tabIndex);
 
                             // 同時更新帳戶列表
-                            await controller
-                                .setCategory(modelPointRecordAccount.category);
+                            await controller.setCategory(
+                              modelPointRecordAccount.category,
+                            );
                           }
                         },
                         child: Text(loc.accountCreate),

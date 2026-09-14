@@ -26,14 +26,14 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
       appBar: AppBar(title: const Text('Select Template')),
       body: Selector<ControllerBusinessPlan, bool>(
         selector: (_, c) => c.isTemplateLoading,
-        builder: (_, loading, __) {
+        builder: (_, loading, _) {
           if (loading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           return Selector<ControllerBusinessPlan, List<ModelPlanTemplate>>(
             selector: (_, c) => c.templates,
-            builder: (_, templates, __) {
+            builder: (_, templates, _) {
               return ListView.builder(
                 itemCount: templates.length,
                 itemBuilder: (_, i) {

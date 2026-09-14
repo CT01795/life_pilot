@@ -44,12 +44,8 @@ class ControllerAuth extends SafeChangeNotifier {
   void _listenAuthState() {
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
       logger.i('Auth Event: ${data.event}');
-      logger.i(
-        'Recovery User Present: ${data.session?.user != null}',
-      );
-      logger.i(
-        'Current User Present: ${supabase.auth.currentUser != null}',
-      );
+      logger.i('Recovery User Present: ${data.session?.user != null}');
+      logger.i('Current User Present: ${supabase.auth.currentUser != null}');
       if (data.event == AuthChangeEvent.passwordRecovery) {
         _update(() {
           _currentPage = AuthPage.resetPassword;
@@ -77,6 +73,7 @@ class ControllerAuth extends SafeChangeNotifier {
   SubscriptionSnapshot _subscription = SubscriptionSnapshot.free;
   DataStorageLocation _preferredStorage = DataStorageLocation.cloud;
   bool _hasStorageChoice = false;
+  int _personalDataRevision = 0;
   AuthPage _currentPage = AuthPage.login;
 
   bool get isLoading => _isLoading;
@@ -112,6 +109,7 @@ class ControllerAuth extends SafeChangeNotifier {
   bool get storesNewDataLocally =>
       _preferredStorage == DataStorageLocation.local;
   bool get hasStorageChoice => _hasStorageChoice;
+  int get personalDataRevision => _personalDataRevision;
   bool get hasServerAdminRole =>
       supabase.auth.currentUser?.appMetadata['role'] == AuthConstants.adminRole;
   bool get isSysAdmin => hasServerAdminRole;
@@ -124,8 +122,11 @@ class ControllerAuth extends SafeChangeNotifier {
       _syncLocalCreatePermission();
       if (notify) notifyListeners();
     } catch (error, stackTrace) {
-      logger.e('Failed to refresh subscription usage',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Failed to refresh subscription usage',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -275,6 +276,7 @@ class ControllerAuth extends SafeChangeNotifier {
     await LocalDataStore.instance.setPreferredLocation(account, location);
     _preferredStorage = location;
     _hasStorageChoice = true;
+    _personalDataRevision++;
     notifyListeners();
     await refreshSubscriptionUsage();
     modelDashboard?.switchAccount(account);
@@ -298,9 +300,34 @@ class ControllerAuth extends SafeChangeNotifier {
     }
   }
 
-  final Map<String, String> _registerMap = {
-    AuthConstants.email: '',
-  };
+  Future<void> refreshAfterPersonalDataCleanup() async {
+    final account = _currentAccount;
+    await refreshSubscriptionUsage(notify: false);
+    _personalDataRevision++;
+    modelDashboard?.switchAccount(account);
+    controllerCalendar?.clearAll();
+    notifyListeners();
+    if (account == null) return;
+    try {
+      await Future.wait<void>([
+        if (modelDashboard != null) ...[
+          modelDashboard!.loadEventCities(account),
+          modelDashboard!.loadPlaceCities(account),
+          modelDashboard!.refreshAll(account: account),
+        ],
+        if (controllerCalendar != null)
+          controllerCalendar!.loadCalendarEvents(month: DateTime.now()),
+      ]);
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to refresh data after personal data cleanup',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  final Map<String, String> _registerMap = {AuthConstants.email: ''};
 
   Map<String, String> get registerMap => Map.unmodifiable(_registerMap);
 
@@ -356,8 +383,9 @@ class ControllerAuth extends SafeChangeNotifier {
       }, notify: false);
 
       if (_isLoggedIn && !_isAnonymous) {
-        final storedLocation =
-            await LocalDataStore.instance.preferredLocation(_currentAccount!);
+        final storedLocation = await LocalDataStore.instance.preferredLocation(
+          _currentAccount!,
+        );
         _hasStorageChoice = storedLocation != null;
         _preferredStorage = storedLocation ?? DataStorageLocation.cloud;
         if (_preferredStorage == DataStorageLocation.local) {
@@ -444,7 +472,8 @@ class ControllerAuth extends SafeChangeNotifier {
   // -------------------- 註冊 --------------------
   Future<String?> register({required String email, required String password}) =>
       _authenticate(
-          () => ServiceAuth.register(email: email, password: password));
+        () => ServiceAuth.register(email: email, password: password),
+      );
 
   // -------------------- 登出 --------------------
   Future<String?> logout() async {

@@ -215,10 +215,10 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                       const SubscriptionUsageBanner(resource: 'memory_trace'),
                       AnimatedBuilder(
                         animation: _appBarHandler,
-                        builder: (_, __) => Selector<ControllerEvent, int>(
+                        builder: (_, _) => Selector<ControllerEvent, int>(
                           selector: (_, controller) =>
                               controller.filterRevision,
-                          builder: (_, __, ___) =>
+                          builder: (_, _, _) =>
                               _buildSearchPanel(loc, context),
                         ),
                       ),
@@ -226,7 +226,7 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
                           // ✅ 讓 ListView 可以使用剩餘高度
                           child: Selector<ControllerEvent, List<EventItem>>(
                         selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
-                        builder: (_, filteredEvents, __) {
+                        builder: (_, filteredEvents, _) {
                           final regionData = _regionsFor(filteredEvents);
                           final cityCounts = regionData.counts;
                           final cities = regionData.sortedRegions;

@@ -105,7 +105,7 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
         cacheHeight: cacheHeight,
         filterQuality: FilterQuality.low,
         frameBuilder: _buildFrame,
-        errorBuilder: (_, __, ___) => _buildErrorPlaceholder(context),
+        errorBuilder: (_, _, _) => _buildErrorPlaceholder(context),
       );
     }
     return FutureBuilder<Uint8List?>(
@@ -123,7 +123,7 @@ class _WidgetsEventImageState extends State<WidgetsEventImage> {
           cacheHeight: cacheHeight,
           filterQuality: FilterQuality.low,
           frameBuilder: _buildFrame,
-          errorBuilder: (_, __, ___) => _buildErrorPlaceholder(context),
+          errorBuilder: (_, _, _) => _buildErrorPlaceholder(context),
         );
       },
     );

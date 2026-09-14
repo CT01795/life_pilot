@@ -313,7 +313,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                       }
                     });
                   },
-                  builder: (_, __, ___) {
+                  builder: (_, _, _) {
                     if (block != null) {
                       return Draggable<ModelGamePolyominoDragBlockData>(
                         dragAnchorStrategy: childDragAnchorStrategy,
@@ -329,7 +329,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                             PolyominoTileWidget(tile: tile, size: cell),
                         onDragStarted: () =>
                             setState(() => ctrl.removeBlock(block)),
-                        onDraggableCanceled: (_, __) {
+                        onDraggableCanceled: (_, _) {
                           if (!waiting.any((w) => w.id == block.id)) {
                             setState(() => waiting.add(block));
                           }

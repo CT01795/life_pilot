@@ -127,16 +127,28 @@ class ServiceCalendarSharing {
         .order('updated_at', ascending: false);
     final invitations =
         response.map((row) => CalendarShareInvitation.fromJson(row)).toList();
-    final sharedEventResponse =
-        await supabase.rpc('get_my_shared_calendar_events');
+    final activeSentInvitationIds = invitations
+        .where(
+          (item) =>
+              item.sharedBy.toLowerCase() == currentEmail &&
+              (item.isPending || item.isAccepted),
+        )
+        .map((item) => item.id)
+        .toSet();
+    final sharedEventResponse = await supabase.rpc(
+      'get_my_shared_calendar_events',
+    );
     final sharedEvents = (sharedEventResponse as List<dynamic>)
         .map((row) => SharedCalendarEvent.fromJson(row as Map<String, dynamic>))
+        .where((event) => activeSentInvitationIds.contains(event.invitationId))
         .toList();
 
     final shareableEvents = visibleEvents
-        .where((event) =>
-            event.account?.trim().toLowerCase() == currentEmail &&
-            event.startDate != null)
+        .where(
+          (event) =>
+              event.account?.trim().toLowerCase() == currentEmail &&
+              event.startDate != null,
+        )
         .map(
           (event) => CalendarShareableEvent(
             id: event.id,
@@ -187,10 +199,7 @@ class ServiceCalendarSharing {
     await _requireCloudMode();
     await supabase.rpc(
       'respond_calendar_invitation',
-      params: {
-        'p_invitation_id': invitationId,
-        'p_accept': accept,
-      },
+      params: {'p_invitation_id': invitationId, 'p_accept': accept},
     );
   }
 
@@ -209,10 +218,7 @@ class ServiceCalendarSharing {
     await _requireCloudMode();
     await supabase.rpc(
       'remove_calendar_shared_event',
-      params: {
-        'p_invitation_id': invitationId,
-        'p_event_id': eventId,
-      },
+      params: {'p_invitation_id': invitationId, 'p_event_id': eventId},
     );
   }
 }

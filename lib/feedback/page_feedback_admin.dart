@@ -54,7 +54,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                             ((controller.hasMore || controller.isLoadingMore)
                                 ? 1
                                 : 0),
-                        separatorBuilder: (_, __) => const Divider(),
+                        separatorBuilder: (_, _) => const Divider(),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return Padding(
@@ -154,7 +154,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                                                     addRepaintBoundaries: true,
                                                     itemCount: feedback
                                                         .screenshot!.length,
-                                                    separatorBuilder: (_, __) =>
+                                                    separatorBuilder: (_, _) =>
                                                         Gaps.w8,
                                                     itemBuilder:
                                                         (context, index) {

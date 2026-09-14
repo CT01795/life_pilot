@@ -207,7 +207,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
                   Text(loc.eventSub),
                   Selector<ControllerPageCalendarAdd, int>(
                     selector: (_, ctl) => ctl.subEvents.length,
-                    builder: (_, length, __) {
+                    builder: (_, length, _) {
                       return Column(
                         children: List.generate(
                           length,
@@ -285,7 +285,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       {required AppLocalizations loc,
       required ControllerPageCalendarAdd ctl,
       int? index}) {
-    return Consumer<ControllerPageCalendarAdd>(builder: (_, ctl, __) {
+    return Consumer<ControllerPageCalendarAdd>(builder: (_, ctl, _) {
       final dStart =
           index == null ? ctl.startDate : ctl.subEvents[index].startDate;
       final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
@@ -491,7 +491,7 @@ class SpeechTextField extends StatelessWidget {
       children: [
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: ctrl,
-          builder: (_, value, __) {
+          builder: (_, value, _) {
             if (value.text.isEmpty) return const SizedBox.shrink();
             return IconButton(
               icon: const Icon(Icons.volume_up),
@@ -517,7 +517,7 @@ class SpeechTextField extends StatelessWidget {
         Selector<ControllerPageCalendarAdd, bool>(
             selector: (_, ctl) =>
                 ctl.isListening && ctl.currentListeningKey == keyField,
-            builder: (_, isActive, __) {
+            builder: (_, isActive, _) {
               return IconButton(
                 icon: Icon(
                   Icons.mic,

@@ -23,7 +23,7 @@ Widget widgetsEventTrailing({
             controllerEvent.fromTableName != TableNames.memoryTrace)
           Selector<ControllerEvent, bool>(
             selector: (_, c) => c.isEventSelected(event.id),
-            builder: (_, isSelected, __) {
+            builder: (_, isSelected, _) {
               return Tooltip(
                   message: loc.eventAdd1,
                   child: Checkbox(
@@ -52,7 +52,7 @@ Widget widgetsEventTrailing({
             final e = c.getEventById(event.id);
             return e.isApproved;
           },
-          builder: (_, isApproved, __) {
+          builder: (_, isApproved, _) {
             if (controllerEvent.fromTableName != TableNames.memoryTrace &&
                 !isApproved &&
                 auth.isSysAdmin) {

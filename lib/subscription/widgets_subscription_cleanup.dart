@@ -48,21 +48,25 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isLocal
-                    ? loc.dataCleanupLocalExplanation
-                    : loc.dataCleanupCloudExplanation),
+                Text(
+                  isLocal
+                      ? loc.dataCleanupLocalExplanation
+                      : loc.dataCleanupCloudExplanation,
+                ),
                 if (!isLocal && overages.isEmpty) ...[
                   Gaps.h12,
                   Text(loc.dataCleanupNoOverage),
                 ],
                 for (final row in overages) ...[
                   Gaps.h8,
-                  Text(loc.subscriptionOverageItem(
-                    _resourceName(loc, row.resource),
-                    row.used,
-                    row.quota,
-                    row.excess,
-                  )),
+                  Text(
+                    loc.subscriptionOverageItem(
+                      _resourceName(loc, row.resource),
+                      row.used,
+                      row.quota,
+                      row.excess,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -89,9 +93,11 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
             context: context,
             builder: (dialogContext) => AlertDialog(
               title: Text(loc.dataCleanupConfirmTitle),
-              content: Text(mode == 'excess'
-                  ? loc.dataCleanupExcessConfirm
-                  : loc.dataCleanupAllConfirm),
+              content: Text(
+                mode == 'excess'
+                    ? loc.dataCleanupExcessConfirm
+                    : loc.dataCleanupAllConfirm,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
@@ -114,7 +120,8 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
         await ServiceSubscription().cleanupData(email: target, mode: mode);
       }
       if (!mounted) return;
-      await auth.refreshSubscriptionUsage(notify: false);
+      await auth.refreshAfterPersonalDataCleanup();
+      if (!mounted) return;
       AppNavigator.showSnackBar(loc.dataCleanupSuccess);
     } catch (error) {
       if (mounted) {
@@ -135,8 +142,10 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(loc.dataCleanupTitle,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              loc.dataCleanupTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             if (auth.isSysAdmin &&
                 auth.preferredStorage == DataStorageLocation.cloud) ...[
               Gaps.h12,

@@ -1170,6 +1170,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get calendarShareEvents => '共有する予定を選択';
 
   @override
+  String get calendarSearchEmail => 'メールアドレス';
+
+  @override
+  String get calendarSearchEvent => '予定';
+
+  @override
   String get scrollThisArea => 'この範囲を上下にスクロール';
 
   @override
@@ -1396,6 +1402,26 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidName => 'デバイス Plus';
+
+  @override
+  String subscriptionCloudVersionName(String version) {
+    return 'クラウド $version';
+  }
+
+  @override
+  String subscriptionLocalVersionName(String version) {
+    return 'デバイス $version';
+  }
+
+  @override
+  String subscriptionNextCloudVersionName(String version) {
+    return '次回支払い：クラウド $version';
+  }
+
+  @override
+  String subscriptionNextLocalVersionName(String version) {
+    return '次回支払い：デバイス $version';
+  }
 
   @override
   String get subscriptionLocalPaidPrice => '四半期 NT\$129';

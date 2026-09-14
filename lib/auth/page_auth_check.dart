@@ -32,7 +32,7 @@ class _PageAuthCheckState extends State<PageAuthCheck> {
   Widget build(BuildContext context) {
     return Selector<ModelAuthView, bool>(
       selector: (_, auth) => auth.isLoading,
-      builder: (_, loading, __) {
+      builder: (_, loading, _) {
         if (loading) {
           return const Scaffold(
             body: Center(

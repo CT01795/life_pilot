@@ -71,7 +71,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
               preferredSize: const Size.fromHeight(16), // 增加高度，變胖
               child: Selector<ControllerBusinessPlan, double>(
                 selector: (_, c) => c.progress,
-                builder: (_, p, __) => Padding(
+                builder: (_, p, _) => Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 6), // 加點內邊距
                   child: ClipRRect(

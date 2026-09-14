@@ -29,14 +29,8 @@ class CalendarService {
     final result = await supabase
         .from(TableNames.calendarEvents)
         .select(Fields.id)
-        .eq(
-          Fields.id,
-          event.id,
-        )
-        .eq(
-          Fields.account,
-          account,
-        )
+        .eq(Fields.id, event.id)
+        .eq(Fields.account, account)
         .maybeSingle();
     return result != null;
   }
@@ -90,8 +84,9 @@ class CalendarService {
         resource: TableNames.calendarEvents,
       );
       return rows.any((row) {
-        final date =
-            DateTime.tryParse(row['start_date']?.toString() ?? '')?.toLocal();
+        final date = DateTime.tryParse(
+          row['start_date']?.toString() ?? '',
+        )?.toLocal();
         return row['name']?.toString() == place.name &&
             date != null &&
             DateUtils.isSameDay(date, today);
@@ -100,18 +95,12 @@ class CalendarService {
     final result = await supabase
         .from(TableNames.calendarEvents)
         .select(Fields.id)
+        .eq("name", place.name)
+        .eq(Fields.account, account)
         .eq(
-          "name",
-          place.name,
+          "start_date",
+          DateTimeFormatter.dateOnly(DateTime.now().toUtc()).toIso8601String(),
         )
-        .eq(
-          Fields.account,
-          account,
-        )
-        .eq(
-            "start_date",
-            DateTimeFormatter.dateOnly(DateTime.now().toUtc())
-                .toIso8601String())
         .maybeSingle();
     return result != null;
   }
@@ -127,8 +116,9 @@ class CalendarService {
       Fields.id: id ?? const Uuid().v4(),
       Fields.account: account,
       'master_url': place.masterUrl,
-      'start_date':
-          DateTimeFormatter.dateOnly(DateTime.now().toUtc()).toIso8601String(),
+      'start_date': DateTimeFormatter.dateOnly(
+        DateTime.now().toUtc(),
+      ).toIso8601String(),
       'end_date': null,
       'start_time': TimeOfDay.fromDateTime(DateTime.now()).formatTimeString(),
       'end_time': null,
@@ -165,14 +155,8 @@ class CalendarService {
     final result = await supabase
         .from(TableNames.memoryTrace)
         .select(Fields.id)
-        .eq(
-          Fields.id,
-          event.id,
-        )
-        .eq(
-          Fields.account,
-          account,
-        )
+        .eq(Fields.id, event.id)
+        .eq(Fields.account, account)
         .maybeSingle();
     return result != null;
   }
@@ -192,6 +176,7 @@ class CalendarService {
       'end_date': event.endDate?.toUtc().toIso8601String(),
       'start_time': event.startTime?.formatTimeString(),
       'end_time': event.endTime?.formatTimeString(),
+      EventFields.country: event.country,
       'city': event.city,
       'location': event.location,
       'name': event.name,

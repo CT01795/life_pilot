@@ -1170,6 +1170,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarShareEvents => 'Choose events to share';
 
   @override
+  String get calendarSearchEmail => 'Email';
+
+  @override
+  String get calendarSearchEvent => 'Event';
+
+  @override
   String get scrollThisArea => 'Scroll within this area';
 
   @override
@@ -1396,6 +1402,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidName => 'Device Plus';
+
+  @override
+  String subscriptionCloudVersionName(String version) {
+    return 'Cloud $version';
+  }
+
+  @override
+  String subscriptionLocalVersionName(String version) {
+    return 'Device $version';
+  }
+
+  @override
+  String subscriptionNextCloudVersionName(String version) {
+    return 'Next payment: Cloud $version';
+  }
+
+  @override
+  String subscriptionNextLocalVersionName(String version) {
+    return 'Next payment: Device $version';
+  }
 
   @override
   String get subscriptionLocalPaidPrice => 'NT\$129 / quarter';

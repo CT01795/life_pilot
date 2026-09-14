@@ -14,14 +14,19 @@ import 'package:provider/provider.dart';
 class ControllerAccountingList extends SafeChangeNotifier {
   final ServiceAccounting _service;
   ControllerAuth? auth;
-  String? _accountKey;
+  String? _dataScopeKey;
   int _accountGeneration = 0;
 
   ControllerAccountingList({
     required ServiceAccounting service,
     required this.auth,
   })  : _service = service,
-        _accountKey = auth?.currentAccount?.trim().toLowerCase();
+        _dataScopeKey = _scopeKey(auth);
+
+  static String _scopeKey(ControllerAuth? auth) =>
+      '${auth?.currentAccount?.trim().toLowerCase() ?? ''}|'
+      '${auth?.preferredStorage.name ?? ''}|'
+      '${auth?.personalDataRevision ?? 0}';
 
   bool isLoading = false;
   List<ModelAccountingAccount> accounts = [];
@@ -33,8 +38,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
     notifyListeners();
     try {
       final loaded = await _service.fetchAccounts(
-          user: auth?.currentAccount ?? '',
-          category: inputCategory ?? category);
+        user: auth?.currentAccount ?? '',
+        category: inputCategory ?? category,
+      );
       if (generation != _accountGeneration) return;
       accounts = loaded;
     } finally {
@@ -46,10 +52,10 @@ class ControllerAccountingList extends SafeChangeNotifier {
   }
 
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
-    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    final nextScope = _scopeKey(nextAuth);
     auth = nextAuth;
-    if (_accountKey == nextAccount) return;
-    _accountKey = nextAccount;
+    if (_dataScopeKey == nextScope) return;
+    _dataScopeKey = nextScope;
     _accountGeneration++;
     isLoading = false;
     accounts = [];
@@ -79,7 +85,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
     }
     if (accounts.isEmpty || mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await _service.fetchLatestAccount(
-          user: auth?.currentAccount ?? '', category: category);
+        user: auth?.currentAccount ?? '',
+        category: category,
+      );
       notifyListeners();
       return;
     }
@@ -93,11 +101,13 @@ class ControllerAccountingList extends SafeChangeNotifier {
         content: TextField(controller: textController),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: Text(loc.cancel)),
+            onPressed: () => Navigator.pop(context, null),
+            child: Text(loc.cancel),
+          ),
           ElevatedButton(
-              onPressed: () => Navigator.pop(context, textController.text),
-              child: Text(loc.confirm)),
+            onPressed: () => Navigator.pop(context, textController.text),
+            child: Text(loc.confirm),
+          ),
         ],
       ),
     );
@@ -111,18 +121,23 @@ class ControllerAccountingList extends SafeChangeNotifier {
     }
   }
 
-  Future<ModelAccountingAccount> createAccount(
-      {required String name, String? eventId}) async {
+  Future<ModelAccountingAccount> createAccount({
+    required String name,
+    String? eventId,
+  }) async {
     if (mainCurrency == null || mainCurrency!.isEmpty) {
       mainCurrency = await _service.fetchLatestAccount(
-          user: auth?.currentAccount ?? '', category: category);
+        user: auth?.currentAccount ?? '',
+        category: category,
+      );
     }
     final modelAccountingAccount = await _service.createAccount(
-        name: name,
-        user: auth?.currentAccount ?? '',
-        currency: mainCurrency,
-        category: category,
-        eventId: eventId);
+      name: name,
+      user: auth?.currentAccount ?? '',
+      currency: mainCurrency,
+      category: category,
+      eventId: eventId,
+    );
     // ⭐ 統一來源：重新拉一次
     await loadAccounts();
     return modelAccountingAccount;
@@ -137,8 +152,10 @@ class ControllerAccountingList extends SafeChangeNotifier {
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
 
     // 上傳圖片給後端，後端返回可訪問 URL
-    final newImage =
-        await _service.uploadAccountImageBytesDirect(accountId, bytes);
+    final newImage = await _service.uploadAccountImageBytesDirect(
+      accountId,
+      bytes,
+    );
 
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
@@ -155,8 +172,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
     return accounts.firstWhereOrNull((a) => a.id == id);
   }
 
-  Future<ModelAccountingAccount?> findAccountByEventId(
-      {required String eventId}) async {
+  Future<ModelAccountingAccount?> findAccountByEventId({
+    required String eventId,
+  }) async {
     return await _service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',
@@ -168,8 +186,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
     required int deltaBalance,
     required String? currency,
   }) {
-    final index = accounts.indexWhere((a) =>
-        a.id == accountId && (currency == null || a.currency == currency));
+    final index = accounts.indexWhere(
+      (a) => a.id == accountId && (currency == null || a.currency == currency),
+    );
     if (index == -1) return;
 
     final old = accounts[index];
@@ -186,10 +205,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
     required String accountId,
     required String currency,
   }) async {
-    await _service.switchMainCurrency(
-      accountId: accountId,
-      currency: currency,
-    );
+    await _service.switchMainCurrency(accountId: accountId, currency: currency);
     await loadAccounts();
   }
 
@@ -234,7 +250,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
 
   // 復用原本 Dialog
   Future<ModelAccountingAccount?> _showAccountPickerDialog(
-      BuildContext context, String eventId) {
+    BuildContext context,
+    String eventId,
+  ) {
     final loc = AppLocalizations.of(context)!;
     return showDialog<ModelAccountingAccount>(
       context: context,
@@ -268,11 +286,13 @@ class ControllerAccountingList extends SafeChangeNotifier {
                       child: TabBarView(
                         children: [
                           _AccountListView(
-                              category: AccountCategory.personal.name,
-                              eventId: eventId),
+                            category: AccountCategory.personal.name,
+                            eventId: eventId,
+                          ),
                           _AccountListView(
-                              category: AccountCategory.project.name,
-                              eventId: eventId),
+                            category: AccountCategory.project.name,
+                            eventId: eventId,
+                          ),
                         ],
                       ),
                     ),
@@ -312,7 +332,7 @@ class _AccountListViewState extends State<_AccountListView> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ControllerAccountingList>(
-      builder: (_, controller, __) {
+      builder: (_, controller, _) {
         final accounts = controller.accounts;
         final loc = AppLocalizations.of(context)!;
 
@@ -368,8 +388,9 @@ class _AccountListViewState extends State<_AccountListView> {
                           if (modelAccountingAccount.category !=
                               widget.category) {
                             // 切換到正確 Tab
-                            final parentTabController =
-                                DefaultTabController.of(context);
+                            final parentTabController = DefaultTabController.of(
+                              context,
+                            );
                             int tabIndex = modelAccountingAccount.category ==
                                     AccountCategory.personal.name
                                 ? 0
@@ -377,8 +398,9 @@ class _AccountListViewState extends State<_AccountListView> {
                             parentTabController.animateTo(tabIndex);
 
                             // 同時更新帳戶列表
-                            await controller
-                                .setCategory(modelAccountingAccount.category);
+                            await controller.setCategory(
+                              modelAccountingAccount.category,
+                            );
                           }
                         },
                         child: Text(loc.accountCreate),

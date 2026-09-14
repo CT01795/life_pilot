@@ -86,7 +86,7 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
       key: app_navigator.rootRepaintBoundaryKey,
       child: Selector<ProviderLocale, Locale>(
         selector: (_, provider) => provider.locale,
-        builder: (_, locale, __) {
+        builder: (_, locale, _) {
           return MaterialApp(
             navigatorKey: app_navigator.navigatorKey,
             scaffoldMessengerKey: app_navigator.scaffoldMessengerKey,

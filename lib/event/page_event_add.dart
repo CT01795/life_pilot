@@ -276,7 +276,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                   Text(loc.eventSub),
                   Selector<ControllerPageEventAdd, int>(
                     selector: (_, ctl) => ctl.subEvents.length,
-                    builder: (_, length, __) {
+                    builder: (_, length, _) {
                       return Column(
                         children: List.generate(
                           length,
@@ -317,7 +317,7 @@ class _PageEventAddState extends State<PageEventAdd> {
   Widget _buildOptionalImagePicker(AppLocalizations loc) {
     return Selector<ControllerPageEventAdd, String?>(
       selector: (_, ctl) => ctl.masterGraphUrl,
-      builder: (context, value, __) {
+      builder: (context, value, _) {
         final ctl = context.read<ControllerPageEventAdd>();
         final imageValue = value?.trim();
         return Card(
@@ -545,7 +545,7 @@ class _PageEventAddState extends State<PageEventAdd> {
       {required AppLocalizations loc,
       required ControllerPageEventAdd ctl,
       int? index}) {
-    return Consumer<ControllerPageEventAdd>(builder: (_, ctl, __) {
+    return Consumer<ControllerPageEventAdd>(builder: (_, ctl, _) {
       final dStart =
           index == null ? ctl.startDate : ctl.subEvents[index].startDate;
       final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
@@ -751,7 +751,7 @@ class SpeechTextField extends StatelessWidget {
       children: [
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: ctrl,
-          builder: (_, value, __) {
+          builder: (_, value, _) {
             if (value.text.isEmpty) return const SizedBox.shrink();
             return IconButton(
               icon: const Icon(Icons.volume_up),
@@ -777,7 +777,7 @@ class SpeechTextField extends StatelessWidget {
         Selector<ControllerPageEventAdd, bool>(
             selector: (_, ctl) =>
                 ctl.isListening && ctl.currentListeningKey == keyField,
-            builder: (_, isActive, __) {
+            builder: (_, isActive, _) {
               return IconButton(
                 icon: Icon(
                   Icons.mic,

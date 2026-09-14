@@ -19,7 +19,7 @@ class AuthGate extends StatelessWidget {
           page: model.currentPage,
           account: model.account?.trim().toLowerCase(),
         ),
-        builder: (_, session, __) {
+        builder: (_, session, _) {
           switch (session.page) {
             case AuthPage.login:
               return PageLogin(

@@ -20,7 +20,7 @@ Widget widgetsCalendarTrailing({
             !controllerCalendar.auth!.isAnonymous)
           Selector<ControllerCalendar, bool>(
             selector: (_, controller) => controller.isEventSelected(event.id),
-            builder: (_, isSelected, __) {
+            builder: (_, isSelected, _) {
               return Tooltip(
                   message: loc.memoryAdd,
                   child: Checkbox(
