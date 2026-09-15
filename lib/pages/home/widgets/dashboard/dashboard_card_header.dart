@@ -39,7 +39,9 @@ class DashboardCardHeader extends StatelessWidget {
           children: [
             Icon(icon),
             Gaps.w8,
-            Flexible(child: Text(title, style: titleStyle)),
+            Expanded(
+              child: Text(title, style: titleStyle),
+            ),
           ],
         );
 

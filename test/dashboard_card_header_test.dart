@@ -52,4 +52,29 @@ void main() {
     expect(trailingTop, greaterThan(titleBottom));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('does not overflow on a narrow screen with enlarged text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: const Scaffold(
+            body: SizedBox(
+              width: 220,
+              child: DashboardCardHeader(
+                icon: Icons.account_balance_wallet,
+                title: 'Income and expense records',
+                trailingWidth: 40,
+                trailing: SizedBox(width: 40, height: 40),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
 }

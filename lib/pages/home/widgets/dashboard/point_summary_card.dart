@@ -15,7 +15,14 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PointSummaryCard extends StatelessWidget {
-  const PointSummaryCard({super.key});
+  final bool isExpanded;
+  final ValueChanged<bool> onExpansionChanged;
+
+  const PointSummaryCard({
+    super.key,
+    required this.isExpanded,
+    required this.onExpansionChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,116 +63,133 @@ class PointSummaryCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.stars,
               title: loc.pointsRecord,
-              trailingWidth: 236,
+              trailingWidth: isExpanded ? 284 : 40,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (isExpanded) ...[
+                    IconButton(
+                      tooltip: loc.add,
+                      onPressed: () => openHomePointQuickAdd(context),
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(child: PointSelectorButton()),
+                  ],
                   IconButton(
-                    tooltip: loc.add,
-                    onPressed: () => openHomePointQuickAdd(context),
-                    icon: const Icon(Icons.add_circle_outline),
+                    onPressed: () => onExpansionChanged(!isExpanded),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 40,
+                      height: 40,
+                    ),
+                    icon: AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: const Icon(Icons.keyboard_arrow_down),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  const Expanded(child: PointSelectorButton()),
                 ],
               ),
             ),
-            if (!hasSelectedAccount)
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: Text(loc.selectAccount),
-              )
-            else ...[
-              Gaps.h16,
-              ListTile(
-                dense: true,
-                title: Text(
-                  loc.totalPoints,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                trailing: Text(
-                  formatter.format(pointsTotal),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: pointsTotal < 0
-                        ? colorScheme.error
-                        : colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              ListTile(
-                dense: true,
-                title: Text(
-                  loc.todayPoints,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                trailing: Text(
-                  formatter.format(todayTotal),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: todayTotal < 0
-                        ? colorScheme.error
-                        : colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const Divider(),
-              if (isLoading && records.isNotEmpty)
-                const LinearProgressIndicator(),
-              if (hasLoadFailed)
-                DashboardLoadFailure(
-                  onRetry: () => context.read<ModelDashboard>().retrySection(
-                    section: DashboardSection.points,
-                    account: context.read<ModelAuthView>().account!,
-                  ),
-                )
-              else if (isLoading && records.isEmpty)
-                const DashboardSectionLoading()
-              else if (records.isEmpty)
+            if (isExpanded) ...[
+              if (!hasSelectedAccount)
                 ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: Text(loc.noInfoAvailable),
+                  title: Text(loc.selectAccount),
                 )
-              else
-                ...records
-                    .take(5)
-                    .map(
-                      (record) => ListTile(
-                        dense: true,
-                        title: Text(
-                          record.description,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        subtitle: Text(
-                          record.group == null || record.group!.isEmpty
-                              ? ''
-                              : record.group!,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        trailing: Text(
-                          formatter.format(record.value),
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: record.value < 0
-                                    ? colorScheme.error
-                                    : colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
+              else ...[
+                Gaps.h16,
+                ListTile(
+                  dense: true,
+                  title: Text(
+                    loc.totalPoints,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  trailing: Text(
+                    formatter.format(pointsTotal),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: pointsTotal < 0
+                          ? colorScheme.error
+                          : colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  dense: true,
+                  title: Text(
+                    loc.todayPoints,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  trailing: Text(
+                    formatter.format(todayTotal),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: todayTotal < 0
+                          ? colorScheme.error
+                          : colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const Divider(),
+                if (isLoading && records.isNotEmpty)
+                  const LinearProgressIndicator(),
+                if (hasLoadFailed)
+                  DashboardLoadFailure(
+                    onRetry: () => context.read<ModelDashboard>().retrySection(
+                      section: DashboardSection.points,
+                      account: context.read<ModelAuthView>().account!,
+                    ),
+                  )
+                else if (isLoading && records.isEmpty)
+                  const DashboardSectionLoading()
+                else if (records.isEmpty)
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(loc.noInfoAvailable),
+                  )
+                else
+                  ...records
+                      .take(5)
+                      .map(
+                        (record) => ListTile(
+                          dense: true,
+                          title: Text(
+                            record.description,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          subtitle: Text(
+                            record.group == null || record.group!.isEmpty
+                                ? ''
+                                : record.group!,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          trailing: Text(
+                            formatter.format(record.value),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: record.value < 0
+                                      ? colorScheme.error
+                                      : colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
                         ),
                       ),
-                    ),
-            ],
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  context.read<ControllerPageMain>().changePage(
-                    PageType.pointsRecord,
-                  );
-                },
-                child: Text(loc.clickHereToSeeMore),
+              ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    context.read<ControllerPageMain>().changePage(
+                      PageType.pointsRecord,
+                    );
+                  },
+                  child: Text(loc.clickHereToSeeMore),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

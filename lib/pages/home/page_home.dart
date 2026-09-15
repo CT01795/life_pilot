@@ -17,6 +17,11 @@ class PageHome extends StatefulWidget {
 }
 
 class _PageHomeState extends State<PageHome> {
+  bool _recommendEventsExpanded = false;
+  bool _recommendPlacesExpanded = false;
+  bool _accountingExpanded = false;
+  bool _pointsExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -60,18 +65,34 @@ class _PageHomeState extends State<PageHome> {
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 960),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TodayScheduleCard(),
+                  const TodayScheduleCard(),
                   Gaps.h16,
-                  RecommendEventCard(),
+                  RecommendEventCard(
+                    isExpanded: _recommendEventsExpanded,
+                    onExpansionChanged: (value) =>
+                        setState(() => _recommendEventsExpanded = value),
+                  ),
                   Gaps.h16,
-                  RecommendPlaceCard(),
+                  RecommendPlaceCard(
+                    isExpanded: _recommendPlacesExpanded,
+                    onExpansionChanged: (value) =>
+                        setState(() => _recommendPlacesExpanded = value),
+                  ),
                   Gaps.h16,
-                  IncomeExpenseSummaryCard(),
+                  IncomeExpenseSummaryCard(
+                    isExpanded: _accountingExpanded,
+                    onExpansionChanged: (value) =>
+                        setState(() => _accountingExpanded = value),
+                  ),
                   Gaps.h16,
-                  PointSummaryCard(),
+                  PointSummaryCard(
+                    isExpanded: _pointsExpanded,
+                    onExpansionChanged: (value) =>
+                        setState(() => _pointsExpanded = value),
+                  ),
                 ],
               ),
             ),
