@@ -1,3 +1,5 @@
+import 'dart:ui' show DartPluginRegistrant;
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
@@ -31,6 +33,7 @@ import 'utils/service/export/service_export.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
 
   await AppInitializer.init();
 
