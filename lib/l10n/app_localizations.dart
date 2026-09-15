@@ -1989,6 +1989,12 @@ abstract class AppLocalizations {
   /// **'Date'**
   String get recordDate;
 
+  /// Label for the record time
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get recordTime;
+
   /// Label for recordValue
   ///
   /// In en, this message translates to:

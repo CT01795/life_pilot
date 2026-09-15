@@ -960,6 +960,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recordDate => '日期';
 
   @override
+  String get recordTime => '時間';
+
+  @override
   String get recordValue => '數值';
 
   @override

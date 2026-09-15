@@ -615,10 +615,10 @@ class ServicePointRecord {
       {required String accountId,
       required String type,
       required List<PointRecordPreview> records}) async {
+    final now = DateTime.now();
     try {
       if (await _storesLocally) {
         final owner = _localOwner!;
-        final now = DateTime.now();
         for (final record in records) {
           final id = const Uuid().v4();
           await LocalDataStore.instance.put(
@@ -651,6 +651,7 @@ class ServicePointRecord {
                     'value': r.value,
                     'primary_category': r.primaryCategory,
                     'group': r.secondaryCategory?.trim() ?? '',
+                    'date': (r.date ?? now).toUtc().toIso8601String(),
                   })
               .toList(),
         },

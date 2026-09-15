@@ -638,6 +638,8 @@
   "@editRecord": {"description": "Label for editRecord"},
   "recordDate": "日期",
   "@recordDate": {"description": "Label for recordDate"},
+  "recordTime": "時間",
+  "@recordTime": {"description": "Label for the record time"},
   "recordValue": "數值",
   "@recordValue": {"description": "Label for recordValue"},
   "recordPrimaryCategory": "一級分類",

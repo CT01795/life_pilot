@@ -960,6 +960,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordDate => 'Date';
 
   @override
+  String get recordTime => 'Time';
+
+  @override
   String get recordValue => 'Value';
 
   @override

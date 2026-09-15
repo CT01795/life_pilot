@@ -10,6 +10,7 @@ import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/record_categories.dart';
+import 'package:life_pilot/utils/record_date_time.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
@@ -71,6 +72,7 @@ class _PagePointRecordDetailViewState
   late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
+  DateTime _newRecordDate = DateTime.now();
 
   @override
   void initState() {
@@ -189,6 +191,7 @@ class _PagePointRecordDetailViewState
           Gaps.h8,
           const SubscriptionUsageBanner(resource: 'point_record_detail'),
           _buildSummary(context, account, controller),
+          _buildNewRecordDatePicker(context),
           _buildMicButton(context, controller),
           const Divider(),
           _buildTodayList(controller),
@@ -369,6 +372,54 @@ class _PagePointRecordDetailViewState
     await controller.deletePointRecordDetail(detailId);
   }
 
+  Widget _buildNewRecordDatePicker(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            icon: const Icon(Icons.calendar_today_outlined),
+            label: Text(
+              '${loc.recordDate}: ${DateFormat.yMd(locale).format(_newRecordDate)}',
+            ),
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _newRecordDate,
+                firstDate: DateTime(2000),
+                lastDate: DateTime.now().add(const Duration(days: 3650)),
+              );
+              if (picked == null || !mounted) return;
+              setState(() {
+                _newRecordDate = replaceRecordDate(_newRecordDate, picked);
+              });
+            },
+          ),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.access_time),
+            label: Text(
+              '${loc.recordTime}: ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_newRecordDate))}',
+            ),
+            onPressed: () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_newRecordDate),
+              );
+              if (picked == null || !mounted) return;
+              setState(() {
+                _newRecordDate = replaceRecordTime(_newRecordDate, picked);
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMicButton(
     BuildContext context,
     ControllerPointRecordDetail controller,
@@ -412,6 +463,9 @@ class _PagePointRecordDetailViewState
               final previews = controller.parseFromSpeech(
                 _speechTextController.text,
               );
+              for (final preview in previews) {
+                preview.date = _newRecordDate;
+              }
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
@@ -432,6 +486,7 @@ class _PagePointRecordDetailViewState
               // 清空輸入框
               setState(() {
                 _speechTextController.clear();
+                _newRecordDate = DateTime.now();
               });
               if (widget.returnAfterSubmit && mounted) {
                 Navigator.of(context).pop(true);
@@ -495,16 +550,29 @@ class _PagePointRecordDetailViewState
                     );
                     if (picked != null) {
                       setState(() {
-                        selectedDate = DateTime(
-                          picked.year,
-                          picked.month,
-                          picked.day,
-                          selectedDate.hour,
-                          selectedDate.minute,
-                          selectedDate.second,
-                        );
+                        selectedDate = replaceRecordDate(selectedDate, picked);
                       });
                     }
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.access_time),
+                  title: Text(loc.recordTime),
+                  subtitle: Text(
+                    MaterialLocalizations.of(
+                      context,
+                    ).formatTimeOfDay(TimeOfDay.fromDateTime(selectedDate)),
+                  ),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(selectedDate),
+                    );
+                    if (picked == null) return;
+                    setState(() {
+                      selectedDate = replaceRecordTime(selectedDate, picked);
+                    });
                   },
                 ),
                 DropdownButtonFormField<String>(

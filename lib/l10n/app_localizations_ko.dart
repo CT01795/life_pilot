@@ -960,6 +960,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recordDate => '날짜';
 
   @override
+  String get recordTime => '시간';
+
+  @override
   String get recordValue => '값';
 
   @override

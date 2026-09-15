@@ -638,6 +638,8 @@
   "@editRecord": {"description": "Label for editRecord"},
   "recordDate": "Date",
   "@recordDate": {"description": "Label for recordDate"},
+  "recordTime": "Time",
+  "@recordTime": {"description": "Label for the record time"},
   "recordValue": "Value",
   "@recordValue": {"description": "Label for recordValue"},
   "recordPrimaryCategory": "Category",

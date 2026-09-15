@@ -11,6 +11,7 @@ import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/utils/record_categories.dart';
+import 'package:life_pilot/utils/record_date_time.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
@@ -81,6 +82,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
   final numberFormatter = NumberFormat('#,##0.####');
+  DateTime _newRecordDate = DateTime.now();
 
   @override
   void initState() {
@@ -196,6 +198,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           Gaps.h8,
           const SubscriptionUsageBanner(resource: 'accounting_detail'),
           _buildSummary(context, account, controller),
+          _buildNewRecordDatePicker(context),
           _buildMicButton(context, controller),
           const Divider(),
           _buildTodayList(controller),
@@ -413,6 +416,54 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     }
   }
 
+  Widget _buildNewRecordDatePicker(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            icon: const Icon(Icons.calendar_today_outlined),
+            label: Text(
+              '${loc.recordDate}: ${DateFormat.yMd(locale).format(_newRecordDate)}',
+            ),
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _newRecordDate,
+                firstDate: DateTime(2000),
+                lastDate: DateTime.now().add(const Duration(days: 3650)),
+              );
+              if (picked == null || !mounted) return;
+              setState(() {
+                _newRecordDate = replaceRecordDate(_newRecordDate, picked);
+              });
+            },
+          ),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.access_time),
+            label: Text(
+              '${loc.recordTime}: ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_newRecordDate))}',
+            ),
+            onPressed: () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_newRecordDate),
+              );
+              if (picked == null || !mounted) return;
+              setState(() {
+                _newRecordDate = replaceRecordTime(_newRecordDate, picked);
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMicButton(
     BuildContext context,
     ControllerAccountingDetail controller,
@@ -460,6 +511,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               );
               for (final preview in previews) {
                 preview.eventId = widget.linkedEventId;
+                preview.date = _newRecordDate;
               }
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
@@ -480,6 +532,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               // 清空輸入框
               setState(() {
                 _speechTextController.clear();
+                _newRecordDate = DateTime.now();
               });
               if (widget.returnAfterSubmit && mounted) {
                 Navigator.of(context).pop(true);
@@ -553,16 +606,35 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                         );
                         if (picked != null) {
                           setState(() {
-                            selectedDate = DateTime(
-                              picked.year,
-                              picked.month,
-                              picked.day,
-                              selectedDate.hour,
-                              selectedDate.minute,
-                              selectedDate.second,
+                            selectedDate = replaceRecordDate(
+                              selectedDate,
+                              picked,
                             );
                           });
                         }
+                      },
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.access_time),
+                      title: Text(loc.recordTime),
+                      subtitle: Text(
+                        MaterialLocalizations.of(
+                          context,
+                        ).formatTimeOfDay(TimeOfDay.fromDateTime(selectedDate)),
+                      ),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.fromDateTime(selectedDate),
+                        );
+                        if (picked == null) return;
+                        setState(() {
+                          selectedDate = replaceRecordTime(
+                            selectedDate,
+                            picked,
+                          );
+                        });
                       },
                     ),
                     DropdownButtonFormField<String>(

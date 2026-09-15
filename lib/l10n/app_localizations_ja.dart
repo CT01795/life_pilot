@@ -960,6 +960,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recordDate => '日付';
 
   @override
+  String get recordTime => '時刻';
+
+  @override
   String get recordValue => '値';
 
   @override
