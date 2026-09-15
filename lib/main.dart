@@ -30,10 +30,13 @@ import 'package:life_pilot/utils/service/service_notification/service_notificati
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:provider/provider.dart';
 import 'utils/service/export/service_export.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
+  if (!kIsWeb) {
+    DartPluginRegistrant.ensureInitialized();
+  }
 
   await AppInitializer.init();
 
