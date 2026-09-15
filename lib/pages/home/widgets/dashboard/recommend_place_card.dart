@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
@@ -20,9 +21,7 @@ import 'package:provider/provider.dart';
 import '../../../../utils/logger.dart';
 
 class RecommendPlaceCard extends StatelessWidget {
-  const RecommendPlaceCard({
-    super.key,
-  });
+  const RecommendPlaceCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,16 +53,17 @@ class RecommendPlaceCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.local_attraction,
               title: loc.recommendPlaces,
-              trailing: PlaceCitySelectorButton(),
+              trailingWidth: 160,
+              trailing: const PlaceCitySelectorButton(),
             ),
             Gaps.h16,
             if (isLoading && places.isNotEmpty) const LinearProgressIndicator(),
             if (hasLoadFailed)
               DashboardLoadFailure(
                 onRetry: () => context.read<ModelDashboard>().retrySection(
-                      section: DashboardSection.recommendPlaces,
-                      account: account!,
-                    ),
+                  section: DashboardSection.recommendPlaces,
+                  account: account!,
+                ),
               )
             else if (isLoading && places.isEmpty)
               const DashboardSectionLoading()
@@ -73,79 +73,150 @@ class RecommendPlaceCard extends StatelessWidget {
                 title: Text(loc.noInfoAvailable),
               )
             else
-              ...places.take(5).map(
+              ...places
+                  .take(5)
+                  .map(
                     (e) => ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       leading: Tooltip(
                         message: loc.addToSchedule,
                         child: Transform.scale(
                           scale: 1.5, // 放大倍率
-                          child: AsyncActionCheckbox(onAccepted: () async {
-                            final calendar = context.read<CalendarService>();
-                            try {
-                              bool isExist =
-                                  await calendar.existsRecommendedPlaceToCal(
-                                      account: account!, place: e);
-                              if (!isExist) {
-                                await calendar.addRecommendedPlaceToCal(
-                                    account: account, place: e, id: null);
-                                context
-                                    .read<ModelDashboard>()
-                                    .refreshTodaySchedule(account: account);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(loc.eventAddOk)));
-                              } else {
-                                final confirm = await showDialog<bool>(
+                          child: AsyncActionCheckbox(
+                            onAccepted: () async {
+                              final calendar = context.read<CalendarService>();
+                              final calendarController = context
+                                  .read<ControllerCalendar>();
+                              final dashboard = context.read<ModelDashboard>();
+                              try {
+                                bool isExist = await calendar
+                                    .existsRecommendedPlaceToCal(
+                                      account: account!,
+                                      place: e,
+                                    );
+                                if (!isExist) {
+                                  if (!context.mounted) return;
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (dialogContext) => AlertDialog(
+                                      content: Text(
+                                        '${loc.addToSchedule}「${e.name}」？',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(
+                                            dialogContext,
+                                            false,
+                                          ),
+                                          child: Text(loc.cancel),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(
+                                            dialogContext,
+                                            true,
+                                          ),
+                                          child: Text(loc.confirm),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm != true) return;
+                                  final addedEvent = await calendar
+                                      .addRecommendedPlaceToCal(
+                                        account: account,
+                                        place: e,
+                                        id: null,
+                                      );
+                                  dashboard.addUpcomingEvent(
+                                    addedEvent,
+                                    account: account,
+                                  );
+                                  calendarController.invalidateEventCache(
+                                    startDate: addedEvent.startDate,
+                                    endDate: addedEvent.endDate,
+                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(loc.eventAddOk)),
+                                    );
+                                  }
+                                } else {
+                                  final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (_) => AlertDialog(
-                                          content: Text(
-                                              '「${e.name}」${loc.eventAddError}'),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context, false);
-                                                },
-                                                child: Text(loc.cancel)),
-                                            TextButton(
-                                                onPressed: () async {
-                                                  Navigator.pop(context, true);
-                                                },
-                                                child: Text(loc.confirm))
-                                          ],
-                                        ));
-                                if (confirm == true) {
-                                  await calendar.addRecommendedPlaceToCal(
-                                      account: account, place: e, id: null);
-                                  context
-                                      .read<ModelDashboard>()
-                                      .refreshTodaySchedule(account: account);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(loc.eventAddOk)));
+                                      content: Text(
+                                        '「${e.name}」${loc.eventAddError}',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context, false);
+                                          },
+                                          child: Text(loc.cancel),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(context, true);
+                                          },
+                                          child: Text(loc.confirm),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm != true) return;
+                                  if (confirm == true) {
+                                    final addedEvent = await calendar
+                                        .addRecommendedPlaceToCal(
+                                          account: account,
+                                          place: e,
+                                          id: null,
+                                        );
+                                    dashboard.addUpcomingEvent(
+                                      addedEvent,
+                                      account: account,
+                                    );
+                                    calendarController.invalidateEventCache(
+                                      startDate: addedEvent.startDate,
+                                      endDate: addedEvent.endDate,
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(loc.eventAddOk)),
+                                      );
+                                    }
+                                  }
                                 }
-                              }
-                              await tracking.incrementEventCounter(
+                                await tracking.incrementEventCounter(
                                   eventId: e.id,
                                   eventName: e.name, // 或者用 eventViewModel.name
-                                  column: 'saves'); //收藏到行事曆
-                            } catch (e, stackTrace) {
-                              logger.e(
-                                'Could not add recommended place to calendar.',
-                                error: e,
-                                stackTrace: stackTrace,
-                              );
-                              if (context.mounted) {
-                                final message =
-                                    subscriptionErrorMessage(loc, e);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(message.isNotEmpty
-                                        ? message
-                                        : loc.eventSaveFailed),
-                                  ),
+                                  column: 'saves',
+                                ); //收藏到行事曆
+                              } catch (e, stackTrace) {
+                                logger.e(
+                                  'Could not add recommended place to calendar.',
+                                  error: e,
+                                  stackTrace: stackTrace,
                                 );
+                                if (context.mounted) {
+                                  final message = subscriptionErrorMessage(
+                                    loc,
+                                    e,
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        message.isNotEmpty
+                                            ? message
+                                            : loc.eventSaveFailed,
+                                      ),
+                                    ),
+                                  );
+                                }
                               }
-                            }
-                          }),
+                            },
+                          ),
                         ),
                       ),
                       title: Tooltip(
@@ -161,13 +232,16 @@ class RecommendPlaceCard extends StatelessWidget {
                                     eventName: e.name,
                                     column: 'page_views',
                                   );
-                                  if (!await tracking
-                                          .launchUrlLink(e.masterUrl) &&
+                                  if (!await tracking.launchUrlLink(
+                                        e.masterUrl,
+                                      ) &&
                                       context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content:
-                                              Text(loc.externalLinkOpenFailed)),
+                                        content: Text(
+                                          loc.externalLinkOpenFailed,
+                                        ),
+                                      ),
                                     );
                                   }
                                 },
@@ -178,19 +252,21 @@ class RecommendPlaceCard extends StatelessWidget {
                             style: TextStyle(
                               color:
                                   (e.masterUrl == null || e.masterUrl!.isEmpty)
-                                      ? colorScheme.onSurface
-                                      : colorScheme.primary,
+                                  ? colorScheme.onSurface
+                                  : colorScheme.primary,
                             ),
                           ),
                         ),
                       ),
                       subtitle: Tooltip(
-                        message: ((e.city != null && e.city!.isNotEmpty) ||
+                        message:
+                            ((e.city != null && e.city!.isNotEmpty) ||
                                 (e.location != null && e.location!.isNotEmpty))
                             ? loc.openMap
                             : '',
                         child: InkWell(
-                          onTap: ((e.city != null && e.city!.isNotEmpty) ||
+                          onTap:
+                              ((e.city != null && e.city!.isNotEmpty) ||
                                   (e.location != null &&
                                       e.location!.isNotEmpty))
                               ? () async {
@@ -200,12 +276,16 @@ class RecommendPlaceCard extends StatelessWidget {
                                     column: 'card_clicks',
                                   );
                                   if (!await tracking.onOpenMap(
-                                          e.city, e.location) &&
+                                        e.city,
+                                        e.location,
+                                      ) &&
                                       context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content:
-                                              Text(loc.externalLinkOpenFailed)),
+                                        content: Text(
+                                          loc.externalLinkOpenFailed,
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -216,9 +296,7 @@ class RecommendPlaceCard extends StatelessWidget {
                               if ((e.city != null && e.city!.isNotEmpty) ||
                                   (e.location != null &&
                                       e.location!.isNotEmpty))
-                                const Icon(
-                                  Icons.location_on,
-                                ),
+                                const Icon(Icons.location_on),
                               Gaps.w8,
                               Flexible(
                                 child: Text(
@@ -240,9 +318,9 @@ class RecommendPlaceCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  context
-                      .read<ControllerPageMain>()
-                      .changePage(PageType.recommendPlaces);
+                  context.read<ControllerPageMain>().changePage(
+                    PageType.recommendPlaces,
+                  );
                 },
                 child: Text(loc.clickHereToSeeMore),
               ),

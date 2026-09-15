@@ -25,9 +25,7 @@ import 'package:provider/provider.dart';
 import '../../../../utils/logger.dart';
 
 class TodayScheduleCard extends StatelessWidget {
-  const TodayScheduleCard({
-    super.key,
-  });
+  const TodayScheduleCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -71,22 +69,47 @@ class TodayScheduleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.calendar_today),
-              Gaps.w8,
-              Text(
-                loc.upcomingSchedule,
-                style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.calendar_today),
+                Gaps.w8,
+                Text(
+                  loc.upcomingSchedule,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+            if (events.isNotEmpty) ...[
+              Gaps.h8,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.auto_awesome_outlined,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
+                  Gaps.w8,
+                  Expanded(
+                    child: Text(
+                      loc.homeJourneyReviewHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ]),
+            ],
             Gaps.h16,
             if (isLoading && events.isNotEmpty) const LinearProgressIndicator(),
             if (hasLoadFailed)
               DashboardLoadFailure(
                 onRetry: () => context.read<ModelDashboard>().retrySection(
-                      section: DashboardSection.todaySchedule,
-                      account: account!,
-                    ),
+                  section: DashboardSection.todaySchedule,
+                  account: account!,
+                ),
               )
             else if (isLoading && events.isEmpty)
               const DashboardSectionLoading()
@@ -96,173 +119,215 @@ class TodayScheduleCard extends StatelessWidget {
                 title: Text(loc.noInfoAvailable),
               )
             else
-              ...events.take(5).map(
+              ...events
+                  .take(5)
+                  .map(
                     (e) => ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       leading: Tooltip(
-                        message: loc.completeEventTitle,
+                        message: loc.completeAndReview,
                         child: Transform.scale(
                           scale: 1.5, // 放大倍率
-                          child: AsyncActionCheckbox(onAccepted: () async {
-                            final choice = await showEventCompletionSheet(
-                              context,
-                              eventName: e.name,
-                              accountingAccountName: accountingAccountName,
-                              accountingCurrency: accountingCurrency,
-                              pointAccountName: pointAccountName,
-                            );
-                            if (choice == null || !context.mounted) return;
-                            try {
-                              await context
-                                  .read<ModelDashboard>()
-                                  .completeEvent(
-                                    id: e.id,
-                                    account: account!,
-                                  );
-                              await context
-                                  .read<ControllerNotification>()
-                                  .cancelAllEventReminders(
-                                    eventId: e.id,
-                                  );
-                            } catch (error, stackTrace) {
-                              logger.e(
-                                'Could not complete today schedule event.',
-                                error: error,
-                                stackTrace: stackTrace,
+                          child: AsyncActionCheckbox(
+                            onAccepted: () async {
+                              final choice = await showEventCompletionSheet(
+                                context,
+                                eventName: e.name,
+                                accountingAccountName: accountingAccountName,
+                                accountingCurrency: accountingCurrency,
+                                pointAccountName: pointAccountName,
                               );
-                              if (context.mounted) {
-                                final message =
-                                    subscriptionErrorMessage(loc, error);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(message.isNotEmpty
-                                        ? message
-                                        : loc.eventSaveFailed),
-                                  ),
-                                );
+                              if (choice == null || !context.mounted) {
+                                return;
                               }
-                              return;
-                            }
-                            if (choice.addToMemory) {
-                              final calendar = context.read<CalendarService>();
                               try {
-                                await calendar.addCalendarEventToMemory(
-                                    account: account, event: e, id: e.id);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(loc.memoryAddOk)),
-                                  );
-                                }
+                                await context
+                                    .read<ModelDashboard>()
+                                    .completeEvent(id: e.id, account: account!);
+                                await context
+                                    .read<ControllerNotification>()
+                                    .cancelAllEventReminders(eventId: e.id);
                               } catch (error, stackTrace) {
                                 logger.e(
-                                  'Could not add calendar event to memory.',
+                                  'Could not complete today schedule event.',
                                   error: error,
                                   stackTrace: stackTrace,
                                 );
                                 if (context.mounted) {
-                                  final message =
-                                      subscriptionErrorMessage(loc, error);
+                                  final message = subscriptionErrorMessage(
+                                    loc,
+                                    error,
+                                  );
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(message.isNotEmpty
-                                          ? message
-                                          : loc.eventSaveFailed),
+                                      content: Text(
+                                        message.isNotEmpty
+                                            ? message
+                                            : loc.eventSaveFailed,
+                                      ),
                                     ),
                                   );
                                 }
+                                return;
                               }
-                            }
-                            if (choice.expenseValue case final value?) {
-                              try {
-                                await ServiceAccounting().insertRecordsBatch(
-                                  accountId: accountingAccountId!,
-                                  type: 'balance',
-                                  records: [
-                                    AccountingPreview(
-                                      description: e.name,
-                                      value: value,
-                                      currency: accountingCurrency,
-                                      exchangeRate: null,
-                                      date: DateTime.now(),
-                                      primaryCategory: choice.expenseCategory,
-                                    ),
-                                  ],
-                                  currency: accountingCurrency,
-                                );
-                                if (context.mounted) {
-                                  await context
-                                      .read<ControllerAuth>()
-                                      .refreshSubscriptionUsage();
-                                  await context
+                              final pendingWrites = <Future<void>>[];
+                              if (choice.addToMemory) {
+                                final calendar = context
+                                    .read<CalendarService>();
+                                pendingWrites.add(() async {
+                                  try {
+                                    await calendar.addCalendarEventToMemory(
+                                      account: account,
+                                      event: e,
+                                      id: e.id,
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(loc.memoryAddOk),
+                                        ),
+                                      );
+                                    }
+                                  } catch (error, stackTrace) {
+                                    logger.e(
+                                      'Could not add calendar event to memory.',
+                                      error: error,
+                                      stackTrace: stackTrace,
+                                    );
+                                    if (context.mounted) {
+                                      final message = subscriptionErrorMessage(
+                                        loc,
+                                        error,
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            message.isNotEmpty
+                                                ? message
+                                                : loc.eventSaveFailed,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }());
+                              }
+                              if (choice.expenseValue case final value?) {
+                                pendingWrites.add(() async {
+                                  try {
+                                    await ServiceAccounting()
+                                        .insertRecordsBatch(
+                                          accountId: accountingAccountId!,
+                                          type: 'balance',
+                                          records: [
+                                            AccountingPreview(
+                                              description: e.name,
+                                              value: value,
+                                              currency: accountingCurrency,
+                                              exchangeRate: null,
+                                              eventId: e.id,
+                                              date: DateTime.now(),
+                                              primaryCategory:
+                                                  choice.expenseCategory,
+                                            ),
+                                          ],
+                                          currency: accountingCurrency,
+                                        );
+                                  } catch (error, stackTrace) {
+                                    logger.e(
+                                      'Could not add event expense.',
+                                      error: error,
+                                      stackTrace: stackTrace,
+                                    );
+                                    if (context.mounted) {
+                                      final message = subscriptionErrorMessage(
+                                        loc,
+                                        error,
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            message.isNotEmpty
+                                                ? message
+                                                : loc.eventSaveFailed,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }());
+                              }
+                              if (choice.pointValue case final value?) {
+                                pendingWrites.add(() async {
+                                  try {
+                                    await ServicePointRecord()
+                                        .insertRecordsBatch(
+                                          accountId: pointAccountId!,
+                                          type: 'points',
+                                          records: [
+                                            PointRecordPreview(
+                                              description: e.name,
+                                              value: value,
+                                              date: DateTime.now(),
+                                              primaryCategory:
+                                                  choice.pointCategory,
+                                            ),
+                                          ],
+                                        );
+                                  } catch (error, stackTrace) {
+                                    logger.e(
+                                      'Could not add event point record.',
+                                      error: error,
+                                      stackTrace: stackTrace,
+                                    );
+                                    if (context.mounted) {
+                                      final message = subscriptionErrorMessage(
+                                        loc,
+                                        error,
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            message.isNotEmpty
+                                                ? message
+                                                : loc.eventSaveFailed,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }());
+                              }
+                              await Future.wait(pendingWrites);
+                              if (!context.mounted || pendingWrites.isEmpty) {
+                                return;
+                              }
+                              final refreshes = <Future<void>>[
+                                context
+                                    .read<ControllerAuth>()
+                                    .refreshSubscriptionUsage(),
+                                if (choice.expenseValue != null)
+                                  context
                                       .read<ModelDashboard>()
                                       .refreshAccounting(
-                                        accountId: accountingAccountId,
-                                      );
-                                }
-                              } catch (error, stackTrace) {
-                                logger.e(
-                                  'Could not add event expense.',
-                                  error: error,
-                                  stackTrace: stackTrace,
-                                );
-                                if (context.mounted) {
-                                  final message =
-                                      subscriptionErrorMessage(loc, error);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(message.isNotEmpty
-                                          ? message
-                                          : loc.eventSaveFailed),
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                            if (choice.pointValue case final value?) {
-                              try {
-                                await ServicePointRecord().insertRecordsBatch(
-                                  accountId: pointAccountId!,
-                                  type: 'points',
-                                  records: [
-                                    PointRecordPreview(
-                                      description: e.name,
-                                      value: value,
-                                      date: DateTime.now(),
-                                      primaryCategory: choice.pointCategory,
-                                    ),
-                                  ],
-                                );
-                                if (context.mounted) {
-                                  await context
-                                      .read<ControllerAuth>()
-                                      .refreshSubscriptionUsage();
-                                  await context
-                                      .read<ModelDashboard>()
-                                      .refreshPoints(accountId: pointAccountId);
-                                }
-                              } catch (error, stackTrace) {
-                                logger.e(
-                                  'Could not add event point record.',
-                                  error: error,
-                                  stackTrace: stackTrace,
-                                );
-                                if (context.mounted) {
-                                  final message =
-                                      subscriptionErrorMessage(loc, error);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(message.isNotEmpty
-                                          ? message
-                                          : loc.eventSaveFailed),
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                            context
-                                .read<ModelDashboard>()
-                                .refreshTodaySchedule(account: account);
-                          }),
+                                        accountId: accountingAccountId!,
+                                      ),
+                                if (choice.pointValue != null)
+                                  context.read<ModelDashboard>().refreshPoints(
+                                    accountId: pointAccountId!,
+                                  ),
+                              ];
+                              await Future.wait(refreshes);
+                            },
+                          ),
                         ),
                       ),
                       title: Tooltip(
@@ -278,13 +343,16 @@ class TodayScheduleCard extends StatelessWidget {
                                     eventName: e.name,
                                     column: 'page_views',
                                   );
-                                  if (!await tracking
-                                          .launchUrlLink(e.masterUrl) &&
+                                  if (!await tracking.launchUrlLink(
+                                        e.masterUrl,
+                                      ) &&
                                       context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content:
-                                              Text(loc.externalLinkOpenFailed)),
+                                        content: Text(
+                                          loc.externalLinkOpenFailed,
+                                        ),
+                                      ),
                                     );
                                   }
                                 },
@@ -295,19 +363,21 @@ class TodayScheduleCard extends StatelessWidget {
                             style: TextStyle(
                               color:
                                   (e.masterUrl == null || e.masterUrl!.isEmpty)
-                                      ? colorScheme.onSurface
-                                      : colorScheme.primary,
+                                  ? colorScheme.onSurface
+                                  : colorScheme.primary,
                             ),
                           ),
                         ),
                       ),
                       subtitle: Tooltip(
-                        message: ((e.city != null && e.city!.isNotEmpty) ||
+                        message:
+                            ((e.city != null && e.city!.isNotEmpty) ||
                                 (e.location != null && e.location!.isNotEmpty))
                             ? loc.openMap
                             : '',
                         child: InkWell(
-                          onTap: ((e.city != null && e.city!.isNotEmpty) ||
+                          onTap:
+                              ((e.city != null && e.city!.isNotEmpty) ||
                                   (e.location != null &&
                                       e.location!.isNotEmpty))
                               ? () async {
@@ -317,12 +387,16 @@ class TodayScheduleCard extends StatelessWidget {
                                     column: 'card_clicks',
                                   );
                                   if (!await tracking.onOpenMap(
-                                          e.city, e.location) &&
+                                        e.city,
+                                        e.location,
+                                      ) &&
                                       context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content:
-                                              Text(loc.externalLinkOpenFailed)),
+                                        content: Text(
+                                          loc.externalLinkOpenFailed,
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -333,9 +407,7 @@ class TodayScheduleCard extends StatelessWidget {
                               if ((e.city != null && e.city!.isNotEmpty) ||
                                   (e.location != null &&
                                       e.location!.isNotEmpty))
-                                const Icon(
-                                  Icons.location_on,
-                                ),
+                                const Icon(Icons.location_on),
                               Gaps.w8,
                               Flexible(
                                 child: Text(
@@ -357,9 +429,9 @@ class TodayScheduleCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  context
-                      .read<ControllerPageMain>()
-                      .changePage(PageType.personalEvent);
+                  context.read<ControllerPageMain>().changePage(
+                    PageType.personalEvent,
+                  );
                 },
                 child: Text(loc.clickHereToSeeMore),
               ),

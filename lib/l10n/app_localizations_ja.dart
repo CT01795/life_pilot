@@ -248,6 +248,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get completeEventTitle => '旅程を完成させてください';
 
   @override
+  String get completeAndReview => '完了して振り返る';
+
+  @override
   String get completeEventMessage => '完了すると、この旅行は本日のリストから消えます。';
 
   @override
@@ -651,6 +654,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get upcomingSchedule => '今後の予定';
+
+  @override
+  String get homeJourneyReviewHint => '予定の完了時に、思い出・収支・ポイントをまとめて記録できます';
 
   @override
   String get addToSchedule => '旅程に追加する';

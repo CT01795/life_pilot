@@ -573,6 +573,12 @@ abstract class AppLocalizations {
   /// **'Complete the schedule'**
   String get completeEventTitle;
 
+  /// Action for completing a schedule and recording its review
+  ///
+  /// In en, this message translates to:
+  /// **'Complete & review'**
+  String get completeAndReview;
+
   /// Label for completeEventMessage
   ///
   /// In en, this message translates to:
@@ -1382,6 +1388,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upcoming Schedule'**
   String get upcomingSchedule;
+
+  /// Compact hint for the integrated journey completion workflow
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a schedule and record memories, money, and points together'**
+  String get homeJourneyReviewHint;
 
   /// Label for addToSchedule
   ///

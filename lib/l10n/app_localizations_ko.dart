@@ -248,6 +248,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get completeEventTitle => '여행 일정을 완성하세요';
 
   @override
+  String get completeAndReview => '완료 및 돌아보기';
+
+  @override
   String get completeEventMessage => '이 여정이 완료되면 오늘의 목록에서 사라집니다.';
 
   @override
@@ -651,6 +654,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get upcomingSchedule => '향후 일정';
+
+  @override
+  String get homeJourneyReviewHint => '일정을 완료하며 추억, 수입·지출, 포인트를 함께 기록할 수 있습니다';
 
   @override
   String get addToSchedule => '일정에 추가';

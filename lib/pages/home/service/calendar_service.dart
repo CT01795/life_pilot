@@ -36,7 +36,7 @@ class CalendarService {
   }
 
   /// 加入行事曆
-  Future<void> addRecommendedEventToCal({
+  Future<CalendarEvent> addRecommendedEventToCal({
     required String account,
     required RecommendedEvent event,
     required String? id,
@@ -53,6 +53,7 @@ class CalendarService {
       'end_date': event.endDate?.toUtc().toIso8601String(),
       'start_time': event.startTime?.formatTimeString(),
       'end_time': event.endTime?.formatTimeString(),
+      EventFields.country: event.country,
       'city': event.city,
       'location': event.location,
       'name': event.name,
@@ -67,9 +68,10 @@ class CalendarService {
         id: data[Fields.id]!.toString(),
         data: data,
       );
-      return;
+      return CalendarEvent.fromJson(data);
     }
     await supabase.from(TableNames.calendarEvents).insert(data);
+    return CalendarEvent.fromJson(data);
   }
 
   /// 檢查是否已加入
@@ -106,7 +108,7 @@ class CalendarService {
   }
 
   /// 加入行事曆
-  Future<void> addRecommendedPlaceToCal({
+  Future<CalendarEvent> addRecommendedPlaceToCal({
     required String account,
     required RecommendedPlace place,
     required String? id,
@@ -122,6 +124,7 @@ class CalendarService {
       'end_date': null,
       'start_time': TimeOfDay.fromDateTime(DateTime.now()).formatTimeString(),
       'end_time': null,
+      EventFields.country: place.country,
       'city': place.city,
       'location': place.location,
       'name': place.name,
@@ -136,9 +139,10 @@ class CalendarService {
         id: data[Fields.id]!.toString(),
         data: data,
       );
-      return;
+      return CalendarEvent.fromJson(data);
     }
     await supabase.from(TableNames.calendarEvents).insert(data);
+    return CalendarEvent.fromJson(data);
   }
 
   Future<bool> existsCalendarEventToMemory({

@@ -9,9 +9,7 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PointSelectorButton extends StatefulWidget {
-  const PointSelectorButton({
-    super.key,
-  });
+  const PointSelectorButton({super.key});
 
   @override
   State<PointSelectorButton> createState() => _PointSelectorButtonState();
@@ -40,25 +38,28 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                 dimension: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(
-                Icons.stars,
-              ),
-        label: Text(
-          accountName ?? loc.selectAccount,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+            : const Icon(Icons.stars),
+        label: SizedBox(
+          width: double.infinity,
+          child: Text(
+            accountName ?? loc.selectAccount,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.left,
+          ),
         ),
         onPressed: _isLoading
             ? null
             : () async {
                 setState(() => _isLoading = true);
                 try {
-                  final accounts =
-                      await context.read<ServicePointRecord>().fetchAccounts(
-                            user: auth.account ?? '',
-                            projectLimit: 2,
-                            includeGraph: false,
-                          );
+                  final accounts = await context
+                      .read<ServicePointRecord>()
+                      .fetchAccounts(
+                        user: auth.account ?? '',
+                        projectLimit: 2,
+                        includeGraph: false,
+                      );
 
                   if (!context.mounted) return;
 
@@ -75,9 +76,9 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              context
-                                  .read<ControllerPageMain>()
-                                  .changePage(PageType.pointsRecord);
+                              context.read<ControllerPageMain>().changePage(
+                                PageType.pointsRecord,
+                              );
                             },
                             child: Text(loc.pointsRecord),
                           ),
@@ -100,13 +101,16 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                           .toDouble();
                       return AlertDialog(
                         title: Text(loc.selectAccount),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          12,
+                          8,
+                          12,
+                          12,
+                        ),
                         content: SizedBox(
-                          width: MediaQuery.sizeOf(dialogContext)
-                              .width
-                              .clamp(0, 420)
-                              .toDouble(),
+                          width: MediaQuery.sizeOf(
+                            dialogContext,
+                          ).width.clamp(0, 420).toDouble(),
                           height: contentHeight,
                           child: ListView.separated(
                             itemCount: itemCount,
@@ -131,13 +135,10 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
                                 subtitle: Text(
                                   _categoryLabel(loc, account.category),
                                 ),
-                                onTap: () => Navigator.pop(
-                                  dialogContext,
-                                  {
-                                    Fields.id: account.id,
-                                    'name': account.accountName,
-                                  },
-                                ),
+                                onTap: () => Navigator.pop(dialogContext, {
+                                  Fields.id: account.id,
+                                  'name': account.accountName,
+                                }),
                               );
                             },
                           ),

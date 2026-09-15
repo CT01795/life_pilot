@@ -70,6 +70,16 @@ class ControllerCalendar extends SafeChangeNotifier {
 
   List<EventItem> get events => _modelCalendar.events;
 
+  void invalidateEventCache({
+    required DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    _modelCalendar.invalidateEventRange(
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
   static final DateTime baseDate = DateTime(1911, 1);
   int get pageIndex =>
       (currentMonth.year - baseDate.year) * 12 +

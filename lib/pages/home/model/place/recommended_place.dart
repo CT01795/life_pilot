@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/extension.dart';
 
 class RecommendedPlace {
@@ -11,6 +12,7 @@ class RecommendedPlace {
   final TimeOfDay? startTime;
   final DateTime? endDate;
   final TimeOfDay? endTime;
+  final String country;
   final String? city;
   final String? location;
   final String? type;
@@ -31,6 +33,7 @@ class RecommendedPlace {
     this.startTime,
     this.endDate,
     this.endTime,
+    this.country = 'TW',
     this.city,
     this.location,
     this.type,
@@ -53,6 +56,7 @@ class RecommendedPlace {
       startTime: DateTimeParser.parseTime(json['start_time']),
       endDate: DateTimeParser.parseDate(json['end_date']),
       endTime: DateTimeParser.parseTime(json['end_time']),
+      country: EventCountry.normalize(json[EventFields.country]?.toString()),
       city: json['city'],
       location: json['location'],
       type: json['type'],
@@ -74,6 +78,7 @@ class RecommendedPlace {
       'start_time': startTime?.formatTimeString(),
       'end_date': endDate?.formatDateString(),
       'end_time': endTime?.formatTimeString(),
+      EventFields.country: country,
       'city': city,
       'location': location,
       'type': type,

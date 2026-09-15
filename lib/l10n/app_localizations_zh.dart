@@ -248,6 +248,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get completeEventTitle => '完成行程';
 
   @override
+  String get completeAndReview => '完成並回顧';
+
+  @override
   String get completeEventMessage => '完成後此行程會從今日列表消失';
 
   @override
@@ -651,6 +654,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get upcomingSchedule => '近日行程';
+
+  @override
+  String get homeJourneyReviewHint => '完成行程時，可一次整理回憶、收支與積分';
 
   @override
   String get addToSchedule => '加入行程';

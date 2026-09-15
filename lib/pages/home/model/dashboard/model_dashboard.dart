@@ -2,6 +2,7 @@ import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
+import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_state.dart';
 import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
@@ -75,10 +76,14 @@ class ModelDashboard extends SafeChangeNotifier {
   DashboardSetting get setting => _setting;
 
   List<DashboardCity> _eventCities = [];
+  bool _eventCitiesLoaded = false;
+  Future<void>? _eventCitiesLoad;
 
   List<DashboardCity> get eventCities => _eventCities;
 
   List<DashboardCity> _placeCities = [];
+  bool _placeCitiesLoaded = false;
+  Future<void>? _placeCitiesLoad;
 
   List<DashboardCity> get placeCities => _placeCities;
 
@@ -94,6 +99,10 @@ class ModelDashboard extends SafeChangeNotifier {
     );
     _eventCities = [];
     _placeCities = [];
+    _eventCitiesLoaded = false;
+    _placeCitiesLoaded = false;
+    _eventCitiesLoad = null;
+    _placeCitiesLoad = null;
     _sectionLoadingCounts.clear();
     _failedSections.clear();
     notifyListeners();
@@ -102,7 +111,29 @@ class ModelDashboard extends SafeChangeNotifier {
   bool _isCurrentRequest(String account, int generation) =>
       _activeAccount == account && _accountGeneration == generation;
 
-  Future<void> loadEventCities(String account) async {
+  Future<void> loadEventCities(
+    String account, {
+    bool forceRefresh = false,
+  }) async {
+    final pending = _eventCitiesLoad;
+    if (pending != null) {
+      await pending;
+      if (!forceRefresh) return;
+    } else if (_eventCitiesLoaded && !forceRefresh) {
+      return;
+    }
+
+    late final Future<void> operation;
+    operation = _loadEventCities(account).whenComplete(() {
+      if (identical(_eventCitiesLoad, operation)) {
+        _eventCitiesLoad = null;
+      }
+    });
+    _eventCitiesLoad = operation;
+    await operation;
+  }
+
+  Future<void> _loadEventCities(String account) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     List<DashboardCity> eventCities;
@@ -115,10 +146,33 @@ class ModelDashboard extends SafeChangeNotifier {
     }
     if (!_isCurrentRequest(account, generation)) return;
     _eventCities = eventCities;
+    _eventCitiesLoaded = true;
     notifyListeners();
   }
 
-  Future<void> loadPlaceCities(String account) async {
+  Future<void> loadPlaceCities(
+    String account, {
+    bool forceRefresh = false,
+  }) async {
+    final pending = _placeCitiesLoad;
+    if (pending != null) {
+      await pending;
+      if (!forceRefresh) return;
+    } else if (_placeCitiesLoaded && !forceRefresh) {
+      return;
+    }
+
+    late final Future<void> operation;
+    operation = _loadPlaceCities(account).whenComplete(() {
+      if (identical(_placeCitiesLoad, operation)) {
+        _placeCitiesLoad = null;
+      }
+    });
+    _placeCitiesLoad = operation;
+    await operation;
+  }
+
+  Future<void> _loadPlaceCities(String account) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     List<DashboardCity> placeCities;
@@ -131,6 +185,7 @@ class ModelDashboard extends SafeChangeNotifier {
     }
     if (!_isCurrentRequest(account, generation)) return;
     _placeCities = placeCities;
+    _placeCitiesLoaded = true;
     notifyListeners();
   }
 
@@ -467,14 +522,55 @@ class ModelDashboard extends SafeChangeNotifier {
     required String id,
     required String account,
   }) async {
+    final generation = _accountGeneration;
+    if (!_isCurrentRequest(account, generation)) return;
+
     await repository.completeEvent(
       id: id,
       account: account,
     );
 
-    await refreshTodaySchedule(
-      account: account,
+    if (!_isCurrentRequest(account, generation)) return;
+    _state = _state.copyWith(
+      todayEvents: _state.todayEvents
+          .where((event) => event.id != id)
+          .toList(growable: false),
     );
+    notifyListeners();
+  }
+
+  void addUpcomingEvent(
+    CalendarEvent event, {
+    required String account,
+    DateTime? currentTime,
+  }) {
+    if (_activeAccount != account) return;
+    final startDate = event.startDate;
+    if (startDate == null || event.isCompleted) return;
+
+    final now = currentTime ?? DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final visibleUntil = today.add(const Duration(days: 3));
+    final eventDate = DateTime(startDate.year, startDate.month, startDate.day);
+    if (eventDate.isBefore(today) || !eventDate.isBefore(visibleUntil)) return;
+
+    final events = [
+      ..._state.todayEvents.where((item) => item.id != event.id),
+      event,
+    ]..sort((a, b) {
+        final dateComparison = a.startDate!.compareTo(b.startDate!);
+        if (dateComparison != 0) return dateComparison;
+        final aMinutes =
+            (a.startTime?.hour ?? 0) * 60 + (a.startTime?.minute ?? 0);
+        final bMinutes =
+            (b.startTime?.hour ?? 0) * 60 + (b.startTime?.minute ?? 0);
+        return aMinutes.compareTo(bMinutes);
+      });
+
+    _state = _state.copyWith(
+      todayEvents: events.take(5).toList(growable: false),
+    );
+    notifyListeners();
   }
 
   Future<void> changeEventCity({

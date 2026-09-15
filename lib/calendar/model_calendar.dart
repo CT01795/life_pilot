@@ -196,28 +196,32 @@ class ModelCalendar {
 
   // 清除該事件相關月份的快取
   void updateCachedEvent({required EventItem event}) {
-    final keysToRemove = <String>{};
-    String? startDateS = event.startDate?.toMonthKey();
-    String? endDateS = event.endDate?.toMonthKey();
+    invalidateEventRange(
+      startDate: event.startDate,
+      endDate: event.endDate,
+    );
+  }
 
-    if (startDateS != null) keysToRemove.add(startDateS);
-    if (endDateS != null) keysToRemove.add(endDateS);
+  void invalidateEventRange({
+    required DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    if (startDate == null && endDate == null) return;
 
-    if (event.startDate != null) {
-      keysToRemove.add(
-          DateTime(event.startDate!.year, event.startDate!.month - 1, 1)
-              .toMonthKey());
-      keysToRemove.add(
-          DateTime(event.startDate!.year, event.startDate!.month + 1, 1)
-              .toMonthKey());
+    var first = startDate ?? endDate!;
+    var last = endDate ?? startDate!;
+    if (last.isBefore(first)) {
+      final swap = first;
+      first = last;
+      last = swap;
     }
-    if (event.endDate != null) {
-      keysToRemove.add(
-          DateTime(event.endDate!.year, event.endDate!.month - 1, 1)
-              .toMonthKey());
-      keysToRemove.add(
-          DateTime(event.endDate!.year, event.endDate!.month + 1, 1)
-              .toMonthKey());
+
+    var month = DateTime(first.year, first.month - 1);
+    final lastAffectedMonth = DateTime(last.year, last.month + 1);
+    final keysToRemove = <String>{};
+    while (!month.isAfter(lastAffectedMonth)) {
+      keysToRemove.add(month.toMonthKey());
+      month = DateTime(month.year, month.month + 1);
     }
 
     for (var key in keysToRemove) {

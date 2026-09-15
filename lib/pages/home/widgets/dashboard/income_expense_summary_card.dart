@@ -9,6 +9,7 @@ import 'package:life_pilot/pages/home/widgets/dashboard/account_selector_button.
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/home_quick_record_navigation.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +59,19 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.account_balance_wallet,
               title: loc.accountRecords,
-              trailing: const AccountSelectorButton(),
+              trailingWidth: 236,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: loc.add,
+                    onPressed: () => openHomeAccountingQuickAdd(context),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(child: AccountSelectorButton()),
+                ],
+              ),
             ),
             if (!hasSelectedAccount)
               ListTile(
@@ -76,25 +89,27 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 trailing: Text(
                   '${formatter.format(accountTotal)} $currency',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: accountTotal < 0
-                            ? colorScheme.error
-                            : colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: accountTotal < 0
+                        ? colorScheme.error
+                        : colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               ListTile(
                 dense: true,
-                title: Text(loc.todayIncomeExpense,
-                    style: Theme.of(context).textTheme.titleMedium),
+                title: Text(
+                  loc.todayIncomeExpense,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 trailing: Text(
                   '${formatter.format(todayTotal)} $currency',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: todayTotal < 0
-                            ? colorScheme.error
-                            : colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: todayTotal < 0
+                        ? colorScheme.error
+                        : colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(),
@@ -103,9 +118,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
               if (hasLoadFailed)
                 DashboardLoadFailure(
                   onRetry: () => context.read<ModelDashboard>().retrySection(
-                        section: DashboardSection.accounting,
-                        account: context.read<ModelAuthView>().account!,
-                      ),
+                    section: DashboardSection.accounting,
+                    account: context.read<ModelAuthView>().account!,
+                  ),
                 )
               else if (isLoading && records.isEmpty)
                 const DashboardSectionLoading()
@@ -115,25 +130,30 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                   title: Text(loc.noInfoAvailable),
                 )
               else
-                ...records.take(5).map(
+                ...records
+                    .take(5)
+                    .map(
                       (record) => ListTile(
                         dense: true,
-                        title: Text(record.description,
-                            style: Theme.of(context).textTheme.titleMedium),
+                        title: Text(
+                          record.description,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         subtitle: Text(
-                            record.group == null || record.group!.isEmpty
-                                ? ''
-                                : record.group!,
-                            style: Theme.of(context).textTheme.titleMedium),
+                          record.group == null || record.group!.isEmpty
+                              ? ''
+                              : record.group!,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         trailing: Text(
                           '${formatter.format(record.value)} $currency',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: record.value < 0
-                                        ? colorScheme.error
-                                        : colorScheme.onSurface,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: record.value < 0
+                                    ? colorScheme.error
+                                    : colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ),
                     ),
@@ -142,9 +162,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  context
-                      .read<ControllerPageMain>()
-                      .changePage(PageType.accountRecords);
+                  context.read<ControllerPageMain>().changePage(
+                    PageType.accountRecords,
+                  );
                 },
                 child: Text(loc.clickHereToSeeMore),
               ),

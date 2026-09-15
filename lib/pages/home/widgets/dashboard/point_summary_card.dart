@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/home_quick_record_navigation.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/point_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -55,7 +56,19 @@ class PointSummaryCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.stars,
               title: loc.pointsRecord,
-              trailing: const PointSelectorButton(),
+              trailingWidth: 236,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: loc.add,
+                    onPressed: () => openHomePointQuickAdd(context),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(child: PointSelectorButton()),
+                ],
+              ),
             ),
             if (!hasSelectedAccount)
               ListTile(
@@ -73,25 +86,27 @@ class PointSummaryCard extends StatelessWidget {
                 trailing: Text(
                   formatter.format(pointsTotal),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: pointsTotal < 0
-                            ? colorScheme.error
-                            : colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: pointsTotal < 0
+                        ? colorScheme.error
+                        : colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               ListTile(
                 dense: true,
-                title: Text(loc.todayPoints,
-                    style: Theme.of(context).textTheme.titleMedium),
+                title: Text(
+                  loc.todayPoints,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 trailing: Text(
                   formatter.format(todayTotal),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: todayTotal < 0
-                            ? colorScheme.error
-                            : colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: todayTotal < 0
+                        ? colorScheme.error
+                        : colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(),
@@ -100,9 +115,9 @@ class PointSummaryCard extends StatelessWidget {
               if (hasLoadFailed)
                 DashboardLoadFailure(
                   onRetry: () => context.read<ModelDashboard>().retrySection(
-                        section: DashboardSection.points,
-                        account: context.read<ModelAuthView>().account!,
-                      ),
+                    section: DashboardSection.points,
+                    account: context.read<ModelAuthView>().account!,
+                  ),
                 )
               else if (isLoading && records.isEmpty)
                 const DashboardSectionLoading()
@@ -112,25 +127,30 @@ class PointSummaryCard extends StatelessWidget {
                   title: Text(loc.noInfoAvailable),
                 )
               else
-                ...records.take(5).map(
+                ...records
+                    .take(5)
+                    .map(
                       (record) => ListTile(
                         dense: true,
-                        title: Text(record.description,
-                            style: Theme.of(context).textTheme.titleMedium),
+                        title: Text(
+                          record.description,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         subtitle: Text(
-                            record.group == null || record.group!.isEmpty
-                                ? ''
-                                : record.group!,
-                            style: Theme.of(context).textTheme.titleMedium),
+                          record.group == null || record.group!.isEmpty
+                              ? ''
+                              : record.group!,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         trailing: Text(
                           formatter.format(record.value),
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: record.value < 0
-                                        ? colorScheme.error
-                                        : colorScheme.onSurface,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: record.value < 0
+                                    ? colorScheme.error
+                                    : colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ),
                     ),
@@ -139,9 +159,9 @@ class PointSummaryCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  context
-                      .read<ControllerPageMain>()
-                      .changePage(PageType.pointsRecord);
+                  context.read<ControllerPageMain>().changePage(
+                    PageType.pointsRecord,
+                  );
                 },
                 child: Text(loc.clickHereToSeeMore),
               ),

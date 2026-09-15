@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
+import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
@@ -140,6 +141,105 @@ void main() {
 
     repository.setting.complete(_setting());
     await refresh;
+  });
+
+  test('city lists are cached until a forced refresh', () async {
+    final repository = _CityCacheRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    await model.loadEventCities('user');
+    await model.loadEventCities('user');
+    await model.loadPlaceCities('user');
+    await model.loadPlaceCities('user');
+
+    expect(repository.eventCalls, 1);
+    expect(repository.placeCalls, 1);
+
+    await model.loadEventCities('user', forceRefresh: true);
+    await model.loadPlaceCities('user', forceRefresh: true);
+
+    expect(repository.eventCalls, 2);
+    expect(repository.placeCalls, 2);
+  });
+
+  test('city requests in progress are shared by concurrent callers', () async {
+    final repository = _PendingCityRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    final first = model.loadEventCities('user');
+    final second = model.loadEventCities('user');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.eventCalls, 1);
+    repository.events.complete([]);
+    await Future.wait([first, second]);
+  });
+
+  test('switching account does not reuse the previous city request', () async {
+    final repository = _AccountCityRepository();
+    final model = _model(repository)..switchAccount('first-user');
+
+    final oldRequest = model.loadEventCities('first-user');
+    await Future<void>.delayed(Duration.zero);
+    model.switchAccount('second-user');
+    final newRequest = model.loadEventCities('second-user');
+
+    repository.firstEvents.complete([]);
+    repository.secondEvents.complete([]);
+    await Future.wait([oldRequest, newRequest]);
+
+    expect(repository.eventCalls, 2);
+  });
+
+  test('completing an event removes it without querying the calendar again',
+      () async {
+    final repository = _CompleteEventRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    await model.refreshTodaySchedule(account: 'user');
+    expect(model.state.todayEvents.single.id, 'event');
+
+    await model.completeEvent(id: 'event', account: 'user');
+
+    expect(repository.eventLoads, 1);
+    expect(repository.completedIds, ['event']);
+    expect(model.state.todayEvents, isEmpty);
+  });
+
+  test('new calendar item updates only the active account and visible range',
+      () {
+    final model = _model(_CityCacheRepository())..switchAccount('user');
+    final now = DateTime(2026, 9, 14, 12);
+
+    model.addUpcomingEvent(
+      CalendarEvent(
+        id: 'visible',
+        name: 'Visible event',
+        startDate: DateTime(2026, 9, 15),
+      ),
+      account: 'user',
+      currentTime: now,
+    );
+    model.addUpcomingEvent(
+      CalendarEvent(
+        id: 'later',
+        name: 'Later event',
+        startDate: DateTime(2026, 9, 20),
+      ),
+      account: 'user',
+      currentTime: now,
+    );
+    model.addUpcomingEvent(
+      CalendarEvent(
+        id: 'other-user',
+        name: 'Other user event',
+        startDate: DateTime(2026, 9, 15),
+      ),
+      account: 'other-user',
+      currentTime: now,
+    );
+
+    expect(model.state.todayEvents.map((event) => event.id), ['visible']);
   });
 }
 
@@ -331,4 +431,63 @@ class _ClearSelectionRepository extends DashboardRepository {
         ],
         total: 1,
       );
+}
+
+class _CityCacheRepository extends DashboardRepository {
+  int eventCalls = 0;
+  int placeCalls = 0;
+
+  @override
+  Future<List<DashboardCity>> loadEventCities() async {
+    eventCalls++;
+    return [];
+  }
+
+  @override
+  Future<List<DashboardCity>> loadPlaceCities() async {
+    placeCalls++;
+    return [];
+  }
+}
+
+class _PendingCityRepository extends DashboardRepository {
+  final events = Completer<List<DashboardCity>>();
+  int eventCalls = 0;
+
+  @override
+  Future<List<DashboardCity>> loadEventCities() {
+    eventCalls++;
+    return events.future;
+  }
+}
+
+class _AccountCityRepository extends DashboardRepository {
+  final firstEvents = Completer<List<DashboardCity>>();
+  final secondEvents = Completer<List<DashboardCity>>();
+  int eventCalls = 0;
+
+  @override
+  Future<List<DashboardCity>> loadEventCities() {
+    eventCalls++;
+    return eventCalls == 1 ? firstEvents.future : secondEvents.future;
+  }
+}
+
+class _CompleteEventRepository extends DashboardRepository {
+  int eventLoads = 0;
+  final List<String> completedIds = [];
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) async {
+    eventLoads++;
+    return [CalendarEvent(id: 'event', name: 'Event')];
+  }
+
+  @override
+  Future<void> completeEvent({
+    required String id,
+    required String account,
+  }) async {
+    completedIds.add(id);
+  }
 }

@@ -39,34 +39,85 @@ class ServiceAccounting {
     return null;
   }
 
-  Future<ModelAccountingAccount?> findAccountByEventId(
-      {required String eventId, required String user}) async {
+  Future<ModelAccountingAccount?> findAccountByEventId({
+    required String eventId,
+    required String user,
+  }) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.accountingAccount);
-        final response = rows
-            .where((row) =>
-                row[Fields.id]?.toString() == eventId &&
-                row[Fields.isValid] == true)
+        final accounts = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+        );
+        String? accountId = accounts
+            .where(
+              (row) =>
+                  row[Fields.id]?.toString() == eventId &&
+                  row[Fields.isValid] == true,
+            )
+            .firstOrNull?[Fields.id]
+            ?.toString();
+        if (accountId == null) {
+          final details = await LocalDataStore.instance.list(
+            owner: _localOwner!,
+            resource: TableNames.accountingDetail,
+          );
+          final linkedDetails =
+              details
+                  .where((row) => row['event_id']?.toString() == eventId)
+                  .toList()
+                ..sort(
+                  (a, b) => (b['date']?.toString() ?? '').compareTo(
+                    a['date']?.toString() ?? '',
+                  ),
+                );
+          accountId = linkedDetails.firstOrNull?['account_id']?.toString();
+        }
+        final response = accounts
+            .where(
+              (row) =>
+                  row[Fields.id]?.toString() == accountId &&
+                  row[Fields.isValid] == true,
+            )
             .firstOrNull;
         if (response == null) return null;
         return ModelAccountingAccount(
-            id: response[Fields.id],
-            accountName: response[Fields.account],
-            category: response['category'],
-            masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-            balance: (response['balance'] as num?) ?? 0,
-            currency: response['main_currency'],
-            exchangeRate: response['exchange_rate']);
+          id: response[Fields.id],
+          accountName: response[Fields.account],
+          category: response['category'],
+          masterGraphUrl: parseMasterGraph(response['master_graph_url']),
+          balance: (response['balance'] as num?) ?? 0,
+          currency: response['main_currency'],
+          exchangeRate: response['exchange_rate'],
+        );
       }
-      final response = await supabase
+      var response = await supabase
           .from(TableNames.accountingAccount)
           .select()
           .eq(Fields.id, eventId)
           .eq(Fields.createdBy, user)
           .eq(Fields.isValid, true)
           .maybeSingle();
+
+      if (response == null) {
+        final linkedDetail = await supabase
+            .from(TableNames.accountingDetail)
+            .select('account_id')
+            .eq('event_id', eventId)
+            .order('date', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        final linkedAccountId = linkedDetail?['account_id']?.toString();
+        if (linkedAccountId != null) {
+          response = await supabase
+              .from(TableNames.accountingAccount)
+              .select()
+              .eq(Fields.id, linkedAccountId)
+              .eq(Fields.createdBy, user)
+              .eq(Fields.isValid, true)
+              .maybeSingle();
+        }
+      }
 
       if (response == null) return null;
 
@@ -100,27 +151,39 @@ class ServiceAccounting {
   }) async {
     try {
       if (await _storesLocally) {
-        var rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.accountingAccount);
-        final details = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.accountingDetail);
+        var rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+        );
+        final details = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.accountingDetail,
+        );
         rows = rows
-            .where((row) =>
-                row[Fields.isValid] == true &&
-                (category == null || row['category']?.toString() == category))
+            .where(
+              (row) =>
+                  row[Fields.isValid] == true &&
+                  (category == null || row['category']?.toString() == category),
+            )
             .toList();
         if (category == null && projectLimit != null) {
-          final personal =
-              rows.where((r) => r['category'] == AccountCategory.personal.name);
-          final projects = rows
-              .where((r) => r['category'] == AccountCategory.project.name)
-              .toList()
-            ..sort((a, b) => (b[Fields.createdAt]?.toString() ?? '')
-                .compareTo(a[Fields.createdAt]?.toString() ?? ''));
+          final personal = rows.where(
+            (r) => r['category'] == AccountCategory.personal.name,
+          );
+          final projects =
+              rows
+                  .where((r) => r['category'] == AccountCategory.project.name)
+                  .toList()
+                ..sort(
+                  (a, b) => (b[Fields.createdAt]?.toString() ?? '').compareTo(
+                    a[Fields.createdAt]?.toString() ?? '',
+                  ),
+                );
           rows = [...personal, ...projects.take(projectLimit)];
         }
         return rows
-            .map((e) => ModelAccountingAccount(
+            .map(
+              (e) => ModelAccountingAccount(
                 id: e[Fields.id],
                 accountName: e[Fields.account],
                 category: e['category'],
@@ -128,18 +191,23 @@ class ServiceAccounting {
                     ? parseMasterGraph(e['master_graph_url'])
                     : null,
                 balance: details
-                    .where((d) =>
-                        d['account_id']?.toString() ==
-                            e[Fields.id]?.toString() &&
-                        d['currency']?.toString() ==
-                            e['main_currency']?.toString())
+                    .where(
+                      (d) =>
+                          d['account_id']?.toString() ==
+                              e[Fields.id]?.toString() &&
+                          d['currency']?.toString() ==
+                              e['main_currency']?.toString(),
+                    )
                     .fold<num>(
-                        0,
-                        (sum, d) =>
-                            sum +
-                            (num.tryParse(d['value']?.toString() ?? '0') ?? 0)),
+                      0,
+                      (sum, d) =>
+                          sum +
+                          (num.tryParse(d['value']?.toString() ?? '0') ?? 0),
+                    ),
                 currency: e['main_currency'],
-                exchangeRate: e['exchange_rate']))
+                exchangeRate: e['exchange_rate'],
+              ),
+            )
             .toList();
       }
       final columns = includeGraph
@@ -204,12 +272,13 @@ class ServiceAccounting {
     }
   }
 
-  Future<ModelAccountingAccount> createAccount(
-      {required String name,
-      required String user,
-      required String? currency,
-      required String category,
-      String? eventId}) async {
+  Future<ModelAccountingAccount> createAccount({
+    required String name,
+    required String user,
+    required String? currency,
+    required String category,
+    String? eventId,
+  }) async {
     try {
       if (await _storesLocally) {
         final id = eventId ?? const Uuid().v4();
@@ -223,29 +292,35 @@ class ServiceAccounting {
           'balance': 0,
           'exchange_rate': null,
           Fields.isValid: true,
-          Fields.createdAt: now
+          Fields.createdAt: now,
         };
-        final existing = (await LocalDataStore.instance.list(
-                owner: _localOwner!, resource: TableNames.accountingAccount))
-            .any((r) =>
-                r[Fields.account]?.toString().toLowerCase() ==
-                    name.toLowerCase() &&
-                r['category'] == category &&
-                r[Fields.isValid] == true);
+        final existing =
+            (await LocalDataStore.instance.list(
+              owner: _localOwner!,
+              resource: TableNames.accountingAccount,
+            )).any(
+              (r) =>
+                  r[Fields.account]?.toString().toLowerCase() ==
+                      name.toLowerCase() &&
+                  r['category'] == category &&
+                  r[Fields.isValid] == true,
+            );
         if (existing) throw Exception('Account already exists');
         await LocalDataStore.instance.put(
-            owner: _localOwner!,
-            resource: TableNames.accountingAccount,
-            id: id,
-            data: data);
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+          id: id,
+          data: data,
+        );
         return ModelAccountingAccount(
-            id: id,
-            accountName: name,
-            category: category,
-            masterGraphUrl: null,
-            balance: 0,
-            currency: currency,
-            exchangeRate: null);
+          id: id,
+          accountName: name,
+          category: category,
+          masterGraphUrl: null,
+          balance: 0,
+          currency: currency,
+          exchangeRate: null,
+        );
       }
       // 1. 查詢是否已存在
       final exist = await supabase
@@ -263,9 +338,7 @@ class ServiceAccounting {
         if (exist[Fields.isValid] != true) {
           result = await supabase
               .from(TableNames.accountingAccount)
-              .update({
-                Fields.isValid: true,
-              })
+              .update({Fields.isValid: true})
               .eq(Fields.id, exist[Fields.id])
               .select()
               .single();
@@ -310,16 +383,20 @@ class ServiceAccounting {
   Future<void> deleteAccount({required String accountId}) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.accountingAccount);
-        final row =
-            rows.firstWhere((r) => r[Fields.id]?.toString() == accountId);
+        final rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+        );
+        final row = rows.firstWhere(
+          (r) => r[Fields.id]?.toString() == accountId,
+        );
         await LocalDataStore.instance.put(
-            owner: _localOwner!,
-            resource: TableNames.accountingAccount,
-            id: accountId,
-            data: {...row, Fields.isValid: false},
-            syncState: LocalSyncState.modifiedLocally);
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+          id: accountId,
+          data: {...row, Fields.isValid: false},
+          syncState: LocalSyncState.modifiedLocally,
+        );
         final settings = await LocalDataStore.instance.list(
           owner: _localOwner!,
           resource: TableNames.dashboardSetting,
@@ -342,14 +419,18 @@ class ServiceAccounting {
         }
         return;
       }
-      await supabase.from(TableNames.accountingAccount).update({
-        Fields.isValid: false,
-      }).eq(Fields.id, accountId);
+      await supabase
+          .from(TableNames.accountingAccount)
+          .update({Fields.isValid: false})
+          .eq(Fields.id, accountId);
 
-      await supabase.from(TableNames.dashboardSetting).update({
-        'accounting_account_id': null,
-        'accounting_account_name': null,
-      }).eq('accounting_account_id', accountId);
+      await supabase
+          .from(TableNames.dashboardSetting)
+          .update({
+            'accounting_account_id': null,
+            'accounting_account_name': null,
+          })
+          .eq('accounting_account_id', accountId);
     } catch (e, st) {
       logger.e('deleteAccount failed $e\n$st');
       rethrow;
@@ -357,28 +438,32 @@ class ServiceAccounting {
   }
 
   Future<Uint8List> uploadAccountImageBytesDirect(
-      String accountId, Uint8List imageBytes) async {
+    String accountId,
+    Uint8List imageBytes,
+  ) async {
     // 不管 Web / Mobile 都轉 base64
     // Mobile / Web 統一存 bytea (Uint8List)
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.accountingAccount);
-        final row =
-            rows.firstWhere((r) => r[Fields.id]?.toString() == accountId);
+        final rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+        );
+        final row = rows.firstWhere(
+          (r) => r[Fields.id]?.toString() == accountId,
+        );
         await LocalDataStore.instance.put(
-            owner: _localOwner!,
-            resource: TableNames.accountingAccount,
-            id: accountId,
-            data: {...row, 'master_graph_url': base64Encode(imageBytes)},
-            syncState: LocalSyncState.modifiedLocally);
+          owner: _localOwner!,
+          resource: TableNames.accountingAccount,
+          id: accountId,
+          data: {...row, 'master_graph_url': base64Encode(imageBytes)},
+          syncState: LocalSyncState.modifiedLocally,
+        );
         return imageBytes;
       }
       final result = await supabase
           .from(TableNames.accountingAccount)
-          .update({
-            'master_graph_url': base64Encode(imageBytes),
-          })
+          .update({'master_graph_url': base64Encode(imageBytes)})
           .eq(Fields.id, accountId)
           .eq(Fields.isValid, true)
           .select();
@@ -408,32 +493,42 @@ class ServiceAccounting {
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
       );
-      final accountRows = rows.where((row) =>
-          row['account_id']?.toString() == accountId &&
-          row['type']?.toString().toLowerCase() == type.toLowerCase());
+      final accountRows = rows.where(
+        (row) =>
+            row['account_id']?.toString() == accountId &&
+            row['type']?.toString().toLowerCase() == type.toLowerCase(),
+      );
       final balance = accountRows.fold<num>(
         0,
         (sum, row) =>
             sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
       );
-      final filtered = accountRows.where((row) {
-        if (includeReservedRecords && row['primary_category'] == 'reserved') {
-          return true;
-        }
-        final date = DateTime.tryParse(row['date']?.toString() ?? '');
-        return date != null &&
-            !date.isBefore(dateFrom) &&
-            date.isBefore(upperBound);
-      }).toList()
-        ..sort((a, b) => (b['date']?.toString() ?? '')
-            .compareTo(a['date']?.toString() ?? ''));
+      final filtered =
+          accountRows.where((row) {
+            if (includeReservedRecords &&
+                row['primary_category'] == 'reserved') {
+              return true;
+            }
+            final date = DateTime.tryParse(row['date']?.toString() ?? '');
+            return date != null &&
+                !date.isBefore(dateFrom) &&
+                date.isBefore(upperBound);
+          }).toList()..sort(
+            (a, b) => (b['date']?.toString() ?? '').compareTo(
+              a['date']?.toString() ?? '',
+            ),
+          );
       if (includeLatestFallback &&
           !filtered.any((row) => row['primary_category'] != 'reserved')) {
-        final fallback = accountRows
-            .where((row) => row['primary_category'] != 'reserved')
-            .toList()
-          ..sort((a, b) => (b['date']?.toString() ?? '')
-              .compareTo(a['date']?.toString() ?? ''));
+        final fallback =
+            accountRows
+                .where((row) => row['primary_category'] != 'reserved')
+                .toList()
+              ..sort(
+                (a, b) => (b['date']?.toString() ?? '').compareTo(
+                  a['date']?.toString() ?? '',
+                ),
+              );
         if (fallback.isNotEmpty) filtered.add(fallback.first);
       }
       return filtered.map((row) => _mapDetail(row, balance)).toList();
@@ -461,22 +556,25 @@ class ServiceAccounting {
         owner: owner,
         resource: TableNames.accountingDetail,
       );
-      result.addAll(localRows.where((row) {
-        if (row['account_id']?.toString() != accountId ||
-            row['type']?.toString().toLowerCase() != type.toLowerCase()) {
-          return false;
-        }
-        if (includeReservedRecords && row['primary_category'] == 'reserved') {
-          return true;
-        }
-        final date = DateTime.tryParse(row['date']?.toString() ?? '');
-        return date != null &&
-            !date.isBefore(dateFrom) &&
-            date.isBefore(upperBound);
-      }));
+      result.addAll(
+        localRows.where((row) {
+          if (row['account_id']?.toString() != accountId ||
+              row['type']?.toString().toLowerCase() != type.toLowerCase()) {
+            return false;
+          }
+          if (includeReservedRecords && row['primary_category'] == 'reserved') {
+            return true;
+          }
+          final date = DateTime.tryParse(row['date']?.toString() ?? '');
+          return date != null &&
+              !date.isBefore(dateFrom) &&
+              date.isBefore(upperBound);
+        }),
+      );
     }
-    final hasRegularRecord =
-        result.any((row) => row['primary_category'] != 'reserved');
+    final hasRegularRecord = result.any(
+      (row) => row['primary_category'] != 'reserved',
+    );
     if (includeLatestFallback && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.accountingDetail)
@@ -502,20 +600,25 @@ class ServiceAccounting {
         resource: TableNames.accountingDetail,
       );
       balance += allLocal
-          .where((row) =>
-              row['account_id']?.toString() == accountId &&
-              row['type']?.toString() == type)
+          .where(
+            (row) =>
+                row['account_id']?.toString() == accountId &&
+                row['type']?.toString() == type,
+          )
           .fold<num>(
             0,
             (sum, row) =>
                 sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
           );
     }
-    final unique = <String, Map<String, dynamic>>{
-      for (final row in result) row[Fields.id].toString(): row,
-    }.values.toList()
-      ..sort((a, b) =>
-          (b['date']?.toString() ?? '').compareTo(a['date']?.toString() ?? ''));
+    final unique =
+        <String, Map<String, dynamic>>{
+          for (final row in result) row[Fields.id].toString(): row,
+        }.values.toList()..sort(
+          (a, b) => (b['date']?.toString() ?? '').compareTo(
+            a['date']?.toString() ?? '',
+          ),
+        );
     return unique.map((detail) => _mapDetail(detail, balance)).toList();
   }
 
@@ -559,16 +662,20 @@ class ServiceAccounting {
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
       );
-      final dates = rows
-          .where((row) =>
-              row['account_id']?.toString() == accountId &&
-              row['type']?.toString().toLowerCase() == type.toLowerCase() &&
-              row['primary_category'] != 'reserved')
-          .map((row) => DateTime.tryParse(row['date']?.toString() ?? ''))
-          .whereType<DateTime>()
-          .where((date) => date.isBefore(before))
-          .toList()
-        ..sort((a, b) => b.compareTo(a));
+      final dates =
+          rows
+              .where(
+                (row) =>
+                    row['account_id']?.toString() == accountId &&
+                    row['type']?.toString().toLowerCase() ==
+                        type.toLowerCase() &&
+                    row['primary_category'] != 'reserved',
+              )
+              .map((row) => DateTime.tryParse(row['date']?.toString() ?? ''))
+              .whereType<DateTime>()
+              .where((date) => date.isBefore(before))
+              .toList()
+            ..sort((a, b) => b.compareTo(a));
       return dates.isEmpty ? null : dates.first.toLocal();
     }
     final rows = await supabase
@@ -585,14 +692,17 @@ class ServiceAccounting {
   }
 
   ModelAccountingDetail _mapDetail(
-      Map<String, dynamic> detail, dynamic balance) {
+    Map<String, dynamic> detail,
+    dynamic balance,
+  ) {
     return ModelAccountingDetail(
       id: detail[Fields.id]?.toString() ?? '',
       accountId: detail['account_id']?.toString() ?? '',
       createdAt:
           DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
-              DateTime.now(),
-      date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+          DateTime.now(),
+      date:
+          DateTime.tryParse(detail['date']?.toString() ?? '') ??
           DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
           DateTime.now(),
       primaryCategory:
@@ -600,7 +710,8 @@ class ServiceAccounting {
       secondaryCategory: detail['group']?.toString(),
       description: detail['description']?.toString() ?? '',
       type: detail['type']?.toString() ?? '',
-      value: (detail['value'] as num?) ??
+      value:
+          (detail['value'] as num?) ??
           num.tryParse(detail['value']?.toString() ?? '0') ??
           0,
       currency: detail['currency']?.toString() ?? '',
@@ -610,25 +721,29 @@ class ServiceAccounting {
     );
   }
 
-  Future<void> insertRecordsBatch(
-      {required String accountId,
-      required String type,
-      required List<AccountingPreview> records,
-      required String? currency}) async {
+  Future<void> insertRecordsBatch({
+    required String accountId,
+    required String type,
+    required List<AccountingPreview> records,
+    required String? currency,
+  }) async {
     final now = DateTime.now();
     final recordsMap = records
-        .map((r) => {
-              Fields.id: const Uuid().v4(),
-              'description': r.description,
-              'value': r.value,
-              'currency': r.currency ?? currency,
-              'primary_category': r.primaryCategory,
-              'group': r.secondaryCategory?.trim() ?? '',
-              'account_id': accountId,
-              'type': type,
-              'date': (r.date ?? now).toUtc().toIso8601String(),
-              Fields.createdAt: now.toUtc().toIso8601String(),
-            })
+        .map(
+          (r) => {
+            Fields.id: const Uuid().v4(),
+            'description': r.description,
+            'value': r.value,
+            'currency': r.currency ?? currency,
+            'primary_category': r.primaryCategory,
+            'group': r.secondaryCategory?.trim() ?? '',
+            'account_id': accountId,
+            'event_id': r.eventId,
+            'type': type,
+            'date': (r.date ?? now).toUtc().toIso8601String(),
+            Fields.createdAt: now.toUtc().toIso8601String(),
+          },
+        )
         .toList();
 
     try {
@@ -723,17 +838,19 @@ class ServiceAccounting {
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
         );
-        final matching = rows
-            .where(
-              (row) =>
-                  row[Fields.isValid] == true &&
-                  row['category']?.toString() == category,
-            )
-            .toList()
-          ..sort(
-            (a, b) => (b[Fields.createdAt]?.toString() ?? '')
-                .compareTo(a[Fields.createdAt]?.toString() ?? ''),
-          );
+        final matching =
+            rows
+                .where(
+                  (row) =>
+                      row[Fields.isValid] == true &&
+                      row['category']?.toString() == category,
+                )
+                .toList()
+              ..sort(
+                (a, b) => (b[Fields.createdAt]?.toString() ?? '').compareTo(
+                  a[Fields.createdAt]?.toString() ?? '',
+                ),
+              );
         return matching.isEmpty
             ? 'TWD'
             : matching.first['main_currency']?.toString() ?? 'TWD';
@@ -803,10 +920,7 @@ class ServiceAccounting {
       }
       await supabase.rpc(
         'switch_main_currency',
-        params: {
-          'p_account_id': accountId,
-          'p_currency': currency,
-        },
+        params: {'p_account_id': accountId, 'p_currency': currency},
       );
     } catch (e, st) {
       logger.e('switchMainCurrency failed $e\n$st');

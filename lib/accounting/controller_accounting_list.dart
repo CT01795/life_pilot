@@ -20,8 +20,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
   ControllerAccountingList({
     required ServiceAccounting service,
     required this.auth,
-  })  : _service = service,
-        _dataScopeKey = _scopeKey(auth);
+  }) : _service = service,
+       _dataScopeKey = _scopeKey(auth);
 
   static String _scopeKey(ControllerAuth? auth) =>
       '${auth?.currentAccount?.trim().toLowerCase() ?? ''}|'
@@ -227,6 +227,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
           builder: (_) => PageAccountingDetail(
             service: context.read<ServiceAccounting>(),
             account: existingAccount,
+            linkedEventId: eventId,
           ),
         ),
       );
@@ -243,6 +244,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
         builder: (_) => PageAccountingDetail(
           service: context.read<ServiceAccounting>(),
           account: selectedAccount,
+          linkedEventId: eventId,
         ),
       ),
     );
@@ -378,11 +380,11 @@ class _AccountListViewState extends State<_AccountListView> {
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          final modelAccountingAccount =
-                              await controller.createAccount(
-                            name: textController.text,
-                            eventId: widget.eventId,
-                          );
+                          final modelAccountingAccount = await controller
+                              .createAccount(
+                                name: textController.text,
+                                eventId: widget.eventId,
+                              );
                           Navigator.pop(context, true);
                           // 如果新增的帳戶 category 與目前 Tab 不符
                           if (modelAccountingAccount.category !=
@@ -391,7 +393,8 @@ class _AccountListViewState extends State<_AccountListView> {
                             final parentTabController = DefaultTabController.of(
                               context,
                             );
-                            int tabIndex = modelAccountingAccount.category ==
+                            int tabIndex =
+                                modelAccountingAccount.category ==
                                     AccountCategory.personal.name
                                 ? 0
                                 : 1;

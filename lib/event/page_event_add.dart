@@ -18,6 +18,7 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 class PageEventAdd extends StatefulWidget {
@@ -47,6 +48,12 @@ class _PageEventAddState extends State<PageEventAdd> {
   bool _hasUnsavedChanges = false;
   bool _allowPop = false;
   bool _discardDialogVisible = false;
+  bool _addToCalendar = false;
+
+  bool get _canAddToCalendar =>
+      widget.existingEvent == null &&
+      (controllerAdd.tableName == TableNames.recommendEvents ||
+          controllerAdd.tableName == TableNames.recommendPlaces);
 
   @override
   void initState() {
@@ -128,7 +135,33 @@ class _PageEventAddState extends State<PageEventAdd> {
         isNew: widget.existingEvent == null,
       );
 
+      String? calendarSaveError;
+      if (_canAddToCalendar && _addToCalendar) {
+        try {
+          final isAlreadyAdded = await widget.controllerEvent
+              .handleEventCheckboxIsAlreadyAdd(event, true);
+          if (!isAlreadyAdded) {
+            final calendarEvent = await widget.controllerEvent
+                .handleEventCheckboxTransfer(true, false, event);
+            if (calendarEvent != null && context.mounted) {
+              context.read<ControllerCalendar>().invalidateEventCache(
+                startDate: calendarEvent.startDate,
+                endDate: calendarEvent.endDate,
+              );
+            }
+          }
+        } catch (error) {
+          final quotaMessage = subscriptionErrorMessage(loc, error);
+          calendarSaveError = quotaMessage.isNotEmpty
+              ? quotaMessage
+              : loc.eventSaveFailed;
+        }
+      }
+
       AppNavigator.showSnackBar(loc.eventSaved);
+      if (calendarSaveError != null) {
+        AppNavigator.showErrorBar(calendarSaveError);
+      }
       if (context.mounted) {
         setState(() {
           _hasUnsavedChanges = false;
@@ -145,9 +178,11 @@ class _PageEventAddState extends State<PageEventAdd> {
       AppNavigator.showErrorBar(message);
     } catch (error) {
       final subscriptionMessage = subscriptionErrorMessage(loc, error);
-      AppNavigator.showErrorBar(subscriptionMessage.isNotEmpty
-          ? subscriptionMessage
-          : loc.eventSaveFailed);
+      AppNavigator.showErrorBar(
+        subscriptionMessage.isNotEmpty
+            ? subscriptionMessage
+            : loc.eventSaveFailed,
+      );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -173,145 +208,164 @@ class _PageEventAddState extends State<PageEventAdd> {
       EventFields.isOutdoor: loc.isOutdoor,
     };
     return ChangeNotifierProvider.value(
-        value: controllerAdd,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(loc.eventAddEdit),
-            actions: [
-              PopScope(
-                canPop: _allowPop || !_hasUnsavedChanges,
-                onPopInvokedWithResult: (didPop, _) {
-                  if (!didPop) _confirmDiscardChanges(loc);
-                },
-                child: TextButton(
-                  onPressed: _isSaving ? null : () => _saveEvent(loc),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    disabledForegroundColor: Colors.white70,
-                  ),
-                  child: _isSaving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(loc.save),
+      value: controllerAdd,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(loc.eventAddEdit),
+          actions: [
+            PopScope(
+              canPop: _allowPop || !_hasUnsavedChanges,
+              onPopInvokedWithResult: (didPop, _) {
+                if (!didPop) _confirmDiscardChanges(loc);
+              },
+              child: TextButton(
+                onPressed: _isSaving ? null : () => _saveEvent(loc),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  disabledForegroundColor: Colors.white70,
                 ),
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                controller: _scrollController,
-                padding: Insets.directionalL4R4T4B8,
-                children: [
-                  Card(
-                    color: Colors.yellow[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextField(
-                            controller: fbTextController,
-                            maxLines: 5,
-                            decoration: InputDecoration(
-                              hintText: loc.postText,
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          Gaps.h8,
-                          Row(
-                            children: [
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.auto_fix_high),
-                                label: Text(loc.parsing),
-                                onPressed: () {
-                                  controllerAdd
-                                      .parseFacebookText(fbTextController.text);
-                                },
-                              ),
-                              Gaps.w8,
-                              TextButton(
-                                onPressed: () {
-                                  fbTextController.clear();
-                                },
-                                child: Text(loc.clear),
-                              )
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                  if ({
-                    TableNames.recommendEvents,
-                    TableNames.recommendPlaces,
-                    TableNames.memoryTrace,
-                  }.contains(controllerAdd.tableName))
-                    if (context.watch<ControllerAuth>().isPlus ||
-                        context.watch<ControllerAuth>().storesNewDataLocally)
-                      _buildOptionalImagePicker(loc)
-                    else
-                      Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.lock_outline),
-                          title: Text(loc.subscriptionImagePlusOnly),
+                child: _isSaving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
-                      ),
-                  if (controllerAdd.tableName == TableNames.calendarEvents)
-                    const SubscriptionUsageBanner(
-                      resource: 'calendar_events',
-                    ),
-                  if (controllerAdd.tableName == TableNames.memoryTrace)
-                    const SubscriptionUsageBanner(resource: 'memory_trace'),
-                  _buildDateTimeRow(loc: loc, ctl: controllerAdd),
-                  ..._buildTextFields(
-                      loc: loc, ctl: controllerAdd, fields: fields),
-                  Gaps.h16,
-                  Text(loc.eventSub),
-                  Selector<ControllerPageEventAdd, int>(
-                    selector: (_, ctl) => ctl.subEvents.length,
-                    builder: (_, length, _) {
-                      return Column(
-                        children: List.generate(
-                          length,
-                          (index) => _buildSubEventCard(
-                              loc: loc,
-                              ctl: controllerAdd,
-                              index: index,
-                              fields: fields),
-                        ),
-                      );
-                    },
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      controllerAdd.addSubEvent();
-                      // 自動滑到最下
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted) return;
-                        if (_scrollController.hasClients) {
-                          _scrollController.animateTo(
-                            _scrollController.position.maxScrollExtent,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
-                          );
-                        }
-                      });
-                    },
-                    icon: const Icon(Icons.add),
-                    label: Text(loc.eventAddSub),
-                  ),
-                ],
+                      )
+                    : Text(loc.save),
               ),
             ),
+          ],
+        ),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              controller: _scrollController,
+              padding: Insets.directionalL4R4T4B8,
+              children: [
+                Card(
+                  color: Colors.yellow[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: fbTextController,
+                          maxLines: 5,
+                          decoration: InputDecoration(
+                            hintText: loc.postText,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        Gaps.h8,
+                        Row(
+                          children: [
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.auto_fix_high),
+                              label: Text(loc.parsing),
+                              onPressed: () {
+                                controllerAdd.parseFacebookText(
+                                  fbTextController.text,
+                                );
+                              },
+                            ),
+                            Gaps.w8,
+                            TextButton(
+                              onPressed: () {
+                                fbTextController.clear();
+                              },
+                              child: Text(loc.clear),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if ({
+                  TableNames.recommendEvents,
+                  TableNames.recommendPlaces,
+                  TableNames.memoryTrace,
+                }.contains(controllerAdd.tableName))
+                  if (context.watch<ControllerAuth>().isPlus ||
+                      context.watch<ControllerAuth>().storesNewDataLocally)
+                    _buildOptionalImagePicker(loc)
+                  else
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.lock_outline),
+                        title: Text(loc.subscriptionImagePlusOnly),
+                      ),
+                    ),
+                if (controllerAdd.tableName == TableNames.calendarEvents)
+                  const SubscriptionUsageBanner(resource: 'calendar_events'),
+                if (controllerAdd.tableName == TableNames.memoryTrace)
+                  const SubscriptionUsageBanner(resource: 'memory_trace'),
+                if (_canAddToCalendar)
+                  CheckboxListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    value: _addToCalendar,
+                    title: Text(loc.addToSchedule),
+                    secondary: const Icon(Icons.event_available_outlined),
+                    onChanged: _isSaving
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _addToCalendar = value ?? false;
+                              _hasUnsavedChanges = true;
+                            });
+                          },
+                  ),
+                _buildDateTimeRow(loc: loc, ctl: controllerAdd),
+                ..._buildTextFields(
+                  loc: loc,
+                  ctl: controllerAdd,
+                  fields: fields,
+                ),
+                Gaps.h16,
+                Text(loc.eventSub),
+                Selector<ControllerPageEventAdd, int>(
+                  selector: (_, ctl) => ctl.subEvents.length,
+                  builder: (_, length, _) {
+                    return Column(
+                      children: List.generate(
+                        length,
+                        (index) => _buildSubEventCard(
+                          loc: loc,
+                          ctl: controllerAdd,
+                          index: index,
+                          fields: fields,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    controllerAdd.addSubEvent();
+                    // 自動滑到最下
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: Text(loc.eventAddSub),
+                ),
+              ],
+            ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   Widget _buildOptionalImagePicker(AppLocalizations loc) {
@@ -347,9 +401,11 @@ class _PageEventAddState extends State<PageEventAdd> {
                     OutlinedButton.icon(
                       onPressed: () => _pickEventImage(ctl),
                       icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: Text(imageValue == null || imageValue.isEmpty
-                          ? _chooseImageLabel()
-                          : _replaceImageLabel()),
+                      label: Text(
+                        imageValue == null || imageValue.isEmpty
+                            ? _chooseImageLabel()
+                            : _replaceImageLabel(),
+                      ),
                     ),
                   ],
                 ),
@@ -406,11 +462,12 @@ class _PageEventAddState extends State<PageEventAdd> {
   // =====================================================
   // 🧱 組件建構部分
   // =====================================================
-  List<Widget> _buildTextFields(
-      {required AppLocalizations loc,
-      required ControllerPageEventAdd ctl,
-      required Map<String, String> fields,
-      String? index}) {
+  List<Widget> _buildTextFields({
+    required AppLocalizations loc,
+    required ControllerPageEventAdd ctl,
+    required Map<String, String> fields,
+    String? index,
+  }) {
     final Map<String, String> currentFields = Map.from(fields);
     if (index != null || controllerAdd.tableName == TableNames.memoryTrace) {
       currentFields.remove(EventFields.unit);
@@ -449,7 +506,6 @@ class _PageEventAddState extends State<PageEventAdd> {
           },
         );
       }
-
       // ✅ isOutdoor 下拉選單
       else if (e.key == EventFields.isOutdoor) {
         return DropdownButtonFormField<String>(
@@ -493,7 +549,10 @@ class _PageEventAddState extends State<PageEventAdd> {
                 focusNode: getFocusNode(minKey),
                 onChanged: (value) {
                   ctl.updateField(
-                      minKey, ctl.getController(key: minKey).text, false);
+                    minKey,
+                    ctl.getController(key: minKey).text,
+                    false,
+                  );
                 },
               ),
             ),
@@ -523,7 +582,10 @@ class _PageEventAddState extends State<PageEventAdd> {
                 focusNode: getFocusNode(maxKey),
                 onChanged: (value) {
                   ctl.updateField(
-                      maxKey, ctl.getController(key: maxKey).text, false);
+                    maxKey,
+                    ctl.getController(key: maxKey).text,
+                    false,
+                  );
                 },
               ),
             ),
@@ -541,109 +603,121 @@ class _PageEventAddState extends State<PageEventAdd> {
     }).toList();
   }
 
-  Widget _buildDateTimeRow(
-      {required AppLocalizations loc,
-      required ControllerPageEventAdd ctl,
-      int? index}) {
-    return Consumer<ControllerPageEventAdd>(builder: (_, ctl, _) {
-      final dStart =
-          index == null ? ctl.startDate : ctl.subEvents[index].startDate;
-      final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
-      final tStart =
-          index == null ? ctl.startTime : ctl.subEvents[index].startTime;
-      final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
+  Widget _buildDateTimeRow({
+    required AppLocalizations loc,
+    required ControllerPageEventAdd ctl,
+    int? index,
+  }) {
+    return Consumer<ControllerPageEventAdd>(
+      builder: (_, ctl, _) {
+        final dStart = index == null
+            ? ctl.startDate
+            : ctl.subEvents[index].startDate;
+        final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
+        final tStart = index == null
+            ? ctl.startTime
+            : ctl.subEvents[index].startTime;
+        final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
 
-      return Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildDateTile(
-                  loc: loc,
-                  date: dStart,
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: dStart ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-
-                    if (picked != null) {
-                      ctl.setDate(picked, isStart: true, index: index);
-                    }
-                  },
-                  type: CalendarMisc.startToS,
-                ),
-              ),
-              const Text(' ~ '),
-              Expanded(
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
                   child: _buildDateTile(
-                      loc: loc,
-                      date: dEnd,
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: dEnd ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
+                    loc: loc,
+                    date: dStart,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dStart ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
 
-                        if (picked != null) {
-                          ctl.setDate(picked, isStart: false, index: index);
-                        }
-                      },
-                      type: CalendarMisc.endToE)),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
+                      if (picked != null) {
+                        ctl.setDate(picked, isStart: true, index: index);
+                      }
+                    },
+                    type: CalendarMisc.startToS,
+                  ),
+                ),
+                const Text(' ~ '),
+                Expanded(
+                  child: _buildDateTile(
+                    loc: loc,
+                    date: dEnd,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dEnd ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (picked != null) {
+                        ctl.setDate(picked, isStart: false, index: index);
+                      }
+                    },
+                    type: CalendarMisc.endToE,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
                   child: _buildTimeTile(
-                      loc: loc,
-                      time: tStart,
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: tStart ?? TimeOfDay.now(),
-                        );
+                    loc: loc,
+                    time: tStart,
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: tStart ?? TimeOfDay.now(),
+                      );
 
-                        if (picked != null) {
-                          ctl.setTime(picked, isStart: true, index: index);
-                        }
-                      },
-                      type: CalendarMisc.startToS)),
-              const Text(' ~ '),
-              Expanded(
+                      if (picked != null) {
+                        ctl.setTime(picked, isStart: true, index: index);
+                      }
+                    },
+                    type: CalendarMisc.startToS,
+                  ),
+                ),
+                const Text(' ~ '),
+                Expanded(
                   child: _buildTimeTile(
-                      loc: loc,
-                      time: tEnd,
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: tEnd ?? TimeOfDay.now(),
-                        );
+                    loc: loc,
+                    time: tEnd,
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: tEnd ?? TimeOfDay.now(),
+                      );
 
-                        if (picked != null) {
-                          ctl.setTime(picked, isStart: false, index: index);
-                        }
-                      },
-                      type: CalendarMisc.endToE)),
-            ],
-          ),
-        ],
-      );
-    });
+                      if (picked != null) {
+                        ctl.setTime(picked, isStart: false, index: index);
+                      }
+                    },
+                    type: CalendarMisc.endToE,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // =====================================================
   // 📅 時間與日期選擇
   // =====================================================
-  Widget _buildDateTile(
-      {required AppLocalizations loc,
-      DateTime? date,
-      required VoidCallback onTap,
-      required String type}) {
+  Widget _buildDateTile({
+    required AppLocalizations loc,
+    DateTime? date,
+    required VoidCallback onTap,
+    required String type,
+  }) {
     final text = date != null
         ? date.formatDateString(passYear: false, formatShow: true)
         : (type == CalendarMisc.startToS ? loc.startDate : loc.endDate);
@@ -656,12 +730,14 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
   }
 
-  Widget _buildTimeTile(
-      {required AppLocalizations loc,
-      TimeOfDay? time,
-      required VoidCallback onTap,
-      required String type}) {
-    final text = time?.format(context) ??
+  Widget _buildTimeTile({
+    required AppLocalizations loc,
+    TimeOfDay? time,
+    required VoidCallback onTap,
+    required String type,
+  }) {
+    final text =
+        time?.format(context) ??
         (type == CalendarMisc.startToS ? loc.startTime : loc.endTime);
     return ListTile(
       contentPadding: Insets.e0,
@@ -672,11 +748,12 @@ class _PageEventAddState extends State<PageEventAdd> {
     );
   }
 
-  Widget _buildSubEventCard(
-      {required AppLocalizations loc,
-      required ControllerPageEventAdd ctl,
-      required Map<String, String> fields,
-      required int index}) {
+  Widget _buildSubEventCard({
+    required AppLocalizations loc,
+    required ControllerPageEventAdd ctl,
+    required Map<String, String> fields,
+    required int index,
+  }) {
     final d = ctl.subEvents[index];
 
     return Card(
@@ -688,33 +765,35 @@ class _PageEventAddState extends State<PageEventAdd> {
           children: [
             _buildDateTimeRow(loc: loc, ctl: ctl, index: index),
             ..._buildTextFields(
-                loc: loc, ctl: ctl, index: d.id, fields: fields),
+              loc: loc,
+              ctl: ctl,
+              index: d.id,
+              fields: fields,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   '#${index + 1} ${DateFormat('MM/dd').format(d.startDate!)} ${d.startTime!.format(context)} ${d.name.substring(0, d.name.length > 5 ? 5 : d.name.length)}${d.name.length > 5 ? '...' : ''}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.pinkAccent),
-                    tooltip: loc.delete,
-                    onPressed: () async {
-                      final event = ctl.subEvents[
-                          index]; // 假設你有 subEvents list 裡的 item 為 event
-                      final shouldDelete = await showConfirmationDialog(
-                        content:
-                            'No. ${index + 1} ${event.name} ${loc.delete}？',
-                        confirmText: loc.delete,
-                        cancelText: loc.cancel,
-                      );
+                  icon: const Icon(Icons.delete, color: Colors.pinkAccent),
+                  tooltip: loc.delete,
+                  onPressed: () async {
+                    final event = ctl
+                        .subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
+                    final shouldDelete = await showConfirmationDialog(
+                      content: 'No. ${index + 1} ${event.name} ${loc.delete}？',
+                      confirmText: loc.delete,
+                      cancelText: loc.cancel,
+                    );
 
-                      if (shouldDelete == true) {
-                        controllerAdd.removeSubEvent(index);
-                      }
-                    }),
+                    if (shouldDelete == true) {
+                      controllerAdd.removeSubEvent(index);
+                    }
+                  },
+                ),
               ],
             ),
           ],
@@ -775,37 +854,36 @@ class SpeechTextField extends StatelessWidget {
           ),
         ),
         Selector<ControllerPageEventAdd, bool>(
-            selector: (_, ctl) =>
-                ctl.isListening && ctl.currentListeningKey == keyField,
-            builder: (_, isActive, _) {
-              return IconButton(
-                icon: Icon(
-                  Icons.mic,
-                  color: isActive ? Colors.red : null,
-                ),
-                tooltip: loc.speak,
-                onPressed: () async {
-                  if (controller.isListening &&
-                      controller.currentListeningKey == keyField) {
+          selector: (_, ctl) =>
+              ctl.isListening && ctl.currentListeningKey == keyField,
+          builder: (_, isActive, _) {
+            return IconButton(
+              icon: Icon(Icons.mic, color: isActive ? Colors.red : null),
+              tooltip: loc.speak,
+              onPressed: () async {
+                if (controller.isListening &&
+                    controller.currentListeningKey == keyField) {
+                  await controller.stopListening();
+                } else {
+                  if (controller.isListening) {
                     await controller.stopListening();
-                  } else {
-                    if (controller.isListening) {
-                      await controller.stopListening();
-                      await Future.delayed(const Duration(milliseconds: 200));
-                    }
-                    await controller.startListening(
-                        onResult: (text) {
-                          ctrl.text += ' $text'; // 加上追加模式
-                          ctrl.selection = TextSelection.fromPosition(
-                            TextPosition(offset: ctrl.text.length),
-                          );
-                          onChanged(ctrl.text);
-                        },
-                        key: keyField);
+                    await Future.delayed(const Duration(milliseconds: 200));
                   }
-                },
-              );
-            }),
+                  await controller.startListening(
+                    onResult: (text) {
+                      ctrl.text += ' $text'; // 加上追加模式
+                      ctrl.selection = TextSelection.fromPosition(
+                        TextPosition(offset: ctrl.text.length),
+                      );
+                      onChanged(ctrl.text);
+                    },
+                    key: keyField,
+                  );
+                }
+              },
+            );
+          },
+        ),
       ],
     );
   }

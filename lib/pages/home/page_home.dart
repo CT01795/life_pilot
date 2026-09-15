@@ -45,9 +45,12 @@ class _PageHomeState extends State<PageHome> {
           return;
         }
 
-        await context.read<ModelDashboard>().refreshAll(
-              account: account,
-            );
+        final dashboard = context.read<ModelDashboard>();
+        await Future.wait<void>([
+          dashboard.loadEventCities(account, forceRefresh: true),
+          dashboard.loadPlaceCities(account, forceRefresh: true),
+          dashboard.refreshAll(account: account),
+        ]);
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),

@@ -18,10 +18,14 @@ import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 class PageAccountingDetail extends StatelessWidget {
   final ModelAccountingAccount account;
   final ServiceAccounting service;
+  final bool returnAfterSubmit;
+  final String? linkedEventId;
   const PageAccountingDetail({
     super.key,
     required this.service,
     required this.account,
+    this.returnAfterSubmit = false,
+    this.linkedEventId,
   });
 
   @override
@@ -46,21 +50,27 @@ class PageAccountingDetail extends StatelessWidget {
             return controller;
           },
         ),
-        Provider<ControllerSpeech>(
-          create: (_) => ControllerSpeech(),
-        ),
-        Provider<ServiceSpeech>(
-          create: (_) => ServiceSpeech(),
-        ),
+        Provider<ControllerSpeech>(create: (_) => ControllerSpeech()),
+        Provider<ServiceSpeech>(create: (_) => ServiceSpeech()),
       ],
-      child: _PageAccountingDetailView(account),
+      child: _PageAccountingDetailView(
+        account,
+        returnAfterSubmit,
+        linkedEventId,
+      ),
     );
   }
 }
 
 class _PageAccountingDetailView extends StatefulWidget {
   final ModelAccountingAccount account;
-  const _PageAccountingDetailView(this.account);
+  final bool returnAfterSubmit;
+  final String? linkedEventId;
+  const _PageAccountingDetailView(
+    this.account,
+    this.returnAfterSubmit,
+    this.linkedEventId,
+  );
 
   @override
   State<_PageAccountingDetailView> createState() =>
@@ -144,8 +154,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   child: Text(loc.cancel),
                 ),
                 ElevatedButton(
-                  onPressed:
-                      isValid ? () => Navigator.pop(context, true) : null,
+                  onPressed: isValid
+                      ? () => Navigator.pop(context, true)
+                      : null,
                   child: Text(loc.confirm),
                 ),
               ],
@@ -193,8 +204,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     );
   }
 
-  Widget _buildSummary(BuildContext context, ModelAccountingAccount account,
-      ControllerAccountingDetail controller) {
+  Widget _buildSummary(
+    BuildContext context,
+    ModelAccountingAccount account,
+    ControllerAccountingDetail controller,
+  ) {
     final loc = AppLocalizations.of(context)!;
     String currency = controller.currentCurrency ?? (account.currency ?? '');
     num totalValue = controller.total ?? 0;
@@ -214,13 +228,17 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             children: [
               TableRow(
                 children: [
-                  Text(' ${loc.recordTotal} ',
-                      style: const TextStyle(fontSize: 20)),
+                  Text(
+                    ' ${loc.recordTotal} ',
+                    style: const TextStyle(fontSize: 20),
+                  ),
                   account.currency != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(currency,
-                              style: const TextStyle(fontSize: 20)),
+                          child: Text(
+                            currency,
+                            style: const TextStyle(fontSize: 20),
+                          ),
                         )
                       : const SizedBox(),
                   Text(
@@ -243,8 +261,10 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   account.currency != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(currency,
-                              style: const TextStyle(fontSize: 20)),
+                          child: Text(
+                            currency,
+                            style: const TextStyle(fontSize: 20),
+                          ),
                         )
                       : const SizedBox(),
                   Text(
@@ -276,7 +296,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
       child: ListView.builder(
         cacheExtent: 240,
         addAutomaticKeepAlives: false,
-        itemCount: visibleRecords.length +
+        itemCount:
+            visibleRecords.length +
             ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == visibleRecords.length) {
@@ -291,7 +312,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                         inputAccountId: widget.account.id,
                       ),
                       child: Text(
-                          AppLocalizations.of(context)!.clickHereToSeeMore),
+                        AppLocalizations.of(context)!.clickHereToSeeMore,
+                      ),
                     ),
             );
           }
@@ -317,8 +339,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       ? '+${numberFormatter.format(record.value)} ${record.currency}'
                       : '${numberFormatter.format(record.value)} ${record.currency}',
                   style: TextStyle(
-                      color: record.value >= 0 ? Colors.green : Colors.red,
-                      fontSize: 18),
+                    color: record.value >= 0 ? Colors.green : Colors.red,
+                    fontSize: 18,
+                  ),
                 ),
                 IconButton(
                   tooltip: AppLocalizations.of(context)!.delete,
@@ -357,7 +380,8 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     String detailId,
   ) async {
     final loc = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(loc.confirmDelete),
@@ -390,7 +414,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerAccountingDetail controller) {
+    BuildContext context,
+    ControllerAccountingDetail controller,
+  ) {
     final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -415,6 +441,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           Expanded(
             child: TextField(
               controller: _speechTextController,
+              autofocus: widget.returnAfterSubmit,
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
                 hintText: loc.accountingSpeechHint,
@@ -427,9 +454,13 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
               final previews = controller.parseFromSpeech(
-                  _speechTextController.text,
-                  controller.currentCurrency ?? widget.account.currency,
-                  controller.currentExchangeRate);
+                _speechTextController.text,
+                controller.currentCurrency ?? widget.account.currency,
+                controller.currentExchangeRate,
+              );
+              for (final preview in previews) {
+                preview.eventId = widget.linkedEventId;
+              }
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
@@ -450,6 +481,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
               setState(() {
                 _speechTextController.clear();
               });
+              if (widget.returnAfterSubmit && mounted) {
+                Navigator.of(context).pop(true);
+              }
             },
             child: Text(loc.recordSubmit),
           ),
@@ -460,7 +494,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
 
   // 回傳修改後的 AccountingPreview，取消則回傳 null
   Future<AccountingPreview?> _showEditDetailDialog(
-      BuildContext context, AccountingPreview record) async {
+    BuildContext context,
+    AccountingPreview record,
+  ) async {
     final valueController = TextEditingController(
       text: NumberFormat('#,##0.####').format(record.value),
     );
@@ -468,8 +504,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     String currency = record.currency ?? '';
     DateTime selectedDate = record.date ?? DateTime.now();
     String primaryCategory = record.primaryCategory;
-    final secondaryController =
-        TextEditingController(text: record.secondaryCategory ?? '');
+    final secondaryController = TextEditingController(
+      text: record.secondaryCategory ?? '',
+    );
     final loc = AppLocalizations.of(context)!;
 
     final result = await showDialog<AccountingPreview>(
@@ -502,16 +539,17 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       title: Text(loc.recordDate),
                       subtitle: Text(
                         DateFormat.yMd(
-                                Localizations.localeOf(context).toString())
-                            .format(selectedDate),
+                          Localizations.localeOf(context).toString(),
+                        ).format(selectedDate),
                       ),
                       onTap: () async {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: selectedDate,
                           firstDate: DateTime(2000),
-                          lastDate:
-                              DateTime.now().add(const Duration(days: 3650)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 3650),
+                          ),
                         );
                         if (picked != null) {
                           setState(() {
@@ -531,16 +569,18 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       isExpanded: true,
                       initialValue:
                           RecordCategories.accounting.contains(primaryCategory)
-                              ? primaryCategory
-                              : RecordCategories.uncategorized,
-                      decoration:
-                          InputDecoration(labelText: loc.recordPrimaryCategory),
+                          ? primaryCategory
+                          : RecordCategories.uncategorized,
+                      decoration: InputDecoration(
+                        labelText: loc.recordPrimaryCategory,
+                      ),
                       items: RecordCategories.accounting
                           .map(
                             (category) => DropdownMenuItem(
                               value: category,
-                              child:
-                                  Text(RecordCategories.label(loc, category)),
+                              child: Text(
+                                RecordCategories.label(loc, category),
+                              ),
                             ),
                           )
                           .toList(),
@@ -551,14 +591,16 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                     TextField(
                       controller: secondaryController,
                       decoration: InputDecoration(
-                          labelText: loc.recordSecondaryCategory),
+                        labelText: loc.recordSecondaryCategory,
+                      ),
                     ),
                     DropdownButton<String>(
                       value: currency,
                       isExpanded: true,
                       items: currencyList
                           .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)))
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
+                          )
                           .toList(),
                       onChanged: (val) {
                         if (val != null) {

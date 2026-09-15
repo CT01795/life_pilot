@@ -248,6 +248,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completeEventTitle => 'Complete the schedule';
 
   @override
+  String get completeAndReview => 'Complete & review';
+
+  @override
   String get completeEventMessage => 'Once completed, this trip will disappear from today\'s list.';
 
   @override
@@ -651,6 +654,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get upcomingSchedule => 'Upcoming Schedule';
+
+  @override
+  String get homeJourneyReviewHint => 'Complete a schedule and record memories, money, and points together';
 
   @override
   String get addToSchedule => 'Add to schedule';

@@ -16,19 +16,23 @@ import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 class PagePointRecordDetail extends StatelessWidget {
   final ModelPointRecordAccount account;
   final ServicePointRecord service;
+  final bool returnAfterSubmit;
 
   const PagePointRecordDetail({
     super.key,
     required this.service,
     required this.account,
+    this.returnAfterSubmit = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProxyProvider<ControllerAuth,
-            ControllerPointRecordDetail>(
+        ChangeNotifierProxyProvider<
+          ControllerAuth,
+          ControllerPointRecordDetail
+        >(
           create: (context) => ControllerPointRecordDetail(
             service: service,
             auth: context.read<ControllerAuth>(),
@@ -44,21 +48,18 @@ class PagePointRecordDetail extends StatelessWidget {
             return controller;
           },
         ),
-        Provider<ControllerSpeech>(
-          create: (_) => ControllerSpeech(),
-        ),
-        Provider<ServiceSpeech>(
-          create: (_) => ServiceSpeech(),
-        ),
+        Provider<ControllerSpeech>(create: (_) => ControllerSpeech()),
+        Provider<ServiceSpeech>(create: (_) => ServiceSpeech()),
       ],
-      child: _PagePointRecordDetailView(account),
+      child: _PagePointRecordDetailView(account, returnAfterSubmit),
     );
   }
 }
 
 class _PagePointRecordDetailView extends StatefulWidget {
   final ModelPointRecordAccount account;
-  const _PagePointRecordDetailView(this.account);
+  final bool returnAfterSubmit;
+  const _PagePointRecordDetailView(this.account, this.returnAfterSubmit);
 
   @override
   State<_PagePointRecordDetailView> createState() =>
@@ -76,9 +77,9 @@ class _PagePointRecordDetailViewState
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context
-          .read<ControllerPointRecordDetail>()
-          .loadToday(inputAccountId: widget.account.id);
+      context.read<ControllerPointRecordDetail>().loadToday(
+        inputAccountId: widget.account.id,
+      );
     });
   }
 
@@ -146,8 +147,9 @@ class _PagePointRecordDetailViewState
                   child: Text(loc.cancel),
                 ),
                 ElevatedButton(
-                  onPressed:
-                      isValid ? () => Navigator.pop(context, true) : null,
+                  onPressed: isValid
+                      ? () => Navigator.pop(context, true)
+                      : null,
                   child: Text(loc.confirm),
                 ),
               ],
@@ -195,8 +197,11 @@ class _PagePointRecordDetailViewState
     );
   }
 
-  Widget _buildSummary(BuildContext context, ModelPointRecordAccount account,
-      ControllerPointRecordDetail controller) {
+  Widget _buildSummary(
+    BuildContext context,
+    ModelPointRecordAccount account,
+    ControllerPointRecordDetail controller,
+  ) {
     final loc = AppLocalizations.of(context)!;
     int totalValue = controller.total ?? 0;
     return Center(
@@ -206,15 +211,14 @@ class _PagePointRecordDetailViewState
           constraints: const BoxConstraints(maxWidth: 480),
           child: Table(
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            columnWidths: const {
-              0: FlexColumnWidth(1),
-              1: FlexColumnWidth(2),
-            },
+            columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(2)},
             children: [
               TableRow(
                 children: [
-                  Text(' ${loc.recordTotal} ',
-                      style: const TextStyle(fontSize: 20)),
+                  Text(
+                    ' ${loc.recordTotal} ',
+                    style: const TextStyle(fontSize: 20),
+                  ),
                   Text(
                     '${NumberFormat('#,###').format(totalValue)} ${loc.pointsUnit}'
                         .trim(),
@@ -261,7 +265,8 @@ class _PagePointRecordDetailViewState
       child: ListView.builder(
         cacheExtent: 240,
         addAutomaticKeepAlives: false,
-        itemCount: visibleRecords.length +
+        itemCount:
+            visibleRecords.length +
             ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == visibleRecords.length) {
@@ -276,7 +281,8 @@ class _PagePointRecordDetailViewState
                         inputAccountId: widget.account.id,
                       ),
                       child: Text(
-                          AppLocalizations.of(context)!.clickHereToSeeMore),
+                        AppLocalizations.of(context)!.clickHereToSeeMore,
+                      ),
                     ),
             );
           }
@@ -302,8 +308,9 @@ class _PagePointRecordDetailViewState
                       ? '+${numberFormatter.format(record.value)}'
                       : numberFormatter.format(record.value),
                   style: TextStyle(
-                      color: record.value >= 0 ? Colors.green : Colors.red,
-                      fontSize: 18),
+                    color: record.value >= 0 ? Colors.green : Colors.red,
+                    fontSize: 18,
+                  ),
                 ),
                 IconButton(
                   tooltip: AppLocalizations.of(context)!.delete,
@@ -339,7 +346,8 @@ class _PagePointRecordDetailViewState
     String detailId,
   ) async {
     final loc = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(loc.confirmDelete),
@@ -362,7 +370,9 @@ class _PagePointRecordDetailViewState
   }
 
   Widget _buildMicButton(
-      BuildContext context, ControllerPointRecordDetail controller) {
+    BuildContext context,
+    ControllerPointRecordDetail controller,
+  ) {
     final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -387,6 +397,7 @@ class _PagePointRecordDetailViewState
           Expanded(
             child: TextField(
               controller: _speechTextController,
+              autofocus: widget.returnAfterSubmit,
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
                 hintText: loc.pointsSpeechHint,
@@ -398,8 +409,9 @@ class _PagePointRecordDetailViewState
           ElevatedButton(
             onPressed: () async {
               if (_speechTextController.text.isEmpty) return;
-              final previews =
-                  controller.parseFromSpeech(_speechTextController.text);
+              final previews = controller.parseFromSpeech(
+                _speechTextController.text,
+              );
               if (previews.isEmpty) return;
               final confirmed = await showVoiceConfirmDialog(context, previews);
               if (confirmed != true) return;
@@ -421,6 +433,9 @@ class _PagePointRecordDetailViewState
               setState(() {
                 _speechTextController.clear();
               });
+              if (widget.returnAfterSubmit && mounted) {
+                Navigator.of(context).pop(true);
+              }
             },
             child: Text(loc.recordSubmit),
           ),
@@ -433,13 +448,15 @@ class _PagePointRecordDetailViewState
     BuildContext context,
     PointRecordPreview record,
   ) async {
-    final valueController =
-        TextEditingController(text: record.value.toString());
+    final valueController = TextEditingController(
+      text: record.value.toString(),
+    );
     final descController = TextEditingController(text: record.description);
     DateTime selectedDate = record.date ?? DateTime.now();
     String primaryCategory = record.primaryCategory;
-    final secondaryController =
-        TextEditingController(text: record.secondaryCategory ?? '');
+    final secondaryController = TextEditingController(
+      text: record.secondaryCategory ?? '',
+    );
     final loc = AppLocalizations.of(context)!;
 
     return showDialog<PointRecordPreview>(
@@ -465,8 +482,9 @@ class _PagePointRecordDetailViewState
                   leading: const Icon(Icons.calendar_today),
                   title: Text(loc.recordDate),
                   subtitle: Text(
-                    DateFormat.yMd(Localizations.localeOf(context).toString())
-                        .format(selectedDate),
+                    DateFormat.yMd(
+                      Localizations.localeOf(context).toString(),
+                    ).format(selectedDate),
                   ),
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -493,10 +511,11 @@ class _PagePointRecordDetailViewState
                   isExpanded: true,
                   initialValue:
                       RecordCategories.points.contains(primaryCategory)
-                          ? primaryCategory
-                          : RecordCategories.uncategorized,
-                  decoration:
-                      InputDecoration(labelText: loc.recordPrimaryCategory),
+                      ? primaryCategory
+                      : RecordCategories.uncategorized,
+                  decoration: InputDecoration(
+                    labelText: loc.recordPrimaryCategory,
+                  ),
                   items: RecordCategories.points
                       .map(
                         (category) => DropdownMenuItem(
@@ -511,8 +530,9 @@ class _PagePointRecordDetailViewState
                 ),
                 TextField(
                   controller: secondaryController,
-                  decoration:
-                      InputDecoration(labelText: loc.recordSecondaryCategory),
+                  decoration: InputDecoration(
+                    labelText: loc.recordSecondaryCategory,
+                  ),
                 ),
               ],
             ),
