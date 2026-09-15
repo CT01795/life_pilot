@@ -662,6 +662,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addToSchedule => '旅程に追加する';
 
   @override
+  String get scheduleDuplicateConfirmation => 'この項目はすでにカレンダーにあります。もう一度追加しますか？';
+
+  @override
   String get clickHereToSeeMore => 'もっと見る';
 
   @override

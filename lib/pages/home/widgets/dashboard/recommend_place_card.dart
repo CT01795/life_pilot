@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
+import 'package:life_pilot/calendar/widgets_schedule_datetime_dialog.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
@@ -96,36 +97,22 @@ class RecommendPlaceCard extends StatelessWidget {
                                     );
                                 if (!isExist) {
                                   if (!context.mounted) return;
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (dialogContext) => AlertDialog(
-                                      content: Text(
-                                        '${loc.addToSchedule}「${e.name}」？',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(
-                                            dialogContext,
-                                            false,
-                                          ),
-                                          child: Text(loc.cancel),
-                                        ),
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(
-                                            dialogContext,
-                                            true,
-                                          ),
-                                          child: Text(loc.confirm),
-                                        ),
-                                      ],
-                                    ),
+                                  final now = DateTime.now();
+                                  final schedule =
+                                      await showScheduleDateTimeDialog(
+                                    context,
+                                    title: e.name,
+                                    initialDate: now,
+                                    initialTime: TimeOfDay.fromDateTime(now),
                                   );
-                                  if (confirm != true) return;
+                                  if (schedule == null) return;
                                   final addedEvent = await calendar
                                       .addRecommendedPlaceToCal(
                                         account: account,
                                         place: e,
                                         id: null,
+                                        scheduledDate: schedule.date,
+                                        scheduledTime: schedule.time,
                                       );
                                   dashboard.addUpcomingEvent(
                                     addedEvent,
@@ -141,35 +128,24 @@ class RecommendPlaceCard extends StatelessWidget {
                                     );
                                   }
                                 } else {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (_) => AlertDialog(
-                                      content: Text(
-                                        '「${e.name}」${loc.eventAddError}',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context, false);
-                                          },
-                                          child: Text(loc.cancel),
-                                        ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            Navigator.pop(context, true);
-                                          },
-                                          child: Text(loc.confirm),
-                                        ),
-                                      ],
-                                    ),
+                                  final now = DateTime.now();
+                                  final schedule =
+                                      await showScheduleDateTimeDialog(
+                                    context,
+                                    title: e.name,
+                                    description:
+                                        loc.scheduleDuplicateConfirmation,
+                                    initialDate: now,
+                                    initialTime: TimeOfDay.fromDateTime(now),
                                   );
-                                  if (confirm != true) return;
-                                  if (confirm == true) {
+                                  if (schedule != null) {
                                     final addedEvent = await calendar
                                         .addRecommendedPlaceToCal(
                                           account: account,
                                           place: e,
                                           id: null,
+                                          scheduledDate: schedule.date,
+                                          scheduledTime: schedule.time,
                                         );
                                     dashboard.addUpcomingEvent(
                                       addedEvent,

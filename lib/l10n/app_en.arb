@@ -440,6 +440,8 @@
   "homeJourneyReviewHint": "Complete a schedule and record memories, money, and points together",
   "@homeJourneyReviewHint": {"description": "Compact hint for the integrated journey completion workflow"},
   "addToSchedule": "Add to schedule",
+  "scheduleDuplicateConfirmation": "This item is already in your calendar. Add it again?",
+  "@scheduleDuplicateConfirmation": {"description": "Confirmation shown before adding a duplicate calendar item"},
   "@addToSchedule": {"description": "Label for addToSchedule"},
   "clickHereToSeeMore": "See more...",
   "@clickHereToSeeMore": {"description": "Label for clickHereToSeeMore"},

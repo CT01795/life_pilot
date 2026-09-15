@@ -128,8 +128,20 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(previews.length, (index) {
                   final p = previews[index];
+                  final recordDate = p.date ?? _newRecordDate;
+                  final category = RecordCategories.label(
+                    loc,
+                    p.primaryCategory,
+                  );
+                  final dateText = DateFormat.yMd(
+                    Localizations.localeOf(context).toString(),
+                  ).format(recordDate);
+                  final timeText = MaterialLocalizations.of(
+                    context,
+                  ).formatTimeOfDay(TimeOfDay.fromDateTime(recordDate));
                   return ListTile(
                     dense: true,
+                    isThreeLine: true,
                     onTap: () async {
                       // 點整個 ListTile 都能編輯
                       final updated = await _showEditDetailDialog(context, p);
@@ -139,13 +151,22 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                         });
                       }
                     },
-                    title: Text(p.description),
-                    trailing: Text(
-                      '${p.value >= 0 ? '+' : ''}${p.value} ${p.currency}',
-                      style: TextStyle(
-                        color: p.value >= 0 ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    title: Row(
+                      children: [
+                        Expanded(child: Text(p.description)),
+                        Gaps.w8,
+                        Text(
+                          '${p.value >= 0 ? '+' : ''}${p.value} ${p.currency}',
+                          style: TextStyle(
+                            color: p.value >= 0 ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Text(
+                      '$category\n${loc.recordDate}: $dateText · '
+                      '${loc.recordTime}: $timeText',
                     ),
                   );
                 }),

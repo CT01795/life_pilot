@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/calendar/widgets_schedule_datetime_dialog.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/l10n/app_localizations.dart';
 
@@ -55,22 +55,25 @@ Future<bool?> confirmCalenderEventTransfer(
   );
 }
 
-Future<bool?> confirmEventTransfer(
+Future<ScheduleDateTimeChoice?> confirmEventTransfer(
       {required BuildContext context,
       required var event,
-      required ControllerEvent controller,
       required AppLocalizations loc,
       required bool isAlreadyAdded}) async {
 
-  final content = controller.buildTransferMessage(
-    isAlreadyAdded: isAlreadyAdded,
-    event: event,
-    loc: loc,
-  );
-
-  return showConfirmationDialog(
-    content: content,
-    confirmText: loc.add,
-    cancelText: loc.cancel,
+  final now = DateTime.now();
+  final initialDate = event.startDate is DateTime &&
+          !(event.startDate as DateTime).isBefore(DateUtils.dateOnly(now))
+      ? event.startDate as DateTime
+      : now;
+  final initialTime = event.startTime is TimeOfDay
+      ? event.startTime as TimeOfDay
+      : TimeOfDay.fromDateTime(now);
+  return showScheduleDateTimeDialog(
+    context,
+    title: event.name?.toString() ?? '',
+    initialDate: initialDate,
+    initialTime: initialTime,
+    description: isAlreadyAdded ? loc.scheduleDuplicateConfirmation : null,
   );
 }

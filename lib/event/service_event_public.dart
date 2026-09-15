@@ -1758,7 +1758,7 @@ class ServiceEventPublic {
 class DateTimeParser {
   static DateTime? parseDate(String? s) {
     if (s == null || s.isEmpty) return null;
-    return DateTime.tryParse(s.replaceAll('/', '-'));
+    return DateTime.tryParse(s.replaceAll('/', '-'))?.toLocal();
   }
 
   static TimeOfDay? parseTime(String? s) {

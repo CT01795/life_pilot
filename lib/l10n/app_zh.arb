@@ -440,6 +440,8 @@
   "homeJourneyReviewHint": "完成行程時，可一次整理回憶、收支與積分",
   "@homeJourneyReviewHint": {"description": "Compact hint for the integrated journey completion workflow"},
   "addToSchedule":"加入行程",
+  "scheduleDuplicateConfirmation": "此項目已在行事曆中，仍要再次加入嗎？",
+  "@scheduleDuplicateConfirmation": {"description": "重複加入行事曆時的確認訊息"},
   "@addToSchedule": {"description": "Label for addToSchedule"},
   "clickHereToSeeMore": "點我看更多",
   "@clickHereToSeeMore": {"description": "Label for clickHereToSeeMore"},

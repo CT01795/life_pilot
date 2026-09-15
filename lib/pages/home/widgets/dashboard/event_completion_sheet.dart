@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/decimal_input_formatter.dart';
@@ -12,6 +13,7 @@ class EventCompletionChoice {
     this.expenseCategory = RecordCategories.uncategorized,
     this.pointValue,
     this.pointCategory = RecordCategories.uncategorized,
+    required this.recordedAt,
   });
 
   final bool addToMemory;
@@ -19,6 +21,7 @@ class EventCompletionChoice {
   final String expenseCategory;
   final int? pointValue;
   final String pointCategory;
+  final DateTime recordedAt;
 }
 
 Future<EventCompletionChoice?> showEventCompletionSheet(
@@ -67,6 +70,8 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
   bool _pointsArePositive = true;
   String _expenseCategory = RecordCategories.uncategorized;
   String _pointCategory = RecordCategories.uncategorized;
+  DateTime _recordDate = DateUtils.dateOnly(DateTime.now());
+  TimeOfDay _recordTime = TimeOfDay.now();
 
   @override
   void dispose() {
@@ -269,6 +274,52 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               },
             ),
           ],
+          if (_addExpense || _addPoints) ...[
+            Gaps.h12,
+            Card(
+              margin: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today_outlined),
+                    title: Text(loc.recordDate),
+                    trailing: TextButton(
+                      onPressed: () async {
+                        final value = await showDatePicker(
+                          context: context,
+                          initialDate: _recordDate,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2200),
+                        );
+                        if (value != null && mounted) {
+                          setState(() => _recordDate = value);
+                        }
+                      },
+                      child: Text(
+                        DateFormat.yMMMd(loc.localeName).format(_recordDate),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.schedule_outlined),
+                    title: Text(loc.recordTime),
+                    trailing: TextButton(
+                      onPressed: () async {
+                        final value = await showTimePicker(
+                          context: context,
+                          initialTime: _recordTime,
+                        );
+                        if (value != null && mounted) {
+                          setState(() => _recordTime = value);
+                        }
+                      },
+                      child: Text(_recordTime.format(context)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           Gaps.h16,
           Row(
             children: [
@@ -298,6 +349,13 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
                                       : -pointValue!)
                                   : null,
                               pointCategory: _pointCategory,
+                              recordedAt: DateTime(
+                                _recordDate.year,
+                                _recordDate.month,
+                                _recordDate.day,
+                                _recordTime.hour,
+                                _recordTime.minute,
+                              ),
                             ),
                           )
                       : null,

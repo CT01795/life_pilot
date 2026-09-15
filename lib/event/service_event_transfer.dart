@@ -72,7 +72,7 @@ class ServiceEventTransfer {
 
     if (fromTableName == TableNames.recommendPlaces) {
       event.id = Uuid().v4();
-      event.endDate = event.startDate;
+      event.endDate = null;
     }
 
     await serviceEvent.saveEvent(

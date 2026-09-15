@@ -40,18 +40,22 @@ class CalendarService {
     required String account,
     required RecommendedEvent event,
     required String? id,
+    DateTime? scheduledDate,
+    TimeOfDay? scheduledTime,
   }) async {
     DateTime today = DateTimeFormatter.dateOnly(DateTime.now().toUtc());
+    final originalStart = event.startDate ?? today;
+    final startDate = scheduledDate ??
+        (originalStart.toUtc().isBefore(today) ? today : originalStart);
     final data = <String, Object?>{
       // 新的 id
       Fields.id: id ?? const Uuid().v4(),
       Fields.account: account,
       'master_url': event.masterUrl,
-      'start_date': event.startDate!.toUtc().isBefore(today)
-          ? today.toIso8601String()
-          : event.startDate?.toUtc().toIso8601String(),
-      'end_date': event.endDate?.toUtc().toIso8601String(),
-      'start_time': event.startTime?.formatTimeString(),
+      'start_date': startDate.toUtc().toIso8601String(),
+      // Items transferred from recommendations are always single-day entries.
+      'end_date': null,
+      'start_time': (scheduledTime ?? event.startTime)?.formatTimeString(),
       'end_time': event.endTime?.formatTimeString(),
       EventFields.country: event.country,
       'city': event.city,
@@ -112,17 +116,21 @@ class CalendarService {
     required String account,
     required RecommendedPlace place,
     required String? id,
+    DateTime? scheduledDate,
+    TimeOfDay? scheduledTime,
   }) async {
+    final now = DateTime.now();
     final data = <String, Object?>{
       // 新的 id
       Fields.id: id ?? const Uuid().v4(),
       Fields.account: account,
       'master_url': place.masterUrl,
       'start_date': DateTimeFormatter.dateOnly(
-        DateTime.now().toUtc(),
+        (scheduledDate ?? now).toUtc(),
       ).toIso8601String(),
       'end_date': null,
-      'start_time': TimeOfDay.fromDateTime(DateTime.now()).formatTimeString(),
+      'start_time': (scheduledTime ?? TimeOfDay.fromDateTime(now))
+          .formatTimeString(),
       'end_time': null,
       EventFields.country: place.country,
       'city': place.city,

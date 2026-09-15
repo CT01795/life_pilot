@@ -87,17 +87,27 @@ Future<void> onMemoryCheckboxChanged({
       event, tmpValue);
 
   // 顯示確認對話框
-  final shouldTransfer = await confirmEventTransfer(
+  final schedule = await confirmEventTransfer(
     context: context,
     event: event,
-    controller: controller,
     loc: loc,
     isAlreadyAdded: isAlreadyAdded,
   );
 
-  if (shouldTransfer ?? false) {
+  if (schedule != null) {
+    final scheduledEvent = event.copyWith(
+      newStartDate: schedule.date,
+      newStartTime: schedule.time,
+    );
+    // Calendar items created from recommendations are always single-day.
+    scheduledEvent.endDate = null;
+    if (isAlreadyAdded) {
+      // A duplicate add uses the date/time explicitly chosen in this dialog.
+      // Do not let an older sub-event silently replace that selection.
+      scheduledEvent.subEvents = [];
+    }
     await controller.handleEventCheckboxTransfer(
-        tmpValue, isAlreadyAdded, event);
+        tmpValue, isAlreadyAdded, scheduledEvent);
     AppNavigator.showSnackBar(loc.eventAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);

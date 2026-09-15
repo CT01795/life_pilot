@@ -662,6 +662,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addToSchedule => '加入行程';
 
   @override
+  String get scheduleDuplicateConfirmation => '此項目已在行事曆中，仍要再次加入嗎？';
+
+  @override
   String get clickHereToSeeMore => '點我看更多';
 
   @override

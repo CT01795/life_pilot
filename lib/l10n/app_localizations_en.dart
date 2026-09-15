@@ -662,6 +662,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addToSchedule => 'Add to schedule';
 
   @override
+  String get scheduleDuplicateConfirmation => 'This item is already in your calendar. Add it again?';
+
+  @override
   String get clickHereToSeeMore => 'See more...';
 
   @override

@@ -1401,6 +1401,12 @@ abstract class AppLocalizations {
   /// **'Add to schedule'**
   String get addToSchedule;
 
+  /// Confirmation shown before adding a duplicate calendar item
+  ///
+  /// In en, this message translates to:
+  /// **'This item is already in your calendar. Add it again?'**
+  String get scheduleDuplicateConfirmation;
+
   /// Label for clickHereToSeeMore
   ///
   /// In en, this message translates to:

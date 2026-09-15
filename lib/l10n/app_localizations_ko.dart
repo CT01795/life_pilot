@@ -662,6 +662,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get addToSchedule => '일정에 추가';
 
   @override
+  String get scheduleDuplicateConfirmation => '이 항목은 이미 캘린더에 있습니다. 다시 추가할까요?';
+
+  @override
   String get clickHereToSeeMore => '더 보기 클릭';
 
   @override

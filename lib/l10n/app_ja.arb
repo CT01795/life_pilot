@@ -440,6 +440,8 @@
   "homeJourneyReviewHint": "予定の完了時に、思い出・収支・ポイントをまとめて記録できます",
   "@homeJourneyReviewHint": {"description": "Compact hint for the integrated journey completion workflow"},
   "addToSchedule": "旅程に追加する",
+  "scheduleDuplicateConfirmation": "この項目はすでにカレンダーにあります。もう一度追加しますか？",
+  "@scheduleDuplicateConfirmation": {"description": "カレンダーに重複して追加する前の確認メッセージ"},
   "@addToSchedule": {"description": "Label for addToSchedule"},
   "clickHereToSeeMore": "もっと見る",
   "@clickHereToSeeMore": {"description": "Label for clickHereToSeeMore"},

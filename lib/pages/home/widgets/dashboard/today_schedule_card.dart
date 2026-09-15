@@ -230,7 +230,7 @@ class TodayScheduleCard extends StatelessWidget {
                                               currency: accountingCurrency,
                                               exchangeRate: null,
                                               eventId: e.id,
-                                              date: DateTime.now(),
+                                              date: choice.recordedAt,
                                               primaryCategory:
                                                   choice.expenseCategory,
                                             ),
@@ -274,7 +274,7 @@ class TodayScheduleCard extends StatelessWidget {
                                             PointRecordPreview(
                                               description: e.name,
                                               value: value,
-                                              date: DateTime.now(),
+                                              date: choice.recordedAt,
                                               primaryCategory:
                                                   choice.pointCategory,
                                             ),
