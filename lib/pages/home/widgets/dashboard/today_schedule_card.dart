@@ -13,6 +13,7 @@ import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/event_completion_sheet.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
@@ -69,16 +70,9 @@ class TodayScheduleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.calendar_today),
-                Gaps.w8,
-                Text(
-                  loc.upcomingSchedule,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
+            DashboardCardHeader(
+              icon: Icons.calendar_today,
+              title: loc.upcomingSchedule,
             ),
             if (events.isNotEmpty) ...[
               Gaps.h8,

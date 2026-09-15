@@ -66,8 +66,11 @@ void main() {
               child: DashboardCardHeader(
                 icon: Icons.account_balance_wallet,
                 title: 'Income and expense records',
-                trailingWidth: 40,
-                trailing: SizedBox(width: 40, height: 40),
+                trailingWidth: null,
+                trailing: IconButton(
+                  onPressed: null,
+                  icon: Icon(Icons.keyboard_arrow_down),
+                ),
               ),
             ),
           ),
@@ -77,4 +80,29 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'does not overflow without trailing controls on a narrow screen',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: const Scaffold(
+              body: SizedBox(
+                width: 220,
+                child: DashboardCardHeader(
+                  icon: Icons.calendar_today,
+                  title: 'Today and upcoming schedules',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Today and upcoming schedules'), findsOneWidget);
+    },
+  );
 }

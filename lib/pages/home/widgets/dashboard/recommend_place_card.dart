@@ -61,7 +61,7 @@ class RecommendPlaceCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.local_attraction,
               title: loc.recommendPlaces,
-              trailingWidth: isExpanded ? 208 : 40,
+              trailingWidth: isExpanded ? 208 : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -69,11 +69,6 @@ class RecommendPlaceCard extends StatelessWidget {
                     const Expanded(child: PlaceCitySelectorButton()),
                   IconButton(
                     onPressed: () => onExpansionChanged(!isExpanded),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
-                    ),
                     icon: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 180),

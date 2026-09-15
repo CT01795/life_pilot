@@ -62,7 +62,7 @@ class RecommendEventCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.local_activity,
               title: loc.recommendEvent,
-              trailingWidth: isExpanded ? 208 : 40,
+              trailingWidth: isExpanded ? 208 : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -70,11 +70,6 @@ class RecommendEventCard extends StatelessWidget {
                     const Expanded(child: EventCitySelectorButton()),
                   IconButton(
                     onPressed: () => onExpansionChanged(!isExpanded),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
-                    ),
                     icon: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 180),

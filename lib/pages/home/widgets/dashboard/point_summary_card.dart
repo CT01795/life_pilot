@@ -63,7 +63,7 @@ class PointSummaryCard extends StatelessWidget {
             DashboardCardHeader(
               icon: Icons.stars,
               title: loc.pointsRecord,
-              trailingWidth: isExpanded ? 284 : 40,
+              trailingWidth: isExpanded ? 284 : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -78,11 +78,6 @@ class PointSummaryCard extends StatelessWidget {
                   ],
                   IconButton(
                     onPressed: () => onExpansionChanged(!isExpanded),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
-                    ),
                     icon: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 180),
