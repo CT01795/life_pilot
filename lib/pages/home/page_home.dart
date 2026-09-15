@@ -17,6 +17,7 @@ class PageHome extends StatefulWidget {
 }
 
 class _PageHomeState extends State<PageHome> {
+  bool _todayScheduleExpanded = true;
   bool _recommendEventsExpanded = false;
   bool _recommendPlacesExpanded = false;
   bool _accountingExpanded = false;
@@ -68,7 +69,11 @@ class _PageHomeState extends State<PageHome> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const TodayScheduleCard(),
+                  TodayScheduleCard(
+                    isExpanded: _todayScheduleExpanded,
+                    onExpansionChanged: (value) =>
+                        setState(() => _todayScheduleExpanded = value),
+                  ),
                   Gaps.h16,
                   RecommendEventCard(
                     isExpanded: _recommendEventsExpanded,
