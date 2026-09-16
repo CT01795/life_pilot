@@ -9,11 +9,15 @@ class WidgetsMemoryDialog extends StatelessWidget {
   final ControllerEvent controllerEvent;
   final EventViewModel eventViewModel;
   final String tableName;
+  final VoidCallback? onAccounting;
+  final VoidCallback? onPoints;
   const WidgetsMemoryDialog({
     super.key,
     required this.controllerEvent,
     required this.eventViewModel,
     required this.tableName,
+    this.onAccounting,
+    this.onPoints,
   });
 
   @override
@@ -36,6 +40,8 @@ class WidgetsMemoryDialog extends StatelessWidget {
                 tableName: tableName,
                 showFullDescription: true,
                 onTap: () => Navigator.pop(context),
+                onAccounting: onAccounting,
+                onPoints: onPoints,
                 onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
                 onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
               ),

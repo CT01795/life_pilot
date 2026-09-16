@@ -1,5 +1,6 @@
 class PointRecordPreview {
   String? id;
+  String? eventId;
   String description;
   int value;
   DateTime? date;
@@ -8,6 +9,7 @@ class PointRecordPreview {
 
   PointRecordPreview({
     this.id,
+    this.eventId,
     required this.description,
     required this.value,
     this.date,
@@ -17,6 +19,7 @@ class PointRecordPreview {
 
   PointRecordPreview copyWith({
     String? id,
+    String? eventId,
     String? description,
     int? value,
     DateTime? date,
@@ -25,6 +28,7 @@ class PointRecordPreview {
   }) {
     return PointRecordPreview(
       id: id ?? this.id,
+      eventId: eventId ?? this.eventId,
       description: description ?? this.description,
       value: value ?? this.value,
       date: date ?? this.date,

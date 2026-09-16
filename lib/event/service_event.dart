@@ -44,10 +44,11 @@ class ServiceEvent {
     required String tableName,
     int offset = 0,
   }) async {
-    final response = await apiSupabase.post(
-      '/external/map-geocode/backfill',
-      {'table_name': tableName, 'limit': 25, 'offset': offset},
-    );
+    final response = await apiSupabase.post('/external/map-geocode/backfill', {
+      'table_name': tableName,
+      'limit': 25,
+      'offset': offset,
+    });
     return MapCoordinateBackfillResult.fromJson(
       Map<String, dynamic>.from(response as Map),
     );
@@ -64,13 +65,10 @@ class ServiceEvent {
       return event;
     }
 
-    final response = await apiSupabase.post(
-      '/external/map-geocode',
-      {
-        'table_name': tableName,
-        'event_id': event.id,
-      },
-    );
+    final response = await apiSupabase.post('/external/map-geocode', {
+      'table_name': tableName,
+      'event_id': event.id,
+    });
     if (response is Map<String, dynamic>) {
       event.mapLat = (response['lat'] as num?)?.toDouble();
       event.mapLng = (response['lng'] as num?)?.toDouble();
@@ -85,10 +83,7 @@ class ServiceEvent {
 
     final request = () async {
       try {
-        await apiSupabase.post(
-          'event/cleanup_recommended_events',
-          const {},
-        );
+        await apiSupabase.post('event/cleanup_recommended_events', const {});
         _lastCleanupRequestDate = today;
       } catch (error, stackTrace) {
         logger.e(
@@ -118,29 +113,32 @@ class ServiceEvent {
     if (tableName == TableNames.recommendEvents) {
       unawaited(_cleanupRecommendedEventsOncePerDay(today));
     }
-    final inputDateS = (dateS ??
-            (tableName == TableNames.memoryTrace
-                ? DateTime(today.year, today.month, today.day)
-                    .subtract(const Duration(days: 29))
-                : today))
-        .formatDateString();
+    final inputDateS =
+        (dateS ??
+                (tableName == TableNames.memoryTrace
+                    ? DateTime(
+                        today.year,
+                        today.month,
+                        today.day,
+                      ).subtract(const Duration(days: 29))
+                    : today))
+            .formatDateString();
     final inputDateE =
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
 
-    final isPersonalResource = tableName == TableNames.calendarEvents ||
+    final isPersonalResource =
+        tableName == TableNames.calendarEvents ||
         tableName == TableNames.memoryTrace;
-    final useLocal = isPersonalResource &&
+    final useLocal =
+        isPersonalResource &&
         inputUser != null &&
         inputUser.isNotEmpty &&
         await LocalDataStore.instance.preferredLocation(inputUser) ==
             DataStorageLocation.local;
     if (useLocal) {
       final localRows = await LocalDataStore.instance
-          .list(
-            owner: inputUser,
-            resource: tableName,
-          )
+          .list(owner: inputUser, resource: tableName)
           .timeout(const Duration(seconds: 15));
       return localRows
           .map((row) => EventItem.fromJson(json: row))
@@ -150,10 +148,12 @@ class ServiceEvent {
                 ? null
                 : DateTimeFormatter.dateOnly(event.startDate!.toLocal());
             if (eventDate == null) return true;
-            final start = DateTimeFormatter.dateOnly(dateS ??
-                (tableName == TableNames.memoryTrace
-                    ? today.subtract(const Duration(days: 29))
-                    : today));
+            final start = DateTimeFormatter.dateOnly(
+              dateS ??
+                  (tableName == TableNames.memoryTrace
+                      ? today.subtract(const Duration(days: 29))
+                      : today),
+            );
             final end = DateTimeFormatter.dateOnly(
               dateE ?? DateTime(today.year + 2, today.month, today.day),
             );
@@ -165,31 +165,33 @@ class ServiceEvent {
     }
 
     try {
+      final payload = <String, dynamic>{
+        'table_name': tableName,
+        'inputid': id,
+        'inputdates': inputDateS,
+        'inputdatee': inputDateE,
+        if (tableName != TableNames.recommendEvents &&
+            tableName != TableNames.recommendPlaces)
+          'inputuser': inputUser,
+      };
+      if (limit != null) {
+        payload['inputlimit'] = limit;
+        payload['inputoffset'] = offset;
+      }
       final response = await supabase.rpc(
         'get_filtered_$tableName',
-        params: {
-          'payload': {
-            'table_name': tableName,
-            'inputid': id,
-            'inputdates': inputDateS,
-            'inputdatee': inputDateE,
-            if (tableName != TableNames.recommendEvents &&
-                tableName != TableNames.recommendPlaces)
-              'inputuser': inputUser,
-            if (limit != null) 'inputlimit': limit,
-            if (limit != null) 'inputoffset': offset,
-          }
-        },
+        params: {'payload': payload},
       );
 
       final events = (response as List)
           .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
           .toList()
           .map((e) {
-        e.startDate = e.startDate?.toLocal();
-        e.endDate = e.endDate?.toLocal();
-        return e;
-      }).toList();
+            e.startDate = e.startDate?.toLocal();
+            e.endDate = e.endDate?.toLocal();
+            return e;
+          })
+          .toList();
 
       return events;
     } catch (ex, st) {
@@ -242,14 +244,17 @@ class ServiceEvent {
         owner: inputUser,
         resource: tableName,
       );
-      final dates = rows
-          .map((row) => DateTime.tryParse(
-                row[EventFields.startDate]?.toString() ?? '',
-              ))
-          .whereType<DateTime>()
-          .where((date) => date.isBefore(before))
-          .toList()
-        ..sort((left, right) => right.compareTo(left));
+      final dates =
+          rows
+              .map(
+                (row) => DateTime.tryParse(
+                  row[EventFields.startDate]?.toString() ?? '',
+                ),
+              )
+              .whereType<DateTime>()
+              .where((date) => date.isBefore(before))
+              .toList()
+            ..sort((left, right) => right.compareTo(left));
       return dates.isEmpty ? null : dates.first;
     }
     var query = supabase
@@ -259,8 +264,9 @@ class ServiceEvent {
     if (inputUser != null && inputUser.isNotEmpty) {
       query = query.eq(Fields.account, inputUser);
     }
-    final rows =
-        await query.order(EventFields.startDate, ascending: false).limit(1);
+    final rows = await query
+        .order(EventFields.startDate, ascending: false)
+        .limit(1);
     if (rows.isEmpty) return null;
     return DateTime.tryParse(
       rows.first[EventFields.startDate]?.toString() ?? '',
@@ -268,11 +274,12 @@ class ServiceEvent {
   }
 
   // 💾 儲存（新增或更新）事件 + 排程通知
-  Future<void> saveEvent(
-      {required String currentAccount,
-      required EventItem event,
-      required bool isNew,
-      required String tableName}) async {
+  Future<void> saveEvent({
+    required String currentAccount,
+    required EventItem event,
+    required bool isNew,
+    required String tableName,
+  }) async {
     try {
       _validateEvent(event: event);
       if (tableName == TableNames.recommendEvents) {
@@ -286,7 +293,7 @@ class ServiceEvent {
         event.reminderOptions = [
           CalendarReminderOption.oneHour, // 事件開始前1小時
           CalendarReminderOption.sameDay8am,
-          CalendarReminderOption.dayBefore8am // 前一天早上8點
+          CalendarReminderOption.dayBefore8am, // 前一天早上8點
         ];
       }
 
@@ -296,23 +303,35 @@ class ServiceEvent {
 
       event.endDate = _normalizeEndDate(event.startDate, event.endDate);
       event.endTime = _normalizeEndTime(
-          event.startTime, event.endTime, event.startDate, event.endDate);
+        event.startTime,
+        event.endTime,
+        event.startDate,
+        event.endDate,
+      );
 
       for (final subEvent in event.subEvents) {
-        subEvent.endDate =
-            _normalizeEndDate(subEvent.startDate, subEvent.endDate);
-        subEvent.endTime = _normalizeEndTime(subEvent.startTime,
-            subEvent.endTime, subEvent.startDate, subEvent.endDate);
+        subEvent.endDate = _normalizeEndDate(
+          subEvent.startDate,
+          subEvent.endDate,
+        );
+        subEvent.endTime = _normalizeEndTime(
+          subEvent.startTime,
+          subEvent.endTime,
+          subEvent.startDate,
+          subEvent.endDate,
+        );
       }
 
       event.account = currentAccount;
       event.isApproved = false;
-      final isPersonalLocalResource = tableName == TableNames.calendarEvents ||
+      final isPersonalLocalResource =
+          tableName == TableNames.calendarEvents ||
           tableName == TableNames.memoryTrace;
       final storageLocation = isPersonalLocalResource
           ? await LocalDataStore.instance.preferredLocation(currentAccount)
           : DataStorageLocation.cloud;
-      final alreadyStoredLocally = isPersonalLocalResource &&
+      final alreadyStoredLocally =
+          isPersonalLocalResource &&
           await LocalDataStore.instance.contains(
             owner: currentAccount,
             resource: tableName,
@@ -333,9 +352,7 @@ class ServiceEvent {
       }
       //final Map<String, dynamic> data = event.toJson();
       if (isNew) {
-        await supabase.from(tableName).insert([
-          event.toJson(),
-        ]);
+        await supabase.from(tableName).insert([event.toJson()]);
       } else {
         final data = event.toJson();
         var query = supabase
@@ -363,18 +380,21 @@ class ServiceEvent {
   }
 
   // ❌ 刪除推薦事件
-  Future<void> deleteEvent(
-      {required String currentAccount,
-      required EventItem event,
-      required String tableName}) async {
+  Future<void> deleteEvent({
+    required String currentAccount,
+    required EventItem event,
+    required String tableName,
+  }) async {
     try {
       final data = event.toJson();
-      final isPersonalLocalResource = tableName == TableNames.calendarEvents ||
+      final isPersonalLocalResource =
+          tableName == TableNames.calendarEvents ||
           tableName == TableNames.memoryTrace;
       final storageLocation = isPersonalLocalResource
           ? await LocalDataStore.instance.preferredLocation(currentAccount)
           : DataStorageLocation.cloud;
-      final existsLocally = isPersonalLocalResource &&
+      final existsLocally =
+          isPersonalLocalResource &&
           await LocalDataStore.instance.contains(
             owner: currentAccount,
             resource: tableName,
@@ -395,15 +415,14 @@ class ServiceEvent {
         await supabase.from(TableNames.recommendEventsDeleted).insert([data]);
       }
 
-      var query =
-          supabase.from(tableName).delete().eq(Fields.id, data[Fields.id]);
+      var query = supabase
+          .from(tableName)
+          .delete()
+          .eq(Fields.id, data[Fields.id]);
 
       // 非系統管理員只能刪自己的事件
       if (!_isCurrentUserAdmin) {
-        query = query.eq(
-          Fields.account,
-          currentAccount,
-        );
+        query = query.eq(Fields.account, currentAccount);
       }
 
       final result = await query.select();
@@ -418,22 +437,28 @@ class ServiceEvent {
   }
 
   // ✅ 核准事件 (由管理者)
-  Future<void> approvalEvent(
-      {required EventItem event, required String tableName}) async {
+  Future<void> approvalEvent({
+    required EventItem event,
+    required String tableName,
+  }) async {
     final data = event.toJson();
-    var query =
-        supabase.from(tableName).update(data).eq(Fields.id, data[Fields.id]);
+    var query = supabase
+        .from(tableName)
+        .update(data)
+        .eq(Fields.id, data[Fields.id]);
 
     await query;
   }
 
-  Future<void> updateLikeEvent(
-      {required EventItem event, required String account}) async {
+  Future<void> updateLikeEvent({
+    required EventItem event,
+    required String account,
+  }) async {
     final Map<String, dynamic> data = {
       "id": event.id,
       "is_like": event.isLike,
       "is_dislike": event.isDislike,
-      "account": account
+      "account": account,
     };
     try {
       await supabase.from(TableNames.recommendEventsFavor).insert([data]);
@@ -463,8 +488,12 @@ class ServiceEvent {
     return end;
   }
 
-  TimeOfDay? _normalizeEndTime(TimeOfDay? startTime, TimeOfDay? endTime,
-      DateTime? startDate, DateTime? endDate) {
+  TimeOfDay? _normalizeEndTime(
+    TimeOfDay? startTime,
+    TimeOfDay? endTime,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) {
     if ((endDate == null || endDate == startDate) &&
         endTime != null &&
         !endTime.isAfter(startTime!)) {

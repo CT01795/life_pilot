@@ -98,6 +98,7 @@ Future<void> onMemoryCheckboxChanged({
   required bool? value,
   required EventItem event,
   required AppLocalizations loc,
+  required DateTime selectedDate,
 }) async {
   final tmpValue = value ?? false;
 
@@ -108,8 +109,10 @@ Future<void> onMemoryCheckboxChanged({
   }
 
   // 判斷是否已經存在
-  final isAlreadyAdded =
-      await controller.handleEventCheckboxIsAlreadyAdd(event, tmpValue);
+  final isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
+    event,
+    tmpValue,
+  );
 
   // 顯示確認對話框
   final shouldTransfer = await confirmCalenderEventTransfer(
@@ -122,7 +125,11 @@ Future<void> onMemoryCheckboxChanged({
 
   if (shouldTransfer ?? false) {
     await controller.handleEventCheckboxTransfer(
-        tmpValue, isAlreadyAdded, event);
+      tmpValue,
+      isAlreadyAdded,
+      event,
+      selectedDate,
+    );
     AppNavigator.showSnackBar(loc.memoryAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);
@@ -135,12 +142,7 @@ Future<void> onAlarmPressed({
   required EventItem event,
   required AppLocalizations loc,
 }) async {
-  final result = await showAlarmSettingsDialog(
-    context,
-    controller,
-    event,
-    loc,
-  );
+  final result = await showAlarmSettingsDialog(context, controller, event, loc);
 
   if (result == null) {
     return;
@@ -164,10 +166,11 @@ Future<void> onAlarmPressed({
 }
 
 Future<Map<String, dynamic>?> showAlarmSettingsDialog(
-    BuildContext context,
-    ControllerCalendar controllerCalendar,
-    EventItem event,
-    AppLocalizations loc) async {
+  BuildContext context,
+  ControllerCalendar controllerCalendar,
+  EventItem event,
+  AppLocalizations loc,
+) async {
   final repeatOptions = CalendarRepeatRule.values;
   final reminderOptions = CalendarReminderOption.values;
 
@@ -189,39 +192,47 @@ Future<Map<String, dynamic>?> showAlarmSettingsDialog(
                   crossAxisAlignment: CrossAxisAlignment.start, // ⬅️ 靠左對齊
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(// 重複頻率單選
-                        children: [
-                      Text(loc.repeatOptions,
-                          style: TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
-                      Gaps.w16,
-                      Expanded(
-                        child: DropdownButtonFormField<CalendarRepeatRule>(
-                          initialValue: selectedRepeat,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                selectedRepeat = value;
-                              });
-                            }
-                          },
-                          items: repeatOptions
-                              .map((r) => DropdownMenuItem(
+                    Row(
+                      // 重複頻率單選
+                      children: [
+                        Text(
+                          loc.repeatOptions,
+                          style: TextStyle(color: Colors.black54),
+                        ), // 你可以加翻譯關鍵字
+                        Gaps.w16,
+                        Expanded(
+                          child: DropdownButtonFormField<CalendarRepeatRule>(
+                            initialValue: selectedRepeat,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  selectedRepeat = value;
+                                });
+                              }
+                            },
+                            items: repeatOptions
+                                .map(
+                                  (r) => DropdownMenuItem(
                                     value: r,
                                     child: Text(r.label(loc)),
-                                  ))
-                              .toList(),
+                                  ),
+                                )
+                                .toList(),
+                          ),
                         ),
-                      ),
-                    ]),
+                      ],
+                    ),
                     Gaps.h4,
                     // 提醒時間多選
-                    Text(loc.reminderOptions,
-                        style: TextStyle(color: Colors.black54)), // 你可以加翻譯關鍵字
+                    Text(
+                      loc.reminderOptions,
+                      style: TextStyle(color: Colors.black54),
+                    ), // 你可以加翻譯關鍵字
                     ...reminderOptions.map((option) {
                       final checked = selectedReminders.contains(option);
                       return Row(
@@ -278,9 +289,7 @@ Future<void> openDayDialog(
   final dateOnly = DateTimeFormatter.dateOnly(date);
 
   // ✅ 若點到的是不同月份，就先載入那個月份的資料
-  await controller.handleCrossMonthTap(
-    tappedDate: date,
-  );
+  await controller.handleCrossMonthTap(tappedDate: date);
   final eventsOfDay = controller.getEventsOfDay(dateOnly);
 
   /// ✅ ① 如果沒有事件 → 直接跳新增頁

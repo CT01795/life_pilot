@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -346,7 +347,7 @@ class _AccountListViewState extends State<_AccountListView> {
           children: [
             Expanded(
               child: ListView.builder(
-                cacheExtent: 240,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(240),
                 addAutomaticKeepAlives: false,
                 itemCount: accounts.length,
                 itemBuilder: (_, index) {

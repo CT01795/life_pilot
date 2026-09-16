@@ -45,7 +45,8 @@ class CalendarService {
   }) async {
     DateTime today = DateTimeFormatter.dateOnly(DateTime.now().toUtc());
     final originalStart = event.startDate ?? today;
-    final startDate = scheduledDate ??
+    final startDate =
+        scheduledDate ??
         (originalStart.toUtc().isBefore(today) ? today : originalStart);
     final data = <String, Object?>{
       // 新的 id
@@ -178,7 +179,9 @@ class CalendarService {
     required String account,
     required CalendarEvent event,
     required String? id,
+    DateTime? selectedDate,
   }) async {
+    final memoryDate = selectedDate ?? DateTime.now();
     final data = <String, Object?>{
       // 新的 id
       Fields.id: id ?? const Uuid().v4(),
@@ -194,6 +197,7 @@ class CalendarService {
       'name': event.name,
       'type': event.type,
       'description': event.description,
+      EventFields.subEvents: event.subEventsForDate(memoryDate),
       'is_completed': false,
     };
     if (await _storesLocally(account)) {

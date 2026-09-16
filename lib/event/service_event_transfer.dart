@@ -38,10 +38,19 @@ class ServiceEventTransfer {
     required String toTableName,
     required bool? isChecked,
     required bool isAlreadyAdded,
+    DateTime? selectedDate,
   }) async {
     if (isChecked != true) return null;
 
     final now = DateUtils.dateOnly(DateTime.now());
+    if (fromTableName == TableNames.calendarEvents &&
+        toTableName == TableNames.memoryTrace) {
+      return _transferCalendarMemory(
+        event,
+        isAlreadyAdded,
+        selectedDate ?? event.startDate ?? now,
+      );
+    }
     if (!isAlreadyAdded || fromTableName == TableNames.recommendPlaces) {
       return _transferNewEvent(event, toTableName, now, fromTableName);
     }
@@ -61,8 +70,38 @@ class ServiceEventTransfer {
     return !date.isAfter(now) ? now : date;
   }
 
-  Future<EventItem> _transferNewEvent(EventItem event, String toTableName,
-      DateTime now, String fromTableName) async {
+  Future<EventItem> _transferCalendarMemory(
+    EventItem event,
+    bool isAlreadyAdded,
+    DateTime selectedDate,
+  ) async {
+    final memoryDate = DateUtils.dateOnly(selectedDate);
+    final subEventsOfDay = event.subEvents
+        .where((subEvent) {
+          final start = DateUtils.dateOnly(subEvent.startDate ?? memoryDate);
+          final end = DateUtils.dateOnly(subEvent.endDate ?? start);
+          return !memoryDate.isBefore(start) && !memoryDate.isAfter(end);
+        })
+        .toList(growable: false);
+    final memoryEvent = event.copyWith(
+      newAccount: currentAccount,
+      newSubEvents: subEventsOfDay,
+    );
+    await serviceEvent.saveEvent(
+      currentAccount: currentAccount,
+      event: memoryEvent,
+      isNew: !isAlreadyAdded,
+      tableName: TableNames.memoryTrace,
+    );
+    return memoryEvent;
+  }
+
+  Future<EventItem> _transferNewEvent(
+    EventItem event,
+    String toTableName,
+    DateTime now,
+    String fromTableName,
+  ) async {
     if (toTableName != TableNames.memoryTrace &&
         event.startDate != null &&
         !event.startDate!.isAfter(now)) {
@@ -88,23 +127,31 @@ class ServiceEventTransfer {
     final sortedSubEvents = List<EventItem>.from(event.subEvents)
       ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
 
-    sortedSubEvents.removeWhere((subEvent) =>
-        !subEvent.startDate!.isAfter(event.startDate!) &&
-        (subEvent.endDate == null ||
-            !subEvent.endDate!.isAfter(event.startDate!)));
+    sortedSubEvents.removeWhere(
+      (subEvent) =>
+          !subEvent.startDate!.isAfter(event.startDate!) &&
+          (subEvent.endDate == null ||
+              !subEvent.endDate!.isAfter(event.startDate!)),
+    );
 
     return sortedSubEvents;
   }
 
-  Future<EventItem> _transferSubEvent(EventItem masterEvent, EventItem subEvent,
-      String toTableName, DateTime now) async {
+  Future<EventItem> _transferSubEvent(
+    EventItem masterEvent,
+    EventItem subEvent,
+    String toTableName,
+    DateTime now,
+  ) async {
     final updatedSubEvent = subEvent.copyWith(
       newStartDate: _normalizeDate(subEvent.startDate, now),
       newEndDate: _normalizeDate(subEvent.endDate, now),
       newMasterGraphUrl: subEvent.masterGraphUrl ?? masterEvent.masterGraphUrl,
       newMasterUrl: subEvent.masterUrl ?? masterEvent.masterUrl,
       newCity: subEvent.city.isEmpty ? masterEvent.city : subEvent.city,
-      newLocation: subEvent.location.isEmpty ? masterEvent.location : subEvent.location,
+      newLocation: subEvent.location.isEmpty
+          ? masterEvent.location
+          : subEvent.location,
       newUnit: subEvent.unit.isEmpty ? masterEvent.unit : subEvent.unit,
       newAccount: currentAccount,
     );
@@ -125,7 +172,10 @@ class ServiceEventTransfer {
   }
 
   Future<EventItem> _transferFallbackEvent(
-      EventItem event, String toTableName, DateTime now) async {
+    EventItem event,
+    String toTableName,
+    DateTime now,
+  ) async {
     event.subEvents = [];
     final updatedEvent = event.copyWith(
       newId: Uuid().v4(),

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
@@ -108,26 +109,27 @@ class _PageAccountingListState extends State<PageAccountingList>
         }
 
         return Selector<ControllerAccountingList, List<ModelAccountingAccount>>(
-            selector: (_, c) => c.accounts,
-            builder: (context, accounts, _) {
-              if (accounts.isEmpty) {
-                return Center(
-                  child: Text(AppLocalizations.of(context)!.accountListEmpty),
-                );
-              }
-
-              return ListView.builder(
-                cacheExtent: 240,
-                addAutomaticKeepAlives: false,
-                itemCount: accounts.length,
-                itemBuilder: (context, index) {
-                  return _AccountCard(
-                    key: ValueKey(accounts[index].id),
-                    accountId: accounts[index].id, // ✅ 只傳 id
-                  );
-                },
+          selector: (_, c) => c.accounts,
+          builder: (context, accounts, _) {
+            if (accounts.isEmpty) {
+              return Center(
+                child: Text(AppLocalizations.of(context)!.accountListEmpty),
               );
-            });
+            }
+
+            return ListView.builder(
+              scrollCacheExtent: const ScrollCacheExtent.pixels(240),
+              addAutomaticKeepAlives: false,
+              itemCount: accounts.length,
+              itemBuilder: (context, index) {
+                return _AccountCard(
+                  key: ValueKey(accounts[index].id),
+                  accountId: accounts[index].id, // ✅ 只傳 id
+                );
+              },
+            );
+          },
+        );
       },
     );
   }
@@ -171,10 +173,7 @@ class _PageAccountingListState extends State<PageAccountingList>
 class _AccountCard extends StatelessWidget {
   final String accountId;
 
-  const _AccountCard({
-    super.key,
-    required this.accountId,
-  });
+  const _AccountCard({super.key, required this.accountId});
 
   @override
   Widget build(BuildContext context) {
@@ -294,19 +293,21 @@ class _AccountCard extends StatelessWidget {
                               TextSpan(
                                 text: '${account.currency} ',
                                 style: TextStyle(
-                                    color: Color(0xFF757575),
-                                    fontSize: 20), // 中灰
+                                  color: Color(0xFF757575),
+                                  fontSize: 20,
+                                ), // 中灰
                               ),
                               TextSpan(
                                 text:
                                     '${formatter.format(account.balance)} ${loc.accountingUnit}'
                                         .trim(),
                                 style: TextStyle(
-                                    color: account.balance >= 0
-                                        ? Color(0xFF388E3C) // 綠色
-                                        : Color(0xFFD32F2F), // 紅色
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20),
+                                  color: account.balance >= 0
+                                      ? Color(0xFF388E3C) // 綠色
+                                      : Color(0xFFD32F2F), // 紅色
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
                               ),
                             ],
                           ),
@@ -315,64 +316,70 @@ class _AccountCard extends StatelessWidget {
                     ),
                   ),
                   Column(
-                      mainAxisSize: MainAxisSize.min, // 依內容大小自適應
-                      children: [
-                        //幣別切換按鈕
-                        IconButton(
-                          icon: const Icon(Icons.currency_exchange),
-                          onPressed: () async {
-                            final selected = await showDialog<String>(
-                              context: context,
-                              builder: (_) => SimpleDialog(
-                                title: Text(loc.accountSwitchCurrency),
-                                children: currencyList.map((c) {
-                                  return SimpleDialogOption(
-                                    child: Text(c),
-                                    onPressed: () => Navigator.pop(context, c),
-                                  );
-                                }).toList(),
-                              ),
-                            );
+                    mainAxisSize: MainAxisSize.min, // 依內容大小自適應
+                    children: [
+                      //幣別切換按鈕
+                      IconButton(
+                        icon: const Icon(Icons.currency_exchange),
+                        onPressed: () async {
+                          final selected = await showDialog<String>(
+                            context: context,
+                            builder: (_) => SimpleDialog(
+                              title: Text(loc.accountSwitchCurrency),
+                              children: currencyList.map((c) {
+                                return SimpleDialogOption(
+                                  child: Text(c),
+                                  onPressed: () => Navigator.pop(context, c),
+                                );
+                              }).toList(),
+                            ),
+                          );
 
-                            if (selected != null) {
-                              await controller.changeMainCurrency(
-                                  accountId: account.id, currency: selected);
-                            }
-                          },
-                        ),
-                        Gaps.h32,
-                        // ===== 刪除 =====
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          color: Colors.redAccent,
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                content: Text(loc.accountDeleteConfirmation(
-                                    account.accountName)),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: Text(loc.cancel),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: Text(loc.delete),
-                                  ),
-                                ],
-                              ),
+                          if (selected != null) {
+                            await controller.changeMainCurrency(
+                              accountId: account.id,
+                              currency: selected,
                             );
+                          }
+                        },
+                      ),
+                      Gaps.h32,
+                      // ===== 刪除 =====
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        color: Colors.redAccent,
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              content: Text(
+                                loc.accountDeleteConfirmation(
+                                  account.accountName,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(loc.cancel),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(loc.delete),
+                                ),
+                              ],
+                            ),
+                          );
 
-                            if (confirm == true) {
-                              await controller.deleteAccount(
-                                  accountId: account.id);
-                            }
-                          },
-                        ),
-                      ])
+                          if (confirm == true) {
+                            await controller.deleteAccount(
+                              accountId: account.id,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

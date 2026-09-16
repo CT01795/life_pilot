@@ -212,6 +212,7 @@ class TodayScheduleCard extends StatelessWidget {
                                         account: account,
                                         event: e,
                                         id: e.id,
+                                        selectedDate: DateTime.now(),
                                       );
                                       memorySaved = true;
                                     } catch (error, stackTrace) {
@@ -301,6 +302,7 @@ class TodayScheduleCard extends StatelessWidget {
                                               PointRecordPreview(
                                                 description: e.name,
                                                 value: value,
+                                                eventId: e.id,
                                                 date: choice.recordedAt,
                                                 primaryCategory:
                                                     choice.pointCategory,

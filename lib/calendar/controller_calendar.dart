@@ -679,6 +679,7 @@ class ControllerCalendar extends SafeChangeNotifier {
     bool isChecked,
     bool isAlreadyAdded,
     EventItem event,
+    DateTime selectedDate,
   ) async {
     final targetEvent = await _serviceEventTransfer.toggleEventTransfer(
       isChecked: isChecked,
@@ -686,6 +687,7 @@ class ControllerCalendar extends SafeChangeNotifier {
       event: event,
       fromTableName: _tableName,
       toTableName: _toTableName,
+      selectedDate: selectedDate,
     );
     _modelCalendar.toggleEventSelection(event.id, targetEvent != null);
     return targetEvent;

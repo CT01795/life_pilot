@@ -9,6 +9,7 @@ Widget widgetsCalendarTrailing({
   required BuildContext context,
   required ControllerCalendar controllerCalendar,
   required EventItem event,
+  required DateTime selectedDate,
 }) {
   AppLocalizations loc = AppLocalizations.of(context)!;
   return Transform.scale(
@@ -22,16 +23,19 @@ Widget widgetsCalendarTrailing({
             selector: (_, controller) => controller.isEventSelected(event.id),
             builder: (_, isSelected, _) {
               return Tooltip(
-                  message: loc.memoryAdd,
-                  child: Checkbox(
-                    value: isSelected,
-                    onChanged: (value) => onMemoryCheckboxChanged(
-                        context: context,
-                        controller: controllerCalendar,
-                        value: value,
-                        event: event,
-                        loc: loc),
-                  ));
+                message: loc.memoryAdd,
+                child: Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => onMemoryCheckboxChanged(
+                    context: context,
+                    controller: controllerCalendar,
+                    value: value,
+                    event: event,
+                    loc: loc,
+                    selectedDate: selectedDate,
+                  ),
+                ),
+              );
             },
           ),
         if (!event.isHoliday && controllerCalendar.isOwnEvent(event))
@@ -44,8 +48,9 @@ Widget widgetsCalendarTrailing({
               size: event.reminderOptions.isNotEmpty
                   ? IconTheme.of(context).size! * 1.2
                   : IconTheme.of(context).size!,
-              color:
-                  event.reminderOptions.isNotEmpty ? Colors.blue : Colors.black,
+              color: event.reminderOptions.isNotEmpty
+                  ? Colors.blue
+                  : Colors.black,
             ),
             tooltip: loc.setAlarm,
             onPressed: () async {

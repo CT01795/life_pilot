@@ -39,26 +39,57 @@ class ServicePointRecord {
     return null;
   }
 
-  Future<ModelPointRecordAccount?> findAccountByEventId(
-      {required String eventId, required String user}) async {
+  Future<ModelPointRecordAccount?> findAccountByEventId({
+    required String eventId,
+    required String user,
+  }) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
+        final rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+        );
+        String? accountId = rows
+            .where(
+              (row) =>
+                  row[Fields.id]?.toString() == eventId &&
+                  row[Fields.isValid] == true,
+            )
+            .firstOrNull?[Fields.id]
+            ?.toString();
+        if (accountId == null) {
+          final details = await LocalDataStore.instance.list(
+            owner: _localOwner!,
+            resource: TableNames.pointRecordDetail,
+          );
+          final linkedDetails =
+              details
+                  .where((row) => row['event_id']?.toString() == eventId)
+                  .toList()
+                ..sort(
+                  (a, b) => (b['date']?.toString() ?? '').compareTo(
+                    a['date']?.toString() ?? '',
+                  ),
+                );
+          accountId = linkedDetails.firstOrNull?['account_id']?.toString();
+        }
         final response = rows
-            .where((row) =>
-                row[Fields.id]?.toString() == eventId &&
-                row[Fields.isValid] == true)
+            .where(
+              (row) =>
+                  row[Fields.id]?.toString() == accountId &&
+                  row[Fields.isValid] == true,
+            )
             .firstOrNull;
         if (response == null) return null;
         return ModelPointRecordAccount(
-            id: response[Fields.id],
-            accountName: response[Fields.account],
-            category: response['category'],
-            masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-            points: (response['points'] as num?)?.toInt() ?? 0);
+          id: response[Fields.id],
+          accountName: response[Fields.account],
+          category: response['category'],
+          masterGraphUrl: parseMasterGraph(response['master_graph_url']),
+          points: (response['points'] as num?)?.toInt() ?? 0,
+        );
       }
-      final response = await supabase
+      var response = await supabase
           .from(currentTable)
           .select()
           .eq(Fields.id, eventId)
@@ -67,8 +98,26 @@ class ServicePointRecord {
           .maybeSingle();
 
       if (response == null) {
-        return null;
+        final linkedDetail = await supabase
+            .from(TableNames.pointRecordDetail)
+            .select('account_id')
+            .eq('event_id', eventId)
+            .order('date', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        final linkedAccountId = linkedDetail?['account_id']?.toString();
+        if (linkedAccountId != null) {
+          response = await supabase
+              .from(currentTable)
+              .select()
+              .eq(Fields.id, linkedAccountId)
+              .eq(Fields.createdBy, user)
+              .eq(Fields.isValid, true)
+              .maybeSingle();
+        }
       }
+
+      if (response == null) return null;
 
       Uint8List? bytes;
       if (response['master_graph_url'] != null) {
@@ -99,27 +148,39 @@ class ServicePointRecord {
   }) async {
     try {
       if (await _storesLocally) {
-        var rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
-        final details = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.pointRecordDetail);
+        var rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+        );
+        final details = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.pointRecordDetail,
+        );
         rows = rows
-            .where((row) =>
-                row[Fields.isValid] == true &&
-                (category == null || row['category']?.toString() == category))
+            .where(
+              (row) =>
+                  row[Fields.isValid] == true &&
+                  (category == null || row['category']?.toString() == category),
+            )
             .toList();
         if (category == null && projectLimit != null) {
-          final personal =
-              rows.where((r) => r['category'] == AccountCategory.personal.name);
-          final projects = rows
-              .where((r) => r['category'] == AccountCategory.project.name)
-              .toList()
-            ..sort((a, b) => (b[Fields.createdAt]?.toString() ?? '')
-                .compareTo(a[Fields.createdAt]?.toString() ?? ''));
+          final personal = rows.where(
+            (r) => r['category'] == AccountCategory.personal.name,
+          );
+          final projects =
+              rows
+                  .where((r) => r['category'] == AccountCategory.project.name)
+                  .toList()
+                ..sort(
+                  (a, b) => (b[Fields.createdAt]?.toString() ?? '').compareTo(
+                    a[Fields.createdAt]?.toString() ?? '',
+                  ),
+                );
           rows = [...personal, ...projects.take(projectLimit)];
         }
         return rows
-            .map((e) => ModelPointRecordAccount(
+            .map(
+              (e) => ModelPointRecordAccount(
                 id: e[Fields.id],
                 accountName: e[Fields.account],
                 category: e['category'],
@@ -127,14 +188,19 @@ class ServicePointRecord {
                     ? parseMasterGraph(e['master_graph_url'])
                     : null,
                 points: details
-                    .where((d) =>
-                        d['account_id']?.toString() == e[Fields.id]?.toString())
+                    .where(
+                      (d) =>
+                          d['account_id']?.toString() ==
+                          e[Fields.id]?.toString(),
+                    )
                     .fold<int>(
-                        0,
-                        (sum, d) =>
-                            sum +
-                            (int.tryParse(d['value']?.toString() ?? '0') ??
-                                0))))
+                      0,
+                      (sum, d) =>
+                          sum +
+                          (int.tryParse(d['value']?.toString() ?? '0') ?? 0),
+                    ),
+              ),
+            )
             .toList();
       }
       final columns = includeGraph ? '*' : 'id,account,category,points';
@@ -171,65 +237,74 @@ class ServicePointRecord {
       }
 
       if (list.isEmpty) return [];
-      return Future.wait(list.map((e) async {
-        final graph = e['master_graph_url'];
-        final bytes = graph == null
-            ? null
-            : await compute<String?, Uint8List?>(
-                decodeBase64InIsolate,
-                graph,
-              );
-        return ModelPointRecordAccount(
-          id: e[Fields.id],
-          accountName: e[Fields.account],
-          category: e['category'],
-          masterGraphUrl: bytes,
-          points: (e['points'] ?? 0).toInt(),
-        );
-      }));
+      return await Future.wait(
+        list.map((e) async {
+          final graph = e['master_graph_url'];
+          final bytes = graph == null
+              ? null
+              : await compute<String?, Uint8List?>(
+                  decodeBase64InIsolate,
+                  graph,
+                );
+          return ModelPointRecordAccount(
+            id: e[Fields.id],
+            accountName: e[Fields.account],
+            category: e['category'],
+            masterGraphUrl: bytes,
+            points: (e['points'] ?? 0).toInt(),
+          );
+        }),
+      );
     } on Exception catch (exception) {
       logger.e(exception);
       return [];
     }
   }
 
-  Future<ModelPointRecordAccount> createAccount(
-      {required String name,
-      required String user,
-      required String? currency,
-      required String category,
-      String? eventId}) async {
+  Future<ModelPointRecordAccount> createAccount({
+    required String name,
+    required String user,
+    required String? currency,
+    required String category,
+    String? eventId,
+  }) async {
     try {
       if (await _storesLocally) {
         final id = eventId ?? const Uuid().v4();
         final now = DateTime.now().toUtc().toIso8601String();
-        final existing = (await LocalDataStore.instance.list(
-                owner: _localOwner!, resource: TableNames.pointRecordAccount))
-            .any((r) =>
-                r[Fields.account]?.toString().toLowerCase() ==
-                    name.toLowerCase() &&
-                r['category'] == category &&
-                r[Fields.isValid] == true);
+        final existing =
+            (await LocalDataStore.instance.list(
+              owner: _localOwner!,
+              resource: TableNames.pointRecordAccount,
+            )).any(
+              (r) =>
+                  r[Fields.account]?.toString().toLowerCase() ==
+                      name.toLowerCase() &&
+                  r['category'] == category &&
+                  r[Fields.isValid] == true,
+            );
         if (existing) throw Exception('Account already exists');
         await LocalDataStore.instance.put(
-            owner: _localOwner!,
-            resource: TableNames.pointRecordAccount,
-            id: id,
-            data: {
-              Fields.id: id,
-              Fields.account: name,
-              Fields.createdBy: user,
-              'category': category,
-              'points': 0,
-              Fields.isValid: true,
-              Fields.createdAt: now
-            });
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+          id: id,
+          data: {
+            Fields.id: id,
+            Fields.account: name,
+            Fields.createdBy: user,
+            'category': category,
+            'points': 0,
+            Fields.isValid: true,
+            Fields.createdAt: now,
+          },
+        );
         return ModelPointRecordAccount(
-            id: id,
-            accountName: name,
-            category: category,
-            masterGraphUrl: null,
-            points: 0);
+          id: id,
+          accountName: name,
+          category: category,
+          masterGraphUrl: null,
+          points: 0,
+        );
       }
       // 查詢是否已存在
       final exist = await supabase
@@ -247,9 +322,7 @@ class ServicePointRecord {
         if (exist[Fields.isValid] != true) {
           response = await supabase
               .from(TableNames.pointRecordAccount)
-              .update({
-                Fields.isValid: true,
-              })
+              .update({Fields.isValid: true})
               .eq(Fields.id, exist[Fields.id])
               .select()
               .single();
@@ -289,16 +362,20 @@ class ServicePointRecord {
   Future<void> deleteAccount({required String accountId}) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
-        final row =
-            rows.firstWhere((r) => r[Fields.id]?.toString() == accountId);
+        final rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+        );
+        final row = rows.firstWhere(
+          (r) => r[Fields.id]?.toString() == accountId,
+        );
         await LocalDataStore.instance.put(
-            owner: _localOwner!,
-            resource: TableNames.pointRecordAccount,
-            id: accountId,
-            data: {...row, Fields.isValid: false},
-            syncState: LocalSyncState.modifiedLocally);
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+          id: accountId,
+          data: {...row, Fields.isValid: false},
+          syncState: LocalSyncState.modifiedLocally,
+        );
         final settings = await LocalDataStore.instance.list(
           owner: _localOwner!,
           resource: TableNames.dashboardSetting,
@@ -321,9 +398,7 @@ class ServicePointRecord {
       }
       final result = await supabase
           .from(TableNames.pointRecordAccount)
-          .update({
-            Fields.isValid: false,
-          })
+          .update({Fields.isValid: false})
           .eq(Fields.id, accountId)
           .select();
 
@@ -331,43 +406,43 @@ class ServicePointRecord {
         throw Exception("account not found");
       }
 
-      await supabase.from(TableNames.dashboardSetting).update({
-        'point_account_id': null,
-        'point_account_name': null,
-      }).eq('point_account_id', accountId);
+      await supabase
+          .from(TableNames.dashboardSetting)
+          .update({'point_account_id': null, 'point_account_name': null})
+          .eq('point_account_id', accountId);
     } catch (e, stacktrace) {
-      logger.e(
-        "deleteAccount error",
-        error: e,
-        stackTrace: stacktrace,
-      );
+      logger.e("deleteAccount error", error: e, stackTrace: stacktrace);
       rethrow;
     }
   }
 
   Future<Uint8List> uploadAccountImageBytesDirect(
-      String accountId, Uint8List imageBytes) async {
+    String accountId,
+    Uint8List imageBytes,
+  ) async {
     try {
       if (await _storesLocally) {
-        final rows = await LocalDataStore.instance
-            .list(owner: _localOwner!, resource: TableNames.pointRecordAccount);
-        final row =
-            rows.firstWhere((r) => r[Fields.id]?.toString() == accountId);
+        final rows = await LocalDataStore.instance.list(
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+        );
+        final row = rows.firstWhere(
+          (r) => r[Fields.id]?.toString() == accountId,
+        );
         await LocalDataStore.instance.put(
-            owner: _localOwner!,
-            resource: TableNames.pointRecordAccount,
-            id: accountId,
-            data: {...row, 'master_graph_url': base64Encode(imageBytes)},
-            syncState: LocalSyncState.modifiedLocally);
+          owner: _localOwner!,
+          resource: TableNames.pointRecordAccount,
+          id: accountId,
+          data: {...row, 'master_graph_url': base64Encode(imageBytes)},
+          syncState: LocalSyncState.modifiedLocally,
+        );
         return imageBytes;
       }
       // 不管 Web / Mobile 都轉 base64
       // Mobile / Web 統一存 bytea (Uint8List)
       final result = await supabase
           .from(TableNames.pointRecordAccount)
-          .update({
-            'master_graph_url': base64Encode(imageBytes),
-          })
+          .update({'master_graph_url': base64Encode(imageBytes)})
           .eq(Fields.id, accountId)
           .eq(Fields.isValid, true)
           .select();
@@ -397,43 +472,53 @@ class ServicePointRecord {
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
       );
-      final accountRows = rows.where((row) =>
-          row['account_id']?.toString() == accountId &&
-          row['type']?.toString().toLowerCase() == type.toLowerCase());
+      final accountRows = rows.where(
+        (row) =>
+            row['account_id']?.toString() == accountId &&
+            row['type']?.toString().toLowerCase() == type.toLowerCase(),
+      );
       final points = accountRows.fold<int>(
         0,
         (sum, row) =>
             sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
       );
-      final filtered = accountRows.where((row) {
-        if (includeReservedRecords && row['primary_category'] == 'reserved') {
-          return true;
-        }
-        final date = DateTime.tryParse(row['date']?.toString() ?? '');
-        return date != null &&
-            !date.isBefore(dateFrom) &&
-            date.isBefore(upperBound);
-      }).toList()
-        ..sort((a, b) => (b['date']?.toString() ?? '')
-            .compareTo(a['date']?.toString() ?? ''));
+      final filtered =
+          accountRows.where((row) {
+            if (includeReservedRecords &&
+                row['primary_category'] == 'reserved') {
+              return true;
+            }
+            final date = DateTime.tryParse(row['date']?.toString() ?? '');
+            return date != null &&
+                !date.isBefore(dateFrom) &&
+                date.isBefore(upperBound);
+          }).toList()..sort(
+            (a, b) => (b['date']?.toString() ?? '').compareTo(
+              a['date']?.toString() ?? '',
+            ),
+          );
       if (includeLatestFallback &&
           !filtered.any((row) => row['primary_category'] != 'reserved')) {
-        final fallback = accountRows
-            .where((row) => row['primary_category'] != 'reserved')
-            .toList()
-          ..sort((a, b) => (b['date']?.toString() ?? '')
-              .compareTo(a['date']?.toString() ?? ''));
+        final fallback =
+            accountRows
+                .where((row) => row['primary_category'] != 'reserved')
+                .toList()
+              ..sort(
+                (a, b) => (b['date']?.toString() ?? '').compareTo(
+                  a['date']?.toString() ?? '',
+                ),
+              );
         if (fallback.isNotEmpty) filtered.add(fallback.first);
       }
       return filtered.map((detail) {
         return ModelPointRecordDetail(
           id: detail[Fields.id]?.toString() ?? '',
           accountId: detail['account_id']?.toString() ?? '',
-          createdAt: DateTime.tryParse(
-                detail[Fields.createdAt]?.toString() ?? '',
-              ) ??
+          createdAt:
+              DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
               DateTime.now(),
-          date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+          date:
+              DateTime.tryParse(detail['date']?.toString() ?? '') ??
               DateTime.now(),
           primaryCategory:
               detail['primary_category']?.toString() ?? 'uncategorized',
@@ -468,22 +553,25 @@ class ServicePointRecord {
         owner: owner,
         resource: TableNames.pointRecordDetail,
       );
-      result.addAll(localRows.where((row) {
-        if (row['account_id']?.toString() != accountId ||
-            row['type']?.toString().toLowerCase() != type.toLowerCase()) {
-          return false;
-        }
-        if (includeReservedRecords && row['primary_category'] == 'reserved') {
-          return true;
-        }
-        final date = DateTime.tryParse(row['date']?.toString() ?? '');
-        return date != null &&
-            !date.isBefore(dateFrom) &&
-            date.isBefore(upperBound);
-      }));
+      result.addAll(
+        localRows.where((row) {
+          if (row['account_id']?.toString() != accountId ||
+              row['type']?.toString().toLowerCase() != type.toLowerCase()) {
+            return false;
+          }
+          if (includeReservedRecords && row['primary_category'] == 'reserved') {
+            return true;
+          }
+          final date = DateTime.tryParse(row['date']?.toString() ?? '');
+          return date != null &&
+              !date.isBefore(dateFrom) &&
+              date.isBefore(upperBound);
+        }),
+      );
     }
-    final hasRegularRecord =
-        result.any((row) => row['primary_category'] != 'reserved');
+    final hasRegularRecord = result.any(
+      (row) => row['primary_category'] != 'reserved',
+    );
     if (includeLatestFallback && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.pointRecordDetail)
@@ -509,28 +597,34 @@ class ServicePointRecord {
         resource: TableNames.pointRecordDetail,
       );
       points += allLocal
-          .where((row) =>
-              row['account_id']?.toString() == accountId &&
-              row['type']?.toString() == type)
+          .where(
+            (row) =>
+                row['account_id']?.toString() == accountId &&
+                row['type']?.toString() == type,
+          )
           .fold<int>(
             0,
             (sum, row) =>
                 sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
           );
     }
-    final unique = <String, Map<String, dynamic>>{
-      for (final row in result) row[Fields.id].toString(): row,
-    }.values.toList()
-      ..sort((a, b) =>
-          (b['date']?.toString() ?? '').compareTo(a['date']?.toString() ?? ''));
+    final unique =
+        <String, Map<String, dynamic>>{
+          for (final row in result) row[Fields.id].toString(): row,
+        }.values.toList()..sort(
+          (a, b) => (b['date']?.toString() ?? '').compareTo(
+            a['date']?.toString() ?? '',
+          ),
+        );
     return unique.map((detail) {
       return ModelPointRecordDetail(
         id: detail[Fields.id]?.toString() ?? '',
         accountId: detail['account_id']?.toString() ?? '',
         createdAt:
             DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
-                DateTime.now(),
-        date: DateTime.tryParse(detail['date']?.toString() ?? '') ??
+            DateTime.now(),
+        date:
+            DateTime.tryParse(detail['date']?.toString() ?? '') ??
             DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
             DateTime.now(),
         primaryCategory:
@@ -586,16 +680,20 @@ class ServicePointRecord {
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
       );
-      final dates = rows
-          .where((row) =>
-              row['account_id']?.toString() == accountId &&
-              row['type']?.toString().toLowerCase() == type.toLowerCase() &&
-              row['primary_category'] != 'reserved')
-          .map((row) => DateTime.tryParse(row['date']?.toString() ?? ''))
-          .whereType<DateTime>()
-          .where((date) => date.isBefore(before))
-          .toList()
-        ..sort((a, b) => b.compareTo(a));
+      final dates =
+          rows
+              .where(
+                (row) =>
+                    row['account_id']?.toString() == accountId &&
+                    row['type']?.toString().toLowerCase() ==
+                        type.toLowerCase() &&
+                    row['primary_category'] != 'reserved',
+              )
+              .map((row) => DateTime.tryParse(row['date']?.toString() ?? ''))
+              .whereType<DateTime>()
+              .where((date) => date.isBefore(before))
+              .toList()
+            ..sort((a, b) => b.compareTo(a));
       return dates.isEmpty ? null : dates.first.toLocal();
     }
     final rows = await supabase
@@ -611,10 +709,11 @@ class ServicePointRecord {
     return DateTime.tryParse(rows.first['date']?.toString() ?? '')?.toLocal();
   }
 
-  Future<void> insertRecordsBatch(
-      {required String accountId,
-      required String type,
-      required List<PointRecordPreview> records}) async {
+  Future<void> insertRecordsBatch({
+    required String accountId,
+    required String type,
+    required List<PointRecordPreview> records,
+  }) async {
     final now = DateTime.now();
     try {
       if (await _storesLocally) {
@@ -633,6 +732,7 @@ class ServicePointRecord {
               'value': record.value,
               'primary_category': record.primaryCategory,
               'group': record.secondaryCategory?.trim() ?? '',
+              'event_id': record.eventId,
               'date': (record.date ?? now).toUtc().toIso8601String(),
               Fields.createdAt: now.toUtc().toIso8601String(),
             },
@@ -646,22 +746,21 @@ class ServicePointRecord {
           'p_account_id': accountId,
           'p_type': type,
           'p_records': records
-              .map((r) => {
-                    'description': r.description,
-                    'value': r.value,
-                    'primary_category': r.primaryCategory,
-                    'group': r.secondaryCategory?.trim() ?? '',
-                    'date': (r.date ?? now).toUtc().toIso8601String(),
-                  })
+              .map(
+                (r) => {
+                  'description': r.description,
+                  'value': r.value,
+                  'primary_category': r.primaryCategory,
+                  'group': r.secondaryCategory?.trim() ?? '',
+                  'event_id': r.eventId,
+                  'date': (r.date ?? now).toUtc().toIso8601String(),
+                },
+              )
               .toList(),
         },
       );
     } catch (e, st) {
-      logger.e(
-        'insertRecordsBatch failed',
-        error: e,
-        stackTrace: st,
-      );
+      logger.e('insertRecordsBatch failed', error: e, stackTrace: st);
       rethrow;
     }
   }

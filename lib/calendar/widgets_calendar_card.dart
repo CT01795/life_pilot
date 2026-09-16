@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -16,6 +17,7 @@ class WidgetsCalendarCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback? onPoints;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -29,6 +31,7 @@ class WidgetsCalendarCard extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    this.onPoints,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -43,6 +46,7 @@ class WidgetsCalendarCard extends StatelessWidget {
       onTap: onTap,
       onDelete: onDelete,
       onAccounting: onAccounting,
+      onPoints: onPoints,
       onOpenMap: onOpenMap,
       onOpenLink: onOpenLink,
       trailing: trailing,
@@ -102,6 +106,7 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback? onPoints;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -114,6 +119,7 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    this.onPoints,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -141,8 +147,9 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather =
-        forecast != null && forecast.isNotEmpty ? forecast.first : null;
+    final todayWeather = forecast != null && forecast.isNotEmpty
+        ? forecast.first
+        : null;
 
     final loc = AppLocalizations.of(context)!;
     Widget buildHeader() {
@@ -156,13 +163,13 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                 height: 42,
                 decoration:
                     todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
-                        ? BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                            shape: BoxShape.circle,
-                          )
-                        : null,
+                    ? BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        shape: BoxShape.circle,
+                      )
+                    : null,
                 padding: const EdgeInsets.all(1),
                 child: WidgetsWeatherIcon(icon: todayWeather.icon),
               ),
@@ -181,14 +188,15 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                     return AlertDialog(
                       title: Text(loc.weatherForecast),
                       content: SizedBox(
-                        width: MediaQuery.sizeOf(dialogContext)
-                            .width
-                            .clamp(0, 420)
-                            .toDouble(),
+                        width: MediaQuery.sizeOf(
+                          dialogContext,
+                        ).width.clamp(0, 420).toDouble(),
                         height: contentHeight,
                         child: ListView.builder(
                           itemCount: forecast.length,
-                          cacheExtent: 208,
+                          scrollCacheExtent: const ScrollCacheExtent.pixels(
+                            208,
+                          ),
                           addAutomaticKeepAlives: false,
                           itemBuilder: (context, index) {
                             final w = forecast[index];
@@ -211,18 +219,19 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                                 height: 42,
                                 decoration:
                                     w.main == 'Clouds' || w.main == 'Rain'
-                                        ? BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                            shape: BoxShape.circle,
-                                          )
-                                        : null,
+                                    ? BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                        shape: BoxShape.circle,
+                                      )
+                                    : null,
                                 padding: const EdgeInsets.all(1),
                                 child: WidgetsWeatherIcon(icon: w.icon),
                               ),
                               title: Text(
-                                  '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
+                                '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}',
+                              ),
                               subtitle: Text(tmp),
                             );
                           },
@@ -242,13 +251,14 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
 
           Gaps.w8,
           Expanded(
-              child: Text(
-            widget.eventViewModel.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-            softWrap: true, // 允許換行
-            overflow: TextOverflow.visible, // 文字超過不截斷
-            //overflow: TextOverflow.ellipsis, // 防止文字過長
-          )),
+            child: Text(
+              widget.eventViewModel.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              softWrap: true, // 允許換行
+              overflow: TextOverflow.visible, // 文字超過不截斷
+              //overflow: TextOverflow.ellipsis, // 防止文字過長
+            ),
+          ),
           if (widget.trailing != null)
             Builder(
               builder: (context) {
@@ -261,7 +271,7 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
     }
 
     final content = Padding(
-      padding: Insets.all4,
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 52),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -306,15 +316,12 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                   onOpenLink: widget.onOpenLink,
                 );
               },
-            )
+            ),
         ],
       ),
     );
 
-    final container = Container(
-      margin: Insets.h8v16,
-      child: content,
-    );
+    final container = Container(margin: Insets.h8v16, child: content);
 
     return GestureDetector(
       onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
@@ -332,6 +339,12 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
                     icon: Icon(Icons.currency_exchange),
                     tooltip: loc.accountRecords,
                     onPressed: widget.onAccounting,
+                  ),
+                if (widget.onPoints != null)
+                  IconButton(
+                    icon: const Icon(Icons.stars_rounded),
+                    tooltip: loc.pointsRecord,
+                    onPressed: widget.onPoints,
                   ),
                 // 🗑 Delete（只有 canDelete）
                 if (widget.eventViewModel.canDelete && widget.onDelete != null)

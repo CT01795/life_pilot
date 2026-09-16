@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_detail.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -318,7 +319,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         .toList();
     return Expanded(
       child: ListView.builder(
-        cacheExtent: 240,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(240),
         addAutomaticKeepAlives: false,
         itemCount:
             visibleRecords.length +

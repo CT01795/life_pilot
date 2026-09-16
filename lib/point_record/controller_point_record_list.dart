@@ -1,12 +1,14 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
+import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
 
@@ -28,7 +30,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
   }
 
   ControllerPointRecordList({required this.service, required this.auth})
-      : _dataScopeKey = _scopeKey(auth);
+    : _dataScopeKey = _scopeKey(auth);
 
   static String _scopeKey(ControllerAuth? auth) =>
       '${auth?.currentAccount?.trim().toLowerCase() ?? ''}|'
@@ -133,6 +135,86 @@ class ControllerPointRecordList extends SafeChangeNotifier {
 
     notifyListeners();
   }
+
+  Future<void> handlePointRecord({
+    required BuildContext context,
+    required String eventId,
+  }) async {
+    final existingAccount = await findAccountByEventId(eventId: eventId);
+    if (!context.mounted) return;
+
+    final account =
+        existingAccount ??
+        await _showAccountPickerDialog(context: context, eventId: eventId);
+    if (account == null || !context.mounted) return;
+
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PagePointRecordDetail(
+          service: context.read<ServicePointRecord>(),
+          account: account,
+          linkedEventId: eventId,
+        ),
+      ),
+    );
+  }
+
+  Future<ModelPointRecordAccount?> _showAccountPickerDialog({
+    required BuildContext context,
+    required String eventId,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    return showDialog<ModelPointRecordAccount>(
+      context: context,
+      builder: (dialogContext) {
+        final screenSize = MediaQuery.sizeOf(dialogContext);
+        return DefaultTabController(
+          length: 2,
+          child: Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 24,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 640,
+                maxHeight: screenSize.height * 0.8,
+              ),
+              child: SizedBox(
+                width: double.maxFinite,
+                height: screenSize.height * 0.75,
+                child: Column(
+                  children: [
+                    TabBar(
+                      tabs: [
+                        Tab(text: loc.accountPersonal),
+                        Tab(text: loc.pointGroup),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _AccountListView(
+                            category: AccountCategory.personal.name,
+                            eventId: eventId,
+                          ),
+                          _AccountListView(
+                            category: AccountCategory.project.name,
+                            eventId: eventId,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _AccountListView extends StatefulWidget {
@@ -171,7 +253,7 @@ class _AccountListViewState extends State<_AccountListView> {
           children: [
             Expanded(
               child: ListView.builder(
-                cacheExtent: 240,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(240),
                 addAutomaticKeepAlives: false,
                 itemCount: accounts.length,
                 itemBuilder: (_, index) {
@@ -205,11 +287,11 @@ class _AccountListViewState extends State<_AccountListView> {
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          final modelPointRecordAccount =
-                              await controller.createAccount(
-                            name: textController.text,
-                            eventId: widget.eventId,
-                          );
+                          final modelPointRecordAccount = await controller
+                              .createAccount(
+                                name: textController.text,
+                                eventId: widget.eventId,
+                              );
                           Navigator.pop(context, true);
                           // 如果新增的帳戶 category 與目前 Tab 不符
                           if (modelPointRecordAccount.category !=
@@ -218,7 +300,8 @@ class _AccountListViewState extends State<_AccountListView> {
                             final parentTabController = DefaultTabController.of(
                               context,
                             );
-                            int tabIndex = modelPointRecordAccount.category ==
+                            int tabIndex =
+                                modelPointRecordAccount.category ==
                                     AccountCategory.personal.name
                                 ? 0
                                 : 1;

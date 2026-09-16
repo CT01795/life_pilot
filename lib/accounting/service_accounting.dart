@@ -245,7 +245,7 @@ class ServiceAccounting {
         list = await query.order(Fields.account, ascending: true);
       }
 
-      return Future.wait(
+      return await Future.wait(
         list.map((e) async {
           final graph = e['master_graph_url'];
           final bytes = graph == null

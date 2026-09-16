@@ -9,8 +9,6 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:life_pilot/event/widgets_event_image.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
-import 'package:life_pilot/utils/model_event_weather.dart';
-import 'package:provider/provider.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -18,6 +16,7 @@ class WidgetsMemoryCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback? onPoints;
   final VoidCallback onOpenLink;
   final VoidCallback onOpenMap;
   final Widget? trailing;
@@ -33,6 +32,7 @@ class WidgetsMemoryCard extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    this.onPoints,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -42,18 +42,22 @@ class WidgetsMemoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _WidgetsMemoryCardBody(
-      controllerEvent: controllerEvent,
-      eventViewModel: eventViewModel,
-      tableName: tableName,
-      onTap: onTap,
-      onDelete: onDelete,
-      onAccounting: onAccounting,
-      onOpenMap: onOpenMap,
-      onOpenLink: onOpenLink,
-      trailing: trailing,
-      showSubEvents: showSubEvents,
-      showFullDescription: showFullDescription,
+    return AnimatedBuilder(
+      animation: controllerEvent,
+      builder: (_, _) => _WidgetsMemoryCardBody(
+        controllerEvent: controllerEvent,
+        eventViewModel: eventViewModel,
+        tableName: tableName,
+        onTap: onTap,
+        onDelete: onDelete,
+        onAccounting: onAccounting,
+        onPoints: onPoints,
+        onOpenMap: onOpenMap,
+        onOpenLink: onOpenLink,
+        trailing: trailing,
+        showSubEvents: showSubEvents,
+        showFullDescription: showFullDescription,
+      ),
     );
   }
 
@@ -108,6 +112,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
+  final VoidCallback? onPoints;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -122,6 +127,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
     this.onTap,
     this.onDelete,
     this.onAccounting,
+    this.onPoints,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -141,10 +147,8 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     final eventDate =
         widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
-    final forecast = context.select<ControllerEvent, List<EventWeather>?>(
-      (controller) => controller.getForecast(
-        locationDisplay: widget.eventViewModel.locationDisplay,
-      ),
+    final forecast = widget.controllerEvent.getForecast(
+      locationDisplay: widget.eventViewModel.locationDisplay,
     );
 
     final showWeatherIcon =
@@ -390,6 +394,12 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
                     icon: Icon(Icons.currency_exchange),
                     tooltip: loc.accountRecords,
                     onPressed: widget.onAccounting,
+                  ),
+                if (widget.onPoints != null)
+                  IconButton(
+                    icon: const Icon(Icons.stars_rounded),
+                    tooltip: loc.pointsRecord,
+                    onPressed: widget.onPoints,
                   ),
                 // 🗑 Delete（只有 canDelete）
                 if (widget.eventViewModel.canDelete && widget.onDelete != null)

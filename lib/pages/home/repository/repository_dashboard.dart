@@ -58,7 +58,7 @@ class DashboardRepository {
         .from(TableNames.calendarEvents)
         .select(
           'id,name,start_date,start_time,end_date,end_time,city,location,'
-          'type,is_free,description,master_url,is_completed',
+          'type,is_free,description,master_url,sub_events,is_completed',
         )
         .eq(Fields.account, account)
         .eq('is_completed', false)

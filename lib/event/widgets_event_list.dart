@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_event_ui.dart';
@@ -29,9 +30,10 @@ class WidgetsEventList extends StatelessWidget {
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
-      cacheExtent: 180,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(180),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: filteredEvents.length +
+      itemCount:
+          filteredEvents.length +
           (controllerEvent.usesCloudPagination && controllerEvent.hasMoreEvents
               ? 1
               : 0),
@@ -77,9 +79,10 @@ class WidgetsEventList extends StatelessWidget {
           eventViewModel: eventViewModel,
           tableName: controllerEvent.fromTableName,
           onTap: () => _showEventDialog(
-              context: context,
-              eventViewModel: eventViewModel,
-              tableName: controllerEvent.fromTableName),
+            context: context,
+            eventViewModel: eventViewModel,
+            tableName: controllerEvent.fromTableName,
+          ),
           onDelete: eventViewModel.canDelete
               ? () async {
                   await onDeletePressed(
@@ -111,10 +114,11 @@ class WidgetsEventList extends StatelessWidget {
     );
   }
 
-  void _showEventDialog(
-      {required BuildContext context,
-      required EventViewModel eventViewModel,
-      required String tableName}) {
+  void _showEventDialog({
+    required BuildContext context,
+    required EventViewModel eventViewModel,
+    required String tableName,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: true,

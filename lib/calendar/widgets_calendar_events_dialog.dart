@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
+import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
@@ -51,116 +52,130 @@ class CalendarEventsDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: 1 + updatedEventsOfDay.length, // 1 是標題列
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      // 標題列
-                      return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              DateFormat(DateFormats.mmdd).format(date),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.add,
-                                  size: IconTheme.of(context).size ?? 24.0),
-                              tooltip: loc.add,
-                              onPressed: () => onAddEventPressed(
-                                  context: context,
-                                  controller: controllerCalendar,
-                                  date: date),
-                            ),
-                          ]);
-                    }
-                    final event = updatedEventsOfDay[index - 1];
-                    final eventViewModel = EventViewModel.buildEventViewModel(
-                      event: event,
-                      parentLocation: '',
-                      canDelete: controllerCalendar.canDelete(
-                        account: event.account ?? '',
-                      ),
-                      showSubEvents: true,
-                      loc: loc,
-                      tableName: tableName,
-                    );
-
-                    final isOwnEvent = controllerCalendar.isOwnEvent(event);
-                    return DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: BorderDirectional(
-                          start: BorderSide(
-                            color: event.isHoliday
-                                ? Colors.transparent
-                                : controllerCalendar.eventOwnerColor(event),
-                            width: 5,
+                padding: const EdgeInsets.all(8),
+                itemCount: 1 + updatedEventsOfDay.length, // 1 是標題列
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    // 標題列
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat(DateFormats.mmdd).format(date),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.add,
+                            size: IconTheme.of(context).size ?? 24.0,
+                          ),
+                          tooltip: loc.add,
+                          onPressed: () => onAddEventPressed(
+                            context: context,
+                            controller: controllerCalendar,
+                            date: date,
                           ),
                         ),
+                      ],
+                    );
+                  }
+                  final event = updatedEventsOfDay[index - 1];
+                  final eventViewModel = EventViewModel.buildEventViewModel(
+                    event: event,
+                    parentLocation: '',
+                    canDelete: controllerCalendar.canDelete(
+                      account: event.account ?? '',
+                    ),
+                    showSubEvents: true,
+                    loc: loc,
+                    tableName: tableName,
+                  );
+
+                  final isOwnEvent = controllerCalendar.isOwnEvent(event);
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: BorderDirectional(
+                        start: BorderSide(
+                          color: event.isHoliday
+                              ? Colors.transparent
+                              : controllerCalendar.eventOwnerColor(event),
+                          width: 5,
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!isOwnEvent && !event.isHoliday)
-                            Padding(
-                              padding: const EdgeInsetsDirectional.fromSTEB(
-                                  12, 8, 8, 0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.lock_outline, size: 16),
-                                  Gaps.w8,
-                                  Expanded(
-                                    child: Text(
-                                      loc.calendarSharedBy(event.account ?? ''),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!isOwnEvent && !event.isHoliday)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                              12,
+                              8,
+                              8,
+                              0,
                             ),
-                          WidgetsCalendarCard(
-                            eventViewModel: eventViewModel,
-                            tableName: tableName,
-                            onTap: () => Navigator.pop(context),
-                            onDelete: event.isHoliday || !isOwnEvent
-                                ? null
-                                : () async {
-                                    await onDeletePressed(
-                                      context: context,
-                                      controller: controllerCalendar,
-                                      event: event,
-                                      loc: loc,
-                                    );
-                                  },
-                            onAccounting: isOwnEvent
-                                ? () => context
+                            child: Row(
+                              children: [
+                                const Icon(Icons.lock_outline, size: 16),
+                                Gaps.w8,
+                                Expanded(
+                                  child: Text(
+                                    loc.calendarSharedBy(event.account ?? ''),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        WidgetsCalendarCard(
+                          eventViewModel: eventViewModel,
+                          tableName: tableName,
+                          onTap: () => Navigator.pop(context),
+                          onDelete: event.isHoliday || !isOwnEvent
+                              ? null
+                              : () async {
+                                  await onDeletePressed(
+                                    context: context,
+                                    controller: controllerCalendar,
+                                    event: event,
+                                    loc: loc,
+                                  );
+                                },
+                          onAccounting: isOwnEvent
+                              ? () => context
                                     .read<ControllerAccountingList>()
                                     .handleAccounting(
                                       context: context,
                                       eventId: event.id,
                                     )
-                                : null,
-                            onOpenMap: () =>
-                                controllerCalendar.onOpenMap(eventViewModel),
-                            onOpenLink: () =>
-                                controllerCalendar.onOpenLink(eventViewModel),
-                            trailing: widgetsCalendarTrailing(
-                              context: context,
-                              controllerCalendar: controllerCalendar,
-                              event: event,
-                            ),
+                              : null,
+                          onPoints: isOwnEvent
+                              ? () => context
+                                    .read<ControllerPointRecordList>()
+                                    .handlePointRecord(
+                                      context: context,
+                                      eventId: event.id,
+                                    )
+                              : null,
+                          onOpenMap: () =>
+                              controllerCalendar.onOpenMap(eventViewModel),
+                          onOpenLink: () =>
+                              controllerCalendar.onOpenLink(eventViewModel),
+                          trailing: widgetsCalendarTrailing(
+                            context: context,
+                            controllerCalendar: controllerCalendar,
+                            event: event,
+                            selectedDate: dateOnly,
                           ),
-                        ],
-                      ),
-                    );
-                  }),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
 
             // 右上角關閉按鈕

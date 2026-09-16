@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -20,6 +22,7 @@ class CalendarEvent {
 
   final String? description;
   final String? masterUrl;
+  final List<Map<String, dynamic>> subEvents;
 
   final bool isCompleted;
 
@@ -37,6 +40,7 @@ class CalendarEvent {
     this.isFree = false,
     this.description,
     this.masterUrl,
+    this.subEvents = const [],
     this.isCompleted = false,
   });
 
@@ -55,6 +59,7 @@ class CalendarEvent {
       isFree: json['is_free'] == true,
       description: json['description']?.toString(),
       masterUrl: json['master_url']?.toString(),
+      subEvents: _parseSubEvents(json[EventFields.subEvents]),
       isCompleted: json['is_completed'] == true,
     );
   }
@@ -74,7 +79,40 @@ class CalendarEvent {
       'is_free': isFree,
       'description': description,
       'master_url': masterUrl,
+      EventFields.subEvents: subEvents,
       'is_completed': isCompleted,
     };
+  }
+
+  List<Map<String, dynamic>> subEventsForDate(DateTime date) {
+    final selectedDate = DateUtils.dateOnly(date);
+    return subEvents
+        .where((subEvent) {
+          final start = DateTimeParser.parseDate(subEvent['start_date']);
+          if (start == null) return false;
+          final startDate = DateUtils.dateOnly(start);
+          final endDate = DateUtils.dateOnly(
+            DateTimeParser.parseDate(subEvent['end_date']) ?? start,
+          );
+          return !selectedDate.isBefore(startDate) &&
+              !selectedDate.isAfter(endDate);
+        })
+        .toList(growable: false);
+  }
+
+  static List<Map<String, dynamic>> _parseSubEvents(dynamic value) {
+    dynamic parsed = value;
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        parsed = jsonDecode(value);
+      } on FormatException {
+        return const [];
+      }
+    }
+    if (parsed is! List) return const [];
+    return parsed
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList(growable: false);
   }
 }

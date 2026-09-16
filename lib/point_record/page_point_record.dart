@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -21,11 +22,12 @@ class PagePointRecord extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider.value(
-          value: ServicePointRecord(),
-        ),
-        ChangeNotifierProxyProvider2<ServicePointRecord, ControllerAuth,
-            ControllerPointRecordList>(
+        Provider.value(value: ServicePointRecord()),
+        ChangeNotifierProxyProvider2<
+          ServicePointRecord,
+          ControllerAuth,
+          ControllerPointRecordList
+        >(
           create: (context) => ControllerPointRecordList(
             service: context.read<ServicePointRecord>(),
             auth: context.read<ControllerAuth>(),
@@ -138,28 +140,31 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Selector<ControllerPointRecordList,
-                List<ModelPointRecordAccount>>(
-            selector: (_, c) => c.accounts,
-            builder: (context, accounts, _) {
-              if (accounts.isEmpty) {
-                return Center(
-                  child: Text(AppLocalizations.of(context)!.accountListEmpty),
-                );
-              }
-
-              return ListView.builder(
-                cacheExtent: 240,
-                addAutomaticKeepAlives: false,
-                itemCount: accounts.length,
-                itemBuilder: (context, index) {
-                  return _AccountCard(
-                    key: ValueKey(accounts[index].id),
-                    accountId: accounts[index].id, // ✅ 只傳 id
-                  );
-                },
+        return Selector<
+          ControllerPointRecordList,
+          List<ModelPointRecordAccount>
+        >(
+          selector: (_, c) => c.accounts,
+          builder: (context, accounts, _) {
+            if (accounts.isEmpty) {
+              return Center(
+                child: Text(AppLocalizations.of(context)!.accountListEmpty),
               );
-            });
+            }
+
+            return ListView.builder(
+              scrollCacheExtent: const ScrollCacheExtent.pixels(240),
+              addAutomaticKeepAlives: false,
+              itemCount: accounts.length,
+              itemBuilder: (context, index) {
+                return _AccountCard(
+                  key: ValueKey(accounts[index].id),
+                  accountId: accounts[index].id, // ✅ 只傳 id
+                );
+              },
+            );
+          },
+        );
       },
     );
   }
@@ -203,10 +208,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
 class _AccountCard extends StatelessWidget {
   final String accountId;
 
-  const _AccountCard({
-    super.key,
-    required this.accountId,
-  });
+  const _AccountCard({super.key, required this.accountId});
 
   @override
   Widget build(BuildContext context) {
@@ -328,11 +330,12 @@ class _AccountCard extends StatelessWidget {
                                     '${formatter.format(account.points)} ${loc.pointsUnit}'
                                         .trim(),
                                 style: TextStyle(
-                                    color: account.points >= 0
-                                        ? Color(0xFF388E3C)
-                                        : Color(0xFFD32F2F), // 紅色
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20),
+                                  color: account.points >= 0
+                                      ? Color(0xFF388E3C)
+                                      : Color(0xFFD32F2F), // 紅色
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
                               ),
                             ],
                           ),
@@ -342,41 +345,45 @@ class _AccountCard extends StatelessWidget {
                   ),
 
                   Column(
-                      mainAxisSize: MainAxisSize.min, // 依內容大小自適應
-                      children: [
-                        Gaps.h80,
-                        // ===== 刪除 =====
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          color: Colors.redAccent,
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                content: Text(loc.accountDeleteConfirmation(
-                                    account.accountName)),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: Text(loc.cancel),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: Text(loc.delete),
-                                  ),
-                                ],
+                    mainAxisSize: MainAxisSize.min, // 依內容大小自適應
+                    children: [
+                      Gaps.h80,
+                      // ===== 刪除 =====
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        color: Colors.redAccent,
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              content: Text(
+                                loc.accountDeleteConfirmation(
+                                  account.accountName,
+                                ),
                               ),
-                            );
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(loc.cancel),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(loc.delete),
+                                ),
+                              ],
+                            ),
+                          );
 
-                            if (confirm == true) {
-                              await controller.deleteAccount(
-                                  accountId: account.id);
-                            }
-                          },
-                        ),
-                      ])
+                          if (confirm == true) {
+                            await controller.deleteAccount(
+                              accountId: account.id,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

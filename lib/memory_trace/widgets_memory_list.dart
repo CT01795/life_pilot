@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
@@ -9,6 +10,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_dialog.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_trailing.dart';
+import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
@@ -32,7 +34,7 @@ class WidgetsMemoryList extends StatelessWidget {
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
       controller: scrollController,
-      cacheExtent: 180,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(180),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount:
           filteredEvents.length + (controllerEvent.hasMoreMemory ? 1 : 0),
@@ -76,8 +78,9 @@ class WidgetsMemoryList extends StatelessWidget {
         );
         controllerEvent.preloadWeatherForEvent(eventViewModel);
         final date = eventViewModel.startDate;
-        final previousDate =
-            index == 0 ? null : filteredEvents[index - 1].startDate;
+        final previousDate = index == 0
+            ? null
+            : filteredEvents[index - 1].startDate;
         final showDateHeader = date != null && !_sameDay(date, previousDate);
 
         return Column(
@@ -130,9 +133,10 @@ class WidgetsMemoryList extends StatelessWidget {
                     eventViewModel: eventViewModel,
                     tableName: controllerEvent.fromTableName,
                     onTap: () => _showEventDialog(
-                        context: context,
-                        eventViewModel: eventViewModel,
-                        tableName: controllerEvent.fromTableName),
+                      context: context,
+                      eventViewModel: eventViewModel,
+                      tableName: controllerEvent.fromTableName,
+                    ),
                     onDelete: eventViewModel.canDelete
                         ? () async {
                             await onDeletePressed(
@@ -146,6 +150,12 @@ class WidgetsMemoryList extends StatelessWidget {
                     onAccounting: () => context
                         .read<ControllerAccountingList>()
                         .handleAccounting(
+                          context: context,
+                          eventId: eventViewModel.id,
+                        ),
+                    onPoints: () => context
+                        .read<ControllerPointRecordList>()
+                        .handlePointRecord(
                           context: context,
                           eventId: eventViewModel.id,
                         ),
@@ -181,10 +191,11 @@ class WidgetsMemoryList extends StatelessWidget {
     return DateFormat.yMMMMd(locale).format(date);
   }
 
-  void _showEventDialog(
-      {required BuildContext context,
-      required EventViewModel eventViewModel,
-      required String tableName}) {
+  void _showEventDialog({
+    required BuildContext context,
+    required EventViewModel eventViewModel,
+    required String tableName,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -193,6 +204,12 @@ class WidgetsMemoryList extends StatelessWidget {
         controllerEvent: controllerEvent,
         eventViewModel: eventViewModel,
         tableName: tableName,
+        onAccounting: () => context
+            .read<ControllerAccountingList>()
+            .handleAccounting(context: context, eventId: eventViewModel.id),
+        onPoints: () => context
+            .read<ControllerPointRecordList>()
+            .handlePointRecord(context: context, eventId: eventViewModel.id),
       ),
     );
   }

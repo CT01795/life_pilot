@@ -249,7 +249,7 @@ class EventItem implements EventBase {
   }
 
   factory EventItem.fromJson({required Map<String, dynamic> json}) {
-    final subEventsJson = json[EventFields.subEvents];
+    final subEventsJson = _parseSubEvents(json[EventFields.subEvents]);
 
     return EventItem(
       id: json[Fields.id] ?? _uuid.v4(),
@@ -294,13 +294,22 @@ class EventItem implements EventBase {
       lng: (json[EventFields.lng] as num?)?.toDouble(),
       mapLat: (json[EventFields.mapLat] as num?)?.toDouble(),
       mapLng: (json[EventFields.mapLng] as num?)?.toDouble(),
-      subEvents: subEventsJson is List
-          ? subEventsJson
-              .whereType<Map<String, dynamic>>()
-              .map((e) => EventItem.fromJson(json: e))
-              .toList()
-          : [],
+      subEvents: subEventsJson
+          .whereType<Map>()
+          .map((e) => EventItem.fromJson(json: Map<String, dynamic>.from(e)))
+          .toList(),
     );
+  }
+
+  static List<dynamic> _parseSubEvents(dynamic value) {
+    if (value is List) return value;
+    if (value is! String || value.trim().isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(value);
+      return decoded is List ? decoded : const [];
+    } on FormatException {
+      return const [];
+    }
   }
 
   // -------------------- copyWith --------------------
