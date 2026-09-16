@@ -1073,6 +1073,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventPointDecrease => 'Deduct points';
 
   @override
+  String get eventCompleted => 'Schedule completed';
+
+  @override
+  String eventCompletedWithRecords(String items) {
+    return 'Schedule completed: $items';
+  }
+
+  @override
+  String get eventMemory => 'Memory';
+
+  @override
   String get eventRefresh => 'Update recommended events';
 
   @override

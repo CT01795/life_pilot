@@ -12,6 +12,7 @@ import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_header_summary.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/place_selector_button.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -23,11 +24,13 @@ import '../../../../utils/logger.dart';
 
 class RecommendPlaceCard extends StatelessWidget {
   final bool isExpanded;
+  final bool hasRequestedData;
   final ValueChanged<bool> onExpansionChanged;
 
   const RecommendPlaceCard({
     super.key,
     required this.isExpanded,
+    required this.hasRequestedData,
     required this.onExpansionChanged,
   });
 
@@ -67,6 +70,13 @@ class RecommendPlaceCard extends StatelessWidget {
                 children: [
                   if (isExpanded)
                     const Expanded(child: PlaceCitySelectorButton()),
+                  if (!isExpanded)
+                    DashboardHeaderSummary(
+                      value: hasRequestedData ? places.length.toString() : '—',
+                      tooltip: loc.recommendPlaces,
+                      isLoading:
+                          hasRequestedData && isLoading && places.isEmpty,
+                    ),
                   IconButton(
                     onPressed: () => onExpansionChanged(!isExpanded),
                     icon: AnimatedRotation(

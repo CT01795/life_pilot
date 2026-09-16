@@ -1073,6 +1073,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventPointDecrease => '減分';
 
   @override
+  String get eventCompleted => '行程已完成';
+
+  @override
+  String eventCompletedWithRecords(String items) {
+    return '行程已完成：$items';
+  }
+
+  @override
+  String get eventMemory => '回憶';
+
+  @override
   String get eventRefresh => '更新推薦活動';
 
   @override

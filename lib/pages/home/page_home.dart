@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
@@ -22,6 +24,12 @@ class _PageHomeState extends State<PageHome> {
   bool _recommendPlacesExpanded = false;
   bool _accountingExpanded = false;
   bool _pointsExpanded = false;
+  Future<void>? _coreLoad;
+  String? _coreAccount;
+  Future<void>? _recommendEventsLoad;
+  Future<void>? _recommendPlacesLoad;
+  String? _recommendEventsAccount;
+  String? _recommendPlacesAccount;
 
   @override
   void initState() {
@@ -33,12 +41,61 @@ class _PageHomeState extends State<PageHome> {
 
       if (account == null || account.isEmpty) return;
 
-      await Future.wait<void>([
-        dashboard.loadEventCities(account),
-        dashboard.loadPlaceCities(account),
-        dashboard.refreshAll(account: account),
-      ]);
+      final operation = dashboard.refreshCore(account: account);
+      _coreAccount = account;
+      _coreLoad = operation;
+      await operation;
     });
+  }
+
+  Future<void> _ensureRecommendEvents({bool forceRefresh = false}) async {
+    final account = context.read<ModelAuthView>().account;
+    if (account == null || account.isEmpty) return;
+    if (_coreAccount == account) await _coreLoad;
+    if (!mounted || context.read<ModelAuthView>().account != account) return;
+    if (_recommendEventsAccount != account) {
+      _recommendEventsAccount = account;
+      _recommendEventsLoad = null;
+    }
+    if (_recommendEventsLoad != null && !forceRefresh) {
+      return _recommendEventsLoad;
+    }
+    final dashboard = context.read<ModelDashboard>();
+    final operation = Future.wait<void>([
+      dashboard.loadEventCities(account, forceRefresh: forceRefresh),
+      dashboard.retrySection(
+        section: DashboardSection.recommendEvents,
+        account: account,
+      ),
+    ]);
+    _recommendEventsLoad = operation;
+    if (mounted) setState(() {});
+    await operation;
+  }
+
+  Future<void> _ensureRecommendPlaces({bool forceRefresh = false}) async {
+    final account = context.read<ModelAuthView>().account;
+    if (account == null || account.isEmpty) return;
+    if (_coreAccount == account) await _coreLoad;
+    if (!mounted || context.read<ModelAuthView>().account != account) return;
+    if (_recommendPlacesAccount != account) {
+      _recommendPlacesAccount = account;
+      _recommendPlacesLoad = null;
+    }
+    if (_recommendPlacesLoad != null && !forceRefresh) {
+      return _recommendPlacesLoad;
+    }
+    final dashboard = context.read<ModelDashboard>();
+    final operation = Future.wait<void>([
+      dashboard.loadPlaceCities(account, forceRefresh: forceRefresh),
+      dashboard.retrySection(
+        section: DashboardSection.recommendPlaces,
+        account: account,
+      ),
+    ]);
+    _recommendPlacesLoad = operation;
+    if (mounted) setState(() {});
+    await operation;
   }
 
   @override
@@ -52,10 +109,15 @@ class _PageHomeState extends State<PageHome> {
         }
 
         final dashboard = context.read<ModelDashboard>();
+        final coreOperation = dashboard.refreshCore(account: account);
+        _coreAccount = account;
+        _coreLoad = coreOperation;
+        await coreOperation;
         await Future.wait<void>([
-          dashboard.loadEventCities(account, forceRefresh: true),
-          dashboard.loadPlaceCities(account, forceRefresh: true),
-          dashboard.refreshAll(account: account),
+          if (_recommendEventsLoad != null)
+            _ensureRecommendEvents(forceRefresh: true),
+          if (_recommendPlacesLoad != null)
+            _ensureRecommendPlaces(forceRefresh: true),
         ]);
       },
       child: ListView(
@@ -77,14 +139,20 @@ class _PageHomeState extends State<PageHome> {
                   Gaps.h16,
                   RecommendEventCard(
                     isExpanded: _recommendEventsExpanded,
-                    onExpansionChanged: (value) =>
-                        setState(() => _recommendEventsExpanded = value),
+                    hasRequestedData: _recommendEventsLoad != null,
+                    onExpansionChanged: (value) {
+                      setState(() => _recommendEventsExpanded = value);
+                      if (value) unawaited(_ensureRecommendEvents());
+                    },
                   ),
                   Gaps.h16,
                   RecommendPlaceCard(
                     isExpanded: _recommendPlacesExpanded,
-                    onExpansionChanged: (value) =>
-                        setState(() => _recommendPlacesExpanded = value),
+                    hasRequestedData: _recommendPlacesLoad != null,
+                    onExpansionChanged: (value) {
+                      setState(() => _recommendPlacesExpanded = value);
+                      if (value) unawaited(_ensureRecommendPlaces());
+                    },
                   ),
                   Gaps.h16,
                   IncomeExpenseSummaryCard(

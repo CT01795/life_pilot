@@ -16,6 +16,13 @@ class DecimalInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
+    if (newValue.text.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
     final rawOutput = StringBuffer();
     final rawBeforeCursor = StringBuffer();
     var hasDecimalPoint = false;
@@ -47,8 +54,9 @@ class DecimalInputFormatter extends TextInputFormatter {
     }
 
     final text = _withThousandsSeparators(rawOutput.toString());
-    final cursorOffset =
-        _withThousandsSeparators(rawBeforeCursor.toString()).length;
+    final cursorOffset = _withThousandsSeparators(
+      rawBeforeCursor.toString(),
+    ).length;
     return TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(
@@ -62,10 +70,12 @@ class DecimalInputFormatter extends TextInputFormatter {
     final negative = raw.startsWith('-');
     final unsigned = negative ? raw.substring(1) : raw;
     final decimalIndex = unsigned.indexOf('.');
-    final integerPart =
-        decimalIndex < 0 ? unsigned : unsigned.substring(0, decimalIndex);
-    final fractionPart =
-        decimalIndex < 0 ? null : unsigned.substring(decimalIndex + 1);
+    final integerPart = decimalIndex < 0
+        ? unsigned
+        : unsigned.substring(0, decimalIndex);
+    final fractionPart = decimalIndex < 0
+        ? null
+        : unsigned.substring(decimalIndex + 1);
 
     final grouped = StringBuffer();
     for (var index = 0; index < integerPart.length; index++) {

@@ -1073,6 +1073,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventPointDecrease => '減点';
 
   @override
+  String get eventCompleted => '予定を完了しました';
+
+  @override
+  String eventCompletedWithRecords(String items) {
+    return '予定を完了しました：$items';
+  }
+
+  @override
+  String get eventMemory => '思い出';
+
+  @override
   String get eventRefresh => 'おすすめイベントを更新';
 
   @override

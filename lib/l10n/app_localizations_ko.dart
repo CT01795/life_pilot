@@ -1073,6 +1073,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventPointDecrease => '감점';
 
   @override
+  String get eventCompleted => '일정을 완료했습니다';
+
+  @override
+  String eventCompletedWithRecords(String items) {
+    return '일정을 완료했습니다: $items';
+  }
+
+  @override
+  String get eventMemory => '추억';
+
+  @override
   String get eventRefresh => '추천 이벤트 업데이트';
 
   @override

@@ -9,6 +9,8 @@ import 'package:life_pilot/utils/record_categories.dart';
 class EventCompletionChoice {
   const EventCompletionChoice({
     required this.addToMemory,
+    this.incomeValue,
+    this.incomeCategory = RecordCategories.uncategorized,
     this.expenseValue,
     this.expenseCategory = RecordCategories.uncategorized,
     this.pointValue,
@@ -17,6 +19,8 @@ class EventCompletionChoice {
   });
 
   final bool addToMemory;
+  final num? incomeValue;
+  final String incomeCategory;
   final num? expenseValue;
   final String expenseCategory;
   final int? pointValue;
@@ -30,18 +34,17 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
   String? accountingAccountName,
   required String accountingCurrency,
   String? pointAccountName,
-}) =>
-    showModalBottomSheet<EventCompletionChoice>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => _EventCompletionSheet(
-        eventName: eventName,
-        accountingAccountName: accountingAccountName,
-        accountingCurrency: accountingCurrency,
-        pointAccountName: pointAccountName,
-      ),
-    );
+}) => showModalBottomSheet<EventCompletionChoice>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  builder: (context) => _EventCompletionSheet(
+    eventName: eventName,
+    accountingAccountName: accountingAccountName,
+    accountingCurrency: accountingCurrency,
+    pointAccountName: pointAccountName,
+  ),
+);
 
 class _EventCompletionSheet extends StatefulWidget {
   const _EventCompletionSheet({
@@ -61,13 +64,14 @@ class _EventCompletionSheet extends StatefulWidget {
 }
 
 class _EventCompletionSheetState extends State<_EventCompletionSheet> {
+  final _incomeController = TextEditingController();
   final _expenseController = TextEditingController();
   final _pointController = TextEditingController();
   bool _addToMemory = false;
   bool _addExpense = false;
-  bool _expenseIsIncome = false;
   bool _addPoints = false;
   bool _pointsArePositive = true;
+  String _incomeCategory = RecordCategories.uncategorized;
   String _expenseCategory = RecordCategories.uncategorized;
   String _pointCategory = RecordCategories.uncategorized;
   DateTime _recordDate = DateUtils.dateOnly(DateTime.now());
@@ -75,6 +79,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
 
   @override
   void dispose() {
+    _incomeController.dispose();
     _expenseController.dispose();
     _pointController.dispose();
     super.dispose();
@@ -85,13 +90,6 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final expenseValue = num.tryParse(
-      _expenseController.text.trim().replaceAll(',', ''),
-    );
-    final pointValue = int.tryParse(_pointController.text.trim());
-    final canSubmit =
-        (!_addExpense || (expenseValue != null && expenseValue > 0)) &&
-            (!_addPoints || (pointValue != null && pointValue > 0));
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -149,38 +147,52 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
           ),
           if (_addExpense) ...[
             Gaps.h8,
-            SegmentedButton<bool>(
-              segments: [
-                ButtonSegment(
-                  value: true,
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: Text(loc.eventIncome),
-                ),
-                ButtonSegment(
-                  value: false,
-                  icon: const Icon(Icons.remove_circle_outline),
-                  label: Text(loc.eventExpense),
-                ),
-              ],
-              selected: {_expenseIsIncome},
-              onSelectionChanged: (value) {
-                setState(() => _expenseIsIncome = value.first);
+            TextField(
+              controller: _incomeController,
+              autofocus: false,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: const [DecimalInputFormatter()],
+              decoration: InputDecoration(
+                labelText: loc.eventIncome,
+                suffixText: widget.accountingCurrency,
+                prefixIcon: const Icon(Icons.add_circle_outline),
+              ),
+            ),
+            Gaps.h12,
+            DropdownButtonFormField<String>(
+              initialValue: _incomeCategory,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: '${loc.eventIncome} · ${loc.recordPrimaryCategory}',
+              ),
+              items: RecordCategories.accounting
+                  .where((category) => category != RecordCategories.reserved)
+                  .map(
+                    (category) => DropdownMenuItem(
+                      value: category,
+                      child: Text(RecordCategories.label(loc, category)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _incomeCategory = value);
+                }
               },
             ),
             Gaps.h12,
             TextField(
               controller: _expenseController,
-              autofocus: false,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: const [DecimalInputFormatter()],
-              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: loc.recordValue,
+                labelText: loc.eventExpense,
                 suffixText: widget.accountingCurrency,
-                prefixIcon: Icon(_expenseIsIncome
-                    ? Icons.add_circle_outline
-                    : Icons.remove_circle_outline),
+                prefixIcon: const Icon(Icons.remove_circle_outline),
               ),
             ),
             Gaps.h12,
@@ -188,7 +200,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               initialValue: _expenseCategory,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: loc.recordPrimaryCategory,
+                labelText: '${loc.eventExpense} · ${loc.recordPrimaryCategory}',
               ),
               items: RecordCategories.accounting
                   .where((category) => category != RecordCategories.reserved)
@@ -250,9 +262,11 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               decoration: InputDecoration(
                 labelText: loc.recordValue,
                 suffixText: loc.pointsUnit,
-                prefixIcon: Icon(_pointsArePositive
-                    ? Icons.add_circle_outline
-                    : Icons.remove_circle_outline),
+                prefixIcon: Icon(
+                  _pointsArePositive
+                      ? Icons.add_circle_outline
+                      : Icons.remove_circle_outline,
+                ),
               ),
             ),
             Gaps.h12,
@@ -331,36 +345,53 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               ),
               Gaps.w12,
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: canSubmit
-                      ? () => Navigator.pop(
-                            context,
-                            EventCompletionChoice(
-                              addToMemory: _addToMemory,
-                              expenseValue: _addExpense
-                                  ? (_expenseIsIncome
-                                      ? expenseValue
-                                      : -expenseValue!)
-                                  : null,
-                              expenseCategory: _expenseCategory,
-                              pointValue: _addPoints
-                                  ? (_pointsArePositive
-                                      ? pointValue
-                                      : -pointValue!)
-                                  : null,
-                              pointCategory: _pointCategory,
-                              recordedAt: DateTime(
-                                _recordDate.year,
-                                _recordDate.month,
-                                _recordDate.day,
-                                _recordTime.hour,
-                                _recordTime.minute,
+                child: ListenableBuilder(
+                  listenable: Listenable.merge([
+                    _incomeController,
+                    _expenseController,
+                    _pointController,
+                  ]),
+                  builder: (context, _) {
+                    final incomeValue = _parseAmount(_incomeController);
+                    final expenseValue = _parseAmount(_expenseController);
+                    final pointValue = int.tryParse(
+                      _pointController.text.trim(),
+                    );
+                    final canSubmit = _canSubmit(
+                      incomeValue: incomeValue,
+                      expenseValue: expenseValue,
+                      pointValue: pointValue,
+                    );
+                    return FilledButton.icon(
+                      onPressed: canSubmit
+                          ? () => Navigator.pop(
+                              context,
+                              EventCompletionChoice(
+                                addToMemory: _addToMemory,
+                                incomeValue: _addExpense ? incomeValue : null,
+                                incomeCategory: _incomeCategory,
+                                expenseValue: _addExpense ? expenseValue : null,
+                                expenseCategory: _expenseCategory,
+                                pointValue: _addPoints
+                                    ? (_pointsArePositive
+                                          ? pointValue
+                                          : -pointValue!)
+                                    : null,
+                                pointCategory: _pointCategory,
+                                recordedAt: DateTime(
+                                  _recordDate.year,
+                                  _recordDate.month,
+                                  _recordDate.day,
+                                  _recordTime.hour,
+                                  _recordTime.minute,
+                                ),
                               ),
-                            ),
-                          )
-                      : null,
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: Text(loc.confirm),
+                            )
+                          : null,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: Text(loc.confirm),
+                    );
+                  },
                 ),
               ),
             ],
@@ -368,5 +399,26 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
         ],
       ),
     );
+  }
+
+  num? _parseAmount(TextEditingController controller) =>
+      num.tryParse(controller.text.trim().replaceAll(',', ''));
+
+  bool _canSubmit({
+    required num? incomeValue,
+    required num? expenseValue,
+    required int? pointValue,
+  }) {
+    final incomeText = _incomeController.text.trim();
+    final expenseText = _expenseController.text.trim();
+    final hasValidAccountingValue =
+        (incomeValue != null && incomeValue > 0) ||
+        (expenseValue != null && expenseValue > 0);
+    final accountingValuesAreValid =
+        (incomeText.isEmpty || (incomeValue != null && incomeValue > 0)) &&
+        (expenseText.isEmpty || (expenseValue != null && expenseValue > 0));
+    return (!_addExpense ||
+            (hasValidAccountingValue && accountingValuesAreValid)) &&
+        (!_addPoints || (pointValue != null && pointValue > 0));
   }
 }

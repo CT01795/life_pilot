@@ -712,6 +712,15 @@
   "@eventPointIncrease": {"description": "完成行程時增加積分"},
   "eventPointDecrease": "減分",
   "@eventPointDecrease": {"description": "完成行程時扣除積分"},
+  "eventCompleted": "行程已完成",
+  "@eventCompleted": {"description": "行程完成後的成功訊息"},
+  "eventCompletedWithRecords": "行程已完成：{items}",
+  "@eventCompletedWithRecords": {
+    "description": "行程完成並新增相關紀錄後的摘要",
+    "placeholders": {"items": {"type": "String"}}
+  },
+  "eventMemory": "回憶",
+  "@eventMemory": {"description": "行程完成摘要中的回憶紀錄"},
   "eventRefresh": "更新推薦活動",
   "@eventRefresh": {"description": "推薦活動更新按鈕"},
   "eventRefreshSucceeded": "推薦活動已更新。",

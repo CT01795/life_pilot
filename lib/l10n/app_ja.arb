@@ -712,6 +712,15 @@
   "@eventPointIncrease": {"description": "予定完了時にポイントを追加"},
   "eventPointDecrease": "減点",
   "@eventPointDecrease": {"description": "予定完了時にポイントを差し引く"},
+  "eventCompleted": "予定を完了しました",
+  "@eventCompleted": {"description": "予定完了後に表示する成功メッセージ"},
+  "eventCompletedWithRecords": "予定を完了しました：{items}",
+  "@eventCompletedWithRecords": {
+    "description": "予定完了時に保存した関連記録の概要",
+    "placeholders": {"items": {"type": "String"}}
+  },
+  "eventMemory": "思い出",
+  "@eventMemory": {"description": "予定完了の概要に表示する思い出の記録"},
   "eventRefresh": "おすすめイベントを更新",
   "@eventRefresh": {"description": "おすすめイベント更新ボタン"},
   "eventRefreshSucceeded": "おすすめイベントを更新しました。",

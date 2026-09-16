@@ -14,38 +14,42 @@ import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 
 void main() {
-  test('latest recommendation request wins when an older request finishes last',
-      () async {
-    final repository = _RecommendationOrderRepository();
-    final model = _model(repository)..switchAccount('user');
+  test(
+    'latest recommendation request wins when an older request finishes last',
+    () async {
+      final repository = _RecommendationOrderRepository();
+      final model = _model(repository)..switchAccount('user');
 
-    final firstRequest = model.refreshRecommendEvent(account: 'user');
-    final secondRequest = model.refreshRecommendEvent(account: 'user');
+      final firstRequest = model.refreshRecommendEvent(account: 'user');
+      final secondRequest = model.refreshRecommendEvent(account: 'user');
 
-    repository.secondEvents.complete([_event('new')]);
-    await secondRequest;
-    repository.firstEvents.complete([_event('old')]);
-    await firstRequest;
+      repository.secondEvents.complete([_event('new')]);
+      await secondRequest;
+      repository.firstEvents.complete([_event('old')]);
+      await firstRequest;
 
-    expect(model.state.recommendEvents.single.name, 'new');
-  });
+      expect(model.state.recommendEvents.single.name, 'new');
+    },
+  );
 
-  test('late full refresh cannot overwrite a newer accounting selection',
-      () async {
-    final repository = _RefreshOrderRepository();
-    final model = _model(repository);
-    model.switchAccount('user');
+  test(
+    'late full refresh cannot overwrite a newer accounting selection',
+    () async {
+      final repository = _RefreshOrderRepository();
+      final model = _model(repository);
+      model.switchAccount('user');
 
-    final fullRefresh = model.refreshAll(account: 'user');
-    await Future<void>.delayed(Duration.zero);
-    final latestSelection = model.refreshAccounting(accountId: 'new-account');
-    await latestSelection;
+      final fullRefresh = model.refreshAll(account: 'user');
+      await Future<void>.delayed(Duration.zero);
+      final latestSelection = model.refreshAccounting(accountId: 'new-account');
+      await latestSelection;
 
-    repository.oldAccounting.complete([_income('old')]);
-    await fullRefresh;
+      repository.oldAccounting.complete([_income('old')]);
+      await fullRefresh;
 
-    expect(model.state.todayIncomeExpense.single.description, 'new');
-  });
+      expect(model.state.todayIncomeExpense.single.description, 'new');
+    },
+  );
 
   test('request from the previous user cannot update the dashboard', () async {
     final repository = _AccountSwitchRepository();
@@ -62,84 +66,145 @@ void main() {
     expect(model.isLoading(DashboardSection.recommendEvents), isFalse);
   });
 
-  test('clearing dashboard accounts removes saved selections and records',
-      () async {
-    final repository = _ClearSelectionRepository();
-    final model = _model(repository)..switchAccount('user');
+  test(
+    'clearing dashboard accounts removes saved selections and records',
+    () async {
+      final repository = _ClearSelectionRepository();
+      final model = _model(repository)..switchAccount('user');
 
-    await model.refreshAccounting(accountId: 'account');
-    await model.refreshPoints(accountId: 'points');
-    expect(model.state.todayIncomeExpense, isNotEmpty);
-    expect(model.state.todayPoints, isNotEmpty);
+      await model.refreshAccounting(accountId: 'account');
+      await model.refreshPoints(accountId: 'points');
+      expect(model.state.todayIncomeExpense, isNotEmpty);
+      expect(model.state.todayPoints, isNotEmpty);
 
-    await model.changeAccountingAccount(
-      account: 'user',
-      accountId: null,
-      accountName: null,
-    );
-    await model.changePointAccount(
-      account: 'user',
-      accountId: null,
-      accountName: null,
-    );
+      await model.changeAccountingAccount(
+        account: 'user',
+        accountId: null,
+        accountName: null,
+      );
+      await model.changePointAccount(
+        account: 'user',
+        accountId: null,
+        accountName: null,
+      );
 
-    expect(model.setting.accountingAccountId, isNull);
-    expect(model.setting.accountingAccountName, isNull);
-    expect(model.setting.pointAccountId, isNull);
-    expect(model.setting.pointAccountName, isNull);
-    expect(model.state.todayIncomeExpense, isEmpty);
-    expect(model.state.todayPoints, isEmpty);
-    expect(repository.savedSetting?.accountingAccountId, isNull);
-    expect(repository.savedSetting?.pointAccountId, isNull);
-  });
+      expect(model.setting.accountingAccountId, isNull);
+      expect(model.setting.accountingAccountName, isNull);
+      expect(model.setting.pointAccountId, isNull);
+      expect(model.setting.pointAccountName, isNull);
+      expect(model.state.todayIncomeExpense, isEmpty);
+      expect(model.state.todayPoints, isEmpty);
+      expect(repository.savedSetting?.accountingAccountId, isNull);
+      expect(repository.savedSetting?.pointAccountId, isNull);
+    },
+  );
 
-  test('selecting dashboard accounts immediately reloads homepage records',
-      () async {
-    final repository = _ClearSelectionRepository();
-    final model = _model(repository)..switchAccount('user');
+  test(
+    'selecting dashboard accounts immediately reloads homepage records',
+    () async {
+      final repository = _ClearSelectionRepository();
+      final model = _model(repository)..switchAccount('user');
 
-    await model.changeAccountingAccount(
-      account: 'user',
-      accountId: 'account',
-      accountName: 'Accounting',
-    );
-    await model.changePointAccount(
-      account: 'user',
-      accountId: 'points',
-      accountName: 'Points',
-    );
+      await model.changeAccountingAccount(
+        account: 'user',
+        accountId: 'account',
+        accountName: 'Accounting',
+      );
+      await model.changePointAccount(
+        account: 'user',
+        accountId: 'points',
+        accountName: 'Points',
+      );
 
-    expect(model.state.todayIncomeExpense.single.description, 'record');
-    expect(model.state.todayPoints.single.description, 'record');
-    expect(repository.savedSetting?.accountingAccountId, 'account');
-    expect(repository.savedSetting?.pointAccountId, 'points');
-  });
+      expect(model.state.todayIncomeExpense.single.description, 'record');
+      expect(model.state.todayPoints.single.description, 'record');
+      expect(repository.savedSetting?.accountingAccountId, 'account');
+      expect(repository.savedSetting?.pointAccountId, 'points');
+    },
+  );
 
-  test('section refreshes reuse loaded settings without another settings query',
-      () async {
-    final repository = _SectionRefreshRepository();
-    final model = _model(repository)..switchAccount('user');
+  test(
+    'section refreshes reuse loaded settings without another settings query',
+    () async {
+      final repository = _SectionRefreshRepository();
+      final model = _model(repository)..switchAccount('user');
 
-    await model.refreshTodaySchedule(account: 'user');
-    await model.refreshRecommendEvent(account: 'user');
-    await model.refreshRecommendPlace(account: 'user');
+      await model.refreshTodaySchedule(account: 'user');
+      await model.refreshRecommendEvent(account: 'user');
+      await model.refreshRecommendPlace(account: 'user');
 
-    expect(repository.settingLoadCount, 0);
-    expect(repository.eventCity, model.setting.recommendEventCity);
-    expect(repository.placeCity, model.setting.recommendPlaceCity);
-  });
+      expect(repository.settingLoadCount, 0);
+      expect(repository.eventCity, model.setting.recommendEventCity);
+      expect(repository.placeCity, model.setting.recommendPlaceCity);
+    },
+  );
 
-  test('full refresh starts today schedule while settings are loading',
-      () async {
-    final repository = _ParallelInitialLoadRepository();
+  test(
+    'full refresh starts today schedule while settings are loading',
+    () async {
+      final repository = _ParallelInitialLoadRepository();
+      final model = _model(repository)..switchAccount('user');
+
+      final refresh = model.refreshAll(account: 'user');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.todayEventsStarted, isTrue);
+
+      repository.setting.complete(_setting());
+      await refresh;
+    },
+  );
+
+  test('full refresh publishes each section independently', () async {
+    final repository = _ProgressiveFullRepository();
     final model = _model(repository)..switchAccount('user');
 
     final refresh = model.refreshAll(account: 'user');
     await Future<void>.delayed(Duration.zero);
+    repository.recommendEvents.complete([_event('Event first')]);
+    await Future<void>.delayed(Duration.zero);
 
-    expect(repository.todayEventsStarted, isTrue);
+    expect(model.state.recommendEvents.single.name, 'Event first');
+    expect(model.state.recommendPlaces, isEmpty);
+    expect(model.state.todayIncomeExpense, isEmpty);
+    expect(model.state.todayPoints, isEmpty);
 
-    repository.setting.complete(_setting());
+    repository.recommendPlaces.complete([]);
+    repository.accounting.complete(const AccountingDashboardSummary.empty());
+    repository.points.complete(const PointDashboardSummary.empty());
+    await refresh;
+  });
+
+  test('core refresh does not load deferred recommendation sections', () async {
+    final repository = _CoreFirstRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    await model.refreshCore(account: 'user');
+
+    expect(repository.todayCalls, 1);
+    expect(repository.accountingCalls, 1);
+    expect(repository.pointCalls, 1);
+    expect(repository.recommendEventCalls, 0);
+    expect(repository.recommendPlaceCalls, 0);
+  });
+
+  test('core refresh publishes today schedule before slow summaries', () async {
+    final repository = _ProgressiveCoreRepository();
+    final model = _model(repository)..switchAccount('user');
+
+    final refresh = model.refreshCore(account: 'user');
+    await Future<void>.delayed(Duration.zero);
+    repository.todayEvents.complete([
+      CalendarEvent(id: 'today', name: 'Today first'),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(model.state.todayEvents.single.name, 'Today first');
+    expect(model.state.todayIncomeExpense, isEmpty);
+    expect(model.state.todayPoints, isEmpty);
+
+    repository.accounting.complete(const AccountingDashboardSummary.empty());
+    repository.points.complete(const PointDashboardSummary.empty());
     await refresh;
   });
 
@@ -191,78 +256,79 @@ void main() {
     expect(repository.eventCalls, 2);
   });
 
-  test('completing an event removes it without querying the calendar again',
-      () async {
-    final repository = _CompleteEventRepository();
-    final model = _model(repository)..switchAccount('user');
+  test(
+    'completing an event removes it without querying the calendar again',
+    () async {
+      final repository = _CompleteEventRepository();
+      final model = _model(repository)..switchAccount('user');
 
-    await model.refreshTodaySchedule(account: 'user');
-    expect(model.state.todayEvents.single.id, 'event');
+      await model.refreshTodaySchedule(account: 'user');
+      expect(model.state.todayEvents.single.id, 'event');
 
-    await model.completeEvent(id: 'event', account: 'user');
+      await model.completeEvent(id: 'event', account: 'user');
 
-    expect(repository.eventLoads, 1);
-    expect(repository.completedIds, ['event']);
-    expect(model.state.todayEvents, isEmpty);
-  });
+      expect(repository.eventLoads, 1);
+      expect(repository.completedIds, ['event']);
+      expect(model.state.todayEvents, isEmpty);
+    },
+  );
 
-  test('new calendar item updates only the active account and visible range',
-      () {
-    final model = _model(_CityCacheRepository())..switchAccount('user');
-    final now = DateTime(2026, 9, 14, 12);
+  test(
+    'new calendar item updates only the active account and visible range',
+    () {
+      final model = _model(_CityCacheRepository())..switchAccount('user');
+      final now = DateTime(2026, 9, 14, 12);
 
-    model.addUpcomingEvent(
-      CalendarEvent(
-        id: 'visible',
-        name: 'Visible event',
-        startDate: DateTime(2026, 9, 15),
-      ),
-      account: 'user',
-      currentTime: now,
-    );
-    model.addUpcomingEvent(
-      CalendarEvent(
-        id: 'later',
-        name: 'Later event',
-        startDate: DateTime(2026, 9, 20),
-      ),
-      account: 'user',
-      currentTime: now,
-    );
-    model.addUpcomingEvent(
-      CalendarEvent(
-        id: 'other-user',
-        name: 'Other user event',
-        startDate: DateTime(2026, 9, 15),
-      ),
-      account: 'other-user',
-      currentTime: now,
-    );
+      model.addUpcomingEvent(
+        CalendarEvent(
+          id: 'visible',
+          name: 'Visible event',
+          startDate: DateTime(2026, 9, 15),
+        ),
+        account: 'user',
+        currentTime: now,
+      );
+      model.addUpcomingEvent(
+        CalendarEvent(
+          id: 'later',
+          name: 'Later event',
+          startDate: DateTime(2026, 9, 20),
+        ),
+        account: 'user',
+        currentTime: now,
+      );
+      model.addUpcomingEvent(
+        CalendarEvent(
+          id: 'other-user',
+          name: 'Other user event',
+          startDate: DateTime(2026, 9, 15),
+        ),
+        account: 'other-user',
+        currentTime: now,
+      );
 
-    expect(model.state.todayEvents.map((event) => event.id), ['visible']);
-  });
+      expect(model.state.todayEvents.map((event) => event.id), ['visible']);
+    },
+  );
 }
 
 ModelDashboard _model(DashboardRepository repository) => ModelDashboard(
-      repository: repository,
-      localeProvider: ProviderLocale(locale: const Locale('zh')),
-    );
+  repository: repository,
+  localeProvider: ProviderLocale(locale: const Locale('zh')),
+);
 
 RecommendedEvent _event(String name) => RecommendedEvent(id: name, name: name);
 
-IncomeExpenseItem _income(String description) => IncomeExpenseItem(
-      description: description,
-      value: 1,
-      currency: 'TWD',
-    );
+IncomeExpenseItem _income(String description) =>
+    IncomeExpenseItem(description: description, value: 1, currency: 'TWD');
 
 DashboardSetting _setting() => DashboardSetting(
-      recommendEventCity: '台北',
-      recommendPlaceCity: '台北',
-      language: 'zh',
-      accountingAccountId: 'old-account',
-      pointAccountId: 'point-account',
-    );
+  recommendEventCity: '台北',
+  recommendPlaceCity: '台北',
+  language: 'zh',
+  accountingAccountId: 'old-account',
+  pointAccountId: 'point-account',
+);
 
 class _RecommendationOrderRepository extends DashboardRepository {
   final firstEvents = Completer<List<RecommendedEvent>>();
@@ -270,9 +336,9 @@ class _RecommendationOrderRepository extends DashboardRepository {
   int _eventCalls = 0;
 
   @override
-  Future<DashboardSetting> loadDashboardSetting(
-          {required String account}) async =>
-      _setting();
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async => _setting();
 
   @override
   Future<List<RecommendedEvent>> loadRecommendEvents(String city) {
@@ -286,9 +352,9 @@ class _RefreshOrderRepository extends DashboardRepository {
   int _accountingCalls = 0;
 
   @override
-  Future<DashboardSetting> loadDashboardSetting(
-          {required String account}) async =>
-      _setting();
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async => _setting();
 
   @override
   Future<List<CalendarEvent>> loadTodayEvents(String account) async => [];
@@ -300,8 +366,9 @@ class _RefreshOrderRepository extends DashboardRepository {
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async => [];
 
   @override
-  Future<AccountingDashboardSummary> loadAccountingSummary(
-      {required String accountId}) {
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) {
     _accountingCalls++;
     return _accountingCalls == 1
         ? oldAccounting.future.then(
@@ -321,18 +388,18 @@ class _RefreshOrderRepository extends DashboardRepository {
   }
 
   @override
-  Future<PointDashboardSummary> loadPointSummary(
-          {required String accountId}) async =>
-      const PointDashboardSummary.empty();
+  Future<PointDashboardSummary> loadPointSummary({
+    required String accountId,
+  }) async => const PointDashboardSummary.empty();
 }
 
 class _AccountSwitchRepository extends DashboardRepository {
   final oldEvents = Completer<List<RecommendedEvent>>();
 
   @override
-  Future<DashboardSetting> loadDashboardSetting(
-          {required String account}) async =>
-      _setting();
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async => _setting();
 
   @override
   Future<List<RecommendedEvent>> loadRecommendEvents(String city) =>
@@ -345,8 +412,9 @@ class _SectionRefreshRepository extends DashboardRepository {
   String? placeCity;
 
   @override
-  Future<DashboardSetting> loadDashboardSetting(
-      {required String account}) async {
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async {
     settingLoadCount++;
     return _setting();
   }
@@ -390,14 +458,115 @@ class _ParallelInitialLoadRepository extends DashboardRepository {
   @override
   Future<AccountingDashboardSummary> loadAccountingSummary({
     required String accountId,
-  }) async =>
-      const AccountingDashboardSummary.empty();
+  }) async => const AccountingDashboardSummary.empty();
 
   @override
   Future<PointDashboardSummary> loadPointSummary({
     required String accountId,
-  }) async =>
-      const PointDashboardSummary.empty();
+  }) async => const PointDashboardSummary.empty();
+}
+
+class _ProgressiveFullRepository extends DashboardRepository {
+  final recommendEvents = Completer<List<RecommendedEvent>>();
+  final recommendPlaces = Completer<List<RecommendedPlace>>();
+  final accounting = Completer<AccountingDashboardSummary>();
+  final points = Completer<PointDashboardSummary>();
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async => _setting();
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) async => [];
+
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) =>
+      recommendEvents.future;
+
+  @override
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) =>
+      recommendPlaces.future;
+
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) => accounting.future;
+
+  @override
+  Future<PointDashboardSummary> loadPointSummary({required String accountId}) =>
+      points.future;
+}
+
+class _CoreFirstRepository extends DashboardRepository {
+  int todayCalls = 0;
+  int accountingCalls = 0;
+  int pointCalls = 0;
+  int recommendEventCalls = 0;
+  int recommendPlaceCalls = 0;
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async => _setting();
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) async {
+    todayCalls++;
+    return [];
+  }
+
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) async {
+    accountingCalls++;
+    return const AccountingDashboardSummary.empty();
+  }
+
+  @override
+  Future<PointDashboardSummary> loadPointSummary({
+    required String accountId,
+  }) async {
+    pointCalls++;
+    return const PointDashboardSummary.empty();
+  }
+
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
+    recommendEventCalls++;
+    return [];
+  }
+
+  @override
+  Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
+    recommendPlaceCalls++;
+    return [];
+  }
+}
+
+class _ProgressiveCoreRepository extends DashboardRepository {
+  final todayEvents = Completer<List<CalendarEvent>>();
+  final accounting = Completer<AccountingDashboardSummary>();
+  final points = Completer<PointDashboardSummary>();
+
+  @override
+  Future<DashboardSetting> loadDashboardSetting({
+    required String account,
+  }) async => _setting();
+
+  @override
+  Future<List<CalendarEvent>> loadTodayEvents(String account) =>
+      todayEvents.future;
+
+  @override
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) => accounting.future;
+
+  @override
+  Future<PointDashboardSummary> loadPointSummary({required String accountId}) =>
+      points.future;
 }
 
 class _ClearSelectionRepository extends DashboardRepository {
@@ -414,23 +583,19 @@ class _ClearSelectionRepository extends DashboardRepository {
   @override
   Future<AccountingDashboardSummary> loadAccountingSummary({
     required String accountId,
-  }) async =>
-      AccountingDashboardSummary(
-        records: [_income('record')],
-        total: 1,
-        currency: 'TWD',
-      );
+  }) async => AccountingDashboardSummary(
+    records: [_income('record')],
+    total: 1,
+    currency: 'TWD',
+  );
 
   @override
   Future<PointDashboardSummary> loadPointSummary({
     required String accountId,
-  }) async =>
-      PointDashboardSummary(
-        records: [
-          PointRecordItem(description: 'record', type: 'point', value: 1),
-        ],
-        total: 1,
-      );
+  }) async => PointDashboardSummary(
+    records: [PointRecordItem(description: 'record', type: 'point', value: 1)],
+    total: 1,
+  );
 }
 
 class _CityCacheRepository extends DashboardRepository {

@@ -1,13 +1,9 @@
 import 'package:life_pilot/apps/config_app.dart';
-import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_state.dart';
-import 'package:life_pilot/pages/home/model/event/recommended_event.dart';
-import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
-import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/pages/home/repository/repository_dashboard.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -26,10 +22,7 @@ class ModelDashboard extends SafeChangeNotifier {
   int _accountGeneration = 0;
   String? _activeAccount;
 
-  ModelDashboard({
-    required this.repository,
-    required this.localeProvider,
-  });
+  ModelDashboard({required this.repository, required this.localeProvider});
 
   bool _loading = false;
   final Map<DashboardSection, int> _sectionLoadingCounts = {};
@@ -46,8 +39,11 @@ class ModelDashboard extends SafeChangeNotifier {
 
   void _beginLoading(Iterable<DashboardSection> sections) {
     for (final section in sections) {
-      _sectionLoadingCounts.update(section, (count) => count + 1,
-          ifAbsent: () => 1);
+      _sectionLoadingCounts.update(
+        section,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
     }
   }
 
@@ -140,8 +136,11 @@ class ModelDashboard extends SafeChangeNotifier {
     try {
       eventCities = await repository.loadEventCities();
     } catch (error, stackTrace) {
-      logger.e('Could not load recommended event cities.',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Could not load recommended event cities.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return;
     }
     if (!_isCurrentRequest(account, generation)) return;
@@ -179,8 +178,11 @@ class ModelDashboard extends SafeChangeNotifier {
     try {
       placeCities = await repository.loadPlaceCities();
     } catch (error, stackTrace) {
-      logger.e('Could not load recommended place cities.',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Could not load recommended place cities.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return;
     }
     if (!_isCurrentRequest(account, generation)) return;
@@ -189,9 +191,7 @@ class ModelDashboard extends SafeChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> refreshAll({
-    required String account,
-  }) async {
+  Future<void> refreshAll({required String account}) async {
     const sections = DashboardSection.values;
     final generation = _accountGeneration;
     final recommendEventRequest = ++_recommendEventRequest;
@@ -205,10 +205,17 @@ class ModelDashboard extends SafeChangeNotifier {
     notifyListeners();
 
     try {
-      final todayEventsFuture = _loadSection(
-        DashboardSection.todaySchedule,
-        () => repository.loadTodayEvents(account),
-      );
+      final todayEventsFuture =
+          _loadSection(
+            DashboardSection.todaySchedule,
+            () => repository.loadTodayEvents(account),
+          ).then((todayEvents) {
+            if (_isCurrentRequest(account, generation) && todayEvents != null) {
+              _state = _state.copyWith(todayEvents: todayEvents);
+              notifyListeners();
+            }
+            return todayEvents;
+          });
       DashboardSetting setting = _setting;
       try {
         final loadedSetting = await repository.loadDashboardSetting(
@@ -218,78 +225,176 @@ class ModelDashboard extends SafeChangeNotifier {
           language: localeProvider.locale.languageCode,
         );
       } catch (error, stackTrace) {
-        logger.e('Could not load dashboard settings.',
-            error: error, stackTrace: stackTrace);
+        logger.e(
+          'Could not load dashboard settings.',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
       if (!_isCurrentRequest(account, generation)) return;
-
-      final configuredSections = await Future.wait([
-        _loadSection(
-          DashboardSection.recommendEvents,
-          () => repository.loadRecommendEvents(setting.recommendEventCity),
-        ),
-        _loadSection(
-          DashboardSection.recommendPlaces,
-          () => repository.loadRecommendPlaces(setting.recommendPlaceCity),
-        ),
-        _loadSection(
-          DashboardSection.accounting,
-          () => repository.loadAccountingSummary(
-            accountId: setting.accountingAccountId ?? '',
-          ),
-        ),
-        _loadSection(
-          DashboardSection.points,
-          () => repository.loadPointSummary(
-            accountId: setting.pointAccountId ?? '',
-          ),
-        ),
-      ]);
-      final todayEvents = await todayEventsFuture;
-      if (!_isCurrentRequest(account, generation)) return;
-
       _setting = setting;
-      _state = DashboardState(
-        todayEvents: todayEvents ?? _state.todayEvents,
-        recommendEvents: recommendEventRequest == _recommendEventRequest
-            ? configuredSections[0] as List<RecommendedEvent>? ??
-                _state.recommendEvents
-            : _state.recommendEvents,
-        recommendPlaces: recommendPlaceRequest == _recommendPlaceRequest
-            ? configuredSections[1] as List<RecommendedPlace>? ??
-                _state.recommendPlaces
-            : _state.recommendPlaces,
-        todayIncomeExpense: accountingRequest == _accountingRequest
-            ? (configuredSections[2] as AccountingDashboardSummary?)?.records ??
-                _state.todayIncomeExpense
-            : _state.todayIncomeExpense,
-        accountingTotal: accountingRequest == _accountingRequest
-            ? (configuredSections[2] as AccountingDashboardSummary?)?.total ??
-                _state.accountingTotal
-            : _state.accountingTotal,
-        todayAccountingTotal: accountingRequest == _accountingRequest
-            ? (configuredSections[2] as AccountingDashboardSummary?)
-                    ?.todayTotal ??
-                _state.todayAccountingTotal
-            : _state.todayAccountingTotal,
-        accountingCurrency: accountingRequest == _accountingRequest
-            ? (configuredSections[2] as AccountingDashboardSummary?)
-                    ?.currency ??
-                _state.accountingCurrency
-            : _state.accountingCurrency,
-        todayPoints: pointsRequest == _pointsRequest
-            ? (configuredSections[3] as PointDashboardSummary?)?.records ??
-                _state.todayPoints
-            : _state.todayPoints,
-        pointsTotal: pointsRequest == _pointsRequest
-            ? (configuredSections[3] as PointDashboardSummary?)?.total ??
-                _state.pointsTotal
-            : _state.pointsTotal,
-        todayPointsTotal: pointsRequest == _pointsRequest
-            ? (configuredSections[3] as PointDashboardSummary?)?.todayTotal ??
-                _state.todayPointsTotal
-            : _state.todayPointsTotal,
-      );
+      notifyListeners();
+
+      final recommendEventsFuture =
+          _loadSection(
+            DashboardSection.recommendEvents,
+            () => repository.loadRecommendEvents(setting.recommendEventCity),
+          ).then((events) {
+            if (!_isCurrentRequest(account, generation)) return;
+            if (recommendEventRequest == _recommendEventRequest &&
+                events != null) {
+              _state = _state.copyWith(recommendEvents: events);
+            }
+            notifyListeners();
+          });
+      final recommendPlacesFuture =
+          _loadSection(
+            DashboardSection.recommendPlaces,
+            () => repository.loadRecommendPlaces(setting.recommendPlaceCity),
+          ).then((places) {
+            if (!_isCurrentRequest(account, generation)) return;
+            if (recommendPlaceRequest == _recommendPlaceRequest &&
+                places != null) {
+              _state = _state.copyWith(recommendPlaces: places);
+            }
+            notifyListeners();
+          });
+      final accountingFuture =
+          _loadSection(
+            DashboardSection.accounting,
+            () => repository.loadAccountingSummary(
+              accountId: setting.accountingAccountId ?? '',
+            ),
+          ).then((accounting) {
+            if (!_isCurrentRequest(account, generation)) return;
+            if (accountingRequest == _accountingRequest && accounting != null) {
+              _state = _state.copyWith(
+                todayIncomeExpense: accounting.records,
+                accountingTotal: accounting.total,
+                todayAccountingTotal: accounting.todayTotal,
+                accountingCurrency: accounting.currency,
+              );
+            }
+            notifyListeners();
+          });
+      final pointsFuture =
+          _loadSection(
+            DashboardSection.points,
+            () => repository.loadPointSummary(
+              accountId: setting.pointAccountId ?? '',
+            ),
+          ).then((points) {
+            if (!_isCurrentRequest(account, generation)) return;
+            if (pointsRequest == _pointsRequest && points != null) {
+              _state = _state.copyWith(
+                todayPoints: points.records,
+                pointsTotal: points.total,
+                todayPointsTotal: points.todayTotal,
+              );
+            }
+            notifyListeners();
+          });
+
+      await Future.wait([
+        todayEventsFuture,
+        recommendEventsFuture,
+        recommendPlacesFuture,
+        accountingFuture,
+        pointsFuture,
+      ]);
+    } finally {
+      if (_isCurrentRequest(account, generation)) {
+        _loading = false;
+        _endLoading(sections);
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> refreshCore({required String account}) async {
+    const sections = [
+      DashboardSection.todaySchedule,
+      DashboardSection.accounting,
+      DashboardSection.points,
+    ];
+    final generation = _accountGeneration;
+    final accountingRequest = ++_accountingRequest;
+    final pointsRequest = ++_pointsRequest;
+    if (!_isCurrentRequest(account, generation)) return;
+    _loading = true;
+    _beginLoading(sections);
+    _failedSections.removeAll(sections);
+    notifyListeners();
+
+    try {
+      final todayEventsFuture =
+          _loadSection(
+            DashboardSection.todaySchedule,
+            () => repository.loadTodayEvents(account),
+          ).then((todayEvents) {
+            if (_isCurrentRequest(account, generation) && todayEvents != null) {
+              _state = _state.copyWith(todayEvents: todayEvents);
+              notifyListeners();
+            }
+            return todayEvents;
+          });
+      DashboardSetting setting = _setting;
+      try {
+        final loadedSetting = await repository.loadDashboardSetting(
+          account: account,
+        );
+        setting = loadedSetting.copyWith(
+          language: localeProvider.locale.languageCode,
+        );
+      } catch (error, stackTrace) {
+        logger.e(
+          'Could not load dashboard settings.',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      if (!_isCurrentRequest(account, generation)) return;
+      _setting = setting;
+      notifyListeners();
+
+      final accountingFuture =
+          _loadSection(
+            DashboardSection.accounting,
+            () => repository.loadAccountingSummary(
+              accountId: setting.accountingAccountId ?? '',
+            ),
+          ).then((accounting) {
+            if (_isCurrentRequest(account, generation) &&
+                accountingRequest == _accountingRequest &&
+                accounting != null) {
+              _state = _state.copyWith(
+                todayIncomeExpense: accounting.records,
+                accountingTotal: accounting.total,
+                todayAccountingTotal: accounting.todayTotal,
+                accountingCurrency: accounting.currency,
+              );
+              notifyListeners();
+            }
+          });
+      final pointsFuture =
+          _loadSection(
+            DashboardSection.points,
+            () => repository.loadPointSummary(
+              accountId: setting.pointAccountId ?? '',
+            ),
+          ).then((points) {
+            if (_isCurrentRequest(account, generation) &&
+                pointsRequest == _pointsRequest &&
+                points != null) {
+              _state = _state.copyWith(
+                todayPoints: points.records,
+                pointsTotal: points.total,
+                todayPointsTotal: points.todayTotal,
+              );
+              notifyListeners();
+            }
+          });
+      await Future.wait([todayEventsFuture, accountingFuture, pointsFuture]);
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _loading = false;
@@ -306,8 +411,11 @@ class ModelDashboard extends SafeChangeNotifier {
     try {
       return await loader();
     } catch (error, stackTrace) {
-      logger.e('Could not load dashboard section: $section.',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Could not load dashboard section: $section.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       _failedSections.add(section);
       return null;
     }
@@ -347,9 +455,7 @@ class ModelDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshTodaySchedule({
-    required String account,
-  }) async {
+  Future<void> refreshTodaySchedule({required String account}) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     _loading = true;
@@ -360,9 +466,7 @@ class ModelDashboard extends SafeChangeNotifier {
       final todayEvents = await repository.loadTodayEvents(account);
       if (!_isCurrentRequest(account, generation)) return;
 
-      _state = _state.copyWith(
-        todayEvents: todayEvents,
-      );
+      _state = _state.copyWith(todayEvents: todayEvents);
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _loading = false;
@@ -372,9 +476,7 @@ class ModelDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshRecommendEvent({
-    required String account,
-  }) async {
+  Future<void> refreshRecommendEvent({required String account}) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     final request = ++_recommendEventRequest;
@@ -392,9 +494,7 @@ class ModelDashboard extends SafeChangeNotifier {
         return;
       }
 
-      _state = _state.copyWith(
-        recommendEvents: recommendedEvents,
-      );
+      _state = _state.copyWith(recommendEvents: recommendedEvents);
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(const [DashboardSection.recommendEvents]);
@@ -407,9 +507,7 @@ class ModelDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshRecommendPlace({
-    required String account,
-  }) async {
+  Future<void> refreshRecommendPlace({required String account}) async {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
     final request = ++_recommendPlaceRequest;
@@ -427,9 +525,7 @@ class ModelDashboard extends SafeChangeNotifier {
         return;
       }
 
-      _state = _state.copyWith(
-        recommendPlaces: recommendedPlaces,
-      );
+      _state = _state.copyWith(recommendPlaces: recommendedPlaces);
     } finally {
       if (_isCurrentRequest(account, generation)) {
         _endLoading(const [DashboardSection.recommendPlaces]);
@@ -442,9 +538,7 @@ class ModelDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshAccounting({
-    required String accountId,
-  }) async {
+  Future<void> refreshAccounting({required String accountId}) async {
     final account = _activeAccount;
     final generation = _accountGeneration;
     if (account == null || !_isCurrentRequest(account, generation)) return;
@@ -482,9 +576,7 @@ class ModelDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshPoints({
-    required String accountId,
-  }) async {
+  Future<void> refreshPoints({required String accountId}) async {
     final account = _activeAccount;
     final generation = _accountGeneration;
     if (account == null || !_isCurrentRequest(account, generation)) return;
@@ -525,10 +617,7 @@ class ModelDashboard extends SafeChangeNotifier {
     final generation = _accountGeneration;
     if (!_isCurrentRequest(account, generation)) return;
 
-    await repository.completeEvent(
-      id: id,
-      account: account,
-    );
+    await repository.completeEvent(id: id, account: account);
 
     if (!_isCurrentRequest(account, generation)) return;
     _state = _state.copyWith(
@@ -554,18 +643,17 @@ class ModelDashboard extends SafeChangeNotifier {
     final eventDate = DateTime(startDate.year, startDate.month, startDate.day);
     if (eventDate.isBefore(today) || !eventDate.isBefore(visibleUntil)) return;
 
-    final events = [
-      ..._state.todayEvents.where((item) => item.id != event.id),
-      event,
-    ]..sort((a, b) {
-        final dateComparison = a.startDate!.compareTo(b.startDate!);
-        if (dateComparison != 0) return dateComparison;
-        final aMinutes =
-            (a.startTime?.hour ?? 0) * 60 + (a.startTime?.minute ?? 0);
-        final bMinutes =
-            (b.startTime?.hour ?? 0) * 60 + (b.startTime?.minute ?? 0);
-        return aMinutes.compareTo(bMinutes);
-      });
+    final events =
+        [..._state.todayEvents.where((item) => item.id != event.id), event]
+          ..sort((a, b) {
+            final dateComparison = a.startDate!.compareTo(b.startDate!);
+            if (dateComparison != 0) return dateComparison;
+            final aMinutes =
+                (a.startTime?.hour ?? 0) * 60 + (a.startTime?.minute ?? 0);
+            final bMinutes =
+                (b.startTime?.hour ?? 0) * 60 + (b.startTime?.minute ?? 0);
+            return aMinutes.compareTo(bMinutes);
+          });
 
     _state = _state.copyWith(
       todayEvents: events.take(5).toList(growable: false),
@@ -577,9 +665,7 @@ class ModelDashboard extends SafeChangeNotifier {
     required String account,
     required String city,
   }) async {
-    final updatedSetting = _setting.copyWith(
-      recommendEventCity: city,
-    );
+    final updatedSetting = _setting.copyWith(recommendEventCity: city);
 
     await repository.saveDashboardSetting(
       account: account,
@@ -589,18 +675,14 @@ class ModelDashboard extends SafeChangeNotifier {
     _setting = updatedSetting;
     notifyListeners();
 
-    await refreshRecommendEvent(
-      account: account,
-    );
+    await refreshRecommendEvent(account: account);
   }
 
   Future<void> changePlaceCity({
     required String account,
     required String city,
   }) async {
-    final updatedSetting = _setting.copyWith(
-      recommendPlaceCity: city,
-    );
+    final updatedSetting = _setting.copyWith(recommendPlaceCity: city);
 
     await repository.saveDashboardSetting(
       account: account,
@@ -610,27 +692,18 @@ class ModelDashboard extends SafeChangeNotifier {
     _setting = updatedSetting;
     notifyListeners();
 
-    await refreshRecommendPlace(
-      account: account,
-    );
+    await refreshRecommendPlace(account: account);
   }
 
   Future<void> changeLanguage({
     required String account,
     required String language,
   }) async {
-    _setting = _setting.copyWith(
-      language: language,
-    );
+    _setting = _setting.copyWith(language: language);
 
-    await repository.saveDashboardSetting(
-      account: account,
-      setting: _setting,
-    );
+    await repository.saveDashboardSetting(account: account, setting: _setting);
 
-    await refreshAll(
-      account: account,
-    );
+    await refreshAll(account: account);
   }
 
   Future<void> changeAccountingAccount({

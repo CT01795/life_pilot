@@ -712,6 +712,15 @@
   "@eventPointIncrease": {"description": "일정 완료 시 포인트 추가"},
   "eventPointDecrease": "감점",
   "@eventPointDecrease": {"description": "일정 완료 시 포인트 차감"},
+  "eventCompleted": "일정을 완료했습니다",
+  "@eventCompleted": {"description": "일정 완료 후 표시되는 성공 메시지"},
+  "eventCompletedWithRecords": "일정을 완료했습니다: {items}",
+  "@eventCompletedWithRecords": {
+    "description": "일정 완료 시 저장된 관련 기록 요약",
+    "placeholders": {"items": {"type": "String"}}
+  },
+  "eventMemory": "추억",
+  "@eventMemory": {"description": "일정 완료 요약에 표시되는 추억 기록"},
   "eventRefresh": "추천 이벤트 업데이트",
   "@eventRefresh": {"description": "추천 이벤트 업데이트 버튼"},
   "eventRefreshSucceeded": "추천 이벤트를 업데이트했습니다.",

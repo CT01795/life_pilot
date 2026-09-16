@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_header_summary.dart';
 
 void main() {
   const trailingKey = Key('header-trailing');
@@ -105,4 +106,41 @@ void main() {
       expect(find.text('Today and upcoming schedules'), findsOneWidget);
     },
   );
+
+  testWidgets('collapsed summary and arrow fit a narrow phone header', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+          child: Scaffold(
+            body: SizedBox(
+              width: 260,
+              child: DashboardCardHeader(
+                icon: Icons.account_balance_wallet,
+                title: 'Income and expense records',
+                trailingWidth: null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const DashboardHeaderSummary(
+                      value: '1,234,567 TWD',
+                      tooltip: 'Today total',
+                    ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.keyboard_arrow_down),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
 }

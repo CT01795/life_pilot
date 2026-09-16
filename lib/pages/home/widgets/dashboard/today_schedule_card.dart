@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
@@ -14,7 +13,9 @@ import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.da
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_header_summary.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/event_completion_sheet.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/event_completion_accounting.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -81,13 +82,24 @@ class TodayScheduleCard extends StatelessWidget {
               icon: Icons.calendar_today,
               title: loc.upcomingSchedule,
               trailingWidth: null,
-              trailing: IconButton(
-                onPressed: () => onExpansionChanged(!isExpanded),
-                icon: AnimatedRotation(
-                  turns: isExpanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 180),
-                  child: const Icon(Icons.keyboard_arrow_down),
-                ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isExpanded)
+                    DashboardHeaderSummary(
+                      value: events.length.toString(),
+                      tooltip: loc.upcomingSchedule,
+                      isLoading: isLoading && events.isEmpty,
+                    ),
+                  IconButton(
+                    onPressed: () => onExpansionChanged(!isExpanded),
+                    icon: AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: const Icon(Icons.keyboard_arrow_down),
+                    ),
+                  ),
+                ],
               ),
             ),
             if (isExpanded) ...[
@@ -188,6 +200,9 @@ class TodayScheduleCard extends StatelessWidget {
                                   return;
                                 }
                                 final pendingWrites = <Future<void>>[];
+                                var memorySaved = false;
+                                var accountingSaved = false;
+                                var pointsSaved = false;
                                 if (choice.addToMemory) {
                                   final calendar = context
                                       .read<CalendarService>();
@@ -198,15 +213,7 @@ class TodayScheduleCard extends StatelessWidget {
                                         event: e,
                                         id: e.id,
                                       );
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(loc.memoryAddOk),
-                                          ),
-                                        );
-                                      }
+                                      memorySaved = true;
                                     } catch (error, stackTrace) {
                                       logger.e(
                                         'Could not add calendar event to memory.',
@@ -234,30 +241,31 @@ class TodayScheduleCard extends StatelessWidget {
                                     }
                                   }());
                                 }
-                                if (choice.expenseValue case final value?) {
+                                final accountingRecords =
+                                    buildEventAccountingRecords(
+                                      eventName: e.name,
+                                      eventId: e.id,
+                                      currency: accountingCurrency,
+                                      recordedAt: choice.recordedAt,
+                                      incomeValue: choice.incomeValue,
+                                      incomeCategory: choice.incomeCategory,
+                                      expenseValue: choice.expenseValue,
+                                      expenseCategory: choice.expenseCategory,
+                                    );
+                                if (accountingRecords.isNotEmpty) {
                                   pendingWrites.add(() async {
                                     try {
                                       await ServiceAccounting()
                                           .insertRecordsBatch(
                                             accountId: accountingAccountId!,
                                             type: 'balance',
-                                            records: [
-                                              AccountingPreview(
-                                                description: e.name,
-                                                value: value,
-                                                currency: accountingCurrency,
-                                                exchangeRate: null,
-                                                eventId: e.id,
-                                                date: choice.recordedAt,
-                                                primaryCategory:
-                                                    choice.expenseCategory,
-                                              ),
-                                            ],
+                                            records: accountingRecords,
                                             currency: accountingCurrency,
                                           );
+                                      accountingSaved = true;
                                     } catch (error, stackTrace) {
                                       logger.e(
-                                        'Could not add event expense.',
+                                        'Could not add event accounting records.',
                                         error: error,
                                         stackTrace: stackTrace,
                                       );
@@ -299,6 +307,7 @@ class TodayScheduleCard extends StatelessWidget {
                                               ),
                                             ],
                                           );
+                                      pointsSaved = true;
                                     } catch (error, stackTrace) {
                                       logger.e(
                                         'Could not add event point record.',
@@ -327,14 +336,20 @@ class TodayScheduleCard extends StatelessWidget {
                                   }());
                                 }
                                 await Future.wait(pendingWrites);
-                                if (!context.mounted || pendingWrites.isEmpty) {
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                if (pendingWrites.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(loc.eventCompleted)),
+                                  );
                                   return;
                                 }
                                 final refreshes = <Future<void>>[
                                   context
                                       .read<ControllerAuth>()
                                       .refreshSubscriptionUsage(),
-                                  if (choice.expenseValue != null)
+                                  if (accountingRecords.isNotEmpty)
                                     context
                                         .read<ModelDashboard>()
                                         .refreshAccounting(
@@ -348,6 +363,27 @@ class TodayScheduleCard extends StatelessWidget {
                                         ),
                                 ];
                                 await Future.wait(refreshes);
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                final savedItems = <String>[
+                                  if (memorySaved) loc.eventMemory,
+                                  if (accountingSaved &&
+                                      choice.incomeValue != null)
+                                    loc.eventIncome,
+                                  if (accountingSaved &&
+                                      choice.expenseValue != null)
+                                    loc.eventExpense,
+                                  if (pointsSaved) loc.pointsRecord,
+                                ];
+                                final message = savedItems.isEmpty
+                                    ? loc.eventCompleted
+                                    : loc.eventCompletedWithRecords(
+                                        savedItems.join(' · '),
+                                      );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(message)),
+                                );
                               },
                             ),
                           ),

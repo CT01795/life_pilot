@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/account_selector_button.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_header_summary.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/home_quick_record_navigation.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -79,6 +80,12 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     const Expanded(child: AccountSelectorButton()),
                   ],
+                  if (!isExpanded)
+                    DashboardHeaderSummary(
+                      value: '${formatter.format(todayTotal)} $currency',
+                      tooltip: loc.todayIncomeExpense,
+                      isLoading: isLoading,
+                    ),
                   IconButton(
                     onPressed: () => onExpansionChanged(!isExpanded),
                     icon: AnimatedRotation(

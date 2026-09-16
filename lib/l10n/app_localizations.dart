@@ -2211,6 +2211,24 @@ abstract class AppLocalizations {
   /// **'Deduct points'**
   String get eventPointDecrease;
 
+  /// Success message shown after completing a schedule
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule completed'**
+  String get eventCompleted;
+
+  /// Summary shown after completing a schedule and saving related records
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule completed: {items}'**
+  String eventCompletedWithRecords(String items);
+
+  /// Memory record in the schedule completion summary
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get eventMemory;
+
   /// Recommended event refresh button
   ///
   /// In en, this message translates to:
