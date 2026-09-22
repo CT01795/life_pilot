@@ -671,6 +671,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeJourneyReviewHint => 'Complete a schedule and record memories, money, and points together';
 
   @override
+  String get todayLifeOverview => 'Today\'s Life Overview';
+
+  @override
+  String get todayLifeOverviewHint => 'See your schedule, money, and points together. Tap an item for details.';
+
+  @override
   String get addToSchedule => 'Add to schedule';
 
   @override

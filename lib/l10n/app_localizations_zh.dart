@@ -671,6 +671,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeJourneyReviewHint => '完成行程時，可一次整理回憶、收支與積分';
 
   @override
+  String get todayLifeOverview => '今日生活總覽';
+
+  @override
+  String get todayLifeOverviewHint => '行程、收支與積分集中整理，點選項目即可查看詳情';
+
+  @override
   String get addToSchedule => '加入行程';
 
   @override

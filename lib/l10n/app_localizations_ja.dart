@@ -671,6 +671,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get homeJourneyReviewHint => '予定の完了時に、思い出・収支・ポイントをまとめて記録できます';
 
   @override
+  String get todayLifeOverview => '今日の生活サマリー';
+
+  @override
+  String get todayLifeOverviewHint => '予定・収支・ポイントをまとめて確認できます。項目をタップして詳細を表示します。';
+
+  @override
   String get addToSchedule => '旅程に追加する';
 
   @override

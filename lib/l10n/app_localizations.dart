@@ -1419,6 +1419,18 @@ abstract class AppLocalizations {
   /// **'Complete a schedule and record memories, money, and points together'**
   String get homeJourneyReviewHint;
 
+  /// Title for the integrated daily dashboard overview
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Life Overview'**
+  String get todayLifeOverview;
+
+  /// Hint for opening sections from the daily overview
+  ///
+  /// In en, this message translates to:
+  /// **'See your schedule, money, and points together. Tap an item for details.'**
+  String get todayLifeOverviewHint;
+
   /// Label for addToSchedule
   ///
   /// In en, this message translates to:

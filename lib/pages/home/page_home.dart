@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/widgets/dashboard/point_summary_card.dart'
 import 'package:life_pilot/pages/home/widgets/dashboard/recommend_event_card.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/recommend_place_card.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/today_schedule_card.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/today_life_overview_card.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,9 @@ class PageHome extends StatefulWidget {
 }
 
 class _PageHomeState extends State<PageHome> {
+  final _scheduleKey = GlobalKey();
+  final _accountingKey = GlobalKey();
+  final _pointsKey = GlobalKey();
   bool _todayScheduleExpanded = true;
   bool _recommendEventsExpanded = false;
   bool _recommendPlacesExpanded = false;
@@ -30,6 +34,20 @@ class _PageHomeState extends State<PageHome> {
   Future<void>? _recommendPlacesLoad;
   String? _recommendEventsAccount;
   String? _recommendPlacesAccount;
+
+  void _openSection(GlobalKey key, VoidCallback expand) {
+    setState(expand);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetContext = key.currentContext;
+      if (!mounted || targetContext == null) return;
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        alignment: 0.08,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -131,7 +149,21 @@ class _PageHomeState extends State<PageHome> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  TodayLifeOverviewCard(
+                    onSchedulePressed: () => _openSection(
+                      _scheduleKey,
+                      () => _todayScheduleExpanded = true,
+                    ),
+                    onAccountingPressed: () => _openSection(
+                      _accountingKey,
+                      () => _accountingExpanded = true,
+                    ),
+                    onPointsPressed: () =>
+                        _openSection(_pointsKey, () => _pointsExpanded = true),
+                  ),
+                  Gaps.h16,
                   TodayScheduleCard(
+                    key: _scheduleKey,
                     isExpanded: _todayScheduleExpanded,
                     onExpansionChanged: (value) =>
                         setState(() => _todayScheduleExpanded = value),
@@ -156,12 +188,14 @@ class _PageHomeState extends State<PageHome> {
                   ),
                   Gaps.h16,
                   IncomeExpenseSummaryCard(
+                    key: _accountingKey,
                     isExpanded: _accountingExpanded,
                     onExpansionChanged: (value) =>
                         setState(() => _accountingExpanded = value),
                   ),
                   Gaps.h16,
                   PointSummaryCard(
+                    key: _pointsKey,
                     isExpanded: _pointsExpanded,
                     onExpansionChanged: (value) =>
                         setState(() => _pointsExpanded = value),

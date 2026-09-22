@@ -671,6 +671,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeJourneyReviewHint => '일정을 완료하며 추억, 수입·지출, 포인트를 함께 기록할 수 있습니다';
 
   @override
+  String get todayLifeOverview => '오늘의 생활 요약';
+
+  @override
+  String get todayLifeOverviewHint => '일정, 수입·지출, 포인트를 한곳에서 확인하고 항목을 눌러 자세히 볼 수 있습니다.';
+
+  @override
   String get addToSchedule => '일정에 추가';
 
   @override
