@@ -16,7 +16,6 @@ import 'package:provider/provider.dart';
 class CalendarAppBar extends StatelessWidget {
   final String monthLabel;
   final Color monthColor;
-  final double buttonSize;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onToday;
@@ -28,7 +27,6 @@ class CalendarAppBar extends StatelessWidget {
     super.key,
     required this.monthLabel,
     required this.monthColor,
-    required this.buttonSize,
     required this.onPrevious,
     required this.onNext,
     required this.onToday,
@@ -40,7 +38,7 @@ class CalendarAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final storage = context.select<ControllerAuth, DataStorageLocation>(
       (auth) => auth.preferredStorage,
     );
@@ -48,28 +46,19 @@ class CalendarAppBar extends StatelessWidget {
     // 手機縮小，桌面維持原本大小
     final bool isSmallScreen = screenWidth < 500;
 
-    final double iconSize =
-        buttonSize; //isSmallScreen ? buttonSize : buttonSize*1.2;
+    // Use distinct phone/tablet sizes. Scaling directly from the screen made
+    // tablet icons overlap, while a single small cap made them look undersized.
+    final double controlSize = isSmallScreen ? 40 : 56;
+    final double iconSize = isSmallScreen ? 28 : 36;
 
-    Widget iconButton(
-      IconData icon,
-      VoidCallback onTap,
-      String tooltip,
-    ) {
+    Widget iconButton(IconData icon, VoidCallback onTap, String tooltip) {
       return SizedBox(
-        width: isSmallScreen ? 40 : 48,
-        height: 48,
+        width: controlSize,
+        height: controlSize,
         child: IconButton(
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(
-            minWidth: 0,
-            minHeight: 0,
-          ),
-          icon: Icon(
-            icon,
-            size: iconSize,
-            color: monthColor,
-          ),
+          constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          icon: Icon(icon, size: iconSize, color: monthColor),
           tooltip: tooltip,
           onPressed: onTap,
         ),
@@ -81,33 +70,18 @@ class CalendarAppBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (storage == DataStorageLocation.cloud) ...[
-          iconButton(
-            Icons.people_alt_outlined,
-            onSharing,
-            loc.calendarSharing,
-          ),
+          iconButton(Icons.people_alt_outlined, onSharing, loc.calendarSharing),
           Gaps.w8,
         ],
-        iconButton(
-          Icons.arrow_left_rounded,
-          onPrevious,
-          loc.previousMonth,
-        ),
+        iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth),
         Gaps.w8,
         SizedBox(
-          width: isSmallScreen ? 40 : 48,
-          height: 48,
+          width: controlSize,
+          height: controlSize,
           child: IconButton(
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
-            icon: Icon(
-              Icons.today,
-              size: iconSize,
-              color: monthColor,
-            ),
+            constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            icon: Icon(Icons.today, size: iconSize, color: monthColor),
             tooltip: loc.today,
             onPressed: onToday,
           ),
@@ -116,32 +90,22 @@ class CalendarAppBar extends StatelessWidget {
         GestureDetector(
           onTap: onMonthTap,
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 4 : 8,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8),
             child: Text(
               monthLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: isSmallScreen ? 18 : buttonSize * 0.5,
+                fontSize: isSmallScreen ? 18 : 28,
                 color: monthColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
         ),
-        iconButton(
-          Icons.arrow_right_rounded,
-          onNext,
-          loc.nextMonth,
-        ),
+        iconButton(Icons.arrow_right_rounded, onNext, loc.nextMonth),
         Gaps.w8,
-        iconButton(
-          Icons.add,
-          onAdd,
-          loc.add,
-        ),
+        iconButton(Icons.add, onAdd, loc.add),
       ],
     );
   }
@@ -167,22 +131,26 @@ class CalendarBody extends StatelessWidget {
         return Column(
           children: [
             WeekDayHeader(
-                isCurrentMonth: DateTimeCompare.isCurrentMonth(
-                    controllerCalendar.currentMonth)),
+              isCurrentMonth: DateTimeCompare.isCurrentMonth(
+                controllerCalendar.currentMonth,
+              ),
+            ),
             // 顯示日曆的每一行
             Expanded(
               child: PageView.builder(
                 controller: pageController,
                 onPageChanged: (index) async {
-                  final newMonth =
-                      controllerCalendar.pageIndexToMonth(index: index);
+                  final newMonth = controllerCalendar.pageIndexToMonth(
+                    index: index,
+                  );
                   // ✅ 不直接觸發 UI，等資料載完再一次刷新
                   //await controllerCalendar.loadCalendarEvents(month: newMonth);
                   await controllerCalendar.goToMonth(month: newMonth);
                 },
                 itemBuilder: (context, index) {
-                  final monthToShow =
-                      controllerCalendar.pageIndexToMonth(index: index);
+                  final monthToShow = controllerCalendar.pageIndexToMonth(
+                    index: index,
+                  );
                   return CalendarMonthView(
                     key: ValueKey(monthToShow.toMonthKey()), // ✅ 用顯示月份決定 key
                     auth: auth,
@@ -202,18 +170,13 @@ class CalendarBody extends StatelessWidget {
 class WeekDayHeader extends StatelessWidget {
   final bool isCurrentMonth;
 
-  const WeekDayHeader({
-    super.key,
-    required this.isCurrentMonth,
-  });
+  const WeekDayHeader({super.key, required this.isCurrentMonth});
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!; // ✅ 直接讀 context
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final labelSize =
-        (screenHeight > screenWidth ? screenWidth : screenHeight) * 0.05;
+    final shortestSide = MediaQuery.sizeOf(context).shortestSide;
+    final labelSize = (shortestSide * 0.03).clamp(13.0, 20.0);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -225,7 +188,7 @@ class WeekDayHeader extends StatelessWidget {
           loc.weekDayWed,
           loc.weekDayThu,
           loc.weekDayFri,
-          loc.weekDaySat
+          loc.weekDaySat,
         ][index];
 
         bool isTodayWeekDay =
@@ -243,7 +206,7 @@ class WeekDayHeader extends StatelessWidget {
             child: Text(
               weekday,
               style: TextStyle(
-                fontSize: labelSize * 0.6,
+                fontSize: labelSize,
                 fontWeight: FontWeight.bold,
                 color: isTodayWeekDay ? Colors.blueAccent : Colors.black,
               ),
@@ -306,76 +269,80 @@ class WeekRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final cellWidth = constraints.maxWidth / 7;
-      const dateCellHeight = 28.0; // 日期格子高度固定
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellWidth = constraints.maxWidth / 7;
+        const dateCellHeight = 28.0; // 日期格子高度固定
 
-      final eventHeight = 22.0; //eventAreaHeight / maxEventRows;
-      final now = DateTime.now();
-      return Stack(
-        children: [
-          Row(
-            //key: weekRowKey,
-            children: week.map((date) {
-              bool isFromOtherMonth = date.month != displayedMonth.month;
-              bool isToday = date.day == now.day &&
-                  date.month == now.month &&
-                  date.year == now.year;
+        final eventHeight = 22.0; //eventAreaHeight / maxEventRows;
+        final now = DateTime.now();
+        return Stack(
+          children: [
+            Row(
+              //key: weekRowKey,
+              children: week.map((date) {
+                bool isFromOtherMonth = date.month != displayedMonth.month;
+                bool isToday =
+                    date.day == now.day &&
+                    date.month == now.month &&
+                    date.year == now.year;
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    await openDayDialog(context, controllerCalendar, date);
-                  },
-                  child: Container(
-                    margin: Insets.e0,
-                    decoration: BoxDecoration(
-                      color: isFromOtherMonth
-                          ? Colors.grey[100]
-                          : Colors.transparent,
-                      border: Border.all(color: Colors.black12),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    alignment: Alignment.topCenter,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        isToday
-                            ? Container(
-                                padding: Insets.all2,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.blueAccent),
-                                ),
-                                child: Text(
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      await openDayDialog(context, controllerCalendar, date);
+                    },
+                    child: Container(
+                      margin: Insets.e0,
+                      decoration: BoxDecoration(
+                        color: isFromOtherMonth
+                            ? Colors.grey[100]
+                            : Colors.transparent,
+                        border: Border.all(color: Colors.black12),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      alignment: Alignment.topCenter,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          isToday
+                              ? Container(
+                                  padding: Insets.all2,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.blueAccent,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${date.day}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueAccent,
+                                    ),
+                                  ),
+                                )
+                              : Text(
                                   '${date.day}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blueAccent,
+                                  style: TextStyle(
+                                    color: isFromOtherMonth
+                                        ? Colors.grey
+                                        : Colors.black,
                                   ),
                                 ),
-                              )
-                            : Text(
-                                '${date.day}',
-                                style: TextStyle(
-                                  color: isFromOtherMonth
-                                      ? Colors.grey
-                                      : Colors.black,
-                                ),
-                              ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          // 3. 使用 controller 已計算的事件分組來畫事件條
-          Selector<ControllerCalendar, List<EventWithRow>>(
+                );
+              }).toList(),
+            ),
+            // 3. 使用 controller 已計算的事件分組來畫事件條
+            Selector<ControllerCalendar, List<EventWithRow>>(
               selector: (_, controller) => controller.getEventRowsForWeek(
-                    month: displayedMonth,
-                    weekIndex: weekIndex,
-                  ),
+                month: displayedMonth,
+                weekIndex: weekIndex,
+              ),
               shouldRebuild: (prev, next) => !listEquals(prev, next),
               builder: (context, weekEvents, _) {
                 return Stack(
@@ -385,21 +352,25 @@ class WeekRow extends StatelessWidget {
 
                     final start = DateTimeFormatter.dateOnly(event.startDate!);
                     final end = DateTimeFormatter.dateOnly(
-                        event.endDate ?? event.startDate!);
+                      event.endDate ?? event.startDate!,
+                    );
                     final weekStart = week.first;
                     final weekEnd = week.last;
 
-                    final visibleStart =
-                        start.isBefore(weekStart) ? weekStart : start;
+                    final visibleStart = start.isBefore(weekStart)
+                        ? weekStart
+                        : start;
                     final visibleEnd = end.isAfter(weekEnd) ? weekEnd : end;
 
-                    final startIndex =
-                        visibleStart.difference(weekStart).inDays;
+                    final startIndex = visibleStart
+                        .difference(weekStart)
+                        .inDays;
                     final spanDays =
                         visibleEnd.difference(visibleStart).inDays + 1;
 
                     return PositionedDirectional(
-                      top: dateCellHeight +
+                      top:
+                          dateCellHeight +
                           eventHeight *
                               rowIndex, // ✅ 自適應 top: 28 + 23.0 * rowIndex,
                       start: startIndex * cellWidth,
@@ -410,22 +381,29 @@ class WeekRow extends StatelessWidget {
                         onTapDown: (details) async {
                           // 算出第幾格（哪一天）
                           final tapX = details.localPosition.dx;
-                          final tappedOffset =
-                              (tapX / cellWidth).floor().clamp(0, spanDays - 1);
-                          final tappedDate =
-                              visibleStart.add(Duration(days: tappedOffset));
+                          final tappedOffset = (tapX / cellWidth).floor().clamp(
+                            0,
+                            spanDays - 1,
+                          );
+                          final tappedDate = visibleStart.add(
+                            Duration(days: tappedOffset),
+                          );
                           // 4. 呼叫 dialog，並傳入正確的日期
                           await openDayDialog(
-                              context, controllerCalendar, tappedDate);
+                            context,
+                            controllerCalendar,
+                            tappedDate,
+                          );
                         },
                         child: Container(
                           decoration: BoxDecoration(
                             color: event.isTaiwanHoliday
                                 ? Colors.redAccent
                                 : (event.isHoliday
-                                    ? Colors.transparent
-                                    : controllerCalendar
-                                        .eventOwnerColor(event)),
+                                      ? Colors.transparent
+                                      : controllerCalendar.eventOwnerColor(
+                                          event,
+                                        )),
                             borderRadius: BorderRadiusDirectional.horizontal(
                               start: (start.isAtSameMomentAs(visibleStart)
                                   ? const Radius.circular(2)
@@ -457,9 +435,11 @@ class WeekRow extends StatelessWidget {
                     );
                   }).toList(),
                 );
-              }),
-        ],
-      );
-    });
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

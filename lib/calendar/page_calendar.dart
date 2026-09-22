@@ -71,7 +71,6 @@ class _PageCalendarState extends State<PageCalendar> {
                 return CalendarAppBar(
                   monthLabel: monthLabel, //DateFormat('y / M').format(month),
                   monthColor: isCurrentMonth ? Colors.blueAccent : Colors.black,
-                  buttonSize: MediaQuery.of(context).size.shortestSide * 0.1,
                   onPrevious: () async {
                     await controller.previousMonth();
                     _updatePageController(controller.pageIndex);
