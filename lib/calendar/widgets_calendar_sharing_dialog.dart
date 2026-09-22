@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/service_calendar_sharing.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -32,6 +34,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   final _dialogScrollController = ScrollController();
   late Future<CalendarSharingState> _state;
   bool _submitting = false;
+  bool _silentlyRefreshing = false;
   String? _emailError;
   bool _eventSelectionError = false;
   final Set<String> _selectedEventIds = {};
@@ -57,6 +60,13 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     final state = await widget.service.load(
       visibleEvents: widget.visibleEvents,
     );
+    if (mounted) {
+      // Sharing can be accepted, declined, or stopped on another device.
+      // Refresh the cached quota whenever this dialog reads server state.
+      unawaited(
+        context.read<ControllerAuth>().refreshSubscriptionUsage(),
+      );
+    }
     if (mounted &&
         _emailsController.text.trim().isEmpty &&
         state.sent.isNotEmpty) {
@@ -65,7 +75,28 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     return state;
   }
 
-  void _reload() => setState(() => _state = _loadState());
+  void _reload() {
+    final nextState = _loadState();
+    setState(() {
+      _state = nextState;
+    });
+  }
+
+  Future<void> _refreshSilently() async {
+    if (!mounted || _submitting || _silentlyRefreshing) return;
+    setState(() => _silentlyRefreshing = true);
+    try {
+      final nextState = await _loadState();
+      if (!mounted) return;
+      setState(() {
+        _state = Future.value(nextState);
+      });
+    } catch (_) {
+      // Keep the last usable state when an explicit refresh fails.
+    } finally {
+      if (mounted) setState(() => _silentlyRefreshing = false);
+    }
+  }
 
   Future<void> _run(
     Future<void> Function() action, {
@@ -75,8 +106,6 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     setState(() => _submitting = true);
     try {
       await action();
-      await context.read<ControllerAuth>().refreshSubscriptionUsage();
-      await widget.onSharingChanged();
       if (mounted) {
         _reload();
         if (successMessage != null) {
@@ -86,15 +115,40 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
             ..showSnackBar(SnackBar(content: Text(successMessage)));
         }
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         final loc = AppLocalizations.of(context)!;
+        final message = error is CalendarSharingFailure
+            ? switch (error.code) {
+                'quota' => loc.calendarInvitationQuotaExceeded,
+                'duplicate' => loc.calendarInvitationDuplicate,
+                'account_not_found' => loc.calendarInvitationAccountNotFound,
+                'invalid_email' => loc.invalidEmail,
+                'self_invite' => loc.calendarInvitationSelfInvite,
+                'event_unavailable' => loc.calendarInvitationEventUnavailable,
+                'stale_invitation' => loc.calendarInvitationStateChanged,
+                _ => loc.calendarInvitationFailedWithReason(
+                  error.details ?? error.code,
+                ),
+              }
+            : loc.calendarInvitationFailed;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(loc.calendarInvitationFailed)));
+        ).showSnackBar(SnackBar(content: Text(message)));
+        // Re-read the actual server state even when an older backend reports
+        // a failure after it has already changed the invitation.
+        _reload();
       }
+      return;
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+
+    if (!mounted) return;
+    try {
+      await widget.onSharingChanged();
+    } catch (_) {
+      // The dialog reload above remains available if the parent refresh fails.
     }
   }
 
@@ -109,8 +163,8 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         _emailError = emails.isEmpty
             ? loc.noEmailError
             : invalidEmail
-                ? loc.invalidEmail
-                : null;
+            ? loc.invalidEmail
+            : null;
         _eventSelectionError = _selectedEventIds.isEmpty;
       });
       return;
@@ -129,7 +183,23 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(loc.calendarSharing),
+      title: Row(
+        children: [
+          Expanded(child: Text(loc.calendarSharing)),
+          IconButton(
+            tooltip: loc.retry,
+            onPressed: _submitting || _silentlyRefreshing
+                ? null
+                : _refreshSilently,
+            icon: _silentlyRefreshing
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+        ],
+      ),
       content: SizedBox(
         width: MediaQuery.sizeOf(context).width.clamp(0, 560).toDouble(),
         child: FutureBuilder<CalendarSharingState>(
@@ -165,23 +235,29 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
             final state = snapshot.data!;
             final auth = context.watch<ControllerAuth>();
             final sent = state.sent
-                .where((item) => _matchesKeyword(
-                      item.invitedEmail,
-                      _sentSearchController.text,
-                    ))
+                .where(
+                  (item) => _matchesKeyword(
+                    item.invitedEmail,
+                    _sentSearchController.text,
+                  ),
+                )
                 .toList(growable: false);
             final received = state.received
-                .where((item) => _matchesKeyword(
-                      item.sharedBy,
-                      _receivedSearchController.text,
-                    ))
+                .where(
+                  (item) => _matchesKeyword(
+                    item.sharedBy,
+                    _receivedSearchController.text,
+                  ),
+                )
                 .toList(growable: false);
             final shareableEvents = state.shareableEvents
-                .where((event) => _matchesEventKeyword(
-                      context,
-                      event,
-                      _eventSearchController.text,
-                    ))
+                .where(
+                  (event) => _matchesEventKeyword(
+                    context,
+                    event,
+                    _eventSearchController.text,
+                  ),
+                )
                 .toList(growable: false);
             return ConstrainedBox(
               constraints: BoxConstraints(
@@ -269,11 +345,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                           _emptySection(context, loc.noData)
                         else
                           for (final invitation in received)
-                            _receivedInvitationTile(
-                              context,
-                              loc,
-                              invitation,
-                            ),
+                            _receivedInvitationTile(context, loc, invitation),
                       ],
                     ),
                     Gaps.h16,
@@ -288,10 +360,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                           label: loc.calendarSearchEvent,
                         ),
                         if (shareableEvents.isEmpty)
-                          _emptySection(
-                            context,
-                            loc.calendarNoShareableEvents,
-                          )
+                          _emptySection(context, loc.calendarNoShareableEvents)
                         else ...[
                           CheckboxListTile(
                             contentPadding: const EdgeInsetsDirectional.only(
@@ -305,21 +374,21 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                             onChanged: _submitting
                                 ? null
                                 : (selected) => setState(() {
-                                      if (selected == true) {
-                                        _selectedEventIds.addAll(
-                                          shareableEvents.map(
-                                            (event) => event.id,
-                                          ),
-                                        );
-                                      } else {
-                                        _selectedEventIds.removeAll(
-                                          shareableEvents.map(
-                                            (event) => event.id,
-                                          ),
-                                        );
-                                      }
-                                      _eventSelectionError = false;
-                                    }),
+                                    if (selected == true) {
+                                      _selectedEventIds.addAll(
+                                        shareableEvents.map(
+                                          (event) => event.id,
+                                        ),
+                                      );
+                                    } else {
+                                      _selectedEventIds.removeAll(
+                                        shareableEvents.map(
+                                          (event) => event.id,
+                                        ),
+                                      );
+                                    }
+                                    _eventSelectionError = false;
+                                  }),
                           ),
                           for (final event in shareableEvents)
                             _shareableEventTile(context, event),
@@ -334,10 +403,10 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                         ),
                         child: Text(
                           loc.calendarSelectEventRequired,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
                         ),
                       ),
                   ],
@@ -417,8 +486,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   ) {
     final date = event.startDate == null
         ? ''
-        : MaterialLocalizations.of(context)
-            .formatShortDate(event.startDate!.toLocal());
+        : MaterialLocalizations.of(
+            context,
+          ).formatShortDate(event.startDate!.toLocal());
     return CheckboxListTile(
       contentPadding: const EdgeInsetsDirectional.only(start: 8, end: 16),
       value: _selectedEventIds.contains(event.id),
@@ -426,9 +496,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         event.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
       ),
       subtitle: date.isEmpty
           ? null
@@ -436,13 +506,13 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
       onChanged: _submitting
           ? null
           : (selected) => setState(() {
-                if (selected == true) {
-                  _selectedEventIds.add(event.id);
-                } else {
-                  _selectedEventIds.remove(event.id);
-                }
-                _eventSelectionError = false;
-              }),
+              if (selected == true) {
+                _selectedEventIds.add(event.id);
+              } else {
+                _selectedEventIds.remove(event.id);
+              }
+              _eventSelectionError = false;
+            }),
     );
   }
 
@@ -519,15 +589,15 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                           onPressed: _submitting
                               ? null
                               : () => _confirmAndRun(
-                                    context: context,
-                                    title: loc.calendarCancelSingleShare,
-                                    subject: event.name,
-                                    action: () =>
-                                        widget.service.removeSharedEvent(
-                                      invitationId: item.id,
-                                      eventId: event.eventId,
-                                    ),
-                                  ),
+                                  context: context,
+                                  title: loc.calendarCancelSingleShare,
+                                  subject: event.name,
+                                  action: () =>
+                                      widget.service.removeSharedEvent(
+                                        invitationId: item.id,
+                                        eventId: event.eventId,
+                                      ),
+                                ),
                           icon: const Icon(Icons.remove_circle_outline),
                         ),
                       );
@@ -539,11 +609,11 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                   onPressed: _submitting
                       ? null
                       : () => _confirmAndRun(
-                            context: context,
-                            title: loc.calendarCancelAllShares,
-                            subject: item.invitedEmail,
-                            action: () => widget.service.revoke(item.id),
-                          ),
+                          context: context,
+                          title: loc.calendarCancelAllShares,
+                          subject: item.invitedEmail,
+                          action: () => widget.service.revoke(item.id),
+                        ),
                   icon: const Icon(Icons.link_off),
                   label: Text(loc.calendarCancelAllShares),
                 ),
@@ -557,82 +627,81 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     BuildContext context,
     AppLocalizations loc,
     CalendarShareInvitation item,
-  ) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ListTile(
-            contentPadding: const EdgeInsetsDirectional.only(start: 12, end: 8),
-            leading: _directionIcon(context, Icons.download_outlined),
-            title: Text(item.sharedBy, overflow: TextOverflow.ellipsis),
-            subtitle: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: _statusChip(context, loc, item.status),
+  ) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      ListTile(
+        contentPadding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+        leading: _directionIcon(context, Icons.download_outlined),
+        title: Text(item.sharedBy, overflow: TextOverflow.ellipsis),
+        subtitle: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: _statusChip(context, loc, item.status),
+        ),
+      ),
+      if (item.isPending || item.isAccepted)
+        Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: 56,
+            end: 8,
+            bottom: 8,
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              alignment: WrapAlignment.end,
+              children: [
+                if (item.isPending) ...[
+                  TextButton(
+                    onPressed: _submitting
+                        ? null
+                        : () => _confirmAndRun(
+                            context: context,
+                            title: loc.calendarInvitationDecline,
+                            subject: item.sharedBy,
+                            action: () => widget.service.respond(
+                              invitationId: item.id,
+                              accept: false,
+                            ),
+                          ),
+                    child: Text(loc.calendarInvitationDecline),
+                  ),
+                  FilledButton(
+                    onPressed: _submitting
+                        ? null
+                        : () => _run(
+                            () => widget.service.respond(
+                              invitationId: item.id,
+                              accept: true,
+                            ),
+                            successMessage: loc.calendarSharingUpdated,
+                          ),
+                    child: Text(loc.calendarInvitationAccept),
+                  ),
+                ] else
+                  TextButton(
+                    onPressed: _submitting
+                        ? null
+                        : () => _confirmAndRun(
+                            context: context,
+                            title: loc.calendarStopReceiving,
+                            subject: item.sharedBy,
+                            action: () => widget.service.respond(
+                              invitationId: item.id,
+                              accept: false,
+                            ),
+                          ),
+                    child: Text(loc.calendarStopReceiving),
+                  ),
+              ],
             ),
           ),
-          if (item.isPending || item.isAccepted)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(
-                start: 56,
-                end: 8,
-                bottom: 8,
-              ),
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  alignment: WrapAlignment.end,
-                  children: [
-                    if (item.isPending) ...[
-                      TextButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => _confirmAndRun(
-                                  context: context,
-                                  title: loc.calendarInvitationDecline,
-                                  subject: item.sharedBy,
-                                  action: () => widget.service.respond(
-                                    invitationId: item.id,
-                                    accept: false,
-                                  ),
-                                ),
-                        child: Text(loc.calendarInvitationDecline),
-                      ),
-                      FilledButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => _run(
-                                  () => widget.service.respond(
-                                    invitationId: item.id,
-                                    accept: true,
-                                  ),
-                                  successMessage: loc.calendarSharingUpdated,
-                                ),
-                        child: Text(loc.calendarInvitationAccept),
-                      ),
-                    ] else
-                      TextButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => _confirmAndRun(
-                                  context: context,
-                                  title: loc.calendarStopReceiving,
-                                  subject: item.sharedBy,
-                                  action: () => widget.service.respond(
-                                    invitationId: item.id,
-                                    accept: false,
-                                  ),
-                                ),
-                        child: Text(loc.calendarStopReceiving),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          const Divider(height: 1),
-        ],
-      );
+        ),
+      const Divider(height: 1),
+    ],
+  );
 
   Future<void> _confirmAndRun({
     required BuildContext context,
@@ -670,46 +739,46 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
       .toSet();
 
   Widget _emailChips(BuildContext context) => ValueListenableBuilder(
-        valueListenable: _emailsController,
-        builder: (context, value, _) {
-          final emails = _splitEmails(value.text);
-          if (emails.isEmpty) return const SizedBox.shrink();
-          return Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: emails
-                  .map(
-                    (email) => ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 250),
-                      child: InputChip(
-                        visualDensity: VisualDensity.compact,
-                        label: Text(
-                          email,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onDeleted: _submitting
-                            ? null
-                            : () {
-                                emails.remove(email);
-                                final text = emails.join(', ');
-                                _emailsController.value = TextEditingValue(
-                                  text: text,
-                                  selection: TextSelection.collapsed(
-                                    offset: text.length,
-                                  ),
-                                );
-                              },
-                      ),
+    valueListenable: _emailsController,
+    builder: (context, value, _) {
+      final emails = _splitEmails(value.text);
+      if (emails.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: emails
+              .map(
+                (email) => ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 250),
+                  child: InputChip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  )
-                  .toList(),
-            ),
-          );
-        },
+                    onDeleted: _submitting
+                        ? null
+                        : () {
+                            emails.remove(email);
+                            final text = emails.join(', ');
+                            _emailsController.value = TextEditingValue(
+                              text: text,
+                              selection: TextSelection.collapsed(
+                                offset: text.length,
+                              ),
+                            );
+                          },
+                  ),
+                ),
+              )
+              .toList(),
+        ),
       );
+    },
+  );
 
   Widget _directionIcon(BuildContext context, IconData icon) {
     final colors = Theme.of(context).colorScheme;
@@ -732,18 +801,18 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     final colors = Theme.of(context).colorScheme;
     final (background, foreground) = switch (status) {
       'accepted' => (
-          colors.primaryContainer.withValues(alpha: .7),
-          colors.onPrimaryContainer,
-        ),
+        colors.primaryContainer.withValues(alpha: .7),
+        colors.onPrimaryContainer,
+      ),
       'declined' => (
-          colors.errorContainer.withValues(alpha: .65),
-          colors.onErrorContainer,
-        ),
+        colors.errorContainer.withValues(alpha: .65),
+        colors.onErrorContainer,
+      ),
       'revoked' => (colors.surfaceContainerHighest, colors.onSurfaceVariant),
       _ => (
-          colors.tertiaryContainer.withValues(alpha: .7),
-          colors.onTertiaryContainer,
-        ),
+        colors.tertiaryContainer.withValues(alpha: .7),
+        colors.onTertiaryContainer,
+      ),
     };
     return Container(
       margin: const EdgeInsets.only(top: 5),
@@ -755,9 +824,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
       child: Text(
         _statusLabel(loc, status),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
-            ),
+          color: foreground,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -789,10 +858,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                   '$count',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
           ],
@@ -800,22 +868,22 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
       );
 
   Widget _emptySection(BuildContext context, String text) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.surfaceContainerLowest.withValues(alpha: .5),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      );
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+    decoration: BoxDecoration(
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerLowest.withValues(alpha: .5),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
 
   Widget _expandableSection({
     required BuildContext context,
@@ -838,9 +906,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
             Container(
@@ -860,9 +928,9 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   }
 
   String _statusLabel(AppLocalizations loc, String status) => switch (status) {
-        'accepted' => loc.calendarInvitationAccepted,
-        'declined' => loc.calendarInvitationDeclined,
-        'revoked' => loc.calendarInvitationRevoked,
-        _ => loc.calendarInvitationPending,
-      };
+    'accepted' => loc.calendarInvitationAccepted,
+    'declined' => loc.calendarInvitationDeclined,
+    'revoked' => loc.calendarInvitationRevoked,
+    _ => loc.calendarInvitationPending,
+  };
 }

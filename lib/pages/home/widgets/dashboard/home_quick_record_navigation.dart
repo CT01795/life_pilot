@@ -46,6 +46,27 @@ Future<void> openHomeAccountingQuickAdd(BuildContext context) async {
   }
 }
 
+Future<void> openHomeAccountingDetails(BuildContext context) async {
+  final dashboard = context.read<ModelDashboard>();
+  final auth = context.read<ModelAuthView>();
+  final accountId = dashboard.setting.accountingAccountId;
+  final accountName = dashboard.setting.accountingAccountName;
+  final user = auth.account;
+  if ((accountId == null && accountName == null) || user == null) return;
+  final service = context.read<ServiceAccounting>();
+  final accounts = await service.fetchAccounts(user: user, includeGraph: false);
+  if (!context.mounted) return;
+  final account = accounts
+      .where((item) => item.id == accountId || item.accountName == accountName)
+      .firstOrNull;
+  if (account == null) return;
+  await Navigator.of(context).push<bool>(
+    MaterialPageRoute(
+      builder: (_) => PageAccountingDetail(service: service, account: account),
+    ),
+  );
+}
+
 Future<void> openHomePointQuickAdd(BuildContext context) async {
   final loc = AppLocalizations.of(context)!;
   final dashboard = context.read<ModelDashboard>();
@@ -82,4 +103,25 @@ Future<void> openHomePointQuickAdd(BuildContext context) async {
   if (saved == true && context.mounted) {
     await dashboard.refreshPoints(accountId: accountId);
   }
+}
+
+Future<void> openHomePointDetails(BuildContext context) async {
+  final dashboard = context.read<ModelDashboard>();
+  final auth = context.read<ModelAuthView>();
+  final accountId = dashboard.setting.pointAccountId;
+  final accountName = dashboard.setting.pointAccountName;
+  final user = auth.account;
+  if ((accountId == null && accountName == null) || user == null) return;
+  final service = context.read<ServicePointRecord>();
+  final accounts = await service.fetchAccounts(user: user, includeGraph: false);
+  if (!context.mounted) return;
+  final account = accounts
+      .where((item) => item.id == accountId || item.accountName == accountName)
+      .firstOrNull;
+  if (account == null) return;
+  await Navigator.of(context).push<bool>(
+    MaterialPageRoute(
+      builder: (_) => PagePointRecordDetail(service: service, account: account),
+    ),
+  );
 }

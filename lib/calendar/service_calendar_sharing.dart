@@ -1,6 +1,13 @@
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class CalendarSharingFailure implements Exception {
+  const CalendarSharingFailure(this.code, [this.details]);
+  final String code;
+  final String? details;
+}
 
 class CalendarShareableEvent {
   const CalendarShareableEvent({
@@ -124,9 +131,11 @@ class ServiceCalendarSharing {
     final response = await supabase
         .from('calendar_share_invitations')
         .select('id, shared_by, invited_email, status')
+        .inFilter('status', const ['pending', 'accepted'])
         .order('updated_at', ascending: false);
-    final invitations =
-        response.map((row) => CalendarShareInvitation.fromJson(row)).toList();
+    final invitations = response
+        .map((row) => CalendarShareInvitation.fromJson(row))
+        .toList();
     final activeSentInvitationIds = invitations
         .where(
           (item) =>
@@ -143,33 +152,42 @@ class ServiceCalendarSharing {
         .where((event) => activeSentInvitationIds.contains(event.invitationId))
         .toList();
 
-    final shareableEvents = visibleEvents
-        .where(
-          (event) =>
-              event.account?.trim().toLowerCase() == currentEmail &&
-              event.startDate != null,
-        )
-        .map(
-          (event) => CalendarShareableEvent(
-            id: event.id,
-            name: event.name.trim().isEmpty ? '-' : event.name,
-            startDate: event.startDate,
-          ),
-        )
-        .fold<Map<String, CalendarShareableEvent>>(
-          {},
-          (eventsById, event) => eventsById..[event.id] = event,
-        )
-        .values
-        .toList()
-      ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
+    final shareableEvents =
+        visibleEvents
+            .where(
+              (event) =>
+                  event.account?.trim().toLowerCase() == currentEmail &&
+                  event.startDate != null,
+            )
+            .map(
+              (event) => CalendarShareableEvent(
+                id: event.id,
+                name: event.name.trim().isEmpty ? '-' : event.name,
+                startDate: event.startDate,
+              ),
+            )
+            .fold<Map<String, CalendarShareableEvent>>(
+              {},
+              (eventsById, event) => eventsById..[event.id] = event,
+            )
+            .values
+            .toList()
+          ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
 
     return CalendarSharingState(
       sent: invitations
-          .where((item) => item.sharedBy.toLowerCase() == currentEmail)
+          .where(
+            (item) =>
+                item.sharedBy.toLowerCase() == currentEmail &&
+                (item.isPending || item.isAccepted),
+          )
           .toList(),
       received: invitations
-          .where((item) => item.invitedEmail.toLowerCase() == currentEmail)
+          .where(
+            (item) =>
+                item.invitedEmail.toLowerCase() == currentEmail &&
+                (item.isPending || item.isAccepted),
+          )
           .toList(),
       shareableEvents: shareableEvents,
       sharedEvents: sharedEvents,
@@ -182,13 +200,23 @@ class ServiceCalendarSharing {
   ) async {
     await _requireCloudMode();
     for (final email in emails) {
-      await supabase.rpc(
-        'invite_calendar_viewer',
-        params: {
-          'p_invited_email': email.trim(),
-          'p_event_ids': eventIds.toList(),
-        },
-      );
+      try {
+        final result = await supabase.rpc(
+          'invite_calendar_viewer',
+          params: {
+            'p_invited_email': email.trim(),
+            'p_event_ids': eventIds.toList(),
+          },
+        );
+        if (result is Map && result['ok'] != true) {
+          throw CalendarSharingFailure(
+            result['error']?.toString() ?? 'unknown',
+            result['details']?.toString(),
+          );
+        }
+      } on PostgrestException catch (error) {
+        throw _translateFailure(error);
+      }
     }
   }
 
@@ -197,18 +225,26 @@ class ServiceCalendarSharing {
     required bool accept,
   }) async {
     await _requireCloudMode();
-    await supabase.rpc(
-      'respond_calendar_invitation',
-      params: {'p_invitation_id': invitationId, 'p_accept': accept},
-    );
+    try {
+      await supabase.rpc(
+        'respond_calendar_invitation',
+        params: {'p_invitation_id': invitationId, 'p_accept': accept},
+      );
+    } on PostgrestException catch (error) {
+      throw _translateFailure(error);
+    }
   }
 
   Future<void> revoke(String invitationId) async {
     await _requireCloudMode();
-    await supabase.rpc(
-      'revoke_calendar_invitation',
-      params: {'p_invitation_id': invitationId},
-    );
+    try {
+      await supabase.rpc(
+        'revoke_calendar_invitation',
+        params: {'p_invitation_id': invitationId},
+      );
+    } on PostgrestException catch (error) {
+      throw _translateFailure(error);
+    }
   }
 
   Future<void> removeSharedEvent({
@@ -216,9 +252,48 @@ class ServiceCalendarSharing {
     required String eventId,
   }) async {
     await _requireCloudMode();
-    await supabase.rpc(
-      'remove_calendar_shared_event',
-      params: {'p_invitation_id': invitationId, 'p_event_id': eventId},
-    );
+    try {
+      await supabase.rpc(
+        'remove_calendar_shared_event',
+        params: {'p_invitation_id': invitationId, 'p_event_id': eventId},
+      );
+    } on PostgrestException catch (error) {
+      throw _translateFailure(error);
+    }
+  }
+
+  CalendarSharingFailure _translateFailure(PostgrestException error) {
+    final rawMessage = [
+      error.message,
+      error.details,
+      error.hint,
+      error.code,
+    ].whereType<Object>().join(' ');
+    final message = rawMessage.toUpperCase();
+    if (message.contains('QUOTA_REACHED') ||
+        message.contains('RENEWAL_REQUIRED')) {
+      return const CalendarSharingFailure('quota');
+    }
+    if (message.contains('DUPLICATE_INVITATION')) {
+      return const CalendarSharingFailure('duplicate');
+    }
+    if (message.contains('ACCOUNT_NOT_FOUND')) {
+      return const CalendarSharingFailure('account_not_found');
+    }
+    if (message.contains('INVALID EMAIL')) {
+      return const CalendarSharingFailure('invalid_email');
+    }
+    if (message.contains('CANNOT INVITE YOURSELF')) {
+      return const CalendarSharingFailure('self_invite');
+    }
+    if (message.contains('NO OWNED EVENTS SELECTED') ||
+        message.contains('SHARED EVENT NOT FOUND')) {
+      return const CalendarSharingFailure('event_unavailable');
+    }
+    if (message.contains('INVITATION CANNOT BE UPDATED') ||
+        message.contains('INVITATION NOT FOUND')) {
+      return const CalendarSharingFailure('stale_invitation');
+    }
+    return CalendarSharingFailure('unknown', rawMessage);
   }
 }

@@ -183,10 +183,14 @@ class PointSummaryCard extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                    context.read<ControllerPageMain>().changePage(
-                      PageType.pointsRecord,
-                    );
+                  onPressed: () async {
+                    if (context.read<ModelDashboard>().setting.pointAccountId != null) {
+                      await openHomePointDetails(context);
+                    } else if (context.mounted) {
+                      context.read<ControllerPageMain>().changePage(
+                        PageType.pointsRecord,
+                      );
+                    }
                   },
                   child: Text(loc.clickHereToSeeMore),
                 ),

@@ -19,10 +19,47 @@ class ControllerStock extends SafeChangeNotifier {
   DateTime? selectedDate;
   DateTime? latestAvailableDate;
   StockUpdateStatus updateStatus = StockUpdateStatus.idle;
+  String searchQuery = '';
   bool _isDisposed = false;
   int _dataRequestId = 0;
 
   ControllerStock(this.service);
+
+  List<ModelStock> get visibleStocks {
+    final query = searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return stocks;
+    return stocks
+        .where(
+          (stock) =>
+              stock.securityCode.toLowerCase().contains(query) ||
+              stock.securityName.toLowerCase().contains(query),
+        )
+        .toList(growable: false);
+  }
+
+  List<ModelInstitutional> get visibleForeignBuy =>
+      _filterInstitutionals(foreignBuy);
+  List<ModelInstitutional> get visibleForeignSell =>
+      _filterInstitutionals(foreignSell);
+
+  List<ModelInstitutional> _filterInstitutionals(
+    List<ModelInstitutional> items,
+  ) {
+    final query = searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return items;
+    return items
+        .where((item) {
+          final values = '${item.stockNo} ${item.stockName}'.toLowerCase();
+          return values.contains(query);
+        })
+        .toList(growable: false);
+  }
+
+  void setSearchQuery(String value) {
+    if (searchQuery == value) return;
+    searchQuery = value;
+    _notifyListenersIfActive();
+  }
 
   bool get canSelectDate =>
       !_isDisposed &&
@@ -103,7 +140,9 @@ class ControllerStock extends SafeChangeNotifier {
   }
 
   Future<void> _useStocksIfAvailable(
-      List<ModelStock> availableStocks, int requestId) async {
+    List<ModelStock> availableStocks,
+    int requestId,
+  ) async {
     if (_isDisposed || requestId != _dataRequestId || availableStocks.isEmpty) {
       return;
     }
@@ -132,8 +171,11 @@ class ControllerStock extends SafeChangeNotifier {
       if (_isDisposed || requestId != _dataRequestId) return;
       loadFailed = stocks.isEmpty;
     } catch (error, stackTrace) {
-      logger.e('Load stocks by date failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load stocks by date failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (_isDisposed || requestId != _dataRequestId) return;
       stocks = [];
       institutionals = [];
@@ -163,11 +205,7 @@ class ControllerStock extends SafeChangeNotifier {
     if (_isDisposed || requestId != _dataRequestId) return;
     foreignBuy = [...institutionals];
 
-    foreignBuy.sort(
-      (a, b) => b.foreignDiff.compareTo(
-        a.foreignDiff,
-      ),
-    );
+    foreignBuy.sort((a, b) => b.foreignDiff.compareTo(a.foreignDiff));
 
     foreignBuy = foreignBuy
         .where((e) => e.foreignDiff > 0)
@@ -178,11 +216,7 @@ class ControllerStock extends SafeChangeNotifier {
     // ==========
     foreignSell = [...institutionals];
 
-    foreignSell.sort(
-      (a, b) => a.foreignDiff.compareTo(
-        b.foreignDiff,
-      ),
-    );
+    foreignSell.sort((a, b) => a.foreignDiff.compareTo(b.foreignDiff));
 
     foreignSell = foreignSell
         .where((e) => e.foreignDiff < 0)

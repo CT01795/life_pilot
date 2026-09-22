@@ -18,6 +18,7 @@ class PageStock extends StatelessWidget {
       create: (_) => ControllerStock(ServiceStock())..load(),
       child: Consumer<ControllerStock>(
         builder: (context, controller, _) {
+          final loc = AppLocalizations.of(context)!;
           if (controller.loading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -34,15 +35,16 @@ class PageStock extends StatelessWidget {
             );
           }
 
+          final visibleStocks = controller.visibleStocks;
           return ListView.builder(
             padding: const EdgeInsets.all(8),
-            itemCount: controller.stocks.length + 1,
+            itemCount: visibleStocks.length + 1,
             itemBuilder: (context, index) {
               if (index > 0) {
                 final stockIndex = index - 1;
                 return _buildStockCard(
                   context,
-                  controller.stocks[stockIndex],
+                  visibleStocks[stockIndex],
                   stockIndex,
                 );
               }
@@ -50,6 +52,24 @@ class PageStock extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildDateSelector(context, controller),
+                  Gaps.h8,
+                  TextField(
+                    onChanged: controller.setSearchQuery,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.search),
+                      labelText: loc.search,
+                      suffixIcon: controller.searchQuery.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: loc.clear,
+                              onPressed: () => controller.setSearchQuery(''),
+                              icon: const Icon(Icons.clear),
+                            ),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
                   Gaps.h8,
                   if (controller.updateStatus != StockUpdateStatus.idle) ...[
                     _buildUpdateStatus(context, controller.updateStatus),
@@ -109,10 +129,7 @@ Widget _buildDateSelector(BuildContext context, ControllerStock controller) {
   );
 }
 
-Widget _buildLoadFailure(
-  BuildContext context,
-  ControllerStock controller,
-) {
+Widget _buildLoadFailure(BuildContext context, ControllerStock controller) {
   final loc = AppLocalizations.of(context)!;
 
   return Center(
@@ -163,25 +180,21 @@ Widget _buildUpdateStatus(BuildContext context, StockUpdateStatus status) {
   final loc = AppLocalizations.of(context)!;
   final (icon, color, message) = switch (status) {
     StockUpdateStatus.updating => (
-        Icons.sync,
-        Colors.blue,
-        loc.stockUpdateInProgress,
-      ),
+      Icons.sync,
+      Colors.blue,
+      loc.stockUpdateInProgress,
+    ),
     StockUpdateStatus.succeeded => (
-        Icons.check_circle_outline,
-        Colors.green,
-        loc.stockUpdateSucceeded,
-      ),
+      Icons.check_circle_outline,
+      Colors.green,
+      loc.stockUpdateSucceeded,
+    ),
     StockUpdateStatus.failed => (
-        Icons.error_outline,
-        Colors.red,
-        loc.stockUpdateFailed,
-      ),
-    StockUpdateStatus.idle => (
-        Icons.info_outline,
-        Colors.grey,
-        '',
-      ),
+      Icons.error_outline,
+      Colors.red,
+      loc.stockUpdateFailed,
+    ),
+    StockUpdateStatus.idle => (Icons.info_outline, Colors.grey, ''),
   };
 
   return Container(
@@ -197,10 +210,7 @@ Widget _buildUpdateStatus(BuildContext context, StockUpdateStatus status) {
           SizedBox(
             width: 20,
             height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: color,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: color),
           )
         else
           Icon(icon, color: color),
@@ -228,10 +238,7 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
         //.take(30).map(
         (e) => RichText(
           text: TextSpan(
-            style: TextStyle(
-              fontSize: 20,
-              color: onSurface,
-            ),
+            style: TextStyle(fontSize: 20, color: onSurface),
             children: [
               TextSpan(
                 text: "${e.productName?.trim()} ${e.identityType?.trim()} ",
@@ -243,9 +250,7 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              TextSpan(
-                text: "Net:",
-              ),
+              TextSpan(text: "Net:"),
               TextSpan(
                 text: '${integerFormat.format(e.oiNetQtyDiff)} ',
                 style: TextStyle(
@@ -261,14 +266,14 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
       _ForeignRankingSection(
         key: const ValueKey('foreign-buy-ranking'),
         title: loc.stockForeignBuy,
-        items: c.foreignBuy,
+        items: c.visibleForeignBuy,
         isBuy: true,
       ),
       Gaps.h8,
       _ForeignRankingSection(
         key: const ValueKey('foreign-sell-ranking'),
         title: loc.stockForeignSell,
-        items: c.foreignSell,
+        items: c.visibleForeignSell,
         isBuy: false,
       ),
     ],
@@ -321,16 +326,16 @@ class _ForeignRankingSectionState extends State<_ForeignRankingSection> {
             Expanded(
               child: Text(
                 widget.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             Text(
               '$itemCount / ${widget.items.length}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -356,11 +361,11 @@ class _ForeignRankingSectionState extends State<_ForeignRankingSection> {
                   style: TextStyle(
                     color: widget.isBuy
                         ? (item.foreignDiff < item.totalDiff
-                            ? Colors.red
-                            : Colors.blue)
+                              ? Colors.red
+                              : Colors.blue)
                         : (item.foreignDiff > item.totalDiff
-                            ? Colors.green
-                            : Colors.blue),
+                              ? Colors.green
+                              : Colors.blue),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -396,16 +401,15 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
             borderRadius: BorderRadius.circular(8),
             onTap: () async {
               final url = Uri.parse(
-                  "https://tw.stock.yahoo.com/quote/${stock.securityCode}");
+                "https://tw.stock.yahoo.com/quote/${stock.securityCode}",
+              );
               await launchUrl(url, mode: LaunchMode.externalApplication);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  Text(
-                    "${index + 1}. ",
-                  ),
+                  Text("${index + 1}. "),
                   Gaps.w8,
                   Text(
                     stock.securityCode,
@@ -423,8 +427,8 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
                         color: stock.signal == 1
                             ? Colors.red
                             : (stock.signal == -1
-                                ? Colors.green
-                                : colorScheme.onSurface),
+                                  ? Colors.green
+                                  : colorScheme.onSurface),
                         fontWeight: stock.signal != 0
                             ? FontWeight.bold
                             : FontWeight.normal,
@@ -446,9 +450,7 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
                 loc.stockClosingPrice(
                   NumberFormat('#,##0.00').format(stock.closingPrice),
                 ),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (stock.pctChange != null)
                 Text(
@@ -479,8 +481,9 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
                 ),
               Text(
                 loc.stockTradingVolume(
-                  NumberFormat('#,##0')
-                      .format((stock.tradedNumber ?? 0) / 1000),
+                  NumberFormat(
+                    '#,##0',
+                  ).format((stock.tradedNumber ?? 0) / 1000),
                 ),
               ),
             ],

@@ -2,6 +2,19 @@ import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/utils/api.dart';
 
 class ServiceSubscription {
+  Future<Map<String, dynamic>?> fetchUserSubscriptionAsAdmin({
+    required String email,
+  }) async {
+    final rows =
+        await supabase.rpc(
+              'admin_get_user_subscription',
+              params: {'p_email': email.trim()},
+            )
+            as List<dynamic>;
+    if (rows.isEmpty) return null;
+    return Map<String, dynamic>.from(rows.first as Map);
+  }
+
   Future<List<SubscriptionCleanupPreview>> fetchCleanupPreview({
     String? email,
   }) async {
@@ -10,9 +23,11 @@ class ServiceSubscription {
       params: {'p_email': email?.trim()},
     );
     return (rows as List<dynamic>)
-        .map((row) => SubscriptionCleanupPreview.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ))
+        .map(
+          (row) => SubscriptionCleanupPreview.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -40,11 +55,13 @@ class ServiceSubscription {
         ? <String, dynamic>{}
         : Map<String, dynamic>.from(statusRows.first as Map);
     final items = (rows as List<dynamic>)
-        .map((row) => SubscriptionUsage.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ))
+        .map(
+          (row) =>
+              SubscriptionUsage.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
         .toList();
-    final plan = status['plan']?.toString() ??
+    final plan =
+        status['plan']?.toString() ??
         (items.isEmpty
             ? 'free'
             : (rows.first as Map)['plan']?.toString() ?? 'free');
@@ -58,8 +75,8 @@ class ServiceSubscription {
       cancelAtPeriodEnd: status['cancel_at_period_end'] == true,
       storagePlan: status['storage_plan']?.toString() ?? 'cloud',
       quotaMultiplier: (status['quota_multiplier'] as num?)?.toInt() ?? 1,
-      quarterlyPricePaidTwd:
-          (status['quarterly_price_paid_twd'] as num?)?.toInt(),
+      quarterlyPricePaidTwd: (status['quarterly_price_paid_twd'] as num?)
+          ?.toInt(),
       pricingVersionName: status['pricing_version_name']?.toString(),
       pricingEffectiveAt: DateTime.tryParse(
         status['pricing_effective_at']?.toString() ?? '',
@@ -71,9 +88,11 @@ class ServiceSubscription {
         status['downgrade_grace_ends_at']?.toString() ?? '',
       ),
       entitlements: entitlementRows
-          .map((row) => SubscriptionEntitlement.fromJson(
-                Map<String, dynamic>.from(row as Map),
-              ))
+          .map(
+            (row) => SubscriptionEntitlement.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
           .toList(),
     );
   }
@@ -86,20 +105,40 @@ class ServiceSubscription {
     required bool unlimited,
     Map<String, int?> quotas = const {},
   }) async {
-    await supabase.rpc('admin_set_user_subscription', params: {
-      'p_email': email.trim(),
-      'p_plan': plan,
-      'p_expires_at': expiresAt.toUtc().toIso8601String(),
-      'p_admin_note': note.trim(),
-      'p_unlimited_quota': unlimited,
-      'p_calendar_quota': quotas['calendar'],
-      'p_accounting_quota': quotas['accounting'],
-      'p_point_quota': quotas['point'],
-      'p_memory_quota': quotas['memory'],
-      'p_game_question_quota': quotas['game'],
-      'p_calendar_share_quota': quotas['share'],
-      'p_image_megabytes': quotas['image'],
-    });
+    await supabase.rpc(
+      'admin_set_user_subscription',
+      params: {
+        'p_email': email.trim(),
+        'p_plan': plan,
+        'p_expires_at': expiresAt.toUtc().toIso8601String(),
+        'p_admin_note': note.trim(),
+        'p_unlimited_quota': unlimited,
+        'p_calendar_quota': quotas['calendar'],
+        'p_accounting_quota': quotas['accounting'],
+        'p_point_quota': quotas['point'],
+        'p_memory_quota': quotas['memory'],
+        'p_game_question_quota': quotas['game'],
+        'p_calendar_share_quota': quotas['share'],
+        'p_image_megabytes': quotas['image'],
+      },
+    );
+  }
+
+  Future<void> extendUserSubscriptionAsAdmin({
+    required String email,
+    int days = 90,
+  }) async {
+    await supabase.rpc(
+      'admin_extend_user_subscription',
+      params: {'p_email': email.trim(), 'p_days': days},
+    );
+  }
+
+  Future<void> deleteUserSubscriptionAsAdmin({required String email}) async {
+    await supabase.rpc(
+      'admin_delete_user_subscription',
+      params: {'p_email': email.trim()},
+    );
   }
 
   Future<void> setUserSubscriptionV2AsAdmin({
@@ -111,15 +150,18 @@ class ServiceSubscription {
     required DateTime? expiresAt,
     required String note,
   }) async {
-    await supabase.rpc('admin_set_user_subscription_v2', params: {
-      'p_email': email.trim(),
-      'p_plan': plan,
-      'p_storage_plan': storagePlan,
-      'p_pricing_version_id': pricingVersionId,
-      'p_quota_multiplier': multiplier,
-      'p_expires_at': expiresAt?.toUtc().toIso8601String(),
-      'p_admin_note': note.trim(),
-    });
+    await supabase.rpc(
+      'admin_set_user_subscription_v2',
+      params: {
+        'p_email': email.trim(),
+        'p_plan': plan,
+        'p_storage_plan': storagePlan,
+        'p_pricing_version_id': pricingVersionId,
+        'p_quota_multiplier': multiplier,
+        'p_expires_at': expiresAt?.toUtc().toIso8601String(),
+        'p_admin_note': note.trim(),
+      },
+    );
   }
 
   Future<void> addUserEntitlementAsAdmin({
@@ -130,22 +172,27 @@ class ServiceSubscription {
     required DateTime endsAt,
     required String note,
   }) async {
-    await supabase.rpc('admin_add_user_subscription_entitlement', params: {
-      'p_email': email.trim(),
-      'p_storage_plan': storagePlan,
-      'p_pricing_version_id': pricingVersionId,
-      'p_quota_multiplier': multiplier,
-      'p_ends_at': endsAt.toUtc().toIso8601String(),
-      'p_admin_note': note.trim(),
-    });
+    await supabase.rpc(
+      'admin_add_user_subscription_entitlement',
+      params: {
+        'p_email': email.trim(),
+        'p_storage_plan': storagePlan,
+        'p_pricing_version_id': pricingVersionId,
+        'p_quota_multiplier': multiplier,
+        'p_ends_at': endsAt.toUtc().toIso8601String(),
+        'p_admin_note': note.trim(),
+      },
+    );
   }
 
   Future<List<SubscriptionPricingVersion>> fetchPricingVersions() async {
     final rows = await supabase.rpc('get_subscription_pricing_versions');
     return (rows as List<dynamic>)
-        .map((row) => SubscriptionPricingVersion.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ))
+        .map(
+          (row) => SubscriptionPricingVersion.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
         .toList();
   }
 
@@ -156,20 +203,23 @@ class ServiceSubscription {
     required int quarterlyPrice,
     required Map<String, int> quotas,
   }) async {
-    await supabase.rpc('admin_create_subscription_pricing_version', params: {
-      'p_version_name': name.trim(),
-      'p_storage_plan': storagePlan,
-      'p_effective_at': effectiveAt.toUtc().toIso8601String(),
-      'p_quarterly_price_twd': quarterlyPrice,
-      'p_calendar_quota': quotas['calendar'],
-      'p_accounting_quota': quotas['accounting'],
-      'p_point_quota': quotas['point'],
-      'p_memory_quota': quotas['memory'],
-      'p_game_question_quota': quotas['game'],
-      'p_calendar_share_quota': quotas['share'],
-      'p_image_megabytes': quotas['image'],
-      'p_answer_history_days': quotas['answerDays'],
-    });
+    await supabase.rpc(
+      'admin_create_subscription_pricing_version',
+      params: {
+        'p_version_name': name.trim(),
+        'p_storage_plan': storagePlan,
+        'p_effective_at': effectiveAt.toUtc().toIso8601String(),
+        'p_quarterly_price_twd': quarterlyPrice,
+        'p_calendar_quota': quotas['calendar'],
+        'p_accounting_quota': quotas['accounting'],
+        'p_point_quota': quotas['point'],
+        'p_memory_quota': quotas['memory'],
+        'p_game_question_quota': quotas['game'],
+        'p_calendar_share_quota': quotas['share'],
+        'p_image_megabytes': quotas['image'],
+        'p_answer_history_days': quotas['answerDays'],
+      },
+    );
   }
 }
 
@@ -197,9 +247,7 @@ class SubscriptionCleanupPreview {
         used: (json['used'] as num?)?.toInt() ?? 0,
         quota: (json['quota'] as num?)?.toInt() ?? 0,
         excess: (json['excess'] as num?)?.toInt() ?? 0,
-        graceEndsAt: DateTime.tryParse(
-          json['grace_ends_at']?.toString() ?? '',
-        ),
+        graceEndsAt: DateTime.tryParse(json['grace_ends_at']?.toString() ?? ''),
       );
 }
 
@@ -261,8 +309,11 @@ class SubscriptionLimitException implements Exception {
     const quotaMarker = 'LIFE_PILOT_QUOTA_REACHED:';
     const plusMarker = 'LIFE_PILOT_PLUS_REQUIRED:';
     if (message.contains(quotaMarker)) {
-      final value =
-          message.split(quotaMarker).last.split(RegExp(r"[\s,)]")).first;
+      final value = message
+          .split(quotaMarker)
+          .last
+          .split(RegExp(r"[\s,)]"))
+          .first;
       final parts = value.split(':');
       return SubscriptionLimitException(
         parts.first,

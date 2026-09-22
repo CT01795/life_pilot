@@ -5,6 +5,7 @@ import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
+import 'package:life_pilot/subscription/widgets_admin_account_deletion_requests.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
@@ -374,6 +375,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               key: ValueKey(_adminSubscriptionEditorRevision),
               onSaved: () => auth.refreshSubscriptionUsage(),
             ),
+            Gaps.h16,
+            const AdminAccountDeletionRequests(),
           ],
         ],
       ),

@@ -107,6 +107,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get correctAnswer => '정답';
 
   @override
+  String get categoryLabel => '분류';
+
+  @override
+  String get secondaryCategoryLabel => '하위 분류';
+
+  @override
+  String get amountLabel => '값';
+
+  @override
+  String get dataExportSummarySheet => '내보내기 요약';
+
+  @override
   String get questionGroup => '문제 그룹';
 
   @override
@@ -854,7 +866,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get requestAccountDeletion => '계정 삭제 요청';
 
   @override
-  String get accountDeletionRequestDescription => '계정 삭제 요청을 위한 이메일 초안을 엽니다. 계정과 데이터는 즉시 삭제되지 않습니다.';
+  String get accountDeletionRequestDescription => '요청이 관리자에게 전송되며, 관리자가 승인한 후 계정과 데이터가 삭제됩니다.';
 
   @override
   String get continueLabel => '계속';
@@ -866,10 +878,58 @@ class AppLocalizationsKo extends AppLocalizations {
   String get requestDataExport => '개인 데이터 내보내기 요청';
 
   @override
-  String get dataExportRequestDescription => '개인 데이터 내보내기 요청을 위한 이메일 초안을 엽니다. 본인 확인 후 데이터를 준비합니다.';
+  String get dataExportRequestDescription => '클라우드와 기기의 개인 데이터를 Excel 파일로 직접 다운로드합니다.';
+
+  @override
+  String get dataExportIncludedPages => '다운로드 내용: 캘린더, 추억, 회계 기록 및 포인트 기록입니다.';
 
   @override
   String get dataExportEmailUnavailable => '이메일 앱을 열 수 없습니다. minavi@alumni.nccu.edu.tw로 문의해 주세요.';
+
+  @override
+  String get accountDeletionCompleted => '삭제 요청이 관리자에게 전송되었습니다.';
+
+  @override
+  String accountDeletionFailed(Object message) {
+    return '계정 삭제 실패: $message';
+  }
+
+  @override
+  String get accountDeletionPending => '신청 처리 중';
+
+  @override
+  String get accountDeletionPendingDescription => '계정 삭제 신청이 관리자 확인을 기다리고 있습니다. 삭제를 원하지 않으면 신청 취소를 요청할 수 있습니다.';
+
+  @override
+  String get accountDeletionCancelRequest => '신청 취소';
+
+  @override
+  String get accountDeletionCancellationSubmitted => '취소 신청을 보냈습니다. 관리자 확인을 기다리고 있습니다.';
+
+  @override
+  String get accountDeletionCancellationPending => '취소 신청이 관리자 확인을 기다리고 있습니다.';
+
+  @override
+  String get adminAccountDeletionCancellationRequested => '사용자가 계정 삭제 신청 취소를 요청했습니다.';
+
+  @override
+  String get adminAccountDeletionConfirmCancellation => '취소 확인';
+
+  @override
+  String get adminAccountDeletionCancellationConfirmed => '취소를 확인하고 기존 삭제 신청을 제거했습니다.';
+
+  @override
+  String get adminAccountDeletionCompleted => '계정과 관련 데이터가 삭제되었습니다.';
+
+  @override
+  String dataExportCompleted(Object path) {
+    return '데이터 내보내기 완료: $path';
+  }
+
+  @override
+  String dataExportFailed(Object message) {
+    return '데이터 내보내기 실패: $message';
+  }
 
   @override
   String get agreeToLegalTermsPrefix => '다음을 읽고 동의합니다: ';
@@ -981,37 +1041,37 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recordCategoryReserved => '보존 항목';
 
   @override
-  String get recordCategoryFood => '식';
+  String get recordCategoryFood => '식비';
 
   @override
-  String get recordCategoryClothing => '의';
+  String get recordCategoryClothing => '의류';
 
   @override
-  String get recordCategoryHousing => '주';
+  String get recordCategoryHousing => '주거';
 
   @override
-  String get recordCategoryTransportation => '행';
+  String get recordCategoryTransportation => '교통';
 
   @override
-  String get recordCategoryEducation => '육';
+  String get recordCategoryEducation => '교육';
 
   @override
-  String get recordCategoryEntertainment => '락';
+  String get recordCategoryEntertainment => '여가';
 
   @override
-  String get recordCategoryVirtue => '덕';
+  String get recordCategoryVirtue => '덕성';
 
   @override
-  String get recordCategoryIntelligence => '지';
+  String get recordCategoryIntelligence => '지성';
 
   @override
-  String get recordCategoryFitness => '체';
+  String get recordCategoryFitness => '체력';
 
   @override
-  String get recordCategorySocial => '군';
+  String get recordCategorySocial => '사회성';
 
   @override
-  String get recordCategoryArts => '미';
+  String get recordCategoryArts => '예술';
 
   @override
   String get recordTotal => '합계';
@@ -1047,6 +1107,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get accountSwitchCurrency => '통화 전환';
+
+  @override
+  String get currencyLabel => '통화';
 
   @override
   String get accountingSpeechHint => '예: 금액 추가/차감';
@@ -1180,6 +1243,78 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get calendarInvitationFailed => '캘린더 초대를 업데이트할 수 없습니다.';
+
+  @override
+  String get calendarInvitationQuotaExceeded => '캘린더 공유 한도에 도달했습니다. 기존 공유를 삭제하거나 요금제를 변경하세요.';
+
+  @override
+  String get calendarInvitationDuplicate => '이 일정은 이미 이 계정과 공유되어 있습니다.';
+
+  @override
+  String get calendarInvitationAccountNotFound => '계정을 찾을 수 없습니다.';
+
+  @override
+  String get calendarInvitationSelfInvite => '자신의 계정은 초대할 수 없습니다.';
+
+  @override
+  String get calendarInvitationEventUnavailable => '선택한 일정이 없거나 공유할 수 없습니다. 새로고침 후 다시 선택해 주세요.';
+
+  @override
+  String get calendarInvitationStateChanged => '초대 상태가 변경되었습니다. 새로고침 후 다시 시도해 주세요.';
+
+  @override
+  String calendarInvitationFailedWithReason(String reason) {
+    return '캘린더 초대를 업데이트할 수 없습니다: $reason';
+  }
+
+  @override
+  String get adminSubscriptionExtended => '구독 기간이 90일 연장되었습니다.';
+
+  @override
+  String get adminSubscriptionExtend90Days => '90일 연장';
+
+  @override
+  String get adminSubscriptionExtensionDays => '연장 일수';
+
+  @override
+  String get adminSubscriptionExtend => '연장';
+
+  @override
+  String get adminSubscriptionLookupRequired => '먼저 데이터를 조회해 주세요.';
+
+  @override
+  String get adminSubscriptionNotFound => '구독 정보가 없습니다';
+
+  @override
+  String get adminSubscriptionNotFoundCreate => '이 사용자의 새 구독을 만들 수 있습니다.';
+
+  @override
+  String get adminSubscriptionUserNotFound => '사용자 계정을 찾을 수 없습니다';
+
+  @override
+  String get adminSubscriptionLoadedForEditing => '현재 구독을 불러왔습니다. 수정 후 저장할 수 있습니다.';
+
+  @override
+  String get adminSubscriptionDeleteTitle => '구독 설정 삭제';
+
+  @override
+  String adminSubscriptionDeleteConfirmation(String email) {
+    return '$email의 구독 및 한도 설정을 삭제할까요? 사용자 데이터는 삭제되지 않습니다.';
+  }
+
+  @override
+  String get adminSubscriptionDeleted => '구독 및 한도 설정을 삭제했습니다.';
+
+  @override
+  String get adminSubscriptionInvalidExtensionDays => '1~3650일 사이의 숫자를 입력하세요.';
+
+  @override
+  String adminSubscriptionExtendedDays(int days) {
+    return '구독 기간이 $days일 연장되었습니다.';
+  }
+
+  @override
+  String get days => '일';
 
   @override
   String calendarSharedBy(String account) {

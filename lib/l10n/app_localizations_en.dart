@@ -107,6 +107,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get correctAnswer => 'Correct answer';
 
   @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String get secondaryCategoryLabel => 'Subcategory';
+
+  @override
+  String get amountLabel => 'Value';
+
+  @override
+  String get dataExportSummarySheet => 'Export summary';
+
+  @override
   String get questionGroup => 'Question group';
 
   @override
@@ -854,7 +866,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requestAccountDeletion => 'Request account deletion';
 
   @override
-  String get accountDeletionRequestDescription => 'We will open an email draft to submit your account deletion request. Your account and data will not be deleted immediately.';
+  String get accountDeletionRequestDescription => 'Your request will be sent to an administrator. The account and related data will be deleted only after approval.';
 
   @override
   String get continueLabel => 'Continue';
@@ -866,10 +878,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requestDataExport => 'Request personal data export';
 
   @override
-  String get dataExportRequestDescription => 'We will open an email draft to submit your personal data export request. The export will be prepared after we verify the request.';
+  String get dataExportRequestDescription => 'An Excel file containing your cloud and local personal data will be downloaded to this device.';
+
+  @override
+  String get dataExportIncludedPages => 'Included pages: calendar, memories, accounting records, and point records.';
 
   @override
   String get dataExportEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
+
+  @override
+  String get accountDeletionCompleted => 'Your deletion request was sent to an administrator.';
+
+  @override
+  String accountDeletionFailed(Object message) {
+    return 'Account deletion failed: $message';
+  }
+
+  @override
+  String get accountDeletionPending => 'Request pending';
+
+  @override
+  String get accountDeletionPendingDescription => 'Your account deletion request is waiting for administrator review. You can request cancellation if you no longer want to delete the account.';
+
+  @override
+  String get accountDeletionCancelRequest => 'Cancel request';
+
+  @override
+  String get accountDeletionCancellationSubmitted => 'Cancellation requested. Waiting for administrator confirmation.';
+
+  @override
+  String get accountDeletionCancellationPending => 'Cancellation is waiting for administrator confirmation.';
+
+  @override
+  String get adminAccountDeletionCancellationRequested => 'The user requested cancellation of account deletion.';
+
+  @override
+  String get adminAccountDeletionConfirmCancellation => 'Confirm cancellation';
+
+  @override
+  String get adminAccountDeletionCancellationConfirmed => 'Cancellation confirmed and the original deletion request was removed.';
+
+  @override
+  String get adminAccountDeletionCompleted => 'The account and its related data were deleted.';
+
+  @override
+  String dataExportCompleted(Object path) {
+    return 'Your data export is ready: $path';
+  }
+
+  @override
+  String dataExportFailed(Object message) {
+    return 'Data export failed: $message';
+  }
 
   @override
   String get agreeToLegalTermsPrefix => 'I have read and agree to the ';
@@ -1049,6 +1109,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSwitchCurrency => 'Switch currency';
 
   @override
+  String get currencyLabel => 'Currency';
+
+  @override
   String get accountingSpeechHint => 'For example: add/subtract an amount';
 
   @override
@@ -1180,6 +1243,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarInvitationFailed => 'Calendar invitation could not be updated.';
+
+  @override
+  String get calendarInvitationQuotaExceeded => 'You have reached the calendar sharing limit. Please remove an existing share or upgrade your plan.';
+
+  @override
+  String get calendarInvitationDuplicate => 'These events are already shared with this account.';
+
+  @override
+  String get calendarInvitationAccountNotFound => 'That account could not be found.';
+
+  @override
+  String get calendarInvitationSelfInvite => 'You cannot invite your own account.';
+
+  @override
+  String get calendarInvitationEventUnavailable => 'The selected event no longer exists or cannot be shared. Refresh and select it again.';
+
+  @override
+  String get calendarInvitationStateChanged => 'The invitation status changed. Refresh and try again.';
+
+  @override
+  String calendarInvitationFailedWithReason(String reason) {
+    return 'Calendar invitation could not be updated: $reason';
+  }
+
+  @override
+  String get adminSubscriptionExtended => 'Subscription extended by 90 days.';
+
+  @override
+  String get adminSubscriptionExtend90Days => 'Extend 90 days';
+
+  @override
+  String get adminSubscriptionExtensionDays => 'Extension days';
+
+  @override
+  String get adminSubscriptionExtend => 'Extend';
+
+  @override
+  String get adminSubscriptionLookupRequired => 'Search for the user first.';
+
+  @override
+  String get adminSubscriptionNotFound => 'No subscription found';
+
+  @override
+  String get adminSubscriptionNotFoundCreate => 'You can create a new subscription for this user.';
+
+  @override
+  String get adminSubscriptionUserNotFound => 'User account not found';
+
+  @override
+  String get adminSubscriptionLoadedForEditing => 'The current subscription is ready to edit and save.';
+
+  @override
+  String get adminSubscriptionDeleteTitle => 'Delete subscription settings';
+
+  @override
+  String adminSubscriptionDeleteConfirmation(String email) {
+    return 'Delete the subscription and quota settings for $email? The user\'s data will not be deleted.';
+  }
+
+  @override
+  String get adminSubscriptionDeleted => 'Subscription and quota settings deleted.';
+
+  @override
+  String get adminSubscriptionInvalidExtensionDays => 'Enter a number from 1 to 3650.';
+
+  @override
+  String adminSubscriptionExtendedDays(int days) {
+    return 'Subscription extended by $days days.';
+  }
+
+  @override
+  String get days => 'days';
 
   @override
   String calendarSharedBy(String account) {

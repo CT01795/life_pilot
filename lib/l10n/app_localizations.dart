@@ -291,6 +291,30 @@ abstract class AppLocalizations {
   /// **'Correct answer'**
   String get correctAnswer;
 
+  /// Label for categoryLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// Label for secondaryCategoryLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategory'**
+  String get secondaryCategoryLabel;
+
+  /// Amount column title
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get amountLabel;
+
+  /// Personal data export summary sheet name
+  ///
+  /// In en, this message translates to:
+  /// **'Export summary'**
+  String get dataExportSummarySheet;
+
   /// Label for questionGroup
   ///
   /// In en, this message translates to:
@@ -1788,7 +1812,7 @@ abstract class AppLocalizations {
   /// Account deletion request explanation
   ///
   /// In en, this message translates to:
-  /// **'We will open an email draft to submit your account deletion request. Your account and data will not be deleted immediately.'**
+  /// **'Your request will be sent to an administrator. The account and related data will be deleted only after approval.'**
   String get accountDeletionRequestDescription;
 
   /// Label for continuing an action
@@ -1812,14 +1836,98 @@ abstract class AppLocalizations {
   /// Personal data export request explanation
   ///
   /// In en, this message translates to:
-  /// **'We will open an email draft to submit your personal data export request. The export will be prepared after we verify the request.'**
+  /// **'An Excel file containing your cloud and local personal data will be downloaded to this device.'**
   String get dataExportRequestDescription;
+
+  /// Pages included in personal data export
+  ///
+  /// In en, this message translates to:
+  /// **'Included pages: calendar, memories, accounting records, and point records.'**
+  String get dataExportIncludedPages;
 
   /// Personal data export email fallback message
   ///
   /// In en, this message translates to:
   /// **'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.'**
   String get dataExportEmailUnavailable;
+
+  /// Confirmation after self-service account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Your deletion request was sent to an administrator.'**
+  String get accountDeletionCompleted;
+
+  /// Self-service account deletion error
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion failed: {message}'**
+  String accountDeletionFailed(Object message);
+
+  /// Account deletion request is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Request pending'**
+  String get accountDeletionPending;
+
+  /// Pending account deletion explanation
+  ///
+  /// In en, this message translates to:
+  /// **'Your account deletion request is waiting for administrator review. You can request cancellation if you no longer want to delete the account.'**
+  String get accountDeletionPendingDescription;
+
+  /// Cancel an account deletion request
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get accountDeletionCancelRequest;
+
+  /// Account deletion cancellation submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation requested. Waiting for administrator confirmation.'**
+  String get accountDeletionCancellationSubmitted;
+
+  /// Account deletion cancellation is pending
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation is waiting for administrator confirmation.'**
+  String get accountDeletionCancellationPending;
+
+  /// Cancellation request shown to administrators
+  ///
+  /// In en, this message translates to:
+  /// **'The user requested cancellation of account deletion.'**
+  String get adminAccountDeletionCancellationRequested;
+
+  /// Administrator confirms cancellation
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm cancellation'**
+  String get adminAccountDeletionConfirmCancellation;
+
+  /// Administrator confirmed cancellation
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation confirmed and the original deletion request was removed.'**
+  String get adminAccountDeletionCancellationConfirmed;
+
+  /// Administrator completed account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'The account and its related data were deleted.'**
+  String get adminAccountDeletionCompleted;
+
+  /// Confirmation after data export
+  ///
+  /// In en, this message translates to:
+  /// **'Your data export is ready: {path}'**
+  String dataExportCompleted(Object path);
+
+  /// Data export error
+  ///
+  /// In en, this message translates to:
+  /// **'Data export failed: {message}'**
+  String dataExportFailed(Object message);
 
   /// Registration legal agreement prefix
   ///
@@ -2163,6 +2271,12 @@ abstract class AppLocalizations {
   /// **'Switch currency'**
   String get accountSwitchCurrency;
 
+  /// Currency column title
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get currencyLabel;
+
   /// Label for accountingSpeechHint
   ///
   /// In en, this message translates to:
@@ -2420,6 +2534,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calendar invitation could not be updated.'**
   String get calendarInvitationFailed;
+
+  /// Calendar sharing quota error
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached the calendar sharing limit. Please remove an existing share or upgrade your plan.'**
+  String get calendarInvitationQuotaExceeded;
+
+  /// Duplicate calendar invitation error
+  ///
+  /// In en, this message translates to:
+  /// **'These events are already shared with this account.'**
+  String get calendarInvitationDuplicate;
+
+  /// Calendar invitation account error
+  ///
+  /// In en, this message translates to:
+  /// **'That account could not be found.'**
+  String get calendarInvitationAccountNotFound;
+
+  /// Cannot invite yourself to a calendar
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot invite your own account.'**
+  String get calendarInvitationSelfInvite;
+
+  /// Selected sharing event is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'The selected event no longer exists or cannot be shared. Refresh and select it again.'**
+  String get calendarInvitationEventUnavailable;
+
+  /// Invitation state changed
+  ///
+  /// In en, this message translates to:
+  /// **'The invitation status changed. Refresh and try again.'**
+  String get calendarInvitationStateChanged;
+
+  /// Calendar invitation error with reason
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar invitation could not be updated: {reason}'**
+  String calendarInvitationFailedWithReason(String reason);
+
+  /// Admin subscription extension success
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription extended by 90 days.'**
+  String get adminSubscriptionExtended;
+
+  /// Admin subscription extension action
+  ///
+  /// In en, this message translates to:
+  /// **'Extend 90 days'**
+  String get adminSubscriptionExtend90Days;
+
+  /// Number of days for an admin subscription extension
+  ///
+  /// In en, this message translates to:
+  /// **'Extension days'**
+  String get adminSubscriptionExtensionDays;
+
+  /// Admin subscription extension action
+  ///
+  /// In en, this message translates to:
+  /// **'Extend'**
+  String get adminSubscriptionExtend;
+
+  /// Require a lookup before managing a subscription
+  ///
+  /// In en, this message translates to:
+  /// **'Search for the user first.'**
+  String get adminSubscriptionLookupRequired;
+
+  /// No user subscription was found
+  ///
+  /// In en, this message translates to:
+  /// **'No subscription found'**
+  String get adminSubscriptionNotFound;
+
+  /// Prompt to create after an empty lookup
+  ///
+  /// In en, this message translates to:
+  /// **'You can create a new subscription for this user.'**
+  String get adminSubscriptionNotFoundCreate;
+
+  /// User was not found while managing a subscription
+  ///
+  /// In en, this message translates to:
+  /// **'User account not found'**
+  String get adminSubscriptionUserNotFound;
+
+  /// Subscription loaded for editing
+  ///
+  /// In en, this message translates to:
+  /// **'The current subscription is ready to edit and save.'**
+  String get adminSubscriptionLoadedForEditing;
+
+  /// Delete subscription confirmation title
+  ///
+  /// In en, this message translates to:
+  /// **'Delete subscription settings'**
+  String get adminSubscriptionDeleteTitle;
+
+  /// Delete subscription confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the subscription and quota settings for {email}? The user\'s data will not be deleted.'**
+  String adminSubscriptionDeleteConfirmation(String email);
+
+  /// Subscription deletion success
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription and quota settings deleted.'**
+  String get adminSubscriptionDeleted;
+
+  /// Invalid admin subscription extension days
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number from 1 to 3650.'**
+  String get adminSubscriptionInvalidExtensionDays;
+
+  /// Admin subscription extension success
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription extended by {days} days.'**
+  String adminSubscriptionExtendedDays(int days);
+
+  /// Unit label for days
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get days;
 
   /// No description provided for @calendarSharedBy.
   ///

@@ -186,10 +186,14 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                    context.read<ControllerPageMain>().changePage(
-                      PageType.accountRecords,
-                    );
+                  onPressed: () async {
+                    if (context.read<ModelDashboard>().setting.accountingAccountId != null) {
+                      await openHomeAccountingDetails(context);
+                    } else if (context.mounted) {
+                      context.read<ControllerPageMain>().changePage(
+                        PageType.accountRecords,
+                      );
+                    }
                   },
                   child: Text(loc.clickHereToSeeMore),
                 ),

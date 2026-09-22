@@ -11,13 +11,12 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/page_subscription_plans.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/service/export/service_export_platform.dart';
+import 'package:life_pilot/utils/service/service_personal_data.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class UserMenuButton extends StatelessWidget {
-  const UserMenuButton({
-    super.key,
-  });
+  const UserMenuButton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +27,7 @@ class UserMenuButton extends StatelessWidget {
     }
 
     return PopupMenuButton<String>(
-      icon: const Icon(
-        Icons.account_circle,
-        color: Colors.white,
-      ),
+      icon: const Icon(Icons.account_circle, color: Colors.white),
       tooltip: loc.userMenuButton,
       color: const Color(0xFF0066CC), // 改成跟 LanguageToggleDropdown 一樣
       constraints: const BoxConstraints(minWidth: 320, maxWidth: 360),
@@ -41,16 +37,10 @@ class UserMenuButton extends StatelessWidget {
             _openFeedback(context);
             break;
           case "privacyPolicy":
-            _openLegalDocument(
-              context,
-              assetPath: 'web/privacy.html',
-            );
+            _openLegalDocument(context, assetPath: 'web/privacy.html');
             break;
           case "termsOfService":
-            _openLegalDocument(
-              context,
-              assetPath: 'web/terms.html',
-            );
+            _openLegalDocument(context, assetPath: 'web/terms.html');
             break;
           case "dataStorage":
             await showDialog<void>(
@@ -106,10 +96,7 @@ class UserMenuButton extends StatelessWidget {
               ),
               Text(
                 auth.account!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
               ),
             ],
           ),
@@ -121,10 +108,7 @@ class UserMenuButton extends StatelessWidget {
             children: [
               Icon(Icons.feedback, color: Colors.white),
               Gaps.w8,
-              Text(
-                loc.feedback,
-                style: const TextStyle(color: Colors.white),
-              ),
+              Text(loc.feedback, style: const TextStyle(color: Colors.white)),
             ],
           ),
         ),
@@ -233,12 +217,7 @@ class UserMenuButton extends StatelessWidget {
             children: [
               const Icon(Icons.exit_to_app, color: Colors.white),
               Gaps.w8,
-              Text(
-                loc.logout,
-                style: const TextStyle(
-                  color: Colors.white,
-                ),
-              ),
+              Text(loc.logout, style: const TextStyle(color: Colors.white)),
             ],
           ),
         ),
@@ -246,10 +225,7 @@ class UserMenuButton extends StatelessWidget {
     );
   }
 
-  void _openLegalDocument(
-    BuildContext context, {
-    required String assetPath,
-  }) {
+  void _openLegalDocument(BuildContext context, {required String assetPath}) {
     showDialog(
       context: context,
       builder: (_) => LegalDocumentDialog(assetPath: assetPath),
@@ -261,6 +237,29 @@ class UserMenuButton extends StatelessWidget {
     String account,
     AppLocalizations loc,
   ) async {
+    try {
+      final existing = await ServicePersonalData()
+          .fetchMyAccountDeletionRequest();
+      if (!context.mounted) return;
+      final status = existing?['status']?.toString();
+      if (status == 'pending') {
+        await _showPendingDeletionRequest(context, loc);
+        return;
+      }
+      if (status == 'cancel_pending') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.accountDeletionCancellationPending)),
+        );
+        return;
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.accountDeletionFailed(error.toString()))),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -281,22 +280,61 @@ class UserMenuButton extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    final mailto = Uri(
-      scheme: 'mailto',
-      path: 'minavi@alumni.nccu.edu.tw',
-      queryParameters: {
-        'subject': 'Life Pilot account deletion request',
-        'body': 'Please delete my Life Pilot account and associated data.\n\n'
-            'Account email: $account',
-      },
-    );
+    try {
+      await ServicePersonalData().requestAccountDeletion();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.accountDeletionCompleted)));
+    } catch (error) {
+      if (!context.mounted) return;
+      final errorText = error.toString();
+      if (errorText.contains('deletion_request_already_pending')) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.accountDeletionPending)));
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.accountDeletionFailed(errorText))),
+      );
+    }
+  }
 
-    if (await launchUrl(mailto)) return;
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(loc.accountDeletionEmailUnavailable)),
+  Future<void> _showPendingDeletionRequest(
+    BuildContext context,
+    AppLocalizations loc,
+  ) async {
+    final cancelRequest = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.accountDeletionPending),
+        content: Text(loc.accountDeletionPendingDescription),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(loc.close),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(loc.accountDeletionCancelRequest),
+          ),
+        ],
+      ),
     );
+    if (cancelRequest != true || !context.mounted) return;
+    try {
+      await ServicePersonalData().requestAccountDeletionCancellation();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.accountDeletionCancellationSubmitted)),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.accountDeletionFailed(error.toString()))),
+      );
+    }
   }
 
   Future<void> _requestDataExport(
@@ -324,22 +362,22 @@ class UserMenuButton extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    final mailto = Uri(
-      scheme: 'mailto',
-      path: 'minavi@alumni.nccu.edu.tw',
-      queryParameters: {
-        'subject': 'Life Pilot personal data export request',
-        'body': 'Please provide an export of my Life Pilot personal data.\n\n'
-            'Account email: $account',
-      },
-    );
-
-    if (await launchUrl(mailto)) return;
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(loc.dataExportEmailUnavailable)),
-    );
+    try {
+      final path = await ServicePersonalData().export(
+        email: account,
+        exporter: context.read<ServiceExportPlatform>(),
+        loc: loc,
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.dataExportCompleted(path))));
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.dataExportFailed(error.toString()))),
+      );
+    }
   }
 
   void _openFeedback(BuildContext context) {

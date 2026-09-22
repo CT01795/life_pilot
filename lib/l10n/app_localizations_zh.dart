@@ -107,6 +107,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get correctAnswer => '正確答案';
 
   @override
+  String get categoryLabel => '分類';
+
+  @override
+  String get secondaryCategoryLabel => '次分類';
+
+  @override
+  String get amountLabel => '值';
+
+  @override
+  String get dataExportSummarySheet => '匯出說明';
+
+  @override
   String get questionGroup => '題目分類';
 
   @override
@@ -854,7 +866,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get requestAccountDeletion => '申請刪除帳號';
 
   @override
-  String get accountDeletionRequestDescription => '系統將開啟電子郵件草稿，讓您提交刪除帳號申請。帳號與資料不會立即刪除。';
+  String get accountDeletionRequestDescription => '申請會送給管理者審核。管理者確認後才會刪除帳號與相關資料。';
 
   @override
   String get continueLabel => '繼續';
@@ -866,10 +878,58 @@ class AppLocalizationsZh extends AppLocalizations {
   String get requestDataExport => '申請匯出個人資料';
 
   @override
-  String get dataExportRequestDescription => '系統將開啟電子郵件草稿，讓您提交個人資料匯出申請。完成身分核對後，我們會準備匯出資料。';
+  String get dataExportRequestDescription => '個人資料會直接下載為 Excel 檔案，包含雲端與本機資料。';
+
+  @override
+  String get dataExportIncludedPages => '下載內容包含：行事曆、回憶走廊、記帳與積分。';
 
   @override
   String get dataExportEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
+
+  @override
+  String get accountDeletionCompleted => '刪除申請已送出，等待管理者處理。';
+
+  @override
+  String accountDeletionFailed(Object message) {
+    return '刪除帳號失敗：$message';
+  }
+
+  @override
+  String get accountDeletionPending => '申請中';
+
+  @override
+  String get accountDeletionPendingDescription => '刪除帳號申請正在等待管理者處理。若不再刪除帳號，可以提出取消申請。';
+
+  @override
+  String get accountDeletionCancelRequest => '取消申請';
+
+  @override
+  String get accountDeletionCancellationSubmitted => '取消申請已送出，等待管理者確認。';
+
+  @override
+  String get accountDeletionCancellationPending => '取消申請正在等待管理者確認。';
+
+  @override
+  String get adminAccountDeletionCancellationRequested => '使用者申請撤銷刪除帳號。';
+
+  @override
+  String get adminAccountDeletionConfirmCancellation => '確認撤銷';
+
+  @override
+  String get adminAccountDeletionCancellationConfirmed => '撤銷已確認，原刪除申請已清除。';
+
+  @override
+  String get adminAccountDeletionCompleted => '帳號與相關資料已刪除。';
+
+  @override
+  String dataExportCompleted(Object path) {
+    return '資料匯出完成：$path';
+  }
+
+  @override
+  String dataExportFailed(Object message) {
+    return '資料匯出失敗：$message';
+  }
 
   @override
   String get agreeToLegalTermsPrefix => '我已閱讀並同意';
@@ -1049,6 +1109,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountSwitchCurrency => '切換幣別';
 
   @override
+  String get currencyLabel => '幣別';
+
+  @override
   String get accountingSpeechHint => '例如：加／扣金額';
 
   @override
@@ -1180,6 +1243,78 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get calendarInvitationFailed => '無法更新行事曆邀請。';
+
+  @override
+  String get calendarInvitationQuotaExceeded => '已達行事曆分享上限，請先停止分享或升級方案。';
+
+  @override
+  String get calendarInvitationDuplicate => '這些事件已經分享給此帳號。';
+
+  @override
+  String get calendarInvitationAccountNotFound => '找不到這個帳號。';
+
+  @override
+  String get calendarInvitationSelfInvite => '不能邀請自己的帳號。';
+
+  @override
+  String get calendarInvitationEventUnavailable => '選取的事件已不存在或無法分享，請重新整理後再選擇。';
+
+  @override
+  String get calendarInvitationStateChanged => '邀請狀態已變更，請重新整理後再操作。';
+
+  @override
+  String calendarInvitationFailedWithReason(String reason) {
+    return '無法更新行事曆邀請：$reason';
+  }
+
+  @override
+  String get adminSubscriptionExtended => '訂閱期限已延長 90 天。';
+
+  @override
+  String get adminSubscriptionExtend90Days => '延長 90 天';
+
+  @override
+  String get adminSubscriptionExtensionDays => '延長天數';
+
+  @override
+  String get adminSubscriptionExtend => '延長';
+
+  @override
+  String get adminSubscriptionLookupRequired => '請先查詢資料';
+
+  @override
+  String get adminSubscriptionNotFound => '查無訂閱資料';
+
+  @override
+  String get adminSubscriptionNotFoundCreate => '可為此使用者建立新訂閱。';
+
+  @override
+  String get adminSubscriptionUserNotFound => '找不到這個使用者帳號';
+
+  @override
+  String get adminSubscriptionLoadedForEditing => '已載入目前訂閱，可修改後儲存。';
+
+  @override
+  String get adminSubscriptionDeleteTitle => '刪除訂閱設定';
+
+  @override
+  String adminSubscriptionDeleteConfirmation(String email) {
+    return '確定刪除 $email 的訂閱與額度設定嗎？使用者資料不會被刪除。';
+  }
+
+  @override
+  String get adminSubscriptionDeleted => '訂閱與額度設定已刪除。';
+
+  @override
+  String get adminSubscriptionInvalidExtensionDays => '請輸入 1 至 3650 的天數。';
+
+  @override
+  String adminSubscriptionExtendedDays(int days) {
+    return '訂閱期限已延長 $days 天。';
+  }
+
+  @override
+  String get days => '天';
 
   @override
   String calendarSharedBy(String account) {

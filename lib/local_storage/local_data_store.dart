@@ -47,19 +47,19 @@ class LocalDataStore {
     String owner,
     String resource,
     int value,
-  ) =>
-      _settings.record(_countKey(owner, resource)).put(database, {
-        'value': value < 0 ? 0 : value,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      });
+  ) => _settings.record(_countKey(owner, resource)).put(database, {
+    'value': value < 0 ? 0 : value,
+    'updated_at': DateTime.now().toUtc().toIso8601String(),
+  });
 
   Future<int?> _cachedCount(
     DatabaseClient database,
     String owner,
     String resource,
   ) async {
-    final row =
-        await _settings.record(_countKey(owner, resource)).get(database);
+    final row = await _settings
+        .record(_countKey(owner, resource))
+        .get(database);
     return (row?['value'] as num?)?.toInt();
   }
 
@@ -166,9 +166,10 @@ class LocalDataStore {
         )
         .timeout(const Duration(seconds: 10));
     return snapshots
-        .map((snapshot) => Map<String, dynamic>.from(
-              snapshot.value['data']! as Map,
-            ))
+        .map(
+          (snapshot) =>
+              Map<String, dynamic>.from(snapshot.value['data']! as Map),
+        )
         .toList(growable: false);
   }
 
@@ -196,12 +197,16 @@ class LocalDataStore {
     await database.transaction((transaction) async {
       final deletedByResource = <String, int>{};
       for (final record in recordList) {
-        final stored =
-            _records.record(_recordKey(owner, record.resource, record.id));
+        final stored = _records.record(
+          _recordKey(owner, record.resource, record.id),
+        );
         if (await stored.exists(transaction)) {
           await stored.delete(transaction);
-          deletedByResource.update(record.resource, (value) => value + 1,
-              ifAbsent: () => 1);
+          deletedByResource.update(
+            record.resource,
+            (value) => value + 1,
+            ifAbsent: () => 1,
+          );
         }
       }
       for (final entry in deletedByResource.entries) {
@@ -219,20 +224,43 @@ class LocalDataStore {
     await database.transaction((transaction) async {
       await _records.delete(
         transaction,
-        finder: Finder(
-          filter: Filter.equals('owner', owner.toLowerCase()),
-        ),
+        finder: Finder(filter: Filter.equals('owner', owner.toLowerCase())),
       );
       await _settings.delete(
         transaction,
         finder: Finder(
-          filter: Filter.custom((record) => record.key
-              .toString()
-              .startsWith('${owner.toLowerCase()}::record_count::')),
+          filter: Filter.custom(
+            (record) => record.key.toString().startsWith(
+              '${owner.toLowerCase()}::record_count::',
+            ),
+          ),
         ),
       );
     });
     _invalidateOwner(owner);
+  }
+
+  /// Returns a portable snapshot of every record stored for [owner].
+  /// The wrapper keeps the resource name so an export can be restored later.
+  Future<List<Map<String, dynamic>>> exportAllRecords({
+    required String owner,
+  }) async {
+    final snapshots = await _records.find(
+      await _db,
+      finder: Finder(filter: Filter.equals('owner', owner.toLowerCase())),
+    );
+    return snapshots
+        .map(
+          (snapshot) => <String, dynamic>{
+            'table_name': snapshot.value['resource']?.toString() ?? '',
+            'record': Map<String, dynamic>.from(
+              (snapshot.value['data'] as Map?)?.cast<String, dynamic>() ??
+                  const <String, dynamic>{},
+            ),
+          },
+        )
+        .where((row) => (row['table_name'] as String).isNotEmpty)
+        .toList(growable: false);
   }
 
   Future<bool> contains({
@@ -246,10 +274,7 @@ class LocalDataStore {
         null;
   }
 
-  Future<int> count({
-    required String owner,
-    required String resource,
-  }) async {
+  Future<int> count({required String owner, required String resource}) async {
     final database = await _db;
     final cached = await _cachedCount(database, owner, resource);
     if (cached != null) return cached;

@@ -16,6 +16,7 @@ class AdminSubscriptionEditor extends StatefulWidget {
 class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   final _email = TextEditingController();
   final _note = TextEditingController();
+  final _extensionDays = TextEditingController(text: '90');
   late Future<List<SubscriptionPricingVersion>> _versions;
   String _plan = 'plus';
   String _storagePlan = 'cloud';
@@ -24,6 +25,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   DateTime? _expiry = DateTime.now().add(const Duration(days: 90));
   bool _saving = false;
   bool _additive = false;
+  Map<String, dynamic>? _lookedUpSubscription;
+  bool _lookupLoading = false;
+  bool _hasLookedUp = false;
+  String? _lookedUpEmail;
 
   @override
   void initState() {
@@ -35,19 +40,24 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   void dispose() {
     _email.dispose();
     _note.dispose();
+    _extensionDays.dispose();
     super.dispose();
   }
 
   Future<void> _save(List<SubscriptionPricingVersion> versions) async {
     final loc = AppLocalizations.of(context)!;
     if (_email.text.trim().isEmpty || _saving) return;
+    if (!_lookupMatchesCurrentEmail) {
+      _show(loc.adminSubscriptionLookupRequired);
+      return;
+    }
     final matchingVersions = versions
         .where((version) => version.storagePlan == _storagePlan)
         .toList(growable: false);
     final selectedVersion =
         matchingVersions.any((version) => version.id == _versionId)
-            ? _versionId
-            : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
+        ? _versionId
+        : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
     if (_plan == 'plus' && selectedVersion == null) {
       _show(loc.adminSubscriptionNoPricing);
       return;
@@ -78,6 +88,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       if (!mounted) return;
       _show(loc.adminSubscriptionSaved);
       widget.onSaved?.call();
+      await _lookupSubscription();
     } catch (error) {
       if (mounted) _show(loc.adminSubscriptionSaveFailed(error.toString()));
     } finally {
@@ -85,8 +96,9 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     }
   }
 
-  void _show(String message) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(message)));
+  void _show(String message) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
@@ -100,25 +112,87 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
             .toList(growable: false);
         final selectedVersion =
             matchingVersions.any((version) => version.id == _versionId)
-                ? _versionId
-                : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
+            ? _versionId
+            : (matchingVersions.isEmpty ? null : matchingVersions.first.id);
         return Card(
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
-            leading:
-                const CircleAvatar(child: Icon(Icons.manage_accounts_outlined)),
+            leading: const CircleAvatar(
+              child: Icon(Icons.manage_accounts_outlined),
+            ),
             title: Text(loc.adminSubscriptionTitle),
             subtitle: Text(loc.adminSubscriptionSubtitle),
             childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
-              TextField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: loc.adminSubscriptionEmail,
-                  prefixIcon: const Icon(Icons.alternate_email),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (_) => _clearLookupWhenEmailChanged(),
+                      decoration: InputDecoration(
+                        labelText: loc.adminSubscriptionEmail,
+                        prefixIcon: const Icon(Icons.alternate_email),
+                      ),
+                    ),
+                  ),
+                  Gaps.w8,
+                  IconButton(
+                    tooltip: loc.search,
+                    onPressed: _lookupLoading ? null : _lookupSubscription,
+                    icon: _lookupLoading
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.search),
+                  ),
+                ],
               ),
+              if (_subscriptionExists)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.verified_user_outlined),
+                  title: Text(
+                    '${_lookedUpSubscription!['plan'] ?? 'free'} · '
+                    '${_lookedUpSubscription!['storage_plan'] ?? 'cloud'}',
+                  ),
+                  subtitle: Text(
+                    '${_lookedUpSubscription!['status'] ?? '-'} · '
+                    '${_lookedUpSubscription!['expires_at'] ?? '-'}',
+                  ),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      IconButton(
+                        tooltip: loc.edit,
+                        onPressed: _saving
+                            ? null
+                            : () => _loadSubscriptionIntoForm(versions),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      IconButton(
+                        tooltip: loc.delete,
+                        onPressed: _saving ? null : _deleteSubscription,
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_lookupMatchesCurrentEmail && _lookedUpSubscription == null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person_off_outlined),
+                  title: Text(loc.adminSubscriptionUserNotFound),
+                ),
+              if (_lookedUpUserExists && !_subscriptionExists)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person_add_alt_1_outlined),
+                  title: Text(loc.adminSubscriptionNotFound),
+                  subtitle: Text(loc.adminSubscriptionNotFoundCreate),
+                ),
               Gaps.h12,
               LayoutBuilder(
                 builder: (context, constraints) => constraints.maxWidth < 320
@@ -233,14 +307,16 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     prefixIcon: const Icon(Icons.history),
                   ),
                   items: matchingVersions
-                      .map((version) => DropdownMenuItem(
-                            value: version.id,
-                            child: Text(
-                              '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ))
+                      .map(
+                        (version) => DropdownMenuItem(
+                          value: version.id,
+                          child: Text(
+                            '${version.name} · NT\$${version.quarterlyPriceTwd}/季',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   selectedItemBuilder: (context) => matchingVersions
                       .map(
@@ -280,11 +356,46 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.event_available_outlined),
                   title: Text(loc.adminSubscriptionExpiry),
-                  subtitle: Text(_expiry == null
-                      ? '-'
-                      : MaterialLocalizations.of(context)
-                          .formatMediumDate(_expiry!)),
+                  subtitle: Text(
+                    _expiry == null
+                        ? '-'
+                        : MaterialLocalizations.of(
+                            context,
+                          ).formatMediumDate(_expiry!),
+                  ),
                   onTap: _pickExpiry,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _extensionDays,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: loc.adminSubscriptionExtensionDays,
+                          suffixText: loc.days,
+                        ),
+                      ),
+                    ),
+                    Gaps.w8,
+                    Tooltip(
+                      message: !_lookupMatchesCurrentEmail
+                          ? loc.adminSubscriptionLookupRequired
+                          : !_subscriptionExists
+                          ? loc.adminSubscriptionNotFound
+                          : loc.adminSubscriptionExtend,
+                      child: TextButton.icon(
+                        onPressed:
+                            _saving ||
+                                !_lookupMatchesCurrentEmail ||
+                                !_subscriptionExists
+                            ? null
+                            : _extendSubscription,
+                        icon: const Icon(Icons.more_time),
+                        label: Text(loc.adminSubscriptionExtend),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               TextField(
@@ -298,14 +409,27 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
               Gaps.h16,
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _saving ? null : () => _save(versions),
-                  icon: _saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.save_outlined),
-                  label: Text(loc.adminSubscriptionSave),
+                child: Tooltip(
+                  message: _lookupMatchesCurrentEmail
+                      ? _lookedUpUserExists
+                            ? loc.adminSubscriptionSave
+                            : loc.adminSubscriptionUserNotFound
+                      : loc.adminSubscriptionLookupRequired,
+                  child: FilledButton.icon(
+                    onPressed:
+                        _saving ||
+                            !_lookupMatchesCurrentEmail ||
+                            !_lookedUpUserExists
+                        ? null
+                        : () => _save(versions),
+                    icon: _saving
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_outlined),
+                    label: Text(loc.adminSubscriptionSave),
+                  ),
                 ),
               ),
             ],
@@ -325,12 +449,165 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     if (value != null) setState(() => _expiry = value);
   }
 
+  Future<void> _lookupSubscription() async {
+    final email = _normalizedEmail;
+    if (email.isEmpty) return;
+    setState(() {
+      _lookupLoading = true;
+      _hasLookedUp = false;
+      _lookedUpEmail = null;
+      _lookedUpSubscription = null;
+    });
+    try {
+      final result = await ServiceSubscription().fetchUserSubscriptionAsAdmin(
+        email: email,
+      );
+      if (mounted) {
+        setState(() {
+          _lookedUpSubscription = result;
+          _lookedUpEmail = email;
+          _hasLookedUp = true;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        _show(
+          AppLocalizations.of(
+            context,
+          )!.adminSubscriptionSaveFailed(error.toString()),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _lookupLoading = false);
+    }
+  }
+
+  Future<void> _extendSubscription() async {
+    final loc = AppLocalizations.of(context)!;
+    final days = int.tryParse(_extensionDays.text.trim());
+    if (days == null || days < 1 || days > 3650) {
+      _show(loc.adminSubscriptionInvalidExtensionDays);
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await ServiceSubscription().extendUserSubscriptionAsAdmin(
+        email: _email.text,
+        days: days,
+      );
+      if (!mounted) return;
+      _show(loc.adminSubscriptionExtendedDays(days));
+      widget.onSaved?.call();
+      await _lookupSubscription();
+    } catch (error) {
+      if (mounted) _show(loc.adminSubscriptionSaveFailed(error.toString()));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _loadSubscriptionIntoForm(List<SubscriptionPricingVersion> versions) {
+    if (!_subscriptionExists) return;
+    final subscription = _lookedUpSubscription!;
+    final plan = subscription['plan']?.toString() ?? 'free';
+    final storagePlan = subscription['storage_plan']?.toString() ?? 'cloud';
+    final pricingVersionId = subscription['pricing_version_id']?.toString();
+    final parsedExpiry = DateTime.tryParse(
+      subscription['current_period_end']?.toString() ??
+          subscription['expires_at']?.toString() ??
+          '',
+    );
+    final versionExists = versions.any(
+      (version) =>
+          version.id == pricingVersionId && version.storagePlan == storagePlan,
+    );
+    setState(() {
+      _plan = plan;
+      _storagePlan = storagePlan;
+      _versionId = versionExists ? pricingVersionId : null;
+      _multiplier = (subscription['quota_multiplier'] as num?)?.toInt() ?? 1;
+      _expiry = plan == 'free'
+          ? null
+          : (parsedExpiry?.toLocal() ??
+                DateTime.now().add(const Duration(days: 90)));
+      _note.text = subscription['admin_note']?.toString() ?? '';
+      _additive = false;
+    });
+    _show(AppLocalizations.of(context)!.adminSubscriptionLoadedForEditing);
+  }
+
+  Future<void> _deleteSubscription() async {
+    if (!_subscriptionExists || _saving) return;
+    final loc = AppLocalizations.of(context)!;
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(loc.adminSubscriptionDeleteTitle),
+            content: Text(
+              loc.adminSubscriptionDeleteConfirmation(_normalizedEmail),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(loc.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(loc.delete),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    setState(() => _saving = true);
+    try {
+      await ServiceSubscription().deleteUserSubscriptionAsAdmin(
+        email: _normalizedEmail,
+      );
+      if (!mounted) return;
+      _show(loc.adminSubscriptionDeleted);
+      widget.onSaved?.call();
+      await _lookupSubscription();
+    } catch (error) {
+      if (mounted) _show(loc.adminSubscriptionSaveFailed(error.toString()));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   void _setPlan(String value) {
     setState(() {
       _plan = value;
       _expiry = _plan == 'free'
           ? null
           : (_expiry ?? DateTime.now().add(const Duration(days: 90)));
+    });
+  }
+
+  String get _normalizedEmail => _email.text.trim().toLowerCase();
+
+  bool get _lookupMatchesCurrentEmail =>
+      _hasLookedUp && _lookedUpEmail == _normalizedEmail;
+
+  bool get _lookedUpUserExists =>
+      _lookupMatchesCurrentEmail && _lookedUpSubscription != null;
+
+  bool get _subscriptionExists =>
+      _lookedUpUserExists && _lookedUpSubscription!['plan'] != null;
+
+  void _clearLookupWhenEmailChanged() {
+    if (!_hasLookedUp &&
+        _lookedUpSubscription == null &&
+        _lookedUpEmail == null) {
+      return;
+    }
+    setState(() {
+      _hasLookedUp = false;
+      _lookedUpEmail = null;
+      _lookedUpSubscription = null;
     });
   }
 }

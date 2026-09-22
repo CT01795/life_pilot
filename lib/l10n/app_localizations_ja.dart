@@ -107,6 +107,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get correctAnswer => '正解';
 
   @override
+  String get categoryLabel => '分類';
+
+  @override
+  String get secondaryCategoryLabel => 'サブ分類';
+
+  @override
+  String get amountLabel => '値';
+
+  @override
+  String get dataExportSummarySheet => 'エクスポート概要';
+
+  @override
   String get questionGroup => '問題グループ';
 
   @override
@@ -506,7 +518,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fee => '料金';
 
   @override
-  String get startDate => '開始日期';
+  String get startDate => '開始日';
 
   @override
   String get startTime => '開始時間';
@@ -854,7 +866,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get requestAccountDeletion => 'アカウント削除を申請';
 
   @override
-  String get accountDeletionRequestDescription => 'アカウント削除申請用のメール下書きを開きます。アカウントとデータは直ちに削除されません。';
+  String get accountDeletionRequestDescription => '申請は管理者に送られ、管理者が承認した後にアカウントとデータが削除されます。';
 
   @override
   String get continueLabel => '続行';
@@ -866,10 +878,58 @@ class AppLocalizationsJa extends AppLocalizations {
   String get requestDataExport => '個人データのエクスポートを申請';
 
   @override
-  String get dataExportRequestDescription => '個人データのエクスポート申請用のメール下書きを開きます。本人確認後、データを準備します。';
+  String get dataExportRequestDescription => 'クラウドと端末の個人データをExcelファイルとして直接ダウンロードします。';
+
+  @override
+  String get dataExportIncludedPages => 'ダウンロード内容：カレンダー、思い出、支出、ポイント。';
 
   @override
   String get dataExportEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
+
+  @override
+  String get accountDeletionCompleted => '削除申請を管理者に送信しました。';
+
+  @override
+  String accountDeletionFailed(Object message) {
+    return 'アカウントの削除に失敗しました: $message';
+  }
+
+  @override
+  String get accountDeletionPending => '申請中';
+
+  @override
+  String get accountDeletionPendingDescription => 'アカウント削除申請は管理者の確認待ちです。削除を取りやめる場合は、申請の取消を依頼できます。';
+
+  @override
+  String get accountDeletionCancelRequest => '申請を取り消す';
+
+  @override
+  String get accountDeletionCancellationSubmitted => '取消申請を送信しました。管理者の確認待ちです。';
+
+  @override
+  String get accountDeletionCancellationPending => '取消申請は管理者の確認待ちです。';
+
+  @override
+  String get adminAccountDeletionCancellationRequested => 'ユーザーがアカウント削除の取消を申請しました。';
+
+  @override
+  String get adminAccountDeletionConfirmCancellation => '取消を確認';
+
+  @override
+  String get adminAccountDeletionCancellationConfirmed => '取消を確認し、元の削除申請を削除しました。';
+
+  @override
+  String get adminAccountDeletionCompleted => 'アカウントと関連データを削除しました。';
+
+  @override
+  String dataExportCompleted(Object path) {
+    return 'データを出力しました: $path';
+  }
+
+  @override
+  String dataExportFailed(Object message) {
+    return 'データの出力に失敗しました: $message';
+  }
 
   @override
   String get agreeToLegalTermsPrefix => '次の内容を読み、同意します：';
@@ -981,37 +1041,37 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recordCategoryReserved => '保持項目';
 
   @override
-  String get recordCategoryFood => '食';
+  String get recordCategoryFood => '食費';
 
   @override
-  String get recordCategoryClothing => '衣';
+  String get recordCategoryClothing => '衣類';
 
   @override
-  String get recordCategoryHousing => '住';
+  String get recordCategoryHousing => '住居';
 
   @override
-  String get recordCategoryTransportation => '行';
+  String get recordCategoryTransportation => '交通';
 
   @override
-  String get recordCategoryEducation => '育';
+  String get recordCategoryEducation => '教育';
 
   @override
-  String get recordCategoryEntertainment => '楽';
+  String get recordCategoryEntertainment => '娯楽';
 
   @override
-  String get recordCategoryVirtue => '徳';
+  String get recordCategoryVirtue => '徳育';
 
   @override
-  String get recordCategoryIntelligence => '智';
+  String get recordCategoryIntelligence => '知育';
 
   @override
-  String get recordCategoryFitness => '体';
+  String get recordCategoryFitness => '体育';
 
   @override
-  String get recordCategorySocial => '群';
+  String get recordCategorySocial => '群育';
 
   @override
-  String get recordCategoryArts => '美';
+  String get recordCategoryArts => '美育';
 
   @override
   String get recordTotal => '合計';
@@ -1047,6 +1107,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get accountSwitchCurrency => '通貨を切り替え';
+
+  @override
+  String get currencyLabel => '通貨単位';
 
   @override
   String get accountingSpeechHint => '例：金額を追加／減算';
@@ -1180,6 +1243,78 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get calendarInvitationFailed => 'カレンダーの招待を更新できませんでした。';
+
+  @override
+  String get calendarInvitationQuotaExceeded => 'カレンダー共有の上限に達しました。既存の共有を削除するか、プランを変更してください。';
+
+  @override
+  String get calendarInvitationDuplicate => 'これらの予定はすでにこのアカウントと共有されています。';
+
+  @override
+  String get calendarInvitationAccountNotFound => 'アカウントが見つかりません。';
+
+  @override
+  String get calendarInvitationSelfInvite => '自分のアカウントを招待することはできません。';
+
+  @override
+  String get calendarInvitationEventUnavailable => '選択した予定が存在しないか共有できません。更新して選び直してください。';
+
+  @override
+  String get calendarInvitationStateChanged => '招待の状態が変更されました。更新してもう一度操作してください。';
+
+  @override
+  String calendarInvitationFailedWithReason(String reason) {
+    return 'カレンダーの招待を更新できませんでした：$reason';
+  }
+
+  @override
+  String get adminSubscriptionExtended => '購読期間を90日延長しました。';
+
+  @override
+  String get adminSubscriptionExtend90Days => '90日延長';
+
+  @override
+  String get adminSubscriptionExtensionDays => '延長日数';
+
+  @override
+  String get adminSubscriptionExtend => '延長';
+
+  @override
+  String get adminSubscriptionLookupRequired => '先にデータを検索してください。';
+
+  @override
+  String get adminSubscriptionNotFound => '購読データが見つかりません';
+
+  @override
+  String get adminSubscriptionNotFoundCreate => 'このユーザーの新しい購読を作成できます。';
+
+  @override
+  String get adminSubscriptionUserNotFound => 'ユーザーアカウントが見つかりません';
+
+  @override
+  String get adminSubscriptionLoadedForEditing => '現在の購読を読み込みました。編集して保存できます。';
+
+  @override
+  String get adminSubscriptionDeleteTitle => '購読設定を削除';
+
+  @override
+  String adminSubscriptionDeleteConfirmation(String email) {
+    return '$email の購読と上限設定を削除しますか？ユーザーデータは削除されません。';
+  }
+
+  @override
+  String get adminSubscriptionDeleted => '購読と上限設定を削除しました。';
+
+  @override
+  String get adminSubscriptionInvalidExtensionDays => '1～3650日の範囲で入力してください。';
+
+  @override
+  String adminSubscriptionExtendedDays(int days) {
+    return 'サブスクリプションを$days日延長しました。';
+  }
+
+  @override
+  String get days => '日';
 
   @override
   String calendarSharedBy(String account) {
