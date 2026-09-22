@@ -121,6 +121,7 @@ class ServiceGame {
   static const _sentenceQuestionTable = 'game_sentence';
   static const _translationQuestionTable = 'game_translation';
   static const localGameListCache = 'local_game_list_cache';
+  final Map<String, Future<List<ModelGameUser>>> _localProgressRequests = {};
 
   String get _ownerEmail =>
       supabase.auth.currentUser?.email?.toLowerCase() ??
@@ -297,6 +298,42 @@ class ServiceGame {
     return data.map((e) => ModelGameUser.fromMap(e)).toList();
   }
 
+  /// Returns only the progress summary needed to decide which level is
+  /// unlocked. The game list used to download the complete history for this
+  /// single number, which became slower as answer history grew.
+  Future<int> fetchHighestPassedLevel({
+    required String userName,
+    required String gameType,
+    required String gameName,
+  }) async {
+    if (await _storesLocally) {
+      final passedLevels = (await _localProgress(
+        userName,
+        gameType,
+        gameName,
+      )).where((row) => row.isPass ?? false).map((row) => row.level ?? 0);
+      return passedLevels.fold<int>(0, max);
+    }
+
+    try {
+      final result = await supabase.rpc(
+        'get_user_game_highest_passed_level',
+        params: {'p_game_type': gameType, 'p_game_name': gameName},
+      );
+      return (result as num?)?.toInt() ?? 0;
+    } on PostgrestException catch (error) {
+      // Keep older deployments usable until the accompanying migration is
+      // installed. This fallback can be removed after every environment has
+      // the summary RPC.
+      if (error.code != '42883' && error.code != 'PGRST202') rethrow;
+      final progress = await fetchUserProgress(userName, gameType, gameName);
+      return progress
+          .where((row) => row.isPass ?? false)
+          .map((row) => row.level ?? 0)
+          .fold<int>(0, max);
+    }
+  }
+
   Future<List<ModelGameUser>> fetchUserProgressPage({
     required String userName,
     required String gameType,
@@ -408,6 +445,18 @@ class ServiceGame {
     String userName,
     String gameType,
     String gameName,
+  ) {
+    final key = '${userName.toLowerCase()}|$gameType|$gameName';
+    return _localProgressRequests.putIfAbsent(
+      key,
+      () => _loadLocalProgress(userName, gameType, gameName),
+    );
+  }
+
+  Future<List<ModelGameUser>> _loadLocalProgress(
+    String userName,
+    String gameType,
+    String gameName,
   ) async {
     final games = {for (final game in await fetchGames()) game.id: game};
     final rows = await _localQuestions(TableNames.gameUser);
@@ -435,6 +484,8 @@ class ServiceGame {
     );
     return result;
   }
+
+  void invalidateLocalProgress() => _localProgressRequests.clear();
 
   Future<void> addGrammarQuestion({
     required String question,

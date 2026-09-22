@@ -2649,6 +2649,30 @@ abstract class AppLocalizations {
   /// **'Subscription and quota settings deleted.'**
   String get adminSubscriptionDeleted;
 
+  /// Heading for individual user allowances
+  ///
+  /// In en, this message translates to:
+  /// **'Created allowances'**
+  String get adminSubscriptionEntitlements;
+
+  /// Confirm deleting one allowance
+  ///
+  /// In en, this message translates to:
+  /// **'Delete only the {version} allowance? Other allowances and user data will be kept.'**
+  String adminSubscriptionDeleteEntitlementConfirmation(String version);
+
+  /// One allowance deleted
+  ///
+  /// In en, this message translates to:
+  /// **'This allowance was deleted. Other allowances were kept.'**
+  String get adminSubscriptionEntitlementDeleted;
+
+  /// Delete all user subscription settings
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all subscription and quota settings'**
+  String get adminSubscriptionDeleteAll;
+
   /// Invalid admin subscription extension days
   ///
   /// In en, this message translates to:

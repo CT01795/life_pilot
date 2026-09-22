@@ -1306,6 +1306,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminSubscriptionDeleted => '購読と上限設定を削除しました。';
 
   @override
+  String get adminSubscriptionEntitlements => '作成済みの上限';
+
+  @override
+  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
+    return 'この $version 上限だけを削除しますか？他の上限とユーザーデータは保持されます。';
+  }
+
+  @override
+  String get adminSubscriptionEntitlementDeleted => 'この上限を削除しました。他の上限は保持されています。';
+
+  @override
+  String get adminSubscriptionDeleteAll => '購読と上限設定をすべて削除';
+
+  @override
   String get adminSubscriptionInvalidExtensionDays => '1～3650日の範囲で入力してください。';
 
   @override

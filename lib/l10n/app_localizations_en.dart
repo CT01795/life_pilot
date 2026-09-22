@@ -1306,6 +1306,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionDeleted => 'Subscription and quota settings deleted.';
 
   @override
+  String get adminSubscriptionEntitlements => 'Created allowances';
+
+  @override
+  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
+    return 'Delete only the $version allowance? Other allowances and user data will be kept.';
+  }
+
+  @override
+  String get adminSubscriptionEntitlementDeleted => 'This allowance was deleted. Other allowances were kept.';
+
+  @override
+  String get adminSubscriptionDeleteAll => 'Delete all subscription and quota settings';
+
+  @override
   String get adminSubscriptionInvalidExtensionDays => 'Enter a number from 1 to 3650.';
 
   @override

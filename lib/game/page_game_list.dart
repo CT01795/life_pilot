@@ -35,9 +35,7 @@ import 'package:provider/provider.dart';
 import '../utils/logger.dart';
 
 class PageGameList extends StatefulWidget {
-  const PageGameList({
-    super.key,
-  });
+  const PageGameList({super.key});
 
   @override
   State<PageGameList> createState() => _PageGameListState();
@@ -66,15 +64,16 @@ class _PageGameListState extends State<PageGameList> {
   String get _effectiveQuestionBank => _isLocalStorage
       ? 'my'
       : _isQuestionBankAdmin && selectedQuestionBank == 'mine'
-          ? 'admin'
-          : selectedQuestionBank;
+      ? 'admin'
+      : selectedQuestionBank;
 
   @override
   void initState() {
     super.initState();
     final auth = context.read<ControllerAuth>();
     final currentAccount = auth.currentAccount ?? AuthConstants.guest;
-    _isQuestionBankAdmin = currentAccount.trim().toLowerCase() ==
+    _isQuestionBankAdmin =
+        currentAccount.trim().toLowerCase() ==
         AuthConstants.systemEventOwnerEmail.toLowerCase();
     controllerGameList = ControllerGameList(
       serviceGame: _serviceGame,
@@ -118,6 +117,7 @@ class _PageGameListState extends State<PageGameList> {
 
   Future<void> _loadUserProgress() async {
     if (selectedCategory == null || selectedGameName == null) return;
+    _serviceGame.invalidateLocalProgress();
     final requestId = ++_progressRequestId;
     final requestedCategory = selectedCategory!;
     final requestedGameName = selectedGameName!;
@@ -128,7 +128,7 @@ class _PageGameListState extends State<PageGameList> {
       });
     }
     // 取得該遊戲所有關卡紀錄
-    late final List<ModelGameUser> progress;
+    late final int highestPassedLevel;
     late final List<ModelGameUser> displayProgress;
     late DateTime startDate;
     late final bool hasMore;
@@ -137,9 +137,10 @@ class _PageGameListState extends State<PageGameList> {
       final today = DateTime(now.year, now.month, now.day);
       startDate = today.subtract(const Duration(days: 29));
       final results = await Future.wait<Object>([
-        controllerGameList.loadUserProgress(
-          requestedCategory,
-          requestedGameName,
+        _serviceGame.fetchHighestPassedLevel(
+          userName: controllerGameList.userName,
+          gameType: requestedCategory,
+          gameName: requestedGameName,
         ),
         _serviceGame.fetchUserProgressPage(
           userName: controllerGameList.userName,
@@ -149,9 +150,16 @@ class _PageGameListState extends State<PageGameList> {
           dateTo: today,
           includeLatestFallback: true,
         ),
+        _serviceGame.hasUserProgressBefore(
+          userName: controllerGameList.userName,
+          gameType: requestedCategory,
+          gameName: requestedGameName,
+          before: startDate,
+        ),
       ]);
-      progress = results[0] as List<ModelGameUser>;
+      highestPassedLevel = results[0] as int;
       displayProgress = results[1] as List<ModelGameUser>;
+      var hasProgressBefore = results[2] as bool;
       final fallbackDates = displayProgress
           .map((item) => item.createdAt)
           .whereType<DateTime>()
@@ -160,21 +168,23 @@ class _PageGameListState extends State<PageGameList> {
       if (displayProgress.isNotEmpty &&
           fallbackDates.length == displayProgress.length) {
         startDate = fallbackDates.reduce((a, b) => a.isAfter(b) ? a : b);
+        hasProgressBefore = await _serviceGame.hasUserProgressBefore(
+          userName: controllerGameList.userName,
+          gameType: requestedCategory,
+          gameName: requestedGameName,
+          before: startDate,
+        );
       }
-      hasMore = await _serviceGame.hasUserProgressBefore(
-        userName: controllerGameList.userName,
-        gameType: requestedCategory,
-        gameName: requestedGameName,
-        before: startDate,
-      );
+      hasMore = hasProgressBefore;
     } catch (error, stackTrace) {
-      logger.e('Load game progress failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load game progress failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (mounted && requestId == _progressRequestId) {
         setState(() => _isLoadingProgress = false);
-        AppNavigator.showErrorBar(
-          AppLocalizations.of(context)!.unknownError,
-        );
+        AppNavigator.showErrorBar(AppLocalizations.of(context)!.unknownError);
       }
       return;
     }
@@ -190,7 +200,7 @@ class _PageGameListState extends State<PageGameList> {
       userProgress = displayProgress;
 
       // 取得最高通關 level
-      unlockedMaxLevel = controllerGameList.getHighestPassedLevel(progress) + 1;
+      unlockedMaxLevel = highestPassedLevel + 1;
       // 將選單預設值設為最大可進入關卡
       selectedLevel = unlockedMaxLevel;
       // 如果 unlockedMaxLevel 超過關卡列表最大值，則選最後一關
@@ -259,8 +269,11 @@ class _PageGameListState extends State<PageGameList> {
         _progressStartDate = dateFrom;
         _hasMoreProgress = hasMore;
         userProgress = unique.values.toList()
-          ..sort((a, b) => (b.createdAt ?? DateTime(0))
-              .compareTo(a.createdAt ?? DateTime(0)));
+          ..sort(
+            (a, b) => (b.createdAt ?? DateTime(0)).compareTo(
+              a.createdAt ?? DateTime(0),
+            ),
+          );
       });
     } catch (error, stackTrace) {
       logger.e(
@@ -269,9 +282,7 @@ class _PageGameListState extends State<PageGameList> {
         stackTrace: stackTrace,
       );
       if (mounted && requestId == _progressRequestId) {
-        AppNavigator.showErrorBar(
-          AppLocalizations.of(context)!.unknownError,
-        );
+        AppNavigator.showErrorBar(AppLocalizations.of(context)!.unknownError);
       }
     } finally {
       if (mounted && requestId == _progressRequestId) {
@@ -297,8 +308,10 @@ class _PageGameListState extends State<PageGameList> {
     if (gameMap == null) return null;
     final levelList = gameMap[selectedGameName!];
     if (levelList == null) return null;
-    return levelList.firstWhere((g) => g.level == selectedLevel,
-        orElse: () => levelList.first);
+    return levelList.firstWhere(
+      (g) => g.level == selectedLevel,
+      orElse: () => levelList.first,
+    );
   }
 
   bool get _supportsQuestionBank {
@@ -333,14 +346,15 @@ class _PageGameListState extends State<PageGameList> {
     final gameType = selectedCategory!;
     final gameName = selectedGameName!;
     final levels = controllerGameList.gamesByCategory[gameType]![gameName]!;
-    final currentMaxLevel = levels.map((item) => item.level).reduce(
-          (current, value) => current > value ? current : value,
-        );
+    final currentMaxLevel = levels
+        .map((item) => item.level)
+        .reduce((current, value) => current > value ? current : value);
     final nextLevel = currentMaxLevel + 1;
     final controller = TextEditingController(text: '$nextLevel');
     String? errorText;
     var saving = false;
-    final created = await showDialog<bool>(
+    final created =
+        await showDialog<bool>(
           context: context,
           barrierDismissible: !saving,
           builder: (dialogContext) => StatefulBuilder(
@@ -369,8 +383,9 @@ class _PageGameListState extends State<PageGameList> {
               ),
               actions: [
                 TextButton(
-                  onPressed:
-                      saving ? null : () => Navigator.pop(dialogContext, false),
+                  onPressed: saving
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
                   child: Text(loc.cancel),
                 ),
                 FilledButton(
@@ -407,8 +422,11 @@ class _PageGameListState extends State<PageGameList> {
                               });
                             }
                           } catch (error, stackTrace) {
-                            logger.e('Create game level failed',
-                                error: error, stackTrace: stackTrace);
+                            logger.e(
+                              'Create game level failed',
+                              error: error,
+                              stackTrace: stackTrace,
+                            );
                             if (dialogContext.mounted) {
                               setDialogState(() {
                                 saving = false;
@@ -439,7 +457,9 @@ class _PageGameListState extends State<PageGameList> {
         selectedCategory = gameType;
         selectedGameName = gameName;
         selectedLevel = controllerGameList
-            .gamesByCategory[gameType]![gameName]!.first.level;
+            .gamesByCategory[gameType]![gameName]!
+            .first
+            .level;
       });
       await _loadUserProgress();
     }
@@ -484,10 +504,11 @@ class _PageGameListState extends State<PageGameList> {
                       trailing: locked
                           ? const Icon(Icons.lock_outline)
                           : level == currentLevel
-                              ? const Icon(Icons.check)
-                              : null,
-                      onTap:
-                          locked ? null : () => Navigator.pop(context, level),
+                          ? const Icon(Icons.check)
+                          : null,
+                      onTap: locked
+                          ? null
+                          : () => Navigator.pop(context, level),
                     );
                   },
                 ),
@@ -510,9 +531,7 @@ class _PageGameListState extends State<PageGameList> {
     final currentYearDateFormat = DateFormat('MM/dd HH:mm', localeName);
     final previousYearDateFormat = DateFormat('yyyy/MM/dd HH:mm', localeName);
     if (controllerGameList.isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_hasLoadError) {
       return Scaffold(
@@ -522,10 +541,7 @@ class _PageGameListState extends State<PageGameList> {
             children: [
               Text(loc.unknownError),
               Gaps.h8,
-              ElevatedButton(
-                onPressed: _loadData,
-                child: Text(loc.retry),
-              ),
+              ElevatedButton(onPressed: _loadData, child: Text(loc.retry)),
             ],
           ),
         ),
@@ -535,8 +551,9 @@ class _PageGameListState extends State<PageGameList> {
     final gameMap = selectedCategory != null
         ? controllerGameList.gamesByCategory[selectedCategory!]
         : null;
-    final levelList =
-        selectedGameName != null ? gameMap![selectedGameName!] : null;
+    final levelList = selectedGameName != null
+        ? gameMap![selectedGameName!]
+        : null;
 
     return Scaffold(
       body: Padding(
@@ -549,9 +566,7 @@ class _PageGameListState extends State<PageGameList> {
               key: ValueKey('category|$selectedCategory'),
               isExpanded: true,
               initialValue: selectedCategory,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
               onChanged: (value) async {
                 if (value != null) {
                   setState(() {
@@ -565,14 +580,16 @@ class _PageGameListState extends State<PageGameList> {
                 }
               },
               items: controllerGameList.gamesByCategory.keys
-                  .map((cat) => DropdownMenuItem(
-                        value: cat,
-                        child: Text(
-                          cat,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ))
+                  .map(
+                    (cat) => DropdownMenuItem(
+                      value: cat,
+                      child: Text(
+                        cat,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
             Gaps.h16,
@@ -581,29 +598,29 @@ class _PageGameListState extends State<PageGameList> {
               key: ValueKey('game|$selectedGameName'),
               isExpanded: true,
               initialValue: selectedGameName,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
               onChanged: (value) async {
                 if (value != null && selectedCategory != null) {
                   setState(() {
                     selectedGameName = value;
-                    final levelList = controllerGameList.gamesByCategory[
-                        selectedCategory!]![selectedGameName!]!;
+                    final levelList = controllerGameList
+                        .gamesByCategory[selectedCategory!]![selectedGameName!]!;
                     selectedLevel = levelList.first.level;
                   });
                   await _loadUserProgress();
                 }
               },
               items: gameMap?.keys
-                  .map((gameName) => DropdownMenuItem(
-                        value: gameName,
-                        child: Text(
-                          gameName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ))
+                  .map(
+                    (gameName) => DropdownMenuItem(
+                      value: gameName,
+                      child: Text(
+                        gameName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
             Gaps.h16,
@@ -726,23 +743,21 @@ class _PageGameListState extends State<PageGameList> {
                         label: Text(loc.addQuestion),
                         onPressed:
                             selectedGameName == null || selectedLevel == null
-                                ? null
-                                : () async {
-                                    final added = await Navigator.push<bool>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => PageGameQuestionCreate(
-                                          gameName: selectedGameName!,
-                                          initialLevel: selectedLevel!,
-                                        ),
-                                      ),
-                                    );
-                                    if (mounted && added == true) {
-                                      setState(
-                                        () => selectedQuestionBank = 'mine',
-                                      );
-                                    }
-                                  },
+                            ? null
+                            : () async {
+                                final added = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PageGameQuestionCreate(
+                                      gameName: selectedGameName!,
+                                      initialLevel: selectedLevel!,
+                                    ),
+                                  ),
+                                );
+                                if (mounted && added == true) {
+                                  setState(() => selectedQuestionBank = 'mine');
+                                }
+                              },
                       ),
                     ),
                     Gaps.w8,
@@ -753,14 +768,14 @@ class _PageGameListState extends State<PageGameList> {
                         onPressed: selectedGameName == null
                             ? null
                             : () => Navigator.push<void>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PageGameMyQuestions(
-                                      gameName: selectedGameName!,
-                                      initialLevel: selectedLevel ?? 1,
-                                    ),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PageGameMyQuestions(
+                                    gameName: selectedGameName!,
+                                    initialLevel: selectedLevel ?? 1,
                                   ),
                                 ),
+                              ),
                       ),
                     ),
                   ],
@@ -768,7 +783,8 @@ class _PageGameListState extends State<PageGameList> {
               Gaps.h16,
             ],
             ElevatedButton(
-              onPressed: (!_isOpeningGame &&
+              onPressed:
+                  (!_isOpeningGame &&
                       selectedGameItem != null &&
                       selectedLevel! <= unlockedMaxLevel)
                   ? () async {
@@ -780,12 +796,12 @@ class _PageGameListState extends State<PageGameList> {
                       );
                       if (_supportsQuestionBank) {
                         try {
-                          final availability =
-                              await _serviceGame.getQuestionBankAvailability(
-                            gameName: game.gameName,
-                            level: game.level,
-                            questionBank: _effectiveQuestionBank,
-                          );
+                          final availability = await _serviceGame
+                              .getQuestionBankAvailability(
+                                gameName: game.gameName,
+                                level: game.level,
+                                questionBank: _effectiveQuestionBank,
+                              );
                           if (!availability.canPlay) {
                             if (mounted) {
                               AppNavigator.showErrorBar(
@@ -798,8 +814,11 @@ class _PageGameListState extends State<PageGameList> {
                             return;
                           }
                         } catch (error, stackTrace) {
-                          logger.e('Check question bank availability failed',
-                              error: error, stackTrace: stackTrace);
+                          logger.e(
+                            'Check question bank availability failed',
+                            error: error,
+                            stackTrace: stackTrace,
+                          );
                           if (mounted) {
                             AppNavigator.showErrorBar(loc.unknownError);
                             setState(() => _isOpeningGame = false);
@@ -846,23 +865,24 @@ class _PageGameListState extends State<PageGameList> {
                                         game: game1,
                                         loadingBuilder: (context) =>
                                             const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                         errorBuilder: (context, error) =>
                                             Center(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(loc.unknownError),
-                                              Gaps.h8,
-                                              ElevatedButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                child: Text(loc.back),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(loc.unknownError),
+                                                  Gaps.h8,
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(context),
+                                                    child: Text(loc.back),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        ),
+                                            ),
                                       ),
                                       Positioned(
                                         top: 8,
@@ -910,12 +930,14 @@ class _PageGameListState extends State<PageGameList> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                   border: Border.all(
-                                                      color: Colors.white12),
+                                                    color: Colors.white12,
+                                                  ),
                                                 ),
                                                 child: Icon(
-                                                    Icons.arrow_back_rounded,
-                                                    color: Colors.white70,
-                                                    size: 60),
+                                                  Icons.arrow_back_rounded,
+                                                  color: Colors.white70,
+                                                  size: 60,
+                                                ),
                                               ),
                                             ),
                                             Gaps.w16,
@@ -938,12 +960,14 @@ class _PageGameListState extends State<PageGameList> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                   border: Border.all(
-                                                      color: Colors.white12),
+                                                    color: Colors.white12,
+                                                  ),
                                                 ),
                                                 child: Icon(
-                                                    Icons.arrow_forward_rounded,
-                                                    color: Colors.white70,
-                                                    size: 60),
+                                                  Icons.arrow_forward_rounded,
+                                                  color: Colors.white70,
+                                                  size: 60,
+                                                ),
                                               ),
                                             ),
                                             Gaps.w16,
@@ -962,7 +986,8 @@ class _PageGameListState extends State<PageGameList> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                   border: Border.all(
-                                                      color: Colors.white12),
+                                                    color: Colors.white12,
+                                                  ),
                                                 ),
                                                 child: Icon(
                                                   Icons.arrow_upward_rounded,
@@ -986,15 +1011,18 @@ class _PageGameListState extends State<PageGameList> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                   border: Border.all(
-                                                      color: Colors.white12),
+                                                    color: Colors.white12,
+                                                  ),
                                                 ),
-                                                child: Icon(Icons.circle,
-                                                    color: Colors.white70),
+                                                child: Icon(
+                                                  Icons.circle,
+                                                  color: Colors.white70,
+                                                ),
                                               ),
                                             ),
                                           ],
                                         ),
-                                      )
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1012,7 +1040,9 @@ class _PageGameListState extends State<PageGameList> {
                           MaterialPageRoute(
                             builder: (_) => GameExitGuard(
                               child: PageGameSteamScratch(
-                                  gameId: game.id, gameLevel: game.level),
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              ),
                             ),
                           ),
                         );
@@ -1026,7 +1056,9 @@ class _PageGameListState extends State<PageGameList> {
                           MaterialPageRoute(
                             builder: (_) => GameExitGuard(
                               child: PageGameSteamScratchMaze(
-                                  gameId: game.id, gameLevel: game.level),
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              ),
                             ),
                           ),
                         );
@@ -1040,7 +1072,9 @@ class _PageGameListState extends State<PageGameList> {
                           MaterialPageRoute(
                             builder: (_) => GameExitGuard(
                               child: PageGameSteamMonomino(
-                                  gameId: game.id, gameLevel: game.level),
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              ),
                             ),
                           ),
                         );
@@ -1054,7 +1088,9 @@ class _PageGameListState extends State<PageGameList> {
                           MaterialPageRoute(
                             builder: (_) => GameExitGuard(
                               child: PageGameSteamPolyomino(
-                                  gameId: game.id, gameLevel: game.level),
+                                gameId: game.id,
+                                gameLevel: game.level,
+                              ),
                             ),
                           ),
                         );
@@ -1145,9 +1181,9 @@ class _PageGameListState extends State<PageGameList> {
                         if (result == true) {
                           await _loadUserProgress();
                         }
-                      } else if (game.gameName
-                          .toLowerCase()
-                          .contains("translation".toLowerCase())) {
+                      } else if (game.gameName.toLowerCase().contains(
+                        "translation".toLowerCase(),
+                      )) {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -1190,88 +1226,87 @@ class _PageGameListState extends State<PageGameList> {
                         child: CircularProgressIndicator(),
                       )
                     : userProgress.isEmpty
-                        ? Center(
-                            key: const ValueKey('empty'),
-                            child: Text(loc.gameNoRecords),
-                          )
-                        : Scrollbar(
-                            key: ValueKey(
-                              'progress|$selectedCategory|$selectedGameName',
-                            ),
-                            child: ListView.builder(
-                              key: ValueKey(
-                                '$selectedCategory|$selectedGameName',
+                    ? Center(
+                        key: const ValueKey('empty'),
+                        child: Text(loc.gameNoRecords),
+                      )
+                    : Scrollbar(
+                        key: ValueKey(
+                          'progress|$selectedCategory|$selectedGameName',
+                        ),
+                        child: ListView.builder(
+                          key: ValueKey('$selectedCategory|$selectedGameName'),
+                          itemExtent: 72,
+                          cacheExtent: 240,
+                          addAutomaticKeepAlives: false,
+                          itemCount:
+                              userProgress.length +
+                              ((_hasMoreProgress || _isLoadingMoreProgress)
+                                  ? 1
+                                  : 0),
+                          itemBuilder: (context, index) {
+                            if (index == userProgress.length) {
+                              return Center(
+                                child: _isLoadingMoreProgress
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : TextButton(
+                                        onPressed: _loadMoreProgress,
+                                        child: Text(loc.clickHereToSeeMore),
+                                      ),
+                              );
+                            }
+                            final item = userProgress[index];
+                            final formattedDate = item.createdAt != null
+                                ? (item.createdAt!.year == now.year
+                                          ? currentYearDateFormat
+                                          : previousYearDateFormat)
+                                      .format(item.createdAt!)
+                                : '';
+                            // 判斷第一筆，設定文字顏色
+                            final textColor = index == 0
+                                ? colorScheme.primary
+                                : colorScheme.onSurface;
+                            final textBold = index == 0
+                                ? FontWeight.bold
+                                : FontWeight.normal;
+                            return ListTile(
+                              leading: index == 0
+                                  ? Icon(
+                                      Icons.emoji_events_outlined,
+                                      color: colorScheme.primary,
+                                    )
+                                  : null,
+                              title: Text(
+                                formattedDate,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: textBold,
+                                ),
                               ),
-                              itemExtent: 72,
-                              cacheExtent: 240,
-                              addAutomaticKeepAlives: false,
-                              itemCount: userProgress.length +
-                                  ((_hasMoreProgress || _isLoadingMoreProgress)
-                                      ? 1
-                                      : 0),
-                              itemBuilder: (context, index) {
-                                if (index == userProgress.length) {
-                                  return Center(
-                                    child: _isLoadingMoreProgress
-                                        ? const Padding(
-                                            padding: EdgeInsets.all(16),
-                                            child: CircularProgressIndicator(),
-                                          )
-                                        : TextButton(
-                                            onPressed: _loadMoreProgress,
-                                            child: Text(loc.clickHereToSeeMore),
-                                          ),
-                                  );
-                                }
-                                final item = userProgress[index];
-                                final formattedDate = item.createdAt != null
-                                    ? (item.createdAt!.year == now.year
-                                            ? currentYearDateFormat
-                                            : previousYearDateFormat)
-                                        .format(item.createdAt!)
-                                    : '';
-                                // 判斷第一筆，設定文字顏色
-                                final textColor = index == 0
-                                    ? colorScheme.primary
-                                    : colorScheme.onSurface;
-                                final textBold = index == 0
-                                    ? FontWeight.bold
-                                    : FontWeight.normal;
-                                return ListTile(
-                                  leading: index == 0
-                                      ? Icon(
-                                          Icons.emoji_events_outlined,
-                                          color: colorScheme.primary,
-                                        )
-                                      : null,
-                                  title: Text(
-                                    formattedDate,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontWeight: textBold,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '${loc.gameLevel} ${item.level}  '
-                                    '${loc.gameScore}: ${item.score}',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  trailing: item.isPass == true
-                                      ? Tooltip(
-                                          message: loc.statusCompleted,
-                                          child: Icon(
-                                            Icons.check_circle,
-                                            color: colorScheme.primary,
-                                          ),
-                                        )
-                                      : null,
-                                );
-                              },
-                            ),
-                          ),
+                              subtitle: Text(
+                                '${loc.gameLevel} ${item.level}  '
+                                '${loc.gameScore}: ${item.score}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: item.isPass == true
+                                  ? Tooltip(
+                                      message: loc.statusCompleted,
+                                      child: Icon(
+                                        Icons.check_circle,
+                                        color: colorScheme.primary,
+                                      ),
+                                    )
+                                  : null,
+                            );
+                          },
+                        ),
+                      ),
               ),
             ),
           ],

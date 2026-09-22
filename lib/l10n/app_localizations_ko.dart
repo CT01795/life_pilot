@@ -1306,6 +1306,20 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adminSubscriptionDeleted => '구독 및 한도 설정을 삭제했습니다.';
 
   @override
+  String get adminSubscriptionEntitlements => '생성된 한도';
+
+  @override
+  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
+    return '$version 한도 한 건만 삭제할까요? 다른 한도와 사용자 데이터는 유지됩니다.';
+  }
+
+  @override
+  String get adminSubscriptionEntitlementDeleted => '이 한도를 삭제했습니다. 다른 한도는 유지됩니다.';
+
+  @override
+  String get adminSubscriptionDeleteAll => '모든 구독 및 한도 설정 삭제';
+
+  @override
   String get adminSubscriptionInvalidExtensionDays => '1~3650일 사이의 숫자를 입력하세요.';
 
   @override

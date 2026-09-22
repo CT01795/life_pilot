@@ -1,5 +1,6 @@
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
   Future<Map<String, dynamic>?> fetchUserSubscriptionAsAdmin({
@@ -138,6 +139,32 @@ class ServiceSubscription {
     await supabase.rpc(
       'admin_delete_user_subscription',
       params: {'p_email': email.trim()},
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserEntitlementsAsAdmin({
+    required String email,
+  }) async {
+    try {
+      final rows = await supabase.rpc(
+        'admin_get_user_subscription_entitlements',
+        params: {'p_email': email.trim()},
+      );
+      return (rows as List<dynamic>)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList(growable: false);
+    } on PostgrestException catch (error) {
+      if (error.code == '42883' || error.code == 'PGRST202') return const [];
+      rethrow;
+    }
+  }
+
+  Future<void> deleteUserEntitlementAsAdmin({
+    required String entitlementId,
+  }) async {
+    await supabase.rpc(
+      'admin_delete_user_subscription_entitlement',
+      params: {'p_entitlement_id': entitlementId},
     );
   }
 

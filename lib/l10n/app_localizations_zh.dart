@@ -1306,6 +1306,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminSubscriptionDeleted => '訂閱與額度設定已刪除。';
 
   @override
+  String get adminSubscriptionEntitlements => '已建立的額度';
+
+  @override
+  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
+    return '確定只刪除這一筆 $version 額度嗎？其他額度與使用者資料會保留。';
+  }
+
+  @override
+  String get adminSubscriptionEntitlementDeleted => '這一筆額度已刪除，其他額度仍保留。';
+
+  @override
+  String get adminSubscriptionDeleteAll => '刪除全部訂閱與額度設定';
+
+  @override
   String get adminSubscriptionInvalidExtensionDays => '請輸入 1 至 3650 的天數。';
 
   @override
