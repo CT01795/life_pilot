@@ -1209,7 +1209,7 @@
   "@memoryCountForMonth": {"description": "Label for memoryCountForMonth", "placeholders": {"count": {"type": "int"}}},
   "gameRecentPracticeSummary": "최근 {attempts}회 연습, {passed}회 통과",
   "@gameRecentPracticeSummary": {"description": "Label for gameRecentPracticeSummary", "placeholders": {"attempts": {"type": "int"}, "passed": {"type": "int"}}},
-  "scheduleConflictCount": "일정 시간 겹침 {count}건",
+  "scheduleConflictCount": "오늘과 내일 일정 시간이 {count}건 겹칩니다",
   "@scheduleConflictCount": {"description": "Label for scheduleConflictCount", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictBeforeSave": "이 시간이 완료되지 않은 일정 {count}개와 겹칩니다. 그래도 저장할까요?",
   "@scheduleConflictBeforeSave": {"description": "Warning before saving an overlapping calendar event", "placeholders": {"count": {"type": "int"}}},

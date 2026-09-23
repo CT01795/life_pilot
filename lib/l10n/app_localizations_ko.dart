@@ -1876,7 +1876,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String scheduleConflictCount(int count) {
-    return '일정 시간 겹침 $count건';
+    return '오늘과 내일 일정 시간이 $count건 겹칩니다';
   }
 
   @override

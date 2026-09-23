@@ -3678,7 +3678,7 @@ abstract class AppLocalizations {
   /// Label for scheduleConflictCount
   ///
   /// In en, this message translates to:
-  /// **'{count} schedule time conflicts'**
+  /// **'{count} schedule time conflicts today and tomorrow'**
   String scheduleConflictCount(int count);
 
   /// Warning before saving an overlapping calendar event

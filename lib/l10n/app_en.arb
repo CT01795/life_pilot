@@ -1209,7 +1209,7 @@
   "@memoryCountForMonth": {"description": "Label for memoryCountForMonth", "placeholders": {"count": {"type": "int"}}},
   "gameRecentPracticeSummary": "{attempts} recent attempts, {passed} passed",
   "@gameRecentPracticeSummary": {"description": "Label for gameRecentPracticeSummary", "placeholders": {"attempts": {"type": "int"}, "passed": {"type": "int"}}},
-  "scheduleConflictCount": "{count} schedule time conflicts",
+  "scheduleConflictCount": "{count} schedule time conflicts today and tomorrow",
   "@scheduleConflictCount": {"description": "Label for scheduleConflictCount", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictBeforeSave": "This time overlaps with {count} unfinished schedule items. Save anyway?",
   "@scheduleConflictBeforeSave": {"description": "Warning before saving an overlapping calendar event", "placeholders": {"count": {"type": "int"}}},

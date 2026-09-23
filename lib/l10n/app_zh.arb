@@ -1209,7 +1209,7 @@
   "@memoryCountForMonth": {"description": "Label for memoryCountForMonth", "placeholders": {"count": {"type": "int"}}},
   "gameRecentPracticeSummary": "近期練習 {attempts} 次，通過 {passed} 次",
   "@gameRecentPracticeSummary": {"description": "Label for gameRecentPracticeSummary", "placeholders": {"attempts": {"type": "int"}, "passed": {"type": "int"}}},
-  "scheduleConflictCount": "有 {count} 組行程時間重疊",
+  "scheduleConflictCount": "今明日有 {count} 組行程時間重疊",
   "@scheduleConflictCount": {"description": "Label for scheduleConflictCount", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictBeforeSave": "此時段與 {count} 個未完成行程重疊，仍要儲存嗎？",
   "@scheduleConflictBeforeSave": {"description": "Warning before saving an overlapping calendar event", "placeholders": {"count": {"type": "int"}}},

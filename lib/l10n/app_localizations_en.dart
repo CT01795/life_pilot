@@ -1876,7 +1876,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String scheduleConflictCount(int count) {
-    return '$count schedule time conflicts';
+    return '$count schedule time conflicts today and tomorrow';
   }
 
   @override

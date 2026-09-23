@@ -1876,7 +1876,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String scheduleConflictCount(int count) {
-    return '有 $count 組行程時間重疊';
+    return '今明日有 $count 組行程時間重疊';
   }
 
   @override

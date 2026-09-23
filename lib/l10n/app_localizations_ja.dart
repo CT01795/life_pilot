@@ -1876,7 +1876,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String scheduleConflictCount(int count) {
-    return '予定の時間重複が$count件あります';
+    return '今日・明日に$count件の予定時間が重複しています';
   }
 
   @override
