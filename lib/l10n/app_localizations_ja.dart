@@ -1842,4 +1842,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dataCleanupFailed => 'データ整理に失敗しました';
+
+  @override
+  String get scheduleAlreadyStarted => '予定は開始済みです';
+
+  @override
+  String scheduleStartsInMinutes(Object count) {
+    return '$count分後に開始';
+  }
+
+  @override
+  String scheduleStartsInHours(Object count) {
+    return '$count時間後に開始';
+  }
+
+  @override
+  String get endsToday => '開始済み、本日終了';
+
+  @override
+  String ongoingUntil(Object date) {
+    return '$dateまで開催中';
+  }
+
+  @override
+  String memoryCountForMonth(Object count) {
+    return '今月$count件';
+  }
+
+  @override
+  String gameRecentPracticeSummary(Object attempts, Object passed) {
+    return '最近$attempts回練習、$passed回クリア';
+  }
 }

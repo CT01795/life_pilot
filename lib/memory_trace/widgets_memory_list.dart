@@ -31,11 +31,14 @@ class WidgetsMemoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final dailyCounts = <int, int>{};
+    final monthlyCounts = <int, int>{};
     for (final event in filteredEvents) {
       final date = event.startDate;
       if (date == null) continue;
       final key = _dayKey(date);
       dailyCounts[key] = (dailyCounts[key] ?? 0) + 1;
+      final monthKey = _monthKey(date);
+      monthlyCounts[monthKey] = (monthlyCounts[monthKey] ?? 0) + 1;
     }
 
     return ListView.builder(
@@ -88,11 +91,49 @@ class WidgetsMemoryList extends StatelessWidget {
         final previousDate = index == 0
             ? null
             : filteredEvents[index - 1].startDate;
+        final showMonthHeader = date != null && !_sameMonth(date, previousDate);
         final showDateHeader = date != null && !_sameDay(date, previousDate);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (showMonthHeader)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 20, 12, 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_stories_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        DateFormat.yMMMM(loc.localeName).format(date),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text(
+                      loc.memoryCountForMonth(
+                        monthlyCounts[_monthKey(date)] ?? 1,
+                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (showDateHeader)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 12, 2),
@@ -217,6 +258,11 @@ class WidgetsMemoryList extends StatelessWidget {
   }
 
   int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
+
+  int _monthKey(DateTime date) => date.year * 100 + date.month;
+
+  bool _sameMonth(DateTime date, DateTime? other) =>
+      other != null && date.year == other.year && date.month == other.month;
 
   String _dateLabel(BuildContext context, DateTime date) {
     final locale = Localizations.localeOf(context).toString();

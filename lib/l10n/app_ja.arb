@@ -1179,5 +1179,12 @@
   "dataCleanupSuccess": "データ整理が完了しました",
   "@dataCleanupSuccess": {"description": "Label for dataCleanupSuccess"},
   "dataCleanupFailed": "データ整理に失敗しました",
-  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"}
+  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"},
+  "scheduleAlreadyStarted": "予定は開始済みです",
+  "scheduleStartsInMinutes": "{count}分後に開始",
+  "scheduleStartsInHours": "{count}時間後に開始",
+  "endsToday": "開始済み、本日終了",
+  "ongoingUntil": "{date}まで開催中",
+  "memoryCountForMonth": "今月{count}件",
+  "gameRecentPracticeSummary": "最近{attempts}回練習、{passed}回クリア"
 }

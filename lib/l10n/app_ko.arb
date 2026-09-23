@@ -1179,5 +1179,12 @@
   "dataCleanupSuccess": "데이터 정리가 완료되었습니다",
   "@dataCleanupSuccess": {"description": "Label for dataCleanupSuccess"},
   "dataCleanupFailed": "데이터 정리에 실패했습니다",
-  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"}
+  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"},
+  "scheduleAlreadyStarted": "일정이 이미 시작됨",
+  "scheduleStartsInMinutes": "{count}분 후 시작",
+  "scheduleStartsInHours": "{count}시간 후 시작",
+  "endsToday": "이미 시작됨, 오늘 종료",
+  "ongoingUntil": "{date}까지 진행 중",
+  "memoryCountForMonth": "이번 달 {count}개",
+  "gameRecentPracticeSummary": "최근 {attempts}회 연습, {passed}회 통과"
 }

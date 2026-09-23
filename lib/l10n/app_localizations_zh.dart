@@ -1842,4 +1842,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataCleanupFailed => '資料清理失敗';
+
+  @override
+  String get scheduleAlreadyStarted => '行程已開始';
+
+  @override
+  String scheduleStartsInMinutes(Object count) {
+    return '$count 分鐘後開始';
+  }
+
+  @override
+  String scheduleStartsInHours(Object count) {
+    return '$count 小時後開始';
+  }
+
+  @override
+  String get endsToday => '已經開始，今日結束';
+
+  @override
+  String ongoingUntil(Object date) {
+    return '進行中，至 $date';
+  }
+
+  @override
+  String memoryCountForMonth(Object count) {
+    return '本月 $count 筆';
+  }
+
+  @override
+  String gameRecentPracticeSummary(Object attempts, Object passed) {
+    return '近期練習 $attempts 次，通過 $passed 次';
+  }
 }

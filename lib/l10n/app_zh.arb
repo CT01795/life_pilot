@@ -1179,5 +1179,12 @@
   "dataCleanupSuccess": "資料清理完成",
   "@dataCleanupSuccess": {"description": "Label for dataCleanupSuccess"},
   "dataCleanupFailed": "資料清理失敗",
-  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"}
+  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"},
+  "scheduleAlreadyStarted": "行程已開始",
+  "scheduleStartsInMinutes": "{count} 分鐘後開始",
+  "scheduleStartsInHours": "{count} 小時後開始",
+  "endsToday": "已經開始，今日結束",
+  "ongoingUntil": "進行中，至 {date}",
+  "memoryCountForMonth": "本月 {count} 筆",
+  "gameRecentPracticeSummary": "近期練習 {attempts} 次，通過 {passed} 次"
 }

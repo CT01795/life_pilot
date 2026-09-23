@@ -163,6 +163,20 @@ class TodayLifeOverviewCard extends StatelessWidget {
                                   style: Theme.of(context).textTheme.titleSmall
                                       ?.copyWith(fontWeight: FontWeight.w800),
                                 ),
+                                if (_nextEventTiming(context, nextEvent)
+                                    case final timing?)
+                                  Text(
+                                    timing,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
+                                          color: colors.primary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
                                 if (_nextEventDetails(context, nextEvent)
                                     case final details?)
                                   Text(
@@ -283,6 +297,28 @@ class TodayLifeOverviewCard extends StatelessWidget {
       if (event.location?.trim().isNotEmpty == true) event.location!.trim(),
     ];
     return values.isEmpty ? null : values.join(' · ');
+  }
+
+  String? _nextEventTiming(BuildContext context, CalendarEvent event) {
+    final startDate = event.startDate;
+    final startTime = event.startTime;
+    if (startDate == null || startTime == null) return null;
+    final loc = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final startsAt = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+      startTime.hour,
+      startTime.minute,
+    );
+    final minutes = startsAt.difference(now).inMinutes;
+    if (minutes < 0) return loc.scheduleAlreadyStarted;
+    if (minutes < 60) return loc.scheduleStartsInMinutes(minutes + 1);
+    if (minutes < 24 * 60) {
+      return loc.scheduleStartsInHours((minutes / 60).ceil());
+    }
+    return null;
   }
 }
 

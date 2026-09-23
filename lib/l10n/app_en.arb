@@ -1179,5 +1179,12 @@
   "dataCleanupSuccess": "Data cleanup completed",
   "@dataCleanupSuccess": {"description": "Label for dataCleanupSuccess"},
   "dataCleanupFailed": "Data cleanup failed",
-  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"}
+  "@dataCleanupFailed": {"description": "Label for dataCleanupFailed"},
+  "scheduleAlreadyStarted": "Schedule already started",
+  "scheduleStartsInMinutes": "Starts in {count} min",
+  "scheduleStartsInHours": "Starts in {count} hr",
+  "endsToday": "Already started, ends today",
+  "ongoingUntil": "Ongoing until {date}",
+  "memoryCountForMonth": "{count} this month",
+  "gameRecentPracticeSummary": "{attempts} recent attempts, {passed} passed"
 }

@@ -1842,4 +1842,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataCleanupFailed => 'Data cleanup failed';
+
+  @override
+  String get scheduleAlreadyStarted => 'Schedule already started';
+
+  @override
+  String scheduleStartsInMinutes(Object count) {
+    return 'Starts in $count min';
+  }
+
+  @override
+  String scheduleStartsInHours(Object count) {
+    return 'Starts in $count hr';
+  }
+
+  @override
+  String get endsToday => 'Already started, ends today';
+
+  @override
+  String ongoingUntil(Object date) {
+    return 'Ongoing until $date';
+  }
+
+  @override
+  String memoryCountForMonth(Object count) {
+    return '$count this month';
+  }
+
+  @override
+  String gameRecentPracticeSummary(Object attempts, Object passed) {
+    return '$attempts recent attempts, $passed passed';
+  }
 }

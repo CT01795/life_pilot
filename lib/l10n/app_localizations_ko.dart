@@ -1842,4 +1842,35 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dataCleanupFailed => '데이터 정리에 실패했습니다';
+
+  @override
+  String get scheduleAlreadyStarted => '일정이 이미 시작됨';
+
+  @override
+  String scheduleStartsInMinutes(Object count) {
+    return '$count분 후 시작';
+  }
+
+  @override
+  String scheduleStartsInHours(Object count) {
+    return '$count시간 후 시작';
+  }
+
+  @override
+  String get endsToday => '이미 시작됨, 오늘 종료';
+
+  @override
+  String ongoingUntil(Object date) {
+    return '$date까지 진행 중';
+  }
+
+  @override
+  String memoryCountForMonth(Object count) {
+    return '이번 달 $count개';
+  }
+
+  @override
+  String gameRecentPracticeSummary(Object attempts, Object passed) {
+    return '최근 $attempts회 연습, $passed회 통과';
+  }
 }

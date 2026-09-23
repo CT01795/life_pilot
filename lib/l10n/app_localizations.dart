@@ -3632,6 +3632,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Data cleanup failed'**
   String get dataCleanupFailed;
+
+  /// No description provided for @scheduleAlreadyStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule already started'**
+  String get scheduleAlreadyStarted;
+
+  /// No description provided for @scheduleStartsInMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {count} min'**
+  String scheduleStartsInMinutes(Object count);
+
+  /// No description provided for @scheduleStartsInHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {count} hr'**
+  String scheduleStartsInHours(Object count);
+
+  /// No description provided for @endsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Already started, ends today'**
+  String get endsToday;
+
+  /// No description provided for @ongoingUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing until {date}'**
+  String ongoingUntil(Object date);
+
+  /// No description provided for @memoryCountForMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} this month'**
+  String memoryCountForMonth(Object count);
+
+  /// No description provided for @gameRecentPracticeSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{attempts} recent attempts, {passed} passed'**
+  String gameRecentPracticeSummary(Object attempts, Object passed);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

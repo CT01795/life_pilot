@@ -588,9 +588,24 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         startDate,
       ).difference(today).inDays;
       if (days < 0) {
-        highlights.add(
-          _DiscoveryHighlight(Icons.play_circle_outline, loc.alreadyStarted),
-        );
+        final endDate = widget.eventViewModel.endDate;
+        final normalizedEnd = endDate == null
+            ? null
+            : DateTimeFormatter.dateOnly(endDate);
+        if (normalizedEnd != null && normalizedEnd.isAfter(today)) {
+          highlights.add(
+            _DiscoveryHighlight(
+              Icons.play_circle_outline,
+              loc.ongoingUntil(
+                DateFormat.Md(loc.localeName).format(normalizedEnd),
+              ),
+            ),
+          );
+        } else {
+          highlights.add(
+            _DiscoveryHighlight(Icons.timer_outlined, loc.endsToday),
+          );
+        }
       } else if (days == 0) {
         highlights.add(
           _DiscoveryHighlight(Icons.today_outlined, loc.startsToday),

@@ -667,6 +667,10 @@ class _PageGameListState extends State<PageGameList> {
                             (current, score) =>
                                 score > current ? score : current,
                           ),
+                recentAttempts: userProgress.length,
+                recentPassed: userProgress
+                    .where((item) => item.isPass == true)
+                    .length,
                 isLoading: _isLoadingProgress,
               ),
             ],
@@ -1337,12 +1341,16 @@ class _GameProgressOverview extends StatelessWidget {
     required this.passedLevels,
     required this.totalLevels,
     required this.recentBestScore,
+    required this.recentAttempts,
+    required this.recentPassed,
     required this.isLoading,
   });
 
   final int passedLevels;
   final int totalLevels;
   final num? recentBestScore;
+  final int recentAttempts;
+  final int recentPassed;
   final bool isLoading;
 
   @override
@@ -1377,6 +1385,27 @@ class _GameProgressOverview extends StatelessWidget {
                     ),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
+                if (recentAttempts > 0) ...[
+                  Gaps.w8,
+                  Tooltip(
+                    message: loc.gameRecentPracticeSummary(
+                      recentAttempts,
+                      recentPassed,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.history_toggle_off, size: 17),
+                        const SizedBox(width: 3),
+                        Text(
+                          '$recentPassed/$recentAttempts',
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
             Gaps.h8,
