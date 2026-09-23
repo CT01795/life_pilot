@@ -105,24 +105,47 @@ class TodayScheduleCard extends StatelessWidget {
             if (isExpanded) ...[
               if (events.isNotEmpty) ...[
                 Gaps.h8,
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.auto_awesome_outlined,
-                      size: 18,
-                      color: colorScheme.primary,
-                    ),
-                    Gaps.w8,
-                    Expanded(
-                      child: Text(
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface.withValues(alpha: 0.62),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         loc.homeJourneyReviewHint,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                  ],
+                      Gaps.h8,
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _JourneyStep(
+                            icon: Icons.task_alt,
+                            label: loc.completeAndReview,
+                          ),
+                          _JourneyStep(
+                            icon: Icons.auto_stories_outlined,
+                            label: loc.eventMemory,
+                          ),
+                          _JourneyStep(
+                            icon: Icons.account_balance_wallet_outlined,
+                            label: loc.accountRecords,
+                          ),
+                          _JourneyStep(
+                            icon: Icons.stars_outlined,
+                            label: loc.pointsRecord,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
               Gaps.h16,
@@ -505,6 +528,39 @@ class TodayScheduleCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _JourneyStep extends StatelessWidget {
+  const _JourneyStep({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: colors.onPrimaryContainer),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: colors.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

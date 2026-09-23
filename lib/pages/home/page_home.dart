@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/income_expense_summary_card.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/home_quick_record_navigation.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/point_summary_card.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/recommend_event_card.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/recommend_place_card.dart';
@@ -21,6 +22,8 @@ class PageHome extends StatefulWidget {
 
 class _PageHomeState extends State<PageHome> {
   final _scheduleKey = GlobalKey();
+  final _recommendEventsKey = GlobalKey();
+  final _recommendPlacesKey = GlobalKey();
   final _accountingKey = GlobalKey();
   final _pointsKey = GlobalKey();
   bool _todayScheduleExpanded = true;
@@ -35,8 +38,13 @@ class _PageHomeState extends State<PageHome> {
   String? _recommendEventsAccount;
   String? _recommendPlacesAccount;
 
-  void _openSection(GlobalKey key, VoidCallback expand) {
+  void _openSection(
+    GlobalKey key,
+    VoidCallback expand, {
+    Future<void> Function()? load,
+  }) {
     setState(expand);
+    if (load != null) unawaited(load());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final targetContext = key.currentContext;
       if (!mounted || targetContext == null) return;
@@ -160,6 +168,20 @@ class _PageHomeState extends State<PageHome> {
                     ),
                     onPointsPressed: () =>
                         _openSection(_pointsKey, () => _pointsExpanded = true),
+                    onAccountingQuickAdd: () =>
+                        unawaited(openHomeAccountingQuickAdd(context)),
+                    onPointsQuickAdd: () =>
+                        unawaited(openHomePointQuickAdd(context)),
+                    onDiscoverEvents: () => _openSection(
+                      _recommendEventsKey,
+                      () => _recommendEventsExpanded = true,
+                      load: _ensureRecommendEvents,
+                    ),
+                    onDiscoverPlaces: () => _openSection(
+                      _recommendPlacesKey,
+                      () => _recommendPlacesExpanded = true,
+                      load: _ensureRecommendPlaces,
+                    ),
                   ),
                   Gaps.h16,
                   TodayScheduleCard(
@@ -170,6 +192,7 @@ class _PageHomeState extends State<PageHome> {
                   ),
                   Gaps.h16,
                   RecommendEventCard(
+                    key: _recommendEventsKey,
                     isExpanded: _recommendEventsExpanded,
                     hasRequestedData: _recommendEventsLoad != null,
                     onExpansionChanged: (value) {
@@ -179,6 +202,7 @@ class _PageHomeState extends State<PageHome> {
                   ),
                   Gaps.h16,
                   RecommendPlaceCard(
+                    key: _recommendPlacesKey,
                     isExpanded: _recommendPlacesExpanded,
                     hasRequestedData: _recommendPlacesLoad != null,
                     onExpansionChanged: (value) {

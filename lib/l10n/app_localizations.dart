@@ -1431,6 +1431,96 @@ abstract class AppLocalizations {
   /// **'See your schedule, money, and points together. Tap an item for details.'**
   String get todayLifeOverviewHint;
 
+  /// No description provided for @homeInsightDiscover.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing planned today. Start with an event or place that interests you.'**
+  String get homeInsightDiscover;
+
+  /// No description provided for @homeInsightConnectAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose money and points accounts to review your day in one step.'**
+  String get homeInsightConnectAccounts;
+
+  /// No description provided for @homeInsightReadyForReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s schedule is connected to memories, money, and points for one-step review.'**
+  String get homeInsightReadyForReview;
+
+  /// No description provided for @quickAddAccounting.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick money entry'**
+  String get quickAddAccounting;
+
+  /// No description provided for @quickAddPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick points entry'**
+  String get quickAddPoints;
+
+  /// No description provided for @findRecommendedEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Find an event'**
+  String get findRecommendedEvent;
+
+  /// No description provided for @findRecommendedPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a place'**
+  String get findRecommendedPlace;
+
+  /// No description provided for @startsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts today'**
+  String get startsToday;
+
+  /// No description provided for @alreadyStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Already started'**
+  String get alreadyStarted;
+
+  /// No description provided for @startsTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts tomorrow'**
+  String get startsTomorrow;
+
+  /// No description provided for @startsInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {count} days'**
+  String startsInDays(Object count);
+
+  /// No description provided for @eventSessionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions'**
+  String eventSessionCount(Object count);
+
+  /// No description provided for @memoryCountForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} memories'**
+  String memoryCountForDay(Object count);
+
+  /// No description provided for @gameProgressSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed {passed} of {total} levels'**
+  String gameProgressSummary(Object passed, Object total);
+
+  /// No description provided for @gameRecentBestScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent best {score}'**
+  String gameRecentBestScore(Object score);
+
   /// Label for addToSchedule
   ///
   /// In en, this message translates to:

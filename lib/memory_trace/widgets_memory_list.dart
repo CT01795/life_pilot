@@ -30,6 +30,13 @@ class WidgetsMemoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final dailyCounts = <int, int>{};
+    for (final event in filteredEvents) {
+      final date = event.startDate;
+      if (date == null) continue;
+      final key = _dayKey(date);
+      dailyCounts[key] = (dailyCounts[key] ?? 0) + 1;
+    }
 
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
@@ -89,13 +96,36 @@ class WidgetsMemoryList extends StatelessWidget {
             if (showDateHeader)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 12, 2),
-                child: Text(
-                  _dateLabel(context, date),
-                  style: const TextStyle(
-                    color: Color(0xFF6D4876),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _dateLabel(context, date),
+                        style: const TextStyle(
+                          color: Color(0xFF6D4876),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE0F0),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        loc.memoryCountForDay(dailyCounts[_dayKey(date)] ?? 1),
+                        style: const TextStyle(
+                          color: Color(0xFF6D4876),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             Stack(
@@ -185,6 +215,8 @@ class WidgetsMemoryList extends StatelessWidget {
         date.month == other.month &&
         date.day == other.day;
   }
+
+  int _dayKey(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
 
   String _dateLabel(BuildContext context, DateTime date) {
     final locale = Localizations.localeOf(context).toString();

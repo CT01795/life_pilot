@@ -677,6 +677,61 @@ class AppLocalizationsJa extends AppLocalizations {
   String get todayLifeOverviewHint => '予定・収支・ポイントをまとめて確認できます。項目をタップして詳細を表示します。';
 
   @override
+  String get homeInsightDiscover => '今日の予定はまだありません。気になるイベントやスポットから始めましょう。';
+
+  @override
+  String get homeInsightConnectAccounts => '収支とポイントのアカウントを選ぶと、予定の完了時にまとめて振り返れます。';
+
+  @override
+  String get homeInsightReadyForReview => '今日の予定は思い出・収支・ポイントと連携され、まとめて振り返れます。';
+
+  @override
+  String get quickAddAccounting => 'かんたん収支記録';
+
+  @override
+  String get quickAddPoints => 'かんたんポイント記録';
+
+  @override
+  String get findRecommendedEvent => 'イベントを探す';
+
+  @override
+  String get findRecommendedPlace => 'スポットを探す';
+
+  @override
+  String get startsToday => '今日開始';
+
+  @override
+  String get alreadyStarted => '開始済み';
+
+  @override
+  String get startsTomorrow => '明日開始';
+
+  @override
+  String startsInDays(Object count) {
+    return '$count日後に開始';
+  }
+
+  @override
+  String eventSessionCount(Object count) {
+    return '全$count回';
+  }
+
+  @override
+  String memoryCountForDay(Object count) {
+    return '思い出$count件';
+  }
+
+  @override
+  String gameProgressSummary(Object passed, Object total) {
+    return '$totalステージ中$passedステージクリア';
+  }
+
+  @override
+  String gameRecentBestScore(Object score) {
+    return '最近の最高 $score';
+  }
+
+  @override
   String get addToSchedule => '旅程に追加する';
 
   @override

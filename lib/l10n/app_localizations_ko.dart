@@ -677,6 +677,61 @@ class AppLocalizationsKo extends AppLocalizations {
   String get todayLifeOverviewHint => '일정, 수입·지출, 포인트를 한곳에서 확인하고 항목을 눌러 자세히 볼 수 있습니다.';
 
   @override
+  String get homeInsightDiscover => '오늘 일정이 없습니다. 관심 있는 이벤트나 장소부터 찾아보세요.';
+
+  @override
+  String get homeInsightConnectAccounts => '수입·지출과 포인트 계정을 선택하면 일정 완료 시 한 번에 정리할 수 있습니다.';
+
+  @override
+  String get homeInsightReadyForReview => '오늘 일정이 추억, 수입·지출, 포인트와 연결되어 한 번에 정리할 수 있습니다.';
+
+  @override
+  String get quickAddAccounting => '빠른 수입·지출 기록';
+
+  @override
+  String get quickAddPoints => '빠른 포인트 기록';
+
+  @override
+  String get findRecommendedEvent => '추천 이벤트 찾기';
+
+  @override
+  String get findRecommendedPlace => '추천 장소 찾기';
+
+  @override
+  String get startsToday => '오늘 시작';
+
+  @override
+  String get alreadyStarted => '이미 시작됨';
+
+  @override
+  String get startsTomorrow => '내일 시작';
+
+  @override
+  String startsInDays(Object count) {
+    return '$count일 후 시작';
+  }
+
+  @override
+  String eventSessionCount(Object count) {
+    return '총 $count회';
+  }
+
+  @override
+  String memoryCountForDay(Object count) {
+    return '추억 $count개';
+  }
+
+  @override
+  String gameProgressSummary(Object passed, Object total) {
+    return '$total개 중 $passed개 레벨 통과';
+  }
+
+  @override
+  String gameRecentBestScore(Object score) {
+    return '최근 최고 $score';
+  }
+
+  @override
   String get addToSchedule => '일정에 추가';
 
   @override

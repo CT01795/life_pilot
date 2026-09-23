@@ -677,6 +677,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayLifeOverviewHint => 'See your schedule, money, and points together. Tap an item for details.';
 
   @override
+  String get homeInsightDiscover => 'Nothing planned today. Start with an event or place that interests you.';
+
+  @override
+  String get homeInsightConnectAccounts => 'Choose money and points accounts to review your day in one step.';
+
+  @override
+  String get homeInsightReadyForReview => 'Today\'s schedule is connected to memories, money, and points for one-step review.';
+
+  @override
+  String get quickAddAccounting => 'Quick money entry';
+
+  @override
+  String get quickAddPoints => 'Quick points entry';
+
+  @override
+  String get findRecommendedEvent => 'Find an event';
+
+  @override
+  String get findRecommendedPlace => 'Find a place';
+
+  @override
+  String get startsToday => 'Starts today';
+
+  @override
+  String get alreadyStarted => 'Already started';
+
+  @override
+  String get startsTomorrow => 'Starts tomorrow';
+
+  @override
+  String startsInDays(Object count) {
+    return 'Starts in $count days';
+  }
+
+  @override
+  String eventSessionCount(Object count) {
+    return '$count sessions';
+  }
+
+  @override
+  String memoryCountForDay(Object count) {
+    return '$count memories';
+  }
+
+  @override
+  String gameProgressSummary(Object passed, Object total) {
+    return 'Passed $passed of $total levels';
+  }
+
+  @override
+  String gameRecentBestScore(Object score) {
+    return 'Recent best $score';
+  }
+
+  @override
   String get addToSchedule => 'Add to schedule';
 
   @override

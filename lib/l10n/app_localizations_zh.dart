@@ -677,6 +677,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get todayLifeOverviewHint => '行程、收支與積分集中整理，點選項目即可查看詳情';
 
   @override
+  String get homeInsightDiscover => '今天還沒有行程，從感興趣的活動或景點開始安排吧';
+
+  @override
+  String get homeInsightConnectAccounts => '選擇記帳與積分帳戶，完成行程時就能一次整理生活紀錄';
+
+  @override
+  String get homeInsightReadyForReview => '今日行程已串連回憶、收支與積分，完成後可一次整理';
+
+  @override
+  String get quickAddAccounting => '快速記帳';
+
+  @override
+  String get quickAddPoints => '快速記積分';
+
+  @override
+  String get findRecommendedEvent => '找推薦活動';
+
+  @override
+  String get findRecommendedPlace => '找推薦景點';
+
+  @override
+  String get startsToday => '今天開始';
+
+  @override
+  String get alreadyStarted => '已經開始';
+
+  @override
+  String get startsTomorrow => '明天開始';
+
+  @override
+  String startsInDays(Object count) {
+    return '$count 天後開始';
+  }
+
+  @override
+  String eventSessionCount(Object count) {
+    return '共 $count 個場次';
+  }
+
+  @override
+  String memoryCountForDay(Object count) {
+    return '$count 筆回憶';
+  }
+
+  @override
+  String gameProgressSummary(Object passed, Object total) {
+    return '已通過 $passed／$total 關';
+  }
+
+  @override
+  String gameRecentBestScore(Object score) {
+    return '近期最佳 $score';
+  }
+
+  @override
   String get addToSchedule => '加入行程';
 
   @override

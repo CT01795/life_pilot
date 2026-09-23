@@ -654,6 +654,22 @@ class _PageGameListState extends State<PageGameList> {
                 ],
               ),
             ),
+            if (levelList != null && levelList.isNotEmpty) ...[
+              Gaps.h8,
+              _GameProgressOverview(
+                passedLevels: (unlockedMaxLevel - 1).clamp(0, levelList.length),
+                totalLevels: levelList.length,
+                recentBestScore: userProgress.isEmpty
+                    ? null
+                    : userProgress
+                          .map((item) => item.score ?? 0)
+                          .reduce(
+                            (current, score) =>
+                                score > current ? score : current,
+                          ),
+                isLoading: _isLoadingProgress,
+              ),
+            ],
             if (_isQuestionBankAdmin) ...[
               Gaps.h8,
               OutlinedButton.icon(
@@ -1309,6 +1325,69 @@ class _PageGameListState extends State<PageGameList> {
                       ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GameProgressOverview extends StatelessWidget {
+  const _GameProgressOverview({
+    required this.passedLevels,
+    required this.totalLevels,
+    required this.recentBestScore,
+    required this.isLoading,
+  });
+
+  final int passedLevels;
+  final int totalLevels;
+  final num? recentBestScore;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
+    final progress = totalLevels == 0 ? 0.0 : passedLevels / totalLevels;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: colors.secondaryContainer.withValues(alpha: 0.72),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.insights_outlined, color: colors.primary),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    loc.gameProgressSummary(passedLevels, totalLevels),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (recentBestScore != null)
+                  Text(
+                    loc.gameRecentBestScore(
+                      NumberFormat('#,##0.##').format(recentBestScore),
+                    ),
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+              ],
+            ),
+            Gaps.h8,
+            if (isLoading)
+              const LinearProgressIndicator()
+            else
+              LinearProgressIndicator(
+                value: progress,
+                minHeight: 7,
+                borderRadius: BorderRadius.circular(99),
+              ),
           ],
         ),
       ),

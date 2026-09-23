@@ -63,10 +63,7 @@ class WidgetsEventCard extends StatelessWidget {
     );
   }
 
-  static Widget link({
-    required String text,
-    required VoidCallback onTap,
-  }) {
+  static Widget link({required String text, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Text(
@@ -173,10 +170,12 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);
 
-    final todayWeather =
-        forecast != null && forecast.isNotEmpty ? forecast.first : null;
+    final todayWeather = forecast != null && forecast.isNotEmpty
+        ? forecast.first
+        : null;
 
     final loc = AppLocalizations.of(context)!;
+    final discoveryHighlights = _discoveryHighlights(loc, now);
     Widget buildHeader() {
       return Row(
         children: [
@@ -188,11 +187,11 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                 height: 42,
                 decoration:
                     todayWeather.main == 'Clouds' || todayWeather.main == 'Rain'
-                        ? BoxDecoration(
-                            color: Colors.grey.shade300,
-                            shape: BoxShape.circle,
-                          )
-                        : null,
+                    ? BoxDecoration(
+                        color: Colors.grey.shade300,
+                        shape: BoxShape.circle,
+                      )
+                    : null,
                 padding: const EdgeInsets.all(1),
                 child: WidgetsWeatherIcon(icon: todayWeather.icon),
               ),
@@ -231,16 +230,17 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                                 height: 42,
                                 decoration:
                                     w.main == 'Clouds' || w.main == 'Rain'
-                                        ? BoxDecoration(
-                                            color: Colors.grey.shade300,
-                                            shape: BoxShape.circle,
-                                          )
-                                        : null,
+                                    ? BoxDecoration(
+                                        color: Colors.grey.shade300,
+                                        shape: BoxShape.circle,
+                                      )
+                                    : null,
                                 padding: const EdgeInsets.all(1),
                                 child: WidgetsWeatherIcon(icon: w.icon),
                               ),
                               title: Text(
-                                  '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}'),
+                                '${DateFormat.Md(loc.localeName).add_Hm().format(w.date)} ${localizeWeatherCondition(loc, w.main)}',
+                              ),
                               subtitle: Text(tmp),
                             );
                           }).toList(),
@@ -260,18 +260,19 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
 
           Gaps.w8,
           Expanded(
-              child: Text(
-            widget.eventViewModel.name,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-              height: 1.25,
-              color: colorScheme.onSurface,
+            child: Text(
+              widget.eventViewModel.name,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                height: 1.25,
+                color: colorScheme.onSurface,
+              ),
+              softWrap: true, // 允許換行
+              overflow: TextOverflow.visible, // 文字超過不截斷
+              //overflow: TextOverflow.ellipsis, // 防止文字過長
             ),
-            softWrap: true, // 允許換行
-            overflow: TextOverflow.visible, // 文字超過不截斷
-            //overflow: TextOverflow.ellipsis, // 防止文字過長
-          )),
+          ),
           if (widget.trailing != null)
             Builder(
               builder: (context) {
@@ -392,6 +393,44 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           Gaps.h8,
           if (widget.eventViewModel.dateRange.isNotEmpty)
             dateBanner(widget.eventViewModel.dateRange),
+          if (discoveryHighlights.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 9),
+              child: Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: discoveryHighlights
+                    .map(
+                      (highlight) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              highlight.icon,
+                              size: 16,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              highlight.label,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
           if (widget.eventViewModel.dateRange.isNotEmpty &&
               widget.eventViewModel.tags.isNotEmpty)
             Padding(
@@ -457,7 +496,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                     onOpenLink: widget.onOpenLink,
                   ),
               ],
-            )
+            ),
         ],
       ),
     );
@@ -536,4 +575,55 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
       ),
     );
   }
+
+  List<_DiscoveryHighlight> _discoveryHighlights(
+    AppLocalizations loc,
+    DateTime today,
+  ) {
+    if (widget.tableName != TableNames.recommendEvents) return const [];
+    final highlights = <_DiscoveryHighlight>[];
+    final startDate = widget.eventViewModel.startDate;
+    if (startDate != null) {
+      final days = DateTimeFormatter.dateOnly(
+        startDate,
+      ).difference(today).inDays;
+      if (days < 0) {
+        highlights.add(
+          _DiscoveryHighlight(Icons.play_circle_outline, loc.alreadyStarted),
+        );
+      } else if (days == 0) {
+        highlights.add(
+          _DiscoveryHighlight(Icons.today_outlined, loc.startsToday),
+        );
+      } else if (days == 1) {
+        highlights.add(
+          _DiscoveryHighlight(Icons.event_outlined, loc.startsTomorrow),
+        );
+      } else if (days <= 30) {
+        highlights.add(
+          _DiscoveryHighlight(
+            Icons.event_note_outlined,
+            loc.startsInDays(days),
+          ),
+        );
+      }
+    }
+    final sessionCount = widget.eventViewModel.subEvents.length;
+    if (sessionCount > 0) {
+      highlights.add(
+        _DiscoveryHighlight(
+          Icons.format_list_numbered,
+          loc.eventSessionCount(sessionCount),
+        ),
+      );
+    }
+    return highlights;
+  }
+}
+
+class _DiscoveryHighlight {
+  const _DiscoveryHighlight(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
 }
