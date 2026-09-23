@@ -30,14 +30,12 @@ class TodayLifeOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
-    final eventCount = context.select<ModelDashboard, int>(
-      (model) => model.state.todayEvents.length,
+    final todayEvents = context.select<ModelDashboard, List<CalendarEvent>>(
+      (model) => model.state.todayEvents,
     );
-    final nextEvent = context.select<ModelDashboard, CalendarEvent?>(
-      (model) => model.state.todayEvents.isEmpty
-          ? null
-          : model.state.todayEvents.first,
-    );
+    final eventCount = todayEvents.length;
+    final nextEvent = todayEvents.isEmpty ? null : todayEvents.first;
+    final scheduleConflictCount = _countScheduleConflicts(todayEvents);
     final accountingTotal = context.select<ModelDashboard, num>(
       (model) => model.state.todayAccountingTotal,
     );
@@ -198,6 +196,46 @@ class TodayLifeOverviewCard extends StatelessWidget {
                   ),
                 ),
               ],
+              if (scheduleConflictCount > 0) ...[
+                Gaps.h8,
+                Material(
+                  color: colors.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: onSchedulePressed,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 9,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.event_busy_outlined,
+                            color: colors.onErrorContainer,
+                          ),
+                          Gaps.w8,
+                          Expanded(
+                            child: Text(
+                              loc.scheduleConflictCount(scheduleConflictCount),
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: colors.onErrorContainer,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: colors.onErrorContainer,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               Gaps.h12,
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -319,6 +357,52 @@ class TodayLifeOverviewCard extends StatelessWidget {
       return loc.scheduleStartsInHours((minutes / 60).ceil());
     }
     return null;
+  }
+
+  int _countScheduleConflicts(List<CalendarEvent> events) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final tomorrow = today.add(const Duration(days: 1));
+    final intervals = <({DateTime start, DateTime end})>[];
+    for (final event in events) {
+      if (event.isCompleted) continue;
+      final startDate = event.startDate;
+      final startTime = event.startTime;
+      if (startDate == null || startTime == null) continue;
+      if (!DateUtils.isSameDay(startDate, today) &&
+          !DateUtils.isSameDay(startDate, tomorrow)) {
+        continue;
+      }
+      final endDate = event.endDate ?? startDate;
+      final start = DateTime(
+        startDate.year,
+        startDate.month,
+        startDate.day,
+        startTime.hour,
+        startTime.minute,
+      );
+      final endTime = event.endTime;
+      final end = endTime != null
+          ? DateTime(
+              endDate.year,
+              endDate.month,
+              endDate.day,
+              endTime.hour,
+              endTime.minute,
+            )
+          : DateUtils.dateOnly(endDate).isAfter(DateUtils.dateOnly(startDate))
+          ? DateUtils.dateOnly(endDate).add(const Duration(days: 1))
+          : start.add(const Duration(hours: 1));
+      if (end.isAfter(start)) intervals.add((start: start, end: end));
+    }
+    intervals.sort((a, b) => a.start.compareTo(b.start));
+    var conflicts = 0;
+    for (var i = 0; i < intervals.length; i++) {
+      for (var j = i + 1; j < intervals.length; j++) {
+        if (!intervals[j].start.isBefore(intervals[i].end)) break;
+        conflicts++;
+      }
+    }
+    return conflicts;
   }
 }
 

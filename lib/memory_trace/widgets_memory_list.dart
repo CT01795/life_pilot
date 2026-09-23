@@ -86,7 +86,6 @@ class WidgetsMemoryList extends StatelessWidget {
           event: event,
           loc: loc,
         );
-        controllerEvent.preloadWeatherForEvent(eventViewModel);
         final date = eventViewModel.startDate;
         final previousDate = index == 0
             ? null

@@ -707,27 +707,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startsTomorrow => 'Starts tomorrow';
 
   @override
-  String startsInDays(Object count) {
+  String startsInDays(int count) {
     return 'Starts in $count days';
   }
 
   @override
-  String eventSessionCount(Object count) {
+  String eventSessionCount(int count) {
     return '$count sessions';
   }
 
   @override
-  String memoryCountForDay(Object count) {
+  String memoryCountForDay(int count) {
     return '$count memories';
   }
 
   @override
-  String gameProgressSummary(Object passed, Object total) {
+  String gameProgressSummary(int passed, int total) {
     return 'Passed $passed of $total levels';
   }
 
   @override
-  String gameRecentBestScore(Object score) {
+  String gameRecentBestScore(String score) {
     return 'Recent best $score';
   }
 
@@ -1847,12 +1847,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleAlreadyStarted => 'Schedule already started';
 
   @override
-  String scheduleStartsInMinutes(Object count) {
+  String scheduleStartsInMinutes(int count) {
     return 'Starts in $count min';
   }
 
   @override
-  String scheduleStartsInHours(Object count) {
+  String scheduleStartsInHours(int count) {
     return 'Starts in $count hr';
   }
 
@@ -1860,17 +1860,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get endsToday => 'Already started, ends today';
 
   @override
-  String ongoingUntil(Object date) {
+  String ongoingUntil(String date) {
     return 'Ongoing until $date';
   }
 
   @override
-  String memoryCountForMonth(Object count) {
+  String memoryCountForMonth(int count) {
     return '$count this month';
   }
 
   @override
-  String gameRecentPracticeSummary(Object attempts, Object passed) {
+  String gameRecentPracticeSummary(int attempts, int passed) {
     return '$attempts recent attempts, $passed passed';
+  }
+
+  @override
+  String scheduleConflictCount(int count) {
+    return '$count schedule time conflicts';
+  }
+
+  @override
+  String scheduleConflictBeforeSave(int count) {
+    return 'This time overlaps with $count unfinished schedule items. Save anyway?';
+  }
+
+  @override
+  String get weekendEvent => 'Weekend event';
+
+  @override
+  String multiDayEvent(int count) {
+    return '$count consecutive days';
+  }
+
+  @override
+  String continueLevel(int level) {
+    return 'Continue level $level';
   }
 }

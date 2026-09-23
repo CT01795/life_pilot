@@ -554,12 +554,12 @@ class _PageGameListState extends State<PageGameList> {
     final levelList = selectedGameName != null
         ? gameMap![selectedGameName!]
         : null;
+    final recentStats = _GameRecentStats.from(userProgress);
 
     return Scaffold(
       body: Padding(
         padding: Insets.all8,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
             // 遊戲類別下拉選單
             DropdownButtonFormField<String>(
@@ -659,18 +659,9 @@ class _PageGameListState extends State<PageGameList> {
               _GameProgressOverview(
                 passedLevels: (unlockedMaxLevel - 1).clamp(0, levelList.length),
                 totalLevels: levelList.length,
-                recentBestScore: userProgress.isEmpty
-                    ? null
-                    : userProgress
-                          .map((item) => item.score ?? 0)
-                          .reduce(
-                            (current, score) =>
-                                score > current ? score : current,
-                          ),
-                recentAttempts: userProgress.length,
-                recentPassed: userProgress
-                    .where((item) => item.isPass == true)
-                    .length,
+                recentBestScore: recentStats.bestScore,
+                recentAttempts: recentStats.attempts,
+                recentPassed: recentStats.passed,
                 isLoading: _isLoadingProgress,
               ),
             ],
@@ -1234,100 +1225,99 @@ class _PageGameListState extends State<PageGameList> {
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(loc.gameStart),
+                  : Text(
+                      selectedLevel == unlockedMaxLevel && unlockedMaxLevel > 1
+                          ? loc.continueLevel(selectedLevel!)
+                          : loc.gameStart,
+                    ),
             ),
             const Divider(),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: _isLoadingProgress
-                    ? const Center(
-                        key: ValueKey('loading'),
-                        child: CircularProgressIndicator(),
-                      )
-                    : userProgress.isEmpty
-                    ? Center(
-                        key: const ValueKey('empty'),
-                        child: Text(loc.gameNoRecords),
-                      )
-                    : Scrollbar(
-                        key: ValueKey(
-                          'progress|$selectedCategory|$selectedGameName',
-                        ),
-                        child: ListView.builder(
-                          key: ValueKey('$selectedCategory|$selectedGameName'),
-                          itemExtent: 72,
-                          cacheExtent: 240,
-                          addAutomaticKeepAlives: false,
-                          itemCount:
-                              userProgress.length +
-                              ((_hasMoreProgress || _isLoadingMoreProgress)
-                                  ? 1
-                                  : 0),
-                          itemBuilder: (context, index) {
-                            if (index == userProgress.length) {
-                              return Center(
-                                child: _isLoadingMoreProgress
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(16),
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : TextButton(
-                                        onPressed: _loadMoreProgress,
-                                        child: Text(loc.clickHereToSeeMore),
-                                      ),
-                              );
-                            }
-                            final item = userProgress[index];
-                            final formattedDate = item.createdAt != null
-                                ? (item.createdAt!.year == now.year
-                                          ? currentYearDateFormat
-                                          : previousYearDateFormat)
-                                      .format(item.createdAt!)
-                                : '';
-                            // 判斷第一筆，設定文字顏色
-                            final textColor = index == 0
-                                ? colorScheme.primary
-                                : colorScheme.onSurface;
-                            final textBold = index == 0
-                                ? FontWeight.bold
-                                : FontWeight.normal;
-                            return ListTile(
-                              leading: index == 0
-                                  ? Icon(
-                                      Icons.emoji_events_outlined,
-                                      color: colorScheme.primary,
-                                    )
-                                  : null,
-                              title: Text(
-                                formattedDate,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontWeight: textBold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                '${loc.gameLevel} ${item.level}  '
-                                '${loc.gameScore}: ${item.score}',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing: item.isPass == true
-                                  ? Tooltip(
-                                      message: loc.statusCompleted,
-                                      child: Icon(
-                                        Icons.check_circle,
-                                        color: colorScheme.primary,
-                                      ),
-                                    )
-                                  : null,
-                            );
-                          },
-                        ),
-                      ),
-              ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: _isLoadingProgress
+                  ? const Center(
+                      key: ValueKey('loading'),
+                      child: CircularProgressIndicator(),
+                    )
+                  : userProgress.isEmpty
+                  ? Center(
+                      key: const ValueKey('empty'),
+                      child: Text(loc.gameNoRecords),
+                    )
+                  : ListView.builder(
+                      key: ValueKey('$selectedCategory|$selectedGameName'),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemExtent: 72,
+                      cacheExtent: 240,
+                      addAutomaticKeepAlives: false,
+                      itemCount:
+                          userProgress.length +
+                          ((_hasMoreProgress || _isLoadingMoreProgress)
+                              ? 1
+                              : 0),
+                      itemBuilder: (context, index) {
+                        if (index == userProgress.length) {
+                          return Center(
+                            child: _isLoadingMoreProgress
+                                ? const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : TextButton(
+                                    onPressed: _loadMoreProgress,
+                                    child: Text(loc.clickHereToSeeMore),
+                                  ),
+                          );
+                        }
+                        final item = userProgress[index];
+                        final formattedDate = item.createdAt != null
+                            ? (item.createdAt!.year == now.year
+                                      ? currentYearDateFormat
+                                      : previousYearDateFormat)
+                                  .format(item.createdAt!)
+                            : '';
+                        // 判斷第一筆，設定文字顏色
+                        final textColor = index == 0
+                            ? colorScheme.primary
+                            : colorScheme.onSurface;
+                        final textBold = index == 0
+                            ? FontWeight.bold
+                            : FontWeight.normal;
+                        return ListTile(
+                          leading: index == 0
+                              ? Icon(
+                                  Icons.emoji_events_outlined,
+                                  color: colorScheme.primary,
+                                )
+                              : null,
+                          title: Text(
+                            formattedDate,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: textBold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${loc.gameLevel} ${item.level}  '
+                            '${loc.gameScore}: ${item.score}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: item.isPass == true
+                              ? Tooltip(
+                                  message: loc.statusCompleted,
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    color: colorScheme.primary,
+                                  ),
+                                )
+                              : null,
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -1422,4 +1412,33 @@ class _GameProgressOverview extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GameRecentStats {
+  const _GameRecentStats({
+    required this.attempts,
+    required this.passed,
+    required this.bestScore,
+  });
+
+  factory _GameRecentStats.from(List<ModelGameUser> records) {
+    var passed = 0;
+    num? bestScore;
+    for (final record in records) {
+      if (record.isPass == true) passed++;
+      final score = record.score;
+      if (score != null && (bestScore == null || score > bestScore)) {
+        bestScore = score;
+      }
+    }
+    return _GameRecentStats(
+      attempts: records.length,
+      passed: passed,
+      bestScore: bestScore,
+    );
+  }
+
+  final int attempts;
+  final int passed;
+  final num? bestScore;
 }

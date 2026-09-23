@@ -655,9 +655,7 @@ class ModelDashboard extends SafeChangeNotifier {
             return aMinutes.compareTo(bMinutes);
           });
 
-    _state = _state.copyWith(
-      todayEvents: events.take(5).toList(growable: false),
-    );
+    _state = _state.copyWith(todayEvents: events.toList(growable: false));
     notifyListeners();
   }
 

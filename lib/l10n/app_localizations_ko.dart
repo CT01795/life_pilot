@@ -707,27 +707,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get startsTomorrow => '내일 시작';
 
   @override
-  String startsInDays(Object count) {
+  String startsInDays(int count) {
     return '$count일 후 시작';
   }
 
   @override
-  String eventSessionCount(Object count) {
+  String eventSessionCount(int count) {
     return '총 $count회';
   }
 
   @override
-  String memoryCountForDay(Object count) {
+  String memoryCountForDay(int count) {
     return '추억 $count개';
   }
 
   @override
-  String gameProgressSummary(Object passed, Object total) {
+  String gameProgressSummary(int passed, int total) {
     return '$total개 중 $passed개 레벨 통과';
   }
 
   @override
-  String gameRecentBestScore(Object score) {
+  String gameRecentBestScore(String score) {
     return '최근 최고 $score';
   }
 
@@ -1847,12 +1847,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scheduleAlreadyStarted => '일정이 이미 시작됨';
 
   @override
-  String scheduleStartsInMinutes(Object count) {
+  String scheduleStartsInMinutes(int count) {
     return '$count분 후 시작';
   }
 
   @override
-  String scheduleStartsInHours(Object count) {
+  String scheduleStartsInHours(int count) {
     return '$count시간 후 시작';
   }
 
@@ -1860,17 +1860,40 @@ class AppLocalizationsKo extends AppLocalizations {
   String get endsToday => '이미 시작됨, 오늘 종료';
 
   @override
-  String ongoingUntil(Object date) {
+  String ongoingUntil(String date) {
     return '$date까지 진행 중';
   }
 
   @override
-  String memoryCountForMonth(Object count) {
+  String memoryCountForMonth(int count) {
     return '이번 달 $count개';
   }
 
   @override
-  String gameRecentPracticeSummary(Object attempts, Object passed) {
+  String gameRecentPracticeSummary(int attempts, int passed) {
     return '최근 $attempts회 연습, $passed회 통과';
+  }
+
+  @override
+  String scheduleConflictCount(int count) {
+    return '일정 시간 겹침 $count건';
+  }
+
+  @override
+  String scheduleConflictBeforeSave(int count) {
+    return '이 시간이 완료되지 않은 일정 $count개와 겹칩니다. 그래도 저장할까요?';
+  }
+
+  @override
+  String get weekendEvent => '주말 행사';
+
+  @override
+  String multiDayEvent(int count) {
+    return '연속 $count일';
+  }
+
+  @override
+  String continueLevel(int level) {
+    return '$level단계 계속하기';
   }
 }

@@ -112,6 +112,15 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       FocusScope.of(context).unfocus();
 
       EventItem event = controllerAdd.toEventItem();
+      final conflictCount = _countScheduleConflicts(event);
+      if (conflictCount > 0) {
+        final shouldContinue = await showConfirmationDialog(
+          content: loc.scheduleConflictBeforeSave(conflictCount),
+          confirmText: loc.continueLabel,
+          cancelText: loc.cancel,
+        );
+        if (!shouldContinue || !mounted) return;
+      }
       event = await ClusterItem.getLatLngFromAddressItem(event);
       await widget.controllerCalendar.saveEventWithNotification(
         oldEvent: widget.existingEvent ?? event,
@@ -143,6 +152,59 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     }
   }
 
+  int _countScheduleConflicts(EventItem candidate) {
+    final candidateStartDate = candidate.startDate;
+    if (candidateStartDate == null || candidate.isCompleted) return 0;
+    final candidateInterval = _eventInterval(candidate);
+    if (candidateInterval == null) return 0;
+
+    return widget.controllerCalendar
+        .getEventsOfDay(candidateStartDate)
+        .where(
+          (event) =>
+              !event.isCompleted &&
+              event.id != candidate.id &&
+              _intervalsOverlap(candidateInterval, _eventInterval(event)),
+        )
+        .length;
+  }
+
+  ({DateTime start, DateTime end})? _eventInterval(EventItem event) {
+    final startDate = event.startDate;
+    final startTime = event.startTime;
+    if (startDate == null || startTime == null) return null;
+    final endDate = event.endDate ?? startDate;
+    final start = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+      startTime.hour,
+      startTime.minute,
+    );
+    final endTime = event.endTime;
+    final end = endTime != null
+        ? DateTime(
+            endDate.year,
+            endDate.month,
+            endDate.day,
+            endTime.hour,
+            endTime.minute,
+          )
+        : DateUtils.dateOnly(endDate).isAfter(DateUtils.dateOnly(startDate))
+        ? DateUtils.dateOnly(endDate).add(const Duration(days: 1))
+        : start.add(const Duration(hours: 1));
+    return end.isAfter(start) ? (start: start, end: end) : null;
+  }
+
+  bool _intervalsOverlap(
+    ({DateTime start, DateTime end}) candidate,
+    ({DateTime start, DateTime end})? existing,
+  ) {
+    return existing != null &&
+        candidate.start.isBefore(existing.end) &&
+        existing.start.isBefore(candidate.end);
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -164,85 +226,90 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       //EventFields.isOutdoor: loc.isOutdoor,
     };
     return ChangeNotifierProvider.value(
-        value: controllerAdd,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(loc.eventAddEdit),
-            actions: [
-              PopScope(
-                canPop: _allowPop || !_hasUnsavedChanges,
-                onPopInvokedWithResult: (didPop, _) {
-                  if (!didPop) _confirmDiscardChanges(loc);
-                },
-                child: TextButton(
-                  onPressed: _isSaving ? null : () => _saveEvent(loc),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    disabledForegroundColor: Colors.white70,
-                  ),
-                  child: _isSaving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(loc.save),
+      value: controllerAdd,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(loc.eventAddEdit),
+          actions: [
+            PopScope(
+              canPop: _allowPop || !_hasUnsavedChanges,
+              onPopInvokedWithResult: (didPop, _) {
+                if (!didPop) _confirmDiscardChanges(loc);
+              },
+              child: TextButton(
+                onPressed: _isSaving ? null : () => _saveEvent(loc),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  disabledForegroundColor: Colors.white70,
                 ),
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                controller: _scrollController,
-                padding: Insets.directionalL4R4T4B8,
-                children: [
-                  _buildDateTimeRow(loc: loc, ctl: controllerAdd),
-                  ..._buildTextFields(
-                      loc: loc, ctl: controllerAdd, fields: fields),
-                  Gaps.h16,
-                  Text(loc.eventSub),
-                  Selector<ControllerPageCalendarAdd, int>(
-                    selector: (_, ctl) => ctl.subEvents.length,
-                    builder: (_, length, _) {
-                      return Column(
-                        children: List.generate(
-                          length,
-                          (index) => _buildSubEventCard(
-                              loc: loc,
-                              ctl: controllerAdd,
-                              index: index,
-                              fields: fields),
+                child: _isSaving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
-                      );
-                    },
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      controllerAdd.addSubEvent();
-                      // 自動滑到最下
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted) return;
-                        if (_scrollController.hasClients) {
-                          _scrollController.animateTo(
-                            _scrollController.position.maxScrollExtent,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
-                          );
-                        }
-                      });
-                    },
-                    icon: const Icon(Icons.add),
-                    label: Text(loc.eventAddSub),
-                  ),
-                ],
+                      )
+                    : Text(loc.save),
               ),
             ),
+          ],
+        ),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              controller: _scrollController,
+              padding: Insets.directionalL4R4T4B8,
+              children: [
+                _buildDateTimeRow(loc: loc, ctl: controllerAdd),
+                ..._buildTextFields(
+                  loc: loc,
+                  ctl: controllerAdd,
+                  fields: fields,
+                ),
+                Gaps.h16,
+                Text(loc.eventSub),
+                Selector<ControllerPageCalendarAdd, int>(
+                  selector: (_, ctl) => ctl.subEvents.length,
+                  builder: (_, length, _) {
+                    return Column(
+                      children: List.generate(
+                        length,
+                        (index) => _buildSubEventCard(
+                          loc: loc,
+                          ctl: controllerAdd,
+                          index: index,
+                          fields: fields,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    controllerAdd.addSubEvent();
+                    // 自動滑到最下
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: Text(loc.eventAddSub),
+                ),
+              ],
+            ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   String _countryLabel() =>
@@ -256,11 +323,12 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
   // =====================================================
   // 🧱 組件建構部分
   // =====================================================
-  List<Widget> _buildTextFields(
-      {required AppLocalizations loc,
-      required ControllerPageCalendarAdd ctl,
-      required Map<String, String> fields,
-      String? index}) {
+  List<Widget> _buildTextFields({
+    required AppLocalizations loc,
+    required ControllerPageCalendarAdd ctl,
+    required Map<String, String> fields,
+    String? index,
+  }) {
     final Map<String, String> currentFields = Map.from(fields);
     return currentFields.entries.map((e) {
       final keyField = index == null ? e.key : '${e.key}_sub_$index';
@@ -281,109 +349,121 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     }).toList();
   }
 
-  Widget _buildDateTimeRow(
-      {required AppLocalizations loc,
-      required ControllerPageCalendarAdd ctl,
-      int? index}) {
-    return Consumer<ControllerPageCalendarAdd>(builder: (_, ctl, _) {
-      final dStart =
-          index == null ? ctl.startDate : ctl.subEvents[index].startDate;
-      final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
-      final tStart =
-          index == null ? ctl.startTime : ctl.subEvents[index].startTime;
-      final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
+  Widget _buildDateTimeRow({
+    required AppLocalizations loc,
+    required ControllerPageCalendarAdd ctl,
+    int? index,
+  }) {
+    return Consumer<ControllerPageCalendarAdd>(
+      builder: (_, ctl, _) {
+        final dStart = index == null
+            ? ctl.startDate
+            : ctl.subEvents[index].startDate;
+        final dEnd = index == null ? ctl.endDate : ctl.subEvents[index].endDate;
+        final tStart = index == null
+            ? ctl.startTime
+            : ctl.subEvents[index].startTime;
+        final tEnd = index == null ? ctl.endTime : ctl.subEvents[index].endTime;
 
-      return Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildDateTile(
-                  loc: loc,
-                  date: dStart,
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: dStart ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-
-                    if (picked != null) {
-                      ctl.setDate(picked, isStart: true, index: index);
-                    }
-                  },
-                  type: CalendarMisc.startToS,
-                ),
-              ),
-              const Text(' ~ '),
-              Expanded(
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
                   child: _buildDateTile(
-                      loc: loc,
-                      date: dEnd,
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: dEnd ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
+                    loc: loc,
+                    date: dStart,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dStart ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
 
-                        if (picked != null) {
-                          ctl.setDate(picked, isStart: false, index: index);
-                        }
-                      },
-                      type: CalendarMisc.endToE)),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
+                      if (picked != null) {
+                        ctl.setDate(picked, isStart: true, index: index);
+                      }
+                    },
+                    type: CalendarMisc.startToS,
+                  ),
+                ),
+                const Text(' ~ '),
+                Expanded(
+                  child: _buildDateTile(
+                    loc: loc,
+                    date: dEnd,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dEnd ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (picked != null) {
+                        ctl.setDate(picked, isStart: false, index: index);
+                      }
+                    },
+                    type: CalendarMisc.endToE,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
                   child: _buildTimeTile(
-                      loc: loc,
-                      time: tStart,
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: tStart ?? TimeOfDay.now(),
-                        );
+                    loc: loc,
+                    time: tStart,
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: tStart ?? TimeOfDay.now(),
+                      );
 
-                        if (picked != null) {
-                          ctl.setTime(picked, isStart: true, index: index);
-                        }
-                      },
-                      type: CalendarMisc.startToS)),
-              const Text(' ~ '),
-              Expanded(
+                      if (picked != null) {
+                        ctl.setTime(picked, isStart: true, index: index);
+                      }
+                    },
+                    type: CalendarMisc.startToS,
+                  ),
+                ),
+                const Text(' ~ '),
+                Expanded(
                   child: _buildTimeTile(
-                      loc: loc,
-                      time: tEnd,
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: tEnd ?? TimeOfDay.now(),
-                        );
+                    loc: loc,
+                    time: tEnd,
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: tEnd ?? TimeOfDay.now(),
+                      );
 
-                        if (picked != null) {
-                          ctl.setTime(picked, isStart: false, index: index);
-                        }
-                      },
-                      type: CalendarMisc.endToE)),
-            ],
-          ),
-        ],
-      );
-    });
+                      if (picked != null) {
+                        ctl.setTime(picked, isStart: false, index: index);
+                      }
+                    },
+                    type: CalendarMisc.endToE,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // =====================================================
   // 📅 時間與日期選擇
   // =====================================================
-  Widget _buildDateTile(
-      {required AppLocalizations loc,
-      DateTime? date,
-      required VoidCallback onTap,
-      required String type}) {
+  Widget _buildDateTile({
+    required AppLocalizations loc,
+    DateTime? date,
+    required VoidCallback onTap,
+    required String type,
+  }) {
     final text = date != null
         ? date.formatDateString(passYear: false, formatShow: true)
         : (type == CalendarMisc.startToS ? loc.startDate : loc.endDate);
@@ -396,12 +476,14 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     );
   }
 
-  Widget _buildTimeTile(
-      {required AppLocalizations loc,
-      TimeOfDay? time,
-      required VoidCallback onTap,
-      required String type}) {
-    final text = time?.format(context) ??
+  Widget _buildTimeTile({
+    required AppLocalizations loc,
+    TimeOfDay? time,
+    required VoidCallback onTap,
+    required String type,
+  }) {
+    final text =
+        time?.format(context) ??
         (type == CalendarMisc.startToS ? loc.startTime : loc.endTime);
     return ListTile(
       contentPadding: Insets.e0,
@@ -412,11 +494,12 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     );
   }
 
-  Widget _buildSubEventCard(
-      {required AppLocalizations loc,
-      required ControllerPageCalendarAdd ctl,
-      required Map<String, String> fields,
-      required int index}) {
+  Widget _buildSubEventCard({
+    required AppLocalizations loc,
+    required ControllerPageCalendarAdd ctl,
+    required Map<String, String> fields,
+    required int index,
+  }) {
     final d = ctl.subEvents[index];
 
     return Card(
@@ -428,33 +511,35 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
           children: [
             _buildDateTimeRow(loc: loc, ctl: ctl, index: index),
             ..._buildTextFields(
-                loc: loc, ctl: ctl, index: d.id, fields: fields),
+              loc: loc,
+              ctl: ctl,
+              index: d.id,
+              fields: fields,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   '#${index + 1} ${DateFormat('MM/dd').format(d.startDate!)} ${d.startTime!.format(context)} ${d.name.substring(0, d.name.length > 5 ? 5 : d.name.length)}${d.name.length > 5 ? '...' : ''}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.pinkAccent),
-                    tooltip: loc.delete,
-                    onPressed: () async {
-                      final event = ctl.subEvents[
-                          index]; // 假設你有 subEvents list 裡的 item 為 event
-                      final shouldDelete = await showConfirmationDialog(
-                        content:
-                            'No. ${index + 1} ${event.name} ${loc.delete}？',
-                        confirmText: loc.delete,
-                        cancelText: loc.cancel,
-                      );
+                  icon: const Icon(Icons.delete, color: Colors.pinkAccent),
+                  tooltip: loc.delete,
+                  onPressed: () async {
+                    final event = ctl
+                        .subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
+                    final shouldDelete = await showConfirmationDialog(
+                      content: 'No. ${index + 1} ${event.name} ${loc.delete}？',
+                      confirmText: loc.delete,
+                      cancelText: loc.cancel,
+                    );
 
-                      if (shouldDelete == true) {
-                        controllerAdd.removeSubEvent(index);
-                      }
-                    }),
+                    if (shouldDelete == true) {
+                      controllerAdd.removeSubEvent(index);
+                    }
+                  },
+                ),
               ],
             ),
           ],
@@ -515,37 +600,36 @@ class SpeechTextField extends StatelessWidget {
           ),
         ),
         Selector<ControllerPageCalendarAdd, bool>(
-            selector: (_, ctl) =>
-                ctl.isListening && ctl.currentListeningKey == keyField,
-            builder: (_, isActive, _) {
-              return IconButton(
-                icon: Icon(
-                  Icons.mic,
-                  color: isActive ? Colors.red : null,
-                ),
-                tooltip: loc.speak,
-                onPressed: () async {
-                  if (controller.isListening &&
-                      controller.currentListeningKey == keyField) {
+          selector: (_, ctl) =>
+              ctl.isListening && ctl.currentListeningKey == keyField,
+          builder: (_, isActive, _) {
+            return IconButton(
+              icon: Icon(Icons.mic, color: isActive ? Colors.red : null),
+              tooltip: loc.speak,
+              onPressed: () async {
+                if (controller.isListening &&
+                    controller.currentListeningKey == keyField) {
+                  await controller.stopListening();
+                } else {
+                  if (controller.isListening) {
                     await controller.stopListening();
-                  } else {
-                    if (controller.isListening) {
-                      await controller.stopListening();
-                      await Future.delayed(const Duration(milliseconds: 200));
-                    }
-                    await controller.startListening(
-                        onResult: (text) {
-                          ctrl.text += ' $text'; // 加上追加模式
-                          ctrl.selection = TextSelection.fromPosition(
-                            TextPosition(offset: ctrl.text.length),
-                          );
-                          onChanged(ctrl.text);
-                        },
-                        key: keyField);
+                    await Future.delayed(const Duration(milliseconds: 200));
                   }
-                },
-              );
-            }),
+                  await controller.startListening(
+                    onResult: (text) {
+                      ctrl.text += ' $text'; // 加上追加模式
+                      ctrl.selection = TextSelection.fromPosition(
+                        TextPosition(offset: ctrl.text.length),
+                      );
+                      onChanged(ctrl.text);
+                    },
+                    key: keyField,
+                  );
+                }
+              },
+            );
+          },
+        ),
       ],
     );
   }

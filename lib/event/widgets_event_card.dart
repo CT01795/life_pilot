@@ -584,9 +584,8 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     final highlights = <_DiscoveryHighlight>[];
     final startDate = widget.eventViewModel.startDate;
     if (startDate != null) {
-      final days = DateTimeFormatter.dateOnly(
-        startDate,
-      ).difference(today).inDays;
+      final normalizedStart = DateTimeFormatter.dateOnly(startDate);
+      final days = normalizedStart.difference(today).inDays;
       if (days < 0) {
         final endDate = widget.eventViewModel.endDate;
         final normalizedEnd = endDate == null
@@ -621,6 +620,28 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
             loc.startsInDays(days),
           ),
         );
+      }
+      if (normalizedStart.weekday == DateTime.saturday ||
+          normalizedStart.weekday == DateTime.sunday) {
+        highlights.add(
+          _DiscoveryHighlight(Icons.weekend_outlined, loc.weekendEvent),
+        );
+      }
+      final endDate = widget.eventViewModel.endDate;
+      if (endDate != null) {
+        final durationDays =
+            DateTimeFormatter.dateOnly(
+              endDate,
+            ).difference(normalizedStart).inDays +
+            1;
+        if (durationDays > 1) {
+          highlights.add(
+            _DiscoveryHighlight(
+              Icons.date_range_outlined,
+              loc.multiDayEvent(durationDays),
+            ),
+          );
+        }
       }
     }
     final sessionCount = widget.eventViewModel.subEvents.length;

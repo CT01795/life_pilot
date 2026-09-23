@@ -28,30 +28,30 @@ class DashboardRepository {
 
   Future<List<CalendarEvent>> loadTodayEvents(String account) async {
     final now = DateTime.now();
-    final today = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    );
+    final today = DateTime(now.year, now.month, now.day);
 
-    final tomorrow = today.add(
-      const Duration(days: 3),
-    );
+    final tomorrow = today.add(const Duration(days: 3));
 
     if (await _storesLocally) {
       final rows = await LocalDataStore.instance.list(
         owner: _localOwner!,
         resource: TableNames.calendarEvents,
       );
-      final filtered = rows.where((row) {
-        if (row['is_completed'] == true) return false;
-        final date =
-            DateTime.tryParse(row['start_date']?.toString() ?? '')?.toLocal();
-        return date != null && !date.isBefore(today) && date.isBefore(tomorrow);
-      }).toList()
-        ..sort((a, b) => (a['start_date']?.toString() ?? '')
-            .compareTo(b['start_date']?.toString() ?? ''));
-      return filtered.take(5).map(CalendarEvent.fromJson).toList();
+      final filtered =
+          rows.where((row) {
+            if (row['is_completed'] == true) return false;
+            final date = DateTime.tryParse(
+              row['start_date']?.toString() ?? '',
+            )?.toLocal();
+            return date != null &&
+                !date.isBefore(today) &&
+                date.isBefore(tomorrow);
+          }).toList()..sort(
+            (a, b) => (a['start_date']?.toString() ?? '').compareTo(
+              b['start_date']?.toString() ?? '',
+            ),
+          );
+      return filtered.map(CalendarEvent.fromJson).toList();
     }
 
     final result = await supabase
@@ -62,29 +62,12 @@ class DashboardRepository {
         )
         .eq(Fields.account, account)
         .eq('is_completed', false)
-        .gte(
-          'start_date',
-          today.toUtc().toIso8601String(),
-        )
-        .lt(
-          'start_date',
-          tomorrow.toUtc().toIso8601String(),
-        )
-        .order(
-          'start_date',
-          ascending: true,
-        )
-        .order(
-          'start_time',
-          ascending: true,
-        )
-        .limit(5);
+        .gte('start_date', today.toUtc().toIso8601String())
+        .lt('start_date', tomorrow.toUtc().toIso8601String())
+        .order('start_date', ascending: true)
+        .order('start_time', ascending: true);
 
-    return (result as List)
-        .map(
-          (e) => CalendarEvent.fromJson(e),
-        )
-        .toList();
+    return (result as List).map((e) => CalendarEvent.fromJson(e)).toList();
   }
 
   Future<List<CalendarEvent>> getSpecificEvent(
@@ -102,8 +85,9 @@ class DashboardRepository {
               final dateComparison = (a['start_date']?.toString() ?? '')
                   .compareTo(b['start_date']?.toString() ?? '');
               if (dateComparison != 0) return dateComparison;
-              return (a['start_time']?.toString() ?? '')
-                  .compareTo(b['start_time']?.toString() ?? '');
+              return (a['start_time']?.toString() ?? '').compareTo(
+                b['start_time']?.toString() ?? '',
+              );
             });
       return filtered.map(CalendarEvent.fromJson).toList();
     }
@@ -113,20 +97,10 @@ class DashboardRepository {
         .select()
         .eq(Fields.account, account)
         .eq(Fields.id, eventId)
-        .order(
-          'start_date',
-          ascending: true,
-        )
-        .order(
-          'start_time',
-          ascending: true,
-        );
+        .order('start_date', ascending: true)
+        .order('start_time', ascending: true);
 
-    return (result as List)
-        .map(
-          (e) => CalendarEvent.fromJson(e),
-        )
-        .toList();
+    return (result as List).map((e) => CalendarEvent.fromJson(e)).toList();
   }
 
   Future<void> completeEvent({
@@ -153,17 +127,9 @@ class DashboardRepository {
     }
     await supabase
         .from(TableNames.calendarEvents)
-        .update({
-          'is_completed': true,
-        })
-        .eq(
-          Fields.id,
-          id,
-        )
-        .eq(
-          Fields.account,
-          account,
-        );
+        .update({'is_completed': true})
+        .eq(Fields.id, id)
+        .eq(Fields.account, account);
   }
 
   //=====================================================================================================
@@ -191,7 +157,10 @@ class DashboardRepository {
 
     if (result == null) {
       final setting = DashboardSetting(
-          recommendEventCity: '台北', recommendPlaceCity: '台北', language: 'zh');
+        recommendEventCity: '台北',
+        recommendPlaceCity: '台北',
+        language: 'zh',
+      );
 
       await supabase.from('dashboard_setting').insert({
         Fields.account: account,
@@ -251,10 +220,7 @@ class DashboardRepository {
         owner: account,
         resource: TableNames.dashboardSetting,
         id: account.toLowerCase(),
-        data: {
-          Fields.account: account,
-          ...setting.toJson(),
-        },
+        data: {Fields.account: account, ...setting.toJson()},
       );
       return;
     }
@@ -268,60 +234,39 @@ class DashboardRepository {
     await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc('get_event_city_counts');
 
-    return (result as List)
-        .map(
-          (e) => DashboardCity.fromJson(e),
-        )
-        .toList();
+    return (result as List).map((e) => DashboardCity.fromJson(e)).toList();
   }
 
   Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
     await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc(
       'get_home_recommended_events',
-      params: {
-        'p_city': city,
-        'p_limit': 5,
-      },
+      params: {'p_city': city, 'p_limit': 5},
     );
 
-    return (result as List)
-        .map(
-          (e) => RecommendedEvent.fromJson(e),
-        )
-        .toList();
+    return (result as List).map((e) => RecommendedEvent.fromJson(e)).toList();
   }
 
   Future<List<DashboardCity>> loadPlaceCities() async {
     await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc('get_place_city_counts');
 
-    return (result as List)
-        .map(
-          (e) => DashboardCity.fromJson(e),
-        )
-        .toList();
+    return (result as List).map((e) => DashboardCity.fromJson(e)).toList();
   }
 
   Future<List<RecommendedPlace>> loadRecommendPlaces(String city) async {
     await _requireNetworkForLocalCloudContent();
     final result = await supabase.rpc(
       'get_home_recommended_places',
-      params: {
-        'p_city': city,
-        'p_limit': 5,
-      },
+      params: {'p_city': city, 'p_limit': 5},
     );
 
-    return (result as List)
-        .map(
-          (e) => RecommendedPlace.fromJson(e),
-        )
-        .toList();
+    return (result as List).map((e) => RecommendedPlace.fromJson(e)).toList();
   }
 
-  Future<AccountingDashboardSummary> loadAccountingSummary(
-      {required String accountId}) async {
+  Future<AccountingDashboardSummary> loadAccountingSummary({
+    required String accountId,
+  }) async {
     if (accountId.isEmpty) return const AccountingDashboardSummary.empty();
     if (await _storesLocally) {
       final accounts = await LocalDataStore.instance.list(
@@ -329,9 +274,11 @@ class DashboardRepository {
         resource: TableNames.accountingAccount,
       );
       final account = accounts
-          .where((row) =>
-              row[Fields.id]?.toString() == accountId &&
-              row[Fields.isValid] == true)
+          .where(
+            (row) =>
+                row[Fields.id]?.toString() == accountId &&
+                row[Fields.isValid] == true,
+          )
           .firstOrNull;
       if (account == null) return const AccountingDashboardSummary.empty();
       final currency = account['main_currency']?.toString() ?? 'TWD';
@@ -353,10 +300,7 @@ class DashboardRepository {
     final accountResult = await supabase
         .from(TableNames.accountingAccount)
         .select('id,main_currency,balance')
-        .eq(
-          Fields.id,
-          accountId,
-        )
+        .eq(Fields.id, accountId)
         .eq(Fields.isValid, true)
         .maybeSingle();
 
@@ -366,38 +310,21 @@ class DashboardRepository {
     //final accountId = accountResult[Fields.id];
     final currency = accountResult['main_currency'];
     final now = DateTime.now();
-    final start = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    );
-    final end = start.add(
-      const Duration(days: 1),
-    );
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
     final result = await supabase
         .from(TableNames.accountingDetail)
         .select('description,value,currency,created_at,date,group')
-        .eq(
-          'account_id',
-          accountId,
-        )
+        .eq('account_id', accountId)
         .eq('currency', currency)
-        .gte(
-          'date',
-          start.toUtc().toIso8601String(),
-        )
-        .lt(
-          'date',
-          end.toUtc().toIso8601String(),
-        )
+        .gte('date', start.toUtc().toIso8601String())
+        .lt('date', end.toUtc().toIso8601String())
         .order('date', ascending: false);
 
     final rows = result as List;
     final records = rows
         .take(5)
-        .map(
-          (e) => IncomeExpenseItem.fromJson(e),
-        )
+        .map((e) => IncomeExpenseItem.fromJson(e))
         .toList();
     return AccountingDashboardSummary(
       records: records,
@@ -410,8 +337,9 @@ class DashboardRepository {
     );
   }
 
-  Future<PointDashboardSummary> loadPointSummary(
-      {required String accountId}) async {
+  Future<PointDashboardSummary> loadPointSummary({
+    required String accountId,
+  }) async {
     if (accountId.isEmpty) return const PointDashboardSummary.empty();
     if (await _storesLocally) {
       final accounts = await LocalDataStore.instance.list(
@@ -419,9 +347,11 @@ class DashboardRepository {
         resource: TableNames.pointRecordAccount,
       );
       final account = accounts
-          .where((row) =>
-              row[Fields.id]?.toString() == accountId &&
-              row[Fields.isValid] == true)
+          .where(
+            (row) =>
+                row[Fields.id]?.toString() == accountId &&
+                row[Fields.isValid] == true,
+          )
           .firstOrNull;
       if (account == null) return const PointDashboardSummary.empty();
       final rows = await _todayLocalDetails(
@@ -440,10 +370,7 @@ class DashboardRepository {
     final accountResult = await supabase
         .from(TableNames.pointRecordAccount)
         .select('id,points')
-        .eq(
-          Fields.id,
-          accountId,
-        )
+        .eq(Fields.id, accountId)
         .eq(Fields.isValid, true)
         .maybeSingle();
 
@@ -452,37 +379,20 @@ class DashboardRepository {
     }
     //final accountId = accountResult[Fields.id];
     final now = DateTime.now();
-    final start = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    );
-    final end = start.add(
-      const Duration(days: 1),
-    );
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
     final result = await supabase
         .from(TableNames.pointRecordDetail)
         .select('description,type,value,created_at,date,group')
-        .eq(
-          'account_id',
-          accountId,
-        )
-        .gte(
-          'date',
-          start.toUtc().toIso8601String(),
-        )
-        .lt(
-          'date',
-          end.toUtc().toIso8601String(),
-        )
+        .eq('account_id', accountId)
+        .gte('date', start.toUtc().toIso8601String())
+        .lt('date', end.toUtc().toIso8601String())
         .order('date', ascending: false);
 
     final rows = result as List;
     final records = rows
         .take(5)
-        .map(
-          (e) => PointRecordItem.fromJson(e),
-        )
+        .map((e) => PointRecordItem.fromJson(e))
         .toList();
     return PointDashboardSummary(
       records: records,
@@ -506,16 +416,21 @@ class DashboardRepository {
       owner: _localOwner!,
       resource: resource,
     );
-    final result = rows.where((row) {
-      if (row['account_id']?.toString() != accountId) return false;
-      if (currency != null && row['currency']?.toString() != currency) {
-        return false;
-      }
-      final date = DateTime.tryParse(row['date']?.toString() ?? '')?.toLocal();
-      return date != null && !date.isBefore(start) && date.isBefore(end);
-    }).toList()
-      ..sort((a, b) =>
-          (b['date']?.toString() ?? '').compareTo(a['date']?.toString() ?? ''));
+    final result =
+        rows.where((row) {
+          if (row['account_id']?.toString() != accountId) return false;
+          if (currency != null && row['currency']?.toString() != currency) {
+            return false;
+          }
+          final date = DateTime.tryParse(
+            row['date']?.toString() ?? '',
+          )?.toLocal();
+          return date != null && !date.isBefore(start) && date.isBefore(end);
+        }).toList()..sort(
+          (a, b) => (b['date']?.toString() ?? '').compareTo(
+            a['date']?.toString() ?? '',
+          ),
+        );
     return result;
   }
 }

@@ -707,27 +707,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get startsTomorrow => '明日開始';
 
   @override
-  String startsInDays(Object count) {
+  String startsInDays(int count) {
     return '$count日後に開始';
   }
 
   @override
-  String eventSessionCount(Object count) {
+  String eventSessionCount(int count) {
     return '全$count回';
   }
 
   @override
-  String memoryCountForDay(Object count) {
+  String memoryCountForDay(int count) {
     return '思い出$count件';
   }
 
   @override
-  String gameProgressSummary(Object passed, Object total) {
+  String gameProgressSummary(int passed, int total) {
     return '$totalステージ中$passedステージクリア';
   }
 
   @override
-  String gameRecentBestScore(Object score) {
+  String gameRecentBestScore(String score) {
     return '最近の最高 $score';
   }
 
@@ -1847,12 +1847,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get scheduleAlreadyStarted => '予定は開始済みです';
 
   @override
-  String scheduleStartsInMinutes(Object count) {
+  String scheduleStartsInMinutes(int count) {
     return '$count分後に開始';
   }
 
   @override
-  String scheduleStartsInHours(Object count) {
+  String scheduleStartsInHours(int count) {
     return '$count時間後に開始';
   }
 
@@ -1860,17 +1860,40 @@ class AppLocalizationsJa extends AppLocalizations {
   String get endsToday => '開始済み、本日終了';
 
   @override
-  String ongoingUntil(Object date) {
+  String ongoingUntil(String date) {
     return '$dateまで開催中';
   }
 
   @override
-  String memoryCountForMonth(Object count) {
+  String memoryCountForMonth(int count) {
     return '今月$count件';
   }
 
   @override
-  String gameRecentPracticeSummary(Object attempts, Object passed) {
+  String gameRecentPracticeSummary(int attempts, int passed) {
     return '最近$attempts回練習、$passed回クリア';
+  }
+
+  @override
+  String scheduleConflictCount(int count) {
+    return '予定の時間重複が$count件あります';
+  }
+
+  @override
+  String scheduleConflictBeforeSave(int count) {
+    return 'この時間は未完了の予定$count件と重複しています。それでも保存しますか？';
+  }
+
+  @override
+  String get weekendEvent => '週末イベント';
+
+  @override
+  String multiDayEvent(int count) {
+    return '連続$count日間';
+  }
+
+  @override
+  String continueLevel(int level) {
+    return 'ステージ$levelを続ける';
   }
 }

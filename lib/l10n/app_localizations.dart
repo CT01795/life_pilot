@@ -1431,95 +1431,95 @@ abstract class AppLocalizations {
   /// **'See your schedule, money, and points together. Tap an item for details.'**
   String get todayLifeOverviewHint;
 
-  /// No description provided for @homeInsightDiscover.
+  /// Hint for discovering events or places when there is no schedule today
   ///
   /// In en, this message translates to:
   /// **'Nothing planned today. Start with an event or place that interests you.'**
   String get homeInsightDiscover;
 
-  /// No description provided for @homeInsightConnectAccounts.
+  /// Hint for connecting money and points accounts
   ///
   /// In en, this message translates to:
   /// **'Choose money and points accounts to review your day in one step.'**
   String get homeInsightConnectAccounts;
 
-  /// No description provided for @homeInsightReadyForReview.
+  /// Hint for when the day is ready for review
   ///
   /// In en, this message translates to:
   /// **'Today\'s schedule is connected to memories, money, and points for one-step review.'**
   String get homeInsightReadyForReview;
 
-  /// No description provided for @quickAddAccounting.
+  /// Label for quickAddAccounting
   ///
   /// In en, this message translates to:
   /// **'Quick money entry'**
   String get quickAddAccounting;
 
-  /// No description provided for @quickAddPoints.
+  /// Label for quickAddPoints
   ///
   /// In en, this message translates to:
   /// **'Quick points entry'**
   String get quickAddPoints;
 
-  /// No description provided for @findRecommendedEvent.
+  /// Label for findRecommendedEvent
   ///
   /// In en, this message translates to:
   /// **'Find an event'**
   String get findRecommendedEvent;
 
-  /// No description provided for @findRecommendedPlace.
+  /// Label for findRecommendedPlace
   ///
   /// In en, this message translates to:
   /// **'Find a place'**
   String get findRecommendedPlace;
 
-  /// No description provided for @startsToday.
+  /// Label for startsToday
   ///
   /// In en, this message translates to:
   /// **'Starts today'**
   String get startsToday;
 
-  /// No description provided for @alreadyStarted.
+  /// Label for alreadyStarted
   ///
   /// In en, this message translates to:
   /// **'Already started'**
   String get alreadyStarted;
 
-  /// No description provided for @startsTomorrow.
+  /// Label for startsTomorrow
   ///
   /// In en, this message translates to:
   /// **'Starts tomorrow'**
   String get startsTomorrow;
 
-  /// No description provided for @startsInDays.
+  /// Label for startsInDays
   ///
   /// In en, this message translates to:
   /// **'Starts in {count} days'**
-  String startsInDays(Object count);
+  String startsInDays(int count);
 
-  /// No description provided for @eventSessionCount.
+  /// Label for eventSessionCount
   ///
   /// In en, this message translates to:
   /// **'{count} sessions'**
-  String eventSessionCount(Object count);
+  String eventSessionCount(int count);
 
-  /// No description provided for @memoryCountForDay.
+  /// Label for memoryCountForDay
   ///
   /// In en, this message translates to:
   /// **'{count} memories'**
-  String memoryCountForDay(Object count);
+  String memoryCountForDay(int count);
 
-  /// No description provided for @gameProgressSummary.
+  /// Label for gameProgressSummary
   ///
   /// In en, this message translates to:
   /// **'Passed {passed} of {total} levels'**
-  String gameProgressSummary(Object passed, Object total);
+  String gameProgressSummary(int passed, int total);
 
-  /// No description provided for @gameRecentBestScore.
+  /// Label for gameRecentBestScore
   ///
   /// In en, this message translates to:
   /// **'Recent best {score}'**
-  String gameRecentBestScore(Object score);
+  String gameRecentBestScore(String score);
 
   /// Label for addToSchedule
   ///
@@ -3633,47 +3633,77 @@ abstract class AppLocalizations {
   /// **'Data cleanup failed'**
   String get dataCleanupFailed;
 
-  /// No description provided for @scheduleAlreadyStarted.
+  /// Label for scheduleAlreadyStarted
   ///
   /// In en, this message translates to:
   /// **'Schedule already started'**
   String get scheduleAlreadyStarted;
 
-  /// No description provided for @scheduleStartsInMinutes.
+  /// Label for scheduleStartsInMinutes
   ///
   /// In en, this message translates to:
   /// **'Starts in {count} min'**
-  String scheduleStartsInMinutes(Object count);
+  String scheduleStartsInMinutes(int count);
 
-  /// No description provided for @scheduleStartsInHours.
+  /// Label for scheduleStartsInHours
   ///
   /// In en, this message translates to:
   /// **'Starts in {count} hr'**
-  String scheduleStartsInHours(Object count);
+  String scheduleStartsInHours(int count);
 
-  /// No description provided for @endsToday.
+  /// Label for endsToday
   ///
   /// In en, this message translates to:
   /// **'Already started, ends today'**
   String get endsToday;
 
-  /// No description provided for @ongoingUntil.
+  /// Label for ongoingUntil
   ///
   /// In en, this message translates to:
   /// **'Ongoing until {date}'**
-  String ongoingUntil(Object date);
+  String ongoingUntil(String date);
 
-  /// No description provided for @memoryCountForMonth.
+  /// Label for memoryCountForMonth
   ///
   /// In en, this message translates to:
   /// **'{count} this month'**
-  String memoryCountForMonth(Object count);
+  String memoryCountForMonth(int count);
 
-  /// No description provided for @gameRecentPracticeSummary.
+  /// Label for gameRecentPracticeSummary
   ///
   /// In en, this message translates to:
   /// **'{attempts} recent attempts, {passed} passed'**
-  String gameRecentPracticeSummary(Object attempts, Object passed);
+  String gameRecentPracticeSummary(int attempts, int passed);
+
+  /// Label for scheduleConflictCount
+  ///
+  /// In en, this message translates to:
+  /// **'{count} schedule time conflicts'**
+  String scheduleConflictCount(int count);
+
+  /// Warning before saving an overlapping calendar event
+  ///
+  /// In en, this message translates to:
+  /// **'This time overlaps with {count} unfinished schedule items. Save anyway?'**
+  String scheduleConflictBeforeSave(int count);
+
+  /// Label for weekendEvent
+  ///
+  /// In en, this message translates to:
+  /// **'Weekend event'**
+  String get weekendEvent;
+
+  /// Label for multiDayEvent
+  ///
+  /// In en, this message translates to:
+  /// **'{count} consecutive days'**
+  String multiDayEvent(int count);
+
+  /// Label for continueLevel
+  ///
+  /// In en, this message translates to:
+  /// **'Continue level {level}'**
+  String continueLevel(int level);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
