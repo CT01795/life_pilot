@@ -1880,8 +1880,39 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String scheduleConflictBeforeSave(int count) {
-    return 'この時間は未完了の予定$count件と重複しています。それでも保存しますか？';
+  String scheduleConflictBeforeSave(int count, String details) {
+    return 'この時間は未完了の予定$count件と重複しています：\n$details\nそれでも保存しますか？';
+  }
+
+  @override
+  String tomorrowScheduleCount(int count) {
+    return '明日の予定：$count件';
+  }
+
+  @override
+  String nextFreeHour(String startTime, String endTime) {
+    return '今日 $startTime～$endTime は予定なし';
+  }
+
+  @override
+  String get scheduleNeedsReview => '予定は終了しています。完了したか確認してください。';
+
+  @override
+  String scheduleNeedsReviewCount(int count) {
+    return '確認待ちの予定が$count件あります';
+  }
+
+  @override
+  String get scheduleAwaitingReview => '確認待ちの予定';
+
+  @override
+  String scheduleConflictToday(int count) {
+    return '今日の予定に時間重複が$count件あります';
+  }
+
+  @override
+  String scheduleConflictTomorrow(int count) {
+    return '明日の予定に時間重複が$count件あります';
   }
 
   @override

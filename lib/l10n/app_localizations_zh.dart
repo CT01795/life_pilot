@@ -1880,8 +1880,39 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String scheduleConflictBeforeSave(int count) {
-    return '此時段與 $count 個未完成行程重疊，仍要儲存嗎？';
+  String scheduleConflictBeforeSave(int count, String details) {
+    return '此時段與 $count 個未完成行程重疊：\n$details\n仍要儲存嗎？';
+  }
+
+  @override
+  String tomorrowScheduleCount(int count) {
+    return '明天有 $count 個行程';
+  }
+
+  @override
+  String nextFreeHour(String startTime, String endTime) {
+    return '今天 $startTime～$endTime 沒有行程';
+  }
+
+  @override
+  String get scheduleNeedsReview => '行程已結束，記得確認是否完成';
+
+  @override
+  String scheduleNeedsReviewCount(int count) {
+    return '有 $count 個行程待確認';
+  }
+
+  @override
+  String get scheduleAwaitingReview => '待確認行程';
+
+  @override
+  String scheduleConflictToday(int count) {
+    return '今天有 $count 組行程時間重疊';
+  }
+
+  @override
+  String scheduleConflictTomorrow(int count) {
+    return '明天有 $count 組行程時間重疊';
   }
 
   @override

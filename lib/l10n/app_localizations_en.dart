@@ -1880,8 +1880,39 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String scheduleConflictBeforeSave(int count) {
-    return 'This time overlaps with $count unfinished schedule items. Save anyway?';
+  String scheduleConflictBeforeSave(int count, String details) {
+    return 'This time overlaps with $count unfinished schedule items:\n$details\nSave anyway?';
+  }
+
+  @override
+  String tomorrowScheduleCount(int count) {
+    return 'Tomorrow: $count schedules';
+  }
+
+  @override
+  String nextFreeHour(String startTime, String endTime) {
+    return 'No schedule today from $startTime to $endTime';
+  }
+
+  @override
+  String get scheduleNeedsReview => 'This schedule has ended. Check whether it is complete.';
+
+  @override
+  String scheduleNeedsReviewCount(int count) {
+    return '$count schedules need review';
+  }
+
+  @override
+  String get scheduleAwaitingReview => 'Schedule awaiting review';
+
+  @override
+  String scheduleConflictToday(int count) {
+    return 'Today has $count schedule time conflicts';
+  }
+
+  @override
+  String scheduleConflictTomorrow(int count) {
+    return 'Tomorrow has $count schedule time conflicts';
   }
 
   @override

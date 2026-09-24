@@ -112,10 +112,14 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       FocusScope.of(context).unfocus();
 
       EventItem event = controllerAdd.toEventItem();
-      final conflictCount = _countScheduleConflicts(event);
-      if (conflictCount > 0) {
+      final conflicts = _scheduleConflicts(event);
+      if (conflicts.isNotEmpty) {
+        final details = conflicts
+            .take(3)
+            .map((conflict) => _conflictLabel(conflict))
+            .join('\n');
         final shouldContinue = await showConfirmationDialog(
-          content: loc.scheduleConflictBeforeSave(conflictCount),
+          content: loc.scheduleConflictBeforeSave(conflicts.length, details),
           confirmText: loc.continueLabel,
           cancelText: loc.cancel,
         );
@@ -152,13 +156,13 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     }
   }
 
-  int _countScheduleConflicts(EventItem candidate) {
+  List<EventItem> _scheduleConflicts(EventItem candidate) {
     final candidateStartDate = candidate.startDate;
-    if (candidateStartDate == null || candidate.isCompleted) return 0;
+    if (candidateStartDate == null || candidate.isCompleted) return const [];
     final candidateInterval = _eventInterval(candidate);
-    if (candidateInterval == null) return 0;
+    if (candidateInterval == null) return const [];
 
-    return widget.controllerCalendar
+    final conflicts = widget.controllerCalendar
         .getEventsOfDay(candidateStartDate)
         .where(
           (event) =>
@@ -166,7 +170,23 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
               event.id != candidate.id &&
               _intervalsOverlap(candidateInterval, _eventInterval(event)),
         )
-        .length;
+        .toList(growable: false);
+    conflicts.sort((left, right) {
+      final leftMinutes =
+          (left.startTime?.hour ?? 0) * 60 + (left.startTime?.minute ?? 0);
+      final rightMinutes =
+          (right.startTime?.hour ?? 0) * 60 + (right.startTime?.minute ?? 0);
+      return leftMinutes.compareTo(rightMinutes);
+    });
+    return conflicts;
+  }
+
+  String _conflictLabel(EventItem event) {
+    final startTime = event.startTime;
+    final time = startTime == null
+        ? ''
+        : MaterialLocalizations.of(context).formatTimeOfDay(startTime);
+    return time.isEmpty ? '• ${event.name}' : '• $time  ${event.name}';
   }
 
   ({DateTime start, DateTime end})? _eventInterval(EventItem event) {

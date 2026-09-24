@@ -3684,8 +3684,50 @@ abstract class AppLocalizations {
   /// Warning before saving an overlapping calendar event
   ///
   /// In en, this message translates to:
-  /// **'This time overlaps with {count} unfinished schedule items. Save anyway?'**
-  String scheduleConflictBeforeSave(int count);
+  /// **'This time overlaps with {count} unfinished schedule items:\n{details}\nSave anyway?'**
+  String scheduleConflictBeforeSave(int count, String details);
+
+  /// Tomorrow schedule count shown on the home overview
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow: {count} schedules'**
+  String tomorrowScheduleCount(int count);
+
+  /// Next available one-hour schedule window
+  ///
+  /// In en, this message translates to:
+  /// **'No schedule today from {startTime} to {endTime}'**
+  String nextFreeHour(String startTime, String endTime);
+
+  /// Reminder for an ended but unfinished schedule
+  ///
+  /// In en, this message translates to:
+  /// **'This schedule has ended. Check whether it is complete.'**
+  String get scheduleNeedsReview;
+
+  /// Count of ended but unfinished schedules
+  ///
+  /// In en, this message translates to:
+  /// **'{count} schedules need review'**
+  String scheduleNeedsReviewCount(int count);
+
+  /// Label for an ended but unfinished next schedule
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule awaiting review'**
+  String get scheduleAwaitingReview;
+
+  /// Today schedule conflict count
+  ///
+  /// In en, this message translates to:
+  /// **'Today has {count} schedule time conflicts'**
+  String scheduleConflictToday(int count);
+
+  /// Tomorrow schedule conflict count
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow has {count} schedule time conflicts'**
+  String scheduleConflictTomorrow(int count);
 
   /// Label for weekendEvent
   ///

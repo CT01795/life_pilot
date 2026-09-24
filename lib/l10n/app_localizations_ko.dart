@@ -1880,8 +1880,39 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String scheduleConflictBeforeSave(int count) {
-    return '이 시간이 완료되지 않은 일정 $count개와 겹칩니다. 그래도 저장할까요?';
+  String scheduleConflictBeforeSave(int count, String details) {
+    return '이 시간이 완료되지 않은 일정 $count개와 겹칩니다:\n$details\n그래도 저장할까요?';
+  }
+
+  @override
+  String tomorrowScheduleCount(int count) {
+    return '내일 일정 $count개';
+  }
+
+  @override
+  String nextFreeHour(String startTime, String endTime) {
+    return '오늘 $startTime~$endTime 일정 없음';
+  }
+
+  @override
+  String get scheduleNeedsReview => '일정이 종료되었습니다. 완료 여부를 확인해 주세요.';
+
+  @override
+  String scheduleNeedsReviewCount(int count) {
+    return '확인이 필요한 일정 $count개';
+  }
+
+  @override
+  String get scheduleAwaitingReview => '확인 대기 일정';
+
+  @override
+  String scheduleConflictToday(int count) {
+    return '오늘 일정 시간 겹침 $count건';
+  }
+
+  @override
+  String scheduleConflictTomorrow(int count) {
+    return '내일 일정 시간 겹침 $count건';
   }
 
   @override

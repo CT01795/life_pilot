@@ -14,6 +14,8 @@ import 'package:life_pilot/point_record/controller_point_record_list.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
+  static final Expando<_MemoryTimelineCounts> _timelineCountsCache = Expando();
+
   final ControllerAuth auth;
   final List<EventItem> filteredEvents;
   final ScrollController scrollController;
@@ -30,16 +32,8 @@ class WidgetsMemoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final dailyCounts = <int, int>{};
-    final monthlyCounts = <int, int>{};
-    for (final event in filteredEvents) {
-      final date = event.startDate;
-      if (date == null) continue;
-      final key = _dayKey(date);
-      dailyCounts[key] = (dailyCounts[key] ?? 0) + 1;
-      final monthKey = _monthKey(date);
-      monthlyCounts[monthKey] = (monthlyCounts[monthKey] ?? 0) + 1;
-    }
+    final timelineCounts = _timelineCountsCache[filteredEvents] ??=
+        _MemoryTimelineCounts.from(filteredEvents);
 
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
@@ -124,7 +118,7 @@ class WidgetsMemoryList extends StatelessWidget {
                     ),
                     Text(
                       loc.memoryCountForMonth(
-                        monthlyCounts[_monthKey(date)] ?? 1,
+                        timelineCounts.monthly[_monthKey(date)] ?? 1,
                       ),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
@@ -158,7 +152,9 @@ class WidgetsMemoryList extends StatelessWidget {
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: Text(
-                        loc.memoryCountForDay(dailyCounts[_dayKey(date)] ?? 1),
+                        loc.memoryCountForDay(
+                          timelineCounts.daily[_dayKey(date)] ?? 1,
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF6D4876),
                           fontWeight: FontWeight.w700,
@@ -290,4 +286,25 @@ class WidgetsMemoryList extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MemoryTimelineCounts {
+  const _MemoryTimelineCounts({required this.daily, required this.monthly});
+
+  factory _MemoryTimelineCounts.from(List<EventItem> events) {
+    final daily = <int, int>{};
+    final monthly = <int, int>{};
+    for (final event in events) {
+      final date = event.startDate;
+      if (date == null) continue;
+      final dayKey = date.year * 10000 + date.month * 100 + date.day;
+      final monthKey = date.year * 100 + date.month;
+      daily[dayKey] = (daily[dayKey] ?? 0) + 1;
+      monthly[monthKey] = (monthly[monthKey] ?? 0) + 1;
+    }
+    return _MemoryTimelineCounts(daily: daily, monthly: monthly);
+  }
+
+  final Map<int, int> daily;
+  final Map<int, int> monthly;
 }

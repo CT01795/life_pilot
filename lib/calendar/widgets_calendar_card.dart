@@ -304,18 +304,15 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
             Text(widget.eventViewModel.description),
           if (widget.showSubEvents &&
               widget.eventViewModel.subEvents.isNotEmpty)
-            ListView.builder(
-              shrinkWrap: true, // 讓 ListView 自動高度
-              physics:
-                  const NeverScrollableScrollPhysics(), // 禁止 ListView 滾動，交給外層 ScrollView
-              itemCount: widget.eventViewModel.subEvents.length,
-              itemBuilder: (context, index) {
-                final sub = widget.eventViewModel.subEvents[index];
-                return WidgetsCalendarSubCard(
-                  event: sub,
-                  onOpenLink: widget.onOpenLink,
-                );
-              },
+            Column(
+              children: [
+                for (final sub in widget.eventViewModel.subEvents)
+                  WidgetsCalendarSubCard(
+                    key: ValueKey(sub.id),
+                    event: sub,
+                    onOpenLink: widget.onOpenLink,
+                  ),
+              ],
             ),
         ],
       ),
