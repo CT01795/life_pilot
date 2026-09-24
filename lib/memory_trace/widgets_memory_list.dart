@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
   static final Expando<_MemoryTimelineCounts> _timelineCountsCache = Expando();
+  static final Map<String, _MemoryDateFormats> _dateFormatsCache = {};
 
   final ControllerAuth auth;
   final List<EventItem> filteredEvents;
@@ -34,6 +35,10 @@ class WidgetsMemoryList extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final timelineCounts = _timelineCountsCache[filteredEvents] ??=
         _MemoryTimelineCounts.from(filteredEvents);
+    final dateFormats = _dateFormatsCache.putIfAbsent(
+      loc.localeName,
+      () => _MemoryDateFormats(loc.localeName),
+    );
 
     return ListView.builder(
       key: PageStorageKey(controllerEvent.fromTableName),
@@ -90,6 +95,12 @@ class WidgetsMemoryList extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (index == 0)
+              _MemoryJourneySummary(
+                memoryCount: timelineCounts.memoryCount,
+                dayCount: timelineCounts.dayCount,
+                cityCount: timelineCounts.cityCount,
+              ),
             if (showMonthHeader)
               Container(
                 width: double.infinity,
@@ -111,7 +122,7 @@ class WidgetsMemoryList extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        DateFormat.yMMMM(loc.localeName).format(date),
+                        dateFormats.month.format(date),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
@@ -134,7 +145,7 @@ class WidgetsMemoryList extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        _dateLabel(context, date),
+                        dateFormats.day.format(date),
                         style: const TextStyle(
                           color: Color(0xFF6D4876),
                           fontSize: 18,
@@ -259,11 +270,6 @@ class WidgetsMemoryList extends StatelessWidget {
   bool _sameMonth(DateTime date, DateTime? other) =>
       other != null && date.year == other.year && date.month == other.month;
 
-  String _dateLabel(BuildContext context, DateTime date) {
-    final locale = Localizations.localeOf(context).toString();
-    return DateFormat.yMMMMd(locale).format(date);
-  }
-
   void _showEventDialog({
     required BuildContext context,
     required EventViewModel eventViewModel,
@@ -288,12 +294,70 @@ class WidgetsMemoryList extends StatelessWidget {
   }
 }
 
+class _MemoryJourneySummary extends StatelessWidget {
+  const _MemoryJourneySummary({
+    required this.memoryCount,
+    required this.dayCount,
+    required this.cityCount,
+  });
+
+  final int memoryCount;
+  final int dayCount;
+  final int cityCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.route_outlined, color: colors.onSecondaryContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              loc.memoryJourneySummary(memoryCount, dayCount, cityCount),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colors.onSecondaryContainer,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemoryDateFormats {
+  _MemoryDateFormats(String locale)
+    : month = DateFormat.yMMMM(locale),
+      day = DateFormat.yMMMMd(locale);
+
+  final DateFormat month;
+  final DateFormat day;
+}
+
 class _MemoryTimelineCounts {
-  const _MemoryTimelineCounts({required this.daily, required this.monthly});
+  const _MemoryTimelineCounts({
+    required this.daily,
+    required this.monthly,
+    required this.memoryCount,
+    required this.dayCount,
+    required this.cityCount,
+  });
 
   factory _MemoryTimelineCounts.from(List<EventItem> events) {
     final daily = <int, int>{};
     final monthly = <int, int>{};
+    final cities = <String>{};
     for (final event in events) {
       final date = event.startDate;
       if (date == null) continue;
@@ -301,10 +365,21 @@ class _MemoryTimelineCounts {
       final monthKey = date.year * 100 + date.month;
       daily[dayKey] = (daily[dayKey] ?? 0) + 1;
       monthly[monthKey] = (monthly[monthKey] ?? 0) + 1;
+      final city = event.city.trim().toLowerCase();
+      if (city.isNotEmpty) cities.add(city);
     }
-    return _MemoryTimelineCounts(daily: daily, monthly: monthly);
+    return _MemoryTimelineCounts(
+      daily: daily,
+      monthly: monthly,
+      memoryCount: events.length,
+      dayCount: daily.length,
+      cityCount: cities.length,
+    );
   }
 
   final Map<int, int> daily;
   final Map<int, int> monthly;
+  final int memoryCount;
+  final int dayCount;
+  final int cityCount;
 }

@@ -16,6 +16,8 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PointSummaryCard extends StatelessWidget {
+  static final Map<String, NumberFormat> _formatters = {};
+
   final bool isExpanded;
   final ValueChanged<bool> onExpansionChanged;
 
@@ -49,7 +51,10 @@ class PointSummaryCard extends StatelessWidget {
       (m) => m.state.pointsTotal,
     );
 
-    final formatter = NumberFormat('#,###');
+    final formatter = _formatters.putIfAbsent(
+      loc.localeName,
+      () => NumberFormat('#,###', loc.localeName),
+    );
 
     return Card(
       color: colorScheme.brightness == Brightness.dark
@@ -184,7 +189,8 @@ class PointSummaryCard extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () async {
-                    if (context.read<ModelDashboard>().setting.pointAccountId != null) {
+                    if (context.read<ModelDashboard>().setting.pointAccountId !=
+                        null) {
                       await openHomePointDetails(context);
                     } else if (context.mounted) {
                       context.read<ControllerPageMain>().changePage(

@@ -1906,6 +1906,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scheduleAwaitingReview => '待確認行程';
 
   @override
+  String homeInsightReviewOverdue(int count) {
+    return '今天有 $count 個已結束行程尚未確認，別讓重要事情被遺漏。';
+  }
+
+  @override
+  String homeInsightResolveConflicts(int count) {
+    return '今明兩天有 $count 個行程時間重疊，建議先調整安排。';
+  }
+
+  @override
+  String memoryJourneySummary(int memoryCount, int dayCount, int cityCount) {
+    return '目前載入 $memoryCount 段回憶，分布在 $dayCount 天、$cityCount 個城市';
+  }
+
+  @override
+  String viewRemainingSchedules(int count) {
+    return '查看另外 $count 個行程';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return '今天有 $count 組行程時間重疊';
   }

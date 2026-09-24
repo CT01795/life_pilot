@@ -1906,6 +1906,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scheduleAwaitingReview => '확인 대기 일정';
 
   @override
+  String homeInsightReviewOverdue(int count) {
+    return '오늘 종료된 일정 $count개가 아직 확인되지 않았습니다. 중요한 일을 확인해 주세요.';
+  }
+
+  @override
+  String homeInsightResolveConflicts(int count) {
+    return '오늘과 내일 일정 $count개의 시간이 겹칩니다. 먼저 일정을 조정해 보세요.';
+  }
+
+  @override
+  String memoryJourneySummary(int memoryCount, int dayCount, int cityCount) {
+    return '불러온 추억 $memoryCount개 · $dayCount일 · $cityCount개 도시';
+  }
+
+  @override
+  String viewRemainingSchedules(int count) {
+    return '나머지 일정 $count개 보기';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return '오늘 일정 시간 겹침 $count건';
   }

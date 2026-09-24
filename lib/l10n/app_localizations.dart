@@ -3717,6 +3717,30 @@ abstract class AppLocalizations {
   /// **'Schedule awaiting review'**
   String get scheduleAwaitingReview;
 
+  /// Home insight for ended unfinished schedules
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ended schedules still need review today. Do not let important tasks slip away.'**
+  String homeInsightReviewOverdue(int count);
+
+  /// Home insight for conflicting schedules
+  ///
+  /// In en, this message translates to:
+  /// **'{count} schedules overlap today or tomorrow. Consider adjusting your plan first.'**
+  String homeInsightResolveConflicts(int count);
+
+  /// Summary of loaded memory journey
+  ///
+  /// In en, this message translates to:
+  /// **'{memoryCount} loaded memories across {dayCount} days and {cityCount} cities'**
+  String memoryJourneySummary(int memoryCount, int dayCount, int cityCount);
+
+  /// Open the calendar to view schedules hidden from the home preview
+  ///
+  /// In en, this message translates to:
+  /// **'View {count} more schedules'**
+  String viewRemainingSchedules(int count);
+
   /// Today schedule conflict count
   ///
   /// In en, this message translates to:

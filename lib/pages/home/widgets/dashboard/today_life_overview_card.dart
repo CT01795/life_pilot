@@ -63,7 +63,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
     final pointsLoading = context.select<ModelDashboard, bool>(
       (model) => model.isLoading(DashboardSection.points),
     );
-    final numberFormat = NumberFormat('#,##0.##');
+    final numberFormats = _OverviewNumberFormats.forLocale(loc.localeName);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -101,11 +101,12 @@ class TodayLifeOverviewCard extends StatelessWidget {
               ),
               Gaps.h4,
               Text(
-                eventCount == 0
-                    ? loc.homeInsightDiscover
-                    : !hasAccountingAccount || !hasPointAccount
-                    ? loc.homeInsightConnectAccounts
-                    : loc.homeInsightReadyForReview,
+                _overviewInsight(
+                  loc: loc,
+                  scheduleOverview: scheduleOverview,
+                  hasAccountingAccount: hasAccountingAccount,
+                  hasPointAccount: hasPointAccount,
+                ),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colors.onPrimaryContainer.withValues(alpha: 0.82),
                 ),
@@ -296,7 +297,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                         icon: Icons.account_balance_wallet_outlined,
                         label: loc.todayIncomeExpense,
                         value: hasAccountingAccount
-                            ? '${numberFormat.format(accountingTotal)} $currency'
+                            ? '${numberFormats.decimal.format(accountingTotal)} $currency'
                             : loc.selectAccount,
                         statusIcon: !hasAccountingAccount
                             ? Icons.info_outline
@@ -318,7 +319,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                         icon: Icons.stars_outlined,
                         label: loc.todayPoints,
                         value: hasPointAccount
-                            ? NumberFormat('#,##0').format(pointsTotal)
+                            ? numberFormats.integer.format(pointsTotal)
                             : loc.selectAccount,
                         statusIcon: !hasPointAccount
                             ? Icons.info_outline
@@ -361,6 +362,28 @@ class TodayLifeOverviewCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _overviewInsight({
+    required AppLocalizations loc,
+    required _ScheduleOverview scheduleOverview,
+    required bool hasAccountingAccount,
+    required bool hasPointAccount,
+  }) {
+    if (scheduleOverview.overdueCount > 0) {
+      return loc.homeInsightReviewOverdue(scheduleOverview.overdueCount);
+    }
+    final conflictCount =
+        scheduleOverview.todayConflictCount +
+        scheduleOverview.tomorrowConflictCount;
+    if (conflictCount > 0) {
+      return loc.homeInsightResolveConflicts(conflictCount);
+    }
+    if (scheduleOverview.todayCount == 0) return loc.homeInsightDiscover;
+    if (!hasAccountingAccount || !hasPointAccount) {
+      return loc.homeInsightConnectAccounts;
+    }
+    return loc.homeInsightReadyForReview;
   }
 
   String? _nextEventDetails(BuildContext context, CalendarEvent event) {
@@ -408,6 +431,23 @@ class TodayLifeOverviewCard extends StatelessWidget {
     }
     return null;
   }
+}
+
+class _OverviewNumberFormats {
+  const _OverviewNumberFormats({required this.decimal, required this.integer});
+
+  factory _OverviewNumberFormats.forLocale(String locale) => _cache.putIfAbsent(
+    locale,
+    () => _OverviewNumberFormats(
+      decimal: NumberFormat('#,##0.##', locale),
+      integer: NumberFormat('#,##0', locale),
+    ),
+  );
+
+  static final Map<String, _OverviewNumberFormats> _cache = {};
+
+  final NumberFormat decimal;
+  final NumberFormat integer;
 }
 
 class _ScheduleOverview {

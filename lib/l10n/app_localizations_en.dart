@@ -1906,6 +1906,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleAwaitingReview => 'Schedule awaiting review';
 
   @override
+  String homeInsightReviewOverdue(int count) {
+    return '$count ended schedules still need review today. Do not let important tasks slip away.';
+  }
+
+  @override
+  String homeInsightResolveConflicts(int count) {
+    return '$count schedules overlap today or tomorrow. Consider adjusting your plan first.';
+  }
+
+  @override
+  String memoryJourneySummary(int memoryCount, int dayCount, int cityCount) {
+    return '$memoryCount loaded memories across $dayCount days and $cityCount cities';
+  }
+
+  @override
+  String viewRemainingSchedules(int count) {
+    return 'View $count more schedules';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return 'Today has $count schedule time conflicts';
   }

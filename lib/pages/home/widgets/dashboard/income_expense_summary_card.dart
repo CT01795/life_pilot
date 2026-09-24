@@ -16,6 +16,8 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class IncomeExpenseSummaryCard extends StatelessWidget {
+  static final Map<String, NumberFormat> _formatters = {};
+
   final bool isExpanded;
   final ValueChanged<bool> onExpansionChanged;
 
@@ -52,7 +54,10 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
       (m) => m.state.accountingCurrency,
     );
 
-    final formatter = NumberFormat('#,##0.##');
+    final formatter = _formatters.putIfAbsent(
+      loc.localeName,
+      () => NumberFormat('#,##0.##', loc.localeName),
+    );
 
     return Card(
       color: colorScheme.brightness == Brightness.dark
@@ -187,7 +192,11 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () async {
-                    if (context.read<ModelDashboard>().setting.accountingAccountId != null) {
+                    if (context
+                            .read<ModelDashboard>()
+                            .setting
+                            .accountingAccountId !=
+                        null) {
                       await openHomeAccountingDetails(context);
                     } else if (context.mounted) {
                       context.read<ControllerPageMain>().changePage(

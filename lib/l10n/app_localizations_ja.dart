@@ -1906,6 +1906,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get scheduleAwaitingReview => '確認待ちの予定';
 
   @override
+  String homeInsightReviewOverdue(int count) {
+    return '今日終了した予定のうち$count件が未確認です。大切な用事を確認しましょう。';
+  }
+
+  @override
+  String homeInsightResolveConflicts(int count) {
+    return '今日・明日の予定が$count件重複しています。先に調整することをおすすめします。';
+  }
+
+  @override
+  String memoryJourneySummary(int memoryCount, int dayCount, int cityCount) {
+    return '読み込み済みの思い出$memoryCount件・$dayCount日・$cityCount都市';
+  }
+
+  @override
+  String viewRemainingSchedules(int count) {
+    return '残り$count件の予定を見る';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return '今日の予定に時間重複が$count件あります';
   }

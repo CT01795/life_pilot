@@ -101,7 +101,7 @@ class WidgetsCalendarCard extends StatelessWidget {
   }
 }
 
-class _WidgetsCalendarCardBody extends StatefulWidget {
+class _WidgetsCalendarCardBody extends StatelessWidget {
   final EventViewModel eventViewModel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
@@ -127,21 +127,13 @@ class _WidgetsCalendarCardBody extends StatefulWidget {
   });
 
   @override
-  State<_WidgetsCalendarCardBody> createState() =>
-      _WidgetsCalendarCardBodyState();
-}
-
-class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
-  @override
   Widget build(BuildContext context) {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
-    final eventDate =
-        widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
+    final eventDate = eventViewModel.endDate ?? eventViewModel.firstEventDate;
 
     // 使用 Selector 只監聽對應 event 的天氣
     final forecast = context.select<ControllerCalendar, List<EventWeather>?>(
-      (c) =>
-          c.getForecast(locationDisplay: widget.eventViewModel.locationDisplay),
+      (c) => c.getForecast(locationDisplay: eventViewModel.locationDisplay),
     );
 
     final showWeatherIcon =
@@ -252,18 +244,18 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
           Gaps.w8,
           Expanded(
             child: Text(
-              widget.eventViewModel.name,
+              eventViewModel.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
               softWrap: true, // 允許換行
               overflow: TextOverflow.visible, // 文字超過不截斷
               //overflow: TextOverflow.ellipsis, // 防止文字過長
             ),
           ),
-          if (widget.trailing != null)
+          if (trailing != null)
             Builder(
               builder: (context) {
                 // 這裡的 context 已經在 widget 樹內，可以安全使用 Provider
-                return widget.trailing!;
+                return trailing!;
               },
             ),
         ],
@@ -276,41 +268,40 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          if (widget.eventViewModel.dateRange.isNotEmpty)
-            Text(widget.eventViewModel.dateRange),
-          if (widget.eventViewModel.tags.isNotEmpty)
+          if (eventViewModel.dateRange.isNotEmpty)
+            Text(eventViewModel.dateRange),
+          if (eventViewModel.tags.isNotEmpty)
             WidgetsCalendarCard.tags(
               context: context,
-              typeList: widget.eventViewModel.tags,
+              typeList: eventViewModel.tags,
             ),
-          if (widget.eventViewModel.hasLocation)
+          if (eventViewModel.hasLocation)
             InkWell(
-              onTap: widget.onOpenMap,
+              onTap: onOpenMap,
               child: Text(
-                widget.eventViewModel.locationDisplay,
+                eventViewModel.locationDisplay,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
-          if (widget.eventViewModel.masterUrl?.isNotEmpty == true)
+          if (eventViewModel.masterUrl?.isNotEmpty == true)
             WidgetsCalendarCard.link(
               context: context,
               text: loc.clickHereToSeeMore,
-              onTap: widget.onOpenLink,
+              onTap: onOpenLink,
             ),
-          if (widget.eventViewModel.description.isNotEmpty)
-            Text(widget.eventViewModel.description),
-          if (widget.showSubEvents &&
-              widget.eventViewModel.subEvents.isNotEmpty)
+          if (eventViewModel.description.isNotEmpty)
+            Text(eventViewModel.description),
+          if (showSubEvents && eventViewModel.subEvents.isNotEmpty)
             Column(
               children: [
-                for (final sub in widget.eventViewModel.subEvents)
+                for (final sub in eventViewModel.subEvents)
                   WidgetsCalendarSubCard(
                     key: ValueKey(sub.id),
                     event: sub,
-                    onOpenLink: widget.onOpenLink,
+                    onOpenLink: onOpenLink,
                   ),
               ],
             ),
@@ -321,7 +312,7 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
     final container = Container(margin: Insets.h8v16, child: content);
 
     return GestureDetector(
-      onTap: widget.eventViewModel.subEvents.isNotEmpty ? widget.onTap : null,
+      onTap: eventViewModel.subEvents.isNotEmpty ? onTap : null,
       child: Stack(
         children: [
           container,
@@ -331,27 +322,27 @@ class _WidgetsCalendarCardBodyState extends State<_WidgetsCalendarCardBody> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (widget.onAccounting != null)
+                if (onAccounting != null)
                   IconButton(
                     icon: Icon(Icons.currency_exchange),
                     tooltip: loc.accountRecords,
-                    onPressed: widget.onAccounting,
+                    onPressed: onAccounting,
                   ),
-                if (widget.onPoints != null)
+                if (onPoints != null)
                   IconButton(
                     icon: const Icon(Icons.stars_rounded),
                     tooltip: loc.pointsRecord,
-                    onPressed: widget.onPoints,
+                    onPressed: onPoints,
                   ),
                 // 🗑 Delete（只有 canDelete）
-                if (widget.eventViewModel.canDelete && widget.onDelete != null)
+                if (eventViewModel.canDelete && onDelete != null)
                   IconButton(
                     icon: Icon(
                       Icons.delete,
                       color: Theme.of(context).colorScheme.error,
                     ),
                     tooltip: loc.delete,
-                    onPressed: widget.onDelete,
+                    onPressed: onDelete,
                   ),
               ],
             ),
