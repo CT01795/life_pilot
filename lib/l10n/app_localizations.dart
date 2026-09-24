@@ -3741,6 +3741,12 @@ abstract class AppLocalizations {
   /// **'View {count} more schedules'**
   String viewRemainingSchedules(int count);
 
+  /// Open the recommendation page to view hidden results
+  ///
+  /// In en, this message translates to:
+  /// **'View {count} more recommendations'**
+  String viewRemainingRecommendations(int count);
+
   /// Today schedule conflict count
   ///
   /// In en, this message translates to:

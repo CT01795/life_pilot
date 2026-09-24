@@ -1926,6 +1926,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String viewRemainingRecommendations(int count) {
+    return '추천 $count개 더 보기';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return '오늘 일정 시간 겹침 $count건';
   }

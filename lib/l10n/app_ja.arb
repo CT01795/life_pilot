@@ -1231,6 +1231,8 @@
   "@memoryJourneySummary": {"description": "Summary of loaded memory journey", "placeholders": {"memoryCount": {"type": "int"}, "dayCount": {"type": "int"}, "cityCount": {"type": "int"}}},
   "viewRemainingSchedules": "残り{count}件の予定を見る",
   "@viewRemainingSchedules": {"description": "Open the calendar to view schedules hidden from the home preview", "placeholders": {"count": {"type": "int"}}},
+  "viewRemainingRecommendations": "残り{count}件のおすすめを見る",
+  "@viewRemainingRecommendations": {"description": "Open the recommendation page to view hidden results", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictToday": "今日の予定に時間重複が{count}件あります",
   "@scheduleConflictToday": {"description": "Today schedule conflict count", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictTomorrow": "明日の予定に時間重複が{count}件あります",

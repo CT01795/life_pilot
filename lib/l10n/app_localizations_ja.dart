@@ -1926,6 +1926,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String viewRemainingRecommendations(int count) {
+    return '残り$count件のおすすめを見る';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return '今日の予定に時間重複が$count件あります';
   }

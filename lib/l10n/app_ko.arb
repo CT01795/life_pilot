@@ -1231,6 +1231,8 @@
   "@memoryJourneySummary": {"description": "Summary of loaded memory journey", "placeholders": {"memoryCount": {"type": "int"}, "dayCount": {"type": "int"}, "cityCount": {"type": "int"}}},
   "viewRemainingSchedules": "나머지 일정 {count}개 보기",
   "@viewRemainingSchedules": {"description": "Open the calendar to view schedules hidden from the home preview", "placeholders": {"count": {"type": "int"}}},
+  "viewRemainingRecommendations": "추천 {count}개 더 보기",
+  "@viewRemainingRecommendations": {"description": "Open the recommendation page to view hidden results", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictToday": "오늘 일정 시간 겹침 {count}건",
   "@scheduleConflictToday": {"description": "Today schedule conflict count", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictTomorrow": "내일 일정 시간 겹침 {count}건",

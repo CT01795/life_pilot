@@ -1231,6 +1231,8 @@
   "@memoryJourneySummary": {"description": "Summary of loaded memory journey", "placeholders": {"memoryCount": {"type": "int"}, "dayCount": {"type": "int"}, "cityCount": {"type": "int"}}},
   "viewRemainingSchedules": "查看另外 {count} 個行程",
   "@viewRemainingSchedules": {"description": "Open the calendar to view schedules hidden from the home preview", "placeholders": {"count": {"type": "int"}}},
+  "viewRemainingRecommendations": "查看另外 {count} 個推薦",
+  "@viewRemainingRecommendations": {"description": "Open the recommendation page to view hidden results", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictToday": "今天有 {count} 組行程時間重疊",
   "@scheduleConflictToday": {"description": "Today schedule conflict count", "placeholders": {"count": {"type": "int"}}},
   "scheduleConflictTomorrow": "明天有 {count} 組行程時間重疊",

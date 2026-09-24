@@ -1926,6 +1926,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String viewRemainingRecommendations(int count) {
+    return 'View $count more recommendations';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return 'Today has $count schedule time conflicts';
   }

@@ -1926,6 +1926,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String viewRemainingRecommendations(int count) {
+    return '查看另外 $count 個推薦';
+  }
+
+  @override
   String scheduleConflictToday(int count) {
     return '今天有 $count 組行程時間重疊';
   }

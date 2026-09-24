@@ -15,6 +15,7 @@ import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.da
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_header_summary.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/recommendation_highlights.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -111,90 +112,54 @@ class RecommendEventCard extends StatelessWidget {
                 ...events
                     .take(5)
                     .map(
-                      (e) => ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                        ),
-                        leading: Tooltip(
-                          message: loc.addToSchedule,
-                          child: Transform.scale(
-                            scale: 1.5, // 放大倍率
-                            child: AsyncActionCheckbox(
-                              onAccepted: () async {
-                                final calendar = context
-                                    .read<CalendarService>();
-                                final calendarController = context
-                                    .read<ControllerCalendar>();
-                                final dashboard = context
-                                    .read<ModelDashboard>();
-                                try {
-                                  bool isExist = await calendar
-                                      .existsRecommendedEventToCal(
-                                        account: account!,
-                                        event: e,
-                                      );
-                                  if (!isExist) {
-                                    if (!context.mounted) return;
-                                    final now = DateTime.now();
-                                    final initialDate =
-                                        e.startDate != null &&
-                                            !e.startDate!.isBefore(
-                                              DateUtils.dateOnly(now),
-                                            )
-                                        ? e.startDate!
-                                        : now;
-                                    final schedule =
-                                        await showScheduleDateTimeDialog(
-                                          context,
-                                          title: e.name,
-                                          initialDate: initialDate,
-                                          initialTime:
-                                              e.startTime ??
-                                              TimeOfDay.fromDateTime(now),
-                                        );
-                                    if (schedule == null) return;
-                                    final addedEvent = await calendar
-                                        .addRecommendedEventToCal(
-                                          account: account,
+                      (e) => RepaintBoundary(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                          ),
+                          leading: Tooltip(
+                            message: loc.addToSchedule,
+                            child: Transform.scale(
+                              scale: 1.5, // 放大倍率
+                              child: AsyncActionCheckbox(
+                                onAccepted: () async {
+                                  final calendar = context
+                                      .read<CalendarService>();
+                                  final calendarController = context
+                                      .read<ControllerCalendar>();
+                                  final dashboard = context
+                                      .read<ModelDashboard>();
+                                  try {
+                                    bool isExist = await calendar
+                                        .existsRecommendedEventToCal(
+                                          account: account!,
                                           event: e,
-                                          id: e.id,
-                                          scheduledDate: schedule.date,
-                                          scheduledTime: schedule.time,
                                         );
-                                    dashboard.addUpcomingEvent(
-                                      addedEvent,
-                                      account: account,
-                                    );
-                                    calendarController.invalidateEventCache(
-                                      startDate: addedEvent.startDate,
-                                      endDate: addedEvent.endDate,
-                                    );
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text(loc.eventAddOk)),
-                                      );
-                                    }
-                                  } else {
-                                    final now = DateTime.now();
-                                    final schedule =
-                                        await showScheduleDateTimeDialog(
-                                          context,
-                                          title: e.name,
-                                          description:
-                                              loc.scheduleDuplicateConfirmation,
-                                          initialDate: now,
-                                          initialTime:
-                                              e.startTime ??
-                                              TimeOfDay.fromDateTime(now),
-                                        );
-                                    if (schedule != null) {
+                                    if (!isExist) {
+                                      if (!context.mounted) return;
+                                      final now = DateTime.now();
+                                      final initialDate =
+                                          e.startDate != null &&
+                                              !e.startDate!.isBefore(
+                                                DateUtils.dateOnly(now),
+                                              )
+                                          ? e.startDate!
+                                          : now;
+                                      final schedule =
+                                          await showScheduleDateTimeDialog(
+                                            context,
+                                            title: e.name,
+                                            initialDate: initialDate,
+                                            initialTime:
+                                                e.startTime ??
+                                                TimeOfDay.fromDateTime(now),
+                                          );
+                                      if (schedule == null) return;
                                       final addedEvent = await calendar
                                           .addRecommendedEventToCal(
                                             account: account,
                                             event: e,
-                                            id: null,
+                                            id: e.id,
                                             scheduledDate: schedule.date,
                                             scheduledTime: schedule.time,
                                           );
@@ -215,137 +180,192 @@ class RecommendEventCard extends StatelessWidget {
                                           ),
                                         );
                                       }
+                                    } else {
+                                      final now = DateTime.now();
+                                      final schedule =
+                                          await showScheduleDateTimeDialog(
+                                            context,
+                                            title: e.name,
+                                            description: loc
+                                                .scheduleDuplicateConfirmation,
+                                            initialDate: now,
+                                            initialTime:
+                                                e.startTime ??
+                                                TimeOfDay.fromDateTime(now),
+                                          );
+                                      if (schedule != null) {
+                                        final addedEvent = await calendar
+                                            .addRecommendedEventToCal(
+                                              account: account,
+                                              event: e,
+                                              id: null,
+                                              scheduledDate: schedule.date,
+                                              scheduledTime: schedule.time,
+                                            );
+                                        dashboard.addUpcomingEvent(
+                                          addedEvent,
+                                          account: account,
+                                        );
+                                        calendarController.invalidateEventCache(
+                                          startDate: addedEvent.startDate,
+                                          endDate: addedEvent.endDate,
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(loc.eventAddOk),
+                                            ),
+                                          );
+                                        }
+                                      }
                                     }
-                                  }
-                                  await tracking.incrementEventCounter(
-                                    eventId: e.id,
-                                    eventName:
-                                        e.name, // 或者用 eventViewModel.name
-                                    column: 'saves',
-                                  ); //收藏到行事曆
-                                } catch (e, stackTrace) {
-                                  logger.e(
-                                    'Could not add recommended event to calendar.',
-                                    error: e,
-                                    stackTrace: stackTrace,
-                                  );
-                                  if (context.mounted) {
-                                    final message = subscriptionErrorMessage(
-                                      loc,
-                                      e,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          message.isNotEmpty
-                                              ? message
-                                              : loc.eventSaveFailed,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                        title: Tooltip(
-                          message: e.masterUrl?.isNotEmpty == true
-                              ? loc.clickHereToSeeMore
-                              : '',
-                          child: InkWell(
-                            onTap: (e.masterUrl == null || e.masterUrl!.isEmpty)
-                                ? null
-                                : () async {
                                     await tracking.incrementEventCounter(
                                       eventId: e.id,
-                                      eventName: e.name,
-                                      column: 'page_views',
+                                      eventName:
+                                          e.name, // 或者用 eventViewModel.name
+                                      column: 'saves',
+                                    ); //收藏到行事曆
+                                  } catch (e, stackTrace) {
+                                    logger.e(
+                                      'Could not add recommended event to calendar.',
+                                      error: e,
+                                      stackTrace: stackTrace,
                                     );
-                                    if (!await tracking.launchUrlLink(
-                                          e.masterUrl,
-                                        ) &&
-                                        context.mounted) {
+                                    if (context.mounted) {
+                                      final message = subscriptionErrorMessage(
+                                        loc,
+                                        e,
+                                      );
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            loc.externalLinkOpenFailed,
+                                            message.isNotEmpty
+                                                ? message
+                                                : loc.eventSaveFailed,
                                           ),
                                         ),
                                       );
                                     }
-                                  },
-                            child: Text(
-                              '${(e.startDate!.isBefore(today) ? '～ ${e.endDate?.formatDateString()}' : e.startDate?.formatDateString())} ${e.startTime?.formatTimeString() ?? ''}\n${e.name}',
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color:
-                                    (e.masterUrl == null ||
-                                        e.masterUrl!.isEmpty)
-                                    ? colorScheme.onSurface
-                                    : colorScheme.primary,
+                                  }
+                                },
                               ),
                             ),
                           ),
-                        ),
-                        subtitle: Tooltip(
-                          message:
-                              ((e.city != null && e.city!.isNotEmpty) ||
-                                  (e.location != null &&
-                                      e.location!.isNotEmpty))
-                              ? loc.openMap
-                              : '',
-                          child: InkWell(
-                            onTap:
-                                ((e.city != null && e.city!.isNotEmpty) ||
-                                    (e.location != null &&
-                                        e.location!.isNotEmpty))
-                                ? () async {
-                                    await tracking.incrementEventCounter(
-                                      eventId: e.id,
-                                      eventName: e.name,
-                                      column: 'card_clicks',
-                                    );
-                                    if (!await tracking.onOpenMap(
-                                          e.city,
-                                          e.location,
-                                        ) &&
-                                        context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            loc.externalLinkOpenFailed,
+                          title: Tooltip(
+                            message: e.masterUrl?.isNotEmpty == true
+                                ? loc.clickHereToSeeMore
+                                : '',
+                            child: InkWell(
+                              onTap:
+                                  (e.masterUrl == null || e.masterUrl!.isEmpty)
+                                  ? null
+                                  : () async {
+                                      await tracking.incrementEventCounter(
+                                        eventId: e.id,
+                                        eventName: e.name,
+                                        column: 'page_views',
+                                      );
+                                      if (!await tracking.launchUrlLink(
+                                            e.masterUrl,
+                                          ) &&
+                                          context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              loc.externalLinkOpenFailed,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                              child: Text(
+                                '${(e.startDate!.isBefore(today) ? '～ ${e.endDate?.formatDateString()}' : e.startDate?.formatDateString())}\n${e.name}',
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color:
+                                      (e.masterUrl == null ||
+                                          e.masterUrl!.isEmpty)
+                                      ? colorScheme.onSurface
+                                      : colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              RecommendationHighlights(
+                                isFree: e.isFree,
+                                type: e.type,
+                                city: e.city,
+                                detail: _recommendedEventTimeRange(e),
+                              ),
+                              Tooltip(
+                                message:
+                                    ((e.city != null && e.city!.isNotEmpty) ||
+                                        (e.location != null &&
+                                            e.location!.isNotEmpty))
+                                    ? loc.openMap
+                                    : '',
+                                child: InkWell(
+                                  onTap:
+                                      ((e.city != null && e.city!.isNotEmpty) ||
+                                          (e.location != null &&
+                                              e.location!.isNotEmpty))
+                                      ? () async {
+                                          await tracking.incrementEventCounter(
+                                            eventId: e.id,
+                                            eventName: e.name,
+                                            column: 'card_clicks',
+                                          );
+                                          if (!await tracking.onOpenMap(
+                                                e.city,
+                                                e.location,
+                                              ) &&
+                                              context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  loc.externalLinkOpenFailed,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      : null,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if ((e.city != null &&
+                                              e.city!.isNotEmpty) ||
+                                          (e.location != null &&
+                                              e.location!.isNotEmpty))
+                                        const Icon(Icons.location_on),
+                                      Gaps.w8,
+                                      Flexible(
+                                        child: Text(
+                                          '${e.city ?? ''} ${e.location ?? ''}',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: colorScheme.onSurfaceVariant,
                                           ),
                                         ),
-                                      );
-                                    }
-                                  }
-                                : null,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if ((e.city != null && e.city!.isNotEmpty) ||
-                                    (e.location != null &&
-                                        e.location!.isNotEmpty))
-                                  const Icon(Icons.location_on),
-                                Gaps.w8,
-                                Flexible(
-                                  child: Text(
-                                    '${e.city ?? ''} ${e.location ?? ''}',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -358,7 +378,11 @@ class RecommendEventCard extends StatelessWidget {
                       PageType.recommendEvent,
                     );
                   },
-                  child: Text(loc.clickHereToSeeMore),
+                  child: Text(
+                    events.length > 5
+                        ? loc.viewRemainingRecommendations(events.length - 5)
+                        : loc.clickHereToSeeMore,
+                  ),
                 ),
               ),
             ],
@@ -367,4 +391,11 @@ class RecommendEventCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String? _recommendedEventTimeRange(RecommendedEvent event) {
+  final start = event.startTime?.formatTimeString();
+  final end = event.endTime?.formatTimeString();
+  if (start == null || start.isEmpty) return null;
+  return end == null || end.isEmpty ? start : '$start–$end';
 }
