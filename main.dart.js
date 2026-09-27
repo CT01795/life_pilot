@@ -200239,7 +200239,7 @@ return A.d($.hd().fg("stock/delete_stock_daily_price",A.E(["table_name","stock_d
 case 2:s=3
 return A.d($.hd().fg("stock/delete_stock_date",A.E(["table_name","stock_date","date",e.cF().bX()],g,k)),$async$px)
 case 3:j=A.dv(new A.ab(Date.now(),0,!1))>=17?0:1
-i=2
+i=4
 case 4:if(!(i>=j)){s=6
 break}n=f.dc(0-864e8*i)
 $.aE().oo(B.xm,"Loading stock data for date: "+A.fq("yyyy-MM-dd",null).bO(n),null,null,null)
