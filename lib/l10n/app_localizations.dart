@@ -117,6 +117,78 @@ abstract class AppLocalizations {
   /// **'loginRelated'**
   String get loginRelated;
 
+  /// No description provided for @passwordRecoveryChoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a reset method'**
+  String get passwordRecoveryChoiceTitle;
+
+  /// No description provided for @passwordRecoveryChoiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset it yourself using a verification email, or email the administrator for help.'**
+  String get passwordRecoveryChoiceDescription;
+
+  /// No description provided for @resetByEmailVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset by verification email'**
+  String get resetByEmailVerification;
+
+  /// No description provided for @resetByEmailVerificationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We will email you a secure link so you can set a new password.'**
+  String get resetByEmailVerificationDescription;
+
+  /// No description provided for @askAdministrator.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the administrator'**
+  String get askAdministrator;
+
+  /// No description provided for @askAdministratorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your email app and send a request. The administrator will reply after handling it.'**
+  String get askAdministratorDescription;
+
+  /// No description provided for @adminPasswordHelpSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Life Pilot password change request'**
+  String get adminPasswordHelpSubject;
+
+  /// No description provided for @adminPasswordHelpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: {account}\n\nPlease reply to this email after the request has been handled.'**
+  String adminPasswordHelpBody(String account);
+
+  /// No description provided for @adminPasswordHelpOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email app is open. Review the message and send it.'**
+  String get adminPasswordHelpOpened;
+
+  /// No description provided for @adminPasswordHelpEmailUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The email app could not be opened. Please email {email}.'**
+  String adminPasswordHelpEmailUnavailable(String email);
+
+  /// No description provided for @passwordHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other reset options'**
+  String get passwordHelpTitle;
+
+  /// No description provided for @passwordHelpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'If you forgot your current password, reset it by verification email or ask the administrator for help.'**
+  String get passwordHelpDescription;
+
   /// Label for login
   ///
   /// In en, this message translates to:
@@ -242,6 +314,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update Password'**
   String get updatePassword;
+
+  /// No description provided for @accountSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Account security'**
+  String get accountSecurity;
+
+  /// No description provided for @currentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get currentPassword;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPassword;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePassword;
+
+  /// No description provided for @changePasswordSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password has been updated.'**
+  String get changePasswordSuccessful;
+
+  /// No description provided for @changePasswordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Password update failed. Check your current password and try again.'**
+  String get changePasswordFailed;
+
+  /// No description provided for @currentPasswordIncorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'The current password is incorrect.'**
+  String get currentPasswordIncorrect;
+
+  /// No description provided for @passwordMustBeDifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'The new password must be different from the current password.'**
+  String get passwordMustBeDifferent;
+
+  /// No description provided for @passwordDoesNotMeetPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.'**
+  String get passwordDoesNotMeetPolicy;
+
+  /// No description provided for @passwordReauthenticationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'For security, reset your password through email verification first.'**
+  String get passwordReauthenticationRequired;
+
+  /// No description provided for @adminPasswordResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help a user reset their password'**
+  String get adminPasswordResetTitle;
+
+  /// No description provided for @adminPasswordResetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.'**
+  String get adminPasswordResetDescription;
+
+  /// No description provided for @adminPasswordResetUserEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'User email'**
+  String get adminPasswordResetUserEmail;
+
+  /// No description provided for @adminPasswordResetSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Create temporary password'**
+  String get adminPasswordResetSend;
+
+  /// No description provided for @adminTemporaryPasswordCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'A temporary password was created for {email}.'**
+  String adminTemporaryPasswordCreated(String email);
+
+  /// No description provided for @adminTemporaryPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary password'**
+  String get adminTemporaryPasswordLabel;
+
+  /// No description provided for @adminTemporaryPasswordInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.'**
+  String get adminTemporaryPasswordInstruction;
+
+  /// No description provided for @adminTemporaryPasswordCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy temporary password'**
+  String get adminTemporaryPasswordCopy;
+
+  /// No description provided for @adminTemporaryPasswordCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary password copied.'**
+  String get adminTemporaryPasswordCopied;
+
+  /// No description provided for @adminPasswordResetUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user was found for this email.'**
+  String get adminPasswordResetUserNotFound;
+
+  /// No description provided for @adminPasswordResetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary password could not be created. Try again later.'**
+  String get adminPasswordResetFailed;
+
+  /// No description provided for @publishedSubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get publishedSubmission;
+
+  /// No description provided for @publishedSubmissionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'This information is public and can be viewed by everyone.'**
+  String get publishedSubmissionTooltip;
 
   /// Label for leaveGameConfirmation
   ///

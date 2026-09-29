@@ -18,6 +18,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginRelated => 'loginRelated';
 
   @override
+  String get passwordRecoveryChoiceTitle => '選擇重設方式';
+
+  @override
+  String get passwordRecoveryChoiceDescription => '請選擇透過驗證信自行重設，或寄信請管理員協助。';
+
+  @override
+  String get resetByEmailVerification => '用驗證信重設';
+
+  @override
+  String get resetByEmailVerificationDescription => '系統會寄送安全連結，由你自行設定新密碼。';
+
+  @override
+  String get askAdministrator => '請管理員協助';
+
+  @override
+  String get askAdministratorDescription => '開啟郵件程式寄出申請；管理員處理後會回覆你的信箱。';
+
+  @override
+  String get adminPasswordHelpSubject => 'Life Pilot 密碼修改申請';
+
+  @override
+  String adminPasswordHelpBody(String account) {
+    return '您好，我無法登入 Life Pilot，請協助處理密碼修改。\n\n帳號：$account\n\n管理員處理後，請回覆此信箱通知結果。';
+  }
+
+  @override
+  String get adminPasswordHelpOpened => '已開啟郵件程式，請確認內容後寄出。';
+
+  @override
+  String adminPasswordHelpEmailUnavailable(String email) {
+    return '無法開啟郵件程式，請寄信至 $email。';
+  }
+
+  @override
+  String get passwordHelpTitle => '其他重設方式';
+
+  @override
+  String get passwordHelpDescription => '忘記目前密碼時，可以透過驗證信自行重設，或寄信請管理員協助。';
+
+  @override
   String get login => '  登入  ';
 
   @override
@@ -81,6 +121,77 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get updatePassword => '更新密碼';
+
+  @override
+  String get accountSecurity => '帳號安全';
+
+  @override
+  String get currentPassword => '目前密碼';
+
+  @override
+  String get newPassword => '新密碼';
+
+  @override
+  String get changePassword => '修改密碼';
+
+  @override
+  String get changePasswordSuccessful => '密碼已更新。';
+
+  @override
+  String get changePasswordFailed => '無法更新密碼，請確認目前密碼後再試一次。';
+
+  @override
+  String get currentPasswordIncorrect => '目前密碼不正確。';
+
+  @override
+  String get passwordMustBeDifferent => '新密碼不可與目前密碼相同。';
+
+  @override
+  String get passwordDoesNotMeetPolicy => '新密碼不符合安全規則，請增加英文字母、數字或符號後再試。';
+
+  @override
+  String get passwordReauthenticationRequired => '基於安全考量，請先使用信箱驗證重設密碼。';
+
+  @override
+  String get adminPasswordResetTitle => '協助使用者重設密碼';
+
+  @override
+  String get adminPasswordResetDescription => '輸入求助者的帳號信箱，由系統產生臨時密碼。請回覆使用者，提醒登入後立即改成自己的密碼。';
+
+  @override
+  String get adminPasswordResetUserEmail => '使用者信箱';
+
+  @override
+  String get adminPasswordResetSend => '產生臨時密碼';
+
+  @override
+  String adminTemporaryPasswordCreated(String email) {
+    return '已為 $email 建立臨時密碼。';
+  }
+
+  @override
+  String get adminTemporaryPasswordLabel => '臨時密碼';
+
+  @override
+  String get adminTemporaryPasswordInstruction => '請複製後回覆給使用者，並提醒使用者登入後立即到「帳號安全」修改密碼。';
+
+  @override
+  String get adminTemporaryPasswordCopy => '複製臨時密碼';
+
+  @override
+  String get adminTemporaryPasswordCopied => '已複製臨時密碼。';
+
+  @override
+  String get adminPasswordResetUserNotFound => '找不到這個使用者帳號。';
+
+  @override
+  String get adminPasswordResetFailed => '無法建立臨時密碼，請稍後再試。';
+
+  @override
+  String get publishedSubmission => '已公開';
+
+  @override
+  String get publishedSubmissionTooltip => '已經公開此資訊，所有人均可閱覽。';
 
   @override
   String get leaveGameConfirmation => '確定要離開遊戲並返回上一頁嗎？';

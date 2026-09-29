@@ -30,7 +30,6 @@ class ModelAuthView extends SafeChangeNotifier {
   Future<String?> logout() => _auth.logout();
   Future<String?> login({required String email, required String password}) =>
       _auth.login(email: email, password: password);
-
   Future<String?> resetPassword({required String email}) =>
       _auth.resetPassword(email: email);
   Future<String?> register({required String email, required String password}) =>
@@ -42,8 +41,10 @@ class ModelAuthView extends SafeChangeNotifier {
   void goBackToLogin(String email) => _auth.goBackToLogin(email: email);
 
   // 登入錯誤顯示
-  String showLoginError(
-      {required String message, required AppLocalizations loc}) {
+  String showLoginError({
+    required String message,
+    required AppLocalizations loc,
+  }) {
     final errorMap = {
       ErrorFields.noRecoverySession: loc.noRecoverySession,
       ErrorFields.resetPasswordError: loc.resetPasswordError,

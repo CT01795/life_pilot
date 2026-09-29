@@ -25,9 +25,7 @@ class ServiceAuth {
     return pending;
   }
 
-  static final RegExp _emailPattern = RegExp(
-    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-  );
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   // 🔐 Check if user is logged in
   static bool isLoggedIn() => supabase.auth.currentUser != null;
@@ -35,8 +33,10 @@ class ServiceAuth {
   static String? currentAccount() => supabase.auth.currentUser?.email;
 
   // 🔑 Login with email/password
-  static Future<String?> login(
-      {required String email, required String password}) async {
+  static Future<String?> login({
+    required String email,
+    required String password,
+  }) async {
     final error = _checkEmptyFields(email: email, password: password);
     if (error != null) {
       return error;
@@ -47,12 +47,11 @@ class ServiceAuth {
     }, defaultError: ErrorFields.loginError);
   }
 
-  static Future<String?> register(
-      {required String email, required String password}) async {
-    final error = _checkRegistrationFields(
-      email: email,
-      password: password,
-    );
+  static Future<String?> register({
+    required String email,
+    required String password,
+  }) async {
+    final error = _checkRegistrationFields(email: email, password: password);
     if (error != null) {
       return error;
     }
@@ -86,10 +85,7 @@ class ServiceAuth {
           ? 'https://ct01795.github.io/life_pilot/'
           : 'lifepilot://reset-password';
 
-      await supabase.auth.resetPasswordForEmail(
-        email,
-        redirectTo: redirectTo,
-      );
+      await supabase.auth.resetPasswordForEmail(email, redirectTo: redirectTo);
     }, defaultError: ErrorFields.resetPasswordError);
   }
 
@@ -103,8 +99,10 @@ class ServiceAuth {
   // -------------------------
   // 🔧 Private Helper Methods
   // -------------------------
-  static String? _checkEmptyFields(
-      {required String email, required String password}) {
+  static String? _checkEmptyFields({
+    required String email,
+    required String password,
+  }) {
     if (email.isEmpty) {
       return ErrorFields.noEmailError;
     }
@@ -118,10 +116,7 @@ class ServiceAuth {
     required String email,
     required String password,
   }) {
-    final emptyFieldError = _checkEmptyFields(
-      email: email,
-      password: password,
-    );
+    final emptyFieldError = _checkEmptyFields(email: email, password: password);
     if (emptyFieldError != null) return emptyFieldError;
     if (!_emailPattern.hasMatch(email)) {
       return ErrorFields.invalidEmailError;

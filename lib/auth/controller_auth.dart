@@ -31,11 +31,11 @@ class ControllerAuth extends SafeChangeNotifier {
     _initialized = true;
     _listenAuthState();
     _listenExternalSignedOut();
-    _passwordRecoveryLinkSubscription =
-        ServiceAuth.passwordRecoveryLinks.listen((_) {
-      ServiceAuth.consumePasswordRecoveryLink();
-      _update(() => _currentPage = AuthPage.resetPassword);
-    });
+    _passwordRecoveryLinkSubscription = ServiceAuth.passwordRecoveryLinks
+        .listen((_) {
+          ServiceAuth.consumePasswordRecoveryLink();
+          _update(() => _currentPage = AuthPage.resetPassword);
+        });
     if (ServiceAuth.consumePasswordRecoveryLink()) {
       _currentPage = AuthPage.resetPassword;
     }
@@ -90,7 +90,8 @@ class ControllerAuth extends SafeChangeNotifier {
           entitlement.storagePlan == 'local' && entitlement.endsAt.isAfter(now),
     );
     final periodEnd = _subscription.currentPeriodEnd;
-    final hasActiveLocalPlan = _subscription.isPlus &&
+    final hasActiveLocalPlan =
+        _subscription.isPlus &&
         _subscription.storagePlan == 'local' &&
         (periodEnd == null || periodEnd.isAfter(now));
     return hasActiveLocalPlan || hasActiveLocalEntitlement;
@@ -142,17 +143,19 @@ class ControllerAuth extends SafeChangeNotifier {
 
   SubscriptionSnapshot _withCloudPresentation(SubscriptionSnapshot base) {
     final now = DateTime.now();
-    final cloudEntitlements = base.entitlements
-        .where(
-          (entitlement) =>
-              entitlement.storagePlan == 'cloud' &&
-              entitlement.endsAt.isAfter(now),
-        )
-        .toList(growable: false)
-      ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
+    final cloudEntitlements =
+        base.entitlements
+            .where(
+              (entitlement) =>
+                  entitlement.storagePlan == 'cloud' &&
+                  entitlement.endsAt.isAfter(now),
+            )
+            .toList(growable: false)
+          ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
     final cloudEntitlement = cloudEntitlements.firstOrNull;
     final basePeriodEnd = base.currentPeriodEnd;
-    final baseCloudPlus = base.isPlus &&
+    final baseCloudPlus =
+        base.isPlus &&
         base.storagePlan == 'cloud' &&
         (basePeriodEnd == null || basePeriodEnd.isAfter(now));
 
@@ -233,7 +236,8 @@ class ControllerAuth extends SafeChangeNotifier {
       ),
       'game_questions': SubscriptionUsage(
         resource: 'game_questions',
-        used: count('game_grammar') +
+        used:
+            count('game_grammar') +
             count('game_sentence') +
             count('game_translation') +
             count(TableNames.gameSocialScenarios),
@@ -241,10 +245,11 @@ class ControllerAuth extends SafeChangeNotifier {
       ),
     };
 
-    final localEntitlements = base.entitlements
-        .where((entitlement) => entitlement.storagePlan == 'local')
-        .toList(growable: false)
-      ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
+    final localEntitlements =
+        base.entitlements
+            .where((entitlement) => entitlement.storagePlan == 'local')
+            .toList(growable: false)
+          ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
     final localEntitlement = localEntitlements.firstOrNull;
     final baseIsLocal = base.storagePlan == 'local';
 
@@ -252,17 +257,22 @@ class ControllerAuth extends SafeChangeNotifier {
       plan: baseIsLocal || localEntitlement != null ? 'plus' : base.plan,
       usage: localUsage,
       status: baseIsLocal || localEntitlement != null ? 'active' : base.status,
-      currentPeriodEnd: localEntitlement?.endsAt ??
+      currentPeriodEnd:
+          localEntitlement?.endsAt ??
           (baseIsLocal ? base.currentPeriodEnd : null),
       cancelAtPeriodEnd: baseIsLocal ? base.cancelAtPeriodEnd : false,
       storagePlan: 'local',
-      quotaMultiplier: localEntitlement?.multiplier ??
+      quotaMultiplier:
+          localEntitlement?.multiplier ??
           (baseIsLocal ? base.quotaMultiplier : 1),
-      quarterlyPricePaidTwd: localEntitlement?.pricePaidTwd ??
+      quarterlyPricePaidTwd:
+          localEntitlement?.pricePaidTwd ??
           (baseIsLocal ? base.quarterlyPricePaidTwd : null),
-      pricingVersionName: localEntitlement?.versionName ??
+      pricingVersionName:
+          localEntitlement?.versionName ??
           (baseIsLocal ? base.pricingVersionName : null),
-      pricingEffectiveAt: localEntitlement?.effectiveAt ??
+      pricingEffectiveAt:
+          localEntitlement?.effectiveAt ??
           (baseIsLocal ? base.pricingEffectiveAt : null),
       lastDataActivityAt: base.lastDataActivityAt,
       downgradeGraceEndsAt: base.downgradeGraceEndsAt,

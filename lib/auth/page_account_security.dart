@@ -1,0 +1,363 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/auth/service_auth.dart';
+import 'package:life_pilot/auth/service_account_security.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/service/service_api.dart';
+import 'package:provider/provider.dart';
+
+class PageAccountSecurity extends StatefulWidget {
+  const PageAccountSecurity({super.key});
+
+  @override
+  State<PageAccountSecurity> createState() => _PageAccountSecurityState();
+}
+
+class _PageAccountSecurityState extends State<PageAccountSecurity> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentPassword = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _confirmPassword = TextEditingController();
+  final _adminUserEmail = TextEditingController();
+  final _service = ServiceAccountSecurity();
+  bool _busy = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+  String? _temporaryPassword;
+
+  @override
+  void dispose() {
+    _currentPassword.dispose();
+    _newPassword.dispose();
+    _confirmPassword.dispose();
+    _adminUserEmail.dispose();
+    super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    final loc = AppLocalizations.of(context)!;
+    if (_busy || !(_formKey.currentState?.validate() ?? false)) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _busy = true);
+    try {
+      await _service.changePassword(
+        currentPassword: _currentPassword.text,
+        newPassword: _newPassword.text,
+      );
+      _currentPassword.clear();
+      _newPassword.clear();
+      _confirmPassword.clear();
+      AppNavigator.showSnackBar(loc.changePasswordSuccessful);
+    } on AccountPasswordException catch (error) {
+      AppNavigator.showErrorBar(_passwordErrorMessage(loc, error.failure));
+    } catch (_) {
+      AppNavigator.showErrorBar(loc.changePasswordFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _passwordErrorMessage(
+    AppLocalizations loc,
+    AccountPasswordFailure failure,
+  ) {
+    return switch (failure) {
+      AccountPasswordFailure.noSignedInUser => loc.changePasswordFailed,
+      AccountPasswordFailure.incorrectCurrentPassword =>
+        loc.currentPasswordIncorrect,
+      AccountPasswordFailure.sameAsCurrent => loc.passwordMustBeDifferent,
+      AccountPasswordFailure.weakPassword => loc.passwordDoesNotMeetPolicy,
+      AccountPasswordFailure.reauthenticationRequired =>
+        loc.passwordReauthenticationRequired,
+      AccountPasswordFailure.unknown => loc.changePasswordFailed,
+    };
+  }
+
+  Future<void> _sendResetEmail() async {
+    final loc = AppLocalizations.of(context)!;
+    if (_busy) return;
+    final account = ServiceAuth.currentAccount();
+    if (account == null || account.isEmpty) {
+      AppNavigator.showErrorBar(loc.noEmailError);
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final error = await ServiceAuth.resetPassword(email: account);
+      if (error == null) {
+        AppNavigator.showSnackBar(loc.resetPasswordEmail);
+      } else {
+        AppNavigator.showErrorBar(loc.resetPasswordError);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _contactAdministrator() async {
+    final loc = AppLocalizations.of(context)!;
+    final account = ServiceAuth.currentAccount();
+    if (_busy || account == null || account.isEmpty) return;
+    final opened = await _service.contactAdministrator(
+      subject: loc.adminPasswordHelpSubject,
+      body: loc.adminPasswordHelpBody(account),
+    );
+    if (!mounted) return;
+    if (opened) {
+      AppNavigator.showSnackBar(loc.adminPasswordHelpOpened);
+    } else {
+      AppNavigator.showErrorBar(
+        loc.adminPasswordHelpEmailUnavailable(
+          ServiceAccountSecurity.administratorEmail,
+        ),
+      );
+    }
+  }
+
+  Future<void> _createTemporaryPassword() async {
+    final loc = AppLocalizations.of(context)!;
+    final auth = context.read<ControllerAuth>();
+    final email = _adminUserEmail.text.trim();
+    if (_busy || !auth.isSysAdmin) return;
+    if (email.isEmpty || !email.contains('@')) {
+      AppNavigator.showErrorBar(loc.invalidEmail);
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final password = await _service.createTemporaryPasswordForUser(email);
+      if (!mounted) return;
+      setState(() => _temporaryPassword = password);
+      AppNavigator.showSnackBar(loc.adminTemporaryPasswordCreated(email));
+    } on ServiceApiException catch (error) {
+      if (!mounted) return;
+      AppNavigator.showErrorBar(
+        error.statusCode == 404
+            ? loc.adminPasswordResetUserNotFound
+            : loc.adminPasswordResetFailed,
+      );
+    } catch (_) {
+      if (mounted) AppNavigator.showErrorBar(loc.adminPasswordResetFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _copyTemporaryPassword() async {
+    final loc = AppLocalizations.of(context)!;
+    final password = _temporaryPassword;
+    if (password == null) return;
+    await Clipboard.setData(ClipboardData(text: password));
+    if (mounted) AppNavigator.showSnackBar(loc.adminTemporaryPasswordCopied);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final isSysAdmin = context.select<ControllerAuth, bool>(
+      (auth) => auth.isSysAdmin,
+    );
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.accountSecurity)),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      loc.changePassword,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Gaps.h16,
+                    _passwordField(
+                      controller: _currentPassword,
+                      label: loc.currentPassword,
+                      obscure: _obscureCurrent,
+                      onToggle: () =>
+                          setState(() => _obscureCurrent = !_obscureCurrent),
+                    ),
+                    Gaps.h12,
+                    _passwordField(
+                      controller: _newPassword,
+                      label: loc.newPassword,
+                      obscure: _obscureNew,
+                      onToggle: () =>
+                          setState(() => _obscureNew = !_obscureNew),
+                    ),
+                    Gaps.h12,
+                    _passwordField(
+                      controller: _confirmPassword,
+                      label: loc.confirmPassword,
+                      obscure: _obscureConfirm,
+                      onToggle: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      confirmation: true,
+                    ),
+                    Gaps.h16,
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _changePassword,
+                      icon: const Icon(Icons.password_outlined),
+                      label: Text(loc.changePassword),
+                    ),
+                    Gaps.h32,
+                    const Divider(),
+                    Gaps.h16,
+                    Text(
+                      loc.passwordHelpTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Gaps.h8,
+                    Text(loc.passwordHelpDescription),
+                    Gaps.h16,
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _sendResetEmail,
+                      icon: const Icon(Icons.mark_email_read_outlined),
+                      label: Text(loc.resetByEmailVerification),
+                    ),
+                    Gaps.h8,
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _contactAdministrator,
+                      icon: const Icon(Icons.support_agent_outlined),
+                      label: Text(loc.askAdministrator),
+                    ),
+                    if (isSysAdmin) ...[
+                      Gaps.h32,
+                      const Divider(),
+                      Gaps.h16,
+                      Text(
+                        loc.adminPasswordResetTitle,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Gaps.h8,
+                      Text(loc.adminPasswordResetDescription),
+                      Gaps.h16,
+                      TextField(
+                        controller: _adminUserEmail,
+                        enabled: !_busy,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: InputDecoration(
+                          labelText: loc.adminPasswordResetUserEmail,
+                          prefixIcon: const Icon(Icons.alternate_email),
+                        ),
+                        onChanged: (_) {
+                          if (_temporaryPassword != null) {
+                            setState(() => _temporaryPassword = null);
+                          }
+                        },
+                      ),
+                      Gaps.h12,
+                      FilledButton.tonalIcon(
+                        onPressed: _busy ? null : _createTemporaryPassword,
+                        icon: const Icon(Icons.password_outlined),
+                        label: Text(loc.adminPasswordResetSend),
+                      ),
+                      if (_temporaryPassword case final password?) ...[
+                        Gaps.h16,
+                        Card(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  loc.adminTemporaryPasswordLabel,
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                Gaps.h8,
+                                SelectableText(
+                                  password,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall,
+                                ),
+                                Gaps.h8,
+                                Text(loc.adminTemporaryPasswordInstruction),
+                                Gaps.h12,
+                                OutlinedButton.icon(
+                                  onPressed: _copyTemporaryPassword,
+                                  icon: const Icon(Icons.copy_outlined),
+                                  label: Text(loc.adminTemporaryPasswordCopy),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                    if (_busy) ...[
+                      Gaps.h16,
+                      const Center(child: CircularProgressIndicator()),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String label,
+    required bool obscure,
+    required VoidCallback onToggle,
+    bool confirmation = false,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      autocorrect: false,
+      enableSuggestions: false,
+      autofillHints: [
+        controller == _currentPassword
+            ? AutofillHints.password
+            : AutofillHints.newPassword,
+      ],
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: IconButton(
+          onPressed: onToggle,
+          tooltip: obscure ? loc.showPassword : loc.hidePassword,
+          icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
+        ),
+      ),
+      validator: (value) {
+        final password = value ?? '';
+        if (password.isEmpty) return loc.noPasswordError;
+        if (!confirmation &&
+            controller == _newPassword &&
+            password.length < AuthConstants.minimumPasswordLength) {
+          return loc.weakPassword;
+        }
+        if (!confirmation &&
+            controller == _newPassword &&
+            password == _currentPassword.text) {
+          return loc.passwordMustBeDifferent;
+        }
+        if (confirmation && password != _newPassword.text) {
+          return loc.passwordMismatch;
+        }
+        return null;
+      },
+    );
+  }
+}

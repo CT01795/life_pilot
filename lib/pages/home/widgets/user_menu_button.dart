@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/auth/page_account_security.dart';
+import 'package:life_pilot/apps/page_module_authorization.dart';
 import 'package:life_pilot/apps/page_settings.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/draggable_resizable_dialog.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/legal_document_dialog.dart';
@@ -22,6 +24,9 @@ class UserMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final auth = context.watch<ModelAuthView>();
+    final isSysAdmin = context.select<ControllerAuth, bool>(
+      (controller) => controller.isSysAdmin,
+    );
     if (auth.account == null || auth.account!.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -56,10 +61,24 @@ class UserMenuButton extends StatelessWidget {
               ),
             );
             break;
+          case "moduleAuthorization":
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PageModuleAuthorization(),
+              ),
+            );
+            break;
           case "subscriptionPlans":
             await Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const PageSubscriptionPlans(),
+              ),
+            );
+            break;
+          case "accountSecurity":
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PageAccountSecurity(),
               ),
             );
             break;
@@ -102,6 +121,19 @@ class UserMenuButton extends StatelessWidget {
           ),
         ),
         const PopupMenuDivider(),
+        PopupMenuItem(
+          value: "accountSecurity",
+          child: Row(
+            children: [
+              const Icon(Icons.security_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.accountSecurity,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
         PopupMenuItem(
           value: "feedback",
           child: Row(
@@ -171,6 +203,26 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
+        if (isSysAdmin)
+          PopupMenuItem(
+            value: "moduleAuthorization",
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: Colors.white,
+                ),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    loc.moduleAuthorization,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: "requestDataExport",

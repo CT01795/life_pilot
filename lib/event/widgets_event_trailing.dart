@@ -25,16 +25,18 @@ Widget widgetsEventTrailing({
             selector: (_, c) => c.isEventSelected(event.id),
             builder: (_, isSelected, _) {
               return Tooltip(
-                  message: loc.eventAdd1,
-                  child: Checkbox(
-                    value: isSelected,
-                    onChanged: (value) => onMemoryCheckboxChanged(
-                        context: context,
-                        controller: controllerEvent,
-                        value: value,
-                        event: event,
-                        loc: loc),
-                  ));
+                message: loc.eventAdd1,
+                child: Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => onMemoryCheckboxChanged(
+                    context: context,
+                    controller: controllerEvent,
+                    value: value,
+                    event: event,
+                    loc: loc,
+                  ),
+                ),
+              );
             },
           ),
         if (auth.currentAccount == event.account)

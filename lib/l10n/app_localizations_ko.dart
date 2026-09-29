@@ -18,6 +18,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loginRelated => 'loginRelated';
 
   @override
+  String get passwordRecoveryChoiceTitle => '재설정 방법 선택';
+
+  @override
+  String get passwordRecoveryChoiceDescription => '인증 이메일로 직접 재설정하거나 관리자에게 이메일로 도움을 요청하세요.';
+
+  @override
+  String get resetByEmailVerification => '인증 이메일로 재설정';
+
+  @override
+  String get resetByEmailVerificationDescription => '새 비밀번호를 설정할 수 있는 안전한 링크를 이메일로 보내드립니다.';
+
+  @override
+  String get askAdministrator => '관리자에게 요청';
+
+  @override
+  String get askAdministratorDescription => '이메일 앱에서 요청을 보내면 관리자가 처리 후 답장합니다.';
+
+  @override
+  String get adminPasswordHelpSubject => 'Life Pilot 비밀번호 변경 요청';
+
+  @override
+  String adminPasswordHelpBody(String account) {
+    return 'Life Pilot에 로그인할 수 없습니다. 비밀번호 변경을 도와주세요.\n\n계정: $account\n\n처리 후 이 이메일 주소로 결과를 회신해 주세요.';
+  }
+
+  @override
+  String get adminPasswordHelpOpened => '이메일 앱을 열었습니다. 내용을 확인한 후 보내 주세요.';
+
+  @override
+  String adminPasswordHelpEmailUnavailable(String email) {
+    return '이메일 앱을 열 수 없습니다. $email로 이메일을 보내 주세요.';
+  }
+
+  @override
+  String get passwordHelpTitle => '기타 재설정 방법';
+
+  @override
+  String get passwordHelpDescription => '현재 비밀번호를 잊은 경우 인증 이메일로 재설정하거나 관리자에게 도움을 요청할 수 있습니다.';
+
+  @override
   String get login => '  로그인  ';
 
   @override
@@ -81,6 +121,77 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get updatePassword => '비밀번호 변경';
+
+  @override
+  String get accountSecurity => '계정 보안';
+
+  @override
+  String get currentPassword => '현재 비밀번호';
+
+  @override
+  String get newPassword => '새 비밀번호';
+
+  @override
+  String get changePassword => '비밀번호 변경';
+
+  @override
+  String get changePasswordSuccessful => '비밀번호가 변경되었습니다.';
+
+  @override
+  String get changePasswordFailed => '현재 비밀번호를 확인한 후 다시 시도해 주세요.';
+
+  @override
+  String get currentPasswordIncorrect => '현재 비밀번호가 올바르지 않습니다.';
+
+  @override
+  String get passwordMustBeDifferent => '새 비밀번호는 현재 비밀번호와 달라야 합니다.';
+
+  @override
+  String get passwordDoesNotMeetPolicy => '새 비밀번호가 보안 요구사항을 충족하지 않습니다. 영문자, 숫자 또는 기호를 추가한 후 다시 시도해 주세요.';
+
+  @override
+  String get passwordReauthenticationRequired => '보안을 위해 먼저 이메일 인증으로 비밀번호를 재설정해 주세요.';
+
+  @override
+  String get adminPasswordResetTitle => '사용자 비밀번호 재설정 지원';
+
+  @override
+  String get adminPasswordResetDescription => '요청한 사용자의 계정 이메일을 입력해 임시 비밀번호를 만드세요. 사용자에게 회신하고 로그인 후 즉시 변경하도록 안내하세요.';
+
+  @override
+  String get adminPasswordResetUserEmail => '사용자 이메일';
+
+  @override
+  String get adminPasswordResetSend => '임시 비밀번호 만들기';
+
+  @override
+  String adminTemporaryPasswordCreated(String email) {
+    return '$email의 임시 비밀번호를 만들었습니다.';
+  }
+
+  @override
+  String get adminTemporaryPasswordLabel => '임시 비밀번호';
+
+  @override
+  String get adminTemporaryPasswordInstruction => '복사하여 사용자에게 회신하고, 로그인 후 즉시 \'계정 보안\'에서 변경하도록 안내하세요.';
+
+  @override
+  String get adminTemporaryPasswordCopy => '임시 비밀번호 복사';
+
+  @override
+  String get adminTemporaryPasswordCopied => '임시 비밀번호를 복사했습니다.';
+
+  @override
+  String get adminPasswordResetUserNotFound => '이 이메일의 사용자를 찾을 수 없습니다.';
+
+  @override
+  String get adminPasswordResetFailed => '임시 비밀번호를 만들 수 없습니다. 잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get publishedSubmission => '공개됨';
+
+  @override
+  String get publishedSubmissionTooltip => '이 정보는 공개되어 모든 사용자가 볼 수 있습니다.';
 
   @override
   String get leaveGameConfirmation => '게임을 종료하고 이전 페이지로 돌아가시겠습니까?';

@@ -43,8 +43,6 @@ class ControllerPageMain extends SafeChangeNotifier {
     PageType.feedbackAdmin: 'feedbackAdmin',
   };
 
-  static const adminOnlyPages = <PageType>[PageType.moduleAuthorization];
-
   ControllerAuth _auth;
   AppLocalizations _loc;
   Locale _locale;
@@ -71,7 +69,6 @@ class ControllerPageMain extends SafeChangeNotifier {
         pages.add(entry.key);
       }
     }
-    if (auth.isSysAdmin) pages.addAll(adminOnlyPages);
     return pages;
   }
 
