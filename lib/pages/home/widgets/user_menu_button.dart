@@ -144,33 +144,6 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: "privacyPolicy",
-          child: Row(
-            children: [
-              const Icon(Icons.privacy_tip_outlined, color: Colors.white),
-              Gaps.w8,
-              Text(
-                loc.privacyPolicy,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "termsOfService",
-          child: Row(
-            children: [
-              const Icon(Icons.description_outlined, color: Colors.white),
-              Gaps.w8,
-              Text(
-                loc.termsOfService,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
         PopupMenuItem(
           value: "subscriptionPlans",
           child: Row(
@@ -203,27 +176,6 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
-        if (isSysAdmin)
-          PopupMenuItem(
-            value: "moduleAuthorization",
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: Colors.white,
-                ),
-                Gaps.w8,
-                Expanded(
-                  child: Text(
-                    loc.moduleAuthorization,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const PopupMenuDivider(),
         PopupMenuItem(
           value: "requestDataExport",
           child: Row(
@@ -262,6 +214,53 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: "privacyPolicy",
+          child: Row(
+            children: [
+              const Icon(Icons.privacy_tip_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.privacyPolicy,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: "termsOfService",
+          child: Row(
+            children: [
+              const Icon(Icons.description_outlined, color: Colors.white),
+              Gaps.w8,
+              Text(
+                loc.termsOfService,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        if (isSysAdmin)
+          PopupMenuItem(
+            value: "moduleAuthorization",
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: Colors.white,
+                ),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    loc.moduleAuthorization,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: "logout",

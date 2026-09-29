@@ -285,7 +285,7 @@
   "@ai": {"description": "Label for AI"},
   "feedback": "피드백",
   "@feedback": {"description": "Label for Feedback"},
-  "businessPlan": "Business Plan",
+  "businessPlan": "비즈니스 플랜",
   "@businessPlan": {"description": "Label for BusinessPlan"},
 
   "pageRecommendEvent": "pageRecommendEvent",
@@ -1078,7 +1078,7 @@
   "@subscriptionPlusAnswerHistory": {"description": "Label for subscriptionPlusAnswerHistory"},
   "subscriptionCommonFeatures": "두 요금제 모두 제공",
   "@subscriptionCommonFeatures": {"description": "Label for subscriptionCommonFeatures"},
-  "subscriptionCommonFeaturesDetail": "캘린더, 회계, 포인트, 추천 이벤트와 장소, 관리자 문제 은행. 기기 저장 데이터는 무제한입니다. 주식과 Business Plan은 관리자 전용입니다.",
+  "subscriptionCommonFeaturesDetail": "캘린더, 회계, 포인트, 추천 이벤트와 장소, 관리자 문제 은행. 기기 저장 데이터는 무제한입니다. 주식과 비즈니스 플랜은 관리자 전용입니다.",
   "@subscriptionCommonFeaturesDetail": {"description": "Label for subscriptionCommonFeaturesDetail"},
   "subscriptionPurchaseComingSoon": "인앱 구독 출시 예정",
   "@subscriptionPurchaseComingSoon": {"description": "Label for subscriptionPurchaseComingSoon"},

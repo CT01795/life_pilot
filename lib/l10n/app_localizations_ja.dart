@@ -482,7 +482,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get feedback => 'フィードバック';
 
   @override
-  String get businessPlan => 'Business Plan';
+  String get businessPlan => 'ビジネスプラン';
 
   @override
   String get pageRecommendEvent => 'pageRecommendEvent';
@@ -1701,7 +1701,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionCommonFeatures => '両プランに含まれる機能';
 
   @override
-  String get subscriptionCommonFeaturesDetail => 'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とBusiness Planは管理者専用です。';
+  String get subscriptionCommonFeaturesDetail => 'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とビジネスプランは管理者専用です。';
 
   @override
   String get subscriptionPurchaseComingSoon => 'アプリ内サブスクリプションは近日公開';
