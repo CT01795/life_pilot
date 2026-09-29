@@ -10,6 +10,7 @@ from event.service_event import router as service_event_router
 from external.service_external import router as service_external_router
 from external.service_weather import router as service_weather_router
 from stock.service_stock import router as service_stock_router
+from account.service_account import router as service_account_router
 
 DEFAULT_CORS_ALLOWED_ORIGINS = (
     "https://ct01795.github.io",
@@ -67,3 +68,4 @@ app.include_router(service_event_router)
 app.include_router(service_external_router)
 app.include_router(service_weather_router)
 app.include_router(service_stock_router)
+app.include_router(service_account_router)

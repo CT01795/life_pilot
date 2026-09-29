@@ -14,6 +14,7 @@ import 'package:life_pilot/event/widgets_event_image.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
 
 class WidgetsEventCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -175,6 +176,16 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         : null;
 
     final loc = AppLocalizations.of(context)!;
+    final currentAccount = context.select<ControllerAuth, String?>(
+      (auth) => auth.currentAccount?.trim().toLowerCase(),
+    );
+    final isPublishedSubmission =
+        currentAccount != null &&
+        currentAccount ==
+            widget.eventViewModel.event.account?.trim().toLowerCase() &&
+        widget.eventViewModel.event.isApproved &&
+        (widget.tableName == TableNames.recommendEvents ||
+            widget.tableName == TableNames.recommendPlaces);
     final discoveryHighlights = _discoveryHighlights(loc, now);
     Widget buildHeader() {
       return Row(
@@ -390,6 +401,18 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
+          if (isPublishedSubmission)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Tooltip(
+                message: loc.publishedSubmissionTooltip,
+                child: Chip(
+                  avatar: const Icon(Icons.public, size: 16),
+                  label: Text(loc.publishedSubmission),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
           Gaps.h8,
           if (widget.eventViewModel.dateRange.isNotEmpty)
             dateBanner(widget.eventViewModel.dateRange),

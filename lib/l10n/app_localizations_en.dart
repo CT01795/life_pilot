@@ -18,6 +18,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginRelated => 'loginRelated';
 
   @override
+  String get passwordRecoveryChoiceTitle => 'Choose a reset method';
+
+  @override
+  String get passwordRecoveryChoiceDescription => 'Reset it yourself using a verification email, or email the administrator for help.';
+
+  @override
+  String get resetByEmailVerification => 'Reset by verification email';
+
+  @override
+  String get resetByEmailVerificationDescription => 'We will email you a secure link so you can set a new password.';
+
+  @override
+  String get askAdministrator => 'Ask the administrator';
+
+  @override
+  String get askAdministratorDescription => 'Open your email app and send a request. The administrator will reply after handling it.';
+
+  @override
+  String get adminPasswordHelpSubject => 'Life Pilot password change request';
+
+  @override
+  String adminPasswordHelpBody(String account) {
+    return 'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: $account\n\nPlease reply to this email after the request has been handled.';
+  }
+
+  @override
+  String get adminPasswordHelpOpened => 'Your email app is open. Review the message and send it.';
+
+  @override
+  String adminPasswordHelpEmailUnavailable(String email) {
+    return 'The email app could not be opened. Please email $email.';
+  }
+
+  @override
+  String get passwordHelpTitle => 'Other reset options';
+
+  @override
+  String get passwordHelpDescription => 'If you forgot your current password, reset it by verification email or ask the administrator for help.';
+
+  @override
   String get login => '  Login  ';
 
   @override
@@ -81,6 +121,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updatePassword => 'Update Password';
+
+  @override
+  String get accountSecurity => 'Account security';
+
+  @override
+  String get currentPassword => 'Current password';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get changePassword => 'Change password';
+
+  @override
+  String get changePasswordSuccessful => 'Your password has been updated.';
+
+  @override
+  String get changePasswordFailed => 'Password update failed. Check your current password and try again.';
+
+  @override
+  String get currentPasswordIncorrect => 'The current password is incorrect.';
+
+  @override
+  String get passwordMustBeDifferent => 'The new password must be different from the current password.';
+
+  @override
+  String get passwordDoesNotMeetPolicy => 'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.';
+
+  @override
+  String get passwordReauthenticationRequired => 'For security, reset your password through email verification first.';
+
+  @override
+  String get adminPasswordResetTitle => 'Help a user reset their password';
+
+  @override
+  String get adminPasswordResetDescription => 'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.';
+
+  @override
+  String get adminPasswordResetUserEmail => 'User email';
+
+  @override
+  String get adminPasswordResetSend => 'Create temporary password';
+
+  @override
+  String adminTemporaryPasswordCreated(String email) {
+    return 'A temporary password was created for $email.';
+  }
+
+  @override
+  String get adminTemporaryPasswordLabel => 'Temporary password';
+
+  @override
+  String get adminTemporaryPasswordInstruction => 'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.';
+
+  @override
+  String get adminTemporaryPasswordCopy => 'Copy temporary password';
+
+  @override
+  String get adminTemporaryPasswordCopied => 'Temporary password copied.';
+
+  @override
+  String get adminPasswordResetUserNotFound => 'No user was found for this email.';
+
+  @override
+  String get adminPasswordResetFailed => 'The temporary password could not be created. Try again later.';
+
+  @override
+  String get publishedSubmission => 'Public';
+
+  @override
+  String get publishedSubmissionTooltip => 'This information is public and can be viewed by everyone.';
 
   @override
   String get leaveGameConfirmation => 'Leave this game and return to the previous page?';

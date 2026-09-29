@@ -7,8 +7,11 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/auth/service_account_security.dart';
 import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
+
+enum _PasswordHelpChoice { emailVerification, administrator }
 
 class PageLogin extends StatefulWidget {
   const PageLogin({super.key});
@@ -18,9 +21,7 @@ class PageLogin extends StatefulWidget {
 }
 
 class _PageLoginState extends State<PageLogin> {
-  static final RegExp _emailPattern = RegExp(
-    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-  );
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
@@ -86,10 +87,7 @@ class _PageLoginState extends State<PageLogin> {
 
     String? error;
     try {
-      error = await _authView.login(
-        email: email,
-        password: password,
-      );
+      error = await _authView.login(email: email, password: password);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -135,24 +133,109 @@ class _PageLoginState extends State<PageLogin> {
     }
   }
 
+  Future<void> _showPasswordRecoveryOptions() async {
+    if (_isSubmitting || _isSendingResetEmail) return;
+    final loc = AppLocalizations.of(context)!;
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      AppNavigator.showErrorBar(loc.noEmailError);
+      _emailFocusNode.requestFocus();
+      return;
+    }
+    if (!_emailPattern.hasMatch(email)) {
+      AppNavigator.showErrorBar(loc.invalidEmail);
+      _emailFocusNode.requestFocus();
+      return;
+    }
+
+    final choice = await showDialog<_PasswordHelpChoice>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.passwordRecoveryChoiceTitle),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(loc.passwordRecoveryChoiceDescription),
+              Gaps.h16,
+              ListTile(
+                leading: const Icon(Icons.mark_email_read_outlined),
+                title: Text(loc.resetByEmailVerification),
+                subtitle: Text(loc.resetByEmailVerificationDescription),
+                onTap: () => Navigator.pop(
+                  dialogContext,
+                  _PasswordHelpChoice.emailVerification,
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.support_agent_outlined),
+                title: Text(loc.askAdministrator),
+                subtitle: Text(loc.askAdministratorDescription),
+                onTap: () => Navigator.pop(
+                  dialogContext,
+                  _PasswordHelpChoice.administrator,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(loc.cancel),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case _PasswordHelpChoice.emailVerification:
+        await _handleResetPassword();
+        return;
+      case _PasswordHelpChoice.administrator:
+        await _contactAdministrator(email);
+        return;
+      case null:
+        return;
+    }
+  }
+
+  Future<void> _contactAdministrator(String email) async {
+    final loc = AppLocalizations.of(context)!;
+    final opened = await ServiceAccountSecurity().contactAdministrator(
+      subject: loc.adminPasswordHelpSubject,
+      body: loc.adminPasswordHelpBody(email),
+    );
+    if (!mounted) return;
+    if (opened) {
+      AppNavigator.showSnackBar(loc.adminPasswordHelpOpened);
+    } else {
+      AppNavigator.showErrorBar(
+        loc.adminPasswordHelpEmailUnavailable(
+          ServiceAccountSecurity.administratorEmail,
+        ),
+      );
+    }
+  }
+
   void _startResetEmailCooldown() {
     _resetEmailCooldownTimer?.cancel();
     setState(() => _resetEmailCooldownSeconds = 60);
-    _resetEmailCooldownTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        if (_resetEmailCooldownSeconds <= 1) {
-          timer.cancel();
-          setState(() => _resetEmailCooldownSeconds = 0);
-          return;
-        }
-        setState(() => _resetEmailCooldownSeconds--);
-      },
-    );
+    _resetEmailCooldownTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_resetEmailCooldownSeconds <= 1) {
+        timer.cancel();
+        setState(() => _resetEmailCooldownSeconds = 0);
+        return;
+      }
+      setState(() => _resetEmailCooldownSeconds--);
+    });
   }
 
   @override
@@ -160,12 +243,12 @@ class _PageLoginState extends State<PageLogin> {
     final loc = AppLocalizations.of(context)!; // ✅ 每次 build 都取最新
     // ✅ 讓語言變化時自動重建整個登入 UI
     return Scaffold(
-      appBar: AppBar(title: Text(loc.appTitle), actions: [
-        Tooltip(
-          message: loc.language,
-          child: LanguageToggleDropdown(),
-        ),
-      ]),
+      appBar: AppBar(
+        title: Text(loc.appTitle),
+        actions: [
+          Tooltip(message: loc.language, child: LanguageToggleDropdown()),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: Insets.all12,
         child: Center(
@@ -183,9 +266,7 @@ class _PageLoginState extends State<PageLogin> {
                       autofillHints: const [AutofillHints.email],
                       autocorrect: false,
                       obscureText: false,
-                      decoration: InputDecoration(
-                        labelText: loc.email,
-                      ),
+                      decoration: InputDecoration(labelText: loc.email),
                       validator: (value) {
                         final email = value?.trim() ?? '';
                         if (email.isEmpty) return loc.noEmailError;
@@ -214,7 +295,8 @@ class _PageLoginState extends State<PageLogin> {
                               : loc.hidePassword,
                           onPressed: () {
                             setState(
-                                () => _obscurePassword = !_obscurePassword);
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                           icon: Icon(
                             _obscurePassword
@@ -233,33 +315,39 @@ class _PageLoginState extends State<PageLogin> {
                       onFieldSubmitted: (_) => _tryLogin(),
                     ),
                     Gaps.h16,
-                    Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                      ElevatedButton(
-                        onPressed: _isSubmitting || _isSendingResetEmail
-                            ? null
-                            : _tryLogin,
-                        child: _isSubmitting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(loc.login),
-                      ),
-                    ]),
-                    Gaps.h16,
-                    Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                      TextButton(
-                        onPressed: _isSubmitting ||
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _isSubmitting || _isSendingResetEmail
+                              ? null
+                              : _tryLogin,
+                          child: _isSubmitting
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(loc.login),
+                        ),
+                      ],
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed:
+                            _isSubmitting ||
                                 _isSendingResetEmail ||
                                 _resetEmailCooldownSeconds > 0
                             ? null
-                            : _handleResetPassword,
+                            : _showPasswordRecoveryOptions,
                         child: _isSendingResetEmail
                             ? const SizedBox.square(
                                 dimension: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(
                                 _resetEmailCooldownSeconds > 0
@@ -269,14 +357,19 @@ class _PageLoginState extends State<PageLogin> {
                                     : loc.resetPassword,
                               ),
                       ),
-                      Gaps.w16,
-                      TextButton(
-                        onPressed: _isSubmitting || _isSendingResetEmail
-                            ? null
-                            : _navigateToRegister,
-                        child: Text(loc.register),
-                      ),
-                    ]),
+                    ),
+                    Gaps.h16,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        TextButton(
+                          onPressed: _isSubmitting || _isSendingResetEmail
+                              ? null
+                              : _navigateToRegister,
+                          child: Text(loc.register),
+                        ),
+                      ],
+                    ),
                     Gaps.h16,
                   ],
                 ),

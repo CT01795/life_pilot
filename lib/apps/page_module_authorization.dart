@@ -38,7 +38,11 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
       _message(loc.moduleAuthorizationSearchFirst);
       return;
     }
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _searched = false;
+      _selectedKeys.clear();
+    });
     try {
       final keys = await _service.loadUserModulesAsAdmin(email);
       if (!mounted) return;
@@ -54,7 +58,13 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
         error: error,
         stackTrace: stackTrace,
       );
-      if (mounted) _message(_errorMessage(loc, error));
+      if (mounted) {
+        setState(() {
+          _searched = false;
+          _selectedKeys.clear();
+        });
+        _message(_errorMessage(loc, error));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -123,9 +133,13 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
     final loc = AppLocalizations.of(context)!;
     final auth = context.watch<ControllerAuth>();
     if (!auth.isSysAdmin) {
-      return const Scaffold(body: Center(child: Icon(Icons.lock_outline)));
+      return Scaffold(
+        appBar: AppBar(title: Text(loc.moduleAuthorization)),
+        body: const Center(child: Icon(Icons.lock_outline)),
+      );
     }
     return Scaffold(
+      appBar: AppBar(title: Text(loc.moduleAuthorization)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -139,11 +153,6 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        loc.moduleAuthorization,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      Gaps.h8,
                       Text(loc.moduleAuthorizationDescription),
                       Gaps.h16,
                       TextField(

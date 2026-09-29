@@ -18,6 +18,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loginRelated => 'loginRelated';
 
   @override
+  String get passwordRecoveryChoiceTitle => '再設定方法を選択';
+
+  @override
+  String get passwordRecoveryChoiceDescription => '確認メールで自分で再設定するか、管理者にメールで依頼してください。';
+
+  @override
+  String get resetByEmailVerification => '確認メールで再設定';
+
+  @override
+  String get resetByEmailVerificationDescription => '新しいパスワードを設定するための安全なリンクをメールで送信します。';
+
+  @override
+  String get askAdministrator => '管理者に依頼';
+
+  @override
+  String get askAdministratorDescription => 'メールアプリで依頼を送信します。管理者が処理後に返信します。';
+
+  @override
+  String get adminPasswordHelpSubject => 'Life Pilot パスワード変更依頼';
+
+  @override
+  String adminPasswordHelpBody(String account) {
+    return 'Life Pilot にログインできません。パスワード変更の対応をお願いします。\n\nアカウント：$account\n\n対応後、このメールアドレスに結果をご返信ください。';
+  }
+
+  @override
+  String get adminPasswordHelpOpened => 'メールアプリを開きました。内容を確認して送信してください。';
+
+  @override
+  String adminPasswordHelpEmailUnavailable(String email) {
+    return 'メールアプリを開けません。$email にメールしてください。';
+  }
+
+  @override
+  String get passwordHelpTitle => 'その他の再設定方法';
+
+  @override
+  String get passwordHelpDescription => '現在のパスワードを忘れた場合は、確認メールで再設定するか、管理者に依頼できます。';
+
+  @override
   String get login => '  ログイン  ';
 
   @override
@@ -81,6 +121,77 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get updatePassword => 'パスワード更新';
+
+  @override
+  String get accountSecurity => 'アカウント保護';
+
+  @override
+  String get currentPassword => '現在のパスワード';
+
+  @override
+  String get newPassword => '新しいパスワード';
+
+  @override
+  String get changePassword => 'パスワード変更';
+
+  @override
+  String get changePasswordSuccessful => 'パスワードを更新しました。';
+
+  @override
+  String get changePasswordFailed => '現在のパスワードを確認して、もう一度お試しください。';
+
+  @override
+  String get currentPasswordIncorrect => '現在のパスワードが正しくありません。';
+
+  @override
+  String get passwordMustBeDifferent => '新しいパスワードは現在のパスワードと異なるものにしてください。';
+
+  @override
+  String get passwordDoesNotMeetPolicy => '新しいパスワードがセキュリティ要件を満たしていません。英字、数字、記号を追加してもう一度お試しください。';
+
+  @override
+  String get passwordReauthenticationRequired => 'セキュリティ保護のため、先にメール認証でパスワードを再設定してください。';
+
+  @override
+  String get adminPasswordResetTitle => 'ユーザーのパスワード再設定を支援';
+
+  @override
+  String get adminPasswordResetDescription => '依頼者のアカウントメールを入力して一時パスワードを作成します。ユーザーに返信し、ログイン後すぐに変更するよう案内してください。';
+
+  @override
+  String get adminPasswordResetUserEmail => 'ユーザーのメール';
+
+  @override
+  String get adminPasswordResetSend => '一時パスワードを作成';
+
+  @override
+  String adminTemporaryPasswordCreated(String email) {
+    return '$email の一時パスワードを作成しました。';
+  }
+
+  @override
+  String get adminTemporaryPasswordLabel => '一時パスワード';
+
+  @override
+  String get adminTemporaryPasswordInstruction => 'コピーしてユーザーに返信し、ログイン後すぐに「アカウント保護」で変更するよう案内してください。';
+
+  @override
+  String get adminTemporaryPasswordCopy => '一時パスワードをコピー';
+
+  @override
+  String get adminTemporaryPasswordCopied => '一時パスワードをコピーしました。';
+
+  @override
+  String get adminPasswordResetUserNotFound => 'このメールのユーザーが見つかりません。';
+
+  @override
+  String get adminPasswordResetFailed => '一時パスワードを作成できませんでした。後でもう一度お試しください。';
+
+  @override
+  String get publishedSubmission => '公開中';
+
+  @override
+  String get publishedSubmissionTooltip => 'この情報は公開され、すべてのユーザーが閲覧できます。';
 
   @override
   String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
