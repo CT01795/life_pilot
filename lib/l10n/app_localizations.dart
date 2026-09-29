@@ -3776,6 +3776,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue level {level}'**
   String continueLevel(int level);
+
+  /// No description provided for @moduleAuthorization.
+  ///
+  /// In en, this message translates to:
+  /// **'Access'**
+  String get moduleAuthorization;
+
+  /// No description provided for @moduleAuthorizationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the extra features available to a user. Home and the feature menu update together.'**
+  String get moduleAuthorizationDescription;
+
+  /// No description provided for @moduleAuthorizationSearchFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter and search for a user email first.'**
+  String get moduleAuthorizationSearchFirst;
+
+  /// No description provided for @moduleAuthorizationNoAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'No extra features are enabled.'**
+  String get moduleAuthorizationNoAccess;
+
+  /// No description provided for @moduleAuthorizationSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature access updated.'**
+  String get moduleAuthorizationSaved;
+
+  /// No description provided for @moduleAuthorizationLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load feature access. Check the account or try again.'**
+  String get moduleAuthorizationLoadFailed;
+
+  /// No description provided for @moduleAuthorizationNotDeployed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature access is not deployed. Run the authorization SQL in Supabase first.'**
+  String get moduleAuthorizationNotDeployed;
+
+  /// No description provided for @moduleAuthorizationUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user was found for that email address.'**
+  String get moduleAuthorizationUserNotFound;
+
+  /// No description provided for @moduleAuthorizationSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature access was not updated correctly. Search again and retry.'**
+  String get moduleAuthorizationSaveFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

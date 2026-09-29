@@ -1952,4 +1952,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String continueLevel(int level) {
     return 'Continue level $level';
   }
+
+  @override
+  String get moduleAuthorization => 'Access';
+
+  @override
+  String get moduleAuthorizationDescription => 'Choose the extra features available to a user. Home and the feature menu update together.';
+
+  @override
+  String get moduleAuthorizationSearchFirst => 'Enter and search for a user email first.';
+
+  @override
+  String get moduleAuthorizationNoAccess => 'No extra features are enabled.';
+
+  @override
+  String get moduleAuthorizationSaved => 'Feature access updated.';
+
+  @override
+  String get moduleAuthorizationLoadFailed => 'Could not load feature access. Check the account or try again.';
+
+  @override
+  String get moduleAuthorizationNotDeployed => 'Feature access is not deployed. Run the authorization SQL in Supabase first.';
+
+  @override
+  String get moduleAuthorizationUserNotFound => 'No user was found for that email address.';
+
+  @override
+  String get moduleAuthorizationSaveFailed => 'Feature access was not updated correctly. Search again and retry.';
 }

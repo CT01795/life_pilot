@@ -1952,4 +1952,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String continueLevel(int level) {
     return 'ステージ$levelを続ける';
   }
+
+  @override
+  String get moduleAuthorization => '機能権限';
+
+  @override
+  String get moduleAuthorizationDescription => '一般ユーザーに追加で許可する機能を設定します。ホームと機能メニューに同時に反映されます。';
+
+  @override
+  String get moduleAuthorizationSearchFirst => '先にユーザーのメールアドレスを入力して検索してください。';
+
+  @override
+  String get moduleAuthorizationNoAccess => '追加機能は許可されていません。';
+
+  @override
+  String get moduleAuthorizationSaved => '機能権限を更新しました。';
+
+  @override
+  String get moduleAuthorizationLoadFailed => '機能権限を読み込めません。アカウントを確認して再試行してください。';
+
+  @override
+  String get moduleAuthorizationNotDeployed => '機能権限が未導入です。先に Supabase で権限 SQL を実行してください。';
+
+  @override
+  String get moduleAuthorizationUserNotFound => 'このメールアドレスのユーザーが見つかりません。';
+
+  @override
+  String get moduleAuthorizationSaveFailed => '機能権限が正しく更新されませんでした。再検索してお試しください。';
 }

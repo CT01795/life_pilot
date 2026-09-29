@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/income_expense_summary_card.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/home_quick_record_navigation.dart';
@@ -37,6 +39,18 @@ class _PageHomeState extends State<PageHome> {
   Future<void>? _recommendPlacesLoad;
   String? _recommendEventsAccount;
   String? _recommendPlacesAccount;
+  bool? _coreIncludedPoints;
+
+  Future<void> _loadCore(String account, {required bool includePoints}) async {
+    final operation = context.read<ModelDashboard>().refreshCore(
+      account: account,
+      includePoints: includePoints,
+    );
+    _coreAccount = account;
+    _coreIncludedPoints = includePoints;
+    _coreLoad = operation;
+    await operation;
+  }
 
   void _openSection(
     GlobalKey key,
@@ -63,14 +77,11 @@ class _PageHomeState extends State<PageHome> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final account = context.read<ModelAuthView>().account;
-      final dashboard = context.read<ModelDashboard>();
-
       if (account == null || account.isEmpty) return;
-
-      final operation = dashboard.refreshCore(account: account);
-      _coreAccount = account;
-      _coreLoad = operation;
-      await operation;
+      final includePoints = context.read<ControllerPageMain>().canAccess(
+        PageType.pointsRecord,
+      );
+      await _loadCore(account, includePoints: includePoints);
     });
   }
 
@@ -126,6 +137,19 @@ class _PageHomeState extends State<PageHome> {
 
   @override
   Widget build(BuildContext context) {
+    final pointsEnabled = context.select<ControllerPageMain, bool>(
+      (controller) => controller.canAccess(PageType.pointsRecord),
+    );
+    final account = context.watch<ModelAuthView>().account;
+    if (account != null &&
+        account.isNotEmpty &&
+        (_coreAccount != account || _coreIncludedPoints != pointsEnabled)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && context.read<ModelAuthView>().account == account) {
+          unawaited(_loadCore(account, includePoints: pointsEnabled));
+        }
+      });
+    }
     return RefreshIndicator(
       onRefresh: () async {
         final account = context.read<ModelAuthView>().account;
@@ -135,7 +159,10 @@ class _PageHomeState extends State<PageHome> {
         }
 
         final dashboard = context.read<ModelDashboard>();
-        final coreOperation = dashboard.refreshCore(account: account);
+        final coreOperation = dashboard.refreshCore(
+          account: account,
+          includePoints: pointsEnabled,
+        );
         _coreAccount = account;
         _coreLoad = coreOperation;
         await coreOperation;
@@ -158,6 +185,7 @@ class _PageHomeState extends State<PageHome> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TodayLifeOverviewCard(
+                    showPoints: pointsEnabled,
                     onSchedulePressed: () => _openSection(
                       _scheduleKey,
                       () => _todayScheduleExpanded = true,
@@ -186,6 +214,7 @@ class _PageHomeState extends State<PageHome> {
                   Gaps.h16,
                   TodayScheduleCard(
                     key: _scheduleKey,
+                    showPoints: pointsEnabled,
                     isExpanded: _todayScheduleExpanded,
                     onExpansionChanged: (value) =>
                         setState(() => _todayScheduleExpanded = value),
@@ -217,13 +246,15 @@ class _PageHomeState extends State<PageHome> {
                     onExpansionChanged: (value) =>
                         setState(() => _accountingExpanded = value),
                   ),
-                  Gaps.h16,
-                  PointSummaryCard(
-                    key: _pointsKey,
-                    isExpanded: _pointsExpanded,
-                    onExpansionChanged: (value) =>
-                        setState(() => _pointsExpanded = value),
-                  ),
+                  if (pointsEnabled) ...[
+                    Gaps.h16,
+                    PointSummaryCard(
+                      key: _pointsKey,
+                      isExpanded: _pointsExpanded,
+                      onExpansionChanged: (value) =>
+                          setState(() => _pointsExpanded = value),
+                    ),
+                  ],
                 ],
               ),
             ),

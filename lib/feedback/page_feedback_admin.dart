@@ -3,10 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PageFeedbackAdmin extends StatelessWidget {
@@ -17,7 +19,8 @@ class PageFeedbackAdmin extends StatelessWidget {
     final auth = context.watch<ControllerAuth>();
     final loc = AppLocalizations.of(context)!;
 
-    if (!auth.isSysAdmin) {
+    if (!auth.isSysAdmin &&
+        !context.read<ControllerPageMain>().canAccess(PageType.feedbackAdmin)) {
       return const Scaffold(body: Center(child: Text('Access denied')));
     }
 

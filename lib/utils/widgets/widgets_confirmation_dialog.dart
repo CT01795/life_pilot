@@ -35,13 +35,13 @@ Future<bool> showConfirmationDialog({
       false;
 }
 
-Future<bool?> confirmCalenderEventTransfer(
-      {required BuildContext context,
-      required var event,
-      required ControllerCalendar controller,
-      required AppLocalizations loc,
-      required bool isAlreadyAdded}) async {
-
+Future<bool?> confirmCalenderEventTransfer({
+  required BuildContext context,
+  required var event,
+  required ControllerCalendar controller,
+  required AppLocalizations loc,
+  required bool isAlreadyAdded,
+}) async {
   final content = controller.buildTransferMessage(
     isAlreadyAdded: isAlreadyAdded,
     event: event,
@@ -55,20 +55,25 @@ Future<bool?> confirmCalenderEventTransfer(
   );
 }
 
-Future<ScheduleDateTimeChoice?> confirmEventTransfer(
-      {required BuildContext context,
-      required var event,
-      required AppLocalizations loc,
-      required bool isAlreadyAdded}) async {
-
+Future<ScheduleDateTimeChoice?> confirmEventTransfer({
+  required BuildContext context,
+  required var event,
+  required AppLocalizations loc,
+  required bool isAlreadyAdded,
+}) async {
   final now = DateTime.now();
-  final initialDate = event.startDate is DateTime &&
+  final initialDate =
+      event.startDate is DateTime &&
           !(event.startDate as DateTime).isBefore(DateUtils.dateOnly(now))
       ? event.startDate as DateTime
       : now;
-  final initialTime = event.startTime is TimeOfDay
-      ? event.startTime as TimeOfDay
-      : TimeOfDay.fromDateTime(now);
+  final initialTime = initialRecommendedScheduleTime(
+    selectedDate: initialDate,
+    sourceTime: event.startTime is TimeOfDay
+        ? event.startTime as TimeOfDay
+        : null,
+    currentDateTime: now,
+  );
   return showScheduleDateTimeDialog(
     context,
     title: event.name?.toString() ?? '',

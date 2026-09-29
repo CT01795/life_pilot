@@ -1242,5 +1242,14 @@
   "multiDayEvent": "{count} consecutive days",
   "@multiDayEvent": {"description": "Label for multiDayEvent", "placeholders": {"count": {"type": "int"}}},
   "continueLevel": "Continue level {level}",
-  "@continueLevel": {"description": "Label for continueLevel", "placeholders": {"level": {"type": "int"}}}
+  "@continueLevel": {"description": "Label for continueLevel", "placeholders": {"level": {"type": "int"}}},
+  "moduleAuthorization": "Access",
+  "moduleAuthorizationDescription": "Choose the extra features available to a user. Home and the feature menu update together.",
+  "moduleAuthorizationSearchFirst": "Enter and search for a user email first.",
+  "moduleAuthorizationNoAccess": "No extra features are enabled.",
+  "moduleAuthorizationSaved": "Feature access updated.",
+  "moduleAuthorizationLoadFailed": "Could not load feature access. Check the account or try again.",
+  "moduleAuthorizationNotDeployed": "Feature access is not deployed. Run the authorization SQL in Supabase first.",
+  "moduleAuthorizationUserNotFound": "No user was found for that email address.",
+  "moduleAuthorizationSaveFailed": "Feature access was not updated correctly. Search again and retry."
 }

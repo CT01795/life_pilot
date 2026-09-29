@@ -43,11 +43,13 @@ class CalendarService {
     DateTime? scheduledDate,
     TimeOfDay? scheduledTime,
   }) async {
-    DateTime today = DateTimeFormatter.dateOnly(DateTime.now().toUtc());
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
     final originalStart = event.startDate ?? today;
     final startDate =
         scheduledDate ??
-        (originalStart.toUtc().isBefore(today) ? today : originalStart);
+        (DateTimeFormatter.dateOnly(originalStart).isBefore(today)
+            ? today
+            : originalStart);
     final data = <String, Object?>{
       // 新的 id
       Fields.id: id ?? const Uuid().v4(),
@@ -99,15 +101,15 @@ class CalendarService {
             DateUtils.isSameDay(date, today);
       });
     }
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    final tomorrow = today.add(const Duration(days: 1));
     final result = await supabase
         .from(TableNames.calendarEvents)
         .select(Fields.id)
         .eq("name", place.name)
         .eq(Fields.account, account)
-        .eq(
-          "start_date",
-          DateTimeFormatter.dateOnly(DateTime.now().toUtc()).toIso8601String(),
-        )
+        .gte("start_date", today.toUtc().toIso8601String())
+        .lt("start_date", tomorrow.toUtc().toIso8601String())
         .maybeSingle();
     return result != null;
   }
@@ -121,14 +123,13 @@ class CalendarService {
     TimeOfDay? scheduledTime,
   }) async {
     final now = DateTime.now();
+    final localDate = DateTimeFormatter.dateOnly(scheduledDate ?? now);
     final data = <String, Object?>{
       // 新的 id
       Fields.id: id ?? const Uuid().v4(),
       Fields.account: account,
       'master_url': place.masterUrl,
-      'start_date': DateTimeFormatter.dateOnly(
-        (scheduledDate ?? now).toUtc(),
-      ).toIso8601String(),
+      'start_date': localDate.toUtc().toIso8601String(),
       'end_date': null,
       'start_time': (scheduledTime ?? TimeOfDay.fromDateTime(now))
           .formatTimeString(),
