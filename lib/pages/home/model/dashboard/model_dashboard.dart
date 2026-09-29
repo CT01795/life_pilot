@@ -311,11 +311,14 @@ class ModelDashboard extends SafeChangeNotifier {
     }
   }
 
-  Future<void> refreshCore({required String account}) async {
-    const sections = [
+  Future<void> refreshCore({
+    required String account,
+    bool includePoints = true,
+  }) async {
+    final sections = [
       DashboardSection.todaySchedule,
       DashboardSection.accounting,
-      DashboardSection.points,
+      if (includePoints) DashboardSection.points,
     ];
     final generation = _accountGeneration;
     final accountingRequest = ++_accountingRequest;
@@ -376,24 +379,25 @@ class ModelDashboard extends SafeChangeNotifier {
               notifyListeners();
             }
           });
-      final pointsFuture =
-          _loadSection(
-            DashboardSection.points,
-            () => repository.loadPointSummary(
-              accountId: setting.pointAccountId ?? '',
-            ),
-          ).then((points) {
-            if (_isCurrentRequest(account, generation) &&
-                pointsRequest == _pointsRequest &&
-                points != null) {
-              _state = _state.copyWith(
-                todayPoints: points.records,
-                pointsTotal: points.total,
-                todayPointsTotal: points.todayTotal,
-              );
-              notifyListeners();
-            }
-          });
+      final pointsFuture = includePoints
+          ? _loadSection(
+              DashboardSection.points,
+              () => repository.loadPointSummary(
+                accountId: setting.pointAccountId ?? '',
+              ),
+            ).then((points) {
+              if (_isCurrentRequest(account, generation) &&
+                  pointsRequest == _pointsRequest &&
+                  points != null) {
+                _state = _state.copyWith(
+                  todayPoints: points.records,
+                  pointsTotal: points.total,
+                  todayPointsTotal: points.todayTotal,
+                );
+                notifyListeners();
+              }
+            })
+          : Future<void>.value();
       await Future.wait([todayEventsFuture, accountingFuture, pointsFuture]);
     } finally {
       if (_isCurrentRequest(account, generation)) {

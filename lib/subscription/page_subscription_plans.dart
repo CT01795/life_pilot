@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
@@ -7,6 +8,7 @@ import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_account_deletion_requests.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
 class PageSubscriptionPlans extends StatefulWidget {
@@ -49,6 +51,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final auth = context.watch<ControllerAuth>();
+    final canUsePoints = context.select<ControllerPageMain, bool>(
+      (controller) => controller.canAccess(PageType.pointsRecord),
+    );
+    final canUseGame = context.select<ControllerPageMain, bool>(
+      (controller) => controller.canAccess(PageType.game),
+    );
+    bool showResource(String resource) =>
+        (resource != 'point_record_detail' || canUsePoints) &&
+        (resource != 'game_questions' || canUseGame);
     final subscription = auth.subscription;
     final currentStoragePlan = auth.preferredStorage.name;
     final currentEntitlements = subscription.entitlements
@@ -87,15 +98,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               title: Text(
                 subscription.isPlus
                     ? (subscription.storagePlan == 'local'
-                        ? loc.subscriptionCurrentLocalPlus
-                        : loc.subscriptionCurrentCloudPlus)
+                          ? loc.subscriptionCurrentLocalPlus
+                          : loc.subscriptionCurrentCloudPlus)
                     : loc.subscriptionCurrentFree,
               ),
               subtitle: endLabel != null
                   ? Text(loc.subscriptionValidUntil(endLabel))
                   : subscription.isPlus
-                      ? null
-                      : Text(loc.subscriptionInactiveAccountWarning),
+                  ? null
+                  : Text(loc.subscriptionInactiveAccountWarning),
             ),
           ),
           if (graceLabel != null && overages.isNotEmpty) ...[
@@ -136,25 +147,28 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
             Gaps.h8,
             Card(
               child: Column(
-                children: subscription.usage.values.map((usage) {
-                  final label = _resourceLabel(loc, usage.resource);
-                  final used = usage.resource == 'image_bytes'
-                      ? '${(usage.used / 1024 / 1024).toStringAsFixed(1)} MB'
-                      : usage.used.toString();
-                  final quota = usage.resource == 'image_bytes'
-                      ? '${(usage.quota / 1024 / 1024).toStringAsFixed(0)} MB'
-                      : usage.quota.toString();
-                  return ListTile(
-                    dense: true,
-                    leading: usage.isUnlimited
-                        ? const Icon(Icons.all_inclusive)
-                        : null,
-                    title: Text(label),
-                    trailing: Text(
-                      usage.isUnlimited ? '$used / ∞' : '$used / $quota',
-                    ),
-                  );
-                }).toList(),
+                children: subscription.usage.values
+                    .where((usage) => showResource(usage.resource))
+                    .map((usage) {
+                      final label = _resourceLabel(loc, usage.resource);
+                      final used = usage.resource == 'image_bytes'
+                          ? '${(usage.used / 1024 / 1024).toStringAsFixed(1)} MB'
+                          : usage.used.toString();
+                      final quota = usage.resource == 'image_bytes'
+                          ? '${(usage.quota / 1024 / 1024).toStringAsFixed(0)} MB'
+                          : usage.quota.toString();
+                      return ListTile(
+                        dense: true,
+                        leading: usage.isUnlimited
+                            ? const Icon(Icons.all_inclusive)
+                            : null,
+                        title: Text(label),
+                        trailing: Text(
+                          usage.isUnlimited ? '$used / ∞' : '$used / $quota',
+                        ),
+                      );
+                    })
+                    .toList(),
               ),
             ),
           ],
@@ -209,20 +223,25 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                   ),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   children: entitlement.quotas.entries
-                      .where((entry) => entry.key != 'answer_history_days')
+                      .where(
+                        (entry) =>
+                            entry.key != 'answer_history_days' &&
+                            showResource(entry.key),
+                      )
                       .map((entry) {
-                    final value = entry.key == 'image_bytes'
-                        ? '${entry.value ~/ 1024 ~/ 1024} MB'
-                        : entry.value.toString();
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Text(_resourceLabel(loc, entry.key)),
-                        ),
-                        Text(value),
-                      ],
-                    );
-                  }).toList(),
+                        final value = entry.key == 'image_bytes'
+                            ? '${entry.value ~/ 1024 ~/ 1024} MB'
+                            : entry.value.toString();
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Text(_resourceLabel(loc, entry.key)),
+                            ),
+                            Text(value),
+                          ],
+                        );
+                      })
+                      .toList(),
                 ),
               ),
             ),
@@ -247,6 +266,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       child: _PricingVersionCard(
                         version: latestCloud,
                         effectiveDate: formatDate(latestCloud.effectiveAt)!,
+                        canUsePoints: canUsePoints,
+                        canUseGame: canUseGame,
                       ),
                     );
               final localCard = latestLocal == null
@@ -256,18 +277,14 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       child: _PricingVersionCard(
                         version: latestLocal,
                         effectiveDate: formatDate(latestLocal.effectiveAt)!,
+                        canUsePoints: canUsePoints,
+                        canUseGame: canUseGame,
                       ),
                     );
               return Column(
                 children: (currentStoragePlan == 'local'
-                    ? [
-                        ?localCard,
-                        ?cloudCard,
-                      ]
-                    : [
-                        ?cloudCard,
-                        ?localCard,
-                      ]),
+                    ? [?localCard, ?cloudCard]
+                    : [?cloudCard, ?localCard]),
               );
             },
           ),
@@ -277,11 +294,12 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 title: loc.subscriptionFreeName,
                 price: loc.subscriptionFreePrice,
                 features: [
-                  loc.subscriptionFreePersonalRecords,
-                  loc.subscriptionFreeGameQuestions,
+                  '${loc.personalEvent} / ${loc.accountRecords} / ${loc.memoryTrace}: 30',
+                  if (canUsePoints) '${loc.pointsRecord}: 30',
+                  if (canUseGame) loc.subscriptionFreeGameQuestions,
                   loc.subscriptionFreeSharing,
                   loc.subscriptionFreeImages,
-                  loc.subscriptionFreeAnswerHistory,
+                  if (canUseGame) loc.subscriptionFreeAnswerHistory,
                 ],
                 selected: !subscription.isPlus,
               );
@@ -296,13 +314,19 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                     : 'NT\$${_latestCloudVersion!.quarterlyPriceTwd}',
                 features: _latestCloudVersion == null
                     ? [
-                        loc.subscriptionPlusPersonalRecords,
-                        loc.subscriptionPlusGameQuestions,
+                        '${loc.personalEvent} / ${loc.accountRecords} / ${loc.memoryTrace}: 300',
+                        if (canUsePoints) '${loc.pointsRecord}: 300',
+                        if (canUseGame) loc.subscriptionPlusGameQuestions,
                         loc.subscriptionPlusSharing,
                         loc.subscriptionPlusImages,
-                        loc.subscriptionPlusAnswerHistory,
+                        if (canUseGame) loc.subscriptionPlusAnswerHistory,
                       ]
-                    : _versionFeatures(loc, _latestCloudVersion!),
+                    : _versionFeatures(
+                        loc,
+                        _latestCloudVersion!,
+                        canUsePoints: canUsePoints,
+                        canUseGame: canUseGame,
+                      ),
                 selected:
                     subscription.isPlus && subscription.storagePlan == 'cloud',
                 highlighted: true,
@@ -318,15 +342,15 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                     : 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
                 features: [
                   loc.subscriptionLocalPaidFeature,
-                  loc.subscriptionLocalAnswerHistory,
+                  if (canUseGame) loc.subscriptionLocalAnswerHistory,
                 ],
                 selected:
                     subscription.isPlus && subscription.storagePlan == 'local',
               );
               final currentCard = subscription.isPlus
                   ? (subscription.storagePlan == 'local'
-                      ? localPlusCard
-                      : cloudPlusCard)
+                        ? localPlusCard
+                        : cloudPlusCard)
                   : freeCard;
               final cards = subscription.isPlus
                   ? <Widget>[
@@ -398,19 +422,24 @@ String _resourceLabel(AppLocalizations loc, String resource) =>
 
 List<String> _versionFeatures(
   AppLocalizations loc,
-  SubscriptionPricingVersion version,
-) {
+  SubscriptionPricingVersion version, {
+  required bool canUsePoints,
+  required bool canUseGame,
+}) {
   if (version.storagePlan == 'local') {
     return [
       loc.subscriptionLocalPaidFeature,
-      loc.subscriptionLocalAnswerHistory,
+      if (canUseGame) loc.subscriptionLocalAnswerHistory,
     ];
   }
   return [
     for (final entry in version.quotas.entries)
-      if (entry.key != 'answer_history_days')
+      if (entry.key != 'answer_history_days' &&
+          (entry.key != 'point_record_detail' || canUsePoints) &&
+          (entry.key != 'game_questions' || canUseGame))
         '${_resourceLabel(loc, entry.key)}：${entry.key == 'image_bytes' ? '${entry.value ~/ 1024 ~/ 1024} MB' : entry.value}',
-    '${loc.subscriptionPlusAnswerHistory}：${version.quotas['answer_history_days'] ?? 0}',
+    if (canUseGame)
+      '${loc.subscriptionPlusAnswerHistory}：${version.quotas['answer_history_days'] ?? 0}',
   ];
 }
 
@@ -418,10 +447,14 @@ class _PricingVersionCard extends StatelessWidget {
   const _PricingVersionCard({
     required this.version,
     required this.effectiveDate,
+    required this.canUsePoints,
+    required this.canUseGame,
   });
 
   final SubscriptionPricingVersion version;
   final String effectiveDate;
+  final bool canUsePoints;
+  final bool canUseGame;
 
   @override
   Widget build(BuildContext context) {
@@ -453,28 +486,34 @@ class _PricingVersionCard extends StatelessWidget {
                 leading: const Icon(Icons.all_inclusive),
                 title: Text(loc.subscriptionLocalPaidFeature),
               ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.history_outlined),
-                title: Text(loc.subscriptionLocalAnswerHistory),
-              ),
+              if (canUseGame)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.history_outlined),
+                  title: Text(loc.subscriptionLocalAnswerHistory),
+                ),
             ] else
               ...version.quotas.entries
-                  .where((entry) => entry.key != 'answer_history_days')
+                  .where(
+                    (entry) =>
+                        entry.key != 'answer_history_days' &&
+                        (entry.key != 'point_record_detail' || canUsePoints) &&
+                        (entry.key != 'game_questions' || canUseGame),
+                  )
                   .map((entry) {
-                final value = entry.key == 'image_bytes'
-                    ? '${entry.value ~/ 1024 ~/ 1024} MB'
-                    : entry.value.toString();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(_resourceLabel(loc, entry.key))),
-                      Text(value),
-                    ],
-                  ),
-                );
-              }),
+                    final value = entry.key == 'image_bytes'
+                        ? '${entry.value ~/ 1024 ~/ 1024} MB'
+                        : entry.value.toString();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(_resourceLabel(loc, entry.key))),
+                          Text(value),
+                        ],
+                      ),
+                    );
+                  }),
           ],
         ),
       ),
@@ -490,16 +529,16 @@ class _Fact extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 150,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.labelMedium),
-            Gaps.h4,
-            Text(value, style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
-      );
+    width: 150,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
+        Gaps.h4,
+        Text(value, style: Theme.of(context).textTheme.titleMedium),
+      ],
+    ),
+  );
 }
 
 class _PlanCard extends StatelessWidget {

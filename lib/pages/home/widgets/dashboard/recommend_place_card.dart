@@ -142,9 +142,12 @@ class RecommendPlaceCard extends StatelessWidget {
                                             context,
                                             title: e.name,
                                             initialDate: now,
-                                            initialTime: TimeOfDay.fromDateTime(
-                                              now,
-                                            ),
+                                            initialTime:
+                                                initialRecommendedScheduleTime(
+                                                  selectedDate: now,
+                                                  sourceTime: e.startTime,
+                                                  currentDateTime: now,
+                                                ),
                                           );
                                       if (schedule == null) return;
                                       final addedEvent = await calendar
@@ -181,9 +184,12 @@ class RecommendPlaceCard extends StatelessWidget {
                                             description: loc
                                                 .scheduleDuplicateConfirmation,
                                             initialDate: now,
-                                            initialTime: TimeOfDay.fromDateTime(
-                                              now,
-                                            ),
+                                            initialTime:
+                                                initialRecommendedScheduleTime(
+                                                  selectedDate: now,
+                                                  sourceTime: e.startTime,
+                                                  currentDateTime: now,
+                                                ),
                                           );
                                       if (schedule != null) {
                                         final addedEvent = await calendar

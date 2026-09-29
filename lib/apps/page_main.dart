@@ -15,6 +15,7 @@ import 'package:life_pilot/game/page_game_list.dart';
 import 'package:life_pilot/feedback/page_feedback_admin.dart';
 import 'package:life_pilot/point_record/page_point_record.dart';
 import 'package:life_pilot/apps/page_settings.dart';
+import 'package:life_pilot/apps/page_module_authorization.dart';
 import 'package:provider/provider.dart';
 
 class PageMain extends StatefulWidget {
@@ -24,32 +25,49 @@ class PageMain extends StatefulWidget {
   State<PageMain> createState() => _PageMainState();
 }
 
-class _PageMainState extends State<PageMain> {
+class _PageMainState extends State<PageMain> with WidgetsBindingObserver {
   final Map<PageType, Widget> _pageMap = {};
   String? _pageAccount;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<ControllerPageMain>().refreshModules();
+    }
+  }
+
   Widget _getPage(PageType type) {
-    return _pageMap.putIfAbsent(
-      type,
-      () => _buildPage(type),
-    );
+    return _pageMap.putIfAbsent(type, () => _buildPage(type));
   }
 
   Widget _buildPage(PageType type) => switch (type) {
-        PageType.home => const PageHome(),
-        PageType.personalEvent => const PageCalendar(),
-        PageType.stock => const PageStock(),
-        PageType.settings => const PageSettings(),
-        PageType.recommendEvent => const PageRecommendEvent(),
-        PageType.recommendPlaces => const PageRecommendPlaces(),
-        PageType.memoryTrace => const PageMemoryTrace(),
-        PageType.accountRecords => const PageAccountingList(),
-        PageType.pointsRecord => const PagePointRecord(),
-        PageType.game => const PageGameList(),
-        PageType.ai => const PageAI(),
-        PageType.feedbackAdmin => const PageFeedbackAdmin(),
-        PageType.businessPlan => const PageBusinessPlan(),
-      };
+    PageType.home => const PageHome(),
+    PageType.personalEvent => const PageCalendar(),
+    PageType.stock => const PageStock(),
+    PageType.settings => const PageSettings(),
+    PageType.recommendEvent => const PageRecommendEvent(),
+    PageType.recommendPlaces => const PageRecommendPlaces(),
+    PageType.memoryTrace => const PageMemoryTrace(),
+    PageType.accountRecords => const PageAccountingList(),
+    PageType.pointsRecord => const PagePointRecord(),
+    PageType.game => const PageGameList(),
+    PageType.ai => const PageAI(),
+    PageType.feedbackAdmin => const PageFeedbackAdmin(),
+    PageType.businessPlan => const PageBusinessPlan(),
+    PageType.moduleAuthorization => const PageModuleAuthorization(),
+  };
 
   @override
   Widget build(BuildContext context) {

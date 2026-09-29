@@ -1,108 +1,138 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/apps/service_module.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ControllerPageMain extends SafeChangeNotifier {
-  ControllerAuth _auth;
-  AppLocalizations _loc;
-  Locale _locale;
-  String? _accountKey;
-  bool _wasAdmin;
-  late List<String> dbPages = [];
-  PageType _selectedPage;
-
-  Timer? _debounce;
-
   ControllerPageMain({
     required ControllerAuth auth,
     required AppLocalizations loc,
     required Locale initialLocale,
-  })  : _auth = auth,
-        _loc = loc,
-        _locale = initialLocale,
-        _accountKey = auth.currentAccount?.trim().toLowerCase(),
-        _wasAdmin = auth.isSysAdmin,
-        _selectedPage = PageType.home;
+    ServiceModule? serviceModule,
+  }) : _auth = auth,
+       _loc = loc,
+       _locale = initialLocale,
+       _serviceModule = serviceModule ?? ServiceModule(),
+       _accountKey = auth.currentAccount?.trim().toLowerCase(),
+       _wasAdmin = auth.isSysAdmin,
+       _selectedPage = PageType.home {
+    unawaited(_reloadModules());
+  }
 
-  // 📘 Getter 區
+  static const basePages = <PageType>[
+    PageType.home,
+    PageType.personalEvent,
+    PageType.recommendEvent,
+    PageType.recommendPlaces,
+    PageType.memoryTrace,
+    PageType.accountRecords,
+  ];
+
+  static const grantablePageKeys = <PageType, String>{
+    PageType.pointsRecord: 'pointsRecord',
+    PageType.game: 'game',
+    PageType.ai: 'ai',
+    PageType.stock: 'stock',
+    PageType.businessPlan: 'businessPlan',
+    PageType.feedbackAdmin: 'feedbackAdmin',
+  };
+
+  static const adminOnlyPages = <PageType>[PageType.moduleAuthorization];
+
+  ControllerAuth _auth;
+  AppLocalizations _loc;
+  Locale _locale;
+  final ServiceModule _serviceModule;
+  String? _accountKey;
+  bool _wasAdmin;
+  Set<String> _moduleKeys = const {};
+  bool _modulesLoading = false;
+  int _moduleRequest = 0;
+  PageType _selectedPage;
+  Timer? _debounce;
+
   ControllerAuth get auth => _auth;
   AppLocalizations get loc => _loc;
   Locale get locale => _locale;
   PageType get selectedPage => _selectedPage;
+  bool get modulesLoading => _modulesLoading;
+  Set<String> get moduleKeys => Set.unmodifiable(_moduleKeys);
 
-  // ✅ 取得目前登入狀態下可使用的頁面
   List<PageType> get availablePages {
-    // ⭐ 已登入 → 基本
-    List<PageType> pages = [
-      PageType.home,
-      PageType.personalEvent,
-      PageType.stock,
-      PageType.recommendEvent,
-      PageType.recommendPlaces,
-      PageType.memoryTrace,
-      PageType.accountRecords,
-      PageType.pointsRecord,
-      PageType.game,
-      PageType.ai,
-    ];
-
-    if (!auth.isSysAdmin) {
-      pages.remove(PageType.stock);
+    final pages = <PageType>[...basePages];
+    for (final entry in grantablePageKeys.entries) {
+      if (auth.isSysAdmin || _moduleKeys.contains(entry.value)) {
+        pages.add(entry.key);
+      }
     }
-
-    // 最後加遊戲頁
-    if (auth.isSysAdmin) {
-      pages.add(PageType.businessPlan);
-      pages.add(PageType.feedbackAdmin);
-    }
-
+    if (auth.isSysAdmin) pages.addAll(adminOnlyPages);
     return pages;
   }
 
-  // ✅ 切換頁面（若不同才觸發 notify）
+  bool canAccess(PageType page) => availablePages.contains(page);
+
   void changePage(PageType newPage) {
-    // ⭐ AI → 直接開外部瀏覽器，不切頁
+    if (!canAccess(newPage)) return;
     if (newPage == PageType.ai) {
-      _openAI();
+      unawaited(_openAI());
       return;
     }
     if (newPage == _selectedPage) return;
     _selectedPage = newPage;
+    _notifyDebounced();
+  }
+
+  Future<void> refreshModules() => _reloadModules(force: true);
+
+  Future<void> _reloadModules({bool force = false}) async {
+    final account = _accountKey;
+    final request = ++_moduleRequest;
+    if (account == null || account.isEmpty || auth.isSysAdmin) {
+      _moduleKeys = const {};
+      _modulesLoading = false;
+      _validateSelectedPage();
+      _notifyDebounced();
+      return;
+    }
+    _modulesLoading = true;
+    if (force) _notifyDebounced();
+    final keys = await _serviceModule.loadModulesFromServer(account);
+    if (request != _moduleRequest || account != _accountKey) return;
+    _moduleKeys = keys.toSet();
+    _modulesLoading = false;
     _validateSelectedPage();
     _notifyDebounced();
   }
 
   Future<void> _openAI() async {
     final uri = Uri.parse('https://chatgpt.com/zh-TW');
-
-    if (!await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    )) {
-      logger.e('❌ Can\'t open ChatGPT');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      logger.e('Can\'t open ChatGPT');
     }
   }
 
-  // ✅ 更新語系與登入資訊
   void updateLocalization(
-      AppLocalizations loc, Locale locale, ControllerAuth? auth) {
-    bool changed = false;
-
+    AppLocalizations loc,
+    Locale locale,
+    ControllerAuth? auth,
+  ) {
+    var changed = false;
+    var sessionChanged = false;
     if (auth != null) {
       final nextAccount = auth.currentAccount?.trim().toLowerCase();
       final nextIsAdmin = auth.isSysAdmin;
-      final sessionChanged =
-          nextAccount != _accountKey || nextIsAdmin != _wasAdmin;
+      sessionChanged = nextAccount != _accountKey || nextIsAdmin != _wasAdmin;
       _auth = auth;
       if (sessionChanged) {
         _accountKey = nextAccount;
         _wasAdmin = nextIsAdmin;
+        _moduleKeys = const {};
         _selectedPage = PageType.home;
         changed = true;
       }
@@ -115,29 +145,24 @@ class ControllerPageMain extends SafeChangeNotifier {
       _locale = locale;
       changed = true;
     }
-    if (changed) {
-      _notifyDebounced();
-    }
+    if (sessionChanged) unawaited(_reloadModules());
+    if (changed) _notifyDebounced();
   }
 
-  // ✅ 確保 selectedPage 在合法頁面範圍內
   void _validateSelectedPage() {
     if (!availablePages.contains(_selectedPage)) {
-      logger.i('🔄 Page $_selectedPage 無效，重設為 ${availablePages.first}（登入狀態改變）');
-      _selectedPage = availablePages.first;
+      _selectedPage = PageType.home;
     }
   }
 
-  // ✅ Debounce 通知，避免頻繁 rebuild
   void _notifyDebounced() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 120), () {
-      notifyListeners();
-    });
+    _debounce = Timer(const Duration(milliseconds: 80), notifyListeners);
   }
 
   @override
   void dispose() {
+    _moduleRequest++;
     _debounce?.cancel();
     super.dispose();
   }

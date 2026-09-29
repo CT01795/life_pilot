@@ -16,6 +16,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
     required this.onPointsQuickAdd,
     required this.onDiscoverEvents,
     required this.onDiscoverPlaces,
+    this.showPoints = true,
   });
 
   final VoidCallback onSchedulePressed;
@@ -25,6 +26,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
   final VoidCallback onPointsQuickAdd;
   final VoidCallback onDiscoverEvents;
   final VoidCallback onDiscoverPlaces;
+  final bool showPoints;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +108,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                   scheduleOverview: scheduleOverview,
                   hasAccountingAccount: hasAccountingAccount,
                   hasPointAccount: hasPointAccount,
+                  showPoints: showPoints,
                 ),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colors.onPrimaryContainer.withValues(alpha: 0.82),
@@ -144,17 +147,15 @@ class TodayLifeOverviewCard extends StatelessWidget {
                         onPressed: onSchedulePressed,
                       ),
                     if (scheduleOverview.nextFreeAt case final freeAt?)
-                      ActionChip(
-                        avatar: const Icon(Icons.free_breakfast_outlined),
-                        label: Text(
-                          loc.nextFreeHour(
-                            MaterialLocalizations.of(
-                              context,
-                            ).formatTimeOfDay(TimeOfDay.fromDateTime(freeAt)),
-                            MaterialLocalizations.of(context).formatTimeOfDay(
-                              TimeOfDay.fromDateTime(
-                                freeAt.add(const Duration(hours: 1)),
-                              ),
+                      _WrappingOverviewAction(
+                        icon: Icons.free_breakfast_outlined,
+                        label: loc.nextFreeHour(
+                          MaterialLocalizations.of(
+                            context,
+                          ).formatTimeOfDay(TimeOfDay.fromDateTime(freeAt)),
+                          MaterialLocalizations.of(context).formatTimeOfDay(
+                            TimeOfDay.fromDateTime(
+                              freeAt.add(const Duration(hours: 1)),
                             ),
                           ),
                         ),
@@ -275,7 +276,9 @@ class TodayLifeOverviewCard extends StatelessWidget {
               Gaps.h12,
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final tileWidth = (constraints.maxWidth - 16) / 3;
+                  final tileCount = showPoints ? 3 : 2;
+                  final tileWidth =
+                      (constraints.maxWidth - (tileCount - 1) * 8) / tileCount;
                   return Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -314,28 +317,29 @@ class TodayLifeOverviewCard extends StatelessWidget {
                         isLoading: accountingLoading,
                         onPressed: onAccountingPressed,
                       ),
-                      _OverviewMetric(
-                        width: tileWidth,
-                        icon: Icons.stars_outlined,
-                        label: loc.todayPoints,
-                        value: hasPointAccount
-                            ? numberFormats.integer.format(pointsTotal)
-                            : loc.selectAccount,
-                        statusIcon: !hasPointAccount
-                            ? Icons.info_outline
-                            : pointsTotal > 0
-                            ? Icons.trending_up
-                            : pointsTotal < 0
-                            ? Icons.trending_down
-                            : Icons.trending_flat,
-                        accentColor: !hasPointAccount
-                            ? colors.secondary
-                            : pointsTotal < 0
-                            ? colors.error
-                            : colors.tertiary,
-                        isLoading: pointsLoading,
-                        onPressed: onPointsPressed,
-                      ),
+                      if (showPoints)
+                        _OverviewMetric(
+                          width: tileWidth,
+                          icon: Icons.stars_outlined,
+                          label: loc.todayPoints,
+                          value: hasPointAccount
+                              ? numberFormats.integer.format(pointsTotal)
+                              : loc.selectAccount,
+                          statusIcon: !hasPointAccount
+                              ? Icons.info_outline
+                              : pointsTotal > 0
+                              ? Icons.trending_up
+                              : pointsTotal < 0
+                              ? Icons.trending_down
+                              : Icons.trending_flat,
+                          accentColor: !hasPointAccount
+                              ? colors.secondary
+                              : pointsTotal < 0
+                              ? colors.error
+                              : colors.tertiary,
+                          isLoading: pointsLoading,
+                          onPressed: onPointsPressed,
+                        ),
                     ],
                   );
                 },
@@ -350,11 +354,12 @@ class TodayLifeOverviewCard extends StatelessWidget {
                     label: loc.quickAddAccounting,
                     onPressed: onAccountingQuickAdd,
                   ),
-                  _OverviewAction(
-                    icon: Icons.add_circle_outline,
-                    label: loc.quickAddPoints,
-                    onPressed: onPointsQuickAdd,
-                  ),
+                  if (showPoints)
+                    _OverviewAction(
+                      icon: Icons.add_circle_outline,
+                      label: loc.quickAddPoints,
+                      onPressed: onPointsQuickAdd,
+                    ),
                 ],
               ),
             ],
@@ -369,6 +374,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
     required _ScheduleOverview scheduleOverview,
     required bool hasAccountingAccount,
     required bool hasPointAccount,
+    required bool showPoints,
   }) {
     if (scheduleOverview.overdueCount > 0) {
       return loc.homeInsightReviewOverdue(scheduleOverview.overdueCount);
@@ -380,7 +386,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
       return loc.homeInsightResolveConflicts(conflictCount);
     }
     if (scheduleOverview.todayCount == 0) return loc.homeInsightDiscover;
-    if (!hasAccountingAccount || !hasPointAccount) {
+    if (!hasAccountingAccount || (showPoints && !hasPointAccount)) {
       return loc.homeInsightConnectAccounts;
     }
     return loc.homeInsightReadyForReview;
@@ -702,6 +708,53 @@ class _OverviewAction extends StatelessWidget {
       label: Text(label),
       onPressed: onPressed,
       tooltip: label,
+    );
+  }
+}
+
+class _WrappingOverviewAction extends StatelessWidget {
+  const _WrappingOverviewAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Material(
+        color: colors.secondaryContainer,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: colors.onSecondaryContainer),
+                Gaps.w8,
+                Flexible(
+                  child: Text(
+                    label,
+                    softWrap: true,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colors.onSecondaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

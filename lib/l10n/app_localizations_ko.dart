@@ -1952,4 +1952,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String continueLevel(int level) {
     return '$level단계 계속하기';
   }
+
+  @override
+  String get moduleAuthorization => '기능 권한';
+
+  @override
+  String get moduleAuthorizationDescription => '일반 사용자에게 추가로 허용할 기능을 설정합니다. 홈과 기능 메뉴에 함께 적용됩니다.';
+
+  @override
+  String get moduleAuthorizationSearchFirst => '먼저 사용자 이메일을 입력하고 검색하세요.';
+
+  @override
+  String get moduleAuthorizationNoAccess => '허용된 추가 기능이 없습니다.';
+
+  @override
+  String get moduleAuthorizationSaved => '기능 권한이 업데이트되었습니다.';
+
+  @override
+  String get moduleAuthorizationLoadFailed => '기능 권한을 불러올 수 없습니다. 계정을 확인하고 다시 시도하세요.';
+
+  @override
+  String get moduleAuthorizationNotDeployed => '기능 권한이 아직 배포되지 않았습니다. 먼저 Supabase에서 권한 SQL을 실행하세요.';
+
+  @override
+  String get moduleAuthorizationUserNotFound => '해당 이메일의 사용자를 찾을 수 없습니다.';
+
+  @override
+  String get moduleAuthorizationSaveFailed => '기능 권한이 올바르게 업데이트되지 않았습니다. 다시 검색한 후 재시도하세요.';
 }

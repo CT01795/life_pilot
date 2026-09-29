@@ -10,6 +10,7 @@ import 'package:life_pilot/accounting/model_accounting_detail.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/apps/service_module.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
@@ -62,6 +63,15 @@ class _FakeAuth extends ControllerAuth {
     storage = value;
     notifyListeners();
   }
+}
+
+class _FakeModuleService extends ServiceModule {
+  _FakeModuleService([this.modules = const []]);
+
+  final List<String> modules;
+
+  @override
+  Future<List<String>> loadModulesFromServer(String account) async => modules;
 }
 
 class _FakeNotificationService implements ServiceNotificationPlatform {
@@ -221,6 +231,7 @@ void main() {
       auth: auth,
       loc: lookupAppLocalizations(const Locale('zh')),
       initialLocale: const Locale('zh'),
+      serviceModule: _FakeModuleService(),
     );
 
     controller.changePage(PageType.stock);
@@ -237,6 +248,31 @@ void main() {
 
     expect(controller.selectedPage, PageType.home);
     expect(controller.availablePages, isNot(contains(PageType.stock)));
+    controller.dispose();
+  });
+
+  test('normal users only see granted optional modules', () async {
+    final auth = _FakeAuth('member@example.com');
+    final controller = ControllerPageMain(
+      auth: auth,
+      loc: lookupAppLocalizations(const Locale('zh')),
+      initialLocale: const Locale('zh'),
+      serviceModule: _FakeModuleService(['pointsRecord', 'businessPlan']),
+    );
+
+    await controller.refreshModules();
+
+    expect(
+      controller.availablePages,
+      containsAll(ControllerPageMain.basePages),
+    );
+    expect(controller.availablePages, contains(PageType.pointsRecord));
+    expect(controller.availablePages, contains(PageType.businessPlan));
+    expect(controller.availablePages, isNot(contains(PageType.game)));
+    expect(
+      controller.availablePages,
+      isNot(contains(PageType.moduleAuthorization)),
+    );
     controller.dispose();
   });
 
@@ -267,41 +303,42 @@ void main() {
     },
   );
 
-  test('old accounting detail request is discarded after account switch',
-      () async {
-    final auth = _FakeAuth('old@example.com');
-    final service = _DelayedAccountingDetailService();
-    final controller = ControllerAccountingDetail(
-      service: service,
-      auth: auth,
-      accountId: 'old-account-id',
-    );
-
-    final request = controller.loadToday();
-    auth.account = 'new@example.com';
-    controller.updateAuth(auth, notify: false);
-    service.response.complete([
-      ModelAccountingDetail(
-        id: 'old-detail',
+  test(
+    'old accounting detail request is discarded after account switch',
+    () async {
+      final auth = _FakeAuth('old@example.com');
+      final service = _DelayedAccountingDetailService();
+      final controller = ControllerAccountingDetail(
+        service: service,
+        auth: auth,
         accountId: 'old-account-id',
-        createdAt: DateTime.now(),
-        date: DateTime.now(),
-        primaryCategory: 'food',
-        description: 'Old record',
-        type: 'balance',
-        value: 100,
-        currency: 'TWD',
-      ),
-    ]);
-    await request;
+      );
 
-    expect(controller.todayRecords, isEmpty);
-    expect(controller.isLoading, isFalse);
-    controller.dispose();
-  });
+      final request = controller.loadToday();
+      auth.account = 'new@example.com';
+      controller.updateAuth(auth, notify: false);
+      service.response.complete([
+        ModelAccountingDetail(
+          id: 'old-detail',
+          accountId: 'old-account-id',
+          createdAt: DateTime.now(),
+          date: DateTime.now(),
+          primaryCategory: 'food',
+          description: 'Old record',
+          type: 'balance',
+          value: 100,
+          currency: 'TWD',
+        ),
+      ]);
+      await request;
 
-  test('old point detail request is discarded after account switch',
-      () async {
+      expect(controller.todayRecords, isEmpty);
+      expect(controller.isLoading, isFalse);
+      controller.dispose();
+    },
+  );
+
+  test('old point detail request is discarded after account switch', () async {
     final auth = _FakeAuth('old@example.com');
     final service = _DelayedPointDetailService();
     final controller = ControllerPointRecordDetail(
@@ -332,35 +369,37 @@ void main() {
     controller.dispose();
   });
 
-  test('old event request and visible data are cleared after account switch',
-      () async {
-    final auth = _FakeAuth('old@example.com');
-    final service = _DelayedEventService();
-    final model = ModelEvent()
-      ..setEvents([EventItem(id: 'visible-old', name: 'Old visible event')]);
-    final controller = ControllerEvent(
-      auth: auth,
-      serviceEvent: service,
-      serviceWeather: ServiceWeather(),
-      modelEvent: model,
-      tableName: TableNames.memoryTrace,
-    );
-    final loc = lookupAppLocalizations(const Locale('zh'));
+  test(
+    'old event request and visible data are cleared after account switch',
+    () async {
+      final auth = _FakeAuth('old@example.com');
+      final service = _DelayedEventService();
+      final model = ModelEvent()
+        ..setEvents([EventItem(id: 'visible-old', name: 'Old visible event')]);
+      final controller = ControllerEvent(
+        auth: auth,
+        serviceEvent: service,
+        serviceWeather: ServiceWeather(),
+        modelEvent: model,
+        tableName: TableNames.memoryTrace,
+      );
+      final loc = lookupAppLocalizations(const Locale('zh'));
 
-    final request = controller.loadEvents(isGetPublicEvents: false);
-    auth.switchAccount('new@example.com');
+      final request = controller.loadEvents(isGetPublicEvents: false);
+      auth.switchAccount('new@example.com');
 
-    expect(controller.getFilteredEvents(loc), isEmpty);
+      expect(controller.getFilteredEvents(loc), isEmpty);
 
-    service.response.complete([
-      EventItem(id: 'old-response', name: 'Old response event'),
-    ]);
-    await request;
+      service.response.complete([
+        EventItem(id: 'old-response', name: 'Old response event'),
+      ]);
+      await request;
 
-    expect(controller.getFilteredEvents(loc), isEmpty);
-    expect(controller.isLoadingEvents, isFalse);
-    controller.dispose();
-  });
+      expect(controller.getFilteredEvents(loc), isEmpty);
+      expect(controller.isLoadingEvents, isFalse);
+      controller.dispose();
+    },
+  );
 
   test('calendar cache is cleared when the same account changes storage', () {
     final auth = _FakeAuth(
@@ -375,16 +414,13 @@ void main() {
           startDate: DateTime(2026, 9, 1),
         ),
       ])
-      ..cacheMonthEvents(
-        DateTime(2026, 9),
-        [
-          EventItem(
-            id: 'cached-cloud-event',
-            name: 'Cached cloud event',
-            startDate: DateTime(2026, 9, 2),
-          ),
-        ],
-      );
+      ..cacheMonthEvents(DateTime(2026, 9), [
+        EventItem(
+          id: 'cached-cloud-event',
+          name: 'Cached cloud event',
+          startDate: DateTime(2026, 9, 2),
+        ),
+      ]);
     final controller = ControllerCalendar(
       modelCalendar: model,
       serviceEvent: ServiceEvent(),

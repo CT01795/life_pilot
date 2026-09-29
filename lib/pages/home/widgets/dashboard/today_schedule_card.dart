@@ -29,11 +29,13 @@ import '../../../../utils/logger.dart';
 class TodayScheduleCard extends StatelessWidget {
   final bool isExpanded;
   final ValueChanged<bool> onExpansionChanged;
+  final bool showPoints;
 
   const TodayScheduleCard({
     super.key,
     required this.isExpanded,
     required this.onExpansionChanged,
+    this.showPoints = true,
   });
 
   @override
@@ -139,10 +141,11 @@ class TodayScheduleCard extends StatelessWidget {
                             icon: Icons.account_balance_wallet_outlined,
                             label: loc.accountRecords,
                           ),
-                          _JourneyStep(
-                            icon: Icons.stars_outlined,
-                            label: loc.pointsRecord,
-                          ),
+                          if (showPoints)
+                            _JourneyStep(
+                              icon: Icons.stars_outlined,
+                              label: loc.pointsRecord,
+                            ),
                         ],
                       ),
                     ],
@@ -188,6 +191,7 @@ class TodayScheduleCard extends StatelessWidget {
                                         accountingAccountName,
                                     accountingCurrency: accountingCurrency,
                                     pointAccountName: pointAccountName,
+                                    allowPoints: showPoints,
                                   );
                                   if (choice == null || !context.mounted) {
                                     return;

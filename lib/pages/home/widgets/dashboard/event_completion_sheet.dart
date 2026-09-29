@@ -34,6 +34,7 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
   String? accountingAccountName,
   required String accountingCurrency,
   String? pointAccountName,
+  bool allowPoints = true,
 }) => showModalBottomSheet<EventCompletionChoice>(
   context: context,
   isScrollControlled: true,
@@ -43,6 +44,7 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
     accountingAccountName: accountingAccountName,
     accountingCurrency: accountingCurrency,
     pointAccountName: pointAccountName,
+    allowPoints: allowPoints,
   ),
 );
 
@@ -52,12 +54,14 @@ class _EventCompletionSheet extends StatefulWidget {
     required this.accountingAccountName,
     required this.accountingCurrency,
     required this.pointAccountName,
+    required this.allowPoints,
   });
 
   final String eventName;
   final String? accountingAccountName;
   final String accountingCurrency;
   final String? pointAccountName;
+  final bool allowPoints;
 
   @override
   State<_EventCompletionSheet> createState() => _EventCompletionSheetState();
@@ -118,16 +122,17 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
           Gaps.h4,
           Text(loc.completeEventMessage),
           Gaps.h12,
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _addToMemory,
-            title: Text(loc.memoryAdd),
-            secondary: const Icon(Icons.auto_stories_outlined),
-            controlAffinity: ListTileControlAffinity.trailing,
-            onChanged: (value) {
-              setState(() => _addToMemory = value ?? false);
-            },
-          ),
+          if (widget.allowPoints)
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _addToMemory,
+              title: Text(loc.memoryAdd),
+              secondary: const Icon(Icons.auto_stories_outlined),
+              controlAffinity: ListTileControlAffinity.trailing,
+              onChanged: (value) {
+                setState(() => _addToMemory = value ?? false);
+              },
+            ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: _addExpense,
@@ -233,7 +238,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
                 ? null
                 : (value) => setState(() => _addPoints = value ?? false),
           ),
-          if (_addPoints) ...[
+          if (widget.allowPoints && _addPoints) ...[
             Gaps.h8,
             SegmentedButton<bool>(
               segments: [

@@ -151,8 +151,11 @@ class RecommendEventCard extends StatelessWidget {
                                             title: e.name,
                                             initialDate: initialDate,
                                             initialTime:
-                                                e.startTime ??
-                                                TimeOfDay.fromDateTime(now),
+                                                initialRecommendedScheduleTime(
+                                                  selectedDate: initialDate,
+                                                  sourceTime: e.startTime,
+                                                  currentDateTime: now,
+                                                ),
                                           );
                                       if (schedule == null) return;
                                       final addedEvent = await calendar
@@ -190,8 +193,11 @@ class RecommendEventCard extends StatelessWidget {
                                                 .scheduleDuplicateConfirmation,
                                             initialDate: now,
                                             initialTime:
-                                                e.startTime ??
-                                                TimeOfDay.fromDateTime(now),
+                                                initialRecommendedScheduleTime(
+                                                  selectedDate: now,
+                                                  sourceTime: e.startTime,
+                                                  currentDateTime: now,
+                                                ),
                                           );
                                       if (schedule != null) {
                                         final addedEvent = await calendar

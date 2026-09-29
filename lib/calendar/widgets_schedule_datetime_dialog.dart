@@ -9,13 +9,23 @@ class ScheduleDateTimeChoice {
   final DateTime date;
   final TimeOfDay time;
 
-  DateTime get dateTime => DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
+  DateTime get dateTime =>
+      DateTime(date.year, date.month, date.day, time.hour, time.minute);
+}
+
+TimeOfDay initialRecommendedScheduleTime({
+  required DateTime selectedDate,
+  TimeOfDay? sourceTime,
+  DateTime? currentDateTime,
+}) {
+  final now = currentDateTime ?? DateTime.now();
+  final currentTime = TimeOfDay.fromDateTime(now);
+  if (!DateUtils.isSameDay(selectedDate, now) || sourceTime == null) {
+    return sourceTime ?? currentTime;
+  }
+  final sourceMinutes = sourceTime.hour * 60 + sourceTime.minute;
+  final currentMinutes = currentTime.hour * 60 + currentTime.minute;
+  return sourceMinutes > currentMinutes ? sourceTime : currentTime;
 }
 
 Future<ScheduleDateTimeChoice?> showScheduleDateTimeDialog(
@@ -91,10 +101,7 @@ Future<ScheduleDateTimeChoice?> showScheduleDateTimeDialog(
           FilledButton(
             onPressed: () => Navigator.pop(
               dialogContext,
-              ScheduleDateTimeChoice(
-                date: selectedDate,
-                time: selectedTime,
-              ),
+              ScheduleDateTimeChoice(date: selectedDate, time: selectedTime),
             ),
             child: Text(loc.confirm),
           ),

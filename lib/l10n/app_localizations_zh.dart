@@ -1952,4 +1952,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String continueLevel(int level) {
     return '繼續第 $level 關';
   }
+
+  @override
+  String get moduleAuthorization => '模組授權';
+
+  @override
+  String get moduleAuthorizationDescription => '設定一般使用者可額外使用的功能。首頁與功能選單會同步套用。';
+
+  @override
+  String get moduleAuthorizationSearchFirst => '請先輸入並查詢使用者 Email。';
+
+  @override
+  String get moduleAuthorizationNoAccess => '目前未開放額外功能。';
+
+  @override
+  String get moduleAuthorizationSaved => '模組授權已更新。';
+
+  @override
+  String get moduleAuthorizationLoadFailed => '無法讀取模組授權，請確認帳號或稍後再試。';
+
+  @override
+  String get moduleAuthorizationNotDeployed => '模組授權尚未部署，請先在 Supabase 執行授權 SQL。';
+
+  @override
+  String get moduleAuthorizationUserNotFound => '找不到這個使用者帳號，請確認 Email。';
+
+  @override
+  String get moduleAuthorizationSaveFailed => '授權未正確更新，請重新查詢後再試。';
 }

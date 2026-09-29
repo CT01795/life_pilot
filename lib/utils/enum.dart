@@ -1,7 +1,7 @@
 enum AuthPage { login, register, resetPassword, pageMain }
 
 enum PageType {
-  home,  
+  home,
   personalEvent,
   stock,
   settings,
@@ -14,13 +14,10 @@ enum PageType {
   ai,
   feedbackAdmin,
   businessPlan,
+  moduleAuthorization,
 }
 
-enum AccountCategory {
-  personal,
-  project,
-  master,
-}
+enum AccountCategory { personal, project, master }
 
 // ⏰ 提醒時間類型
 enum CalendarReminderOption {
@@ -32,7 +29,7 @@ enum CalendarReminderOption {
   twoDays,
   oneWeek,
   twoWeeks,
-  oneMonth;
+  oneMonth,
 }
 
 // 🔁 重複規則（事件重複頻率）
