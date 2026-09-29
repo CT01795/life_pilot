@@ -482,7 +482,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get feedback => '피드백';
 
   @override
-  String get businessPlan => 'Business Plan';
+  String get businessPlan => '비즈니스 플랜';
 
   @override
   String get pageRecommendEvent => 'pageRecommendEvent';
@@ -1701,7 +1701,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionCommonFeatures => '두 요금제 모두 제공';
 
   @override
-  String get subscriptionCommonFeaturesDetail => '캘린더, 회계, 포인트, 추천 이벤트와 장소, 관리자 문제 은행. 기기 저장 데이터는 무제한입니다. 주식과 Business Plan은 관리자 전용입니다.';
+  String get subscriptionCommonFeaturesDetail => '캘린더, 회계, 포인트, 추천 이벤트와 장소, 관리자 문제 은행. 기기 저장 데이터는 무제한입니다. 주식과 비즈니스 플랜은 관리자 전용입니다.';
 
   @override
   String get subscriptionPurchaseComingSoon => '인앱 구독 출시 예정';

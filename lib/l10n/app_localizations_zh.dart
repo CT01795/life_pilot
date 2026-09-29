@@ -482,7 +482,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feedback => '意見回饋';
 
   @override
-  String get businessPlan => 'Business Plan';
+  String get businessPlan => '商業企劃書';
 
   @override
   String get pageRecommendEvent => 'pageRecommendEvent';
@@ -1701,7 +1701,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCommonFeatures => '兩種方案皆可使用';
 
   @override
-  String get subscriptionCommonFeaturesDetail => '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與 Business Plan 僅限管理者。';
+  String get subscriptionCommonFeaturesDetail => '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與商業企劃書僅限管理者。';
 
   @override
   String get subscriptionPurchaseComingSoon => 'App 內訂閱即將開放';

@@ -285,7 +285,7 @@
   "@ai": {"description": "Label for AI"},
   "feedback": "フィードバック",
   "@feedback": {"description": "Label for Feedback"},
-  "businessPlan": "Business Plan",
+  "businessPlan": "ビジネスプラン",
   "@businessPlan": {"description": "Label for BusinessPlan"},
 
   "pageRecommendEvent": "pageRecommendEvent",
@@ -1078,7 +1078,7 @@
   "@subscriptionPlusAnswerHistory": {"description": "Label for subscriptionPlusAnswerHistory"},
   "subscriptionCommonFeatures": "両プランに含まれる機能",
   "@subscriptionCommonFeatures": {"description": "Label for subscriptionCommonFeatures"},
-  "subscriptionCommonFeaturesDetail": "カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とBusiness Planは管理者専用です。",
+  "subscriptionCommonFeaturesDetail": "カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とビジネスプランは管理者専用です。",
   "@subscriptionCommonFeaturesDetail": {"description": "Label for subscriptionCommonFeaturesDetail"},
   "subscriptionPurchaseComingSoon": "アプリ内サブスクリプションは近日公開",
   "@subscriptionPurchaseComingSoon": {"description": "Label for subscriptionPurchaseComingSoon"},
