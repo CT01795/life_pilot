@@ -67,6 +67,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logout => '로그아웃';
 
   @override
+  String get logoutConfirmation => '현재 계정에서 로그아웃하시겠습니까?';
+
+  @override
   String get resetPassword => '비밀번호 재설정';
 
   @override
@@ -192,6 +195,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get publishedSubmissionTooltip => '이 정보는 공개되어 모든 사용자가 볼 수 있습니다.';
+
+  @override
+  String get unpublishedSubmission => '아직 공개되지 않음';
+
+  @override
+  String get unpublishedSubmissionTooltip => '이 정보는 검토 대기 중이며 현재 본인과 관리자만 볼 수 있습니다.';
 
   @override
   String get leaveGameConfirmation => '게임을 종료하고 이전 페이지로 돌아가시겠습니까?';
@@ -489,6 +498,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get search => '검색';
+
+  @override
+  String get recordSearchHint => '설명 또는 하위 분류 검색';
+
+  @override
+  String get recordAllCategories => '전체 분류';
+
+  @override
+  String get recordNetChange => '순변동';
 
   @override
   String get moreActions => '더보기';

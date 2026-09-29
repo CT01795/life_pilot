@@ -67,6 +67,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logout => 'ログアウト';
 
   @override
+  String get logoutConfirmation => '現在のアカウントからログアウトしますか？';
+
+  @override
   String get resetPassword => 'パスワード再設定';
 
   @override
@@ -192,6 +195,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get publishedSubmissionTooltip => 'この情報は公開され、すべてのユーザーが閲覧できます。';
+
+  @override
+  String get unpublishedSubmission => '未公開';
+
+  @override
+  String get unpublishedSubmissionTooltip => 'この情報は審査待ちのため、現在は本人と管理者のみ閲覧できます。';
 
   @override
   String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
@@ -489,6 +498,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get search => '検索';
+
+  @override
+  String get recordSearchHint => '説明またはサブカテゴリを検索';
+
+  @override
+  String get recordAllCategories => 'すべてのカテゴリ';
+
+  @override
+  String get recordNetChange => '差引変動';
 
   @override
   String get moreActions => 'その他';

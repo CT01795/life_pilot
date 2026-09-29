@@ -67,6 +67,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logout => '登出';
 
   @override
+  String get logoutConfirmation => '確定要登出目前帳號嗎？';
+
+  @override
   String get resetPassword => '重設密碼';
 
   @override
@@ -192,6 +195,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get publishedSubmissionTooltip => '已經公開此資訊，所有人均可閱覽。';
+
+  @override
+  String get unpublishedSubmission => '尚未公開';
+
+  @override
+  String get unpublishedSubmissionTooltip => '此資訊正在等待審核，目前只有你與管理者可以閱覽。';
 
   @override
   String get leaveGameConfirmation => '確定要離開遊戲並返回上一頁嗎？';
@@ -489,6 +498,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get search => '搜尋';
+
+  @override
+  String get recordSearchHint => '搜尋描述或次分類';
+
+  @override
+  String get recordAllCategories => '全部分類';
+
+  @override
+  String get recordNetChange => '淨變化';
 
   @override
   String get moreActions => '更多';

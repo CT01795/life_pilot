@@ -56,25 +56,26 @@ class ControllerEvent extends SafeChangeNotifier {
   late String _dataScopeKey;
   int _dataScopeGeneration = 0;
 
-  ControllerEvent(
-      {required this.auth,
-      required ServiceEvent serviceEvent,
-      required ServiceWeather serviceWeather,
-      required ModelEvent modelEvent,
-      required String tableName,
-      String? toTableName,
-      ServiceEventPublic? serviceEventPublic,
-      this.onCalendarReload})
-      : _tableName = tableName,
-        _toTableName = toTableName,
-        _modelEvent = modelEvent,
-        _serviceEvent = serviceEvent,
-        _serviceWeather = serviceWeather,
-        _serviceEventPublic = serviceEventPublic ?? ServiceEventPublic(),
-        _ownsServiceEventPublic = serviceEventPublic == null,
-        _serviceEventTransfer = ServiceEventTransfer(
-            currentAccount: auth.currentAccount ?? '',
-            serviceEvent: serviceEvent) {
+  ControllerEvent({
+    required this.auth,
+    required ServiceEvent serviceEvent,
+    required ServiceWeather serviceWeather,
+    required ModelEvent modelEvent,
+    required String tableName,
+    String? toTableName,
+    ServiceEventPublic? serviceEventPublic,
+    this.onCalendarReload,
+  }) : _tableName = tableName,
+       _toTableName = toTableName,
+       _modelEvent = modelEvent,
+       _serviceEvent = serviceEvent,
+       _serviceWeather = serviceWeather,
+       _serviceEventPublic = serviceEventPublic ?? ServiceEventPublic(),
+       _ownsServiceEventPublic = serviceEventPublic == null,
+       _serviceEventTransfer = ServiceEventTransfer(
+         currentAccount: auth.currentAccount ?? '',
+         serviceEvent: serviceEvent,
+       ) {
     _dataScopeKey = _currentDataScopeKey;
     auth.addListener(_handleAuthChange);
   }
@@ -154,10 +155,13 @@ class ControllerEvent extends SafeChangeNotifier {
     bool isNew = true,
   }) async {
     await _serviceEvent.saveEvent(
-        currentAccount: auth.currentAccount ?? '',
-        event: newEvent,
-        isNew: isNew,
-        tableName: _tableName);
+      currentAccount: auth.currentAccount ?? '',
+      event: newEvent,
+      isNew: isNew,
+      tableName: _tableName,
+      originalAccount: oldEvent?.account,
+      originalIsApproved: oldEvent?.isApproved,
+    );
     if (isNew &&
         (_tableName == TableNames.calendarEvents ||
             _tableName == TableNames.memoryTrace)) {
@@ -168,9 +172,10 @@ class ControllerEvent extends SafeChangeNotifier {
   // ✅ 刪除事件，並更新列表與通知 UI
   Future<void> deleteEvent(EventItem event) async {
     await _serviceEvent.deleteEvent(
-        currentAccount: auth.currentAccount ?? '',
-        event: event,
-        tableName: _tableName);
+      currentAccount: auth.currentAccount ?? '',
+      event: event,
+      tableName: _tableName,
+    );
     if (_tableName == TableNames.calendarEvents ||
         _tableName == TableNames.memoryTrace) {
       await auth.refreshSubscriptionUsage();
@@ -185,9 +190,8 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   Future<void> approveEvent({required EventItem event}) async {
+    await _serviceEvent.approvalEvent(eventId: event.id, tableName: _tableName);
     event.isApproved = true;
-    event.account = AuthConstants.systemEventOwnerEmail;
-    await _serviceEvent.approvalEvent(event: event, tableName: _tableName);
     _invalidateViewModel(event.id);
     if (!_disposed) notifyListeners();
   }
@@ -215,15 +219,18 @@ class ControllerEvent extends SafeChangeNotifier {
     if (!_disposed) notifyListeners();
     try {
       await _serviceEvent.updateLikeEvent(
-          event: event, account: auth.currentAccount!);
+        event: event,
+        account: auth.currentAccount!,
+      );
       if (_tableName == TableNames.recommendEvents ||
           _tableName == TableNames.calendarEvents ||
           _tableName == TableNames.memoryTrace) {
         // 🔹 呼叫 function 更新資料庫
         await tracking.incrementEventCounter(
-            eventId: event.id,
-            eventName: event.name, // 或者用 eventViewModel.name
-            column: event.isLike == true ? 'like_counts' : 'card_clicks');
+          eventId: event.id,
+          eventName: event.name, // 或者用 eventViewModel.name
+          column: event.isLike == true ? 'like_counts' : 'card_clicks',
+        );
       }
     } catch (_) {
       event.isLike = previousLike;
@@ -245,15 +252,18 @@ class ControllerEvent extends SafeChangeNotifier {
     if (!_disposed) notifyListeners();
     try {
       await _serviceEvent.updateLikeEvent(
-          event: event, account: auth.currentAccount!);
+        event: event,
+        account: auth.currentAccount!,
+      );
       if (_tableName == TableNames.recommendEvents ||
           _tableName == TableNames.calendarEvents ||
           _tableName == TableNames.memoryTrace) {
         // 🔹 呼叫 function 更新資料庫
         await tracking.incrementEventCounter(
-            eventId: event.id,
-            eventName: event.name, // 或者用 eventViewModel.name
-            column: event.isDislike == true ? 'dislike_counts' : 'card_clicks');
+          eventId: event.id,
+          eventName: event.name, // 或者用 eventViewModel.name
+          column: event.isDislike == true ? 'dislike_counts' : 'card_clicks',
+        );
       }
     } catch (_) {
       event.isLike = previousLike;
@@ -318,7 +328,10 @@ class ControllerEvent extends SafeChangeNotifier {
     toggleEventSelection(event.id, isChecked);
 
     return await _serviceEventTransfer.toggleEventTransferIsAlreadyAdd(
-        event: event, toTableName: _toTableName!, isChecked: isChecked);
+      event: event,
+      toTableName: _toTableName!,
+      isChecked: isChecked,
+    );
   }
 
   Future<EventItem?> handleEventCheckboxTransfer(
@@ -338,9 +351,10 @@ class ControllerEvent extends SafeChangeNotifier {
       await auth.refreshSubscriptionUsage();
       // 🔹 呼叫 function 更新資料庫
       await tracking.incrementEventCounter(
-          eventId: event.id,
-          eventName: event.name, // 或者用 eventViewModel.name
-          column: 'saves'); //收藏到行事曆
+        eventId: event.id,
+        eventName: event.name, // 或者用 eventViewModel.name
+        column: 'saves',
+      ); //收藏到行事曆
       _invalidateViewModel(event.id);
     }
     if (!_disposed) notifyListeners();
@@ -374,9 +388,7 @@ class ControllerEvent extends SafeChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  void updateKeywords(
-    String? keywords,
-  ) {
+  void updateKeywords(String? keywords) {
     _searchDebounce?.cancel();
     _searchDebounce = null;
     _modelEvent.updateSearchKeywords(keywords);
@@ -395,8 +407,9 @@ class ControllerEvent extends SafeChangeNotifier {
     final keywordList = keywords
         // ignore: deprecated_member_use
         .split(RegExp(r'[,，\s]+'))
-        .map((s) => s
-            .trim()) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔
+        .map(
+          (s) => s.trim(),
+        ) // 只修剪每個 tag 前後空白 .split(RegExp(r'[,，\s]+')) // ← 逗號（英文/中文）或任意空白都分隔
         .where((s) => s.isNotEmpty)
         .toList();
     filter.tags.clear();
@@ -420,8 +433,9 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   void removeKeywordTag(String tag) {
-    final keywords =
-        _modelEvent.searchFilter.tags.where((item) => item != tag).join(' ');
+    final keywords = _modelEvent.searchFilter.tags
+        .where((item) => item != tag)
+        .join(' ');
     _searchController.text = keywords;
     updateKeywords(keywords.isEmpty ? null : keywords);
   }
@@ -435,17 +449,13 @@ class ControllerEvent extends SafeChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  void updateStartDate(
-    DateTime? startDate,
-  ) {
+  void updateStartDate(DateTime? startDate) {
     _modelEvent.updateStartDate(startDate);
     _filterRevision++;
     if (!_disposed) notifyListeners();
   }
 
-  void updateEndDate(
-    DateTime? endDate,
-  ) {
+  void updateEndDate(DateTime? endDate) {
     _modelEvent.updateEndDate(endDate);
     _filterRevision++;
     if (!_disposed) notifyListeners();
@@ -457,12 +467,10 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   final Map<
-      String,
-      ({
-        EventItem event,
-        AppLocalizations loc,
-        EventViewModel viewModel,
-      })> _viewModelCache = {};
+    String,
+    ({EventItem event, AppLocalizations loc, EventViewModel viewModel})
+  >
+  _viewModelCache = {};
 
   EventViewModel buildViewModel({
     required EventItem event,
@@ -478,19 +486,13 @@ class ControllerEvent extends SafeChangeNotifier {
     EventViewModel tmp = EventViewModel.buildEventViewModel(
       event: event,
       parentLocation: '',
-      canDelete: canDelete(
-        account: event.account ?? '',
-      ),
+      canDelete: canDelete(account: event.account ?? ''),
       showSubEvents: true,
       loc: loc,
       tableName: _tableName,
     );
 
-    _viewModelCache[event.id] = (
-      event: event,
-      loc: loc,
-      viewModel: tmp,
-    );
+    _viewModelCache[event.id] = (event: event, loc: loc, viewModel: tmp);
     return tmp;
   }
 
@@ -534,7 +536,8 @@ class ControllerEvent extends SafeChangeNotifier {
         if (!_isCurrentDataScope(generation)) return;
         if (latestOlder != null) {
           _memoryLoadedEndDate = latestOlder;
-          loadedEvents = await _serviceEvent.getEvents(
+          loadedEvents =
+              await _serviceEvent.getEvents(
                 tableName: _tableName,
                 inputUser: auth.currentAccount,
                 dateS: latestOlder,
@@ -559,16 +562,19 @@ class ControllerEvent extends SafeChangeNotifier {
         _modelEvent.sortMemoryEvents();
         _memoryLoadedStartDate = memoryStart;
         if (loadedEvents.isNotEmpty &&
-            loadedEvents.every((event) =>
-                event.startDate != null &&
-                event.startDate!.isBefore(memoryStart))) {
+            loadedEvents.every(
+              (event) =>
+                  event.startDate != null &&
+                  event.startDate!.isBefore(memoryStart),
+            )) {
           _memoryLoadedStartDate = DateTimeFormatter.dateOnly(
-            loadedEvents.map((event) => event.startDate!).reduce(
-                  (left, right) => left.isBefore(right) ? left : right,
-                ),
+            loadedEvents
+                .map((event) => event.startDate!)
+                .reduce((left, right) => left.isBefore(right) ? left : right),
           );
         }
-        _hasMoreMemory = (usesCloudPagination && _hasMoreEvents) ||
+        _hasMoreMemory =
+            (usesCloudPagination && _hasMoreEvents) ||
             await _serviceEvent.hasEventsBefore(
               tableName: _tableName,
               before: _memoryLoadedStartDate ?? memoryStart,
@@ -645,14 +651,17 @@ class ControllerEvent extends SafeChangeNotifier {
       return;
     }
     final generation = _dataScopeGeneration;
-    final loadedStart = _memoryLoadedStartDate ??
-        DateTimeFormatter.dateOnly(DateTime.now())
-            .subtract(const Duration(days: 29));
+    final loadedStart =
+        _memoryLoadedStartDate ??
+        DateTimeFormatter.dateOnly(
+          DateTime.now(),
+        ).subtract(const Duration(days: 29));
     _isLoadingMoreMemory = true;
     if (!_disposed) notifyListeners();
     try {
       if (usesCloudPagination && _hasMoreEvents) {
-        var nextPage = await _serviceEvent.getEvents(
+        var nextPage =
+            await _serviceEvent.getEvents(
               tableName: _tableName,
               inputUser: auth.currentAccount,
               dateS: loadedStart,
@@ -680,7 +689,8 @@ class ControllerEvent extends SafeChangeNotifier {
       }
       final rangeEnd = DateTimeFormatter.dateOnly(latestOlder);
       final rangeStart = rangeEnd.subtract(const Duration(days: 29));
-      final olderEvents = await _serviceEvent.getEvents(
+      final olderEvents =
+          await _serviceEvent.getEvents(
             tableName: _tableName,
             inputUser: auth.currentAccount,
             dateS: rangeStart,
@@ -700,7 +710,8 @@ class ControllerEvent extends SafeChangeNotifier {
       _modelEvent.appendMemoryEvents(visibleOlderEvents);
       _memoryLoadedStartDate = rangeStart;
       _memoryLoadedEndDate = rangeEnd;
-      _hasMoreMemory = _hasMoreEvents ||
+      _hasMoreMemory =
+          _hasMoreEvents ||
           await _serviceEvent.hasEventsBefore(
             tableName: _tableName,
             before: rangeStart,
@@ -726,7 +737,8 @@ class ControllerEvent extends SafeChangeNotifier {
     _isLoadingMoreEvents = true;
     if (!_disposed) notifyListeners();
     try {
-      var nextPage = await _serviceEvent.getEvents(
+      var nextPage =
+          await _serviceEvent.getEvents(
             tableName: _tableName,
             inputUser: auth.currentAccount,
             limit: _cloudPageSize + 1,
@@ -797,11 +809,7 @@ class ControllerEvent extends SafeChangeNotifier {
   Future<void> onOpenLink(EventViewModel event) async {
     if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
 
-    await _launchUrl(
-      Uri.parse(event.masterUrl!),
-      event,
-      column: 'page_views',
-    );
+    await _launchUrl(Uri.parse(event.masterUrl!), event, column: 'page_views');
   }
 
   Future<void> onOpenMap(EventViewModel event) async {
@@ -810,20 +818,20 @@ class ControllerEvent extends SafeChangeNotifier {
     final query = Uri.encodeComponent(event.locationDisplay);
 
     // Google Maps 網頁導航 URL
-    final googleMapsUrl =
-        Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$query');
-
-    await _launchUrl(
-      googleMapsUrl,
-      event,
-      column: 'card_clicks',
+    final googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$query',
     );
+
+    await _launchUrl(googleMapsUrl, event, column: 'card_clicks');
   }
 
   // ------------------ Private ------------------
   /// 統一處理 URL 開啟與事件計數
-  Future<void> _launchUrl(Uri uri, EventViewModel event,
-      {required String column}) async {
+  Future<void> _launchUrl(
+    Uri uri,
+    EventViewModel event, {
+    required String column,
+  }) async {
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
       await _incrementCounter(event, column);

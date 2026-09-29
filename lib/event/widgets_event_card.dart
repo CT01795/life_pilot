@@ -179,13 +179,23 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     final currentAccount = context.select<ControllerAuth, String?>(
       (auth) => auth.currentAccount?.trim().toLowerCase(),
     );
-    final isPublishedSubmission =
+    final isAdmin = context.select<ControllerAuth, bool>(
+      (auth) => auth.isSysAdmin,
+    );
+    final isApproved = context.select<ControllerEvent, bool>(
+      (controller) =>
+          controller.getEventById(widget.eventViewModel.event.id).isApproved,
+    );
+    final isRecommendedSubmission =
+        widget.tableName == TableNames.recommendEvents ||
+        widget.tableName == TableNames.recommendPlaces;
+    final isOwnSubmission =
         currentAccount != null &&
         currentAccount ==
-            widget.eventViewModel.event.account?.trim().toLowerCase() &&
-        widget.eventViewModel.event.isApproved &&
-        (widget.tableName == TableNames.recommendEvents ||
-            widget.tableName == TableNames.recommendPlaces);
+            widget.eventViewModel.event.account?.trim().toLowerCase();
+    final showPublicationStatus =
+        isRecommendedSubmission &&
+        (isOwnSubmission || (isAdmin && !isApproved));
     final discoveryHighlights = _discoveryHighlights(loc, now);
     Widget buildHeader() {
       return Row(
@@ -401,14 +411,23 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           buildHeader(),
-          if (isPublishedSubmission)
+          if (showPublicationStatus)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Tooltip(
-                message: loc.publishedSubmissionTooltip,
+                message: isApproved
+                    ? loc.publishedSubmissionTooltip
+                    : loc.unpublishedSubmissionTooltip,
                 child: Chip(
-                  avatar: const Icon(Icons.public, size: 16),
-                  label: Text(loc.publishedSubmission),
+                  avatar: Icon(
+                    isApproved ? Icons.public : Icons.visibility_off_outlined,
+                    size: 16,
+                  ),
+                  label: Text(
+                    isApproved
+                        ? loc.publishedSubmission
+                        : loc.unpublishedSubmission,
+                  ),
                   visualDensity: VisualDensity.compact,
                 ),
               ),

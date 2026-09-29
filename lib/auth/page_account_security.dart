@@ -7,6 +7,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
+import 'package:life_pilot/utils/service/service_personal_data.dart';
 import 'package:provider/provider.dart';
 
 class PageAccountSecurity extends StatefulWidget {
@@ -156,6 +157,100 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
     if (mounted) AppNavigator.showSnackBar(loc.adminTemporaryPasswordCopied);
   }
 
+  Future<void> _requestAccountDeletion() async {
+    final loc = AppLocalizations.of(context)!;
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final existing = await ServicePersonalData()
+          .fetchMyAccountDeletionRequest();
+      if (!mounted) return;
+      final status = existing?['status']?.toString();
+      if (status == 'pending') {
+        await _showPendingDeletionRequest(loc);
+        return;
+      }
+      if (status == 'cancel_pending') {
+        AppNavigator.showSnackBar(loc.accountDeletionCancellationPending);
+        return;
+      }
+    } catch (error) {
+      if (mounted) {
+        AppNavigator.showErrorBar(loc.accountDeletionFailed(error.toString()));
+      }
+      return;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.requestAccountDeletion),
+        content: Text(loc.accountDeletionRequestDescription),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(loc.continueLabel),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ServicePersonalData().requestAccountDeletion();
+      if (mounted) AppNavigator.showSnackBar(loc.accountDeletionCompleted);
+    } catch (error) {
+      if (!mounted) return;
+      final errorText = error.toString();
+      AppNavigator.showErrorBar(
+        errorText.contains('deletion_request_already_pending')
+            ? loc.accountDeletionPending
+            : loc.accountDeletionFailed(errorText),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _showPendingDeletionRequest(AppLocalizations loc) async {
+    final cancelRequest = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.accountDeletionPending),
+        content: Text(loc.accountDeletionPendingDescription),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(loc.close),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(loc.accountDeletionCancelRequest),
+          ),
+        ],
+      ),
+    );
+    if (cancelRequest != true || !mounted) return;
+    try {
+      await ServicePersonalData().requestAccountDeletionCancellation();
+      if (mounted) {
+        AppNavigator.showSnackBar(loc.accountDeletionCancellationSubmitted);
+      }
+    } catch (error) {
+      if (mounted) {
+        AppNavigator.showErrorBar(loc.accountDeletionFailed(error.toString()));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -300,6 +395,20 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                         ),
                       ],
                     ],
+                    Gaps.h32,
+                    const Divider(),
+                    Gaps.h16,
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _requestAccountDeletion,
+                      icon: const Icon(Icons.person_remove_outlined),
+                      label: Text(loc.accountMenuAccountDeletion),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
                     if (_busy) ...[
                       Gaps.h16,
                       const Center(child: CircularProgressIndicator()),

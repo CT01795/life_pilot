@@ -279,6 +279,8 @@ class ServiceEvent {
     required EventItem event,
     required bool isNew,
     required String tableName,
+    String? originalAccount,
+    bool? originalIsApproved,
   }) async {
     try {
       _validateEvent(event: event);
@@ -322,8 +324,23 @@ class ServiceEvent {
         );
       }
 
-      event.account = currentAccount;
-      event.isApproved = false;
+      final isRecommendedContent =
+          tableName == TableNames.recommendEvents ||
+          tableName == TableNames.recommendPlaces;
+      if (isNew || !isRecommendedContent) {
+        event.account = currentAccount;
+        event.isApproved = false;
+      } else if (_isCurrentUserAdmin) {
+        // 管理者編輯或審核內容時保留投稿者，不接管作者身分。
+        event.account = originalAccount?.trim().isNotEmpty == true
+            ? originalAccount
+            : event.account ?? currentAccount;
+        event.isApproved = originalIsApproved ?? event.isApproved;
+      } else {
+        // 作者修改已公開內容後必須重新審核，修改期間不再公開。
+        event.account = currentAccount;
+        event.isApproved = false;
+      }
       final isPersonalLocalResource =
           tableName == TableNames.calendarEvents ||
           tableName == TableNames.memoryTrace;
@@ -438,16 +455,13 @@ class ServiceEvent {
 
   // ✅ 核准事件 (由管理者)
   Future<void> approvalEvent({
-    required EventItem event,
+    required String eventId,
     required String tableName,
   }) async {
-    final data = event.toJson();
-    var query = supabase
+    await supabase
         .from(tableName)
-        .update(data)
-        .eq(Fields.id, data[Fields.id]);
-
-    await query;
+        .update({EventFields.isApproved: true})
+        .eq(Fields.id, eventId);
   }
 
   Future<void> updateLikeEvent({

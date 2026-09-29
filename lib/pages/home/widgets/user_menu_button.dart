@@ -82,13 +82,28 @@ class UserMenuButton extends StatelessWidget {
               ),
             );
             break;
-          case "requestAccountDeletion":
-            _requestAccountDeletion(context, auth.account!, loc);
-            break;
           case "requestDataExport":
             _requestDataExport(context, auth.account!, loc);
             break;
           case "logout":
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: Text(loc.logout),
+                content: Text(loc.logoutConfirmation),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: Text(loc.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: Text(loc.logout),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed != true) break;
             final error = await auth.logout();
             if (error != null && context.mounted) {
               AppNavigator.showErrorBar(
@@ -131,16 +146,6 @@ class UserMenuButton extends StatelessWidget {
                 loc.accountSecurity,
                 style: const TextStyle(color: Colors.white),
               ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "feedback",
-          child: Row(
-            children: [
-              Icon(Icons.feedback, color: Colors.white),
-              Gaps.w8,
-              Text(loc.feedback, style: const TextStyle(color: Colors.white)),
             ],
           ),
         ),
@@ -196,25 +201,15 @@ class UserMenuButton extends StatelessWidget {
           ),
         ),
         PopupMenuItem(
-          value: "requestAccountDeletion",
+          value: "feedback",
           child: Row(
             children: [
-              const Icon(Icons.person_remove_outlined, color: Colors.white),
+              const Icon(Icons.feedback_outlined, color: Colors.white),
               Gaps.w8,
-              Expanded(
-                child: FittedBox(
-                  alignment: Alignment.centerLeft,
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    loc.accountMenuAccountDeletion,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
+              Text(loc.feedback, style: const TextStyle(color: Colors.white)),
             ],
           ),
         ),
-        const PopupMenuDivider(),
         PopupMenuItem(
           value: "privacyPolicy",
           child: Row(
@@ -266,7 +261,7 @@ class UserMenuButton extends StatelessWidget {
           value: "logout",
           child: Row(
             children: [
-              const Icon(Icons.exit_to_app, color: Colors.white),
+              const Icon(Icons.logout_outlined, color: Colors.white),
               Gaps.w8,
               Text(loc.logout, style: const TextStyle(color: Colors.white)),
             ],
@@ -281,111 +276,6 @@ class UserMenuButton extends StatelessWidget {
       context: context,
       builder: (_) => LegalDocumentDialog(assetPath: assetPath),
     );
-  }
-
-  Future<void> _requestAccountDeletion(
-    BuildContext context,
-    String account,
-    AppLocalizations loc,
-  ) async {
-    try {
-      final existing = await ServicePersonalData()
-          .fetchMyAccountDeletionRequest();
-      if (!context.mounted) return;
-      final status = existing?['status']?.toString();
-      if (status == 'pending') {
-        await _showPendingDeletionRequest(context, loc);
-        return;
-      }
-      if (status == 'cancel_pending') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.accountDeletionCancellationPending)),
-        );
-        return;
-      }
-    } catch (error) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.accountDeletionFailed(error.toString()))),
-      );
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(loc.requestAccountDeletion),
-        content: Text(loc.accountDeletionRequestDescription),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(loc.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(loc.continueLabel),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    try {
-      await ServicePersonalData().requestAccountDeletion();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(loc.accountDeletionCompleted)));
-    } catch (error) {
-      if (!context.mounted) return;
-      final errorText = error.toString();
-      if (errorText.contains('deletion_request_already_pending')) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(loc.accountDeletionPending)));
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.accountDeletionFailed(errorText))),
-      );
-    }
-  }
-
-  Future<void> _showPendingDeletionRequest(
-    BuildContext context,
-    AppLocalizations loc,
-  ) async {
-    final cancelRequest = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(loc.accountDeletionPending),
-        content: Text(loc.accountDeletionPendingDescription),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(loc.close),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(loc.accountDeletionCancelRequest),
-          ),
-        ],
-      ),
-    );
-    if (cancelRequest != true || !context.mounted) return;
-    try {
-      await ServicePersonalData().requestAccountDeletionCancellation();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.accountDeletionCancellationSubmitted)),
-      );
-    } catch (error) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.accountDeletionFailed(error.toString()))),
-      );
-    }
   }
 
   Future<void> _requestDataExport(

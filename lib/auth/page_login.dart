@@ -333,6 +333,7 @@ class _PageLoginState extends State<PageLogin> {
                         ),
                       ],
                     ),
+                    Gaps.h12,
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(

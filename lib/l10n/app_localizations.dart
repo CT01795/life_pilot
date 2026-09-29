@@ -207,6 +207,12 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logout;
 
+  /// No description provided for @logoutConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out of the current account?'**
+  String get logoutConfirmation;
+
   /// Label for reset password
   ///
   /// In en, this message translates to:
@@ -452,6 +458,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This information is public and can be viewed by everyone.'**
   String get publishedSubmissionTooltip;
+
+  /// No description provided for @unpublishedSubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Not public yet'**
+  String get unpublishedSubmission;
+
+  /// No description provided for @unpublishedSubmissionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'This information is awaiting review and is currently visible only to you and administrators.'**
+  String get unpublishedSubmissionTooltip;
 
   /// Label for leaveGameConfirmation
   ///
@@ -1046,6 +1064,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search'**
   String get search;
+
+  /// No description provided for @recordSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search description or subcategory'**
+  String get recordSearchHint;
+
+  /// No description provided for @recordAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get recordAllCategories;
+
+  /// No description provided for @recordNetChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Net change'**
+  String get recordNetChange;
 
   /// Tooltip for additional actions
   ///

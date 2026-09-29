@@ -7,11 +7,13 @@ import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/point_record/controller_point_record_detail.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
+import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/record_categories.dart';
 import 'package:life_pilot/utils/record_date_time.dart';
+import 'package:life_pilot/utils/widgets/widgets_record_explorer.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
@@ -83,8 +85,11 @@ class _PagePointRecordDetailViewState
     extends State<_PagePointRecordDetailView> {
   late ServiceSpeech _speechService;
   final TextEditingController _speechTextController = TextEditingController();
+  final TextEditingController _recordSearchController = TextEditingController();
   final numberFormatter = NumberFormat('#,###');
   DateTime _newRecordDate = DateTime.now();
+  String _recordSearchQuery = '';
+  String? _selectedRecordCategory;
 
   @override
   void initState() {
@@ -107,6 +112,7 @@ class _PagePointRecordDetailViewState
   void dispose() {
     _speechService.stopListening();
     _speechTextController.dispose();
+    _recordSearchController.dispose();
     super.dispose();
   }
 
@@ -203,6 +209,11 @@ class _PagePointRecordDetailViewState
   Widget build(BuildContext context) {
     final controller = context.watch<ControllerPointRecordDetail>();
     final account = widget.account;
+    final loc = AppLocalizations.of(context)!;
+    final loadedRecords = controller.todayRecords
+        .where((record) => record.id.isNotEmpty)
+        .toList(growable: false);
+    final visibleRecords = _filterRecords(loadedRecords, loc);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -213,17 +224,107 @@ class _PagePointRecordDetailViewState
         ),
         title: Text(account.accountName),
       ),
-      body: Column(
-        children: [
-          Gaps.h8,
-          const SubscriptionUsageBanner(resource: 'point_record_detail'),
-          _buildSummary(context, account, controller),
-          _buildNewRecordDatePicker(context),
-          _buildMicButton(context, controller),
-          const Divider(),
-          _buildTodayList(controller),
+      body: CustomScrollView(
+        scrollCacheExtent: const ScrollCacheExtent.pixels(240),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                Gaps.h8,
+                const SubscriptionUsageBanner(resource: 'point_record_detail'),
+                _buildSummary(context, account, controller),
+                _buildNewRecordDatePicker(context),
+                _buildMicButton(context, controller),
+                _buildRecordExplorer(context, loadedRecords, visibleRecords),
+                const Divider(),
+              ],
+            ),
+          ),
+          _buildTodayList(controller, visibleRecords),
         ],
       ),
+    );
+  }
+
+  List<ModelPointRecordDetail> _filterRecords(
+    List<ModelPointRecordDetail> records,
+    AppLocalizations loc,
+  ) {
+    final query = _recordSearchQuery.trim().toLowerCase();
+    return records
+        .where((record) {
+          if (_selectedRecordCategory != null &&
+              record.primaryCategory != _selectedRecordCategory) {
+            return false;
+          }
+          if (query.isEmpty) return true;
+          return record.description.toLowerCase().contains(query) ||
+              (record.secondaryCategory ?? '').toLowerCase().contains(query) ||
+              RecordCategories.label(
+                loc,
+                record.primaryCategory,
+              ).toLowerCase().contains(query);
+        })
+        .toList(growable: false);
+  }
+
+  Widget _buildRecordExplorer(
+    BuildContext context,
+    List<ModelPointRecordDetail> loadedRecords,
+    List<ModelPointRecordDetail> visibleRecords,
+  ) {
+    final loc = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
+    final increase = visibleRecords
+        .where((record) => record.value > 0)
+        .fold<int>(0, (sum, record) => sum + record.value);
+    final decrease = visibleRecords
+        .where((record) => record.value < 0)
+        .fold<int>(0, (sum, record) => sum + record.value.abs());
+    final net = increase - decrease;
+    final presentCategories = loadedRecords
+        .map((record) => record.primaryCategory)
+        .toSet();
+    String metricValue(int value) =>
+        '${numberFormatter.format(value)} ${loc.pointsUnit}'.trim();
+
+    return WidgetsRecordExplorer(
+      searchController: _recordSearchController,
+      searchHint: loc.recordSearchHint,
+      clearTooltip: loc.clear,
+      categories: [
+        RecordCategoryFilterOption(value: null, label: loc.recordAllCategories),
+        for (final category in RecordCategories.points)
+          if (presentCategories.contains(category))
+            RecordCategoryFilterOption(
+              value: category,
+              label: RecordCategories.label(loc, category),
+            ),
+      ],
+      selectedCategory: _selectedRecordCategory,
+      onSearchChanged: (value) => setState(() => _recordSearchQuery = value),
+      onCategorySelected: (value) =>
+          setState(() => _selectedRecordCategory = value),
+      metrics: [
+        RecordExplorerMetric(
+          icon: Icons.add_circle_outline,
+          label: loc.eventPointIncrease,
+          value: metricValue(increase),
+          color: Colors.green,
+        ),
+        RecordExplorerMetric(
+          icon: Icons.remove_circle_outline,
+          label: loc.eventPointDecrease,
+          value: metricValue(decrease),
+          color: colors.error,
+        ),
+        RecordExplorerMetric(
+          icon: Icons.swap_vert,
+          label: loc.recordNetChange,
+          value: metricValue(net),
+          color: net < 0 ? colors.error : colors.primary,
+        ),
+      ],
     );
   }
 
@@ -287,87 +388,83 @@ class _PagePointRecordDetailViewState
     );
   }
 
-  Widget _buildTodayList(ControllerPointRecordDetail controller) {
-    final visibleRecords = controller.todayRecords
-        .where((record) => record.id.isNotEmpty)
-        .toList();
-    return Expanded(
-      child: ListView.builder(
-        scrollCacheExtent: const ScrollCacheExtent.pixels(240),
-        addAutomaticKeepAlives: false,
-        itemCount:
-            visibleRecords.length +
-            ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == visibleRecords.length) {
-            return Center(
-              child: controller.isLoadingMore
-                  ? const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: CircularProgressIndicator(),
-                    )
-                  : TextButton(
-                      onPressed: () => controller.loadMore(
-                        inputAccountId: widget.account.id,
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)!.clickHereToSeeMore,
-                      ),
+  Widget _buildTodayList(
+    ControllerPointRecordDetail controller,
+    List<ModelPointRecordDetail> visibleRecords,
+  ) {
+    return SliverList.builder(
+      addAutomaticKeepAlives: false,
+      itemCount:
+          visibleRecords.length +
+          ((controller.hasMore || controller.isLoadingMore) ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == visibleRecords.length) {
+          return Center(
+            child: controller.isLoadingMore
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(),
+                  )
+                : TextButton(
+                    onPressed: () =>
+                        controller.loadMore(inputAccountId: widget.account.id),
+                    child: Text(
+                      AppLocalizations.of(context)!.clickHereToSeeMore,
                     ),
-            );
-          }
-          final record = visibleRecords[index];
-          return ListTile(
-            key: ValueKey(record.id),
-            title: Text(
-              record.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              '${record.displayTime}  '
-              '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  record.value > 0
-                      ? '+${numberFormatter.format(record.value)}'
-                      : numberFormatter.format(record.value),
-                  style: TextStyle(
-                    color: record.value >= 0 ? Colors.green : Colors.red,
-                    fontSize: 18,
                   ),
-                ),
-                IconButton(
-                  tooltip: AppLocalizations.of(context)!.delete,
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _deleteRecord(controller, record.id),
-                ),
-              ],
-            ),
-            onTap: () async {
-              final updated = await _showEditDetailDialog(
-                context,
-                PointRecordPreview(
-                  id: record.id,
-                  description: record.description,
-                  value: record.value,
-                  date: record.localTime,
-                  primaryCategory: record.primaryCategory,
-                  secondaryCategory: record.secondaryCategory,
-                ),
-              );
-              if (updated != null) {
-                await controller.updatePointRecordDetail(updated);
-              }
-            },
           );
-        },
-      ),
+        }
+        final record = visibleRecords[index];
+        return ListTile(
+          key: ValueKey(record.id),
+          title: Text(
+            record.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            '${record.displayTime}  '
+            '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                record.value > 0
+                    ? '+${numberFormatter.format(record.value)}'
+                    : numberFormatter.format(record.value),
+                style: TextStyle(
+                  color: record.value >= 0 ? Colors.green : Colors.red,
+                  fontSize: 18,
+                ),
+              ),
+              IconButton(
+                tooltip: AppLocalizations.of(context)!.delete,
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _deleteRecord(controller, record.id),
+              ),
+            ],
+          ),
+          onTap: () async {
+            final updated = await _showEditDetailDialog(
+              context,
+              PointRecordPreview(
+                id: record.id,
+                description: record.description,
+                value: record.value,
+                date: record.localTime,
+                primaryCategory: record.primaryCategory,
+                secondaryCategory: record.secondaryCategory,
+              ),
+            );
+            if (updated != null) {
+              await controller.updatePointRecordDetail(updated);
+            }
+          },
+        );
+      },
     );
   }
 
