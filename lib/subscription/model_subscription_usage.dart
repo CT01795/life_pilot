@@ -57,9 +57,7 @@ class SubscriptionSnapshot {
   bool get isPlus => plan == 'plus';
   SubscriptionUsage? operator [](String resource) => usage[resource];
 
-  SubscriptionSnapshot copyWithUsage(
-    Map<String, SubscriptionUsage> newUsage,
-  ) {
+  SubscriptionSnapshot copyWithUsage(Map<String, SubscriptionUsage> newUsage) {
     return SubscriptionSnapshot(
       plan: plan,
       usage: newUsage,

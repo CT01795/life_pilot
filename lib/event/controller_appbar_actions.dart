@@ -120,6 +120,7 @@ class ControllerAppBarActions extends SafeChangeNotifier {
         events = _excelService.parseCsv(csv, loc);
       } else if (filename.endsWith('.xlsx')) {
         final excel = Excel.decodeBytes(bytes);
+        if (excel.tables.isEmpty) return loc.noEventsToUpload;
         final sheet = excel.tables.values.first;
         events = _excelService.parseExcel(sheet, loc);
       }

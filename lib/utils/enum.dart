@@ -2,6 +2,7 @@ enum AuthPage { login, register, resetPassword, pageMain }
 
 enum PageType {
   home,
+  vendorDashboard,
   personalEvent,
   stock,
   settings,

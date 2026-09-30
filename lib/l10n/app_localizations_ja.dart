@@ -9,6 +9,191 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get vendorSubmissionTitle => '投稿センター';
+
+  @override
+  String get vendorSubmissionDescription => '予定を計画しているユーザーにイベントやスポットを届け、公開後も投稿者が管理できます。';
+
+  @override
+  String get vendorSubmissionBenefitReach => '計画中の人に届ける';
+
+  @override
+  String get vendorSubmissionBenefitManage => '自分で情報を管理';
+
+  @override
+  String get vendorSubmissionBenefitReview => '審査状況が明確';
+
+  @override
+  String get vendorSubmitActivity => 'イベントを投稿';
+
+  @override
+  String get vendorSubmitAttraction => 'スポットを投稿';
+
+  @override
+  String get vendorMySubmissions => '自分の投稿';
+
+  @override
+  String get vendorAllActivities => 'すべての投稿';
+
+  @override
+  String get vendorSubmissionGuideTitle => 'イベントを見つけてもらう';
+
+  @override
+  String get vendorSubmissionGuideDescription => '正確な日付、会場、主催者、申込URLを入力してください。審査後に公開され、修正すると再審査となります。';
+
+  @override
+  String get vendorCreateAccountTitle => 'イベント主催者ですか？';
+
+  @override
+  String get vendorCreateAccountDescription => 'アカウントを作成してイベントを投稿し、審査状況の確認や公開情報の更新ができます。';
+
+  @override
+  String get vendorCreateAccountAction => 'アカウントを作成して投稿';
+
+  @override
+  String get vendorRegistrationTitle => '主催者アカウント';
+
+  @override
+  String get vendorRegistrationDescription => 'イベント、スポット、審査状況を管理する主催者ワークスペースを利用します。';
+
+  @override
+  String get vendorDashboardTitle => '主催者ワークスペース';
+
+  @override
+  String get vendorDashboardSubtitle => '投稿と審査状況を管理し、現在の利用枠を確認できます。';
+
+  @override
+  String get vendorDashboardLoadFailed => '主催者情報を読み込めませんでした。';
+
+  @override
+  String get vendorActiveActivities => '公開中のイベント';
+
+  @override
+  String get vendorActiveAttractions => '公開中のスポット';
+
+  @override
+  String vendorCurrentPlan(String plan) {
+    return '現在のプラン：$plan';
+  }
+
+  @override
+  String get vendorManageActivities => 'イベントを管理';
+
+  @override
+  String get vendorManageAttractions => 'スポットを管理';
+
+  @override
+  String get vendorPricingTitle => '主催者向けプラン';
+
+  @override
+  String get vendorPricingDescription => '無料で始め、必要に応じて公開件数と分析期間を拡張できます。';
+
+  @override
+  String get vendorPricingActiveOnlyNote => '利用枠は終了していない情報のみ数えます。終了済みの情報は公開枠を使用しません。';
+
+  @override
+  String vendorQuarterlyPrice(int price) {
+    return '四半期 NT\$$price';
+  }
+
+  @override
+  String vendorPlanActivityQuota(int count) {
+    return '公開中イベント 最大 $count 件';
+  }
+
+  @override
+  String vendorPlanAttractionQuota(int count) {
+    return '公開中スポット 最大 $count 件';
+  }
+
+  @override
+  String vendorPlanImageQuota(int count) {
+    return '画像容量 $count MB';
+  }
+
+  @override
+  String vendorPlanAnalyticsDays(int count) {
+    return '直近 $count 日間の分析';
+  }
+
+  @override
+  String get vendorContentQuotaReached => '公開枠が上限に達しました。公開中の情報を削除するか、主催者プランをアップグレードしてください。';
+
+  @override
+  String get vendorImageQuotaReached => '画像容量が上限に達しました。画像を削除するか、主催者プランをアップグレードしてください。';
+
+  @override
+  String get vendorAnalyticsDays => '分析日数';
+
+  @override
+  String get vendorPlanFreeName => '無料プラン';
+
+  @override
+  String get vendorPlanPartnerName => 'パートナープラン';
+
+  @override
+  String get vendorPlanGrowthName => '成長プラン';
+
+  @override
+  String get vendorPlanCustomName => 'カスタムプラン';
+
+  @override
+  String get vendorAnalyticsTitle => '効果分析';
+
+  @override
+  String vendorAnalyticsDescription(int days) {
+    return '直近 $days 日間のイベントとスポットへの反応です。';
+  }
+
+  @override
+  String get vendorAnalyticsPageViews => 'ページ閲覧';
+
+  @override
+  String get vendorAnalyticsCardClicks => 'コンテンツクリック';
+
+  @override
+  String get vendorAnalyticsRegistrationClicks => '申込クリック';
+
+  @override
+  String get vendorAnalyticsSaves => '保存';
+
+  @override
+  String get vendorAnalyticsLikes => 'いいね';
+
+  @override
+  String get vendorAnalyticsDislikes => '低評価';
+
+  @override
+  String get publishedContentDeleteAdminOnly => '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
+
+  @override
+  String get adminVendorPricingTitle => 'ベンダー料金バージョンを作成';
+
+  @override
+  String get adminVendorPricingSubtitle => '今後の購入は最新の有効バージョンを使用し、既存の権利は購入時の内容を保持します。';
+
+  @override
+  String get adminVendorPricingCreated => '主催者料金バージョンを作成しました。';
+
+  @override
+  String get adminVendorPricingUpdated => '主催者料金バージョンを更新しました。';
+
+  @override
+  String get adminVendorExistingPlans => '既存の料金バージョン';
+
+  @override
+  String get adminPricingUpdate => 'バージョンを更新';
+
+  @override
+  String get adminVendorSubscriptionTitle => '主催者サブスクリプション管理';
+
+  @override
+  String get adminVendorSubscriptionSubtitle => '料金バージョン、利用枠倍率、有効期限を指定します。';
+
+  @override
+  String get adminVendorSubscriptionSaved => '主催者サブスクリプションを保存しました。';
+
+  @override
   String get appTitle => '生活ナビゲーション';
 
   @override
@@ -138,10 +323,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get changePassword => 'パスワード変更';
 
   @override
-  String get changePasswordSuccessful => 'パスワードを更新しました。';
+  String get changePasswordSuccessful => 'パスワードを変更しました。';
 
   @override
-  String get changePasswordFailed => '現在のパスワードを確認して、もう一度お試しください。';
+  String get changePasswordFailed => 'パスワードを変更できませんでした。もう一度お試しください。';
 
   @override
   String get currentPasswordIncorrect => '現在のパスワードが正しくありません。';
@@ -1085,6 +1270,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get accountDeletionCloudOnly => 'アカウント削除の申請はクラウドモードでのみ利用できます。先に保存先をクラウドに切り替えてください。';
+
+  @override
   String get accountDeletionPending => '申請中';
 
   @override
@@ -1795,7 +1983,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => '本体の解答履歴は無制限';
 
   @override
-  String get adminPricingTitle => '料金版を作成';
+  String get adminPricingTitle => 'ユーザー料金版を作成';
 
   @override
   String get adminPricingSubtitle => '今後の支払いと追加購入にのみ適用';
@@ -1807,8 +1995,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPricingCreated => '新しい料金版を作成しました。既存の特典は変わりません';
 
   @override
+  String get adminPricingUpdated => 'ユーザー料金版を更新しました。既存の契約内容は変わりません';
+
+  @override
+  String get adminUserExistingPlans => '既存のユーザー料金版';
+
+  @override
+  String get adminPricingDeleteTitle => '料金バージョンを削除';
+
+  @override
+  String adminPricingDeleteConfirmation(String name) {
+    return '$name を削除しますか？どの契約や権利にも使用されていない場合のみ削除できます。';
+  }
+
+  @override
+  String get adminPricingDeleted => '料金バージョンを削除しました。';
+
+  @override
+  String get adminPricingDeleteInUse => 'この料金バージョンは契約または権利で使用中のため削除できません。';
+
+  @override
   String adminPricingCreateFailed(String error) {
-    return '作成失敗：$error';
+    return '料金版を保存できません：$error';
   }
 
   @override

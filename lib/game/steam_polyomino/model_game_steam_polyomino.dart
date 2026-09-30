@@ -58,6 +58,7 @@ class ModelGamePolyominoPipeBlock extends SafeChangeNotifier {
 
   // 右旋 90°，任意形狀 block 皆適用
   void rotateRight() {
+    if (cells.isEmpty) return;
     final h = height;
 
     // 旋轉 cell 座標：90°順時針
@@ -264,6 +265,8 @@ class ModelGamePolyominoLevelFactory {
   }
 
   static int getWeightedSegmentSize(Random rnd, int maxSize) {
+    if (maxSize <= 0) return 1;
+    maxSize = min(maxSize, 5);
     // 權重表：index = segment size - 1
     // segment size 1,2,3,4,5 的權重
     List<int> weights = [1, maxSize + 2, maxSize + 3, maxSize + 1, 1];

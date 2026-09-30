@@ -99,6 +99,348 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// Label for vendor submission center
+  ///
+  /// In en, this message translates to:
+  /// **'Submission center'**
+  String get vendorSubmissionTitle;
+
+  /// Label for vendor submission description
+  ///
+  /// In en, this message translates to:
+  /// **'Publish activities and attractions where people plan their time. Keep ownership and update your listing after review.'**
+  String get vendorSubmissionDescription;
+
+  /// Label for vendor submission benefit reach
+  ///
+  /// In en, this message translates to:
+  /// **'Reach active planners'**
+  String get vendorSubmissionBenefitReach;
+
+  /// Label for vendor submission benefit manage
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your own information'**
+  String get vendorSubmissionBenefitManage;
+
+  /// Label for vendor submission benefit review
+  ///
+  /// In en, this message translates to:
+  /// **'Clear review status'**
+  String get vendorSubmissionBenefitReview;
+
+  /// Label for vendor submit activity
+  ///
+  /// In en, this message translates to:
+  /// **'Submit an activity'**
+  String get vendorSubmitActivity;
+
+  /// Label for vendor submit attraction
+  ///
+  /// In en, this message translates to:
+  /// **'Submit an attraction'**
+  String get vendorSubmitAttraction;
+
+  /// Label for vendor my submissions
+  ///
+  /// In en, this message translates to:
+  /// **'My submissions'**
+  String get vendorMySubmissions;
+
+  /// Label for vendor all activities
+  ///
+  /// In en, this message translates to:
+  /// **'All submissions'**
+  String get vendorAllActivities;
+
+  /// Label for vendor submission guide title
+  ///
+  /// In en, this message translates to:
+  /// **'Help people discover your activity'**
+  String get vendorSubmissionGuideTitle;
+
+  /// Label for vendor submission guide description
+  ///
+  /// In en, this message translates to:
+  /// **'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.'**
+  String get vendorSubmissionGuideDescription;
+
+  /// Label for vendor create account title
+  ///
+  /// In en, this message translates to:
+  /// **'Organizing an event?'**
+  String get vendorCreateAccountTitle;
+
+  /// Label for vendor create account description
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account to submit activities, follow review status and keep your public information up to date.'**
+  String get vendorCreateAccountDescription;
+
+  /// Label for vendor create account action
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account and submit'**
+  String get vendorCreateAccountAction;
+
+  /// Label for vendor registration title
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer account'**
+  String get vendorRegistrationTitle;
+
+  /// Label for vendor registration description
+  ///
+  /// In en, this message translates to:
+  /// **'This account opens an organizer workspace for managing activities, attractions and review status.'**
+  String get vendorRegistrationDescription;
+
+  /// Label for vendor dashboard title
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer workspace'**
+  String get vendorDashboardTitle;
+
+  /// Label for vendor dashboard subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Manage submissions, follow review status and keep track of your current allowance.'**
+  String get vendorDashboardSubtitle;
+
+  /// Label for vendor dashboard load failed
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer information could not be loaded.'**
+  String get vendorDashboardLoadFailed;
+
+  /// Label for vendor active activities
+  ///
+  /// In en, this message translates to:
+  /// **'Active activities'**
+  String get vendorActiveActivities;
+
+  /// Label for vendor active attractions
+  ///
+  /// In en, this message translates to:
+  /// **'Active attractions'**
+  String get vendorActiveAttractions;
+
+  /// No description provided for @vendorCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan: {plan}'**
+  String vendorCurrentPlan(String plan);
+
+  /// Label for vendor manage activities
+  ///
+  /// In en, this message translates to:
+  /// **'Manage activities'**
+  String get vendorManageActivities;
+
+  /// Label for vendor manage attractions
+  ///
+  /// In en, this message translates to:
+  /// **'Manage attractions'**
+  String get vendorManageAttractions;
+
+  /// Label for vendor pricing title
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer plans'**
+  String get vendorPricingTitle;
+
+  /// Label for vendor pricing description
+  ///
+  /// In en, this message translates to:
+  /// **'Start free, then expand the number of public listings and the reporting period as your organization grows.'**
+  String get vendorPricingDescription;
+
+  /// Label for vendor pricing active only note
+  ///
+  /// In en, this message translates to:
+  /// **'Listing allowances count content that has not ended. Expired content does not occupy an active-listing allowance.'**
+  String get vendorPricingActiveOnlyNote;
+
+  /// No description provided for @vendorQuarterlyPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'NT\${price} / quarter'**
+  String vendorQuarterlyPrice(int price);
+
+  /// No description provided for @vendorPlanActivityQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} active activities'**
+  String vendorPlanActivityQuota(int count);
+
+  /// No description provided for @vendorPlanAttractionQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} active attractions'**
+  String vendorPlanAttractionQuota(int count);
+
+  /// No description provided for @vendorPlanImageQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} MB image storage'**
+  String vendorPlanImageQuota(int count);
+
+  /// No description provided for @vendorPlanAnalyticsDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics for the latest {count} days'**
+  String vendorPlanAnalyticsDays(int count);
+
+  /// Label for vendor content quota reached
+  ///
+  /// In en, this message translates to:
+  /// **'The active-listing allowance is full. Remove an active listing or upgrade the organizer plan.'**
+  String get vendorContentQuotaReached;
+
+  /// Label for vendor image quota reached
+  ///
+  /// In en, this message translates to:
+  /// **'The organizer image allowance is full. Remove images or upgrade the organizer plan.'**
+  String get vendorImageQuotaReached;
+
+  /// Label for vendor analytics days
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics days'**
+  String get vendorAnalyticsDays;
+
+  /// Label for vendor free plan
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan'**
+  String get vendorPlanFreeName;
+
+  /// Label for vendor partner plan
+  ///
+  /// In en, this message translates to:
+  /// **'Partner plan'**
+  String get vendorPlanPartnerName;
+
+  /// Label for vendor growth plan
+  ///
+  /// In en, this message translates to:
+  /// **'Growth plan'**
+  String get vendorPlanGrowthName;
+
+  /// Label for vendor custom plan
+  ///
+  /// In en, this message translates to:
+  /// **'Custom plan'**
+  String get vendorPlanCustomName;
+
+  /// Label for vendor analytics title
+  ///
+  /// In en, this message translates to:
+  /// **'Performance analytics'**
+  String get vendorAnalyticsTitle;
+
+  /// No description provided for @vendorAnalyticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Interactions with your activities and attractions during the latest {days} days.'**
+  String vendorAnalyticsDescription(int days);
+
+  /// Label for vendor analytics page views
+  ///
+  /// In en, this message translates to:
+  /// **'Page views'**
+  String get vendorAnalyticsPageViews;
+
+  /// Label for vendor analytics card clicks
+  ///
+  /// In en, this message translates to:
+  /// **'Content clicks'**
+  String get vendorAnalyticsCardClicks;
+
+  /// Label for vendor analytics registration clicks
+  ///
+  /// In en, this message translates to:
+  /// **'Registration clicks'**
+  String get vendorAnalyticsRegistrationClicks;
+
+  /// Label for vendor analytics saves
+  ///
+  /// In en, this message translates to:
+  /// **'Saves'**
+  String get vendorAnalyticsSaves;
+
+  /// Label for vendor analytics likes
+  ///
+  /// In en, this message translates to:
+  /// **'Likes'**
+  String get vendorAnalyticsLikes;
+
+  /// Label for vendor analytics dislikes
+  ///
+  /// In en, this message translates to:
+  /// **'Dislikes'**
+  String get vendorAnalyticsDislikes;
+
+  /// Label for published content delete admin only
+  ///
+  /// In en, this message translates to:
+  /// **'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.'**
+  String get publishedContentDeleteAdminOnly;
+
+  /// Label for admin vendor pricing title
+  ///
+  /// In en, this message translates to:
+  /// **'Create vendor pricing version'**
+  String get adminVendorPricingTitle;
+
+  /// Label for admin vendor pricing subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Future purchases use the latest effective version; existing entitlements keep their snapshot.'**
+  String get adminVendorPricingSubtitle;
+
+  /// Label for admin vendor pricing created
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer pricing version created.'**
+  String get adminVendorPricingCreated;
+
+  /// Label for admin vendor pricing updated
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer pricing version updated.'**
+  String get adminVendorPricingUpdated;
+
+  /// Label for admin vendor existing plans
+  ///
+  /// In en, this message translates to:
+  /// **'Existing pricing versions'**
+  String get adminVendorExistingPlans;
+
+  /// Label for admin pricing update
+  ///
+  /// In en, this message translates to:
+  /// **'Update version'**
+  String get adminPricingUpdate;
+
+  /// Label for admin vendor subscription title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage organizer subscription'**
+  String get adminVendorSubscriptionTitle;
+
+  /// Label for admin vendor subscription subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Assign a pricing version, allowance multiplier and expiry date to an organizer account.'**
+  String get adminVendorSubscriptionSubtitle;
+
+  /// Label for admin vendor subscription saved
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer subscription saved.'**
+  String get adminVendorSubscriptionSaved;
+
   /// Label for app title
   ///
   /// In en, this message translates to:
@@ -117,43 +459,43 @@ abstract class AppLocalizations {
   /// **'loginRelated'**
   String get loginRelated;
 
-  /// No description provided for @passwordRecoveryChoiceTitle.
+  /// Label for password recovery choice title
   ///
   /// In en, this message translates to:
   /// **'Choose a reset method'**
   String get passwordRecoveryChoiceTitle;
 
-  /// No description provided for @passwordRecoveryChoiceDescription.
+  /// Label for password recovery choice description
   ///
   /// In en, this message translates to:
   /// **'Reset it yourself using a verification email, or email the administrator for help.'**
   String get passwordRecoveryChoiceDescription;
 
-  /// No description provided for @resetByEmailVerification.
+  /// Label for reset by email verification
   ///
   /// In en, this message translates to:
   /// **'Reset by verification email'**
   String get resetByEmailVerification;
 
-  /// No description provided for @resetByEmailVerificationDescription.
+  /// Label for reset by email verification description
   ///
   /// In en, this message translates to:
   /// **'We will email you a secure link so you can set a new password.'**
   String get resetByEmailVerificationDescription;
 
-  /// No description provided for @askAdministrator.
+  /// Label for ask administrator
   ///
   /// In en, this message translates to:
   /// **'Ask the administrator'**
   String get askAdministrator;
 
-  /// No description provided for @askAdministratorDescription.
+  /// Label for ask administrator description
   ///
   /// In en, this message translates to:
   /// **'Open your email app and send a request. The administrator will reply after handling it.'**
   String get askAdministratorDescription;
 
-  /// No description provided for @adminPasswordHelpSubject.
+  /// Label for admin password help subject
   ///
   /// In en, this message translates to:
   /// **'Life Pilot password change request'**
@@ -165,7 +507,7 @@ abstract class AppLocalizations {
   /// **'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: {account}\n\nPlease reply to this email after the request has been handled.'**
   String adminPasswordHelpBody(String account);
 
-  /// No description provided for @adminPasswordHelpOpened.
+  /// Label for admin password help opened
   ///
   /// In en, this message translates to:
   /// **'Your email app is open. Review the message and send it.'**
@@ -177,13 +519,13 @@ abstract class AppLocalizations {
   /// **'The email app could not be opened. Please email {email}.'**
   String adminPasswordHelpEmailUnavailable(String email);
 
-  /// No description provided for @passwordHelpTitle.
+  /// Label for password help title
   ///
   /// In en, this message translates to:
   /// **'Other reset options'**
   String get passwordHelpTitle;
 
-  /// No description provided for @passwordHelpDescription.
+  /// Label for password help description
   ///
   /// In en, this message translates to:
   /// **'If you forgot your current password, reset it by verification email or ask the administrator for help.'**
@@ -207,7 +549,7 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logout;
 
-  /// No description provided for @logoutConfirmation.
+  /// Label for logout confirmation
   ///
   /// In en, this message translates to:
   /// **'Log out of the current account?'**
@@ -321,85 +663,85 @@ abstract class AppLocalizations {
   /// **'Update Password'**
   String get updatePassword;
 
-  /// No description provided for @accountSecurity.
+  /// Label for account security
   ///
   /// In en, this message translates to:
   /// **'Account security'**
   String get accountSecurity;
 
-  /// No description provided for @currentPassword.
+  /// Label for current password
   ///
   /// In en, this message translates to:
   /// **'Current password'**
   String get currentPassword;
 
-  /// No description provided for @newPassword.
+  /// Label for new password
   ///
   /// In en, this message translates to:
   /// **'New password'**
   String get newPassword;
 
-  /// No description provided for @changePassword.
+  /// Label for change password
   ///
   /// In en, this message translates to:
   /// **'Change password'**
   String get changePassword;
 
-  /// No description provided for @changePasswordSuccessful.
+  /// Label for change password successful
   ///
   /// In en, this message translates to:
   /// **'Your password has been updated.'**
   String get changePasswordSuccessful;
 
-  /// No description provided for @changePasswordFailed.
+  /// Label for change password failed
   ///
   /// In en, this message translates to:
   /// **'Password update failed. Check your current password and try again.'**
   String get changePasswordFailed;
 
-  /// No description provided for @currentPasswordIncorrect.
+  /// Label for current password incorrect
   ///
   /// In en, this message translates to:
   /// **'The current password is incorrect.'**
   String get currentPasswordIncorrect;
 
-  /// No description provided for @passwordMustBeDifferent.
+  /// Label for password must be different
   ///
   /// In en, this message translates to:
   /// **'The new password must be different from the current password.'**
   String get passwordMustBeDifferent;
 
-  /// No description provided for @passwordDoesNotMeetPolicy.
+  /// Label for password does not meet policy
   ///
   /// In en, this message translates to:
   /// **'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.'**
   String get passwordDoesNotMeetPolicy;
 
-  /// No description provided for @passwordReauthenticationRequired.
+  /// Label for password reauthentication required
   ///
   /// In en, this message translates to:
   /// **'For security, reset your password through email verification first.'**
   String get passwordReauthenticationRequired;
 
-  /// No description provided for @adminPasswordResetTitle.
+  /// Label for admin password reset title
   ///
   /// In en, this message translates to:
   /// **'Help a user reset their password'**
   String get adminPasswordResetTitle;
 
-  /// No description provided for @adminPasswordResetDescription.
+  /// Label for admin password reset description
   ///
   /// In en, this message translates to:
   /// **'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.'**
   String get adminPasswordResetDescription;
 
-  /// No description provided for @adminPasswordResetUserEmail.
+  /// Label for admin password reset user email
   ///
   /// In en, this message translates to:
   /// **'User email'**
   String get adminPasswordResetUserEmail;
 
-  /// No description provided for @adminPasswordResetSend.
+  /// Label for admin password reset send
   ///
   /// In en, this message translates to:
   /// **'Create temporary password'**
@@ -411,61 +753,61 @@ abstract class AppLocalizations {
   /// **'A temporary password was created for {email}.'**
   String adminTemporaryPasswordCreated(String email);
 
-  /// No description provided for @adminTemporaryPasswordLabel.
+  /// Label for admin temporary password
   ///
   /// In en, this message translates to:
   /// **'Temporary password'**
   String get adminTemporaryPasswordLabel;
 
-  /// No description provided for @adminTemporaryPasswordInstruction.
+  /// Label for admin temporary password instruction
   ///
   /// In en, this message translates to:
   /// **'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.'**
   String get adminTemporaryPasswordInstruction;
 
-  /// No description provided for @adminTemporaryPasswordCopy.
+  /// Label for admin temporary password copy
   ///
   /// In en, this message translates to:
   /// **'Copy temporary password'**
   String get adminTemporaryPasswordCopy;
 
-  /// No description provided for @adminTemporaryPasswordCopied.
+  /// Label for admin temporary password copied
   ///
   /// In en, this message translates to:
   /// **'Temporary password copied.'**
   String get adminTemporaryPasswordCopied;
 
-  /// No description provided for @adminPasswordResetUserNotFound.
+  /// Label for admin password reset user not found
   ///
   /// In en, this message translates to:
   /// **'No user was found for this email.'**
   String get adminPasswordResetUserNotFound;
 
-  /// No description provided for @adminPasswordResetFailed.
+  /// Label for admin password reset failed
   ///
   /// In en, this message translates to:
   /// **'The temporary password could not be created. Try again later.'**
   String get adminPasswordResetFailed;
 
-  /// No description provided for @publishedSubmission.
+  /// Label for published submission
   ///
   /// In en, this message translates to:
   /// **'Public'**
   String get publishedSubmission;
 
-  /// No description provided for @publishedSubmissionTooltip.
+  /// Label for published submission tooltip
   ///
   /// In en, this message translates to:
   /// **'This information is public and can be viewed by everyone.'**
   String get publishedSubmissionTooltip;
 
-  /// No description provided for @unpublishedSubmission.
+  /// Label for unpublished submission
   ///
   /// In en, this message translates to:
   /// **'Not public yet'**
   String get unpublishedSubmission;
 
-  /// No description provided for @unpublishedSubmissionTooltip.
+  /// Label for unpublished submission tooltip
   ///
   /// In en, this message translates to:
   /// **'This information is awaiting review and is currently visible only to you and administrators.'**
@@ -1065,19 +1407,19 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get search;
 
-  /// No description provided for @recordSearchHint.
+  /// Label for record search hint
   ///
   /// In en, this message translates to:
   /// **'Search description or subcategory'**
   String get recordSearchHint;
 
-  /// No description provided for @recordAllCategories.
+  /// Label for record all categories
   ///
   /// In en, this message translates to:
   /// **'All categories'**
   String get recordAllCategories;
 
-  /// No description provided for @recordNetChange.
+  /// Label for record net change
   ///
   /// In en, this message translates to:
   /// **'Net change'**
@@ -2210,6 +2552,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account deletion failed: {message}'**
   String accountDeletionFailed(Object message);
+
+  /// Account deletion request is only available in cloud mode
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion requests are available in cloud mode only. Switch the storage location to cloud before submitting a request.'**
+  String get accountDeletionCloudOnly;
 
   /// Account deletion request is pending
   ///
@@ -3546,7 +3894,7 @@ abstract class AppLocalizations {
   /// Label for adminPricingTitle
   ///
   /// In en, this message translates to:
-  /// **'Create pricing version'**
+  /// **'Create user pricing version'**
   String get adminPricingTitle;
 
   /// Label for adminPricingSubtitle
@@ -3567,10 +3915,46 @@ abstract class AppLocalizations {
   /// **'New pricing version created; existing benefits are unchanged'**
   String get adminPricingCreated;
 
+  /// Label for adminPricingUpdated
+  ///
+  /// In en, this message translates to:
+  /// **'User pricing version updated; existing subscription snapshots are unchanged'**
+  String get adminPricingUpdated;
+
+  /// Label for adminUserExistingPlans
+  ///
+  /// In en, this message translates to:
+  /// **'Existing user pricing versions'**
+  String get adminUserExistingPlans;
+
+  /// Label for adminPricingDeleteTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Delete pricing version'**
+  String get adminPricingDeleteTitle;
+
+  /// No description provided for @adminPricingDeleteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}? This is only allowed when no subscription or entitlement uses it.'**
+  String adminPricingDeleteConfirmation(String name);
+
+  /// Label for adminPricingDeleted
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing version deleted.'**
+  String get adminPricingDeleted;
+
+  /// Label for adminPricingDeleteInUse
+  ///
+  /// In en, this message translates to:
+  /// **'This pricing version is still used by a subscription or entitlement and cannot be deleted.'**
+  String get adminPricingDeleteInUse;
+
   /// No description provided for @adminPricingCreateFailed.
   ///
   /// In en, this message translates to:
-  /// **'Creation failed: {error}'**
+  /// **'Unable to save the pricing version: {error}'**
   String adminPricingCreateFailed(String error);
 
   /// Label for adminPricingVersionName
@@ -4023,55 +4407,55 @@ abstract class AppLocalizations {
   /// **'Continue level {level}'**
   String continueLevel(int level);
 
-  /// No description provided for @moduleAuthorization.
+  /// Label for moduleAuthorization
   ///
   /// In en, this message translates to:
   /// **'Access'**
   String get moduleAuthorization;
 
-  /// No description provided for @moduleAuthorizationDescription.
+  /// Label for moduleAuthorizationDescription
   ///
   /// In en, this message translates to:
   /// **'Choose the extra features available to a user. Home and the feature menu update together.'**
   String get moduleAuthorizationDescription;
 
-  /// No description provided for @moduleAuthorizationSearchFirst.
+  /// Label for moduleAuthorizationSearchFirst
   ///
   /// In en, this message translates to:
   /// **'Enter and search for a user email first.'**
   String get moduleAuthorizationSearchFirst;
 
-  /// No description provided for @moduleAuthorizationNoAccess.
+  /// Label for moduleAuthorizationNoAccess
   ///
   /// In en, this message translates to:
   /// **'No extra features are enabled.'**
   String get moduleAuthorizationNoAccess;
 
-  /// No description provided for @moduleAuthorizationSaved.
+  /// Label for moduleAuthorizationSaved
   ///
   /// In en, this message translates to:
   /// **'Feature access updated.'**
   String get moduleAuthorizationSaved;
 
-  /// No description provided for @moduleAuthorizationLoadFailed.
+  /// Label for moduleAuthorizationLoadFailed
   ///
   /// In en, this message translates to:
   /// **'Could not load feature access. Check the account or try again.'**
   String get moduleAuthorizationLoadFailed;
 
-  /// No description provided for @moduleAuthorizationNotDeployed.
+  /// Label for moduleAuthorizationNotDeployed
   ///
   /// In en, this message translates to:
   /// **'Feature access is not deployed. Run the authorization SQL in Supabase first.'**
   String get moduleAuthorizationNotDeployed;
 
-  /// No description provided for @moduleAuthorizationUserNotFound.
+  /// Label for moduleAuthorizationUserNotFound
   ///
   /// In en, this message translates to:
   /// **'No user was found for that email address.'**
   String get moduleAuthorizationUserNotFound;
 
-  /// No description provided for @moduleAuthorizationSaveFailed.
+  /// Label for moduleAuthorizationSaveFailed
   ///
   /// In en, this message translates to:
   /// **'Feature access was not updated correctly. Search again and retry.'**

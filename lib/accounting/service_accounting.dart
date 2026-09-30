@@ -387,16 +387,18 @@ class ServiceAccounting {
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
         );
-        final row = rows.firstWhere(
-          (r) => r[Fields.id]?.toString() == accountId,
+        final matches = rows.where(
+          (row) => row[Fields.id]?.toString() == accountId,
         );
-        await LocalDataStore.instance.put(
-          owner: _localOwner!,
-          resource: TableNames.accountingAccount,
-          id: accountId,
-          data: {...row, Fields.isValid: false},
-          syncState: LocalSyncState.modifiedLocally,
-        );
+        if (matches.isNotEmpty) {
+          await LocalDataStore.instance.put(
+            owner: _localOwner!,
+            resource: TableNames.accountingAccount,
+            id: accountId,
+            data: {...matches.first, Fields.isValid: false},
+            syncState: LocalSyncState.modifiedLocally,
+          );
+        }
         final settings = await LocalDataStore.instance.list(
           owner: _localOwner!,
           resource: TableNames.dashboardSetting,
@@ -449,9 +451,13 @@ class ServiceAccounting {
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
         );
-        final row = rows.firstWhere(
-          (r) => r[Fields.id]?.toString() == accountId,
+        final matches = rows.where(
+          (row) => row[Fields.id]?.toString() == accountId,
         );
+        if (matches.isEmpty) {
+          throw StateError('accounting_account_not_found');
+        }
+        final row = matches.first;
         await LocalDataStore.instance.put(
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
@@ -792,7 +798,13 @@ class ServiceAccounting {
           owner: owner,
           resource: TableNames.accountingDetail,
         );
-        final row = rows.firstWhere((item) => item[Fields.id] == detailId);
+        final matches = rows.where(
+          (item) => item[Fields.id]?.toString() == detailId,
+        );
+        if (matches.isEmpty) {
+          throw StateError('accounting_detail_not_found');
+        }
+        final row = matches.first;
         await LocalDataStore.instance.put(
           owner: owner,
           resource: TableNames.accountingDetail,

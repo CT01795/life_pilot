@@ -10,6 +10,7 @@ import 'package:life_pilot/subscription/widgets_admin_account_deletion_requests.
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/vendor/widgets_admin_vendor_pricing.dart';
 
 class PageSubscriptionPlans extends StatefulWidget {
   const PageSubscriptionPlans({super.key});
@@ -399,6 +400,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               key: ValueKey(_adminSubscriptionEditorRevision),
               onSaved: () => auth.refreshSubscriptionUsage(),
             ),
+            Gaps.h16,
+            const AdminVendorPricing(),
             Gaps.h16,
             const AdminAccountDeletionRequests(),
           ],

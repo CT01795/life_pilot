@@ -89,7 +89,8 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
         ),
       );
       if (mode == null || !mounted) return;
-      final confirmed = await showDialog<bool>(
+      final confirmed =
+          await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
               title: Text(loc.dataCleanupConfirmTitle),
@@ -177,11 +178,11 @@ class _SubscriptionDataCleanupState extends State<SubscriptionDataCleanup> {
 }
 
 String _resourceName(AppLocalizations loc, String value) => switch (value) {
-      'calendar_events' => loc.personalEvent,
-      'accounting_detail' => loc.accountRecords,
-      'point_record_detail' => loc.pointsRecord,
-      'memory_trace' => loc.memoryTrace,
-      'game_questions' => loc.game,
-      'calendar_shares' => loc.calendarSharing,
-      _ => value,
-    };
+  'calendar_events' => loc.personalEvent,
+  'accounting_detail' => loc.accountRecords,
+  'point_record_detail' => loc.pointsRecord,
+  'memory_trace' => loc.memoryTrace,
+  'game_questions' => loc.game,
+  'calendar_shares' => loc.calendarSharing,
+  _ => value,
+};

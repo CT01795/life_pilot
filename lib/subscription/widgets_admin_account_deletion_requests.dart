@@ -30,7 +30,7 @@ class _AdminAccountDeletionRequestsState
     try {
       await ServicePersonalData().approveAccountDeletion(id);
       if (!mounted) return;
-      setState(_reload);
+      setState(() => _reload());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -38,6 +38,18 @@ class _AdminAccountDeletionRequestsState
           ),
         ),
       );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.accountDeletionFailed(error.toString()),
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -48,7 +60,7 @@ class _AdminAccountDeletionRequestsState
     try {
       await ServicePersonalData().confirmAccountDeletionCancellation(id);
       if (!mounted) return;
-      setState(_reload);
+      setState(() => _reload());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -58,6 +70,18 @@ class _AdminAccountDeletionRequestsState
           ),
         ),
       );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.accountDeletionFailed(error.toString()),
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

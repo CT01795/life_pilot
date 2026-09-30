@@ -214,6 +214,7 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
 
   IconData _iconFor(PageType page) => switch (page) {
     PageType.pointsRecord => Icons.stars_outlined,
+    PageType.vendorDashboard => Icons.storefront_outlined,
     PageType.game => Icons.sports_esports_outlined,
     PageType.ai => Icons.smart_toy_outlined,
     PageType.stock => Icons.candlestick_chart_outlined,

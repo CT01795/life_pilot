@@ -184,7 +184,10 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     );
     final isApproved = context.select<ControllerEvent, bool>(
       (controller) =>
-          controller.getEventById(widget.eventViewModel.event.id).isApproved,
+          controller
+              .findEventById(widget.eventViewModel.event.id)
+              ?.isApproved ??
+          widget.eventViewModel.event.isApproved,
     );
     final isRecommendedSubmission =
         widget.tableName == TableNames.recommendEvents ||

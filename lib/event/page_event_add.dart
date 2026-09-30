@@ -244,6 +244,9 @@ class _PageEventAddState extends State<PageEventAdd> {
               controller: _scrollController,
               padding: Insets.directionalL4R4T4B8,
               children: [
+                if (widget.existingEvent == null &&
+                    controllerAdd.tableName == TableNames.recommendEvents)
+                  _buildVendorSubmissionGuide(loc),
                 Card(
                   color: Colors.yellow[50],
                   child: Padding(
@@ -363,6 +366,37 @@ class _PageEventAddState extends State<PageEventAdd> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVendorSubmissionGuide(AppLocalizations loc) {
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: colors.secondaryContainer.withValues(alpha: 0.55),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.storefront_outlined, color: colors.secondary),
+            Gaps.w12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    loc.vendorSubmissionGuideTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  Gaps.h4,
+                  Text(loc.vendorSubmissionGuideDescription),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

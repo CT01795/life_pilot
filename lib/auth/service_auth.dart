@@ -50,6 +50,7 @@ class ServiceAuth {
   static Future<String?> register({
     required String email,
     required String password,
+    String accountType = 'personal',
   }) async {
     final error = _checkRegistrationFields(email: email, password: password);
     if (error != null) {
@@ -60,9 +61,10 @@ class ServiceAuth {
       final response = await supabase.auth.signUp(
         email: email,
         password: password,
-        data: const {
+        data: {
           'privacy_policy_version': AuthConstants.privacyPolicyVersion,
           'terms_of_service_version': AuthConstants.termsOfServiceVersion,
+          'account_type': accountType == 'vendor' ? 'vendor' : 'personal',
         },
       );
       if (response.user?.identities?.isEmpty == true) {

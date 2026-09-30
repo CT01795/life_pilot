@@ -24,6 +24,7 @@ extension PageTypeExtension on PageType {
 
   static Map<PageType, String> _titlesForLocale(AppLocalizations loc) => {
     PageType.home: loc.home,
+    PageType.vendorDashboard: loc.vendorDashboardTitle,
     PageType.personalEvent: loc.personalEvent,
     PageType.stock: loc.stock,
     PageType.settings: loc.dataStorageTitle,

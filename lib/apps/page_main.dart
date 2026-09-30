@@ -16,6 +16,7 @@ import 'package:life_pilot/feedback/page_feedback_admin.dart';
 import 'package:life_pilot/point_record/page_point_record.dart';
 import 'package:life_pilot/apps/page_settings.dart';
 import 'package:life_pilot/apps/page_module_authorization.dart';
+import 'package:life_pilot/vendor/page_vendor_dashboard.dart';
 import 'package:provider/provider.dart';
 
 class PageMain extends StatefulWidget {
@@ -54,6 +55,7 @@ class _PageMainState extends State<PageMain> with WidgetsBindingObserver {
 
   Widget _buildPage(PageType type) => switch (type) {
     PageType.home => const PageHome(),
+    PageType.vendorDashboard => const PageVendorDashboard(),
     PageType.personalEvent => const PageCalendar(),
     PageType.stock => const PageStock(),
     PageType.settings => const PageSettings(),

@@ -15,9 +15,7 @@ class PageRegister extends StatefulWidget {
 }
 
 class _PageRegisterState extends State<PageRegister> {
-  static final RegExp _emailPattern = RegExp(
-    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-  );
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
@@ -133,12 +131,12 @@ class _PageRegisterState extends State<PageRegister> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(loc.appTitle), actions: [
-        Tooltip(
-          message: loc.language,
-          child: LanguageToggleDropdown(),
-        ),
-      ]),
+      appBar: AppBar(
+        title: Text(loc.appTitle),
+        actions: [
+          Tooltip(message: loc.language, child: LanguageToggleDropdown()),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: Insets.all12,
         child: Center(
@@ -150,6 +148,20 @@ class _PageRegisterState extends State<PageRegister> {
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   children: [
+                    if (_authView.registrationAccountType == 'vendor') ...[
+                      Card(
+                        elevation: 0,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondaryContainer.withValues(alpha: 0.6),
+                        child: ListTile(
+                          leading: const Icon(Icons.storefront_outlined),
+                          title: Text(loc.vendorRegistrationTitle),
+                          subtitle: Text(loc.vendorRegistrationDescription),
+                        ),
+                      ),
+                      Gaps.h12,
+                    ],
                     TextFormField(
                       controller: _emailController,
                       focusNode: _emailFocusNode,
@@ -189,7 +201,8 @@ class _PageRegisterState extends State<PageRegister> {
                               : loc.hidePassword,
                           onPressed: () {
                             setState(
-                                () => _obscurePassword = !_obscurePassword);
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                           icon: Icon(
                             _obscurePassword
@@ -265,7 +278,8 @@ class _PageRegisterState extends State<PageRegister> {
                                     (!_hasReadPrivacyPolicy ||
                                         !_hasReadTermsOfService)) {
                                   AppNavigator.showErrorBar(
-                                      loc.readLegalTermsRequired);
+                                    loc.readLegalTermsRequired,
+                                  );
                                   return;
                                 }
                                 setState(() {
@@ -291,7 +305,8 @@ class _PageRegisterState extends State<PageRegister> {
                                           return;
                                         }
                                         setState(
-                                            () => _hasReadPrivacyPolicy = true);
+                                          () => _hasReadPrivacyPolicy = true,
+                                        );
                                       },
                                     );
                                   },
@@ -315,8 +330,9 @@ class _PageRegisterState extends State<PageRegister> {
                                             _hasReadTermsOfService) {
                                           return;
                                         }
-                                        setState(() =>
-                                            _hasReadTermsOfService = true);
+                                        setState(
+                                          () => _hasReadTermsOfService = true,
+                                        );
                                       },
                                     );
                                   },
@@ -350,15 +366,13 @@ class _PageRegisterState extends State<PageRegister> {
                           child: _isSubmitting
                               ? const SizedBox.square(
                                   dimension: 18,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : Text(loc.register),
                         ),
-                        TextButton(
-                          onPressed: _goBack,
-                          child: Text(loc.back),
-                        ),
+                        TextButton(onPressed: _goBack, child: Text(loc.back)),
                       ],
                     ),
                   ],

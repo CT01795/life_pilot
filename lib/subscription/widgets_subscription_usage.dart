@@ -6,10 +6,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class SubscriptionUsageBanner extends StatelessWidget {
-  const SubscriptionUsageBanner({
-    super.key,
-    required this.resource,
-  });
+  const SubscriptionUsageBanner({super.key, required this.resource});
 
   final String resource;
 
@@ -34,8 +31,10 @@ class SubscriptionUsageBanner extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(full ? Icons.warning_amber_rounded : Icons.data_usage,
-                  size: 18),
+              Icon(
+                full ? Icons.warning_amber_rounded : Icons.data_usage,
+                size: 18,
+              ),
               Gaps.w8,
               Expanded(
                 child: Text(
@@ -54,6 +53,12 @@ class SubscriptionUsageBanner extends StatelessWidget {
 
 String subscriptionErrorMessage(AppLocalizations loc, Object error) {
   final text = error.toString();
+  if (text.contains('vendor_image_quota_reached')) {
+    return loc.vendorImageQuotaReached;
+  }
+  if (text.contains('vendor_quota_reached')) {
+    return loc.vendorContentQuotaReached;
+  }
   if (text.contains('LIFE_PILOT_PLUS_REQUIRED:images')) {
     return loc.subscriptionImagePlusOnly;
   }

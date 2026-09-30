@@ -9,6 +9,191 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get vendorSubmissionTitle => '등록 센터';
+
+  @override
+  String get vendorSubmissionDescription => '일정을 계획하는 사용자에게 행사와 명소를 알리고, 공개 후에도 작성자가 관리할 수 있습니다.';
+
+  @override
+  String get vendorSubmissionBenefitReach => '계획 중인 사용자에게 노출';
+
+  @override
+  String get vendorSubmissionBenefitManage => '정보 직접 관리';
+
+  @override
+  String get vendorSubmissionBenefitReview => '명확한 심사 상태';
+
+  @override
+  String get vendorSubmitActivity => '행사 등록';
+
+  @override
+  String get vendorSubmitAttraction => '명소 등록';
+
+  @override
+  String get vendorMySubmissions => '내 등록';
+
+  @override
+  String get vendorAllActivities => '전체 등록';
+
+  @override
+  String get vendorSubmissionGuideTitle => '더 많은 사람이 행사를 발견하게 하세요';
+
+  @override
+  String get vendorSubmissionGuideDescription => '정확한 날짜, 장소, 주최자, 신청 URL을 입력하세요. 심사 후 공개되며 수정하면 다시 심사를 받습니다.';
+
+  @override
+  String get vendorCreateAccountTitle => '행사 주최자인가요?';
+
+  @override
+  String get vendorCreateAccountDescription => '계정을 만들어 행사를 등록하고 심사 상태를 확인하며 공개 정보를 계속 관리하세요.';
+
+  @override
+  String get vendorCreateAccountAction => '계정 만들고 등록';
+
+  @override
+  String get vendorRegistrationTitle => '주최자 계정';
+
+  @override
+  String get vendorRegistrationDescription => '행사, 명소 및 심사 상태를 관리하는 주최자 작업 공간을 사용합니다.';
+
+  @override
+  String get vendorDashboardTitle => '주최자 작업 공간';
+
+  @override
+  String get vendorDashboardSubtitle => '등록 자료와 심사 상태를 관리하고 현재 한도를 확인하세요.';
+
+  @override
+  String get vendorDashboardLoadFailed => '주최자 정보를 불러오지 못했.uc2b5니다.';
+
+  @override
+  String get vendorActiveActivities => '활성 행사';
+
+  @override
+  String get vendorActiveAttractions => '활성 명소';
+
+  @override
+  String vendorCurrentPlan(String plan) {
+    return '현재 요금제: $plan';
+  }
+
+  @override
+  String get vendorManageActivities => '행사 관리';
+
+  @override
+  String get vendorManageAttractions => '명소 관리';
+
+  @override
+  String get vendorPricingTitle => '주최자 요금제';
+
+  @override
+  String get vendorPricingDescription => '무료로 시작하고 필요에 따라 공개 자료 수와 분석 기간을 늘릴 수 있습니다.';
+
+  @override
+  String get vendorPricingActiveOnlyNote => '한도는 아직 종료되지 않은 자료만 계산합니다. 종료된 자료는 활성 게시 한도를 사용하지 않습니다.';
+
+  @override
+  String vendorQuarterlyPrice(int price) {
+    return '분기 NT\$$price';
+  }
+
+  @override
+  String vendorPlanActivityQuota(int count) {
+    return '활성 행사 최대 $count개';
+  }
+
+  @override
+  String vendorPlanAttractionQuota(int count) {
+    return '활성 명소 최대 $count개';
+  }
+
+  @override
+  String vendorPlanImageQuota(int count) {
+    return '이미지 용량 $count MB';
+  }
+
+  @override
+  String vendorPlanAnalyticsDays(int count) {
+    return '최근 $count일 분석';
+  }
+
+  @override
+  String get vendorContentQuotaReached => '활성 게시 한도가 찼습니다. 진행 중인 자료를 삭제하거나 주최자 요금제를 업그레이드하세요.';
+
+  @override
+  String get vendorImageQuotaReached => '주최자 이미지 한도가 찼습니다. 이미지를 삭제하거나 주최자 요금제를 업그레이드하세요.';
+
+  @override
+  String get vendorAnalyticsDays => '분석 일수';
+
+  @override
+  String get vendorPlanFreeName => '무료 요금제';
+
+  @override
+  String get vendorPlanPartnerName => '파트너 요금제';
+
+  @override
+  String get vendorPlanGrowthName => '성장 요금제';
+
+  @override
+  String get vendorPlanCustomName => '맞춤 요금제';
+
+  @override
+  String get vendorAnalyticsTitle => '성과 분석';
+
+  @override
+  String vendorAnalyticsDescription(int days) {
+    return '최근 $days일 동안 활동 및 명소와의 상호작용입니다.';
+  }
+
+  @override
+  String get vendorAnalyticsPageViews => '페이지 조회';
+
+  @override
+  String get vendorAnalyticsCardClicks => '콘텐츠 클릭';
+
+  @override
+  String get vendorAnalyticsRegistrationClicks => '신청 클릭';
+
+  @override
+  String get vendorAnalyticsSaves => '저장';
+
+  @override
+  String get vendorAnalyticsLikes => '좋아요';
+
+  @override
+  String get vendorAnalyticsDislikes => '싫어요';
+
+  @override
+  String get publishedContentDeleteAdminOnly => '공개된 정보는 관리자만 삭제할 수 있습니다. 수정 후 저장하면 검토 대기 상태로 돌아갑니다.';
+
+  @override
+  String get adminVendorPricingTitle => '업체 요금 버전 생성';
+
+  @override
+  String get adminVendorPricingSubtitle => '향후 구매는 최신 효력 버전을 사용하며 기존 권한은 구매 시점의 내용을 유지합니다.';
+
+  @override
+  String get adminVendorPricingCreated => '주최자 요금 버전을 생성했습니다.';
+
+  @override
+  String get adminVendorPricingUpdated => '주최자 요금 버전을 업데이트했습니다.';
+
+  @override
+  String get adminVendorExistingPlans => '기존 요금 버전';
+
+  @override
+  String get adminPricingUpdate => '버전 업데이트';
+
+  @override
+  String get adminVendorSubscriptionTitle => '주최자 구독 관리';
+
+  @override
+  String get adminVendorSubscriptionSubtitle => '요금 버전, 한도 배수 및 만료일을 지정합니다.';
+
+  @override
+  String get adminVendorSubscriptionSaved => '주최자 구독을 저장했습니다.';
+
+  @override
   String get appTitle => '생활 내비게이션';
 
   @override
@@ -1085,6 +1270,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get accountDeletionCloudOnly => '계정 삭제 요청은 클라우드 모드에서만 사용할 수 있습니다. 먼저 저장 위치를 클라우드로 변경하세요.';
+
+  @override
   String get accountDeletionPending => '신청 처리 중';
 
   @override
@@ -1795,7 +1983,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => '기기 답변 기록 무제한';
 
   @override
-  String get adminPricingTitle => '요금 버전 생성';
+  String get adminPricingTitle => '사용자 요금 버전 생성';
 
   @override
   String get adminPricingSubtitle => '이후 결제와 추가 구매에만 적용';
@@ -1807,8 +1995,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adminPricingCreated => '새 요금 버전이 생성되었습니다. 기존 혜택은 유지됩니다';
 
   @override
+  String get adminPricingUpdated => '사용자 요금 버전이 업데이트되었습니다. 기존 구독 혜택은 유지됩니다';
+
+  @override
+  String get adminUserExistingPlans => '기존 사용자 요금 버전';
+
+  @override
+  String get adminPricingDeleteTitle => '요금 버전 삭제';
+
+  @override
+  String adminPricingDeleteConfirmation(String name) {
+    return '$name을(를) 삭제하시겠습니까? 어떤 구독이나 권한에서도 사용하지 않는 경우에만 삭제할 수 있습니다.';
+  }
+
+  @override
+  String get adminPricingDeleted => '요금 버전이 삭제되었습니다.';
+
+  @override
+  String get adminPricingDeleteInUse => '이 요금 버전은 구독 또는 권한에서 사용 중이므로 삭제할 수 없습니다.';
+
+  @override
   String adminPricingCreateFailed(String error) {
-    return '생성 실패: $error';
+    return '요금 버전을 저장할 수 없습니다: $error';
   }
 
   @override

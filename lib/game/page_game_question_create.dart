@@ -643,9 +643,12 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                     setState(() {
                       if (value == '__custom__') {
                         if (_allowsNumberedCustomGroup) {
-                          _customGroupBase = _groupWithoutLevel(
-                            _selectedGroup ?? _availableGroups.first,
-                          );
+                          final currentGroup = _selectedGroup ??
+                              (_availableGroups.isEmpty
+                                  ? ''
+                                  : _availableGroups.first);
+                          _customGroupBase =
+                              _groupWithoutLevel(currentGroup);
                         }
                         _customGroupLevelController.clear();
                         _groupController.clear();

@@ -9,6 +9,191 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get vendorSubmissionTitle => 'Submission center';
+
+  @override
+  String get vendorSubmissionDescription => 'Publish activities and attractions where people plan their time. Keep ownership and update your listing after review.';
+
+  @override
+  String get vendorSubmissionBenefitReach => 'Reach active planners';
+
+  @override
+  String get vendorSubmissionBenefitManage => 'Manage your own information';
+
+  @override
+  String get vendorSubmissionBenefitReview => 'Clear review status';
+
+  @override
+  String get vendorSubmitActivity => 'Submit an activity';
+
+  @override
+  String get vendorSubmitAttraction => 'Submit an attraction';
+
+  @override
+  String get vendorMySubmissions => 'My submissions';
+
+  @override
+  String get vendorAllActivities => 'All submissions';
+
+  @override
+  String get vendorSubmissionGuideTitle => 'Help people discover your activity';
+
+  @override
+  String get vendorSubmissionGuideDescription => 'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.';
+
+  @override
+  String get vendorCreateAccountTitle => 'Organizing an event?';
+
+  @override
+  String get vendorCreateAccountDescription => 'Create an account to submit activities, follow review status and keep your public information up to date.';
+
+  @override
+  String get vendorCreateAccountAction => 'Create an account and submit';
+
+  @override
+  String get vendorRegistrationTitle => 'Organizer account';
+
+  @override
+  String get vendorRegistrationDescription => 'This account opens an organizer workspace for managing activities, attractions and review status.';
+
+  @override
+  String get vendorDashboardTitle => 'Organizer workspace';
+
+  @override
+  String get vendorDashboardSubtitle => 'Manage submissions, follow review status and keep track of your current allowance.';
+
+  @override
+  String get vendorDashboardLoadFailed => 'Organizer information could not be loaded.';
+
+  @override
+  String get vendorActiveActivities => 'Active activities';
+
+  @override
+  String get vendorActiveAttractions => 'Active attractions';
+
+  @override
+  String vendorCurrentPlan(String plan) {
+    return 'Current plan: $plan';
+  }
+
+  @override
+  String get vendorManageActivities => 'Manage activities';
+
+  @override
+  String get vendorManageAttractions => 'Manage attractions';
+
+  @override
+  String get vendorPricingTitle => 'Organizer plans';
+
+  @override
+  String get vendorPricingDescription => 'Start free, then expand the number of public listings and the reporting period as your organization grows.';
+
+  @override
+  String get vendorPricingActiveOnlyNote => 'Listing allowances count content that has not ended. Expired content does not occupy an active-listing allowance.';
+
+  @override
+  String vendorQuarterlyPrice(int price) {
+    return 'NT\$$price / quarter';
+  }
+
+  @override
+  String vendorPlanActivityQuota(int count) {
+    return 'Up to $count active activities';
+  }
+
+  @override
+  String vendorPlanAttractionQuota(int count) {
+    return 'Up to $count active attractions';
+  }
+
+  @override
+  String vendorPlanImageQuota(int count) {
+    return '$count MB image storage';
+  }
+
+  @override
+  String vendorPlanAnalyticsDays(int count) {
+    return 'Analytics for the latest $count days';
+  }
+
+  @override
+  String get vendorContentQuotaReached => 'The active-listing allowance is full. Remove an active listing or upgrade the organizer plan.';
+
+  @override
+  String get vendorImageQuotaReached => 'The organizer image allowance is full. Remove images or upgrade the organizer plan.';
+
+  @override
+  String get vendorAnalyticsDays => 'Analytics days';
+
+  @override
+  String get vendorPlanFreeName => 'Free plan';
+
+  @override
+  String get vendorPlanPartnerName => 'Partner plan';
+
+  @override
+  String get vendorPlanGrowthName => 'Growth plan';
+
+  @override
+  String get vendorPlanCustomName => 'Custom plan';
+
+  @override
+  String get vendorAnalyticsTitle => 'Performance analytics';
+
+  @override
+  String vendorAnalyticsDescription(int days) {
+    return 'Interactions with your activities and attractions during the latest $days days.';
+  }
+
+  @override
+  String get vendorAnalyticsPageViews => 'Page views';
+
+  @override
+  String get vendorAnalyticsCardClicks => 'Content clicks';
+
+  @override
+  String get vendorAnalyticsRegistrationClicks => 'Registration clicks';
+
+  @override
+  String get vendorAnalyticsSaves => 'Saves';
+
+  @override
+  String get vendorAnalyticsLikes => 'Likes';
+
+  @override
+  String get vendorAnalyticsDislikes => 'Dislikes';
+
+  @override
+  String get publishedContentDeleteAdminOnly => 'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
+
+  @override
+  String get adminVendorPricingTitle => 'Create vendor pricing version';
+
+  @override
+  String get adminVendorPricingSubtitle => 'Future purchases use the latest effective version; existing entitlements keep their snapshot.';
+
+  @override
+  String get adminVendorPricingCreated => 'Organizer pricing version created.';
+
+  @override
+  String get adminVendorPricingUpdated => 'Organizer pricing version updated.';
+
+  @override
+  String get adminVendorExistingPlans => 'Existing pricing versions';
+
+  @override
+  String get adminPricingUpdate => 'Update version';
+
+  @override
+  String get adminVendorSubscriptionTitle => 'Manage organizer subscription';
+
+  @override
+  String get adminVendorSubscriptionSubtitle => 'Assign a pricing version, allowance multiplier and expiry date to an organizer account.';
+
+  @override
+  String get adminVendorSubscriptionSaved => 'Organizer subscription saved.';
+
+  @override
   String get appTitle => 'Life Pilot';
 
   @override
@@ -1085,6 +1270,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get accountDeletionCloudOnly => 'Account deletion requests are available in cloud mode only. Switch the storage location to cloud before submitting a request.';
+
+  @override
   String get accountDeletionPending => 'Request pending';
 
   @override
@@ -1795,7 +1983,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => 'Unlimited local answer history';
 
   @override
-  String get adminPricingTitle => 'Create pricing version';
+  String get adminPricingTitle => 'Create user pricing version';
 
   @override
   String get adminPricingSubtitle => 'Applies to future payments and add-ons only';
@@ -1807,8 +1995,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPricingCreated => 'New pricing version created; existing benefits are unchanged';
 
   @override
+  String get adminPricingUpdated => 'User pricing version updated; existing subscription snapshots are unchanged';
+
+  @override
+  String get adminUserExistingPlans => 'Existing user pricing versions';
+
+  @override
+  String get adminPricingDeleteTitle => 'Delete pricing version';
+
+  @override
+  String adminPricingDeleteConfirmation(String name) {
+    return 'Delete $name? This is only allowed when no subscription or entitlement uses it.';
+  }
+
+  @override
+  String get adminPricingDeleted => 'Pricing version deleted.';
+
+  @override
+  String get adminPricingDeleteInUse => 'This pricing version is still used by a subscription or entitlement and cannot be deleted.';
+
+  @override
   String adminPricingCreateFailed(String error) {
-    return 'Creation failed: $error';
+    return 'Unable to save the pricing version: $error';
   }
 
   @override

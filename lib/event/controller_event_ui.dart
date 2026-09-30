@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -37,7 +38,13 @@ Future<void> onDeletePressed({
   required EventItem event,
   required AppLocalizations loc,
 }) async {
-  if (!controller.canDelete(account: event.account ?? '')) {
+  if (!controller.canDelete(
+    account: event.account ?? '',
+    isApproved: event.isApproved,
+  )) {
+    if (event.isApproved) {
+      AppNavigator.showErrorBar(loc.publishedContentDeleteAdminOnly);
+    }
     return;
   }
 
@@ -52,12 +59,14 @@ Future<void> onDeletePressed({
   try {
     await controller.deleteEvent(event);
     AppNavigator.showSnackBar(loc.deleteOk);
+  } on EventDeleteException catch (error, stackTrace) {
+    logger.e('Delete event blocked', error: error, stackTrace: stackTrace);
+    if (error.error == EventDeleteError.reviewProtected) {
+      AppNavigator.showErrorBar(loc.publishedContentDeleteAdminOnly);
+    }
+    return;
   } catch (error, stackTrace) {
-    logger.e(
-      'Delete event failed',
-      error: error,
-      stackTrace: stackTrace,
-    );
+    logger.e('Delete event failed', error: error, stackTrace: stackTrace);
     AppNavigator.showErrorBar(loc.deleteError);
     return;
   }
@@ -84,7 +93,9 @@ Future<void> onMemoryCheckboxChanged({
 
   // 判斷是否已經存在
   final isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
-      event, tmpValue);
+    event,
+    tmpValue,
+  );
 
   // 顯示確認對話框
   final schedule = await confirmEventTransfer(
@@ -107,7 +118,10 @@ Future<void> onMemoryCheckboxChanged({
       scheduledEvent.subEvents = [];
     }
     await controller.handleEventCheckboxTransfer(
-        tmpValue, isAlreadyAdded, scheduledEvent);
+      tmpValue,
+      isAlreadyAdded,
+      scheduledEvent,
+    );
     AppNavigator.showSnackBar(loc.eventAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);

@@ -9,6 +9,191 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get vendorSubmissionTitle => '投稿中心';
+
+  @override
+  String get vendorSubmissionDescription => '讓正在安排生活的使用者看見您的活動與景點；公開後仍由原作者管理。';
+
+  @override
+  String get vendorSubmissionBenefitReach => '觸及行程規劃者';
+
+  @override
+  String get vendorSubmissionBenefitManage => '自主管理資訊';
+
+  @override
+  String get vendorSubmissionBenefitReview => '審核狀態清楚';
+
+  @override
+  String get vendorSubmitActivity => '投稿活動';
+
+  @override
+  String get vendorSubmitAttraction => '投稿景點';
+
+  @override
+  String get vendorMySubmissions => '我的投稿';
+
+  @override
+  String get vendorAllActivities => '全部投稿';
+
+  @override
+  String get vendorSubmissionGuideTitle => '讓更多人發現您的活動';
+
+  @override
+  String get vendorSubmissionGuideDescription => '請填寫正確日期、地點、主辦單位與報名網址。審核後對所有人公開；後續修改會重新送審。';
+
+  @override
+  String get vendorCreateAccountTitle => '您是活動主辦單位？';
+
+  @override
+  String get vendorCreateAccountDescription => '建立帳號即可投稿活動、追蹤審核狀態，並持續維護公開資訊。';
+
+  @override
+  String get vendorCreateAccountAction => '建帳號並投稿';
+
+  @override
+  String get vendorRegistrationTitle => '合作廠商帳號';
+
+  @override
+  String get vendorRegistrationDescription => '此帳號將開啟廠商工作台，專門管理活動、景點與審核狀態。';
+
+  @override
+  String get vendorDashboardTitle => '合作廠商工作台';
+
+  @override
+  String get vendorDashboardSubtitle => '管理投稿、追蹤審核並掌握目前額度。';
+
+  @override
+  String get vendorDashboardLoadFailed => '無法載入合作廠商資料。';
+
+  @override
+  String get vendorActiveActivities => '有效活動';
+
+  @override
+  String get vendorActiveAttractions => '有效景點';
+
+  @override
+  String vendorCurrentPlan(String plan) {
+    return '目前方案：$plan';
+  }
+
+  @override
+  String get vendorManageActivities => '管理活動';
+
+  @override
+  String get vendorManageAttractions => '管理景點';
+
+  @override
+  String get vendorPricingTitle => '合作廠商方案';
+
+  @override
+  String get vendorPricingDescription => '可先免費使用，再依組織需求增加公開資料數與成效統計期間。';
+
+  @override
+  String get vendorPricingActiveOnlyNote => '額度只計算尚未結束的內容；已過期內容不占有效刊登額度。';
+
+  @override
+  String vendorQuarterlyPrice(int price) {
+    return '每季 NT\$$price';
+  }
+
+  @override
+  String vendorPlanActivityQuota(int count) {
+    return '有效活動最多 $count 筆';
+  }
+
+  @override
+  String vendorPlanAttractionQuota(int count) {
+    return '有效景點最多 $count 筆';
+  }
+
+  @override
+  String vendorPlanImageQuota(int count) {
+    return '圖片容量 $count MB';
+  }
+
+  @override
+  String vendorPlanAnalyticsDays(int count) {
+    return '最近 $count 天成效統計';
+  }
+
+  @override
+  String get vendorContentQuotaReached => '有效刊登額度已滿，請移除尚未結束的資料，或升級廠商方案。';
+
+  @override
+  String get vendorImageQuotaReached => '廠商圖片額度已滿，請移除圖片或升級廠商方案。';
+
+  @override
+  String get vendorAnalyticsDays => '成效統計天數';
+
+  @override
+  String get vendorPlanFreeName => '免費方案';
+
+  @override
+  String get vendorPlanPartnerName => '合作方案';
+
+  @override
+  String get vendorPlanGrowthName => '成長方案';
+
+  @override
+  String get vendorPlanCustomName => '自訂方案';
+
+  @override
+  String get vendorAnalyticsTitle => '成效統計';
+
+  @override
+  String vendorAnalyticsDescription(int days) {
+    return '最近 $days 天，使用者與您的活動及景點互動成效。';
+  }
+
+  @override
+  String get vendorAnalyticsPageViews => '頁面瀏覽';
+
+  @override
+  String get vendorAnalyticsCardClicks => '內容點擊';
+
+  @override
+  String get vendorAnalyticsRegistrationClicks => '報名點擊';
+
+  @override
+  String get vendorAnalyticsSaves => '收藏';
+
+  @override
+  String get vendorAnalyticsLikes => '喜歡';
+
+  @override
+  String get vendorAnalyticsDislikes => '不喜歡';
+
+  @override
+  String get publishedContentDeleteAdminOnly => '已公開資料僅限管理員刪除。您仍可編輯，儲存後會轉為待審核。';
+
+  @override
+  String get adminVendorPricingTitle => '建立廠商收費版本';
+
+  @override
+  String get adminVendorPricingSubtitle => '未來付款使用最新生效版本；已購買權益保留當時快照。';
+
+  @override
+  String get adminVendorPricingCreated => '廠商收費版本已建立。';
+
+  @override
+  String get adminVendorPricingUpdated => '廠商收費版本已更新。';
+
+  @override
+  String get adminVendorExistingPlans => '現有收費版本';
+
+  @override
+  String get adminPricingUpdate => '更新版本';
+
+  @override
+  String get adminVendorSubscriptionTitle => '管理廠商訂閱';
+
+  @override
+  String get adminVendorSubscriptionSubtitle => '指定廠商帳號的收費版本、額度倍數與到期日。';
+
+  @override
+  String get adminVendorSubscriptionSaved => '廠商訂閱已儲存。';
+
+  @override
   String get appTitle => '生活導航';
 
   @override
@@ -1085,6 +1270,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get accountDeletionCloudOnly => '只有雲端模式可申請刪除帳號，請先將儲存位置切換為雲端。';
+
+  @override
   String get accountDeletionPending => '申請中';
 
   @override
@@ -1795,7 +1983,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => '本機答題紀錄不限量';
 
   @override
-  String get adminPricingTitle => '建立收費版本';
+  String get adminPricingTitle => '建立使用者收費版本';
 
   @override
   String get adminPricingSubtitle => '新版本只影響之後付款或加購的權益';
@@ -1807,8 +1995,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPricingCreated => '新收費版本已建立；舊版本與既有使用者權益保持不變';
 
   @override
+  String get adminPricingUpdated => '使用者收費版本已更新；既有訂閱權益快照不受影響';
+
+  @override
+  String get adminUserExistingPlans => '現有使用者收費版本';
+
+  @override
+  String get adminPricingDeleteTitle => '刪除收費版本';
+
+  @override
+  String adminPricingDeleteConfirmation(String name) {
+    return '確定刪除 $name？只有未被任何訂閱或權益使用的版本才能刪除。';
+  }
+
+  @override
+  String get adminPricingDeleted => '收費版本已刪除。';
+
+  @override
+  String get adminPricingDeleteInUse => '此收費版本仍被訂閱或權益使用，無法刪除。';
+
+  @override
   String adminPricingCreateFailed(String error) {
-    return '建立失敗：$error';
+    return '無法儲存收費版本：$error';
   }
 
   @override

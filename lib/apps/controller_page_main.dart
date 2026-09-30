@@ -21,7 +21,10 @@ class ControllerPageMain extends SafeChangeNotifier {
        _serviceModule = serviceModule ?? ServiceModule(),
        _accountKey = auth.currentAccount?.trim().toLowerCase(),
        _wasAdmin = auth.isSysAdmin,
-       _selectedPage = PageType.home {
+       _wasVendor = auth.isVendor,
+       _selectedPage = auth.isVendor
+           ? PageType.vendorDashboard
+           : PageType.home {
     unawaited(_reloadModules());
   }
 
@@ -32,6 +35,12 @@ class ControllerPageMain extends SafeChangeNotifier {
     PageType.recommendPlaces,
     PageType.memoryTrace,
     PageType.accountRecords,
+  ];
+
+  static const vendorPages = <PageType>[
+    PageType.vendorDashboard,
+    PageType.recommendEvent,
+    PageType.recommendPlaces,
   ];
 
   static const grantablePageKeys = <PageType, String>{
@@ -49,6 +58,7 @@ class ControllerPageMain extends SafeChangeNotifier {
   final ServiceModule _serviceModule;
   String? _accountKey;
   bool _wasAdmin;
+  bool _wasVendor;
   Set<String> _moduleKeys = const {};
   bool _modulesLoading = false;
   int _moduleRequest = 0;
@@ -63,6 +73,7 @@ class ControllerPageMain extends SafeChangeNotifier {
   Set<String> get moduleKeys => Set.unmodifiable(_moduleKeys);
 
   List<PageType> get availablePages {
+    if (auth.isVendor) return vendorPages;
     final pages = <PageType>[...basePages];
     for (final entry in grantablePageKeys.entries) {
       if (auth.isSysAdmin || _moduleKeys.contains(entry.value)) {
@@ -124,13 +135,18 @@ class ControllerPageMain extends SafeChangeNotifier {
     if (auth != null) {
       final nextAccount = auth.currentAccount?.trim().toLowerCase();
       final nextIsAdmin = auth.isSysAdmin;
-      sessionChanged = nextAccount != _accountKey || nextIsAdmin != _wasAdmin;
+      final nextIsVendor = auth.isVendor;
+      sessionChanged =
+          nextAccount != _accountKey ||
+          nextIsAdmin != _wasAdmin ||
+          nextIsVendor != _wasVendor;
       _auth = auth;
       if (sessionChanged) {
         _accountKey = nextAccount;
         _wasAdmin = nextIsAdmin;
+        _wasVendor = nextIsVendor;
         _moduleKeys = const {};
-        _selectedPage = PageType.home;
+        _selectedPage = nextIsVendor ? PageType.vendorDashboard : PageType.home;
         changed = true;
       }
     }
@@ -149,6 +165,7 @@ class ControllerPageMain extends SafeChangeNotifier {
   void _validateSelectedPage() {
     if (!availablePages.contains(_selectedPage)) {
       _selectedPage = PageType.home;
+      if (auth.isVendor) _selectedPage = PageType.vendorDashboard;
     }
   }
 

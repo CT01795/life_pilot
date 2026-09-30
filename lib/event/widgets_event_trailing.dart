@@ -51,8 +51,7 @@ Widget widgetsEventTrailing({
           ),
         Selector<ControllerEvent, bool>(
           selector: (_, c) {
-            final e = c.getEventById(event.id);
-            return e.isApproved;
+            return c.findEventById(event.id)?.isApproved ?? event.isApproved;
           },
           builder: (_, isApproved, _) {
             if (controllerEvent.fromTableName != TableNames.memoryTrace &&

@@ -27,6 +27,9 @@ class UserMenuButton extends StatelessWidget {
     final isSysAdmin = context.select<ControllerAuth, bool>(
       (controller) => controller.isSysAdmin,
     );
+    final isVendor = context.select<ControllerAuth, bool>(
+      (controller) => controller.isVendor,
+    );
     if (auth.account == null || auth.account!.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -149,57 +152,63 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
-        PopupMenuItem(
-          value: "subscriptionPlans",
-          child: Row(
-            children: [
-              const Icon(Icons.workspace_premium_outlined, color: Colors.white),
-              Gaps.w8,
-              Expanded(
-                child: Text(
-                  loc.subscriptionPlansTitle,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white),
+        if (!isVendor)
+          PopupMenuItem(
+            value: "subscriptionPlans",
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.workspace_premium_outlined,
+                  color: Colors.white,
                 ),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "dataStorage",
-          child: Row(
-            children: [
-              const Icon(Icons.storage_outlined, color: Colors.white),
-              Gaps.w8,
-              Expanded(
-                child: Text(
-                  loc.dataStorageTitle,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "requestDataExport",
-          child: Row(
-            children: [
-              const Icon(Icons.file_download_outlined, color: Colors.white),
-              Gaps.w8,
-              Expanded(
-                child: FittedBox(
-                  alignment: Alignment.centerLeft,
-                  fit: BoxFit.scaleDown,
+                Gaps.w8,
+                Expanded(
                   child: Text(
-                    loc.accountMenuDataExport,
+                    loc.subscriptionPlansTitle,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        if (!isVendor) ...[
+          PopupMenuItem(
+            value: "dataStorage",
+            child: Row(
+              children: [
+                const Icon(Icons.storage_outlined, color: Colors.white),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    loc.dataStorageTitle,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: "requestDataExport",
+            child: Row(
+              children: [
+                const Icon(Icons.file_download_outlined, color: Colors.white),
+                Gaps.w8,
+                Expanded(
+                  child: FittedBox(
+                    alignment: Alignment.centerLeft,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      loc.accountMenuDataExport,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         PopupMenuItem(
           value: "feedback",
           child: Row(

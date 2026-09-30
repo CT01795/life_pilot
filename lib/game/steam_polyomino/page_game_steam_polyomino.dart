@@ -18,8 +18,11 @@ import 'package:provider/provider.dart';
 class PageGameSteamPolyomino extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const PageGameSteamPolyomino(
-      {super.key, required this.gameId, required this.gameLevel});
+  const PageGameSteamPolyomino({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+  });
 
   @override
   State<PageGameSteamPolyomino> createState() => _PageGameSteamPolyominoState();
@@ -36,15 +39,17 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
   @override
   void initState() {
     super.initState();
-    final levelData =
-        ModelGamePolyominoLevelFactory.generateLevel(widget.gameLevel);
+    final levelData = ModelGamePolyominoLevelFactory.generateLevel(
+      widget.gameLevel,
+    );
     final auth = context.read<ControllerAuth>();
     ctrl = ControllerGameSteamPolyomino(
-        userName: auth.currentAccount ?? AuthConstants.guest,
-        service: ServiceGame(),
-        gameId: widget.gameId,
-        gameLevel: widget.gameLevel,
-        level: levelData);
+      userName: auth.currentAccount ?? AuthConstants.guest,
+      service: ServiceGame(),
+      gameId: widget.gameId,
+      gameLevel: widget.gameLevel,
+      level: levelData,
+    );
     waiting = levelData.availableBlocks.map((b) => b.clone()).toList();
     // 初始化時每個水管旋轉一次，強制 build
     for (var b in waiting) {
@@ -114,8 +119,9 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(ok ? "🎉 Completed!" : "❌ Not Completed"),
-                duration: const Duration(seconds: 1)),
+              content: Text(ok ? "🎉 Completed!" : "❌ Not Completed"),
+              duration: const Duration(seconds: 1),
+            ),
           );
 
           if (ok) {
@@ -132,45 +138,45 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                     ),
                   )
                 : value == 4
-                    ? await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PageGameSpeaking(
-                            gameId: widget.gameId,
-                            gameLevel: -1, //widget.gameLevel,
-                          ),
-                        ),
-                      )
-                    : value == 3
-                        ? await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PageGameTranslation(
-                                gameId: widget.gameId,
-                                gameLevel: -1, //widget.gameLevel,
-                                gameName: "",
-                              ),
-                            ),
-                          )
-                        : value == 2
-                            ? await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PageGameSentence(
-                                    gameId: widget.gameId,
-                                    gameLevel: -1, //widget.gameLevel,
-                                  ),
-                                ),
-                              )
-                            : await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PageGameWordSearch(
-                                    gameId: widget.gameId,
-                                    gameLevel: -1, //widget.gameLevel,
-                                  ),
-                                ),
-                              );
+                ? await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PageGameSpeaking(
+                        gameId: widget.gameId,
+                        gameLevel: -1, //widget.gameLevel,
+                      ),
+                    ),
+                  )
+                : value == 3
+                ? await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PageGameTranslation(
+                        gameId: widget.gameId,
+                        gameLevel: -1, //widget.gameLevel,
+                        gameName: "",
+                      ),
+                    ),
+                  )
+                : value == 2
+                ? await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PageGameSentence(
+                        gameId: widget.gameId,
+                        gameLevel: -1, //widget.gameLevel,
+                      ),
+                    ),
+                  )
+                : await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PageGameWordSearch(
+                        gameId: widget.gameId,
+                        gameLevel: -1, //widget.gameLevel,
+                      ),
+                    ),
+                  );
             if (mounted) {
               Navigator.pop(context, true); // 過關 -> 返回上一頁
             }
@@ -188,8 +194,10 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
     if (!waitingUnitCalculated && waiting.isNotEmpty) {
       // 計算統一縮放比例，只做一次
       const baseUnit = 42.0;
-      final maxBlockWH = max(waiting.map((b) => b.width).fold(0, max),
-          waiting.map((b) => b.height).fold(0, max));
+      final maxBlockWH = max(
+        waiting.map((b) => b.width).fold(0, max),
+        waiting.map((b) => b.height).fold(0, max),
+      );
 
       // 用寬度計算
       final estCols = (maxBlockWH > 0)
@@ -224,47 +232,50 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
     }
 
     return Padding(
-        padding: const EdgeInsets.all(padding),
-        child: InteractiveViewer(
-          minScale: 0.2,
-          maxScale: 3.0,
-          boundaryMargin: const EdgeInsets.all(200),
-          constrained: false, // ⭐ 讓內容可超出邊界
-          child: SizedBox(
-            width: totalW, // ⭐ 限制 Wrap 的寬度
-            child: Wrap(
-              spacing: padding,
-              runSpacing: padding,
-              alignment: WrapAlignment.center,
-              children: waiting.map((b) {
-                return Draggable<ModelGamePolyominoDragBlockData>(
-                  dragAnchorStrategy: childDragAnchorStrategy,
-                  data: ModelGamePolyominoDragBlockData(
-                      block: b, source: EnumPolyominoDragSource.waiting),
-                  feedback: PolyominoBlockWidget(
+      padding: const EdgeInsets.all(padding),
+      child: InteractiveViewer(
+        minScale: 0.2,
+        maxScale: 3.0,
+        boundaryMargin: const EdgeInsets.all(200),
+        constrained: false, // ⭐ 讓內容可超出邊界
+        child: SizedBox(
+          width: totalW, // ⭐ 限制 Wrap 的寬度
+          child: Wrap(
+            spacing: padding,
+            runSpacing: padding,
+            alignment: WrapAlignment.center,
+            children: waiting.map((b) {
+              return Draggable<ModelGamePolyominoDragBlockData>(
+                dragAnchorStrategy: childDragAnchorStrategy,
+                data: ModelGamePolyominoDragBlockData(
+                  block: b,
+                  source: EnumPolyominoDragSource.waiting,
+                ),
+                feedback: PolyominoBlockWidget(
+                  block: b,
+                  unitSize: waitingUnit,
+                  grid: ctrl.grid,
+                  showPipe: true,
+                ),
+                childWhenDragging: const SizedBox.shrink(),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => b.rotateRight());
+                    // 旋轉時不再重新計算 unitSize
+                  },
+                  child: PolyominoBlockWidget(
                     block: b,
                     unitSize: waitingUnit,
                     grid: ctrl.grid,
                     showPipe: true,
                   ),
-                  childWhenDragging: const SizedBox.shrink(),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => b.rotateRight());
-                      // 旋轉時不再重新計算 unitSize
-                    },
-                    child: PolyominoBlockWidget(
-                      block: b,
-                      unitSize: waitingUnit,
-                      grid: ctrl.grid,
-                      showPipe: true,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+                ),
+              );
+            }).toList(),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   // ---------- 右側格子畫布 ----------
@@ -292,7 +303,9 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                 final tile = ctrl.grid[r][c];
                 final block = tile.blockId == null
                     ? null
-                    : ctrl.placedBlocks.firstWhere((b) => b.id == tile.blockId);
+                    : ctrl.placedBlocks
+                          .where((block) => block.id == tile.blockId)
+                          .firstOrNull;
 
                 return DragTarget<ModelGamePolyominoDragBlockData>(
                   onWillAcceptWithDetails: (_) => true,
@@ -302,14 +315,16 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                   onAcceptWithDetails: (details) {
                     setState(() {
                       if (!ctrl.placeBlock(details.data.block, c, r)) {
-                        if (!waiting
-                            .any((w) => w.id == details.data.block.id)) {
+                        if (!waiting.any(
+                          (w) => w.id == details.data.block.id,
+                        )) {
                           waiting.add(details.data.block);
                         }
                       } else if (details.data.source ==
                           EnumPolyominoDragSource.waiting) {
-                        waiting
-                            .removeWhere((w) => w.id == details.data.block.id);
+                        waiting.removeWhere(
+                          (w) => w.id == details.data.block.id,
+                        );
                       }
                     });
                   },
@@ -318,15 +333,19 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                       return Draggable<ModelGamePolyominoDragBlockData>(
                         dragAnchorStrategy: childDragAnchorStrategy,
                         data: ModelGamePolyominoDragBlockData(
-                            block: block, source: EnumPolyominoDragSource.grid),
+                          block: block,
+                          source: EnumPolyominoDragSource.grid,
+                        ),
                         feedback: PolyominoBlockWidget(
                           block: block,
                           unitSize: cell,
                           grid: ctrl.grid,
                           showPipe: true,
                         ),
-                        childWhenDragging:
-                            PolyominoTileWidget(tile: tile, size: cell),
+                        childWhenDragging: PolyominoTileWidget(
+                          tile: tile,
+                          size: cell,
+                        ),
                         onDragStarted: () =>
                             setState(() => ctrl.removeBlock(block)),
                         onDraggableCanceled: (_, _) {

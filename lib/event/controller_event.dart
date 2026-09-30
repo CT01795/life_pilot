@@ -121,8 +121,8 @@ class ControllerEvent extends SafeChangeNotifier {
     return _modelEvent.selectedEventIds.contains(eventId);
   }
 
-  EventItem getEventById(String id) {
-    return _modelEvent.getEventById(id);
+  EventItem? findEventById(String id) {
+    return _modelEvent.findEventById(id);
   }
 
   bool get showSearchPanel => _modelEvent.showSearchPanel;
@@ -204,7 +204,13 @@ class ControllerEvent extends SafeChangeNotifier {
     _viewModelCache.remove(eventId);
   }
 
-  bool canDelete({required String account}) {
+  bool canDelete({required String account, bool isApproved = false}) {
+    final isRecommendedContent =
+        _tableName == TableNames.recommendEvents ||
+        _tableName == TableNames.recommendPlaces;
+    if (isRecommendedContent && isApproved && !auth.isSysAdmin) {
+      return false;
+    }
     return auth.currentAccount == account ||
         (auth.isSysAdmin && _tableName != TableNames.memoryTrace);
   }
@@ -486,7 +492,10 @@ class ControllerEvent extends SafeChangeNotifier {
     EventViewModel tmp = EventViewModel.buildEventViewModel(
       event: event,
       parentLocation: '',
-      canDelete: canDelete(account: event.account ?? ''),
+      canDelete: canDelete(
+        account: event.account ?? '',
+        isApproved: event.isApproved,
+      ),
       showSubEvents: true,
       loc: loc,
       tableName: _tableName,

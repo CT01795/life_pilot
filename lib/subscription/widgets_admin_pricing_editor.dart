@@ -40,6 +40,15 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   DateTime _effectiveAt = DateTime.now();
   String _storagePlan = 'cloud';
   bool _saving = false;
+  late Future<List<SubscriptionPricingVersion>> _versions;
+  String? _editingVersionId;
+  String? _editingVersionName;
+
+  @override
+  void initState() {
+    super.initState();
+    _versions = ServiceSubscription().fetchPricingVersions();
+  }
 
   @override
   void dispose() {
@@ -71,16 +80,38 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     }
     setState(() => _saving = true);
     try {
-      await ServiceSubscription().createPricingVersionAsAdmin(
-        name: _name.text,
-        storagePlan: _storagePlan,
-        effectiveAt: _effectiveAt,
-        quarterlyPrice: values['price']!,
-        quotas: values.map((key, value) => MapEntry(key, value!)),
-      );
+      final createsNewVersion =
+          _editingVersionId == null ||
+          _name.text.trim().toLowerCase() !=
+              _editingVersionName?.trim().toLowerCase();
+      final quotas = values.map((key, value) => MapEntry(key, value!));
+      final service = ServiceSubscription();
+      if (createsNewVersion) {
+        await service.createPricingVersionAsAdmin(
+          name: _name.text,
+          storagePlan: _storagePlan,
+          effectiveAt: _effectiveAt,
+          quarterlyPrice: values['price']!,
+          quotas: quotas,
+        );
+      } else {
+        await service.updatePricingVersionAsAdmin(
+          pricingVersionId: _editingVersionId!,
+          name: _name.text,
+          storagePlan: _storagePlan,
+          effectiveAt: _effectiveAt,
+          quarterlyPrice: values['price']!,
+          quotas: quotas,
+        );
+      }
       if (!mounted) return;
-      _message(loc.adminPricingCreated);
-      _name.clear();
+      _message(
+        createsNewVersion ? loc.adminPricingCreated : loc.adminPricingUpdated,
+      );
+      _resetForm();
+      setState(() {
+        _versions = service.fetchPricingVersions();
+      });
       widget.onSaved?.call();
     } catch (error) {
       if (mounted) _message(loc.adminPricingCreateFailed(error.toString()));
@@ -89,8 +120,88 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     }
   }
 
-  void _message(String value) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(value)));
+  void _editVersion(SubscriptionPricingVersion version) {
+    setState(() {
+      _editingVersionId = version.id;
+      _editingVersionName = version.name;
+      _name.text = version.name;
+      _storagePlan = version.storagePlan;
+      _effectiveAt = version.effectiveAt.toLocal();
+      _values['price']!.text = '${version.quarterlyPriceTwd}';
+      _values['calendar']!.text = '${version.quotas['calendar_events'] ?? 0}';
+      _values['accounting']!.text =
+          '${version.quotas['accounting_detail'] ?? 0}';
+      _values['point']!.text = '${version.quotas['point_record_detail'] ?? 0}';
+      _values['memory']!.text = '${version.quotas['memory_trace'] ?? 0}';
+      _values['game']!.text = '${version.quotas['game_questions'] ?? 0}';
+      _values['share']!.text = '${version.quotas['calendar_shares'] ?? 0}';
+      _values['image']!.text =
+          '${(version.quotas['image_bytes'] ?? 0) ~/ (1024 * 1024)}';
+      _values['answerDays']!.text =
+          '${version.quotas['answer_history_days'] ?? 0}';
+    });
+  }
+
+  void _resetForm() {
+    _editingVersionId = null;
+    _editingVersionName = null;
+    _name.clear();
+    _effectiveAt = DateTime.now();
+    _storagePlan = 'cloud';
+    _values['price']!.text = '129';
+    for (final entry in _cloudQuotaDefaults.entries) {
+      _values[entry.key]!.text = entry.value;
+    }
+  }
+
+  Future<void> _deleteVersion(SubscriptionPricingVersion version) async {
+    final loc = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.adminPricingDeleteTitle),
+        content: Text(loc.adminPricingDeleteConfirmation(version.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(loc.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(loc.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      await ServiceSubscription().deletePricingVersionAsAdmin(
+        versionId: version.id,
+      );
+      if (!mounted) return;
+      if (_editingVersionId == version.id) _resetForm();
+      _message(loc.adminPricingDeleted);
+      setState(() {
+        _versions = ServiceSubscription().fetchPricingVersions();
+      });
+      widget.onSaved?.call();
+    } catch (error) {
+      if (mounted) {
+        _message(
+          error.toString().contains('pricing_version_in_use')
+              ? loc.adminPricingDeleteInUse
+              : loc.adminPricingCreateFailed(error.toString()),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _message(String value) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(value)));
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +225,58 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
         subtitle: Text(loc.adminPricingSubtitle),
         childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              loc.adminUserExistingPlans,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
+          Gaps.h8,
+          FutureBuilder<List<SubscriptionPricingVersion>>(
+            future: _versions,
+            builder: (context, snapshot) {
+              final versions =
+                  snapshot.data ?? const <SubscriptionPricingVersion>[];
+              return Column(
+                children: versions
+                    .map(
+                      (version) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.sell_outlined),
+                        title: Text(version.name),
+                        subtitle: Text(
+                          '${version.storagePlan == 'local' ? loc.dataStorageLocal : loc.dataStorageCloud} · ${loc.vendorQuarterlyPrice(version.quarterlyPriceTwd)}',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: loc.edit,
+                              onPressed: _saving
+                                  ? null
+                                  : () => _editVersion(version),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              tooltip: loc.delete,
+                              onPressed: _saving
+                                  ? null
+                                  : () => _deleteVersion(version),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
+                        onTap: _saving ? null : () => _editVersion(version),
+                      ),
+                    )
+                    .toList(growable: false),
+              );
+            },
+          ),
+          const Divider(height: 28),
           TextField(
             controller: _name,
             decoration: InputDecoration(
@@ -126,11 +289,13 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.event_outlined),
             title: Text(loc.adminPricingEffectiveDate),
-            subtitle: Text(MaterialLocalizations.of(context)
-                .formatMediumDate(_effectiveAt)),
+            subtitle: Text(
+              MaterialLocalizations.of(context).formatMediumDate(_effectiveAt),
+            ),
             onTap: _pickEffectiveDate,
           ),
           DropdownButtonFormField<String>(
+            key: ValueKey(_storagePlan),
             initialValue: _storagePlan,
             decoration: InputDecoration(
               labelText: loc.adminSubscriptionStoragePlan,
@@ -157,9 +322,9 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
               child: Text(
                 loc.adminPricingLocalZeroUnlimited,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -169,8 +334,8 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
               final columns = constraints.maxWidth >= 720
                   ? 3
                   : constraints.maxWidth >= 440
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               return GridView.builder(
                 itemCount: _values.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -193,13 +358,29 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
             },
           ),
           Gaps.h16,
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.add_chart_outlined),
-              label: Text(loc.adminPricingCreate),
-            ),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: Icon(
+                  _editingVersionId == null
+                      ? Icons.add_chart_outlined
+                      : Icons.save_outlined,
+                ),
+                label: Text(
+                  _editingVersionId == null
+                      ? loc.adminPricingCreate
+                      : loc.adminPricingUpdate,
+                ),
+              ),
+              if (_editingVersionId != null)
+                OutlinedButton(
+                  onPressed: _saving ? null : () => setState(_resetForm),
+                  child: Text(loc.cancel),
+                ),
+            ],
           ),
         ],
       ),

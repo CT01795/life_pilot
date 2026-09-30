@@ -366,16 +366,18 @@ class ServicePointRecord {
           owner: _localOwner!,
           resource: TableNames.pointRecordAccount,
         );
-        final row = rows.firstWhere(
-          (r) => r[Fields.id]?.toString() == accountId,
+        final matches = rows.where(
+          (row) => row[Fields.id]?.toString() == accountId,
         );
-        await LocalDataStore.instance.put(
-          owner: _localOwner!,
-          resource: TableNames.pointRecordAccount,
-          id: accountId,
-          data: {...row, Fields.isValid: false},
-          syncState: LocalSyncState.modifiedLocally,
-        );
+        if (matches.isNotEmpty) {
+          await LocalDataStore.instance.put(
+            owner: _localOwner!,
+            resource: TableNames.pointRecordAccount,
+            id: accountId,
+            data: {...matches.first, Fields.isValid: false},
+            syncState: LocalSyncState.modifiedLocally,
+          );
+        }
         final settings = await LocalDataStore.instance.list(
           owner: _localOwner!,
           resource: TableNames.dashboardSetting,
@@ -396,15 +398,10 @@ class ServicePointRecord {
         }
         return;
       }
-      final result = await supabase
+      await supabase
           .from(TableNames.pointRecordAccount)
           .update({Fields.isValid: false})
-          .eq(Fields.id, accountId)
-          .select();
-
-      if (result.isEmpty) {
-        throw Exception("account not found");
-      }
+          .eq(Fields.id, accountId);
 
       await supabase
           .from(TableNames.dashboardSetting)
@@ -426,9 +423,13 @@ class ServicePointRecord {
           owner: _localOwner!,
           resource: TableNames.pointRecordAccount,
         );
-        final row = rows.firstWhere(
-          (r) => r[Fields.id]?.toString() == accountId,
+        final matches = rows.where(
+          (row) => row[Fields.id]?.toString() == accountId,
         );
+        if (matches.isEmpty) {
+          throw StateError('point_account_not_found');
+        }
+        final row = matches.first;
         await LocalDataStore.instance.put(
           owner: _localOwner!,
           resource: TableNames.pointRecordAccount,
@@ -783,7 +784,13 @@ class ServicePointRecord {
           owner: owner,
           resource: TableNames.pointRecordDetail,
         );
-        final row = rows.firstWhere((item) => item[Fields.id] == detailId);
+        final matches = rows.where(
+          (item) => item[Fields.id]?.toString() == detailId,
+        );
+        if (matches.isEmpty) {
+          throw StateError('point_detail_not_found');
+        }
+        final row = matches.first;
         await LocalDataStore.instance.put(
           owner: owner,
           resource: TableNames.pointRecordDetail,

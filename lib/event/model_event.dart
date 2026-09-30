@@ -38,8 +38,11 @@ class ModelEvent {
     );
   }
 
-  EventItem getEventById(String id) {
-    return _events.firstWhere((e) => e.id == id);
+  EventItem? findEventById(String id) {
+    for (final event in _events) {
+      if (event.id == id) return event;
+    }
+    return null;
   }
 
   void updateEvent(EventItem updatedEvent) {

@@ -97,13 +97,27 @@ class _PageGameListState extends State<PageGameList> {
     try {
       await controllerGameList.loadGames();
       if (!mounted) return;
-      if (controllerGameList.gamesByCategory.isNotEmpty) {
+      final playableCategories = controllerGameList.gamesByCategory.entries
+          .where(
+            (category) =>
+                category.value.values.any((levels) => levels.isNotEmpty),
+          )
+          .toList(growable: false);
+      if (playableCategories.isNotEmpty) {
+        final firstCategory = playableCategories.first;
+        MapEntry<String, List<ModelGameItem>>? firstGame;
+        for (final game in firstCategory.value.entries) {
+          if (game.value.isNotEmpty) {
+            firstGame = game;
+            break;
+          }
+        }
+        if (firstGame == null) return;
+        final selectedGame = firstGame;
         setState(() {
-          selectedCategory = controllerGameList.gamesByCategory.keys.first;
-          final gamesMap =
-              controllerGameList.gamesByCategory[selectedCategory!]!;
-          selectedGameName = gamesMap.keys.first;
-          selectedLevel = gamesMap[selectedGameName]!.first.level;
+          selectedCategory = firstCategory.key;
+          selectedGameName = selectedGame.key;
+          selectedLevel = selectedGame.value.first.level;
         });
         await _loadUserProgress();
       } else {
@@ -307,7 +321,7 @@ class _PageGameListState extends State<PageGameList> {
     final gameMap = controllerGameList.gamesByCategory[selectedCategory!];
     if (gameMap == null) return null;
     final levelList = gameMap[selectedGameName!];
-    if (levelList == null) return null;
+    if (levelList == null || levelList.isEmpty) return null;
     return levelList.firstWhere(
       (g) => g.level == selectedLevel,
       orElse: () => levelList.first,
@@ -346,6 +360,7 @@ class _PageGameListState extends State<PageGameList> {
     final gameType = selectedCategory!;
     final gameName = selectedGameName!;
     final levels = controllerGameList.gamesByCategory[gameType]![gameName]!;
+    if (levels.isEmpty) return;
     final currentMaxLevel = levels
         .map((item) => item.level)
         .reduce((current, value) => current > value ? current : value);
@@ -453,13 +468,14 @@ class _PageGameListState extends State<PageGameList> {
     if (created && mounted) {
       await controllerGameList.loadGames();
       if (!mounted) return;
+      final createdLevels =
+          controllerGameList.gamesByCategory[gameType]?[gameName];
       setState(() {
         selectedCategory = gameType;
         selectedGameName = gameName;
-        selectedLevel = controllerGameList
-            .gamesByCategory[gameType]![gameName]!
-            .first
-            .level;
+        selectedLevel = createdLevels == null || createdLevels.isEmpty
+            ? null
+            : createdLevels.first.level;
       });
       await _loadUserProgress();
     }
@@ -569,12 +585,15 @@ class _PageGameListState extends State<PageGameList> {
               decoration: const InputDecoration(border: OutlineInputBorder()),
               onChanged: (value) async {
                 if (value != null) {
+                  final gamesMap = controllerGameList.gamesByCategory[value];
+                  if (gamesMap == null || gamesMap.isEmpty) return;
+                  final nextGameName = gamesMap.keys.first;
+                  final levels = gamesMap[nextGameName];
+                  if (levels == null || levels.isEmpty) return;
                   setState(() {
                     selectedCategory = value;
-                    final gamesMap =
-                        controllerGameList.gamesByCategory[selectedCategory!]!;
-                    selectedGameName = gamesMap.keys.first;
-                    selectedLevel = gamesMap[selectedGameName!]!.first.level;
+                    selectedGameName = nextGameName;
+                    selectedLevel = levels.first.level;
                   });
                   await _loadUserProgress();
                 }
@@ -601,11 +620,12 @@ class _PageGameListState extends State<PageGameList> {
               decoration: const InputDecoration(border: OutlineInputBorder()),
               onChanged: (value) async {
                 if (value != null && selectedCategory != null) {
+                  final levels = controllerGameList
+                      .gamesByCategory[selectedCategory!]?[value];
+                  if (levels == null || levels.isEmpty) return;
                   setState(() {
                     selectedGameName = value;
-                    final levelList = controllerGameList
-                        .gamesByCategory[selectedCategory!]![selectedGameName!]!;
-                    selectedLevel = levelList.first.level;
+                    selectedLevel = levels.first.level;
                   });
                   await _loadUserProgress();
                 }

@@ -6,12 +6,14 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_base_event.dart';
+import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/utils/widgets/widgets_search_panel.dart';
 import 'package:provider/provider.dart';
 
 import 'widgets_event_list.dart';
+import 'widgets_vendor_submission_hub.dart';
 
 class PageRecommendEvent extends StatefulWidget {
   const PageRecommendEvent({super.key});
@@ -22,6 +24,7 @@ class PageRecommendEvent extends StatefulWidget {
 
 class _PageRecommendEventState extends State<PageRecommendEvent> {
   late final ControllerEvent _controllerEvent;
+  bool _showOnlyMySubmissions = false;
 
   @override
   void initState() {
@@ -48,31 +51,63 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
     super.dispose();
   }
 
+  Future<void> _openSubmissionForm() async {
+    final event = await Navigator.of(context).push<EventItem?>(
+      MaterialPageRoute(
+        builder: (_) => PageEventAdd(controllerEvent: _controllerEvent),
+      ),
+    );
+    if (event == null || !mounted) return;
+    await context.read<ControllerAuth>().refreshSubscriptionUsage();
+    await _controllerEvent.loadEvents(isGetPublicEvents: true);
+  }
+
+  Widget _buildVendorSubmissionHub(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return VendorSubmissionHub(
+      submitLabel: loc.vendorSubmitActivity,
+      showOnlyMySubmissions: _showOnlyMySubmissions,
+      onSubmit: _openSubmissionForm,
+      onFilterChanged: (selected) {
+        setState(() => _showOnlyMySubmissions = selected);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
     return ChangeNotifierProvider.value(
-        value: _controllerEvent,
-        child: GenericEventPage(
-          auth: auth,
-          controllerEvent: _controllerEvent,
-          title: '',
-          emptyText: loc.recommendEventZero,
-          enableCityFilter: true,
-          searchPanelBuilder: widgetsSearchPanel,
-          listBuilder: ({
-            required List<EventItem> filteredEvents,
-            required ScrollController scrollController,
-          }) {
-            return WidgetsEventList(
-              filteredEvents: filteredEvents,
-              scrollController: scrollController,
-              controllerEvent: _controllerEvent,
-              auth: auth,
-            );
-          },
-        ));
+      value: _controllerEvent,
+      child: GenericEventPage(
+        auth: auth,
+        controllerEvent: _controllerEvent,
+        title: '',
+        emptyText: loc.recommendEventZero,
+        enableCityFilter: true,
+        searchPanelBuilder: widgetsSearchPanel,
+        headerBuilder: _buildVendorSubmissionHub,
+        showAddAction: false,
+        eventPredicate: _showOnlyMySubmissions
+            ? (event) =>
+                  (event.account ?? '').trim().toLowerCase() ==
+                  (auth.currentAccount ?? '').trim().toLowerCase()
+            : null,
+        listBuilder:
+            ({
+              required List<EventItem> filteredEvents,
+              required ScrollController scrollController,
+            }) {
+              return WidgetsEventList(
+                filteredEvents: filteredEvents,
+                scrollController: scrollController,
+                controllerEvent: _controllerEvent,
+                auth: auth,
+              );
+            },
+      ),
+    );
   }
 }

@@ -368,14 +368,6 @@ class ServicePersonalData {
   }
 
   Future<void> requestAccountDeletion() async {
-    final statusRows =
-        await supabase.rpc('get_my_subscription_status') as List<dynamic>;
-    final storagePlan = statusRows.isEmpty
-        ? 'cloud'
-        : (statusRows.first as Map)['storage_plan']?.toString() ?? 'cloud';
-    if (storagePlan == 'local') {
-      throw StateError('cloud_deletion_request_only');
-    }
     await supabase.rpc('request_account_deletion');
   }
 

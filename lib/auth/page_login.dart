@@ -71,6 +71,10 @@ class _PageLoginState extends State<PageLogin> {
     _authView.goToRegister(_emailController.text.trim());
   }
 
+  void _navigateToVendorRegister() {
+    _authView.goToRegister(_emailController.text.trim(), accountType: 'vendor');
+  }
+
   // 🔹 嘗試登入或匿名登入
   Future<void> _tryLogin() async {
     if (!mounted || _isSubmitting || _isSendingResetEmail) return;
@@ -370,6 +374,47 @@ class _PageLoginState extends State<PageLogin> {
                           child: Text(loc.register),
                         ),
                       ],
+                    ),
+                    Gaps.h16,
+                    Card(
+                      elevation: 0,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer.withValues(alpha: 0.6),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.storefront_outlined),
+                            Gaps.w12,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    loc.vendorCreateAccountTitle,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  Gaps.h4,
+                                  Text(loc.vendorCreateAccountDescription),
+                                  Gaps.h8,
+                                  OutlinedButton.icon(
+                                    onPressed:
+                                        _isSubmitting || _isSendingResetEmail
+                                        ? null
+                                        : _navigateToVendorRegister,
+                                    icon: const Icon(Icons.campaign_outlined),
+                                    label: Text(loc.vendorCreateAccountAction),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     Gaps.h16,
                   ],

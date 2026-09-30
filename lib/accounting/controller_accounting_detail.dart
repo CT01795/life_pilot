@@ -15,14 +15,14 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   final bool loadAllRecords;
   num? currentExchangeRate;
 
-  ControllerAccountingDetail(
-      {required ServiceAccounting service,
-      required this.auth,
-      required this.accountId,
-      this.loadAllRecords = false,
-      this.currentExchangeRate})
-      : _service = service,
-        _accountKey = auth?.currentAccount?.trim().toLowerCase();
+  ControllerAccountingDetail({
+    required ServiceAccounting service,
+    required this.auth,
+    required this.accountId,
+    this.loadAllRecords = false,
+    this.currentExchangeRate,
+  }) : _service = service,
+       _accountKey = auth?.currentAccount?.trim().toLowerCase();
 
   final String currentType = 'balance';
 
@@ -83,7 +83,8 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
             .map((record) => record.localTime)
             .reduce((a, b) => a.isAfter(b) ? a : b);
       }
-      final loadedHasMore = !loadAllRecords &&
+      final loadedHasMore =
+          !loadAllRecords &&
           await _service.hasRecordsBefore(
             accountId: targetAccountId,
             type: currentType,
@@ -165,14 +166,17 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     final todayStart = DateTime(now.year, now.month, now.day);
 
     todayTotal = todayRecords
-        .where((r) =>
-            r.currency == _currentCurrency && r.localTime.isAfter(todayStart))
+        .where(
+          (r) =>
+              r.currency == _currentCurrency && r.localTime.isAfter(todayStart),
+        )
         .fold(0, (s, r) => s + r.value);
     total = todayRecords.isEmpty ? 0 : todayRecords.first.balance;
   }
 
-  Future<ModelAccountingAccount?> findAccountByEventId(
-      {required String eventId}) async {
+  Future<ModelAccountingAccount?> findAccountByEventId({
+    required String eventId,
+  }) async {
     return await _service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',
@@ -189,22 +193,29 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   }
 
   List<AccountingPreview> parseFromSpeech(
-      String text, String? currency, num? exchangeRate) {
+    String text,
+    String? currency,
+    num? exchangeRate,
+  ) {
     final results = NLP.parseMulti(text);
 
     return results
         .map(
           (r) => AccountingPreview(
-              description: r.description,
-              value: r.value,
-              currency: currency,
-              exchangeRate: exchangeRate),
+            description: r.description,
+            value: r.value,
+            currency: currency,
+            exchangeRate: exchangeRate,
+          ),
         )
         .toList();
   }
 
-  Future<void> commitRecords(List<AccountingPreview> previews,
-      {String? inputAccountId}) async {
+  Future<void> commitRecords(
+    List<AccountingPreview> previews, {
+    String? inputAccountId,
+  }) async {
+    if (previews.isEmpty) return;
     await _service.insertRecordsBatch(
       accountId: inputAccountId ?? accountId,
       type: currentType,

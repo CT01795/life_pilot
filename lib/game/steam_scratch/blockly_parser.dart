@@ -26,6 +26,13 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
     return null;
   }
 
+  XmlElement? getNamedValue(XmlElement parent, String name) {
+    for (final value in parent.findElements('value')) {
+      if (value.getAttribute('name') == name) return value;
+    }
+    return null;
+  }
+
   List<Command> parseBlocks(XmlElement parent) {
     List<Command> cmds = [];
     final blocks = parent.findElements('block');
@@ -100,16 +107,8 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
 
                 // ignore: deprecated_member_use
                 final op = logicCompare.getElement('field')?.text ?? 'EQ';
-                final aVal = getValue(
-                    logicCompare
-                        .findElements('value')
-                        .firstWhere((v) => v.getAttribute('name') == 'A'),
-                    g);
-                final bVal = getValue(
-                    logicCompare
-                        .findElements('value')
-                        .firstWhere((v) => v.getAttribute('name') == 'B'),
-                    g);
+                final aVal = getValue(getNamedValue(logicCompare, 'A'), g);
+                final bVal = getValue(getNamedValue(logicCompare, 'B'), g);
 
                 if (aVal == null || bVal == null) return false;
 

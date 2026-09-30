@@ -21,6 +21,7 @@ class ModelAuthView extends SafeChangeNotifier {
   bool get isLoading => _auth.isLoading;
   bool get isLoggedIn => _auth.isLoggedIn;
   String? get account => _auth.currentAccount;
+  String get registrationAccountType => _auth.registrationAccountType;
   AuthPage get currentPage => _auth.currentPage;
 
   String? getRegisterEmail() => _auth.registerMap[AuthConstants.email];
@@ -35,7 +36,8 @@ class ModelAuthView extends SafeChangeNotifier {
   Future<String?> register({required String email, required String password}) =>
       _auth.register(email: email, password: password);
 
-  void goToRegister(String? email) => _auth.goToRegister(email: email);
+  void goToRegister(String? email, {String accountType = 'personal'}) =>
+      _auth.goToRegister(email: email, accountType: accountType);
   void goToResetPassword(String? email) =>
       _auth.goToResetPassword(email: email);
   void goBackToLogin(String email) => _auth.goBackToLogin(email: email);

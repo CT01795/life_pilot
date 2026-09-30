@@ -70,6 +70,8 @@ class ControllerAuth extends SafeChangeNotifier {
   bool _isLoggedIn = false;
   bool _isAnonymous = false;
   String? _currentAccount;
+  String _accountType = 'personal';
+  String _registrationAccountType = 'personal';
   SubscriptionSnapshot _subscription = SubscriptionSnapshot.free;
   DataStorageLocation _preferredStorage = DataStorageLocation.cloud;
   bool _hasStorageChoice = false;
@@ -80,6 +82,9 @@ class ControllerAuth extends SafeChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isAnonymous => _isAnonymous;
   String? get currentAccount => _currentAccount;
+  String get accountType => _accountType;
+  String get registrationAccountType => _registrationAccountType;
+  bool get isVendor => !isSysAdmin && _accountType == 'vendor';
   SubscriptionSnapshot get subscription => _subscription;
   bool get isPlus => isSysAdmin || _subscription.isPlus;
   bool get canUseLocalStorage {
@@ -359,6 +364,7 @@ class ControllerAuth extends SafeChangeNotifier {
       _isLoggedIn = false;
       _isAnonymous = false;
       _currentAccount = null;
+      _accountType = 'personal';
       _subscription = SubscriptionSnapshot.free;
       _preferredStorage = DataStorageLocation.cloud;
       _hasStorageChoice = false;
@@ -387,6 +393,9 @@ class ControllerAuth extends SafeChangeNotifier {
         _isLoggedIn = user != null;
         _isAnonymous = user?.isAnonymous ?? false;
         _currentAccount = _isAnonymous ? AuthConstants.guest : user?.email;
+        _accountType = user?.userMetadata?['account_type'] == 'vendor'
+            ? 'vendor'
+            : 'personal';
         if (_currentPage != AuthPage.resetPassword) {
           _currentPage = _isLoggedIn ? AuthPage.pageMain : AuthPage.login;
         }
@@ -482,7 +491,11 @@ class ControllerAuth extends SafeChangeNotifier {
   // -------------------- 註冊 --------------------
   Future<String?> register({required String email, required String password}) =>
       _authenticate(
-        () => ServiceAuth.register(email: email, password: password),
+        () => ServiceAuth.register(
+          email: email,
+          password: password,
+          accountType: _registrationAccountType,
+        ),
       );
 
   // -------------------- 登出 --------------------
@@ -503,6 +516,7 @@ class ControllerAuth extends SafeChangeNotifier {
       _isLoggedIn = false;
       _isAnonymous = false;
       _currentAccount = null;
+      _accountType = 'personal';
       _subscription = SubscriptionSnapshot.free;
       _preferredStorage = DataStorageLocation.cloud;
       _hasStorageChoice = false;
@@ -528,8 +542,11 @@ class ControllerAuth extends SafeChangeNotifier {
     });
   }
 
-  void goToRegister({String? email}) =>
-      goToPage(AuthPage.register, email: email);
+  void goToRegister({String? email, String accountType = 'personal'}) {
+    _registrationAccountType = accountType == 'vendor' ? 'vendor' : 'personal';
+    goToPage(AuthPage.register, email: email);
+  }
+
   void goToResetPassword({String? email}) =>
       goToPage(AuthPage.resetPassword, email: email);
   void goBackToLogin({String? email}) => goToPage(AuthPage.login, email: email);

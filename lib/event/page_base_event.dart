@@ -16,20 +16,23 @@ import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
 import '../utils/widgets/widgets_appbar.dart';
 
-typedef EventListBuilder = Widget Function({
-  required List<EventItem> filteredEvents,
-  required ScrollController scrollController,
-});
+typedef EventListBuilder =
+    Widget Function({
+      required List<EventItem> filteredEvents,
+      required ScrollController scrollController,
+    });
 
-typedef EventMapBuilder = Widget Function({
-  required List<EventItem> filteredEvents,
-});
+typedef EventMapBuilder =
+    Widget Function({required List<EventItem> filteredEvents});
 
-typedef SearchPanelBuilder = Widget Function({
-  required ControllerEvent controllerEvent,
-  required AppLocalizations loc,
-  required BuildContext context,
-});
+typedef SearchPanelBuilder =
+    Widget Function({
+      required ControllerEvent controllerEvent,
+      required AppLocalizations loc,
+      required BuildContext context,
+    });
+
+typedef EventHeaderBuilder = Widget Function(BuildContext context);
 
 class GenericEventPage extends StatefulWidget {
   final ControllerEvent controllerEvent;
@@ -39,6 +42,9 @@ class GenericEventPage extends StatefulWidget {
   final EventListBuilder listBuilder;
   final SearchPanelBuilder? searchPanelBuilder;
   final bool enableCityFilter;
+  final EventHeaderBuilder? headerBuilder;
+  final bool Function(EventItem event)? eventPredicate;
+  final bool showAddAction;
 
   const GenericEventPage({
     super.key,
@@ -49,6 +55,9 @@ class GenericEventPage extends StatefulWidget {
     required this.listBuilder,
     this.searchPanelBuilder,
     this.enableCityFilter = false,
+    this.headerBuilder,
+    this.eventPredicate,
+    this.showAddAction = true,
   });
 
   @override
@@ -108,9 +117,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
   Future<void> _onAddPressed(BuildContext context) async {
     final newEvent = await Navigator.of(context).push<EventItem?>(
       MaterialPageRoute(
-        builder: (_) => PageEventAdd(
-          controllerEvent: _controller,
-        ),
+        builder: (_) => PageEventAdd(controllerEvent: _controller),
       ),
     );
 
@@ -181,190 +188,198 @@ class _GenericEventPageState extends State<GenericEventPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final pageState = context.select<
-        ControllerEvent,
-        ({
-          bool loading,
-          bool error,
-          bool canRefresh,
-          bool refreshing,
-          bool running
-        })>(
-      (controller) => (
-        loading: controller.isLoadingEvents,
-        error: controller.hasLoadEventsError,
-        canRefresh: controller.canRefreshPublicEvents,
-        refreshing: controller.isRefreshingPublicEvents,
-        running: controller.publicEventsRefreshRunning,
-      ),
-    );
+    final pageState = context
+        .select<
+          ControllerEvent,
+          ({
+            bool loading,
+            bool error,
+            bool canRefresh,
+            bool refreshing,
+            bool running,
+          })
+        >(
+          (controller) => (
+            loading: controller.isLoadingEvents,
+            error: controller.hasLoadEventsError,
+            canRefresh: controller.canRefreshPublicEvents,
+            refreshing: controller.isRefreshingPublicEvents,
+            running: controller.publicEventsRefreshRunning,
+          ),
+        );
 
     return Scaffold(
-        appBar: widgetsWhiteAppBar(
-          title: widget.title,
-          enableSearchAndExport: true,
-          enableUpload: widget.auth.isSysAdmin,
-          onRefresh: pageState.canRefresh
-              ? () async {
-                  final succeeded = await _controller.refreshPublicEvents();
-                  if (!context.mounted) return;
-                  AppNavigator.showSnackBar(
-                    succeeded
-                        ? loc.eventRefreshSucceeded
-                        : pageState.running
-                            ? loc.eventRefreshRunning
-                            : loc.eventRefreshFailed,
-                  );
-                }
-              : null,
-          isRefreshing: pageState.refreshing,
-          refreshTooltip: loc.eventRefresh,
-          showMap: _showMap,
-          onToggleMap: () => setState(() => _showMap = !_showMap),
-          extraMenuActions: [
-            if (widget.auth.isSysAdmin && _supportsCoordinateBackfill)
-              AppBarMenuAction(
-                icon: Icons.add_location_alt_outlined,
-                label: loc.mapCoordinateBackfill,
-                isLoading: _isBackfillingCoordinates,
-                onPressed: _isBackfillingCoordinates
-                    ? null
-                    : () => _backfillMapCoordinates(loc),
+      appBar: widgetsWhiteAppBar(
+        title: widget.title,
+        enableSearchAndExport: true,
+        enableUpload: widget.auth.isSysAdmin,
+        onRefresh: pageState.canRefresh
+            ? () async {
+                final succeeded = await _controller.refreshPublicEvents();
+                if (!context.mounted) return;
+                AppNavigator.showSnackBar(
+                  succeeded
+                      ? loc.eventRefreshSucceeded
+                      : pageState.running
+                      ? loc.eventRefreshRunning
+                      : loc.eventRefreshFailed,
+                );
+              }
+            : null,
+        isRefreshing: pageState.refreshing,
+        refreshTooltip: loc.eventRefresh,
+        showMap: _showMap,
+        onToggleMap: () => setState(() => _showMap = !_showMap),
+        extraMenuActions: [
+          if (widget.auth.isSysAdmin && _supportsCoordinateBackfill)
+            AppBarMenuAction(
+              icon: Icons.add_location_alt_outlined,
+              label: loc.mapCoordinateBackfill,
+              isLoading: _isBackfillingCoordinates,
+              onPressed: _isBackfillingCoordinates
+                  ? null
+                  : () => _backfillMapCoordinates(loc),
+            ),
+        ],
+        handler: _appBarHandler,
+        onAdd: widget.showAddAction ? () => _onAddPressed(context) : null,
+        loc: loc,
+      ),
+      body:
+          (!_hasLoaded ||
+              (pageState.loading && !_controller.hasLoadedEventsSuccessfully))
+          ? const Center(child: CircularProgressIndicator())
+          : pageState.error && !_controller.hasLoadedEventsSuccessfully
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.dashboardLoadFailed),
+                  Gaps.h16,
+                  FilledButton.icon(
+                    onPressed: () async {
+                      _hasLoaded = false;
+                      await _safeLoadEvents();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: Text(loc.retry),
+                  ),
+                ],
               ),
-          ],
-          handler: _appBarHandler,
-          onAdd: () => _onAddPressed(context),
-          loc: loc,
-        ),
-        body: (!_hasLoaded ||
-                (pageState.loading && !_controller.hasLoadedEventsSuccessfully))
-            ? const Center(child: CircularProgressIndicator())
-            : pageState.error && !_controller.hasLoadedEventsSuccessfully
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(loc.dashboardLoadFailed),
-                        Gaps.h16,
-                        FilledButton.icon(
-                          onPressed: () async {
-                            _hasLoaded = false;
-                            await _safeLoadEvents();
-                          },
-                          icon: const Icon(Icons.refresh),
-                          label: Text(loc.retry),
-                        ),
-                      ],
-                    ),
-                  )
-                : Column(
-                    children: [
-                      if (pageState.loading) const LinearProgressIndicator(),
-                      if (pageState.error) _buildBackgroundLoadError(loc),
-                      if (_controller.fromTableName ==
-                          TableNames.calendarEvents)
-                        const SubscriptionUsageBanner(
-                          resource: 'calendar_events',
-                        ),
-                      AnimatedBuilder(
-                        animation: _appBarHandler,
-                        builder: (_, _) => Selector<ControllerEvent, int>(
-                          selector: (_, controller) =>
-                              controller.filterRevision,
-                          builder: (_, _, _) =>
-                              _buildSearchPanel(loc, context),
-                        ),
-                      ),
-                      Expanded(
-                          // ✅ 讓 ListView 可以使用剩餘高度
-                          child: Selector<ControllerEvent, List<EventItem>>(
-                        selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
-                        builder: (_, filteredEvents, _) {
-                          final regionData = _regionsFor(filteredEvents);
-                          final cityCounts = regionData.counts;
-                          final cities = regionData.sortedRegions;
-                          final effectiveCity = _selectedCity != null &&
-                                  cities.contains(_selectedCity)
-                              ? _selectedCity
-                              : null;
-                          final displayedCities = [...cities];
-                          if (effectiveCity != null) {
-                            displayedCities
-                              ..remove(effectiveCity)
-                              ..insert(0, effectiveCity);
+            )
+          : Column(
+              children: [
+                if (pageState.loading) const LinearProgressIndicator(),
+                if (pageState.error) _buildBackgroundLoadError(loc),
+                if (_controller.fromTableName == TableNames.calendarEvents)
+                  const SubscriptionUsageBanner(resource: 'calendar_events'),
+                if (widget.headerBuilder != null)
+                  widget.headerBuilder!(context),
+                AnimatedBuilder(
+                  animation: _appBarHandler,
+                  builder: (_, _) => Selector<ControllerEvent, int>(
+                    selector: (_, controller) => controller.filterRevision,
+                    builder: (_, _, _) => _buildSearchPanel(loc, context),
+                  ),
+                ),
+                Expanded(
+                  // ✅ 讓 ListView 可以使用剩餘高度
+                  child: Selector<ControllerEvent, List<EventItem>>(
+                    selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
+                    builder: (_, filteredEvents, _) {
+                      final pageEvents = widget.eventPredicate == null
+                          ? filteredEvents
+                          : filteredEvents
+                                .where(widget.eventPredicate!)
+                                .toList(growable: false);
+                      final regionData = _regionsFor(pageEvents);
+                      final cityCounts = regionData.counts;
+                      final cities = regionData.sortedRegions;
+                      final effectiveCity =
+                          _selectedCity != null &&
+                              cities.contains(_selectedCity)
+                          ? _selectedCity
+                          : null;
+                      final displayedCities = [...cities];
+                      if (effectiveCity != null) {
+                        displayedCities
+                          ..remove(effectiveCity)
+                          ..insert(0, effectiveCity);
+                      }
+                      if (_selectedCity != effectiveCity) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            setState(() => _selectedCity = effectiveCity);
                           }
-                          if (_selectedCity != effectiveCity) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) {
-                                setState(() => _selectedCity = effectiveCity);
-                              }
-                            });
-                          }
-                          final visibleEvents = effectiveCity == null
-                              ? filteredEvents
-                              : regionData.eventsFor(effectiveCity);
-                          return Column(
-                            children: [
-                              if (widget.enableCityFilter && cities.isNotEmpty)
-                                SizedBox(
-                                  height: kIsWeb ? 58 : 54,
-                                  child: _buildCityScroller(
-                                    children: [
-                                      _cityChip(
-                                        label:
-                                            '${_allCitiesLabel()} (${filteredEvents.length})',
-                                        selected: effectiveCity == null,
-                                        onSelected: () => _showCityList(null),
-                                      ),
-                                      ...displayedCities.map(
-                                        (city) => _cityChip(
-                                          label: '$city (${cityCounts[city]})',
-                                          selected: effectiveCity == city,
-                                          onSelected: () => _showCityList(city),
-                                        ),
-                                      ),
-                                    ],
+                        });
+                      }
+                      final visibleEvents = effectiveCity == null
+                          ? pageEvents
+                          : regionData.eventsFor(effectiveCity);
+                      return Column(
+                        children: [
+                          if (widget.enableCityFilter && cities.isNotEmpty)
+                            SizedBox(
+                              height: kIsWeb ? 58 : 54,
+                              child: _buildCityScroller(
+                                children: [
+                                  _cityChip(
+                                    label:
+                                        '${_allCitiesLabel()} (${pageEvents.length})',
+                                    selected: effectiveCity == null,
+                                    onSelected: () => _showCityList(null),
                                   ),
-                                ),
-                              Expanded(
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 180),
-                                  switchInCurve: Curves.easeOut,
-                                  switchOutCurve: Curves.easeOut,
-                                  child: visibleEvents.isEmpty
-                                      ? KeyedSubtree(
-                                          key: const ValueKey('empty'),
-                                          child: _buildEmptyState(
-                                            loc,
-                                            canLoadMore: _controller
-                                                    .usesCloudPagination &&
-                                                _controller.hasMoreEvents,
-                                          ),
-                                        )
-                                      : _showMap
-                                          ? KeyedSubtree(
-                                              key: const ValueKey('map'),
-                                              child: WidgetsEventMap(
-                                                regionData: regionData,
-                                                onCitySelected: _showCityList,
-                                              ),
-                                            )
-                                          : KeyedSubtree(
-                                              key: const ValueKey('list'),
-                                              child: widget.listBuilder(
-                                                filteredEvents: visibleEvents,
-                                                scrollController: _controller
-                                                    .scrollController,
-                                              ),
-                                            ),
-                                ),
+                                  ...displayedCities.map(
+                                    (city) => _cityChip(
+                                      label: '$city (${cityCounts[city]})',
+                                      selected: effectiveCity == city,
+                                      onSelected: () => _showCityList(city),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          );
-                        },
-                      )),
-                    ],
-                  ));
+                            ),
+                          Expanded(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 180),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeOut,
+                              child: visibleEvents.isEmpty
+                                  ? KeyedSubtree(
+                                      key: const ValueKey('empty'),
+                                      child: _buildEmptyState(
+                                        loc,
+                                        canLoadMore:
+                                            _controller.usesCloudPagination &&
+                                            _controller.hasMoreEvents,
+                                      ),
+                                    )
+                                  : _showMap
+                                  ? KeyedSubtree(
+                                      key: const ValueKey('map'),
+                                      child: WidgetsEventMap(
+                                        regionData: regionData,
+                                        onCitySelected: _showCityList,
+                                      ),
+                                    )
+                                  : KeyedSubtree(
+                                      key: const ValueKey('list'),
+                                      child: widget.listBuilder(
+                                        filteredEvents: visibleEvents,
+                                        scrollController:
+                                            _controller.scrollController,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+    );
   }
 
   Widget _buildCityScroller({required List<Widget> children}) {
@@ -411,18 +426,18 @@ class _GenericEventPageState extends State<GenericEventPage> {
     );
   }
 
-  Widget _buildEmptyState(
-    AppLocalizations loc, {
-    bool canLoadMore = false,
-  }) {
+  Widget _buildEmptyState(AppLocalizations loc, {bool canLoadMore = false}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off_rounded,
-                size: 48, color: Color(0xFF829097)),
+            const Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: Color(0xFF829097),
+            ),
             Gaps.h16,
             Text(widget.emptyText, textAlign: TextAlign.center),
             if (_controller.hasActiveSearchFilters) ...[

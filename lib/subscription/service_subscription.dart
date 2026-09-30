@@ -248,6 +248,41 @@ class ServiceSubscription {
       },
     );
   }
+
+  Future<void> updatePricingVersionAsAdmin({
+    required String pricingVersionId,
+    required String name,
+    required String storagePlan,
+    required DateTime effectiveAt,
+    required int quarterlyPrice,
+    required Map<String, int> quotas,
+  }) async {
+    await supabase.rpc(
+      'admin_update_subscription_pricing_version',
+      params: {
+        'p_pricing_version_id': pricingVersionId,
+        'p_version_name': name.trim(),
+        'p_storage_plan': storagePlan,
+        'p_effective_at': effectiveAt.toUtc().toIso8601String(),
+        'p_quarterly_price_twd': quarterlyPrice,
+        'p_calendar_quota': quotas['calendar'],
+        'p_accounting_quota': quotas['accounting'],
+        'p_point_quota': quotas['point'],
+        'p_memory_quota': quotas['memory'],
+        'p_game_question_quota': quotas['game'],
+        'p_calendar_share_quota': quotas['share'],
+        'p_image_megabytes': quotas['image'],
+        'p_answer_history_days': quotas['answerDays'],
+      },
+    );
+  }
+
+  Future<void> deletePricingVersionAsAdmin({required String versionId}) async {
+    await supabase.rpc(
+      'admin_delete_subscription_pricing_version',
+      params: {'p_pricing_version_id': versionId},
+    );
+  }
 }
 
 class SubscriptionCleanupPreview {

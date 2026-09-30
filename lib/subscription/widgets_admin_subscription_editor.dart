@@ -266,7 +266,9 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                           ),
                         ],
                         selected: {_plan},
-                        onSelectionChanged: (value) => _setPlan(value.first),
+                        onSelectionChanged: (value) {
+                          if (value.isNotEmpty) _setPlan(value.first);
+                        },
                       ),
               ),
               if (_plan == 'free')
@@ -329,10 +331,13 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                             ),
                           ],
                           selected: {_storagePlan},
-                          onSelectionChanged: (value) => setState(() {
-                            _storagePlan = value.first;
-                            _versionId = null;
-                          }),
+                          onSelectionChanged: (value) {
+                            if (value.isEmpty) return;
+                            setState(() {
+                              _storagePlan = value.first;
+                              _versionId = null;
+                            });
+                          },
                         ),
                 ),
                 Gaps.h12,

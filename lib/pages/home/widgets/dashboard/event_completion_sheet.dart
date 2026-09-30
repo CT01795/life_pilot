@@ -255,6 +255,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               ],
               selected: {_pointsArePositive},
               onSelectionChanged: (value) {
+                if (value.isEmpty) return;
                 setState(() => _pointsArePositive = value.first);
               },
             ),

@@ -4,6 +4,7 @@ import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/page_base_event.dart';
+import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -12,6 +13,7 @@ import 'package:life_pilot/utils/widgets/widgets_search_panel.dart';
 import 'package:provider/provider.dart';
 
 import 'widgets_event_list.dart';
+import 'widgets_vendor_submission_hub.dart';
 
 class PageRecommendPlaces extends StatefulWidget {
   const PageRecommendPlaces({super.key});
@@ -22,6 +24,7 @@ class PageRecommendPlaces extends StatefulWidget {
 
 class _PageRecommendPlacesState extends State<PageRecommendPlaces> {
   late final ControllerEvent _controllerEvent;
+  bool _showOnlyMySubmissions = false;
 
   @override
   void initState() {
@@ -43,6 +46,29 @@ class _PageRecommendPlacesState extends State<PageRecommendPlaces> {
     super.dispose();
   }
 
+  Future<void> _openSubmissionForm() async {
+    final event = await Navigator.of(context).push<EventItem?>(
+      MaterialPageRoute(
+        builder: (_) => PageEventAdd(controllerEvent: _controllerEvent),
+      ),
+    );
+    if (event == null || !mounted) return;
+    await context.read<ControllerAuth>().refreshSubscriptionUsage();
+    await _controllerEvent.loadEvents(isGetPublicEvents: true);
+  }
+
+  Widget _buildVendorSubmissionHub(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return VendorSubmissionHub(
+      submitLabel: loc.vendorSubmitAttraction,
+      showOnlyMySubmissions: _showOnlyMySubmissions,
+      onSubmit: _openSubmissionForm,
+      onFilterChanged: (selected) {
+        setState(() => _showOnlyMySubmissions = selected);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -57,6 +83,13 @@ class _PageRecommendPlacesState extends State<PageRecommendPlaces> {
           emptyText: loc.recommendPlacesZero,
           enableCityFilter: true,
           searchPanelBuilder: widgetsSearchPanel,
+          headerBuilder: _buildVendorSubmissionHub,
+          showAddAction: false,
+          eventPredicate: _showOnlyMySubmissions
+              ? (event) =>
+                    (event.account ?? '').trim().toLowerCase() ==
+                    (auth.currentAccount ?? '').trim().toLowerCase()
+              : null,
           listBuilder: ({
             required List<EventItem> filteredEvents,
             required ScrollController scrollController,

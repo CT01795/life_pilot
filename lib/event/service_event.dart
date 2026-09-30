@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
+import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -427,6 +428,31 @@ class ServiceEvent {
           id: event.id,
         );
         return;
+      }
+      final isRecommendedContent =
+          tableName == TableNames.recommendEvents ||
+          tableName == TableNames.recommendPlaces;
+      if (isRecommendedContent && !_isCurrentUserAdmin) {
+        try {
+          final reviewState = await supabase
+              .from(tableName)
+              .select('is_approved,was_approved')
+              .eq(Fields.id, event.id)
+              .eq(Fields.account, currentAccount)
+              .maybeSingle();
+          if (reviewState != null &&
+              (reviewState[EventFields.isApproved] == true ||
+                  reviewState['was_approved'] == true)) {
+            throw const EventDeleteException(EventDeleteError.reviewProtected);
+          }
+        } on PostgrestException catch (error) {
+          // Before the review-history migration is installed, the currently
+          // published flag still prevents accidental deletion.
+          if (event.isApproved) {
+            throw const EventDeleteException(EventDeleteError.reviewProtected);
+          }
+          if (error.code != '42703' && error.code != 'PGRST204') rethrow;
+        }
       }
       if (tableName == TableNames.recommendEvents) {
         await supabase.from(TableNames.recommendEventsDeleted).insert([data]);

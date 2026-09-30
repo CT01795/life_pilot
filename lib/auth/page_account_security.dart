@@ -160,6 +160,11 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
   Future<void> _requestAccountDeletion() async {
     final loc = AppLocalizations.of(context)!;
     if (_busy) return;
+    final auth = context.read<ControllerAuth>();
+    if (auth.storesNewDataLocally) {
+      AppNavigator.showErrorBar(loc.accountDeletionCloudOnly);
+      return;
+    }
     setState(() => _busy = true);
     try {
       final existing = await ServicePersonalData()
