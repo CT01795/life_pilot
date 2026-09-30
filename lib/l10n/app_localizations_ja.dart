@@ -24,10 +24,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '審査状況が明確';
 
   @override
-  String get vendorSubmitActivity => 'イベントを投稿';
+  String get vendorSubmitActivity => '投稿';
 
   @override
-  String get vendorSubmitAttraction => 'スポットを投稿';
+  String get vendorSubmitAttraction => '投稿';
 
   @override
   String get vendorMySubmissions => '自分の投稿';

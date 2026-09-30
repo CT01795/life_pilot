@@ -24,10 +24,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '명확한 심사 상태';
 
   @override
-  String get vendorSubmitActivity => '행사 등록';
+  String get vendorSubmitActivity => '등록';
 
   @override
-  String get vendorSubmitAttraction => '명소 등록';
+  String get vendorSubmitAttraction => '등록';
 
   @override
   String get vendorMySubmissions => '내 등록';

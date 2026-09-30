@@ -24,10 +24,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '審核狀態清楚';
 
   @override
-  String get vendorSubmitActivity => '投稿活動';
+  String get vendorSubmitActivity => '投稿';
 
   @override
-  String get vendorSubmitAttraction => '投稿景點';
+  String get vendorSubmitAttraction => '投稿';
 
   @override
   String get vendorMySubmissions => '我的投稿';
