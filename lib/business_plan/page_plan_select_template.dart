@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/business_plan/page_plan_editor.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class PagePlanSelectTemplate extends StatefulWidget {
@@ -22,8 +23,9 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Template')),
+      appBar: AppBar(title: Text(loc.selectTemplate)),
       body: Selector<ControllerBusinessPlan, bool>(
         selector: (_, c) => c.isTemplateLoading,
         builder: (_, loading, _) {
@@ -53,21 +55,23 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
   }
 
   void _createPlan(BuildContext context, ModelPlanTemplate template) async {
+    final loc = AppLocalizations.of(context)!;
     final textController = TextEditingController();
 
     final title = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Plan Title'),
+        title: Text(loc.planTitle),
         content: TextField(controller: textController),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.cancel),
+          ),
           ElevatedButton(
-              onPressed: () =>
-                  Navigator.pop(context, textController.text),
-              child: const Text('Create')),
+            onPressed: () => Navigator.pop(context, textController.text),
+            child: Text(loc.create),
+          ),
         ],
       ),
     );
@@ -75,16 +79,18 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
     if (title == null || title.isEmpty) return;
 
     await context.read<ControllerBusinessPlan>().createPlanFromTemplate(
-          title: title,
-          templateId: template.id,
-        );
+      title: title,
+      templateId: template.id,
+    );
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
-        value: context.read<ControllerBusinessPlan>(),
-        child: const PagePlanEditor(),
-      ),),
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: context.read<ControllerBusinessPlan>(),
+          child: const PagePlanEditor(),
+        ),
+      ),
     );
   }
 }

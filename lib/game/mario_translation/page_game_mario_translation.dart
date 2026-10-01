@@ -105,50 +105,54 @@ class PageGameMarioTranslation extends FlameGame
 
     // 玩家
     player = Player(
-        position: Vector2(sizeX + 50, ground.position.y - sizeX),
-        size: Vector2(sizeX, sizeX));
+      position: Vector2(sizeX + 50, ground.position.y - sizeX),
+      size: Vector2(sizeX, sizeX),
+    );
     add(player);
 
-    add(RectangleComponent(
-      size: Vector2(max(screenW, screenH), 90),
-      paint: Paint()..color = GameColors.hud,
-    ));
+    add(
+      RectangleComponent(
+        size: Vector2(max(screenW, screenH), 90),
+        paint: Paint()..color = GameColors.hud,
+      ),
+    );
 
     // 分數 HUD
     scoreText = QuestionDisplay(
-        text: "${loc.gameScore}: ${controller.score}",
-        controller: controller,
-        positionX: 40,
-        positionY: 50,
-        sizeX: max(screenW, screenH),
-        sizeY: sizeX)
-      ..priority = 100;
+      text: "${loc.gameScore}: ${controller.score}",
+      controller: controller,
+      positionX: 40,
+      positionY: 50,
+      sizeX: max(screenW, screenH),
+      sizeY: sizeX,
+      isEmphasized: true,
+    )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(scoreText);
 
     // 題目 HUD
     questionTitle = QuestionDisplay(
-        text: "${loc.question}: ",
-        controller: controller,
-        positionX: 40,
-        positionY: 100,
-        sizeX: 100,
-        sizeY: sizeX)
-      ..priority = 90;
+      text: "${loc.question}: ",
+      controller: controller,
+      positionX: 40,
+      positionY: 100,
+      sizeX: 100,
+      sizeY: sizeX,
+    )..priority = 90;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionTitle);
 
     // 題目 HUD
     questionText = QuestionDisplay(
-        text: controller.currentQuestion?.question ?? '',
-        controller: controller,
-        positionX: 120,
-        positionY: 100,
-        sizeX: min(screenW, screenH) - 16,
-        sizeY: sizeX)
-      ..priority = 100;
+      text: controller.currentQuestion?.question ?? '',
+      controller: controller,
+      positionX: 120,
+      positionY: 100,
+      sizeX: min(screenW, screenH) - 16,
+      sizeY: sizeX,
+    )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionText);
@@ -165,13 +169,15 @@ class PageGameMarioTranslation extends FlameGame
   void spawnEnemy() {
     if (children.whereType<Enemy>().isNotEmpty) return;
     player.position.x = sizeX;
-    add(Enemy(
-      position: Vector2(screenW * 2 / 3, player.position.y),
-      size: Vector2(sizeX, sizeX),
-      onStomp: () {
-        spawnOptions();
-      },
-    ));
+    add(
+      Enemy(
+        position: Vector2(screenW * 2 / 3, player.position.y),
+        size: Vector2(sizeX, sizeX),
+        onStomp: () {
+          spawnOptions();
+        },
+      ),
+    );
   }
 
   bool isAnswering = false;

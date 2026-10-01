@@ -1833,6 +1833,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionCurrentFree => '現在のプラン：クラウド無料';
 
   @override
+  String get subscriptionCurrentAdmin => '現在の権限：管理者（無制限）';
+
+  @override
   String get subscriptionCurrentPlus => '現在のプラン：Plus';
 
   @override
@@ -1878,30 +1881,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionPlusPersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
-
-  @override
-  String get subscriptionFreeGameQuestions => 'クラウドの自作ゲーム問題は50問まで';
-
-  @override
-  String get subscriptionPlusGameQuestions => '自作ゲーム問題500問';
-
-  @override
-  String get subscriptionFreeSharing => 'クラウドカレンダーの共有は2人まで';
-
-  @override
-  String get subscriptionPlusSharing => 'カレンダー共有は5人まで';
-
-  @override
-  String get subscriptionFreeImages => 'クラウド画像アップロード機能は含まれません';
-
-  @override
-  String get subscriptionPlusImages => '思い出・イベント画像を合計300 MBまで';
-
-  @override
-  String get subscriptionFreeAnswerHistory => 'クラウドの詳細解答履歴は直近30日間保存';
-
-  @override
-  String get subscriptionPlusAnswerHistory => 'クラウド解答履歴を1年間保存';
 
   @override
   String get subscriptionCommonFeatures => '両プランに含まれる機能';
@@ -2316,4 +2295,335 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get moduleAuthorizationSaveFailed => '機能権限が正しく更新されませんでした。再検索してお試しください。';
+
+  @override
+  String get quotaFreePeriodTitle => '容量無制限キャンペーン';
+
+  @override
+  String get quotaFreePeriodDescription => 'この期間に追加するクラウドデータはプラン上限の対象外です。終了後は自動的に通常の上限へ戻ります。';
+
+  @override
+  String get quotaFreePeriodName => 'キャンペーン名';
+
+  @override
+  String get quotaFreePeriodStart => '開始日時';
+
+  @override
+  String get quotaFreePeriodEnd => '終了日時';
+
+  @override
+  String get quotaFreePeriodEnabled => 'この期間を有効にする';
+
+  @override
+  String get quotaFreePeriodAutomaticHint => '設定した開始日時から終了日時までのみ容量制限を停止します。';
+
+  @override
+  String get quotaFreePeriodInvalidRange => '終了日時は開始日時より後にしてください。';
+
+  @override
+  String get quotaFreePeriodSaved => '容量無制限キャンペーンを保存しました。';
+
+  @override
+  String get quotaFreePeriodSaveFailed => '容量無制限キャンペーンを保存できませんでした。';
+
+  @override
+  String get quotaFreePeriodClear => '設定を削除';
+
+  @override
+  String get quotaFreePeriodClearConfirm => '容量無制限期間を削除しますか？通常のプラン上限が直ちに適用されます。';
+
+  @override
+  String get quotaFreePeriodCleared => '容量無制限キャンペーンを削除しました。';
+
+  @override
+  String get quotaFreePeriodNew => '期間を作成';
+
+  @override
+  String get quotaFreePeriodEdit => '期間を編集';
+
+  @override
+  String get quotaFreePeriodEmpty => '容量無制限期間は設定されていません。';
+
+  @override
+  String get quotaFreePeriodUnnamed => '名称未設定キャンペーン';
+
+  @override
+  String get quotaFreePeriodActive => '現在有効';
+
+  @override
+  String get quotaFreePeriodScheduled => '開始予定';
+
+  @override
+  String get quotaFreePeriodEnded => '終了済み';
+
+  @override
+  String get quotaFreePeriodDisabled => '無効';
+
+  @override
+  String get country => '国';
+
+  @override
+  String get coverPhotoOptional => 'カバー写真（任意）';
+
+  @override
+  String get choosePhoto => '写真を選択';
+
+  @override
+  String get replacePhoto => '変更';
+
+  @override
+  String get allCities => 'すべての都市';
+
+  @override
+  String get switchToList => 'リストに切り替え';
+
+  @override
+  String get switchToMap => '地図に切り替え';
+
+  @override
+  String get countryTaiwan => '台湾';
+
+  @override
+  String get countryJapan => '日本';
+
+  @override
+  String get countrySouthKorea => '韓国';
+
+  @override
+  String get countrySingapore => 'シンガポール';
+
+  @override
+  String get countryUnitedStates => 'アメリカ';
+
+  @override
+  String get countryCanada => 'カナダ';
+
+  @override
+  String get countryChina => '中国';
+
+  @override
+  String get countryHongKong => '香港';
+
+  @override
+  String get countryMacau => 'マカオ';
+
+  @override
+  String get countryThailand => 'タイ';
+
+  @override
+  String get countryVietnam => 'ベトナム';
+
+  @override
+  String get countryMalaysia => 'マレーシア';
+
+  @override
+  String get countryIndonesia => 'インドネシア';
+
+  @override
+  String get countryPhilippines => 'フィリピン';
+
+  @override
+  String get countryAustralia => 'オーストラリア';
+
+  @override
+  String get countryNewZealand => 'ニュージーランド';
+
+  @override
+  String get countryUnitedKingdom => 'イギリス';
+
+  @override
+  String get countryFrance => 'フランス';
+
+  @override
+  String get countryGermany => 'ドイツ';
+
+  @override
+  String get countryItaly => 'イタリア';
+
+  @override
+  String get countrySpain => 'スペイン';
+
+  @override
+  String get countryNetherlands => 'オランダ';
+
+  @override
+  String get countrySwitzerland => 'スイス';
+
+  @override
+  String get countryIndia => 'インド';
+
+  @override
+  String get countryUnitedArabEmirates => 'アラブ首長国連邦';
+
+  @override
+  String get feedbackPurpose => '目的';
+
+  @override
+  String get feedbackContent => '内容';
+
+  @override
+  String get captureScreen => '画面をキャプチャ';
+
+  @override
+  String get feedbackRequired => '目的と内容を入力してください。';
+
+  @override
+  String get feedbackSent => 'フィードバックを送信しました。';
+
+  @override
+  String feedbackSendFailed(String error) {
+    return 'フィードバックを送信できません：$error';
+  }
+
+  @override
+  String get accessDenied => 'アクセス権限がありません';
+
+  @override
+  String get selectTemplate => 'テンプレートを選択';
+
+  @override
+  String get planTitle => 'プランのタイトル';
+
+  @override
+  String get create => '作成';
+
+  @override
+  String get enterAnswer => '回答を入力';
+
+  @override
+  String get previous => '前へ';
+
+  @override
+  String get next => '次へ';
+
+  @override
+  String get loadingSections => 'セクションを読み込み中…';
+
+  @override
+  String get loading => '読み込み中…';
+
+  @override
+  String get notFilled => 'Not filled in yet';
+
+  @override
+  String get untitledPlan => 'Untitled plan';
+
+  @override
+  String get openChatGPT => 'Open ChatGPT';
+
+  @override
+  String get unableToLoadDocument => 'Unable to load this document.';
+
+  @override
+  String gameTitleScore(String game, num score) {
+    return '$game ($score/100)';
+  }
+
+  @override
+  String congratulationsScore(num score) {
+    return 'おめでとう！スコア：$score';
+  }
+
+  @override
+  String get wordSearchTitle => '単語検索';
+
+  @override
+  String get translationTitle => '翻訳';
+
+  @override
+  String get socialTitle => 'ソーシャル';
+
+  @override
+  String get speakingTitle => 'スピーキング';
+
+  @override
+  String get englishRpgAdventureTitle => '英語 RPG アドベンチャー';
+
+  @override
+  String get answerHere => 'ここに回答';
+
+  @override
+  String get check => '確認';
+
+  @override
+  String get restart => '再スタート';
+
+  @override
+  String get scratchGameTitle => 'Scratch ゲーム';
+
+  @override
+  String get scratchMazeTitle => 'Scratch 迷路ゲーム';
+
+  @override
+  String get blocklyEditor => 'Blockly エディター';
+
+  @override
+  String get puzzleMapTitle => '地図パズル';
+
+  @override
+  String get hint => 'ヒント';
+
+  @override
+  String get monominoGameTitle => 'モノミノゲーム';
+
+  @override
+  String get checkPath => '経路を確認';
+
+  @override
+  String get polyominoGameTitle => 'ポリオミノゲーム';
+
+  @override
+  String get noPipes => 'パイプがありません';
+
+  @override
+  String get go => '移動';
+
+  @override
+  String get wordSentenceBuilderTitle => '単語と文の組み立て';
+
+  @override
+  String priceEarningsRatio(String value) {
+    return 'PER：$value';
+  }
+
+  @override
+  String get stockNet => '差引';
+
+  @override
+  String deleteNumberedItem(int number, String name) {
+    return '$number 番目の「$name」を削除しますか？';
+  }
+
+  @override
+  String get languageEnglish => '英語';
+
+  @override
+  String get languageChinese => '中国語';
+
+  @override
+  String get languageJapanese => '日本語';
+
+  @override
+  String get languageKorean => '韓国語';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '$name が $time に対応';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI：$value';
+  }
+
+  @override
+  String get gamePassed => 'クリア！';
+
+  @override
+  String get gameFailed => '失敗';
+
+  @override
+  String gameScoreValue(num score) {
+    return 'スコア：$score';
+  }
 }

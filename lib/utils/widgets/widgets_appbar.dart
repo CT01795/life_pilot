@@ -20,6 +20,7 @@ class AppBarMenuAction {
 
 AppBar widgetsWhiteAppBar({
   required String title,
+  Widget? titleWidget,
   required ControllerAppBarActions handler,
   required AppLocalizations loc,
   VoidCallback? onAdd,
@@ -33,26 +34,31 @@ AppBar widgetsWhiteAppBar({
   List<AppBarMenuAction> extraMenuActions = const [],
 }) {
   return AppBar(
-    title: Text(title,
-        style: TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-        )),
+    title:
+        titleWidget ??
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
     backgroundColor: Colors.white,
     foregroundColor: Colors.black,
     elevation: 0,
     actions: _buildActions(
-        handler: handler,
-        loc: loc,
-        onAdd: onAdd,
-        onRefresh: onRefresh,
-        refreshTooltip: refreshTooltip,
-        isRefreshing: isRefreshing,
-        enableSearchAndExport: enableSearchAndExport,
-        enableUpload: enableUpload,
-        showMap: showMap,
-        onToggleMap: onToggleMap,
-        extraMenuActions: extraMenuActions),
+      handler: handler,
+      loc: loc,
+      onAdd: onAdd,
+      onRefresh: onRefresh,
+      refreshTooltip: refreshTooltip,
+      isRefreshing: isRefreshing,
+      enableSearchAndExport: enableSearchAndExport,
+      enableUpload: enableUpload,
+      showMap: showMap,
+      onToggleMap: onToggleMap,
+      extraMenuActions: extraMenuActions,
+    ),
   );
 }
 
@@ -73,10 +79,10 @@ List<Widget> _buildActions({
   final List<AppBarMenuAction> menuActions = [];
 
   if (onToggleMap != null) {
-    actions.add(
-      IconButton(
-        icon: Icon(showMap ? Icons.view_agenda_outlined : Icons.map_outlined),
-        tooltip: showMap ? _listTooltip(loc) : _mapTooltip(loc),
+    menuActions.add(
+      AppBarMenuAction(
+        icon: showMap ? Icons.view_agenda_outlined : Icons.map_outlined,
+        label: showMap ? loc.switchToList : loc.switchToMap,
         onPressed: onToggleMap,
       ),
     );
@@ -168,18 +174,4 @@ List<Widget> _buildActions({
   }
 
   return actions;
-}
-
-String _listTooltip(AppLocalizations loc) {
-  if (loc.localeName.startsWith('zh')) return '切換為清單';
-  if (loc.localeName.startsWith('ja')) return 'リストに切り替え';
-  if (loc.localeName.startsWith('ko')) return '목록으로 전환';
-  return 'Switch to list';
-}
-
-String _mapTooltip(AppLocalizations loc) {
-  if (loc.localeName.startsWith('zh')) return '切換為地圖';
-  if (loc.localeName.startsWith('ja')) return '地図に切り替え';
-  if (loc.localeName.startsWith('ko')) return '지도로 전환';
-  return 'Switch to map';
 }

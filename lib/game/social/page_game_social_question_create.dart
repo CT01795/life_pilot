@@ -76,9 +76,11 @@ class _PageGameSocialQuestionCreateState
         _useCustomCategory = true;
         _customCategoryController.text = existing.category;
       }
-      for (var index = 0;
-          index < existing.choices.length && index < 3;
-          index++) {
+      for (
+        var index = 0;
+        index < existing.choices.length && index < 3;
+        index++
+      ) {
         final choice = existing.choices[index];
         _optionControllers[index].text = choice.text;
         _feedbackControllers[index].text = choice.feedback;
@@ -104,9 +106,13 @@ class _PageGameSocialQuestionCreateState
       _resolvedCategory != _initialCategory ||
       _bestIndex != _initialBestIndex ||
       !_sameList(
-          _optionControllers.map((item) => item.text), _initialOptions) ||
+        _optionControllers.map((item) => item.text),
+        _initialOptions,
+      ) ||
       !_sameList(
-          _feedbackControllers.map((item) => item.text), _initialFeedback) ||
+        _feedbackControllers.map((item) => item.text),
+        _initialFeedback,
+      ) ||
       !_sameList(_optionScores, _initialScores);
 
   bool _sameList<T>(Iterable<T> current, List<T> initial) {
@@ -126,7 +132,8 @@ class _PageGameSocialQuestionCreateState
     }
     _isConfirmingExit = true;
     final loc = AppLocalizations.of(context)!;
-    final discard = await showDialog<bool>(
+    final discard =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             content: Text(loc.unsavedChangesPrompt),
@@ -211,22 +218,28 @@ class _PageGameSocialQuestionCreateState
       if (widget.existingQuestion == null) {
         await context.read<ControllerAuth>().refreshSubscriptionUsage();
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(widget.existingQuestion == null
-            ? loc.questionAdded
-            : loc.questionUpdated),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.existingQuestion == null
+                ? loc.questionAdded
+                : loc.questionUpdated,
+          ),
+        ),
+      );
       _allowPop(true);
     } on DuplicateGameQuestionException {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(loc.duplicateQuestion)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.duplicateQuestion)));
       }
     } catch (error) {
       if (mounted) {
         final message = subscriptionErrorMessage(loc, error);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(message.isEmpty ? loc.unknownError : message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message.isEmpty ? loc.unknownError : message)),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -241,9 +254,11 @@ class _PageGameSocialQuestionCreateState
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.existingQuestion == null
-              ? 'Social · ${loc.addQuestion}'
-              : 'Social · ${loc.editQuestion}'),
+          title: Text(
+            widget.existingQuestion == null
+                ? '${loc.socialTitle} · ${loc.addQuestion}'
+                : '${loc.socialTitle} · ${loc.editQuestion}',
+          ),
         ),
         body: SafeArea(
           child: Form(
@@ -342,8 +357,10 @@ class _PageGameSocialQuestionCreateState
                   ),
                 ],
                 Gaps.h16,
-                Text(loc.answerOptions,
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  loc.answerOptions,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 Gaps.h8,
                 ...List.generate(3, _buildChoiceCard),
                 FilledButton.icon(
@@ -410,10 +427,12 @@ class _PageGameSocialQuestionCreateState
                 border: const OutlineInputBorder(),
               ),
               items: (isBest ? const [10] : _scores)
-                  .map((score) => DropdownMenuItem(
-                        value: score,
-                        child: Text(score > 0 ? '+$score' : '$score'),
-                      ))
+                  .map(
+                    (score) => DropdownMenuItem(
+                      value: score,
+                      child: Text(score > 0 ? '+$score' : '$score'),
+                    ),
+                  )
                   .toList(),
               onChanged: isBest
                   ? null

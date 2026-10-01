@@ -13,6 +13,7 @@ import 'package:life_pilot/game/word_search/page_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/steam_polyomino/widgets_game_steam_polyomino_block.dart';
 import 'package:life_pilot/game/steam_polyomino/widgets_game_steam_polyomino_tile.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class PageGameSteamPolyomino extends StatefulWidget {
@@ -66,6 +67,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -74,7 +76,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
             Navigator.maybePop(context);
           },
         ),
-        title: const Text("Polyomino Game"),
+        title: Text(loc.polyominoGameTitle),
         actions: [
           IconButton(
             icon: Icon(Icons.lightbulb_outline),
@@ -226,7 +228,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
           width: totalW,
           height: totalH,
           color: Colors.grey.shade200,
-          child: const Center(child: Text("No pipes")),
+          child: Center(child: Text(AppLocalizations.of(context)!.noPipes)),
         ),
       );
     }

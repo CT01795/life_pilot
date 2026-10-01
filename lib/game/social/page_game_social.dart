@@ -109,7 +109,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
                 Navigator.maybePop(context);
               },
             ),
-            title: Text("Social (${controller.score}/100)"),
+            title: Text(loc.gameTitleScore(loc.socialTitle, controller.score)),
           ),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -162,10 +162,12 @@ class _PageGameSocialState extends State<PageGameSocial> {
                   // 三個答案按鈕
                   ...q.options.map((opt) {
                     Color buttonColor = controller.getButtonColor(opt); // 淺藍
-                    Color borderColor =
-                        controller.getBorderColor(opt); // Material Blue 700
-                    Icon? statusIcon =
-                        controller.getStatusIcon(opt); // 用於顯示勾勾或叉叉
+                    Color borderColor = controller.getBorderColor(
+                      opt,
+                    ); // Material Blue 700
+                    Icon? statusIcon = controller.getStatusIcon(
+                      opt,
+                    ); // 用於顯示勾勾或叉叉
                     return Padding(
                       padding: Insets.all8,
                       child: SizedBox(
@@ -175,7 +177,8 @@ class _PageGameSocialState extends State<PageGameSocial> {
                             backgroundColor: buttonColor,
                           ),
                           onPressed: () => controller.speak(
-                              opt), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
+                            opt,
+                          ), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
                           child: Row(
                             mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                             mainAxisAlignment: MainAxisAlignment.start,
@@ -192,14 +195,15 @@ class _PageGameSocialState extends State<PageGameSocial> {
                                     color: Colors.white,
                                     shape: BoxShape.rectangle,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: borderColor,
-                                    ),
+                                    border: Border.all(color: borderColor),
                                   ),
                                   child: Center(
                                     child: opt == controller.lastAnswer
-                                        ? Icon(Icons.check,
-                                            color: borderColor, size: 48)
+                                        ? Icon(
+                                            Icons.check,
+                                            color: borderColor,
+                                            size: 48,
+                                          )
                                         : SizedBox.shrink(),
                                   ),
                                 ),
@@ -209,7 +213,9 @@ class _PageGameSocialState extends State<PageGameSocial> {
                                 child: Text(
                                   opt,
                                   style: TextStyle(
-                                      fontSize: size, color: Color(0xFF212121)),
+                                    fontSize: size,
+                                    color: Color(0xFF212121),
+                                  ),
                                   softWrap: true, // 允許自動換行
                                   textAlign: TextAlign.start,
                                 ),

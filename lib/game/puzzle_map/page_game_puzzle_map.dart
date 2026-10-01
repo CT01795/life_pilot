@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/puzzle_map/controller_game_puzzle_map.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/puzzle_map/model_game_puzzle_map.dart';
 import 'package:life_pilot/game/grammar/page_game_grammar.dart';
@@ -18,8 +19,11 @@ import 'package:provider/provider.dart';
 class PageGamePuzzleMap extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const PageGamePuzzleMap(
-      {super.key, required this.gameId, required this.gameLevel});
+  const PageGamePuzzleMap({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+  });
 
   @override
   State<PageGamePuzzleMap> createState() => _PageGamePuzzleMapState();
@@ -90,7 +94,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
       "assets/maps/europe_1.png", //歐洲
       "assets/maps/france.png", //45 法國
       "assets/maps/africa.png", //非洲
-      "assets/maps/world.png" //47 世界地圖
+      "assets/maps/world.png", //47 世界地圖
     ];
     map = ModelGamePuzzleMap(assetPath: maps[widget.gameLevel - 1]);
     _loadImage(map.assetPath).then((img) {
@@ -121,10 +125,9 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     if (controller == null || puzzleImage == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final ctrl = controller!;
@@ -137,14 +140,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             Navigator.maybePop(context);
           },
         ),
-        title: const Text("Puzzle map"),
+        title: Text(loc.puzzleMapTitle),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.lightbulb_outline,
-              color: Colors.white,
-            ),
-            tooltip: "Hint",
+            icon: Icon(Icons.lightbulb_outline, color: Colors.white),
+            tooltip: loc.hint,
             onPressed: () {
               setState(() {
                 showHint = !showHint;
@@ -155,21 +155,18 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             onSelected: (size) {
               setState(() {
                 gameSize = size; // 更新 state 中的 gridSize
-                controller!.setGridSize(puzzleImage!.width, puzzleImage!.height,
-                    gameSize); // 重新生成 pieces
+                controller!.setGridSize(
+                  puzzleImage!.width,
+                  puzzleImage!.height,
+                  gameSize,
+                ); // 重新生成 pieces
               });
             },
             itemBuilder: (_) => List.generate(
               7,
-              (i) => PopupMenuItem(
-                value: i + 4,
-                child: Text("${i + 4}"),
-              ),
+              (i) => PopupMenuItem(value: i + 4, child: Text("${i + 4}")),
             ),
-            icon: const Icon(
-              Icons.grid_on,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.grid_on, color: Colors.white),
           ),
           IconButton(
             icon: const Icon(Icons.check),
@@ -189,8 +186,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           if (maxWidth > maxHeight) {
             maxHeight = constraints.maxHeight - 16;
             puzzleHeight = maxHeight;
-            puzzleWidth = min(maxWidth * 0.75,
-                maxHeight * puzzleImage!.width / puzzleImage!.height);
+            puzzleWidth = min(
+              maxWidth * 0.75,
+              maxHeight * puzzleImage!.width / puzzleImage!.height,
+            );
 
             return Center(
               child: Row(
@@ -201,7 +200,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     width: puzzleWidth,
                     height: puzzleHeight,
                     child: _buildPuzzleArea(
-                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
+                      ctrl,
+                      puzzleWidth,
+                      puzzleHeight,
+                      puzzleImage!,
+                    ),
                   ),
                   Gaps.w16,
                   if (showHint)
@@ -210,9 +213,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         minScale: 0.2,
                         maxScale: 5.0,
                         boundaryMargin: const EdgeInsets.all(20),
-                        child: Center(
-                          child: RawImage(image: puzzleImage),
-                        ),
+                        child: Center(child: RawImage(image: puzzleImage)),
                       ),
                     ),
                   Gaps.w16,
@@ -222,8 +223,10 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           } else {
             maxWidth = constraints.maxWidth - 16;
             puzzleWidth = maxWidth;
-            puzzleHeight = min(maxHeight * 0.75,
-                maxWidth / puzzleImage!.width * puzzleImage!.height);
+            puzzleHeight = min(
+              maxHeight * 0.75,
+              maxWidth / puzzleImage!.width * puzzleImage!.height,
+            );
 
             return Center(
               child: Column(
@@ -234,7 +237,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                     width: puzzleWidth,
                     height: puzzleHeight,
                     child: _buildPuzzleArea(
-                        ctrl, puzzleWidth, puzzleHeight, puzzleImage!),
+                      ctrl,
+                      puzzleWidth,
+                      puzzleHeight,
+                      puzzleImage!,
+                    ),
                   ),
                   Gaps.h16,
                   if (showHint)
@@ -243,9 +250,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         minScale: 0.2,
                         maxScale: 5.0,
                         boundaryMargin: const EdgeInsets.all(20),
-                        child: Center(
-                          child: RawImage(image: puzzleImage),
-                        ),
+                        child: Center(child: RawImage(image: puzzleImage)),
                       ),
                     ),
                   Gaps.h16,
@@ -258,11 +263,18 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     );
   }
 
-  Widget _buildPuzzleArea(ControllerGamePuzzleMap ctrl, double puzzleWidth,
-      double puzzleHeight, ui.Image inputImage) {
+  Widget _buildPuzzleArea(
+    ControllerGamePuzzleMap ctrl,
+    double puzzleWidth,
+    double puzzleHeight,
+    ui.Image inputImage,
+  ) {
     // 計算圖片在容器中的實際顯示區域
-    final imageRect0 =
-        _calcImageRectInBox(puzzleWidth, puzzleHeight, inputImage);
+    final imageRect0 = _calcImageRectInBox(
+      puzzleWidth,
+      puzzleHeight,
+      inputImage,
+    );
 
     // 想離邊界多遠（像素）
     const double padding = 24;
@@ -283,7 +295,12 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             Offset offset = ctrl.dragOffsets[piece.currentIndex] ?? Offset.zero;
 
             Widget tileChild = _buildPuzzleImage(
-                piece, tileWidth, tileHeight, puzzleImage!, ctrl);
+              piece,
+              tileWidth,
+              tileHeight,
+              puzzleImage!,
+              ctrl,
+            );
 
             if (piece.currentIndex != piece.correctIndex) {
               // 只有沒完成的拼圖才可拖動
@@ -298,39 +315,41 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
               );
             }
 
-            tileChild = Stack(children: [
-              tileChild,
-              if (piece.correctIndex != piece.currentIndex)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _GroupBorderPainter(
-                        color: Colors.black87,
-                        isDashed: false,
-                      ),
-                    ),
-                  ),
-                ),
-              if (piece.correctIndex == piece.currentIndex)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        border: Border.all(color: Colors.yellow, width: 3),
-                      ),
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: Icon(
-                          Icons.check_circle,
-                          color: Colors.green.shade800,
-                          size: 20,
+            tileChild = Stack(
+              children: [
+                tileChild,
+                if (piece.correctIndex != piece.currentIndex)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _GroupBorderPainter(
+                          color: Colors.black87,
+                          isDashed: false,
                         ),
                       ),
                     ),
                   ),
-                ),
-            ]);
+                if (piece.correctIndex == piece.currentIndex)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          border: Border.all(color: Colors.yellow, width: 3),
+                        ),
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: Icon(
+                            Icons.check_circle,
+                            color: Colors.green.shade800,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
 
             return Positioned(
               left: imageRect.left + col * tileWidth + offset.dx,
@@ -345,8 +364,13 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     );
   }
 
-  Widget _buildPuzzleImage(ModelGamePuzzlePiece piece, double tileWidth,
-      double tileHeight, ui.Image inputImage, ControllerGamePuzzleMap ctrl) {
+  Widget _buildPuzzleImage(
+    ModelGamePuzzlePiece piece,
+    double tileWidth,
+    double tileHeight,
+    ui.Image inputImage,
+    ControllerGamePuzzleMap ctrl,
+  ) {
     final row = piece.correctIndex ~/ ctrl.colsCount;
     final col = piece.correctIndex % ctrl.colsCount;
 
@@ -394,7 +418,11 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(ok ? "Pass！🎉" : "Fail 😢"),
+        title: Text(
+          ok
+              ? '${AppLocalizations.of(context)!.gamePassed} 🎉'
+              : '${AppLocalizations.of(context)!.gameFailed} 😢',
+        ),
         actions: [
           TextButton(
             onPressed: () async {
@@ -413,52 +441,52 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
                         ),
                       )
                     : value == 4
-                        ? await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PageGameSpeaking(
-                                gameId: widget.gameId,
-                                gameLevel: -1, //widget.gameLevel,
-                              ),
-                            ),
-                          )
-                        : value == 3
-                            ? await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PageGameTranslation(
-                                    gameId: widget.gameId,
-                                    gameLevel: -1,
-                                    gameName: "", //widget.gameLevel
-                                  ),
-                                ),
-                              )
-                            : value == 2
-                                ? await Navigator.push<bool>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PageGameSentence(
-                                        gameId: widget.gameId,
-                                        gameLevel: -1, //widget.gameLevel,
-                                      ),
-                                    ),
-                                  )
-                                : await Navigator.push<bool>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PageGameWordSearch(
-                                        gameId: widget.gameId,
-                                        gameLevel: -1, //widget.gameLevel,
-                                      ),
-                                    ),
-                                  );
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameSpeaking(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                          ),
+                        ),
+                      )
+                    : value == 3
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameTranslation(
+                            gameId: widget.gameId,
+                            gameLevel: -1,
+                            gameName: "", //widget.gameLevel
+                          ),
+                        ),
+                      )
+                    : value == 2
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameSentence(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                          ),
+                        ),
+                      )
+                    : await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameWordSearch(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                          ),
+                        ),
+                      );
                 if (mounted) {
                   Navigator.pop(context, true); // 過關 -> 返回上一頁
                 }
               }
             },
-            child: Text("OK"),
-          )
+            child: Text(AppLocalizations.of(context)!.confirm),
+          ),
         ],
       ),
     );
@@ -473,8 +501,12 @@ class _PuzzleTilePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawImageRect(uiImage, sourceRect,
-        Rect.fromLTWH(0, 0, size.width, size.height), Paint());
+    canvas.drawImageRect(
+      uiImage,
+      sourceRect,
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint(),
+    );
   }
 
   @override

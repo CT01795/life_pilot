@@ -250,7 +250,7 @@ Widget _buildDashboard(BuildContext context, ControllerStock c) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              TextSpan(text: "Net:"),
+              TextSpan(text: '${loc.stockNet}: '),
               TextSpan(
                 text: '${integerFormat.format(e.oiNetQtyDiff)} ',
                 style: TextStyle(
@@ -355,7 +355,7 @@ class _ForeignRankingSectionState extends State<_ForeignRankingSection> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const TextSpan(text: 'Net:'),
+                TextSpan(text: '${loc.stockNet}: '),
                 TextSpan(
                   text: '${integerFormat.format(item.totalDiff / 1000)} ',
                   style: TextStyle(
@@ -461,7 +461,7 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
                   ),
                 ),
               if (stock.peRatio != null && stock.peRatio != 0)
-                Text("P/E: ${stock.peRatio}"),
+                Text(loc.priceEarningsRatio(stock.peRatio.toString())),
             ],
           ),
           Gaps.h8,
@@ -473,7 +473,7 @@ Widget _buildStockCard(BuildContext context, ModelStock stock, int index) {
             children: [
               if (stock.rsi != null)
                 Text(
-                  'RSI: ${stock.rsi!.toStringAsFixed(2)}',
+                  loc.relativeStrengthIndex(stock.rsi!.toStringAsFixed(2)),
                   style: TextStyle(
                     color: stock.rsi! < 50 ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,

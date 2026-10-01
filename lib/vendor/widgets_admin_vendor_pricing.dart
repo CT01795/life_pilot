@@ -17,11 +17,11 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   final _version = TextEditingController();
   final _email = TextEditingController();
   final _note = TextEditingController();
-  final _price = TextEditingController(text: '299');
-  final _eventQuota = TextEditingController(text: '30');
-  final _attractionQuota = TextEditingController(text: '10');
-  final _imageQuota = TextEditingController(text: '300');
-  final _analyticsDays = TextEditingController(text: '90');
+  final _price = TextEditingController();
+  final _eventQuota = TextEditingController();
+  final _attractionQuota = TextEditingController();
+  final _imageQuota = TextEditingController();
+  final _analyticsDays = TextEditingController();
   final _multiplier = TextEditingController(text: '1');
   late Future<List<VendorPricingPlan>> _plans;
   String _planCode = 'partner';
@@ -140,11 +140,11 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
     _planCode = 'partner';
     _effectiveAt = DateTime.now();
     _version.clear();
-    _price.text = '299';
-    _eventQuota.text = '30';
-    _attractionQuota.text = '10';
-    _imageQuota.text = '300';
-    _analyticsDays.text = '90';
+    _price.clear();
+    _eventQuota.clear();
+    _attractionQuota.clear();
+    _imageQuota.clear();
+    _analyticsDays.clear();
   }
 
   Future<void> _deletePricing(VendorPricingPlan plan) async {

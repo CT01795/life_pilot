@@ -3,6 +3,43 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
+  Future<List<QuotaFreePeriod>> fetchQuotaFreePeriods() async {
+    final rows = await supabase.rpc('get_quota_free_period');
+    if (rows is! List) return const [];
+    return rows
+        .map(
+          (row) =>
+              QuotaFreePeriod.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> saveQuotaFreePeriodAsAdmin({
+    String? id,
+    required String name,
+    required DateTime startsAt,
+    required DateTime endsAt,
+    required bool enabled,
+  }) async {
+    await supabase.rpc(
+      'admin_set_quota_free_period',
+      params: {
+        'p_period_id': id,
+        'p_name': name.trim(),
+        'p_starts_at': startsAt.toUtc().toIso8601String(),
+        'p_ends_at': endsAt.toUtc().toIso8601String(),
+        'p_enabled': enabled,
+      },
+    );
+  }
+
+  Future<void> deleteQuotaFreePeriodAsAdmin(String id) async {
+    await supabase.rpc(
+      'admin_delete_quota_free_period',
+      params: {'p_period_id': id},
+    );
+  }
+
   Future<Map<String, dynamic>?> fetchUserSubscriptionAsAdmin({
     required String email,
   }) async {
@@ -44,10 +81,11 @@ class ServiceSubscription {
   }
 
   Future<SubscriptionSnapshot> fetchMyUsage() async {
-    final responses = await Future.wait([
+    final responses = await Future.wait<dynamic>([
       supabase.rpc('get_my_subscription_usage'),
       supabase.rpc('get_my_subscription_status'),
       supabase.rpc('get_my_subscription_entitlements'),
+      _fetchRecommendationUsage(),
     ]);
     final rows = responses.first;
     final statusRows = responses[1] as List<dynamic>;
@@ -55,12 +93,36 @@ class ServiceSubscription {
     final status = statusRows.isEmpty
         ? <String, dynamic>{}
         : Map<String, dynamic>.from(statusRows.first as Map);
-    final items = (rows as List<dynamic>)
-        .map(
-          (row) =>
-              SubscriptionUsage.fromJson(Map<String, dynamic>.from(row as Map)),
-        )
-        .toList();
+    final items = <SubscriptionUsage>[
+      ...(rows as List<dynamic>).map(
+        (row) =>
+            SubscriptionUsage.fromJson(Map<String, dynamic>.from(row as Map)),
+      ),
+      ...(responses[3] as List<SubscriptionUsage>),
+    ];
+
+    items.sort((a, b) {
+      const resourceOrder = [
+        'calendar_events',
+        'recommended_events',
+        'recommended_attractions',
+        'accounting_detail',
+        'point_record_detail',
+        'memory_trace',
+        'game_questions',
+        'calendar_shares',
+        'image_bytes',
+      ];
+
+      final ai = resourceOrder.indexOf(a.resource);
+      final bi = resourceOrder.indexOf(b.resource);
+
+      final aIndex = ai == -1 ? resourceOrder.length : ai;
+      final bIndex = bi == -1 ? resourceOrder.length : bi;
+
+      return aIndex.compareTo(bIndex);
+    });
+
     final plan =
         status['plan']?.toString() ??
         (items.isEmpty
@@ -96,6 +158,22 @@ class ServiceSubscription {
           )
           .toList(),
     );
+  }
+
+  Future<List<SubscriptionUsage>> _fetchRecommendationUsage() async {
+    try {
+      final rows = await supabase.rpc('get_my_recommendation_submission_usage');
+      return (rows as List<dynamic>)
+          .map(
+            (row) => SubscriptionUsage.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
+          .toList(growable: false);
+    } on PostgrestException catch (error) {
+      if (error.code == '42883' || error.code == 'PGRST202') return const [];
+      rethrow;
+    }
   }
 
   Future<void> setUserSubscriptionAsAdmin({
@@ -243,6 +321,8 @@ class ServiceSubscription {
         'p_memory_quota': quotas['memory'],
         'p_game_question_quota': quotas['game'],
         'p_calendar_share_quota': quotas['share'],
+        'p_recommended_event_quota': quotas['event'],
+        'p_recommended_attraction_quota': quotas['attraction'],
         'p_image_megabytes': quotas['image'],
         'p_answer_history_days': quotas['answerDays'],
       },
@@ -283,6 +363,34 @@ class ServiceSubscription {
       params: {'p_pricing_version_id': versionId},
     );
   }
+}
+
+class QuotaFreePeriod {
+  const QuotaFreePeriod({
+    required this.id,
+    required this.name,
+    required this.startsAt,
+    required this.endsAt,
+    required this.enabled,
+    required this.isActive,
+  });
+
+  final String id;
+  final String name;
+  final DateTime startsAt;
+  final DateTime endsAt;
+  final bool enabled;
+  final bool isActive;
+
+  factory QuotaFreePeriod.fromJson(Map<String, dynamic> json) =>
+      QuotaFreePeriod(
+        id: json['period_id']?.toString() ?? '',
+        name: json['period_name']?.toString() ?? '',
+        startsAt: DateTime.parse(json['starts_at'].toString()).toLocal(),
+        endsAt: DateTime.parse(json['ends_at'].toString()).toLocal(),
+        enabled: json['enabled'] == true,
+        isActive: json['is_active'] == true,
+      );
 }
 
 class SubscriptionCleanupPreview {
@@ -339,6 +447,12 @@ class SubscriptionPricingVersion {
         quarterlyPriceTwd: (json['quarterly_price_twd'] as num?)?.toInt() ?? 0,
         quotas: {
           'calendar_events': (json['calendar_quota'] as num?)?.toInt() ?? 0,
+          if (json['storage_plan']?.toString() == 'cloud') ...{
+            'recommended_events':
+                (json['recommended_event_quota'] as num?)?.toInt() ?? 0,
+            'recommended_attractions':
+                (json['recommended_attraction_quota'] as num?)?.toInt() ?? 0,
+          },
           'accounting_detail': (json['accounting_quota'] as num?)?.toInt() ?? 0,
           'point_record_detail': (json['point_quota'] as num?)?.toInt() ?? 0,
           'memory_trace': (json['memory_quota'] as num?)?.toInt() ?? 0,

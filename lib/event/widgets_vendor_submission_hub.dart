@@ -18,39 +18,38 @@ class VendorSubmissionHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: onSubmit,
-                    icon: const Icon(Icons.add),
-                    label: Text(submitLabel),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => onFilterChanged(!showOnlyMySubmissions),
-                    icon: Icon(
-                      showOnlyMySubmissions
-                          ? Icons.inventory_2
-                          : Icons.inventory_2_outlined,
-                    ),
-                    label: Text(
-                      showOnlyMySubmissions
-                          ? loc.vendorMySubmissions
-                          : loc.vendorAllActivities,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          FilledButton.tonalIcon(
+            onPressed: onSubmit,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: Text(submitLabel),
+            style: FilledButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          ),
+          const SizedBox(width: 6),
+          OutlinedButton.icon(
+            onPressed: () => onFilterChanged(!showOnlyMySubmissions),
+            icon: Icon(
+              showOnlyMySubmissions
+                  ? Icons.inventory_2
+                  : Icons.inventory_2_outlined,
+              size: 18,
+            ),
+            label: Text(
+              showOnlyMySubmissions
+                  ? loc.vendorMySubmissions
+                  : loc.vendorAllActivities,
+            ),
+            style: OutlinedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
           ),
         ],
       ),

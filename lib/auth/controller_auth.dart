@@ -139,12 +139,22 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<SubscriptionSnapshot> _loadSubscriptionUsage() async {
     final cloud = await ServiceSubscription().fetchMyUsage();
     final account = _currentAccount;
-    if (_preferredStorage != DataStorageLocation.local || account == null) {
-      return _withCloudPresentation(cloud);
-    }
-
-    return _withLocalUsage(cloud);
+    final presented =
+        _preferredStorage != DataStorageLocation.local || account == null
+        ? _withCloudPresentation(cloud)
+        : await _withLocalUsage(cloud);
+    return isSysAdmin ? _withUnlimitedUsage(presented) : presented;
   }
+
+  SubscriptionSnapshot _withUnlimitedUsage(SubscriptionSnapshot base) =>
+      base.copyWithUsage({
+        for (final entry in base.usage.entries)
+          entry.key: SubscriptionUsage(
+            resource: entry.value.resource,
+            used: entry.value.used,
+            quota: -1,
+          ),
+      });
 
   SubscriptionSnapshot _withCloudPresentation(SubscriptionSnapshot base) {
     final now = DateTime.now();

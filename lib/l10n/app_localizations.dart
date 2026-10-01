@@ -132,13 +132,13 @@ abstract class AppLocalizations {
   /// Label for vendor submit activity
   ///
   /// In en, this message translates to:
-  /// **'Submit an activity'**
+  /// **'Add'**
   String get vendorSubmitActivity;
 
   /// Label for vendor submit attraction
   ///
   /// In en, this message translates to:
-  /// **'Submit an attraction'**
+  /// **'Add'**
   String get vendorSubmitAttraction;
 
   /// Label for vendor my submissions
@@ -3615,6 +3615,12 @@ abstract class AppLocalizations {
   /// **'Current plan: Cloud Free'**
   String get subscriptionCurrentFree;
 
+  /// Current unlimited administrator access
+  ///
+  /// In en, this message translates to:
+  /// **'Current access: Administrator (unlimited)'**
+  String get subscriptionCurrentAdmin;
+
   /// Label for subscriptionCurrentPlus
   ///
   /// In en, this message translates to:
@@ -3704,54 +3710,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'300 cloud records each for calendar, accounting, points, and memories'**
   String get subscriptionPlusPersonalRecords;
-
-  /// Label for subscriptionFreeGameQuestions
-  ///
-  /// In en, this message translates to:
-  /// **'Up to 50 custom game questions in the cloud'**
-  String get subscriptionFreeGameQuestions;
-
-  /// Label for subscriptionPlusGameQuestions
-  ///
-  /// In en, this message translates to:
-  /// **'500 custom game questions'**
-  String get subscriptionPlusGameQuestions;
-
-  /// Label for subscriptionFreeSharing
-  ///
-  /// In en, this message translates to:
-  /// **'Share your cloud calendar with up to 2 people'**
-  String get subscriptionFreeSharing;
-
-  /// Label for subscriptionPlusSharing
-  ///
-  /// In en, this message translates to:
-  /// **'Share your calendar with up to 5 people'**
-  String get subscriptionPlusSharing;
-
-  /// Label for subscriptionFreeImages
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud photo uploads are not included'**
-  String get subscriptionFreeImages;
-
-  /// Label for subscriptionPlusImages
-  ///
-  /// In en, this message translates to:
-  /// **'Up to 300 MB of memory and event photos'**
-  String get subscriptionPlusImages;
-
-  /// Label for subscriptionFreeAnswerHistory
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud answer history retained for the latest 30 days'**
-  String get subscriptionFreeAnswerHistory;
-
-  /// Label for subscriptionPlusAnswerHistory
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud answer history retained for 1 year'**
-  String get subscriptionPlusAnswerHistory;
 
   /// Label for subscriptionCommonFeatures
   ///
@@ -4460,6 +4418,636 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Feature access was not updated correctly. Search again and retry.'**
   String get moduleAuthorizationSaveFailed;
+
+  /// Label for quotaFreePeriodTitle
+  ///
+  /// In en, this message translates to:
+  /// **'No-limit promotion'**
+  String get quotaFreePeriodTitle;
+
+  /// Label for quotaFreePeriodDescription
+  ///
+  /// In en, this message translates to:
+  /// **'New cloud records do not count against plan limits during this period. Normal limits resume automatically afterward.'**
+  String get quotaFreePeriodDescription;
+
+  /// Label for quotaFreePeriodName
+  ///
+  /// In en, this message translates to:
+  /// **'Promotion name'**
+  String get quotaFreePeriodName;
+
+  /// Label for quotaFreePeriodStart
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get quotaFreePeriodStart;
+
+  /// Label for quotaFreePeriodEnd
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get quotaFreePeriodEnd;
+
+  /// Label for quotaFreePeriodEnabled
+  ///
+  /// In en, this message translates to:
+  /// **'Enable this period'**
+  String get quotaFreePeriodEnabled;
+
+  /// Label for quotaFreePeriodAutomaticHint
+  ///
+  /// In en, this message translates to:
+  /// **'Limits are suspended only between the selected start and end times.'**
+  String get quotaFreePeriodAutomaticHint;
+
+  /// Label for quotaFreePeriodInvalidRange
+  ///
+  /// In en, this message translates to:
+  /// **'The end time must be later than the start time.'**
+  String get quotaFreePeriodInvalidRange;
+
+  /// Label for quotaFreePeriodSaved
+  ///
+  /// In en, this message translates to:
+  /// **'No-limit promotion saved.'**
+  String get quotaFreePeriodSaved;
+
+  /// Label for quotaFreePeriodSaveFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the no-limit promotion.'**
+  String get quotaFreePeriodSaveFailed;
+
+  /// Label for quotaFreePeriodClear
+  ///
+  /// In en, this message translates to:
+  /// **'Clear setting'**
+  String get quotaFreePeriodClear;
+
+  /// Label for quotaFreePeriodClearConfirm
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the configured no-limit period? Normal plan limits will apply immediately.'**
+  String get quotaFreePeriodClearConfirm;
+
+  /// Label for quotaFreePeriodCleared
+  ///
+  /// In en, this message translates to:
+  /// **'No-limit promotion removed.'**
+  String get quotaFreePeriodCleared;
+
+  /// Label for quotaFreePeriodNew
+  ///
+  /// In en, this message translates to:
+  /// **'Create a period'**
+  String get quotaFreePeriodNew;
+
+  /// Label for quotaFreePeriodEdit
+  ///
+  /// In en, this message translates to:
+  /// **'Edit period'**
+  String get quotaFreePeriodEdit;
+
+  /// Label for quotaFreePeriodEmpty
+  ///
+  /// In en, this message translates to:
+  /// **'No no-limit periods have been configured.'**
+  String get quotaFreePeriodEmpty;
+
+  /// Label for quotaFreePeriodUnnamed
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed promotion'**
+  String get quotaFreePeriodUnnamed;
+
+  /// Label for quotaFreePeriodActive
+  ///
+  /// In en, this message translates to:
+  /// **'Active now'**
+  String get quotaFreePeriodActive;
+
+  /// Label for quotaFreePeriodScheduled
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get quotaFreePeriodScheduled;
+
+  /// Label for quotaFreePeriodEnded
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get quotaFreePeriodEnded;
+
+  /// Label for quotaFreePeriodDisabled
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get quotaFreePeriodDisabled;
+
+  /// Label for country
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get country;
+
+  /// Label for coverPhotoOptional
+  ///
+  /// In en, this message translates to:
+  /// **'Cover photo (optional)'**
+  String get coverPhotoOptional;
+
+  /// Label for choosePhoto
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get choosePhoto;
+
+  /// Label for replacePhoto
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replacePhoto;
+
+  /// Label for allCities
+  ///
+  /// In en, this message translates to:
+  /// **'All cities'**
+  String get allCities;
+
+  /// Label for switchToList
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to list'**
+  String get switchToList;
+
+  /// Label for switchToMap
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to map'**
+  String get switchToMap;
+
+  /// Label for countryTaiwan
+  ///
+  /// In en, this message translates to:
+  /// **'Taiwan'**
+  String get countryTaiwan;
+
+  /// Label for countryJapan
+  ///
+  /// In en, this message translates to:
+  /// **'Japan'**
+  String get countryJapan;
+
+  /// Label for countrySouthKorea
+  ///
+  /// In en, this message translates to:
+  /// **'South Korea'**
+  String get countrySouthKorea;
+
+  /// Label for countrySingapore
+  ///
+  /// In en, this message translates to:
+  /// **'Singapore'**
+  String get countrySingapore;
+
+  /// Label for countryUnitedStates
+  ///
+  /// In en, this message translates to:
+  /// **'United States'**
+  String get countryUnitedStates;
+
+  /// Label for countryCanada
+  ///
+  /// In en, this message translates to:
+  /// **'Canada'**
+  String get countryCanada;
+
+  /// Label for countryChina
+  ///
+  /// In en, this message translates to:
+  /// **'China'**
+  String get countryChina;
+
+  /// Label for countryHongKong
+  ///
+  /// In en, this message translates to:
+  /// **'Hong Kong'**
+  String get countryHongKong;
+
+  /// Label for countryMacau
+  ///
+  /// In en, this message translates to:
+  /// **'Macau'**
+  String get countryMacau;
+
+  /// Label for countryThailand
+  ///
+  /// In en, this message translates to:
+  /// **'Thailand'**
+  String get countryThailand;
+
+  /// Label for countryVietnam
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnam'**
+  String get countryVietnam;
+
+  /// Label for countryMalaysia
+  ///
+  /// In en, this message translates to:
+  /// **'Malaysia'**
+  String get countryMalaysia;
+
+  /// Label for countryIndonesia
+  ///
+  /// In en, this message translates to:
+  /// **'Indonesia'**
+  String get countryIndonesia;
+
+  /// Label for countryPhilippines
+  ///
+  /// In en, this message translates to:
+  /// **'Philippines'**
+  String get countryPhilippines;
+
+  /// Label for countryAustralia
+  ///
+  /// In en, this message translates to:
+  /// **'Australia'**
+  String get countryAustralia;
+
+  /// Label for countryNewZealand
+  ///
+  /// In en, this message translates to:
+  /// **'New Zealand'**
+  String get countryNewZealand;
+
+  /// Label for countryUnitedKingdom
+  ///
+  /// In en, this message translates to:
+  /// **'United Kingdom'**
+  String get countryUnitedKingdom;
+
+  /// Label for countryFrance
+  ///
+  /// In en, this message translates to:
+  /// **'France'**
+  String get countryFrance;
+
+  /// Label for countryGermany
+  ///
+  /// In en, this message translates to:
+  /// **'Germany'**
+  String get countryGermany;
+
+  /// Label for countryItaly
+  ///
+  /// In en, this message translates to:
+  /// **'Italy'**
+  String get countryItaly;
+
+  /// Label for countrySpain
+  ///
+  /// In en, this message translates to:
+  /// **'Spain'**
+  String get countrySpain;
+
+  /// Label for countryNetherlands
+  ///
+  /// In en, this message translates to:
+  /// **'Netherlands'**
+  String get countryNetherlands;
+
+  /// Label for countrySwitzerland
+  ///
+  /// In en, this message translates to:
+  /// **'Switzerland'**
+  String get countrySwitzerland;
+
+  /// Label for countryIndia
+  ///
+  /// In en, this message translates to:
+  /// **'India'**
+  String get countryIndia;
+
+  /// Label for countryUnitedArabEmirates
+  ///
+  /// In en, this message translates to:
+  /// **'United Arab Emirates'**
+  String get countryUnitedArabEmirates;
+
+  /// Label for feedbackPurpose
+  ///
+  /// In en, this message translates to:
+  /// **'Purpose'**
+  String get feedbackPurpose;
+
+  /// Label for feedbackContent
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get feedbackContent;
+
+  /// Label for captureScreen
+  ///
+  /// In en, this message translates to:
+  /// **'Capture screen'**
+  String get captureScreen;
+
+  /// Label for feedbackRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Purpose and content are required.'**
+  String get feedbackRequired;
+
+  /// Label for feedbackSent
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback sent successfully.'**
+  String get feedbackSent;
+
+  /// No description provided for @feedbackSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send feedback: {error}'**
+  String feedbackSendFailed(String error);
+
+  /// Label for accessDenied
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied'**
+  String get accessDenied;
+
+  /// Label for selectTemplate
+  ///
+  /// In en, this message translates to:
+  /// **'Select template'**
+  String get selectTemplate;
+
+  /// Label for planTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Plan title'**
+  String get planTitle;
+
+  /// Label for create
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// Label for enterAnswer
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your answer'**
+  String get enterAnswer;
+
+  /// Label for previous
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get previous;
+
+  /// Label for next
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// Label for loadingSections
+  ///
+  /// In en, this message translates to:
+  /// **'Loading sections...'**
+  String get loadingSections;
+
+  /// Label for loading
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// Label for notFilled
+  ///
+  /// In en, this message translates to:
+  /// **'Not filled in yet'**
+  String get notFilled;
+
+  /// Label for untitledPlan
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled plan'**
+  String get untitledPlan;
+
+  /// Label for openChatGPT
+  ///
+  /// In en, this message translates to:
+  /// **'Open ChatGPT'**
+  String get openChatGPT;
+
+  /// Label for unableToLoadDocument
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load this document.'**
+  String get unableToLoadDocument;
+
+  /// No description provided for @gameTitleScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{game} ({score}/100)'**
+  String gameTitleScore(String game, num score);
+
+  /// No description provided for @congratulationsScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations! Score: {score}'**
+  String congratulationsScore(num score);
+
+  /// Label for wordSearchTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Word Search'**
+  String get wordSearchTitle;
+
+  /// Label for translationTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get translationTitle;
+
+  /// Label for socialTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get socialTitle;
+
+  /// Label for speakingTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get speakingTitle;
+
+  /// Label for englishRpgAdventureTitle
+  ///
+  /// In en, this message translates to:
+  /// **'English RPG Adventure'**
+  String get englishRpgAdventureTitle;
+
+  /// Label for answerHere
+  ///
+  /// In en, this message translates to:
+  /// **'Answer here'**
+  String get answerHere;
+
+  /// Label for check
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get check;
+
+  /// Label for restart
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get restart;
+
+  /// Label for scratchGameTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Scratch Game'**
+  String get scratchGameTitle;
+
+  /// Label for scratchMazeTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Scratch Game (Maze)'**
+  String get scratchMazeTitle;
+
+  /// Label for blocklyEditor
+  ///
+  /// In en, this message translates to:
+  /// **'Blockly Editor'**
+  String get blocklyEditor;
+
+  /// Label for puzzleMapTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Puzzle Map'**
+  String get puzzleMapTitle;
+
+  /// Label for hint
+  ///
+  /// In en, this message translates to:
+  /// **'Hint'**
+  String get hint;
+
+  /// Label for monominoGameTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Monomino Game'**
+  String get monominoGameTitle;
+
+  /// Label for checkPath
+  ///
+  /// In en, this message translates to:
+  /// **'Check the path'**
+  String get checkPath;
+
+  /// Label for polyominoGameTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Polyomino Game'**
+  String get polyominoGameTitle;
+
+  /// Label for noPipes
+  ///
+  /// In en, this message translates to:
+  /// **'No pipes'**
+  String get noPipes;
+
+  /// Label for go
+  ///
+  /// In en, this message translates to:
+  /// **'Go'**
+  String get go;
+
+  /// Label for wordSentenceBuilderTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Word and Sentence Builder'**
+  String get wordSentenceBuilderTitle;
+
+  /// No description provided for @priceEarningsRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'P/E: {value}'**
+  String priceEarningsRatio(String value);
+
+  /// No description provided for @stockNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net'**
+  String get stockNet;
+
+  /// No description provided for @deleteNumberedItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete item {number}, {name}?'**
+  String deleteNumberedItem(int number, String name);
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese'**
+  String get languageChinese;
+
+  /// No description provided for @languageJapanese.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese'**
+  String get languageJapanese;
+
+  /// No description provided for @languageKorean.
+  ///
+  /// In en, this message translates to:
+  /// **'Korean'**
+  String get languageKorean;
+
+  /// No description provided for @feedbackProcessedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Processed by {name} at {time}'**
+  String feedbackProcessedBy(String name, String time);
+
+  /// No description provided for @relativeStrengthIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'RSI: {value}'**
+  String relativeStrengthIndex(String value);
+
+  /// No description provided for @gamePassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass!'**
+  String get gamePassed;
+
+  /// No description provided for @gameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fail'**
+  String get gameFailed;
+
+  /// No description provided for @gameScoreValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}'**
+  String gameScoreValue(num score);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

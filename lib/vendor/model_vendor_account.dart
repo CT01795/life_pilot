@@ -47,24 +47,6 @@ class VendorSubscriptionStatus {
     this.currentPeriodEnd,
   });
 
-  static final free = VendorSubscriptionStatus(
-    plan: VendorPricingPlan(
-      id: 'free',
-      code: 'free',
-      versionName: 'Vendor Free',
-      effectiveAt: DateTime.utc(2026, 1, 1),
-      quarterlyPriceTwd: 0,
-      eventQuota: 5,
-      attractionQuota: 2,
-      imageMegabytes: 10,
-      analyticsDays: 30,
-    ),
-    status: 'active',
-    eventUsed: 0,
-    attractionUsed: 0,
-    imageBytesUsed: 0,
-  );
-
   final VendorPricingPlan plan;
   final String status;
   final int eventUsed;

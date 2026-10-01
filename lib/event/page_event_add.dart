@@ -461,37 +461,13 @@ class _PageEventAddState extends State<PageEventAdd> {
     ctl.setMasterGraphUrl(base64Encode(await image.readAsBytes()));
   }
 
-  String _imageLabel() =>
-      switch (Localizations.localeOf(context).languageCode) {
-        'zh' => '封面照片（選填）',
-        'ja' => 'カバー写真（任意）',
-        'ko' => '표지 사진 (선택)',
-        _ => 'Cover photo (optional)',
-      };
+  String _imageLabel() => AppLocalizations.of(context)!.coverPhotoOptional;
 
-  String _countryLabel() =>
-      switch (Localizations.localeOf(context).languageCode) {
-        'zh' => '國家',
-        'ja' => '国',
-        'ko' => '국가',
-        _ => 'Country',
-      };
+  String _countryLabel() => AppLocalizations.of(context)!.country;
 
-  String _chooseImageLabel() =>
-      switch (Localizations.localeOf(context).languageCode) {
-        'zh' => '選擇照片',
-        'ja' => '写真を選択',
-        'ko' => '사진 선택',
-        _ => 'Choose photo',
-      };
+  String _chooseImageLabel() => AppLocalizations.of(context)!.choosePhoto;
 
-  String _replaceImageLabel() =>
-      switch (Localizations.localeOf(context).languageCode) {
-        'zh' => '更換',
-        'ja' => '変更',
-        'ko' => '변경',
-        _ => 'Replace',
-      };
+  String _replaceImageLabel() => AppLocalizations.of(context)!.replacePhoto;
 
   // =====================================================
   // 🧱 組件建構部分
@@ -818,7 +794,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                     final event = ctl
                         .subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
                     final shouldDelete = await showConfirmationDialog(
-                      content: 'No. ${index + 1} ${event.name} ${loc.delete}？',
+                      content: loc.deleteNumberedItem(index + 1, event.name),
                       confirmText: loc.delete,
                       cancelText: loc.cancel,
                     );

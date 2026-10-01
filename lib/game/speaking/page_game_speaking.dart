@@ -86,8 +86,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     controller.answer(userAnswer);
     // 逐字顯示正確答案
     showCorrectAnswer(controller.currentQuestion!.correctAnswer);
-    await Future.delayed(Duration(
-        milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)));
+    await Future.delayed(
+      Duration(milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)),
+    );
     if (!mounted) return;
     answerController.clear();
 
@@ -117,8 +118,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
 
       final newValue = TextEditingValue(
         text: "${answerController.text}${tmp[i]} ",
-        selection:
-            TextSelection.collapsed(offset: answerController.text.length + 1),
+        selection: TextSelection.collapsed(
+          offset: answerController.text.length + 1,
+        ),
       );
       answerController.value = newValue;
     }
@@ -198,7 +200,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
           });
           return Scaffold(
             body: Center(
-              child: Text("Congratulations! Score: ${controller.score}"),
+              child: Text(loc.congratulationsScore(controller.score)),
             ),
           );
         }
@@ -247,27 +249,34 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                       Navigator.maybePop(context);
                     },
                   ),
-                  title: Text("Speaking (${controller.score}/100)"),
+                  title: Text(
+                    loc.gameTitleScore(loc.speakingTitle, controller.score),
+                  ),
                 ),
                 body: Column(
                   children: [
                     // 第一列：喇叭按鈕 + 題目
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 8.0),
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: Icon(Icons.volume_up,
-                                size: 50,
-                                color: isRecording
-                                    ? Colors.grey
-                                    : Color(0xFF26A69A)),
+                            icon: Icon(
+                              Icons.volume_up,
+                              size: 50,
+                              color: isRecording
+                                  ? Colors.grey
+                                  : Color(0xFF26A69A),
+                            ),
                             onPressed: isRecording
                                 ? null // 🔒 錄音中不能按
                                 : () => controller.speak(
-                                    controller.currentQuestion!.correctAnswer),
+                                    controller.currentQuestion!.correctAnswer,
+                                  ),
                           ),
                           Gaps.w8,
                           Flexible(
@@ -296,8 +305,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                                   ? Icons.mic_none
                                   : Icons.stop, // 錄音時顯示停止
                               size: 50,
-                              color:
-                                  !isRecording ? Color(0xFF26A69A) : Colors.red,
+                              color: !isRecording
+                                  ? Color(0xFF26A69A)
+                                  : Colors.red,
                             ),
                             onPressed: () async {
                               if (!isRecording) {
@@ -307,7 +317,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                                 });
                                 // 🚀 開始語音辨識
                                 await startSpeechRecognition(
-                                    onResult: onSpeechResult);
+                                  onResult: onSpeechResult,
+                                );
                               } else {
                                 // ⏹ 停止錄音
                                 await stopSpeechRecognition();
@@ -334,24 +345,24 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                           keyboardType: TextInputType.multiline,
                           textAlign: TextAlign.left,
                           textAlignVertical: TextAlignVertical.top,
-                          style:
-                              TextStyle(fontSize: 20, color: Colors.blueAccent),
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.blueAccent,
+                          ),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(),
-                            hintText: "Answer here",
+                            hintText: loc.answerHere,
                           ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
 
               // 🔹 等待遮罩（可選但很推薦）
               if (controller.isBusy)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.2),
-                ),
+                Container(color: Colors.black.withValues(alpha: 0.2)),
             ],
           ),
         );

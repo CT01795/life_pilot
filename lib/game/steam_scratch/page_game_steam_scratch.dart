@@ -12,6 +12,7 @@ import 'package:life_pilot/game/speaking/page_game_speaking.dart';
 import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/word_search/page_game_word_search.dart';
 import 'package:life_pilot/game/steam_scratch/page_game_steam_scratch_blockly_editor.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/steam_scratch/widgets_game_steam_scratch_game_board.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +20,11 @@ import 'package:provider/provider.dart';
 class PageGameSteamScratch extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const PageGameSteamScratch(
-      {super.key, required this.gameId, required this.gameLevel});
+  const PageGameSteamScratch({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+  });
 
   @override
   State<PageGameSteamScratch> createState() => _PageGameSteamScratchState();
@@ -43,15 +47,17 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
   void initState() {
     super.initState();
 
-    final level =
-        GameSteamScratchLevelGenerator().generateLevel(widget.gameLevel);
+    final level = GameSteamScratchLevelGenerator().generateLevel(
+      widget.gameLevel,
+    );
     final auth = context.read<ControllerAuth>();
 
     game = ControllerGameSteamScratch(
-        gameId: widget.gameId,
-        userName: auth.currentAccount ?? AuthConstants.guest,
-        service: ServiceGame(),
-        level: level);
+      gameId: widget.gameId,
+      userName: auth.currentAccount ?? AuthConstants.guest,
+      service: ServiceGame(),
+      level: level,
+    );
 
     // 監聽 game state 更新
     game.stateNotifier.addListener(() {
@@ -65,7 +71,8 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final maxBlocks = game.level.treasure.y +
+      final maxBlocks =
+          game.level.treasure.y +
           game.level.treasure.x +
           game.level.obstacles.length;
       editorKey.currentState?.setMaxBlocks(maxBlocks);
@@ -89,7 +96,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
       EnumGameEventType.treasure => Colors.green.shade400, // 柔和綠
       EnumGameEventType.complete => Colors.blue.shade400, // 柔和藍
       EnumGameEventType.warning => Colors.red.shade600, // 柔和紅
-      EnumGameEventType.none => Colors.white
+      EnumGameEventType.none => Colors.white,
     };
 
     // 水果 → 自動 300ms 關閉
@@ -114,19 +121,23 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                   ),
                 ],
               ),
-              child: Text(event.message,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold)),
+              child: Text(
+                event.message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           );
         },
       );
       Future.delayed(
         Duration(
-            milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500),
+          milliseconds: event.type == EnumGameEventType.fruit ? 300 : 1500,
+        ),
         () {
           if (!mounted) return;
           Navigator.of(pageContext, rootNavigator: true).pop(); // 關 dialog
@@ -143,8 +154,9 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
         builder: (_) {
           return Dialog(
             backgroundColor: Colors.red.shade300, // 柔和紅色
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -153,9 +165,10 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                   Text(
                     event.message,
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Gaps.h8,
                   // Restart 按鈕
@@ -163,22 +176,30 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade100, // 淡紅
                       foregroundColor: Colors.red.shade700,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     onPressed: () async {
                       if (!mounted) return;
-                      Navigator.of(pageContext, rootNavigator: true)
-                          .pop(); // 關 dialog
+                      Navigator.of(
+                        pageContext,
+                        rootNavigator: true,
+                      ).pop(); // 關 dialog
                       await Future.delayed(
-                          Duration(milliseconds: 100)); // 等 dialog 關閉完成
+                        Duration(milliseconds: 100),
+                      ); // 等 dialog 關閉完成
                       game.resetGame(); // 重置遊戲
                     },
                     icon: Icon(Icons.refresh, size: 22),
-                    label: Text("Restart", style: TextStyle(fontSize: 18)),
+                    label: Text(
+                      AppLocalizations.of(pageContext)!.restart,
+                      style: const TextStyle(fontSize: 18),
+                    ),
                   ),
                   Gaps.h16,
                   // Back 按鈕
@@ -186,20 +207,27 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey.shade200, // 淡灰
                       foregroundColor: Colors.black87,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     onPressed: () {
                       if (!mounted) return;
-                      Navigator.of(pageContext, rootNavigator: true)
-                          .pop(); // 關 dialog
+                      Navigator.of(
+                        pageContext,
+                        rootNavigator: true,
+                      ).pop(); // 關 dialog
                       Navigator.of(pageContext).pop(true); // 回上一頁
                     },
                     icon: Icon(Icons.arrow_back, size: 22),
-                    label: Text("Back", style: TextStyle(fontSize: 18)),
+                    label: Text(
+                      AppLocalizations.of(pageContext)!.back,
+                      style: const TextStyle(fontSize: 18),
+                    ),
                   ),
                 ],
               ),
@@ -217,15 +245,19 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
       builder: (_) {
         return Dialog(
           backgroundColor: bg,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
             padding: EdgeInsets.all(20),
-            child: Text(event.message,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold)),
+            child: Text(
+              event.message,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         );
       },
@@ -247,45 +279,45 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
               ),
             )
           : value == 4
-              ? await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PageGameSpeaking(
-                      gameId: widget.gameId,
-                      gameLevel: -1, //widget.gameLevel,
-                    ),
-                  ),
-                )
-              : value == 3
-                  ? await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PageGameTranslation(
-                          gameId: widget.gameId,
-                          gameLevel: -1, //widget.gameLevel,
-                          gameName: "",
-                        ),
-                      ),
-                    )
-                  : value == 2
-                      ? await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PageGameSentence(
-                              gameId: widget.gameId,
-                              gameLevel: -1, //widget.gameLevel,
-                            ),
-                          ),
-                        )
-                      : await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PageGameWordSearch(
-                              gameId: widget.gameId,
-                              gameLevel: -1, //widget.gameLevel,
-                            ),
-                          ),
-                        );
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameSpeaking(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            )
+          : value == 3
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameTranslation(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                  gameName: "",
+                ),
+              ),
+            )
+          : value == 2
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameSentence(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            )
+          : await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameWordSearch(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            );
       if (!mounted) return;
       // ⭐ 回上一頁（通常是 PageGameList）
       Navigator.of(pageContext).pop(true); // 回上一頁並刷新
@@ -294,16 +326,18 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     // ---- 1. 計算 maxBlocks ----
     return Scaffold(
       appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.maybePop(context);
-            },
-          ),
-          title: Text('Scratch Game')),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.maybePop(context);
+          },
+        ),
+        title: Text(loc.scratchGameTitle),
+      ),
       body: Row(
         children: [
           // -----------------------------------------------------------------
@@ -327,7 +361,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                       Gaps.w8,
                       Expanded(
                         child: Text(
-                          "Blockly Editor",
+                          loc.blocklyEditor,
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -335,8 +369,10 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                         onPressed: () async {
                           await editorKey.currentState?.requestBlocklyJson();
                         },
-                        child: Text("Start",
-                            style: TextStyle(color: Colors.white)),
+                        child: Text(
+                          loc.gameStart,
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -366,11 +402,12 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
           // -----------------------------------------------------------------
           Expanded(
             child: Container(
-                color: Colors.black,
-                child: InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 3.0,
-                  child: LayoutBuilder(builder: (context, constraints) {
+              color: Colors.black,
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 3.0,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
                     final topOffset = 60.0; // 分數區高度
                     final availableWidth = constraints.maxWidth;
                     final availableHeight =
@@ -397,7 +434,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                             valueListenable: game.stateNotifier,
                             builder: (context, state, _) {
                               return Text(
-                                'Score: ${state.score}',
+                                loc.gameScoreValue(state.score),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
@@ -431,8 +468,10 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                         ),
                       ],
                     );
-                  }),
-                )),
+                  },
+                ),
+              ),
+            ),
           ),
         ],
       ),

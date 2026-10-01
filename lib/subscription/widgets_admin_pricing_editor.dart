@@ -14,28 +14,19 @@ class AdminPricingVersionEditor extends StatefulWidget {
 }
 
 class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
-  static const _cloudQuotaDefaults = <String, String>{
-    'calendar': '300',
-    'accounting': '300',
-    'point': '300',
-    'memory': '300',
-    'game': '500',
-    'share': '5',
-    'image': '300',
-    'answerDays': '365',
-  };
-
   final _name = TextEditingController();
   final _values = <String, TextEditingController>{
-    'price': TextEditingController(text: '129'),
-    'calendar': TextEditingController(text: '300'),
-    'accounting': TextEditingController(text: '300'),
-    'point': TextEditingController(text: '300'),
-    'memory': TextEditingController(text: '300'),
-    'game': TextEditingController(text: '500'),
-    'share': TextEditingController(text: '5'),
-    'image': TextEditingController(text: '300'),
-    'answerDays': TextEditingController(text: '365'),
+    'price': TextEditingController(),
+    'calendar': TextEditingController(),
+    'accounting': TextEditingController(),
+    'point': TextEditingController(),
+    'memory': TextEditingController(),
+    'game': TextEditingController(),
+    'share': TextEditingController(),
+    'event': TextEditingController(),
+    'attraction': TextEditingController(),
+    'image': TextEditingController(),
+    'answerDays': TextEditingController(),
   };
   DateTime _effectiveAt = DateTime.now();
   String _storagePlan = 'cloud';
@@ -64,8 +55,9 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
   void _changeStoragePlan(String value) {
     setState(() {
       _storagePlan = value;
-      for (final entry in _cloudQuotaDefaults.entries) {
-        _values[entry.key]!.text = value == 'local' ? '0' : entry.value;
+      for (final entry in _values.entries) {
+        if (entry.key == 'price') continue;
+        entry.value.text = value == 'local' ? '0' : '';
       }
     });
   }
@@ -129,6 +121,9 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
       _effectiveAt = version.effectiveAt.toLocal();
       _values['price']!.text = '${version.quarterlyPriceTwd}';
       _values['calendar']!.text = '${version.quotas['calendar_events'] ?? 0}';
+      _values['event']!.text = '${version.quotas['recommended_events'] ?? 0}';
+      _values['attraction']!.text =
+          '${version.quotas['recommended_attractions'] ?? 0}';
       _values['accounting']!.text =
           '${version.quotas['accounting_detail'] ?? 0}';
       _values['point']!.text = '${version.quotas['point_record_detail'] ?? 0}';
@@ -148,9 +143,8 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     _name.clear();
     _effectiveAt = DateTime.now();
     _storagePlan = 'cloud';
-    _values['price']!.text = '129';
-    for (final entry in _cloudQuotaDefaults.entries) {
-      _values[entry.key]!.text = entry.value;
+    for (final controller in _values.values) {
+      controller.clear();
     }
   }
 
@@ -209,6 +203,8 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     final labels = {
       'price': loc.adminPricingQuarterlyPrice,
       'calendar': loc.adminPricingCalendarQuota,
+      'event': loc.recommendEvent,
+      'attraction': loc.recommendPlaces,
       'accounting': loc.adminPricingAccountingQuota,
       'point': loc.adminPricingPointQuota,
       'memory': loc.adminPricingMemoryQuota,

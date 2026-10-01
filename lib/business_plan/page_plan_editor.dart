@@ -119,7 +119,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                     initialText: c.currentQuestion.answer.isEmpty
                         ? ""
                         : c.currentQuestion.answer,
-                    hint: "請輸入答案",
+                    hint: loc.enterAnswer,
                   ),
                   htmlToolbarOptions: const HtmlToolbarOptions(
                     defaultToolbarButtons: [
@@ -147,7 +147,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                         _loadCurrentAnswer();
                       }
                     },
-                    child: const Text('Previous'),
+                    child: Text(loc.previous),
                   ),
                   ElevatedButton(
                     onPressed: () async {
@@ -160,7 +160,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                         _loadCurrentAnswer();
                       }
                     },
-                    child: const Text('Next'),
+                    child: Text(loc.next),
                   ),
                 ],
               ),

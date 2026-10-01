@@ -7,6 +7,7 @@ import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_account_deletion_requests.dart';
+import 'package:life_pilot/subscription/widgets_admin_quota_free_period.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,8 @@ class PageSubscriptionPlans extends StatefulWidget {
 
 class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   late Future<List<SubscriptionPricingVersion>> _pricingVersions;
+  List<SubscriptionPricingVersion> _availableVersions = const [];
+  SubscriptionPricingVersion? _latestFreeCloudVersion;
   SubscriptionPricingVersion? _latestCloudVersion;
   SubscriptionPricingVersion? _latestLocalVersion;
   int _adminSubscriptionEditorRevision = 0;
@@ -37,8 +40,20 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
     future.then((versions) {
       if (!mounted) return;
       setState(() {
+        _availableVersions = versions;
+        _latestFreeCloudVersion = versions
+            .where(
+              (version) =>
+                  version.storagePlan == 'cloud' &&
+                  version.quarterlyPriceTwd == 0,
+            )
+            .firstOrNull;
         _latestCloudVersion = versions
-            .where((version) => version.storagePlan == 'cloud')
+            .where(
+              (version) =>
+                  version.storagePlan == 'cloud' &&
+                  version.quarterlyPriceTwd > 0,
+            )
             .firstOrNull;
         _latestLocalVersion = versions
             .where((version) => version.storagePlan == 'local')
@@ -62,6 +77,32 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
         (resource != 'point_record_detail' || canUsePoints) &&
         (resource != 'game_questions' || canUseGame);
     final subscription = auth.subscription;
+    final currentPricingVersion = subscription.isPlus
+        ? _availableVersions
+              .where(
+                (version) =>
+                    version.storagePlan == subscription.storagePlan &&
+                    version.name == subscription.pricingVersionName,
+              )
+              .firstOrNull
+        : _latestFreeCloudVersion;
+    final displayedUsage = Map<String, SubscriptionUsage>.from(
+      subscription.usage,
+    );
+    if (currentPricingVersion != null) {
+      for (final entry in currentPricingVersion.quotas.entries) {
+        if (entry.key == 'answer_history_days') continue;
+        final current = displayedUsage[entry.key];
+        displayedUsage[entry.key] = SubscriptionUsage(
+          resource: entry.key,
+          used: current?.used ?? 0,
+          quota: auth.isSysAdmin
+              ? -1
+              : entry.value *
+                    (subscription.isPlus ? subscription.quotaMultiplier : 1),
+        );
+      }
+    }
     final currentStoragePlan = auth.preferredStorage.name;
     final currentEntitlements = subscription.entitlements
         .where((item) => item.storagePlan == currentStoragePlan)
@@ -82,7 +123,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
     final endLabel = formatDate(endDate);
     final pricingEffectiveLabel = formatDate(subscription.pricingEffectiveAt);
     final graceLabel = formatDate(subscription.downgradeGraceEndsAt);
-    final overages = subscription.usage.values
+    final overages = displayedUsage.values
         .where((usage) => !usage.isUnlimited && usage.used > usage.quota)
         .toList(growable: false);
 
@@ -94,10 +135,16 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
           Card(
             child: ListTile(
               leading: Icon(
-                subscription.isPlus ? Icons.workspace_premium : Icons.person,
+                auth.isSysAdmin
+                    ? Icons.admin_panel_settings_outlined
+                    : subscription.isPlus
+                    ? Icons.workspace_premium
+                    : Icons.person,
               ),
               title: Text(
-                subscription.isPlus
+                auth.isSysAdmin
+                    ? loc.subscriptionCurrentAdmin
+                    : subscription.isPlus
                     ? (subscription.storagePlan == 'local'
                           ? loc.subscriptionCurrentLocalPlus
                           : loc.subscriptionCurrentCloudPlus)
@@ -139,7 +186,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
             ),
           ],
           Gaps.h16,
-          if (subscription.usage.isNotEmpty) ...[
+          if (displayedUsage.isNotEmpty) ...[
             Gaps.h16,
             Text(
               loc.subscriptionActualQuotaTitle,
@@ -148,7 +195,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
             Gaps.h8,
             Card(
               child: Column(
-                children: subscription.usage.values
+                children: displayedUsage.values
                     .where((usage) => showResource(usage.resource))
                     .map((usage) {
                       final label = _resourceLabel(loc, usage.resource);
@@ -255,7 +302,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 return const SizedBox.shrink();
               }
               final latestCloud = snapshot.data!
-                  .where((version) => version.storagePlan == 'cloud')
+                  .where(
+                    (version) =>
+                        version.storagePlan == 'cloud' &&
+                        version.quarterlyPriceTwd > 0,
+                  )
                   .firstOrNull;
               final latestLocal = snapshot.data!
                   .where((version) => version.storagePlan == 'local')
@@ -291,90 +342,84 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
           ),
           LayoutBuilder(
             builder: (context, constraints) {
-              final freeCard = _PlanCard(
-                title: loc.subscriptionFreeName,
-                price: loc.subscriptionFreePrice,
-                features: [
-                  '${loc.personalEvent} / ${loc.accountRecords} / ${loc.memoryTrace}: 30',
-                  if (canUsePoints) '${loc.pointsRecord}: 30',
-                  if (canUseGame) loc.subscriptionFreeGameQuestions,
-                  loc.subscriptionFreeSharing,
-                  loc.subscriptionFreeImages,
-                  if (canUseGame) loc.subscriptionFreeAnswerHistory,
-                ],
-                selected: !subscription.isPlus,
-              );
-              final cloudPlusCard = _PlanCard(
-                title: _latestCloudVersion == null
-                    ? loc.subscriptionPlusName
-                    : loc.subscriptionCloudVersionName(
+              final freeCard = _latestFreeCloudVersion == null
+                  ? null
+                  : _PlanCard(
+                      title: loc.subscriptionFreeName,
+                      price:
+                          'NT\$${_latestFreeCloudVersion!.quarterlyPriceTwd}',
+                      features: _versionFeatures(
+                        loc,
+                        _latestFreeCloudVersion!,
+                        canUsePoints: canUsePoints,
+                        canUseGame: canUseGame,
+                      ),
+                      selected: !auth.isSysAdmin && !subscription.isPlus,
+                    );
+              final cloudPlusCard = _latestCloudVersion == null
+                  ? null
+                  : _PlanCard(
+                      title: loc.subscriptionCloudVersionName(
                         _latestCloudVersion!.name,
                       ),
-                price: _latestCloudVersion == null
-                    ? loc.subscriptionPlusPrice
-                    : 'NT\$${_latestCloudVersion!.quarterlyPriceTwd}',
-                features: _latestCloudVersion == null
-                    ? [
-                        '${loc.personalEvent} / ${loc.accountRecords} / ${loc.memoryTrace}: 300',
-                        if (canUsePoints) '${loc.pointsRecord}: 300',
-                        if (canUseGame) loc.subscriptionPlusGameQuestions,
-                        loc.subscriptionPlusSharing,
-                        loc.subscriptionPlusImages,
-                        if (canUseGame) loc.subscriptionPlusAnswerHistory,
-                      ]
-                    : _versionFeatures(
+                      price: 'NT\$${_latestCloudVersion!.quarterlyPriceTwd}',
+                      features: _versionFeatures(
                         loc,
                         _latestCloudVersion!,
                         canUsePoints: canUsePoints,
                         canUseGame: canUseGame,
                       ),
-                selected:
-                    subscription.isPlus && subscription.storagePlan == 'cloud',
-                highlighted: true,
-              );
-              final localPlusCard = _PlanCard(
-                title: _latestLocalVersion == null
-                    ? loc.subscriptionLocalPaidName
-                    : loc.subscriptionLocalVersionName(
+                      selected:
+                          !auth.isSysAdmin &&
+                          subscription.isPlus &&
+                          subscription.storagePlan == 'cloud',
+                      highlighted: true,
+                    );
+              final localPlusCard = _latestLocalVersion == null
+                  ? null
+                  : _PlanCard(
+                      title: loc.subscriptionLocalVersionName(
                         _latestLocalVersion!.name,
                       ),
-                price: _latestLocalVersion == null
-                    ? loc.subscriptionLocalPaidPrice
-                    : 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
-                features: [
-                  loc.subscriptionLocalPaidFeature,
-                  if (canUseGame) loc.subscriptionLocalAnswerHistory,
-                ],
-                selected:
-                    subscription.isPlus && subscription.storagePlan == 'local',
-              );
+                      price: 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
+                      features: [
+                        loc.subscriptionLocalPaidFeature,
+                        if (canUseGame) loc.subscriptionLocalAnswerHistory,
+                      ],
+                      selected:
+                          !auth.isSysAdmin &&
+                          subscription.isPlus &&
+                          subscription.storagePlan == 'local',
+                    );
               final currentCard = subscription.isPlus
                   ? (subscription.storagePlan == 'local'
                         ? localPlusCard
                         : cloudPlusCard)
                   : freeCard;
-              final cards = subscription.isPlus
-                  ? <Widget>[
-                      currentCard,
-                      freeCard,
-                      if (!identical(currentCard, cloudPlusCard)) cloudPlusCard,
-                      if (!identical(currentCard, localPlusCard)) localPlusCard,
-                    ]
-                  : <Widget>[freeCard, cloudPlusCard, localPlusCard];
+              final remainingCards =
+                  <Widget?>[freeCard, cloudPlusCard, localPlusCard]
+                      .whereType<Widget>()
+                      .where((card) => !identical(card, currentCard));
+              final cards = <Widget>[?currentCard, ...remainingCards];
+              if (cards.isEmpty) return const SizedBox.shrink();
               if (constraints.maxWidth >= 900) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: cards[0]),
-                    Gaps.w16,
-                    Expanded(child: cards[1]),
-                    Gaps.w16,
-                    Expanded(child: cards[2]),
+                    for (var i = 0; i < cards.length; i++) ...[
+                      if (i > 0) Gaps.w16,
+                      Expanded(child: cards[i]),
+                    ],
                   ],
                 );
               }
               return Column(
-                children: [cards[0], Gaps.h12, cards[1], Gaps.h12, cards[2]],
+                children: [
+                  for (var i = 0; i < cards.length; i++) ...[
+                    if (i > 0) Gaps.h12,
+                    cards[i],
+                  ],
+                ],
               );
             },
           ),
@@ -394,6 +439,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
             Gaps.h24,
             const Divider(),
             Gaps.h8,
+            const AdminQuotaFreePeriod(),
+            Gaps.h16,
             AdminPricingVersionEditor(onSaved: _reloadPricingVersions),
             Gaps.h16,
             AdminSubscriptionEditor(
@@ -414,6 +461,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
 String _resourceLabel(AppLocalizations loc, String resource) =>
     switch (resource) {
       'calendar_events' => loc.personalEvent,
+      'recommended_events' => loc.recommendEvent,
+      'recommended_attractions' => loc.recommendPlaces,
       'accounting_detail' => loc.accountRecords,
       'point_record_detail' => loc.pointsRecord,
       'memory_trace' => loc.memoryTrace,
@@ -442,7 +491,7 @@ List<String> _versionFeatures(
           (entry.key != 'game_questions' || canUseGame))
         '${_resourceLabel(loc, entry.key)}：${entry.key == 'image_bytes' ? '${entry.value ~/ 1024 ~/ 1024} MB' : entry.value}',
     if (canUseGame)
-      '${loc.subscriptionPlusAnswerHistory}：${version.quotas['answer_history_days'] ?? 0}',
+      '${loc.adminPricingAnswerDays}：${version.quotas['answer_history_days'] ?? 0}',
   ];
 }
 

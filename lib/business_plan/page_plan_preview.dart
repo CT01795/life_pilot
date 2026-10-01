@@ -7,6 +7,7 @@ import 'package:life_pilot/business_plan/model_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_preview.dart';
 import 'package:life_pilot/business_plan/model_plan_question.dart';
 import 'package:life_pilot/business_plan/page_plan_editor.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
@@ -46,7 +47,9 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
 
   // 2️⃣ 依 index 取得 item
   PlanPreviewItem _itemAtIndex(ModelBusinessPlan plan, int index) {
-    if (plan.sections.isEmpty) return PlanSectionItem('Loading sections...');
+    if (plan.sections.isEmpty) {
+      return PlanSectionItem(AppLocalizations.of(context)!.loadingSections);
+    }
 
     int counter = 0;
     for (int s = 0; s < plan.sections.length; s++) {
@@ -59,7 +62,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
         counter++;
       }
     }
-    return PlanSectionItem('Loading...'); // fallback
+    return PlanSectionItem(AppLocalizations.of(context)!.loading); // fallback
   }
 
   @override
@@ -74,9 +77,10 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
               key: _titleKey,
               editing: editingTitle,
               onSave: (value) {
-                context
-                    .read<ControllerBusinessPlan>()
-                    .updateCurrentPlanTitle(plan, value);
+                context.read<ControllerBusinessPlan>().updateCurrentPlanTitle(
+                  plan,
+                  value,
+                );
               },
             ),
             actions: [
@@ -110,8 +114,10 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
               if (item is PlanSectionItem) {
                 return Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
                   margin: Insets.directionalT24B12,
                   decoration: BoxDecoration(
                     color: Colors.blueGrey.shade50,
@@ -182,14 +188,15 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final c = context.read<ControllerBusinessPlan>();
-    final notifier =
-        c.answerNotifier(widget.sectionIndex, widget.questionIndex);
+    final notifier = c.answerNotifier(
+      widget.sectionIndex,
+      widget.questionIndex,
+    );
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: Insets.directionalB12,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -237,8 +244,9 @@ class _ExpandableQuestionTileState extends State<_ExpandableQuestionTile> {
           child: ValueListenableBuilder<String>(
             valueListenable: notifier,
             builder: (_, answer, _) {
-              final previewText =
-                  answer.isEmpty ? '（尚未填寫）' : _shortenHtml(answer, 50);
+              final previewText = answer.isEmpty
+                  ? loc.notFilled
+                  : _shortenHtml(answer, 50);
               return _expanded ? Html(data: answer) : Text(previewText);
             },
           ),

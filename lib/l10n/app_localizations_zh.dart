@@ -1833,6 +1833,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCurrentFree => '目前方案：雲端免費版';
 
   @override
+  String get subscriptionCurrentAdmin => '目前權限：管理員（不限額度）';
+
+  @override
   String get subscriptionCurrentPlus => '目前方案：Plus';
 
   @override
@@ -1878,30 +1881,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subscriptionPlusPersonalRecords => '行事曆、記帳、積分、回憶各 300 筆雲端資料';
-
-  @override
-  String get subscriptionFreeGameQuestions => '雲端自建遊戲題目最多 50 題';
-
-  @override
-  String get subscriptionPlusGameQuestions => '自建遊戲題目 500 題';
-
-  @override
-  String get subscriptionFreeSharing => '雲端行事曆最多分享給 2 人';
-
-  @override
-  String get subscriptionPlusSharing => '行事曆最多分享給 5 人';
-
-  @override
-  String get subscriptionFreeImages => '不包含雲端圖片上傳功能';
-
-  @override
-  String get subscriptionPlusImages => '回憶與活動圖片合計最多 300 MB';
-
-  @override
-  String get subscriptionFreeAnswerHistory => '雲端詳細答題紀錄保留最近 30 天';
-
-  @override
-  String get subscriptionPlusAnswerHistory => '雲端詳細答題紀錄保留 1 年';
 
   @override
   String get subscriptionCommonFeatures => '兩種方案皆可使用';
@@ -2316,4 +2295,335 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get moduleAuthorizationSaveFailed => '授權未正確更新，請重新查詢後再試。';
+
+  @override
+  String get quotaFreePeriodTitle => '不限額度活動';
+
+  @override
+  String get quotaFreePeriodDescription => '此期間新增的雲端資料不受方案額度限制；期間結束後自動恢復原方案額度。';
+
+  @override
+  String get quotaFreePeriodName => '活動名稱';
+
+  @override
+  String get quotaFreePeriodStart => '開始時間';
+
+  @override
+  String get quotaFreePeriodEnd => '結束時間';
+
+  @override
+  String get quotaFreePeriodEnabled => '啟用此期間';
+
+  @override
+  String get quotaFreePeriodAutomaticHint => '只有設定的開始至結束時間內不限制新增容量。';
+
+  @override
+  String get quotaFreePeriodInvalidRange => '結束時間必須晚於開始時間。';
+
+  @override
+  String get quotaFreePeriodSaved => '不限額度活動已儲存。';
+
+  @override
+  String get quotaFreePeriodSaveFailed => '無法儲存不限額度活動。';
+
+  @override
+  String get quotaFreePeriodClear => '清除設定';
+
+  @override
+  String get quotaFreePeriodClearConfirm => '確定移除不限額度期間？移除後會立即恢復原方案額度。';
+
+  @override
+  String get quotaFreePeriodCleared => '不限額度活動已移除。';
+
+  @override
+  String get quotaFreePeriodNew => '建立期間';
+
+  @override
+  String get quotaFreePeriodEdit => '修改期間';
+
+  @override
+  String get quotaFreePeriodEmpty => '尚未設定不限額度期間。';
+
+  @override
+  String get quotaFreePeriodUnnamed => '未命名活動';
+
+  @override
+  String get quotaFreePeriodActive => '目前生效中';
+
+  @override
+  String get quotaFreePeriodScheduled => '尚未開始';
+
+  @override
+  String get quotaFreePeriodEnded => '已結束';
+
+  @override
+  String get quotaFreePeriodDisabled => '未啟用';
+
+  @override
+  String get country => '國家';
+
+  @override
+  String get coverPhotoOptional => '封面照片（選填）';
+
+  @override
+  String get choosePhoto => '選擇照片';
+
+  @override
+  String get replacePhoto => '更換';
+
+  @override
+  String get allCities => '全部城市';
+
+  @override
+  String get switchToList => '切換為清單';
+
+  @override
+  String get switchToMap => '切換為地圖';
+
+  @override
+  String get countryTaiwan => '台灣';
+
+  @override
+  String get countryJapan => '日本';
+
+  @override
+  String get countrySouthKorea => '韓國';
+
+  @override
+  String get countrySingapore => '新加坡';
+
+  @override
+  String get countryUnitedStates => '美國';
+
+  @override
+  String get countryCanada => '加拿大';
+
+  @override
+  String get countryChina => '中國';
+
+  @override
+  String get countryHongKong => '香港';
+
+  @override
+  String get countryMacau => '澳門';
+
+  @override
+  String get countryThailand => '泰國';
+
+  @override
+  String get countryVietnam => '越南';
+
+  @override
+  String get countryMalaysia => '馬來西亞';
+
+  @override
+  String get countryIndonesia => '印尼';
+
+  @override
+  String get countryPhilippines => '菲律賓';
+
+  @override
+  String get countryAustralia => '澳洲';
+
+  @override
+  String get countryNewZealand => '紐西蘭';
+
+  @override
+  String get countryUnitedKingdom => '英國';
+
+  @override
+  String get countryFrance => '法國';
+
+  @override
+  String get countryGermany => '德國';
+
+  @override
+  String get countryItaly => '義大利';
+
+  @override
+  String get countrySpain => '西班牙';
+
+  @override
+  String get countryNetherlands => '荷蘭';
+
+  @override
+  String get countrySwitzerland => '瑞士';
+
+  @override
+  String get countryIndia => '印度';
+
+  @override
+  String get countryUnitedArabEmirates => '阿拉伯聯合大公國';
+
+  @override
+  String get feedbackPurpose => '用途';
+
+  @override
+  String get feedbackContent => '內容';
+
+  @override
+  String get captureScreen => '擷取畫面';
+
+  @override
+  String get feedbackRequired => '請填寫用途與內容。';
+
+  @override
+  String get feedbackSent => '意見回饋已送出。';
+
+  @override
+  String feedbackSendFailed(String error) {
+    return '無法送出意見回饋：$error';
+  }
+
+  @override
+  String get accessDenied => '沒有使用權限';
+
+  @override
+  String get selectTemplate => '選擇範本';
+
+  @override
+  String get planTitle => '企劃書標題';
+
+  @override
+  String get create => '建立';
+
+  @override
+  String get enterAnswer => '請輸入答案';
+
+  @override
+  String get previous => '上一題';
+
+  @override
+  String get next => '下一題';
+
+  @override
+  String get loadingSections => '正在載入章節…';
+
+  @override
+  String get loading => '載入中…';
+
+  @override
+  String get notFilled => '尚未填寫';
+
+  @override
+  String get untitledPlan => '未命名企劃書';
+
+  @override
+  String get openChatGPT => '開啟 ChatGPT';
+
+  @override
+  String get unableToLoadDocument => '無法載入這份文件。';
+
+  @override
+  String gameTitleScore(String game, num score) {
+    return '$game（$score/100）';
+  }
+
+  @override
+  String congratulationsScore(num score) {
+    return '恭喜！得分：$score';
+  }
+
+  @override
+  String get wordSearchTitle => '單字搜尋';
+
+  @override
+  String get translationTitle => '翻譯';
+
+  @override
+  String get socialTitle => '社交情境';
+
+  @override
+  String get speakingTitle => '口說練習';
+
+  @override
+  String get englishRpgAdventureTitle => '英文 RPG 冒險';
+
+  @override
+  String get answerHere => '在這裡輸入答案';
+
+  @override
+  String get check => '檢查';
+
+  @override
+  String get restart => '重新開始';
+
+  @override
+  String get scratchGameTitle => 'Scratch 遊戲';
+
+  @override
+  String get scratchMazeTitle => 'Scratch 迷宮遊戲';
+
+  @override
+  String get blocklyEditor => 'Blockly 編輯器';
+
+  @override
+  String get puzzleMapTitle => '地圖拼圖';
+
+  @override
+  String get hint => '提示';
+
+  @override
+  String get monominoGameTitle => '單格拼圖';
+
+  @override
+  String get checkPath => '檢查路徑';
+
+  @override
+  String get polyominoGameTitle => '多格拼圖';
+
+  @override
+  String get noPipes => '沒有可用管線';
+
+  @override
+  String get go => '前往';
+
+  @override
+  String get wordSentenceBuilderTitle => '單字與句子組合';
+
+  @override
+  String priceEarningsRatio(String value) {
+    return '本益比：$value';
+  }
+
+  @override
+  String get stockNet => '淨額';
+
+  @override
+  String deleteNumberedItem(int number, String name) {
+    return '要刪除第 $number 項「$name」嗎？';
+  }
+
+  @override
+  String get languageEnglish => '英文';
+
+  @override
+  String get languageChinese => '中文';
+
+  @override
+  String get languageJapanese => '日文';
+
+  @override
+  String get languageKorean => '韓文';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '由 $name 於 $time 處理';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return '相對強弱指標：$value';
+  }
+
+  @override
+  String get gamePassed => '過關！';
+
+  @override
+  String get gameFailed => '未過關';
+
+  @override
+  String gameScoreValue(num score) {
+    return '得分：$score';
+  }
 }

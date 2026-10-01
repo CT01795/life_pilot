@@ -4,32 +4,6 @@ import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceVendorAccount {
-  static final _fallbackPlans = <VendorPricingPlan>[
-    VendorSubscriptionStatus.free.plan,
-    VendorPricingPlan(
-      id: 'partner',
-      code: 'partner',
-      versionName: 'Partner 2026-Q4',
-      effectiveAt: DateTime.utc(2026, 10, 1),
-      quarterlyPriceTwd: 299,
-      eventQuota: 30,
-      attractionQuota: 10,
-      imageMegabytes: 300,
-      analyticsDays: 90,
-    ),
-    VendorPricingPlan(
-      id: 'growth',
-      code: 'growth',
-      versionName: 'Growth 2026-Q4',
-      effectiveAt: DateTime.utc(2026, 10, 1),
-      quarterlyPriceTwd: 699,
-      eventQuota: 100,
-      attractionQuota: 30,
-      imageMegabytes: 1024,
-      analyticsDays: 365,
-    ),
-  ];
-
   Future<void> ensureVendorAccount() async {
     try {
       await supabase.rpc('ensure_my_vendor_account');
@@ -39,39 +13,19 @@ class ServiceVendorAccount {
   }
 
   Future<List<VendorPricingPlan>> fetchPricingPlans() async {
-    try {
-      final rows = await supabase.rpc('get_vendor_pricing_versions');
-      final plans = (rows as List<dynamic>)
-          .map(
-            (row) => VendorPricingPlan.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ),
-          )
-          .toList(growable: false);
-      return plans.isEmpty ? _fallbackPlans : plans;
-    } on PostgrestException catch (error) {
-      if (error.code == '42883' || error.code == 'PGRST202') {
-        return _fallbackPlans;
-      }
-      rethrow;
-    }
+    final rows = await supabase.rpc('get_vendor_pricing_versions');
+    return (rows as List<dynamic>)
+        .map(
+          (row) =>
+              VendorPricingPlan.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
+        .toList(growable: false);
   }
 
   Future<VendorSubscriptionStatus> fetchMyStatus() async {
-    try {
-      final value = await supabase.rpc('get_my_vendor_subscription_status');
-      if (value is Map) {
-        return VendorSubscriptionStatus.fromJson(
-          Map<String, dynamic>.from(value),
-        );
-      }
-      return VendorSubscriptionStatus.free;
-    } on PostgrestException catch (error) {
-      if (error.code == '42883' || error.code == 'PGRST202') {
-        return VendorSubscriptionStatus.free;
-      }
-      rethrow;
-    }
+    final value = await supabase.rpc('get_my_vendor_subscription_status');
+    if (value is! Map) throw StateError('vendor_subscription_status_missing');
+    return VendorSubscriptionStatus.fromJson(Map<String, dynamic>.from(value));
   }
 
   Future<VendorContentMetrics> fetchMetrics(String account) async {

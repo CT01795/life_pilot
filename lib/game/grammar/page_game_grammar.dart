@@ -38,12 +38,13 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     final auth = context.read<ControllerAuth>();
     maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameGrammar(
-        gameId: widget.gameId,
-        gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
-        questionBank: widget.questionBank,
-        userName: auth.currentAccount ?? AuthConstants.guest,
-        service: ServiceGame(),
-        model: ModelGameGrammar());
+      gameId: widget.gameId,
+      gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
+      questionBank: widget.questionBank,
+      userName: auth.currentAccount ?? AuthConstants.guest,
+      service: ServiceGame(),
+      model: ModelGameGrammar(),
+    );
 
     controller.startBattle(widget.gameLevel);
     playerMaxHp = controller.model.player.hp;
@@ -82,8 +83,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
             if (mounted) Navigator.pop(context, true);
           });
           return Center(
-            child:
-                Text("Congratulations! Score: ${controller.model.player.hp}"),
+            child: Text(loc.congratulationsScore(controller.model.player.hp)),
           );
         }
 
@@ -127,14 +127,20 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                 Navigator.maybePop(context);
               },
             ),
-            title:
-                Text("English RPG Adventure (${controller.model.player.hp})"),
+            title: Text(
+              loc.gameTitleScore(
+                loc.englishRpgAdventureTitle,
+                controller.model.player.hp,
+              ),
+            ),
           ),
           body: Column(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     // 🧑 玩家血條（左側）
@@ -201,7 +207,9 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 16, horizontal: 16),
+                      vertical: 16,
+                      horizontal: 16,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center, // 🔥 整組置中
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -212,11 +220,14 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                             size: 44,
                             color: Color(0xFF26A69A),
                           ),
-                          onPressed: () => controller.speak(controller
-                              .currentQuestion!.question
-                              .replaceAll("______",
-                                  controller.currentQuestion!.correctAnswer)
-                              .replaceAll("<-->", ",")),
+                          onPressed: () => controller.speak(
+                            controller.currentQuestion!.question
+                                .replaceAll(
+                                  "______",
+                                  controller.currentQuestion!.correctAnswer,
+                                )
+                                .replaceAll("<-->", ","),
+                          ),
                         ),
                         Gaps.w8, // 🔥 小間距就好
                         Flexible(
@@ -277,8 +288,10 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
               // 第二列：答案填答區
               ...controller.model.currentQuestion!.options.map(
                 (opt) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 6,
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -312,11 +325,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
   }
 }
 
-Widget hpBar({
-  required int current,
-  required int max,
-  required Color color,
-}) {
+Widget hpBar({required int current, required int max, required Color color}) {
   final percent = (current / max).clamp(0.0, 1.0);
 
   return ClipRRect(

@@ -1833,6 +1833,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionCurrentFree => '현재 요금제: 클라우드 무료';
 
   @override
+  String get subscriptionCurrentAdmin => '현재 권한: 관리자(무제한)';
+
+  @override
   String get subscriptionCurrentPlus => '현재 요금제: Plus';
 
   @override
@@ -1878,30 +1881,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionPlusPersonalRecords => '캘린더, 회계, 포인트, 추억 클라우드 데이터 각 300개';
-
-  @override
-  String get subscriptionFreeGameQuestions => '클라우드 사용자 게임 문제 최대 50개';
-
-  @override
-  String get subscriptionPlusGameQuestions => '사용자 게임 문제 500개';
-
-  @override
-  String get subscriptionFreeSharing => '클라우드 캘린더를 최대 2명과 공유';
-
-  @override
-  String get subscriptionPlusSharing => '캘린더를 최대 5명과 공유';
-
-  @override
-  String get subscriptionFreeImages => '클라우드 이미지 업로드 기능은 포함되지 않음';
-
-  @override
-  String get subscriptionPlusImages => '추억 및 이벤트 이미지 최대 300 MB';
-
-  @override
-  String get subscriptionFreeAnswerHistory => '클라우드 상세 답변 기록은 최근 30일간 보관';
-
-  @override
-  String get subscriptionPlusAnswerHistory => '클라우드 상세 답변 기록 1년 보관';
 
   @override
   String get subscriptionCommonFeatures => '두 요금제 모두 제공';
@@ -2316,4 +2295,335 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get moduleAuthorizationSaveFailed => '기능 권한이 올바르게 업데이트되지 않았습니다. 다시 검색한 후 재시도하세요.';
+
+  @override
+  String get quotaFreePeriodTitle => '용량 무제한 프로모션';
+
+  @override
+  String get quotaFreePeriodDescription => '이 기간에 추가한 클라우드 데이터는 요금제 한도에 포함되지 않습니다. 종료 후에는 기존 한도가 자동 적용됩니다.';
+
+  @override
+  String get quotaFreePeriodName => '프로모션 이름';
+
+  @override
+  String get quotaFreePeriodStart => '시작 일시';
+
+  @override
+  String get quotaFreePeriodEnd => '종료 일시';
+
+  @override
+  String get quotaFreePeriodEnabled => '이 기간 사용';
+
+  @override
+  String get quotaFreePeriodAutomaticHint => '설정한 시작 시각부터 종료 시각까지만 용량 제한을 중지합니다.';
+
+  @override
+  String get quotaFreePeriodInvalidRange => '종료 일시는 시작 일시보다 늦어야 합니다.';
+
+  @override
+  String get quotaFreePeriodSaved => '용량 무제한 프로모션을 저장했습니다.';
+
+  @override
+  String get quotaFreePeriodSaveFailed => '용량 무제한 프로모션을 저장하지 못했습니다.';
+
+  @override
+  String get quotaFreePeriodClear => '설정 삭제';
+
+  @override
+  String get quotaFreePeriodClearConfirm => '용량 무제한 기간을 삭제할까요? 기존 요금제 한도가 즉시 적용됩니다.';
+
+  @override
+  String get quotaFreePeriodCleared => '용량 무제한 프로모션을 삭제했습니다.';
+
+  @override
+  String get quotaFreePeriodNew => '기간 만들기';
+
+  @override
+  String get quotaFreePeriodEdit => '기간 수정';
+
+  @override
+  String get quotaFreePeriodEmpty => '설정된 용량 무제한 기간이 없습니다.';
+
+  @override
+  String get quotaFreePeriodUnnamed => '이름 없는 프로모션';
+
+  @override
+  String get quotaFreePeriodActive => '현재 적용 중';
+
+  @override
+  String get quotaFreePeriodScheduled => '시작 예정';
+
+  @override
+  String get quotaFreePeriodEnded => '종료됨';
+
+  @override
+  String get quotaFreePeriodDisabled => '사용 안 함';
+
+  @override
+  String get country => '국가';
+
+  @override
+  String get coverPhotoOptional => '표지 사진(선택)';
+
+  @override
+  String get choosePhoto => '사진 선택';
+
+  @override
+  String get replacePhoto => '변경';
+
+  @override
+  String get allCities => '모든 도시';
+
+  @override
+  String get switchToList => '목록으로 전환';
+
+  @override
+  String get switchToMap => '지도로 전환';
+
+  @override
+  String get countryTaiwan => '대만';
+
+  @override
+  String get countryJapan => '일본';
+
+  @override
+  String get countrySouthKorea => '대한민국';
+
+  @override
+  String get countrySingapore => '싱가포르';
+
+  @override
+  String get countryUnitedStates => '미국';
+
+  @override
+  String get countryCanada => '캐나다';
+
+  @override
+  String get countryChina => '중국';
+
+  @override
+  String get countryHongKong => '홍콩';
+
+  @override
+  String get countryMacau => '마카오';
+
+  @override
+  String get countryThailand => '태국';
+
+  @override
+  String get countryVietnam => '베트남';
+
+  @override
+  String get countryMalaysia => '말레이시아';
+
+  @override
+  String get countryIndonesia => '인도네시아';
+
+  @override
+  String get countryPhilippines => '필리핀';
+
+  @override
+  String get countryAustralia => '호주';
+
+  @override
+  String get countryNewZealand => '뉴질랜드';
+
+  @override
+  String get countryUnitedKingdom => '영국';
+
+  @override
+  String get countryFrance => '프랑스';
+
+  @override
+  String get countryGermany => '독일';
+
+  @override
+  String get countryItaly => '이탈리아';
+
+  @override
+  String get countrySpain => '스페인';
+
+  @override
+  String get countryNetherlands => '네덜란드';
+
+  @override
+  String get countrySwitzerland => '스위스';
+
+  @override
+  String get countryIndia => '인도';
+
+  @override
+  String get countryUnitedArabEmirates => '아랍에미리트';
+
+  @override
+  String get feedbackPurpose => '목적';
+
+  @override
+  String get feedbackContent => '내용';
+
+  @override
+  String get captureScreen => '화면 캡처';
+
+  @override
+  String get feedbackRequired => '목적과 내용을 입력하세요.';
+
+  @override
+  String get feedbackSent => '피드백을 보냈습니다.';
+
+  @override
+  String feedbackSendFailed(String error) {
+    return '피드백을 보낼 수 없습니다: $error';
+  }
+
+  @override
+  String get accessDenied => '접근 권한이 없습니다';
+
+  @override
+  String get selectTemplate => '템플릿 선택';
+
+  @override
+  String get planTitle => '계획 제목';
+
+  @override
+  String get create => '만들기';
+
+  @override
+  String get enterAnswer => '답변 입력';
+
+  @override
+  String get previous => '이전';
+
+  @override
+  String get next => '다음';
+
+  @override
+  String get loadingSections => '섹션 로드 중…';
+
+  @override
+  String get loading => '로드 중…';
+
+  @override
+  String get notFilled => '아직 입력하지 않음';
+
+  @override
+  String get untitledPlan => '제목 없는 계획';
+
+  @override
+  String get openChatGPT => 'ChatGPT 열기';
+
+  @override
+  String get unableToLoadDocument => '이 문서를 불러올 수 없습니다.';
+
+  @override
+  String gameTitleScore(String game, num score) {
+    return '$game ($score/100)';
+  }
+
+  @override
+  String congratulationsScore(num score) {
+    return '축하합니다! 점수: $score';
+  }
+
+  @override
+  String get wordSearchTitle => '단어 찾기';
+
+  @override
+  String get translationTitle => '번역';
+
+  @override
+  String get socialTitle => '사회성';
+
+  @override
+  String get speakingTitle => '말하기';
+
+  @override
+  String get englishRpgAdventureTitle => '영어 RPG 모험';
+
+  @override
+  String get answerHere => '여기에 답변';
+
+  @override
+  String get check => '확인';
+
+  @override
+  String get restart => '다시 시작';
+
+  @override
+  String get scratchGameTitle => 'Scratch 게임';
+
+  @override
+  String get scratchMazeTitle => 'Scratch 미로 게임';
+
+  @override
+  String get blocklyEditor => 'Blockly 편집기';
+
+  @override
+  String get puzzleMapTitle => '지도 퍼즐';
+
+  @override
+  String get hint => '힌트';
+
+  @override
+  String get monominoGameTitle => '모노미노 게임';
+
+  @override
+  String get checkPath => '경로 확인';
+
+  @override
+  String get polyominoGameTitle => '폴리오미노 게임';
+
+  @override
+  String get noPipes => '파이프가 없습니다';
+
+  @override
+  String get go => '이동';
+
+  @override
+  String get wordSentenceBuilderTitle => '단어와 문장 만들기';
+
+  @override
+  String priceEarningsRatio(String value) {
+    return 'PER: $value';
+  }
+
+  @override
+  String get stockNet => '순변동';
+
+  @override
+  String deleteNumberedItem(int number, String name) {
+    return '$number번 항목 \'$name\'을(를) 삭제할까요?';
+  }
+
+  @override
+  String get languageEnglish => '영어';
+
+  @override
+  String get languageChinese => '중국어';
+
+  @override
+  String get languageJapanese => '일본어';
+
+  @override
+  String get languageKorean => '한국어';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '$name님이 $time에 처리';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI: $value';
+  }
+
+  @override
+  String get gamePassed => '통과!';
+
+  @override
+  String get gameFailed => '실패';
+
+  @override
+  String gameScoreValue(num score) {
+    return '점수: $score';
+  }
 }

@@ -12,11 +12,12 @@ class PageGameWordSearch extends StatefulWidget {
   final String gameId;
   int gameLevel;
   final String questionBank;
-  PageGameWordSearch(
-      {super.key,
-      required this.gameId,
-      required this.gameLevel,
-      this.questionBank = 'admin'});
+  PageGameWordSearch({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+    this.questionBank = 'admin',
+  });
 
   @override
   State<PageGameWordSearch> createState() => _PageGameWordSearchState();
@@ -40,10 +41,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
       service: ServiceGame(),
       maxQuestions: widget.gameLevel == -1 ? 10 : 999,
       board: WordSearchBoard(12), // ⭐ 12x12 Grid
-      currentQuestion: ModelGameWordSearch(
-        questionId: '',
-        question: '',
-      ),
+      currentQuestion: ModelGameWordSearch(questionId: '', question: ''),
     );
     controller.loadNextQuestion();
   }
@@ -108,7 +106,9 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                 Navigator.maybePop(context);
               },
             ),
-            title: Text("Word Search (${controller.score}/100)"),
+            title: Text(
+              loc.gameTitleScore(loc.wordSearchTitle, controller.score),
+            ),
           ),
           body: Column(
             children: [
@@ -131,8 +131,9 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                       children: [
                         IconButton(
                           tooltip: loc.speakingText,
-                          onPressed: () => controller
-                              .speak(controller.currentQuestion.question),
+                          onPressed: () => controller.speak(
+                            controller.currentQuestion.question,
+                          ),
                           icon: const Icon(
                             Icons.volume_up,
                             color: Color(0xFF212121),
@@ -164,8 +165,10 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                   onPressed: controller.board.currentSelection.isEmpty
                       ? null
                       : controller.submitSelection,
-                  child: const Text('Submit',
-                      style: TextStyle(fontSize: 24, color: Colors.white)),
+                  child: Text(
+                    loc.recordSubmit,
+                    style: const TextStyle(fontSize: 24, color: Colors.white),
+                  ),
                 ),
               ),
               // ⭐ Word Search Grid
@@ -223,8 +226,8 @@ class _WordSearchGrid extends StatelessWidget {
                   color: cell.correct
                       ? Colors.green
                       : cell.selected
-                          ? Colors.blue
-                          : Colors.grey.shade300,
+                      ? Colors.blue
+                      : Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Center(

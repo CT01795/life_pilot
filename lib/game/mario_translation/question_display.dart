@@ -13,34 +13,44 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
   double positionY;
   double sizeX;
   double sizeY;
+  final bool isEmphasized;
 
-
-  QuestionDisplay(
-      {required this.text, required this.controller, required this.positionX, required this.positionY,
-        required this.sizeX, required this.sizeY,})
-      : super(position: Vector2(positionX, positionY), size: Vector2(sizeX, sizeY));
+  QuestionDisplay({
+    required this.text,
+    required this.controller,
+    required this.positionX,
+    required this.positionY,
+    required this.sizeX,
+    required this.sizeY,
+    this.isEmphasized = false,
+  }) : super(
+         position: Vector2(positionX, positionY),
+         size: Vector2(sizeX, sizeY),
+       );
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
     // 顯示文字
-    add(TextBoxComponent(
-      text: text,
-      anchor: Anchor.topLeft,
-      boxConfig: TextBoxConfig(
-        maxWidth: sizeX,        // 用你傳入的寬度當換行邊界
-        timePerChar: 0,         // 0 = 不做打字機效果，直接顯示
-        growingBox: true,       // 文字多的時候自動往下長
-      ),
-      textRenderer: TextPaint(
-        style: TextStyle(
-          fontSize: 32,
-          color: text.contains("分數") ? GameColors.primary : GameColors.textDark,
-          fontWeight: FontWeight.bold,
+    add(
+      TextBoxComponent(
+        text: text,
+        anchor: Anchor.topLeft,
+        boxConfig: TextBoxConfig(
+          maxWidth: sizeX, // 用你傳入的寬度當換行邊界
+          timePerChar: 0, // 0 = 不做打字機效果，直接顯示
+          growingBox: true, // 文字多的時候自動往下長
+        ),
+        textRenderer: TextPaint(
+          style: TextStyle(
+            fontSize: 32,
+            color: isEmphasized ? GameColors.primary : GameColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-    ));
+    );
 
     // 加碰撞盒，才能感應點擊
     add(RectangleHitbox());

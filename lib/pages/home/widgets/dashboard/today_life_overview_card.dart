@@ -101,88 +101,6 @@ class TodayLifeOverviewCard extends StatelessWidget {
                   ),
                 ],
               ),
-              Gaps.h4,
-              Text(
-                _overviewInsight(
-                  loc: loc,
-                  scheduleOverview: scheduleOverview,
-                  hasAccountingAccount: hasAccountingAccount,
-                  hasPointAccount: hasPointAccount,
-                  showPoints: showPoints,
-                ),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.onPrimaryContainer.withValues(alpha: 0.82),
-                ),
-              ),
-              if (scheduleOverview.overdueCount > 0 ||
-                  scheduleOverview.tomorrowCount > 0 ||
-                  scheduleOverview.nextFreeAt != null) ...[
-                Gaps.h8,
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (scheduleOverview.overdueCount > 0)
-                      ActionChip(
-                        avatar: Icon(
-                          Icons.notification_important_outlined,
-                          size: 18,
-                          color: colors.error,
-                        ),
-                        label: Text(
-                          loc.scheduleNeedsReviewCount(
-                            scheduleOverview.overdueCount,
-                          ),
-                        ),
-                        onPressed: onSchedulePressed,
-                      ),
-                    if (scheduleOverview.tomorrowCount > 0)
-                      ActionChip(
-                        avatar: const Icon(Icons.upcoming_outlined, size: 18),
-                        label: Text(
-                          loc.tomorrowScheduleCount(
-                            scheduleOverview.tomorrowCount,
-                          ),
-                        ),
-                        onPressed: onSchedulePressed,
-                      ),
-                    if (scheduleOverview.nextFreeAt case final freeAt?)
-                      _WrappingOverviewAction(
-                        icon: Icons.free_breakfast_outlined,
-                        label: loc.nextFreeHour(
-                          MaterialLocalizations.of(
-                            context,
-                          ).formatTimeOfDay(TimeOfDay.fromDateTime(freeAt)),
-                          MaterialLocalizations.of(context).formatTimeOfDay(
-                            TimeOfDay.fromDateTime(
-                              freeAt.add(const Duration(hours: 1)),
-                            ),
-                          ),
-                        ),
-                        onPressed: onSchedulePressed,
-                      ),
-                  ],
-                ),
-              ],
-              if (eventCount == 0) ...[
-                Gaps.h12,
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _OverviewAction(
-                      icon: Icons.celebration_outlined,
-                      label: loc.findRecommendedEvent,
-                      onPressed: onDiscoverEvents,
-                    ),
-                    _OverviewAction(
-                      icon: Icons.attractions_outlined,
-                      label: loc.findRecommendedPlace,
-                      onPressed: onDiscoverPlaces,
-                    ),
-                  ],
-                ),
-              ],
               if (nextEvent != null) ...[
                 Gaps.h12,
                 Material(
@@ -254,6 +172,22 @@ class TodayLifeOverviewCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              ] else if (scheduleOverview.nextFreeAt case final freeAt?) ...[
+                Gaps.h12,
+                _WrappingOverviewAction(
+                  icon: Icons.free_breakfast_outlined,
+                  label: loc.nextFreeHour(
+                    MaterialLocalizations.of(
+                      context,
+                    ).formatTimeOfDay(TimeOfDay.fromDateTime(freeAt)),
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                      TimeOfDay.fromDateTime(
+                        freeAt.add(const Duration(hours: 1)),
+                      ),
+                    ),
+                  ),
+                  onPressed: onSchedulePressed,
+                ),
               ],
               if (scheduleOverview.todayConflictCount > 0) ...[
                 Gaps.h8,
@@ -271,6 +205,47 @@ class TodayLifeOverviewCard extends StatelessWidget {
                     scheduleOverview.tomorrowConflictCount,
                   ),
                   onPressed: onSchedulePressed,
+                ),
+              ],
+              Gaps.h8,
+              ActionChip(
+                avatar: const Icon(Icons.upcoming_outlined, size: 18),
+                label: Text(
+                  loc.tomorrowScheduleCount(scheduleOverview.tomorrowCount),
+                ),
+                onPressed: onSchedulePressed,
+              ),
+              if (scheduleOverview.overdueCount > 0) ...[
+                Gaps.h8,
+                ActionChip(
+                  avatar: Icon(
+                    Icons.notification_important_outlined,
+                    size: 18,
+                    color: colors.error,
+                  ),
+                  label: Text(
+                    loc.scheduleNeedsReviewCount(scheduleOverview.overdueCount),
+                  ),
+                  onPressed: onSchedulePressed,
+                ),
+              ],
+              if (eventCount == 0) ...[
+                Gaps.h12,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _OverviewAction(
+                      icon: Icons.celebration_outlined,
+                      label: loc.findRecommendedEvent,
+                      onPressed: onDiscoverEvents,
+                    ),
+                    _OverviewAction(
+                      icon: Icons.attractions_outlined,
+                      label: loc.findRecommendedPlace,
+                      onPressed: onDiscoverPlaces,
+                    ),
+                  ],
                 ),
               ],
               Gaps.h12,
@@ -367,29 +342,6 @@ class TodayLifeOverviewCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _overviewInsight({
-    required AppLocalizations loc,
-    required _ScheduleOverview scheduleOverview,
-    required bool hasAccountingAccount,
-    required bool hasPointAccount,
-    required bool showPoints,
-  }) {
-    if (scheduleOverview.overdueCount > 0) {
-      return loc.homeInsightReviewOverdue(scheduleOverview.overdueCount);
-    }
-    final conflictCount =
-        scheduleOverview.todayConflictCount +
-        scheduleOverview.tomorrowConflictCount;
-    if (conflictCount > 0) {
-      return loc.homeInsightResolveConflicts(conflictCount);
-    }
-    if (scheduleOverview.todayCount == 0) return loc.homeInsightDiscover;
-    if (!hasAccountingAccount || (showPoints && !hasPointAccount)) {
-      return loc.homeInsightConnectAccounts;
-    }
-    return loc.homeInsightReadyForReview;
   }
 
   String? _nextEventDetails(BuildContext context, CalendarEvent event) {
@@ -503,7 +455,7 @@ class _ScheduleOverview {
     final overdueCount = todayEvents
         .where((event) => _hasEnded(event, now))
         .length;
-    final nextEvent = activeEvents.firstOrNull;
+    final nextEvent = todayEvents.firstOrNull;
 
     return _ScheduleOverview(
       todayCount: todayEvents.length,

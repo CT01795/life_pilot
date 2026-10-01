@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/feedback_dialog.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 
 class FeedbackButton extends StatelessWidget {
-  const FeedbackButton({
-    super.key,
-  });
+  const FeedbackButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.feedback, color: Colors.white),
-      tooltip: 'Feedback',
+      tooltip: AppLocalizations.of(context)!.feedback,
       onPressed: () {
         showDialog(
           context: context,

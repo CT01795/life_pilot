@@ -15,9 +15,7 @@ class PageBusinessPlan extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider.value(
-          value: ServiceBusinessPlan(),
-        ),
+        Provider.value(value: ServiceBusinessPlan()),
         ChangeNotifierProxyProvider<ControllerAuth, ControllerBusinessPlan>(
           create: (context) => ControllerBusinessPlan(
             service: context.read<ServiceBusinessPlan>(),
@@ -101,7 +99,8 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
                     ),
                   )
                 : ListView.builder(
-                    itemCount: visiblePlans.length +
+                    itemCount:
+                        visiblePlans.length +
                         ((c.hasMorePlans || c.isLoadingMorePlans) ? 1 : 0),
                     itemBuilder: (_, i) {
                       if (i == visiblePlans.length) {
@@ -243,9 +242,11 @@ class _InlineEditableTitleState extends State<InlineEditableTitle> {
       return Row(
         children: [
           Expanded(
-            child: Text(widget.initialText.isEmpty
-                ? 'Untitled Plan'
-                : widget.initialText),
+            child: Text(
+              widget.initialText.isEmpty
+                  ? AppLocalizations.of(context)!.untitledPlan
+                  : widget.initialText,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.grey),

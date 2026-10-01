@@ -12,13 +12,17 @@ import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/word_search/page_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/steam_monomino/widgets_game_steam_monomino.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class PageGameSteamMonomino extends StatefulWidget {
   final String gameId;
   final int gameLevel;
-  const PageGameSteamMonomino(
-      {super.key, required this.gameId, required this.gameLevel});
+  const PageGameSteamMonomino({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+  });
 
   @override
   State<PageGameSteamMonomino> createState() => _PageGameSteamMonominoState();
@@ -32,10 +36,11 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
     super.initState();
     final auth = context.read<ControllerAuth>();
     controller = ControllerGameSteamMonomino(
-        userName: auth.currentAccount ?? AuthConstants.guest,
-        service: ServiceGame(),
-        gameId: widget.gameId,
-        gameLevel: widget.gameLevel);
+      userName: auth.currentAccount ?? AuthConstants.guest,
+      service: ServiceGame(),
+      gameId: widget.gameId,
+      gameLevel: widget.gameLevel,
+    );
   }
 
   @override
@@ -53,7 +58,11 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(ok ? "Pass！🎉" : "Fail 😢"),
+        title: Text(
+          ok
+              ? '${AppLocalizations.of(context)!.gamePassed} 🎉'
+              : '${AppLocalizations.of(context)!.gameFailed} 😢',
+        ),
         actions: [
           TextButton(
             onPressed: () async {
@@ -72,52 +81,52 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                         ),
                       )
                     : value == 4
-                        ? await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PageGameSpeaking(
-                                gameId: widget.gameId,
-                                gameLevel: -1, //widget.gameLevel,
-                              ),
-                            ),
-                          )
-                        : value == 3
-                            ? await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PageGameTranslation(
-                                    gameId: widget.gameId,
-                                    gameLevel: -1, //widget.gameLevel,
-                                    gameName: "",
-                                  ),
-                                ),
-                              )
-                            : value == 2
-                                ? await Navigator.push<bool>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PageGameSentence(
-                                        gameId: widget.gameId,
-                                        gameLevel: -1, //widget.gameLevel,
-                                      ),
-                                    ),
-                                  )
-                                : await Navigator.push<bool>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PageGameWordSearch(
-                                        gameId: widget.gameId,
-                                        gameLevel: -1, //widget.gameLevel,
-                                      ),
-                                    ),
-                                  );
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameSpeaking(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                          ),
+                        ),
+                      )
+                    : value == 3
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameTranslation(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                            gameName: "",
+                          ),
+                        ),
+                      )
+                    : value == 2
+                    ? await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameSentence(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                          ),
+                        ),
+                      )
+                    : await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PageGameWordSearch(
+                            gameId: widget.gameId,
+                            gameLevel: -1, //widget.gameLevel,
+                          ),
+                        ),
+                      );
                 if (mounted) {
                   Navigator.pop(context, true); // 過關 -> 返回上一頁
                 }
               }
             },
-            child: Text("OK"),
-          )
+            child: Text(AppLocalizations.of(context)!.confirm),
+          ),
         ],
       ),
     );
@@ -132,7 +141,10 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
   };
 
   Offset centerDragAnchorStrategy(
-      Draggable<Object> draggable, BuildContext context, Offset position) {
+    Draggable<Object> draggable,
+    BuildContext context,
+    Offset position,
+  ) {
     final renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
     // Offset 從 pointer 轉為 feedback 中心
@@ -141,6 +153,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -149,7 +162,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
             Navigator.maybePop(context);
           },
         ),
-        title: Text("Monomino Game"),
+        title: Text(loc.monominoGameTitle),
       ),
       body: Column(
         children: [
@@ -160,7 +173,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
               children: [
                 ElevatedButton(
                   onPressed: _checkPath,
-                  child: Text("Check the path"),
+                  child: Text(loc.checkPath),
                 ),
                 Gaps.w16,
                 if (controller.usedSteps > 20)
@@ -173,7 +186,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                       controller.clearHint();
                       setState(() {});
                     },
-                    child: Text("Hint 💡"),
+                    child: Text('${loc.hint} 💡'),
                   ),
               ],
             ),
@@ -276,45 +289,54 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                 double gridH = tileSize * rows;
 
                 return Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        20, 0, 20, 20), // 左16、上0、右16、下16
-                    child: Align(
-                      alignment: Alignment.topLeft, // 畫布靠上靠左
-                      child: InteractiveViewer(
-                        panEnabled: true, // 可以拖動
-                        scaleEnabled: true, // 可以縮放
-                        minScale: 0.5, // 最小縮放
-                        maxScale: 3.0, // 最大縮放
-                        child: SizedBox(
-                          width: gridW,
-                          height: gridH,
-                          child: GridView.builder(
-                            physics: NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: cols,
-                              childAspectRatio: 1,
-                            ),
-                            itemCount: rows * cols,
-                            itemBuilder: (context, index) {
-                              int r = index ~/ cols;
-                              int c = index % cols;
-                              return TileWidget(
-                                tile: controller.level.board[r][c],
-                                row: r,
-                                col: c,
-                                onDropped:
-                                    (row, col, fromRow, fromCol, newDir) {
-                                  controller.placeTile(
-                                      row, col, fromRow, fromCol, newDir);
-                                },
-                                size: tileSize,
-                              );
-                            },
-                          ),
+                  padding: const EdgeInsets.fromLTRB(
+                    20,
+                    0,
+                    20,
+                    20,
+                  ), // 左16、上0、右16、下16
+                  child: Align(
+                    alignment: Alignment.topLeft, // 畫布靠上靠左
+                    child: InteractiveViewer(
+                      panEnabled: true, // 可以拖動
+                      scaleEnabled: true, // 可以縮放
+                      minScale: 0.5, // 最小縮放
+                      maxScale: 3.0, // 最大縮放
+                      child: SizedBox(
+                        width: gridW,
+                        height: gridH,
+                        child: GridView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: cols,
+                                childAspectRatio: 1,
+                              ),
+                          itemCount: rows * cols,
+                          itemBuilder: (context, index) {
+                            int r = index ~/ cols;
+                            int c = index % cols;
+                            return TileWidget(
+                              tile: controller.level.board[r][c],
+                              row: r,
+                              col: c,
+                              onDropped: (row, col, fromRow, fromCol, newDir) {
+                                controller.placeTile(
+                                  row,
+                                  col,
+                                  fromRow,
+                                  fromCol,
+                                  newDir,
+                                );
+                              },
+                              size: tileSize,
+                            );
+                          },
                         ),
                       ),
-                    ));
+                    ),
+                  ),
+                );
               },
             ),
           ),

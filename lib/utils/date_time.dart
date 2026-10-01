@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 
 import 'package:life_pilot/utils/const.dart';
 
@@ -10,7 +11,8 @@ class DateTimeCompare {
     if (a == null || b == null) return false;
     if (a.year != b.year || a.month != b.month || a.day != b.day) return false;
     if (time == null) return true;
-    return time.hour > b.hour || (time.hour == b.hour && time.minute >= b.minute - 5); // 提前 5 分鐘視為相同
+    return time.hour > b.hour ||
+        (time.hour == b.hour && time.minute >= b.minute - 5); // 提前 5 分鐘視為相同
   }
 
   static bool isSameTime(TimeOfDay? a, TimeOfDay? b) {
@@ -80,8 +82,9 @@ class DateTimeFormatter {
       format = endTime == null ? DateFormats.mmdd : DateFormats.mmddHHmm;
     } else {
       // 不同年
-      format =
-          endTime == null ? DateFormats.yyyyMMdd : DateFormats.yyyyMMddHHmm;
+      format = endTime == null
+          ? DateFormats.yyyyMMdd
+          : DateFormats.yyyyMMddHHmm;
     }
 
     if (format.isEmpty) return '';
@@ -94,8 +97,8 @@ class DateTimeFormatter {
     final now = DateTime.now();
     return time.year == now.year
         ? time.month == now.month && time.day == now.day
-            ? DateFormat('HH:mm').format(time)
-            : DateFormat('M/d HH:mm').format(time)
+              ? DateFormat('HH:mm').format(time)
+              : DateFormat('M/d HH:mm').format(time)
         : DateFormat('yyyy/M/d HH:mm').format(time);
   }
 
@@ -127,21 +130,9 @@ class DateTimeFormatter {
     } else if (dt != null && td == null) {
       return dt;
     } else if (dt == null && td != null) {
-      return DateTime(
-        now.year,
-        now.month,
-        now.day,
-        td.hour,
-        td.minute,
-      );
+      return DateTime(now.year, now.month, now.day, td.hour, td.minute);
     } else {
-      return DateTime(
-        dt!.year,
-        dt.month,
-        dt.day,
-        td!.hour,
-        td.minute,
-      );
+      return DateTime(dt!.year, dt.month, dt.day, td!.hour, td.minute);
     }
   }
 }
@@ -163,56 +154,64 @@ Future<void> showMonthYearPicker({
         content: StatefulBuilder(
           builder: (context, setState) {
             return Row(
-                children: [
-                  // 年份選擇
-                  Expanded(
-                    child: DropdownButton<int>(
-                      isExpanded: true,
-                      value: selectedYear,
-                      items: years.map((y) => DropdownMenuItem(value: y, child: Center(child: Text('$y')))).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedYear = value;
-                          });
-                          //onChanged(DateTime(selectedYear, selectedMonth));
-                        }
-                      },
-                    ),
+              children: [
+                // 年份選擇
+                Expanded(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: selectedYear,
+                    items: years
+                        .map(
+                          (y) => DropdownMenuItem(
+                            value: y,
+                            child: Center(child: Text('$y')),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedYear = value;
+                        });
+                        //onChanged(DateTime(selectedYear, selectedMonth));
+                      }
+                    },
                   ),
-                  Gaps.w8,
-                  // 月份選擇
-                  Expanded(
-                    child: DropdownButton<int>(
-                      isExpanded: true,
-                      value: selectedMonth,
-                      items: List.generate(12, (index) {
-                        return DropdownMenuItem(
-                          value: index + 1,
-                          child: Center(child: Text((index + 1).toString())),
-                        );
-                      }),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedMonth = value;
-                          });
-                          //onChanged(DateTime(selectedYear, selectedMonth));
-                        }
-                      },
-                    ),
+                ),
+                Gaps.w8,
+                // 月份選擇
+                Expanded(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: selectedMonth,
+                    items: List.generate(12, (index) {
+                      return DropdownMenuItem(
+                        value: index + 1,
+                        child: Center(child: Text((index + 1).toString())),
+                      );
+                    }),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedMonth = value;
+                        });
+                        //onChanged(DateTime(selectedYear, selectedMonth));
+                      }
+                    },
                   ),
-                ],
-              );
+                ),
+              ],
+            );
           },
         ),
         actions: [
           TextButton(
-              onPressed: () {
-                onChanged(DateTime(selectedYear, selectedMonth));
-                Navigator.pop(context);
-              },
-              child: const Text('Go！👆'))
+            onPressed: () {
+              onChanged(DateTime(selectedYear, selectedMonth));
+              Navigator.pop(context);
+            },
+            child: Text(AppLocalizations.of(context)!.go),
+          ),
         ],
       );
     },

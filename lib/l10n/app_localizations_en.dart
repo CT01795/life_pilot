@@ -24,10 +24,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorSubmissionBenefitReview => 'Clear review status';
 
   @override
-  String get vendorSubmitActivity => 'Submit an activity';
+  String get vendorSubmitActivity => 'Add';
 
   @override
-  String get vendorSubmitAttraction => 'Submit an attraction';
+  String get vendorSubmitAttraction => 'Add';
 
   @override
   String get vendorMySubmissions => 'My submissions';
@@ -1833,6 +1833,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionCurrentFree => 'Current plan: Cloud Free';
 
   @override
+  String get subscriptionCurrentAdmin => 'Current access: Administrator (unlimited)';
+
+  @override
   String get subscriptionCurrentPlus => 'Current plan: Plus';
 
   @override
@@ -1878,30 +1881,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionPlusPersonalRecords => '300 cloud records each for calendar, accounting, points, and memories';
-
-  @override
-  String get subscriptionFreeGameQuestions => 'Up to 50 custom game questions in the cloud';
-
-  @override
-  String get subscriptionPlusGameQuestions => '500 custom game questions';
-
-  @override
-  String get subscriptionFreeSharing => 'Share your cloud calendar with up to 2 people';
-
-  @override
-  String get subscriptionPlusSharing => 'Share your calendar with up to 5 people';
-
-  @override
-  String get subscriptionFreeImages => 'Cloud photo uploads are not included';
-
-  @override
-  String get subscriptionPlusImages => 'Up to 300 MB of memory and event photos';
-
-  @override
-  String get subscriptionFreeAnswerHistory => 'Cloud answer history retained for the latest 30 days';
-
-  @override
-  String get subscriptionPlusAnswerHistory => 'Cloud answer history retained for 1 year';
 
   @override
   String get subscriptionCommonFeatures => 'Included with both plans';
@@ -2316,4 +2295,335 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moduleAuthorizationSaveFailed => 'Feature access was not updated correctly. Search again and retry.';
+
+  @override
+  String get quotaFreePeriodTitle => 'No-limit promotion';
+
+  @override
+  String get quotaFreePeriodDescription => 'New cloud records do not count against plan limits during this period. Normal limits resume automatically afterward.';
+
+  @override
+  String get quotaFreePeriodName => 'Promotion name';
+
+  @override
+  String get quotaFreePeriodStart => 'Starts';
+
+  @override
+  String get quotaFreePeriodEnd => 'Ends';
+
+  @override
+  String get quotaFreePeriodEnabled => 'Enable this period';
+
+  @override
+  String get quotaFreePeriodAutomaticHint => 'Limits are suspended only between the selected start and end times.';
+
+  @override
+  String get quotaFreePeriodInvalidRange => 'The end time must be later than the start time.';
+
+  @override
+  String get quotaFreePeriodSaved => 'No-limit promotion saved.';
+
+  @override
+  String get quotaFreePeriodSaveFailed => 'Could not save the no-limit promotion.';
+
+  @override
+  String get quotaFreePeriodClear => 'Clear setting';
+
+  @override
+  String get quotaFreePeriodClearConfirm => 'Remove the configured no-limit period? Normal plan limits will apply immediately.';
+
+  @override
+  String get quotaFreePeriodCleared => 'No-limit promotion removed.';
+
+  @override
+  String get quotaFreePeriodNew => 'Create a period';
+
+  @override
+  String get quotaFreePeriodEdit => 'Edit period';
+
+  @override
+  String get quotaFreePeriodEmpty => 'No no-limit periods have been configured.';
+
+  @override
+  String get quotaFreePeriodUnnamed => 'Unnamed promotion';
+
+  @override
+  String get quotaFreePeriodActive => 'Active now';
+
+  @override
+  String get quotaFreePeriodScheduled => 'Scheduled';
+
+  @override
+  String get quotaFreePeriodEnded => 'Ended';
+
+  @override
+  String get quotaFreePeriodDisabled => 'Disabled';
+
+  @override
+  String get country => 'Country';
+
+  @override
+  String get coverPhotoOptional => 'Cover photo (optional)';
+
+  @override
+  String get choosePhoto => 'Choose photo';
+
+  @override
+  String get replacePhoto => 'Replace';
+
+  @override
+  String get allCities => 'All cities';
+
+  @override
+  String get switchToList => 'Switch to list';
+
+  @override
+  String get switchToMap => 'Switch to map';
+
+  @override
+  String get countryTaiwan => 'Taiwan';
+
+  @override
+  String get countryJapan => 'Japan';
+
+  @override
+  String get countrySouthKorea => 'South Korea';
+
+  @override
+  String get countrySingapore => 'Singapore';
+
+  @override
+  String get countryUnitedStates => 'United States';
+
+  @override
+  String get countryCanada => 'Canada';
+
+  @override
+  String get countryChina => 'China';
+
+  @override
+  String get countryHongKong => 'Hong Kong';
+
+  @override
+  String get countryMacau => 'Macau';
+
+  @override
+  String get countryThailand => 'Thailand';
+
+  @override
+  String get countryVietnam => 'Vietnam';
+
+  @override
+  String get countryMalaysia => 'Malaysia';
+
+  @override
+  String get countryIndonesia => 'Indonesia';
+
+  @override
+  String get countryPhilippines => 'Philippines';
+
+  @override
+  String get countryAustralia => 'Australia';
+
+  @override
+  String get countryNewZealand => 'New Zealand';
+
+  @override
+  String get countryUnitedKingdom => 'United Kingdom';
+
+  @override
+  String get countryFrance => 'France';
+
+  @override
+  String get countryGermany => 'Germany';
+
+  @override
+  String get countryItaly => 'Italy';
+
+  @override
+  String get countrySpain => 'Spain';
+
+  @override
+  String get countryNetherlands => 'Netherlands';
+
+  @override
+  String get countrySwitzerland => 'Switzerland';
+
+  @override
+  String get countryIndia => 'India';
+
+  @override
+  String get countryUnitedArabEmirates => 'United Arab Emirates';
+
+  @override
+  String get feedbackPurpose => 'Purpose';
+
+  @override
+  String get feedbackContent => 'Content';
+
+  @override
+  String get captureScreen => 'Capture screen';
+
+  @override
+  String get feedbackRequired => 'Purpose and content are required.';
+
+  @override
+  String get feedbackSent => 'Feedback sent successfully.';
+
+  @override
+  String feedbackSendFailed(String error) {
+    return 'Could not send feedback: $error';
+  }
+
+  @override
+  String get accessDenied => 'Access denied';
+
+  @override
+  String get selectTemplate => 'Select template';
+
+  @override
+  String get planTitle => 'Plan title';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get enterAnswer => 'Enter your answer';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get loadingSections => 'Loading sections...';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get notFilled => 'Not filled in yet';
+
+  @override
+  String get untitledPlan => 'Untitled plan';
+
+  @override
+  String get openChatGPT => 'Open ChatGPT';
+
+  @override
+  String get unableToLoadDocument => 'Unable to load this document.';
+
+  @override
+  String gameTitleScore(String game, num score) {
+    return '$game ($score/100)';
+  }
+
+  @override
+  String congratulationsScore(num score) {
+    return 'Congratulations! Score: $score';
+  }
+
+  @override
+  String get wordSearchTitle => 'Word Search';
+
+  @override
+  String get translationTitle => 'Translation';
+
+  @override
+  String get socialTitle => 'Social';
+
+  @override
+  String get speakingTitle => 'Speaking';
+
+  @override
+  String get englishRpgAdventureTitle => 'English RPG Adventure';
+
+  @override
+  String get answerHere => 'Answer here';
+
+  @override
+  String get check => 'Check';
+
+  @override
+  String get restart => 'Restart';
+
+  @override
+  String get scratchGameTitle => 'Scratch Game';
+
+  @override
+  String get scratchMazeTitle => 'Scratch Game (Maze)';
+
+  @override
+  String get blocklyEditor => 'Blockly Editor';
+
+  @override
+  String get puzzleMapTitle => 'Puzzle Map';
+
+  @override
+  String get hint => 'Hint';
+
+  @override
+  String get monominoGameTitle => 'Monomino Game';
+
+  @override
+  String get checkPath => 'Check the path';
+
+  @override
+  String get polyominoGameTitle => 'Polyomino Game';
+
+  @override
+  String get noPipes => 'No pipes';
+
+  @override
+  String get go => 'Go';
+
+  @override
+  String get wordSentenceBuilderTitle => 'Word and Sentence Builder';
+
+  @override
+  String priceEarningsRatio(String value) {
+    return 'P/E: $value';
+  }
+
+  @override
+  String get stockNet => 'Net';
+
+  @override
+  String deleteNumberedItem(int number, String name) {
+    return 'Delete item $number, $name?';
+  }
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChinese => 'Chinese';
+
+  @override
+  String get languageJapanese => 'Japanese';
+
+  @override
+  String get languageKorean => 'Korean';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return 'Processed by $name at $time';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI: $value';
+  }
+
+  @override
+  String get gamePassed => 'Pass!';
+
+  @override
+  String get gameFailed => 'Fail';
+
+  @override
+  String gameScoreValue(num score) {
+    return 'Score: $score';
+  }
 }

@@ -21,7 +21,7 @@ class PageFeedbackAdmin extends StatelessWidget {
 
     if (!auth.isSysAdmin &&
         !context.read<ControllerPageMain>().canAccess(PageType.feedbackAdmin)) {
-      return const Scaffold(body: Center(child: Text('Access denied')));
+      return Scaffold(body: Center(child: Text(loc.accessDenied)));
     }
 
     return ChangeNotifierProvider(
@@ -233,7 +233,10 @@ class PageFeedbackAdmin extends StatelessWidget {
                                         Gaps.h8,
                                         if (feedback.isOk == true)
                                           Text(
-                                            'Processed by: ${feedback.dealBy} at ${feedback.dealAt}',
+                                            loc.feedbackProcessedBy(
+                                              feedback.dealBy ?? '',
+                                              feedback.dealAt?.toString() ?? '',
+                                            ),
                                           ),
                                       ],
                                     ),
@@ -241,7 +244,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
-                                      child: const Text('Close'),
+                                      child: Text(loc.close),
                                     ),
                                   ],
                                 ),

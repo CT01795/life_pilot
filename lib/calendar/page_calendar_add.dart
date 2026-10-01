@@ -332,13 +332,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
     );
   }
 
-  String _countryLabel() =>
-      switch (Localizations.localeOf(context).languageCode) {
-        'zh' => '國家',
-        'ja' => '国',
-        'ko' => '국가',
-        _ => 'Country',
-      };
+  String _countryLabel() => AppLocalizations.of(context)!.country;
 
   // =====================================================
   // 🧱 組件建構部分
@@ -550,7 +544,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
                     final event = ctl
                         .subEvents[index]; // 假設你有 subEvents list 裡的 item 為 event
                     final shouldDelete = await showConfirmationDialog(
-                      content: 'No. ${index + 1} ${event.name} ${loc.delete}？',
+                      content: loc.deleteNumberedItem(index + 1, event.name),
                       confirmText: loc.delete,
                       cancelText: loc.cancel,
                     );

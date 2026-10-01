@@ -12,12 +12,13 @@ class PageGameTranslation extends StatefulWidget {
   final String gameName;
   int gameLevel;
   final String questionBank;
-  PageGameTranslation(
-      {super.key,
-      required this.gameId,
-      required this.gameLevel,
-      required this.gameName,
-      this.questionBank = 'admin'});
+  PageGameTranslation({
+    super.key,
+    required this.gameId,
+    required this.gameLevel,
+    required this.gameName,
+    this.questionBank = 'admin',
+  });
 
   @override
   State<PageGameTranslation> createState() => _PageGameTranslationState();
@@ -34,8 +35,8 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
     super.initState();
     questionSize =
         widget.gameName.contains("日") || widget.gameName.contains("韓")
-            ? 24.0
-            : questionSize;
+        ? 24.0
+        : questionSize;
     answerSize = widget.gameName.contains("日") || widget.gameName.contains("韓")
         ? 24.0
         : answerSize;
@@ -118,7 +119,9 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                 Navigator.maybePop(context);
               },
             ),
-            title: Text("Translation (${controller.score}/100)"),
+            title: Text(
+              loc.gameTitleScore(loc.translationTitle, controller.score),
+            ),
           ),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -156,8 +159,9 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                               child: Text(
                                 q.question,
                                 style: TextStyle(
-                                    fontSize: isCompact ? 24 : questionSize,
-                                    color: Color(0xFF212121)),
+                                  fontSize: isCompact ? 24 : questionSize,
+                                  color: Color(0xFF212121),
+                                ),
                                 textAlign: TextAlign.start,
                                 softWrap: true, // 允許換行
                                 overflow: TextOverflow.visible,
@@ -172,10 +176,12 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                   // 三個答案按鈕
                   ...q.options.map((opt) {
                     Color buttonColor = controller.getButtonColor(opt); // 淺藍
-                    Color borderColor =
-                        controller.getBorderColor(opt); // Material Blue 700
-                    Icon? statusIcon =
-                        controller.getStatusIcon(opt); // 用於顯示勾勾或叉叉
+                    Color borderColor = controller.getBorderColor(
+                      opt,
+                    ); // Material Blue 700
+                    Icon? statusIcon = controller.getStatusIcon(
+                      opt,
+                    ); // 用於顯示勾勾或叉叉
                     return Padding(
                       padding: Insets.all8,
                       child: SizedBox(
@@ -184,15 +190,19 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: buttonColor,
                           ),
-                          onPressed: () => controller.speak(opt, q.group,
-                              false), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
+                          onPressed: () => controller.speak(
+                            opt,
+                            q.group,
+                            false,
+                          ), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
                           child: Row(
                             mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               // ⭐ 改成自訂 CheckBox 風格的 Radio
                               GestureDetector(
-                                onTap: controller.lastAnswer == null &&
+                                onTap:
+                                    controller.lastAnswer == null &&
                                         !controller.isAnswering
                                     ? () => onAnswer(opt)
                                     : null,
@@ -203,14 +213,15 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                                     color: Colors.white,
                                     shape: BoxShape.rectangle,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: borderColor,
-                                    ),
+                                    border: Border.all(color: borderColor),
                                   ),
                                   child: Center(
                                     child: opt == controller.lastAnswer
-                                        ? Icon(Icons.check,
-                                            color: borderColor, size: 48)
+                                        ? Icon(
+                                            Icons.check,
+                                            color: borderColor,
+                                            size: 48,
+                                          )
                                         : SizedBox.shrink(),
                                   ),
                                 ),
@@ -220,8 +231,9 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                                 child: Text(
                                   opt,
                                   style: TextStyle(
-                                      fontSize: answerSize,
-                                      color: Color(0xFF212121)),
+                                    fontSize: answerSize,
+                                    color: Color(0xFF212121),
+                                  ),
                                   softWrap: true, // 允許自動換行
                                   textAlign: TextAlign.start,
                                 ),

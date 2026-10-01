@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PageAI extends StatelessWidget {
@@ -20,7 +21,7 @@ class PageAI extends StatelessWidget {
     return Center(
       child: ElevatedButton.icon(
         icon: const Icon(Icons.smart_toy),
-        label: const Text('Open ChatGPT'),
+        label: Text(AppLocalizations.of(context)!.openChatGPT),
         onPressed: _openChatGPT,
       ),
     );

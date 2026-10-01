@@ -211,6 +211,9 @@ class _GenericEventPageState extends State<GenericEventPage> {
     return Scaffold(
       appBar: widgetsWhiteAppBar(
         title: widget.title,
+        titleWidget: widget.headerBuilder == null
+            ? null
+            : widget.headerBuilder!(context),
         enableSearchAndExport: true,
         enableUpload: widget.auth.isSysAdmin,
         onRefresh: pageState.canRefresh
@@ -273,8 +276,6 @@ class _GenericEventPageState extends State<GenericEventPage> {
                 if (pageState.error) _buildBackgroundLoadError(loc),
                 if (_controller.fromTableName == TableNames.calendarEvents)
                   const SubscriptionUsageBanner(resource: 'calendar_events'),
-                if (widget.headerBuilder != null)
-                  widget.headerBuilder!(context),
                 AnimatedBuilder(
                   animation: _appBarHandler,
                   builder: (_, _) => Selector<ControllerEvent, int>(
@@ -325,7 +326,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
                                 children: [
                                   _cityChip(
                                     label:
-                                        '${_allCitiesLabel()} (${pageEvents.length})',
+                                        '${loc.allCities} (${pageEvents.length})',
                                     selected: effectiveCity == null,
                                     onSelected: () => _showCityList(null),
                                   ),
@@ -489,14 +490,5 @@ class _GenericEventPageState extends State<GenericEventPage> {
         ),
       ),
     );
-  }
-
-  String _allCitiesLabel() {
-    return switch (Localizations.localeOf(context).languageCode) {
-      'zh' => '全部城市',
-      'ja' => 'すべての都市',
-      'ko' => '모든 도시',
-      _ => 'All cities',
-    };
   }
 }

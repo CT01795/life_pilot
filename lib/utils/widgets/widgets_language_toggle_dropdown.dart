@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:provider/provider.dart';
 
 class LanguageToggleDropdown extends StatelessWidget {
-  const LanguageToggleDropdown({
-    super.key,
-  });
+  const LanguageToggleDropdown({super.key});
 
   // 語言代碼對應名稱
-  String getLanguageDisplayName(String code) {
+  String getLanguageDisplayName(BuildContext context, String code) {
+    final loc = AppLocalizations.of(context)!;
     switch (code) {
       case Locales.en:
-        return 'EN';
+        return loc.languageEnglish;
       case Locales.zh:
-        return '中文';
+        return loc.languageChinese;
       case Locales.ja:
-        return '日本語';
+        return loc.languageJapanese;
       case Locales.ko:
-        return '한국어';
+        return loc.languageKorean;
       default:
         return code.toUpperCase();
     }
@@ -41,7 +41,7 @@ class LanguageToggleDropdown extends StatelessWidget {
               children: [
                 Icon(Icons.language, color: Colors.white, size: 30),
                 Text(
-                  getLanguageDisplayName(locale.languageCode),
+                  getLanguageDisplayName(context, locale.languageCode),
                   style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ],
@@ -52,7 +52,7 @@ class LanguageToggleDropdown extends StatelessWidget {
           return DropdownMenuItem<Locale>(
             value: locale,
             child: Text(
-              getLanguageDisplayName(locale.languageCode),
+              getLanguageDisplayName(context, locale.languageCode),
               style: TextStyle(color: Colors.white),
             ),
           );

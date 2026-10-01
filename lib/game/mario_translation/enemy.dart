@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/bullet.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 
-class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
+class Enemy extends SpriteComponent
+    with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
   Vector2 velocity = Vector2(-100, 0);
 
   final VoidCallback onStomp;
@@ -38,9 +40,7 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
       if (isMounted) {
         removeFromParent();
       }
-    }
-
-    else if (other is Player) {
+    } else if (other is Player) {
       if (other.velocity.y > 0) {
         // ✅ 踩到敵人
         isDead = true;
@@ -58,9 +58,12 @@ class Enemy extends SpriteComponent with CollisionCallbacks, HasGameRef<PageGame
 
           // 更新畫面文字
           gameRef.questionText.updateText(
-              gameRef.controller.currentQuestion?.question ?? '');
+            gameRef.controller.currentQuestion?.question ?? '',
+          );
+          final loc = AppLocalizations.of(gameRef.context)!;
           gameRef.scoreText.updateText(
-              "分數: ${gameRef.controller.score}");
+            '${loc.gameScore}: ${gameRef.controller.score}',
+          );
           if (gameRef.controller.score < -20) {
             Future.microtask(() => Navigator.pop(gameRef.context, true));
           }

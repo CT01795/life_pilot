@@ -42,11 +42,21 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
       ),
       _service.fetchPricingPlans(),
     ]);
+    final plans =
+        List<VendorPricingPlan>.from(values[2] as List<VendorPricingPlan>)
+          ..sort((left, right) {
+            const order = {'free': 0, 'partner': 1, 'growth': 2};
+            final byPlan = (order[left.code] ?? 99).compareTo(
+              order[right.code] ?? 99,
+            );
+            if (byPlan != 0) return byPlan;
+            return right.effectiveAt.compareTo(left.effectiveAt);
+          });
     return _VendorDashboardData(
       metrics: values[0] as VendorContentMetrics,
       engagement: values[1] as VendorEngagementMetrics,
       status: status,
-      plans: values[2] as List<VendorPricingPlan>,
+      plans: plans,
     );
   }
 
@@ -181,17 +191,17 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                 _usage(
                   loc.vendorActiveActivities,
                   status.eventUsed,
-                  status.plan.eventQuota,
+                  isAdmin ? null : status.plan.eventQuota,
                 ),
                 _usage(
                   loc.vendorActiveAttractions,
                   status.attractionUsed,
-                  status.plan.attractionQuota,
+                  isAdmin ? null : status.plan.attractionQuota,
                 ),
                 _usage(
                   loc.subscriptionImageStorage,
                   status.imageBytesUsed ~/ 1024 ~/ 1024,
-                  status.plan.imageMegabytes,
+                  isAdmin ? null : status.plan.imageMegabytes,
                   suffix: ' MB',
                 ),
               ],
@@ -417,8 +427,10 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     );
   }
 
-  Widget _usage(String label, int used, int quota, {String suffix = ''}) {
-    final progress = quota <= 0 ? 0.0 : (used / quota).clamp(0.0, 1.0);
+  Widget _usage(String label, int used, int? quota, {String suffix = ''}) {
+    final progress = quota == null || quota <= 0
+        ? 0.0
+        : (used / quota).clamp(0.0, 1.0);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -427,11 +439,11 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           Row(
             children: [
               Expanded(child: Text(label)),
-              Text('$used / $quota$suffix'),
+              Text(quota == null ? '$used / ∞' : '$used / $quota$suffix'),
             ],
           ),
           Gaps.h4,
-          LinearProgressIndicator(value: progress),
+          if (quota != null) LinearProgressIndicator(value: progress),
         ],
       ),
     );

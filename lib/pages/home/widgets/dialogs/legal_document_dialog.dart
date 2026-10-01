@@ -85,7 +85,7 @@ class _LegalDocumentDialogState extends State<LegalDocumentDialog> {
           future: _documentFuture,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
-              return const Center(child: Text('Unable to load this document.'));
+              return Center(child: Text(loc.unableToLoadDocument));
             }
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
