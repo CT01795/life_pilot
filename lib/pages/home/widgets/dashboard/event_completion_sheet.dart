@@ -35,6 +35,10 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
   required String accountingCurrency,
   String? pointAccountName,
   bool allowPoints = true,
+  bool initialAccountingIsIncome = false,
+  String initialAccountingCategory = RecordCategories.uncategorized,
+  bool initialPointsArePositive = true,
+  String initialPointCategory = RecordCategories.uncategorized,
 }) => showModalBottomSheet<EventCompletionChoice>(
   context: context,
   isScrollControlled: true,
@@ -45,6 +49,10 @@ Future<EventCompletionChoice?> showEventCompletionSheet(
     accountingCurrency: accountingCurrency,
     pointAccountName: pointAccountName,
     allowPoints: allowPoints,
+    initialAccountingIsIncome: initialAccountingIsIncome,
+    initialAccountingCategory: initialAccountingCategory,
+    initialPointsArePositive: initialPointsArePositive,
+    initialPointCategory: initialPointCategory,
   ),
 );
 
@@ -55,6 +63,10 @@ class _EventCompletionSheet extends StatefulWidget {
     required this.accountingCurrency,
     required this.pointAccountName,
     required this.allowPoints,
+    required this.initialAccountingIsIncome,
+    required this.initialAccountingCategory,
+    required this.initialPointsArePositive,
+    required this.initialPointCategory,
   });
 
   final String eventName;
@@ -62,29 +74,50 @@ class _EventCompletionSheet extends StatefulWidget {
   final String accountingCurrency;
   final String? pointAccountName;
   final bool allowPoints;
+  final bool initialAccountingIsIncome;
+  final String initialAccountingCategory;
+  final bool initialPointsArePositive;
+  final String initialPointCategory;
 
   @override
   State<_EventCompletionSheet> createState() => _EventCompletionSheetState();
 }
 
 class _EventCompletionSheetState extends State<_EventCompletionSheet> {
-  final _incomeController = TextEditingController();
-  final _expenseController = TextEditingController();
+  final _accountingController = TextEditingController();
   final _pointController = TextEditingController();
   bool _addToMemory = false;
-  bool _addExpense = false;
+  bool _addAccounting = false;
+  late bool _accountingIsIncome;
   bool _addPoints = false;
-  bool _pointsArePositive = true;
-  String _incomeCategory = RecordCategories.uncategorized;
-  String _expenseCategory = RecordCategories.uncategorized;
-  String _pointCategory = RecordCategories.uncategorized;
+  late bool _pointsArePositive;
+  late String _accountingCategory;
+  late String _pointCategory;
   DateTime _recordDate = DateUtils.dateOnly(DateTime.now());
   TimeOfDay _recordTime = TimeOfDay.now();
 
   @override
+  void initState() {
+    super.initState();
+    _accountingIsIncome = widget.initialAccountingIsIncome;
+    final accountingCategories = _accountingIsIncome
+        ? RecordCategories.accountingIncome
+        : RecordCategories.accountingExpense;
+    _accountingCategory =
+        accountingCategories.contains(widget.initialAccountingCategory)
+        ? widget.initialAccountingCategory
+        : RecordCategories.uncategorized;
+    _pointsArePositive = widget.initialPointsArePositive;
+    _pointCategory =
+        RecordCategories.points.contains(widget.initialPointCategory) &&
+            widget.initialPointCategory != RecordCategories.reserved
+        ? widget.initialPointCategory
+        : RecordCategories.uncategorized;
+  }
+
+  @override
   void dispose() {
-    _incomeController.dispose();
-    _expenseController.dispose();
+    _accountingController.dispose();
     _pointController.dispose();
     super.dispose();
   }
@@ -122,20 +155,19 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
           Gaps.h4,
           Text(loc.completeEventMessage),
           Gaps.h12,
-          if (widget.allowPoints)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _addToMemory,
-              title: Text(loc.memoryAdd),
-              secondary: const Icon(Icons.auto_stories_outlined),
-              controlAffinity: ListTileControlAffinity.trailing,
-              onChanged: (value) {
-                setState(() => _addToMemory = value ?? false);
-              },
-            ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
-            value: _addExpense,
+            value: _addToMemory,
+            title: Text(loc.memoryAdd),
+            secondary: const Icon(Icons.auto_stories_outlined),
+            controlAffinity: ListTileControlAffinity.trailing,
+            onChanged: (value) {
+              setState(() => _addToMemory = value ?? false);
+            },
+          ),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _addAccounting,
             title: Text(loc.accountRecords),
             subtitle: Text(
               widget.accountingAccountName ?? loc.accountListEmpty,
@@ -147,97 +179,90 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
             onChanged: widget.accountingAccountName == null
                 ? null
                 : (value) {
-                    setState(() => _addExpense = value ?? false);
+                    setState(() => _addAccounting = value ?? false);
                   },
           ),
-          if (_addExpense) ...[
+          if (_addAccounting) ...[
             Gaps.h8,
-            TextField(
-              controller: _incomeController,
-              autofocus: false,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: const [DecimalInputFormatter()],
-              decoration: InputDecoration(
-                labelText: loc.eventIncome,
-                suffixText: widget.accountingCurrency,
-                prefixIcon: const Icon(Icons.add_circle_outline),
-              ),
-            ),
-            Gaps.h12,
-            DropdownButtonFormField<String>(
-              initialValue: _incomeCategory,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: '${loc.eventIncome} · ${loc.recordPrimaryCategory}',
-              ),
-              items: RecordCategories.accounting
-                  .where((category) => category != RecordCategories.reserved)
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(RecordCategories.label(loc, category)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _incomeCategory = value);
-                }
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: false,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  label: Text(loc.eventExpense),
+                ),
+                ButtonSegment(
+                  value: true,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text(loc.eventIncome),
+                ),
+              ],
+              selected: {_accountingIsIncome},
+              onSelectionChanged: (value) {
+                if (value.isEmpty) return;
+                setState(() {
+                  _accountingIsIncome = value.first;
+                  _accountingCategory = RecordCategories.uncategorized;
+                });
               },
             ),
             Gaps.h12,
             TextField(
-              controller: _expenseController,
+              controller: _accountingController,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               inputFormatters: const [DecimalInputFormatter()],
               decoration: InputDecoration(
-                labelText: loc.eventExpense,
+                labelText: loc.recordValue,
                 suffixText: widget.accountingCurrency,
-                prefixIcon: const Icon(Icons.remove_circle_outline),
+                prefixIcon: Icon(
+                  _accountingIsIncome
+                      ? Icons.add_circle_outline
+                      : Icons.remove_circle_outline,
+                ),
               ),
             ),
             Gaps.h12,
             DropdownButtonFormField<String>(
-              initialValue: _expenseCategory,
+              key: ValueKey(_accountingIsIncome),
+              initialValue: _accountingCategory,
               isExpanded: true,
-              decoration: InputDecoration(
-                labelText: '${loc.eventExpense} · ${loc.recordPrimaryCategory}',
-              ),
-              items: RecordCategories.accounting
-                  .where((category) => category != RecordCategories.reserved)
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(RecordCategories.label(loc, category)),
-                    ),
-                  )
-                  .toList(),
+              decoration: InputDecoration(labelText: loc.recordPrimaryCategory),
+              items:
+                  (_accountingIsIncome
+                          ? RecordCategories.accountingIncome
+                          : RecordCategories.accountingExpense)
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(RecordCategories.label(loc, category)),
+                        ),
+                      )
+                      .toList(),
               onChanged: (value) {
                 if (value != null) {
-                  setState(() => _expenseCategory = value);
+                  setState(() => _accountingCategory = value);
                 }
               },
             ),
           ],
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _addPoints,
-            title: Text(loc.pointsRecord),
-            subtitle: Text(
-              widget.pointAccountName ?? loc.accountListEmpty,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          if (widget.allowPoints)
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _addPoints,
+              title: Text(loc.pointsRecord),
+              subtitle: Text(
+                widget.pointAccountName ?? loc.accountListEmpty,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              secondary: const Icon(Icons.stars_outlined),
+              controlAffinity: ListTileControlAffinity.trailing,
+              onChanged: widget.pointAccountName == null
+                  ? null
+                  : (value) => setState(() => _addPoints = value ?? false),
             ),
-            secondary: const Icon(Icons.stars_outlined),
-            controlAffinity: ListTileControlAffinity.trailing,
-            onChanged: widget.pointAccountName == null
-                ? null
-                : (value) => setState(() => _addPoints = value ?? false),
-          ),
           if (widget.allowPoints && _addPoints) ...[
             Gaps.h8,
             SegmentedButton<bool>(
@@ -294,7 +319,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               },
             ),
           ],
-          if (_addExpense || _addPoints) ...[
+          if (_addAccounting || _addPoints) ...[
             Gaps.h12,
             Card(
               margin: EdgeInsets.zero,
@@ -353,19 +378,16 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               Expanded(
                 child: ListenableBuilder(
                   listenable: Listenable.merge([
-                    _incomeController,
-                    _expenseController,
+                    _accountingController,
                     _pointController,
                   ]),
                   builder: (context, _) {
-                    final incomeValue = _parseAmount(_incomeController);
-                    final expenseValue = _parseAmount(_expenseController);
+                    final accountingValue = _parseAmount(_accountingController);
                     final pointValue = int.tryParse(
                       _pointController.text.trim(),
                     );
                     final canSubmit = _canSubmit(
-                      incomeValue: incomeValue,
-                      expenseValue: expenseValue,
+                      accountingValue: accountingValue,
                       pointValue: pointValue,
                     );
                     return FilledButton.icon(
@@ -374,11 +396,17 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
                               context,
                               EventCompletionChoice(
                                 addToMemory: _addToMemory,
-                                incomeValue: _addExpense ? incomeValue : null,
-                                incomeCategory: _incomeCategory,
-                                expenseValue: _addExpense ? expenseValue : null,
-                                expenseCategory: _expenseCategory,
-                                pointValue: _addPoints
+                                incomeValue:
+                                    _addAccounting && _accountingIsIncome
+                                    ? accountingValue
+                                    : null,
+                                incomeCategory: _accountingCategory,
+                                expenseValue:
+                                    _addAccounting && !_accountingIsIncome
+                                    ? accountingValue
+                                    : null,
+                                expenseCategory: _accountingCategory,
+                                pointValue: widget.allowPoints && _addPoints
                                     ? (_pointsArePositive
                                           ? pointValue
                                           : -pointValue!)
@@ -410,21 +438,9 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
   num? _parseAmount(TextEditingController controller) =>
       num.tryParse(controller.text.trim().replaceAll(',', ''));
 
-  bool _canSubmit({
-    required num? incomeValue,
-    required num? expenseValue,
-    required int? pointValue,
-  }) {
-    final incomeText = _incomeController.text.trim();
-    final expenseText = _expenseController.text.trim();
-    final hasValidAccountingValue =
-        (incomeValue != null && incomeValue > 0) ||
-        (expenseValue != null && expenseValue > 0);
-    final accountingValuesAreValid =
-        (incomeText.isEmpty || (incomeValue != null && incomeValue > 0)) &&
-        (expenseText.isEmpty || (expenseValue != null && expenseValue > 0));
-    return (!_addExpense ||
-            (hasValidAccountingValue && accountingValuesAreValid)) &&
+  bool _canSubmit({required num? accountingValue, required int? pointValue}) {
+    return (!_addAccounting ||
+            (accountingValue != null && accountingValue > 0)) &&
         (!_addPoints || (pointValue != null && pointValue > 0));
   }
 }

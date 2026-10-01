@@ -606,90 +606,148 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 麥克風按鈕
-          FloatingActionButton.small(
-            tooltip: loc.accountingSpeechHint,
-            child: const Icon(Icons.mic),
-            onPressed: () async {
-              final speechController = context.read<ControllerSpeech>();
-              final text = await speechController.recordAndTranscribe();
-              if (text.isNotEmpty) {
-                setState(() {
-                  _speechTextController.text = text;
-                });
-              }
-            },
-          ),
-          Gaps.w8,
-          // 可編輯文字欄位
-          Expanded(
-            child: TextField(
-              controller: _speechTextController,
-              autofocus: widget.returnAfterSubmit,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                hintText: loc.accountingSpeechHint,
-              ),
-              maxLines: 1,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.tonalIcon(
+              onPressed: () => _addManualRecord(context, controller),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(loc.manualEntry),
             ),
           ),
-          Gaps.w8,
-          ElevatedButton(
-            onPressed: () async {
-              if (_speechTextController.text.isEmpty) return;
-              final previews = controller.parseFromSpeech(
-                _speechTextController.text,
-                controller.currentCurrency ?? widget.account.currency,
-                controller.currentExchangeRate,
-              );
-              for (final preview in previews) {
-                preview.eventId = widget.linkedEventId;
-                preview.date = _newRecordDate;
-              }
-              if (previews.isEmpty) return;
-              final confirmed = await showVoiceConfirmDialog(context, previews);
-              if (confirmed != true) return;
-              try {
-                await controller.commitRecords(previews);
-              } catch (error) {
-                if (!context.mounted) return;
-                final message = subscriptionErrorMessage(loc, error);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(message.isEmpty ? loc.unknownError : message),
+          Gaps.h8,
+          Row(
+            children: [
+              // 麥克風按鈕
+              FloatingActionButton.small(
+                tooltip: loc.accountingSpeechHint,
+                child: const Icon(Icons.mic),
+                onPressed: () async {
+                  final speechController = context.read<ControllerSpeech>();
+                  final text = await speechController.recordAndTranscribe();
+                  if (text.isNotEmpty) {
+                    setState(() {
+                      _speechTextController.text = text;
+                    });
+                  }
+                },
+              ),
+              Gaps.w8,
+              // 可編輯文字欄位
+              Expanded(
+                child: TextField(
+                  controller: _speechTextController,
+                  autofocus: widget.returnAfterSubmit,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: loc.accountingSpeechHint,
                   ),
-                );
-                return;
-              }
+                  maxLines: 1,
+                ),
+              ),
+              Gaps.w8,
+              ElevatedButton(
+                onPressed: () async {
+                  if (_speechTextController.text.isEmpty) return;
+                  final previews = controller.parseFromSpeech(
+                    _speechTextController.text,
+                    controller.currentCurrency ?? widget.account.currency,
+                    controller.currentExchangeRate,
+                  );
+                  for (final preview in previews) {
+                    preview.eventId = widget.linkedEventId;
+                    preview.date = _newRecordDate;
+                  }
+                  if (previews.isEmpty) return;
+                  final confirmed = await showVoiceConfirmDialog(
+                    context,
+                    previews,
+                  );
+                  if (confirmed != true) return;
+                  try {
+                    await controller.commitRecords(previews);
+                  } catch (error) {
+                    if (!context.mounted) return;
+                    final message = subscriptionErrorMessage(loc, error);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          message.isEmpty ? loc.unknownError : message,
+                        ),
+                      ),
+                    );
+                    return;
+                  }
 
-              // 清空輸入框
-              setState(() {
-                _speechTextController.clear();
-                _newRecordDate = DateTime.now();
-              });
-              if (widget.returnAfterSubmit && mounted) {
-                Navigator.of(context).pop(true);
-              }
-            },
-            child: Text(loc.recordSubmit),
+                  // 清空輸入框
+                  setState(() {
+                    _speechTextController.clear();
+                    _newRecordDate = DateTime.now();
+                  });
+                  if (widget.returnAfterSubmit && mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+                },
+                child: Text(loc.recordSubmit),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Future<void> _addManualRecord(
+    BuildContext context,
+    ControllerAccountingDetail controller,
+  ) async {
+    final latest = controller.todayRecords.isEmpty
+        ? null
+        : controller.todayRecords.first;
+    final draft = AccountingPreview(
+      description: '',
+      value: latest?.value ?? -1,
+      currency: controller.currentCurrency ?? widget.account.currency,
+      exchangeRate: controller.currentExchangeRate,
+      eventId: widget.linkedEventId,
+      date: _newRecordDate,
+      primaryCategory:
+          latest?.primaryCategory ?? RecordCategories.uncategorized,
+    );
+    final record = await _showEditDetailDialog(context, draft, isNew: true);
+    if (record == null) return;
+    try {
+      await controller.commitRecords([record]);
+    } catch (error) {
+      if (!context.mounted) return;
+      final loc = AppLocalizations.of(context)!;
+      final message = subscriptionErrorMessage(loc, error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message.isEmpty ? loc.unknownError : message)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _newRecordDate = DateTime.now());
+    if (widget.returnAfterSubmit) Navigator.of(context).pop(true);
+  }
+
   // 回傳修改後的 AccountingPreview，取消則回傳 null
   Future<AccountingPreview?> _showEditDetailDialog(
     BuildContext context,
-    AccountingPreview record,
-  ) async {
+    AccountingPreview record, {
+    bool isNew = false,
+  }) async {
+    bool isIncome = record.value > 0;
     final valueController = TextEditingController(
-      text: NumberFormat('#,##0.####').format(record.value),
+      text: isNew ? '' : NumberFormat('#,##0.####').format(record.value.abs()),
     );
     final descController = TextEditingController(text: record.description);
-    String currency = record.currency ?? '';
+    String currency = currencyList.contains(record.currency)
+        ? record.currency!
+        : (widget.account.currency ?? currencyList.first);
     DateTime selectedDate = record.date ?? DateTime.now();
     String primaryCategory = record.primaryCategory;
     final secondaryController = TextEditingController(
@@ -704,11 +762,40 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text(loc.editRecord),
+              title: Text(isNew ? loc.manualEntry : loc.editRecord),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          icon: const Icon(Icons.remove_circle_outline),
+                          label: Text(loc.eventExpense),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          icon: const Icon(Icons.add_circle_outline),
+                          label: Text(loc.eventIncome),
+                        ),
+                      ],
+                      selected: {isIncome},
+                      onSelectionChanged: (value) {
+                        if (value.isEmpty) return;
+                        setState(() {
+                          isIncome = value.first;
+                          final categories = isIncome
+                              ? RecordCategories.accountingIncome
+                              : RecordCategories.accountingExpense;
+                          if (!categories.contains(primaryCategory) &&
+                              primaryCategory != RecordCategories.reserved) {
+                            primaryCategory = RecordCategories.uncategorized;
+                          }
+                        });
+                      },
+                    ),
+                    Gaps.h8,
                     TextField(
                       controller: descController,
                       decoration: InputDecoration(labelText: loc.description),
@@ -717,9 +804,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       controller: valueController,
                       decoration: InputDecoration(labelText: loc.recordValue),
                       keyboardType: TextInputType.number,
-                      inputFormatters: const [
-                        DecimalInputFormatter(allowNegative: true),
-                      ],
+                      inputFormatters: const [DecimalInputFormatter()],
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -773,24 +858,36 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                       },
                     ),
                     DropdownButtonFormField<String>(
+                      key: ValueKey(isIncome),
                       isExpanded: true,
                       initialValue:
-                          RecordCategories.accounting.contains(primaryCategory)
+                          <String>{
+                            RecordCategories.reserved,
+                            ...(isIncome
+                                ? RecordCategories.accountingIncome
+                                : RecordCategories.accountingExpense),
+                          }.contains(primaryCategory)
                           ? primaryCategory
                           : RecordCategories.uncategorized,
                       decoration: InputDecoration(
                         labelText: loc.recordPrimaryCategory,
                       ),
-                      items: RecordCategories.accounting
-                          .map(
-                            (category) => DropdownMenuItem(
-                              value: category,
-                              child: Text(
-                                RecordCategories.label(loc, category),
-                              ),
-                            ),
-                          )
-                          .toList(),
+                      items:
+                          <String>[
+                                RecordCategories.reserved,
+                                ...(isIncome
+                                    ? RecordCategories.accountingIncome
+                                    : RecordCategories.accountingExpense),
+                              ]
+                              .map(
+                                (category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(
+                                    RecordCategories.label(loc, category),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (value) {
                         if (value != null) primaryCategory = value;
                       },
@@ -830,11 +927,15 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                     final v = num.tryParse(
                       valueController.text.replaceAll(',', ''),
                     );
-                    if (v == null || descController.text.trim().isEmpty) return;
+                    if (v == null ||
+                        v <= 0 ||
+                        descController.text.trim().isEmpty) {
+                      return;
+                    }
                     Navigator.pop(
                       context,
                       record.copyWith(
-                        value: v,
+                        value: isIncome ? v : -v,
                         description: descController.text.trim(),
                         currency: currency,
                         date: selectedDate,

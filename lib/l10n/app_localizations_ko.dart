@@ -1398,6 +1398,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get editRecord => '내역 편집';
 
   @override
+  String get manualEntry => '직접 추가';
+
+  @override
   String get recordDate => '날짜';
 
   @override
@@ -1417,6 +1420,24 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get recordCategoryReserved => '보존 항목';
+
+  @override
+  String get recordCategorySalary => '급여';
+
+  @override
+  String get recordCategoryBonus => '상여금';
+
+  @override
+  String get recordCategoryInvestmentIncome => '투자 수익';
+
+  @override
+  String get recordCategoryAllowance => '수당';
+
+  @override
+  String get recordCategoryRefund => '환불';
+
+  @override
+  String get recordCategoryOtherIncome => '기타 수입';
 
   @override
   String get recordCategoryFood => '식비';

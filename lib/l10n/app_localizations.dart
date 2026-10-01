@@ -2793,6 +2793,12 @@ abstract class AppLocalizations {
   /// **'Edit record'**
   String get editRecord;
 
+  /// Button for adding a record with a structured form
+  ///
+  /// In en, this message translates to:
+  /// **'Manual entry'**
+  String get manualEntry;
+
   /// Label for recordDate
   ///
   /// In en, this message translates to:
@@ -2834,6 +2840,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reserved'**
   String get recordCategoryReserved;
+
+  /// Accounting income category: salary
+  ///
+  /// In en, this message translates to:
+  /// **'Salary'**
+  String get recordCategorySalary;
+
+  /// Accounting income category: bonus
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus'**
+  String get recordCategoryBonus;
+
+  /// Accounting income category: investment income
+  ///
+  /// In en, this message translates to:
+  /// **'Investment income'**
+  String get recordCategoryInvestmentIncome;
+
+  /// Accounting income category: allowance
+  ///
+  /// In en, this message translates to:
+  /// **'Allowance'**
+  String get recordCategoryAllowance;
+
+  /// Accounting income category: refund
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get recordCategoryRefund;
+
+  /// Accounting income category: other income
+  ///
+  /// In en, this message translates to:
+  /// **'Other income'**
+  String get recordCategoryOtherIncome;
 
   /// Label for recordCategoryFood
   ///

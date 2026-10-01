@@ -110,15 +110,14 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
 
     if (name == 'word searching') {
       _fixedGroups = const ['英翻中Word'];
-    } else if (widget.gameName.contains('日')) {
+    } else if (GameQuestionAuthoringRules.isJapaneseTranslation(
+      widget.gameName,
+    )) {
       _fixedGroups = const ['日翻中句子', '日翻中句子4', '日翻中句子7'];
-    } else if (widget.gameName.contains('韓')) {
-      _fixedGroups = const [
-        '韓翻中句子',
-        '韓翻中句子4',
-        '韓翻中英句子',
-        '韓翻中英句子4',
-      ];
+    } else if (GameQuestionAuthoringRules.isKoreanTranslation(
+      widget.gameName,
+    )) {
+      _fixedGroups = const ['韓翻中句子', '韓翻中句子4', '韓翻中英句子', '韓翻中英句子4'];
     } else if (_kind == _QuestionKind.translation) {
       _fixedGroups = const [
         '中翻英Word',
@@ -142,23 +141,28 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
       }
     }
     _questionController.text = widget.initialQuestion?.trim() ?? '';
-    _customGroupBase =
-        _selectedGroup == null ? '' : _groupWithoutLevel(_selectedGroup!);
+    _customGroupBase = _selectedGroup == null
+        ? ''
+        : _groupWithoutLevel(_selectedGroup!);
 
     final existing = widget.existingQuestion;
     if (existing != null) {
       _level = existing.level.clamp(1, 30);
       if (_kind == _QuestionKind.grammar) {
-        _questionController.text =
-            existing.question.split(RegExp(r'\s*(?:<-->|↔)\s*')).first.trim();
+        _questionController.text = existing.question
+            .split(RegExp(r'\s*(?:<-->|↔)\s*'))
+            .first
+            .trim();
       } else if (_kind != _QuestionKind.sentence) {
         _questionController.text = existing.question;
       }
       _answerController.text = existing.answer;
       if (_kind == _QuestionKind.grammar) {
         if (existing.question.contains('<--> many')) {
-          _questionController.text =
-              existing.question.split('<--> many').first.trim();
+          _questionController.text = existing.question
+              .split('<--> many')
+              .first
+              .trim();
         } else {
           _questionController.text = existing.question.replaceFirst(
             RegExp(r'_{2,}'),
@@ -186,16 +190,18 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
 
   Future<void> _loadGroups() async {
     try {
-      final groups =
-          await _service.fetchMyQuestionGroups(gameName: widget.gameName);
+      final groups = await _service.fetchMyQuestionGroups(
+        gameName: widget.gameName,
+      );
       if (!mounted) return;
       setState(() {
         for (final group in groups) {
           if (!_availableGroups.contains(group)) _availableGroups.add(group);
         }
         _availableGroups.sort();
-        _selectedGroup ??=
-            _availableGroups.isEmpty ? null : _availableGroups.first;
+        _selectedGroup ??= _availableGroups.isEmpty
+            ? null
+            : _availableGroups.first;
       });
       if (widget.existingQuestion == null && _selectedGroup != null) {
         await _loadQuestionHint(_selectedGroup!);
@@ -280,10 +286,10 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
     if (name == 'word searching') {
       return loc.wordSearchQuestionHelp;
     }
-    if (widget.gameName.contains('日')) {
+    if (GameQuestionAuthoringRules.isJapaneseTranslation(widget.gameName)) {
       return loc.japaneseTranslationQuestionHelp;
     }
-    if (widget.gameName.contains('韓')) {
+    if (GameQuestionAuthoringRules.isKoreanTranslation(widget.gameName)) {
       return loc.koreanTranslationQuestionHelp;
     }
     return loc.translationQuestionHelp;
@@ -307,7 +313,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
 
     _isConfirmingExit = true;
     final loc = AppLocalizations.of(context)!;
-    final discard = await showDialog<bool>(
+    final discard =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             content: Text(loc.unsavedChangesPrompt),
@@ -474,15 +481,15 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
       Navigator.pop(context, true);
     } on DuplicateGameQuestionException {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.duplicateQuestion)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.duplicateQuestion)));
       }
     } on FormatException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     } catch (error) {
       if (mounted) {
@@ -571,8 +578,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                     decoration: InputDecoration(
                       labelText: _kind == _QuestionKind.grammar
                           ? _usesPluralGrammarTemplate
-                              ? loc.grammarBaseWord
-                              : loc.completedGrammarQuestion
+                                ? loc.grammarBaseWord
+                                : loc.completedGrammarQuestion
                           : loc.question,
                       border: const OutlineInputBorder(),
                     ),
@@ -588,8 +595,8 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                     labelText: _kind == _QuestionKind.sentence
                         ? loc.sentenceOrWord
                         : isSpeaking
-                            ? loc.speakingText
-                            : loc.correctAnswer,
+                        ? loc.speakingText
+                        : loc.correctAnswer,
                     border: const OutlineInputBorder(),
                   ),
                   validator: _required,
@@ -620,17 +627,19 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                     border: const OutlineInputBorder(),
                   ),
                   items: [
-                    ..._availableGroups.map((group) => DropdownMenuItem(
-                          value: group,
-                          child: Tooltip(
-                            message: group,
-                            child: Text(
-                              group,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                    ..._availableGroups.map(
+                      (group) => DropdownMenuItem(
+                        value: group,
+                        child: Tooltip(
+                          message: group,
+                          child: Text(
+                            group,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        )),
+                        ),
+                      ),
+                    ),
                     if (_allowsCustomGroup)
                       DropdownMenuItem(
                         value: '__custom__',
@@ -643,12 +652,12 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                     setState(() {
                       if (value == '__custom__') {
                         if (_allowsNumberedCustomGroup) {
-                          final currentGroup = _selectedGroup ??
+                          final currentGroup =
+                              _selectedGroup ??
                               (_availableGroups.isEmpty
                                   ? ''
                                   : _availableGroups.first);
-                          _customGroupBase =
-                              _groupWithoutLevel(currentGroup);
+                          _customGroupBase = _groupWithoutLevel(currentGroup);
                         }
                         _customGroupLevelController.clear();
                         _groupController.clear();

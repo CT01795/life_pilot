@@ -1398,6 +1398,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editRecord => '編輯明細';
 
   @override
+  String get manualEntry => '手動新增';
+
+  @override
   String get recordDate => '日期';
 
   @override
@@ -1417,6 +1420,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recordCategoryReserved => '保留項';
+
+  @override
+  String get recordCategorySalary => '薪資';
+
+  @override
+  String get recordCategoryBonus => '獎金';
+
+  @override
+  String get recordCategoryInvestmentIncome => '投資收入';
+
+  @override
+  String get recordCategoryAllowance => '補助';
+
+  @override
+  String get recordCategoryRefund => '退款';
+
+  @override
+  String get recordCategoryOtherIncome => '其他收入';
 
   @override
   String get recordCategoryFood => '食';

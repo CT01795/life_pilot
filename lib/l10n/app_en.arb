@@ -907,6 +907,8 @@
   "@stockTradingVolume": {"placeholders": {"value": {"type": "String"}}},
   "editRecord": "Edit record",
   "@editRecord": {"description": "Label for editRecord"},
+  "manualEntry": "Manual entry",
+  "@manualEntry": {"description": "Label for manualEntry"},
   "recordDate": "Date",
   "@recordDate": {"description": "Label for recordDate"},
   "recordTime": "Time",
@@ -1647,19 +1649,7 @@
   "priceEarningsRatio": "P/E: {value}",
   "@priceEarningsRatio": {"placeholders": {"value": {"type": "String"}}},
   "stockNet": "Net",
-  
+  "@stockNet": {"description": "Label for stockNet"},
   "deleteNumberedItem": "Delete item {number}, {name}?",
-  "@deleteNumberedItem": {"placeholders": {"number": {"type": "int"}, "name": {"type": "String"}}},
-  "languageEnglish": "English",
-  "languageChinese": "Chinese",
-  "languageJapanese": "Japanese",
-  "languageKorean": "Korean",
-  "feedbackProcessedBy": "Processed by {name} at {time}",
-  "@feedbackProcessedBy": {"placeholders": {"name": {"type": "String"}, "time": {"type": "String"}}},
-  "relativeStrengthIndex": "RSI: {value}",
-  "@relativeStrengthIndex": {"placeholders": {"value": {"type": "String"}}},
-  "gamePassed": "Pass!",
-  "gameFailed": "Fail",
-  "gameScoreValue": "Score: {score}",
-  "@gameScoreValue": {"placeholders": {"score": {"type": "num"}}}
+  "@deleteNumberedItem": {"placeholders": {"number": {"type": "int"}, "name": {"type": "String"}}}
 }

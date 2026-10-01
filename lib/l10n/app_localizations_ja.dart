@@ -1398,6 +1398,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get editRecord => '明細を編集';
 
   @override
+  String get manualEntry => '手動追加';
+
+  @override
   String get recordDate => '日付';
 
   @override
@@ -1417,6 +1420,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get recordCategoryReserved => '保持項目';
+
+  @override
+  String get recordCategorySalary => '給与';
+
+  @override
+  String get recordCategoryBonus => '賞与';
+
+  @override
+  String get recordCategoryInvestmentIncome => '投資収入';
+
+  @override
+  String get recordCategoryAllowance => '手当';
+
+  @override
+  String get recordCategoryRefund => '返金';
+
+  @override
+  String get recordCategoryOtherIncome => 'その他の収入';
 
   @override
   String get recordCategoryFood => '食費';

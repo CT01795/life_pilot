@@ -57,10 +57,7 @@ void main() {
 
     test('blank numbered suffix represents level one category', () {
       expect(
-        GameQuestionAuthoringRules.numberedGroup(
-          base: '韓翻中句子4',
-          suffix: '',
-        ),
+        GameQuestionAuthoringRules.numberedGroup(base: '韓翻中句子4', suffix: ''),
         '韓翻中句子',
       );
     });
@@ -76,7 +73,7 @@ void main() {
       expect(
         GameQuestionAuthoringRules.canCreateCustomGroup(
           isAdmin: false,
-          gameName: 'Translation日',
+          gameName: 'Translation (CH-JP)',
         ),
         isTrue,
       );

@@ -1398,6 +1398,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editRecord => 'Edit record';
 
   @override
+  String get manualEntry => 'Manual entry';
+
+  @override
   String get recordDate => 'Date';
 
   @override
@@ -1417,6 +1420,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordCategoryReserved => 'Reserved';
+
+  @override
+  String get recordCategorySalary => 'Salary';
+
+  @override
+  String get recordCategoryBonus => 'Bonus';
+
+  @override
+  String get recordCategoryInvestmentIncome => 'Investment income';
+
+  @override
+  String get recordCategoryAllowance => 'Allowance';
+
+  @override
+  String get recordCategoryRefund => 'Refund';
+
+  @override
+  String get recordCategoryOtherIncome => 'Other income';
 
   @override
   String get recordCategoryFood => 'Food';

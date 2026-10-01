@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/translation/controller_game_translation.dart';
+import 'package:life_pilot/game/game_question_authoring_rules.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -34,10 +35,11 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
   void initState() {
     super.initState();
     questionSize =
-        widget.gameName.contains("日") || widget.gameName.contains("韓")
+        GameQuestionAuthoringRules.isNumberedLanguageGame(widget.gameName)
         ? 24.0
         : questionSize;
-    answerSize = widget.gameName.contains("日") || widget.gameName.contains("韓")
+    answerSize =
+        GameQuestionAuthoringRules.isNumberedLanguageGame(widget.gameName)
         ? 24.0
         : answerSize;
     final auth = context.read<ControllerAuth>();

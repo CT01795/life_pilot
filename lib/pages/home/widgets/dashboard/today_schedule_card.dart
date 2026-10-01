@@ -21,6 +21,7 @@ import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/record_categories.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:provider/provider.dart';
 
@@ -184,6 +185,34 @@ class TodayScheduleCard extends StatelessWidget {
                               scale: 1.5, // 放大倍率
                               child: AsyncActionCheckbox(
                                 onAccepted: () async {
+                                  (bool, String)? accountingDefault;
+                                  (bool, String)? pointDefault;
+                                  try {
+                                    final defaults = await Future.wait([
+                                      accountingAccountId == null
+                                          ? Future<(bool, String)?>.value()
+                                          : ServiceAccounting()
+                                                .latestDirectionAndCategory(
+                                                  accountId:
+                                                      accountingAccountId,
+                                                ),
+                                      !showPoints || pointAccountId == null
+                                          ? Future<(bool, String)?>.value()
+                                          : ServicePointRecord()
+                                                .latestDirectionAndCategory(
+                                                  accountId: pointAccountId,
+                                                ),
+                                    ]);
+                                    accountingDefault = defaults[0];
+                                    pointDefault = defaults[1];
+                                  } catch (error, stackTrace) {
+                                    logger.w(
+                                      'Could not load latest record defaults.',
+                                      error: error,
+                                      stackTrace: stackTrace,
+                                    );
+                                  }
+                                  if (!context.mounted) return;
                                   final choice = await showEventCompletionSheet(
                                     context,
                                     eventName: e.name,
@@ -192,6 +221,16 @@ class TodayScheduleCard extends StatelessWidget {
                                     accountingCurrency: accountingCurrency,
                                     pointAccountName: pointAccountName,
                                     allowPoints: showPoints,
+                                    initialAccountingIsIncome:
+                                        accountingDefault?.$1 ?? false,
+                                    initialAccountingCategory:
+                                        accountingDefault?.$2 ??
+                                        RecordCategories.uncategorized,
+                                    initialPointsArePositive:
+                                        pointDefault?.$1 ?? true,
+                                    initialPointCategory:
+                                        pointDefault?.$2 ??
+                                        RecordCategories.uncategorized,
                                   );
                                   if (choice == null || !context.mounted) {
                                     return;

@@ -551,85 +551,139 @@ class _PagePointRecordDetailViewState
     final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 麥克風按鈕
-          FloatingActionButton.small(
-            tooltip: loc.pointsSpeechHint,
-            child: const Icon(Icons.mic),
-            onPressed: () async {
-              final speechController = context.read<ControllerSpeech>();
-              final text = await speechController.recordAndTranscribe();
-              if (text.isNotEmpty) {
-                setState(() {
-                  _speechTextController.text = text;
-                });
-              }
-            },
-          ),
-          Gaps.w8,
-          // 可編輯文字欄位
-          Expanded(
-            child: TextField(
-              controller: _speechTextController,
-              autofocus: widget.returnAfterSubmit,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                hintText: loc.pointsSpeechHint,
-              ),
-              maxLines: 1,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.tonalIcon(
+              onPressed: () => _addManualRecord(context, controller),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(loc.manualEntry),
             ),
           ),
-          Gaps.w8,
-          ElevatedButton(
-            onPressed: () async {
-              if (_speechTextController.text.isEmpty) return;
-              final previews = controller.parseFromSpeech(
-                _speechTextController.text,
-              );
-              for (final preview in previews) {
-                preview.eventId = widget.linkedEventId;
-                preview.date = _newRecordDate;
-              }
-              if (previews.isEmpty) return;
-              final confirmed = await showVoiceConfirmDialog(context, previews);
-              if (confirmed != true) return;
-
-              try {
-                await controller.commitRecords(previews);
-              } catch (error) {
-                if (!context.mounted) return;
-                final message = subscriptionErrorMessage(loc, error);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(message.isEmpty ? loc.unknownError : message),
+          Gaps.h8,
+          Row(
+            children: [
+              // 麥克風按鈕
+              FloatingActionButton.small(
+                tooltip: loc.pointsSpeechHint,
+                child: const Icon(Icons.mic),
+                onPressed: () async {
+                  final speechController = context.read<ControllerSpeech>();
+                  final text = await speechController.recordAndTranscribe();
+                  if (text.isNotEmpty) {
+                    setState(() {
+                      _speechTextController.text = text;
+                    });
+                  }
+                },
+              ),
+              Gaps.w8,
+              // 可編輯文字欄位
+              Expanded(
+                child: TextField(
+                  controller: _speechTextController,
+                  autofocus: widget.returnAfterSubmit,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: loc.pointsSpeechHint,
                   ),
-                );
-                return;
-              }
+                  maxLines: 1,
+                ),
+              ),
+              Gaps.w8,
+              ElevatedButton(
+                onPressed: () async {
+                  if (_speechTextController.text.isEmpty) return;
+                  final previews = controller.parseFromSpeech(
+                    _speechTextController.text,
+                  );
+                  for (final preview in previews) {
+                    preview.eventId = widget.linkedEventId;
+                    preview.date = _newRecordDate;
+                  }
+                  if (previews.isEmpty) return;
+                  final confirmed = await showVoiceConfirmDialog(
+                    context,
+                    previews,
+                  );
+                  if (confirmed != true) return;
 
-              // 清空輸入框
-              setState(() {
-                _speechTextController.clear();
-                _newRecordDate = DateTime.now();
-              });
-              if (widget.returnAfterSubmit && mounted) {
-                Navigator.of(context).pop(true);
-              }
-            },
-            child: Text(loc.recordSubmit),
+                  try {
+                    await controller.commitRecords(previews);
+                  } catch (error) {
+                    if (!context.mounted) return;
+                    final message = subscriptionErrorMessage(loc, error);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          message.isEmpty ? loc.unknownError : message,
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // 清空輸入框
+                  setState(() {
+                    _speechTextController.clear();
+                    _newRecordDate = DateTime.now();
+                  });
+                  if (widget.returnAfterSubmit && mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+                },
+                child: Text(loc.recordSubmit),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Future<void> _addManualRecord(
+    BuildContext context,
+    ControllerPointRecordDetail controller,
+  ) async {
+    final latest = controller.todayRecords.isEmpty
+        ? null
+        : controller.todayRecords.first;
+    final draft = PointRecordPreview(
+      description: '',
+      value: latest?.value ?? 1,
+      eventId: widget.linkedEventId,
+      date: _newRecordDate,
+      primaryCategory:
+          latest?.primaryCategory ?? RecordCategories.uncategorized,
+    );
+    final record = await _showEditDetailDialog(context, draft, isNew: true);
+    if (record == null) return;
+    try {
+      await controller.commitRecords([record]);
+    } catch (error) {
+      if (!context.mounted) return;
+      final loc = AppLocalizations.of(context)!;
+      final message = subscriptionErrorMessage(loc, error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message.isEmpty ? loc.unknownError : message)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _newRecordDate = DateTime.now());
+    if (widget.returnAfterSubmit) Navigator.of(context).pop(true);
+  }
+
   Future<PointRecordPreview?> _showEditDetailDialog(
     BuildContext context,
-    PointRecordPreview record,
-  ) async {
+    PointRecordPreview record, {
+    bool isNew = false,
+  }) async {
+    bool isPositive = record.value >= 0;
     final valueController = TextEditingController(
-      text: record.value.toString(),
+      text: isNew ? '' : record.value.abs().toString(),
     );
     final descController = TextEditingController(text: record.description);
     DateTime selectedDate = record.date ?? DateTime.now();
@@ -643,11 +697,31 @@ class _PagePointRecordDetailViewState
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(loc.editRecord),
+          title: Text(isNew ? loc.manualEntry : loc.editRecord),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(
+                      value: true,
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: Text(loc.eventPointIncrease),
+                    ),
+                    ButtonSegment(
+                      value: false,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      label: Text(loc.eventPointDecrease),
+                    ),
+                  ],
+                  selected: {isPositive},
+                  onSelectionChanged: (value) {
+                    if (value.isEmpty) return;
+                    setState(() => isPositive = value.first);
+                  },
+                ),
+                Gaps.h8,
                 TextField(
                   controller: descController,
                   decoration: InputDecoration(labelText: loc.description),
@@ -739,11 +813,11 @@ class _PagePointRecordDetailViewState
               onPressed: () {
                 final value = int.tryParse(valueController.text);
                 final description = descController.text.trim();
-                if (value == null || description.isEmpty) return;
+                if (value == null || value <= 0 || description.isEmpty) return;
                 Navigator.pop(
                   context,
                   record.copyWith(
-                    value: value,
+                    value: isPositive ? value : -value,
                     description: description,
                     date: selectedDate,
                     primaryCategory: primaryCategory,

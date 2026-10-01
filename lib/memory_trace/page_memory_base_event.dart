@@ -176,10 +176,17 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
     return Scaffold(
       appBar: widgetsWhiteAppBar(
         title: widget.title,
+        titleWidget: Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            onPressed: () => _onAddPressed(context),
+            icon: const Icon(Icons.add),
+            label: Text(loc.add),
+          ),
+        ),
         enableSearchAndExport: true,
         enableUpload: widget.auth.isSysAdmin,
         handler: _appBarHandler,
-        onAdd: () => _onAddPressed(context),
         showMap: _showMap,
         onToggleMap: () => setState(() => _showMap = !_showMap),
         loc: loc,

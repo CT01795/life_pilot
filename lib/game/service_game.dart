@@ -1277,8 +1277,8 @@ class ServiceGame {
   bool _groupMatchesGame(String gameName, String group) {
     final normalizedName = gameName.toLowerCase();
     if (normalizedName == 'word searching') return group == '英翻中Word';
-    if (gameName.contains('日')) return group.contains('日');
-    if (gameName.contains('韓')) return group.contains('韓');
+    if (normalizedName == 'translation (ch-jp)') return group.contains('日');
+    if (normalizedName == 'translation (ch-kr)') return group.contains('韓');
     if (normalizedName.contains('translation')) {
       return !group.contains('日') && !group.contains('韓');
     }
@@ -1775,9 +1775,9 @@ class ServiceGame {
     }
     if (localMode) throw StateError('local_question_bank_empty');
     String functionName = 'get_translation_with_options';
-    if (gameName.contains("日")) {
+    if (gameName.toLowerCase() == 'translation (ch-jp)') {
       functionName = 'get_translationjp_with_options';
-    } else if (gameName.contains("韓")) {
+    } else if (gameName.toLowerCase() == 'translation (ch-kr)') {
       functionName = 'get_translationkr_with_options';
     }
 

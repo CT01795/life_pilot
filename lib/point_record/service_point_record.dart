@@ -24,6 +24,46 @@ class ServicePointRecord {
   String currentTable = TableNames.pointRecordAccount;
   ServicePointRecord();
 
+  Future<(bool, String)?> latestDirectionAndCategory({
+    required String accountId,
+    String type = 'points',
+  }) async {
+    Map<String, dynamic>? row;
+    if (await _storesLocally) {
+      final rows = await LocalDataStore.instance.list(
+        owner: _localOwner!,
+        resource: TableNames.pointRecordDetail,
+      );
+      final matches =
+          rows
+              .where(
+                (item) =>
+                    item['account_id']?.toString() == accountId &&
+                    item['type']?.toString().toLowerCase() ==
+                        type.toLowerCase(),
+              )
+              .toList()
+            ..sort(
+              (a, b) => (b['date']?.toString() ?? '').compareTo(
+                a['date']?.toString() ?? '',
+              ),
+            );
+      if (matches.isNotEmpty) row = matches.first;
+    } else {
+      final rows = await supabase
+          .from(TableNames.pointRecordDetail)
+          .select('value,primary_category')
+          .eq('account_id', accountId)
+          .ilike('type', type)
+          .order('date', ascending: false)
+          .limit(1);
+      if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
+    }
+    if (row == null) return null;
+    final value = num.tryParse(row['value']?.toString() ?? '') ?? 0;
+    return (value >= 0, row['primary_category']?.toString() ?? 'uncategorized');
+  }
+
   // ===== 帳戶 =====
   Uint8List? parseMasterGraph(dynamic data) {
     if (data == null) return null;
