@@ -152,6 +152,26 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
+        if (isSysAdmin)
+          PopupMenuItem(
+            value: "moduleAuthorization",
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: Colors.white,
+                ),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    loc.moduleAuthorization,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
         if (!isVendor)
           PopupMenuItem(
             value: "subscriptionPlans",
@@ -245,26 +265,6 @@ class UserMenuButton extends StatelessWidget {
             ],
           ),
         ),
-        if (isSysAdmin)
-          PopupMenuItem(
-            value: "moduleAuthorization",
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: Colors.white,
-                ),
-                Gaps.w8,
-                Expanded(
-                  child: Text(
-                    loc.moduleAuthorization,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: "logout",
