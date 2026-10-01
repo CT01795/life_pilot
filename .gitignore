@@ -75,3 +75,6 @@ venv/
 *credentials*.json
 *secret*.json
 *service-account*.json
+
+# Local Supabase SQL drafts and manual database scripts
+/tool/*.sql
