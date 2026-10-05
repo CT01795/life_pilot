@@ -1,5 +1,3 @@
-import 'dart:ui' show DartPluginRegistrant;
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/accounting/controller_accounting_list.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
@@ -35,9 +33,7 @@ import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (!kIsWeb) {
-    DartPluginRegistrant.ensureInitialized();
-  } else {
+  if (kIsWeb) {
     // Capture the recovery marker before Supabase exchanges the code and
     // removes authentication parameters from the browser URL.
     ServiceAuth.capturePasswordRecoveryUri(Uri.base);
@@ -47,7 +43,6 @@ void main() async {
 
   // 只呼叫一次 NotificationService 的初始化
   final notificationService = getNotificationService();
-  await notificationService.initialize();
 
   runApp(
     MultiProvider(
@@ -209,4 +204,13 @@ void main() async {
       child: const AppView(),
     ),
   );
+
+  // Render the app first. Notification permission/plugin initialization must
+  // never hold the splash screen or login page hostage.
+  try {
+    await notificationService.initialize();
+  } catch (error, stackTrace) {
+    debugPrint('Notification initialization failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
 }
