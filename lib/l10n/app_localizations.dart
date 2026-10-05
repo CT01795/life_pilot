@@ -525,43 +525,43 @@ abstract class AppLocalizations {
   /// **'Submission completeness: {count} of {total}'**
   String vendorQualityProgress(int count, int total);
 
-  /// No description provided for @vendorQualityName.
+  /// Label for vendor quality name
   ///
   /// In en, this message translates to:
   /// **'Title'**
   String get vendorQualityName;
 
-  /// No description provided for @vendorQualityDate.
+  /// Label for vendor quality date
   ///
   /// In en, this message translates to:
   /// **'Date'**
   String get vendorQualityDate;
 
-  /// No description provided for @vendorQualityCity.
+  /// Label for vendor quality city
   ///
   /// In en, this message translates to:
   /// **'City'**
   String get vendorQualityCity;
 
-  /// No description provided for @vendorQualityLocation.
+  /// Label for vendor quality location
   ///
   /// In en, this message translates to:
   /// **'Place'**
   String get vendorQualityLocation;
 
-  /// No description provided for @vendorQualityDescription.
+  /// Label for vendor quality description
   ///
   /// In en, this message translates to:
   /// **'Description'**
   String get vendorQualityDescription;
 
-  /// No description provided for @vendorQualityLink.
+  /// Label for vendor quality link
   ///
   /// In en, this message translates to:
   /// **'Registration link'**
   String get vendorQualityLink;
 
-  /// No description provided for @vendorContentMixTitle.
+  /// Label for vendor content mix title
   ///
   /// In en, this message translates to:
   /// **'Content overview'**
@@ -579,67 +579,67 @@ abstract class AppLocalizations {
   /// **'{published} public · {pending} awaiting review'**
   String vendorPublishedPendingMix(int published, int pending);
 
-  /// No description provided for @vendorRecentSubmissionsTitle.
+  /// Label for vendor recent submissions title
   ///
   /// In en, this message translates to:
   /// **'Recent submissions'**
   String get vendorRecentSubmissionsTitle;
 
-  /// No description provided for @vendorRecentSubmissionsEmpty.
+  /// Label for vendor recent submissions empty
   ///
   /// In en, this message translates to:
   /// **'No submissions yet. Add your first activity or attraction.'**
   String get vendorRecentSubmissionsEmpty;
 
-  /// No description provided for @vendorActivityLabel.
+  /// Label for vendor activity label
   ///
   /// In en, this message translates to:
   /// **'Activity'**
   String get vendorActivityLabel;
 
-  /// No description provided for @vendorAttractionLabel.
+  /// Label for vendor attraction label
   ///
   /// In en, this message translates to:
   /// **'Attraction'**
   String get vendorAttractionLabel;
 
-  /// No description provided for @vendorUntitledSubmission.
+  /// Label for vendor untitled submission
   ///
   /// In en, this message translates to:
   /// **'Untitled submission'**
   String get vendorUntitledSubmission;
 
-  /// No description provided for @vendorQuotaFullHint.
+  /// Label for vendor quota full hint
   ///
   /// In en, this message translates to:
   /// **'An allowance is full. Upgrade or remove an active listing before adding more.'**
   String get vendorQuotaFullHint;
 
-  /// No description provided for @vendorQuotaNearFullHint.
+  /// Label for vendor quota near full hint
   ///
   /// In en, this message translates to:
   /// **'An allowance is almost full. Review the available plans before your next submission.'**
   String get vendorQuotaNearFullHint;
 
-  /// No description provided for @vendorViewPlans.
+  /// Label for vendor view plans
   ///
   /// In en, this message translates to:
   /// **'View plans'**
   String get vendorViewPlans;
 
-  /// No description provided for @vendorAnalyticsEmpty.
+  /// Label for vendor analytics empty
   ///
   /// In en, this message translates to:
   /// **'Performance data appears after people discover and interact with your public content.'**
   String get vendorAnalyticsEmpty;
 
-  /// No description provided for @vendorRegistrationFreeStart.
+  /// Label for vendor registration free start
   ///
   /// In en, this message translates to:
   /// **'Start with the free organizer plan'**
   String get vendorRegistrationFreeStart;
 
-  /// No description provided for @vendorRegistrationAnalytics.
+  /// Label for vendor registration analytics
   ///
   /// In en, this message translates to:
   /// **'See content performance in one workspace'**
@@ -705,61 +705,61 @@ abstract class AppLocalizations {
   /// **'Organizer subscription saved.'**
   String get adminVendorSubscriptionSaved;
 
-  /// No description provided for @recordCategorySalary.
+  /// Label for record category salary
   ///
   /// In en, this message translates to:
   /// **'Salary'**
   String get recordCategorySalary;
 
-  /// No description provided for @recordCategoryBonus.
+  /// Label for record category bonus
   ///
   /// In en, this message translates to:
   /// **'Bonus'**
   String get recordCategoryBonus;
 
-  /// No description provided for @recordCategoryInvestmentIncome.
+  /// Label for record category investment income
   ///
   /// In en, this message translates to:
   /// **'Investment income'**
   String get recordCategoryInvestmentIncome;
 
-  /// No description provided for @recordCategoryAllowance.
+  /// Label for record category allowance
   ///
   /// In en, this message translates to:
   /// **'Allowance'**
   String get recordCategoryAllowance;
 
-  /// No description provided for @recordCategoryRefund.
+  /// Label for record category refund
   ///
   /// In en, this message translates to:
   /// **'Refund'**
   String get recordCategoryRefund;
 
-  /// No description provided for @recordCategoryOtherIncome.
+  /// Label for record category other income
   ///
   /// In en, this message translates to:
   /// **'Other income'**
   String get recordCategoryOtherIncome;
 
-  /// No description provided for @languageEnglish.
+  /// Label for language English
   ///
   /// In en, this message translates to:
   /// **'English'**
   String get languageEnglish;
 
-  /// No description provided for @languageChinese.
+  /// Label for language Chinese
   ///
   /// In en, this message translates to:
   /// **'Chinese'**
   String get languageChinese;
 
-  /// No description provided for @languageJapanese.
+  /// Label for language Japanese
   ///
   /// In en, this message translates to:
   /// **'Japanese'**
   String get languageJapanese;
 
-  /// No description provided for @languageKorean.
+  /// Label for language Korean
   ///
   /// In en, this message translates to:
   /// **'Korean'**
@@ -777,19 +777,19 @@ abstract class AppLocalizations {
   /// **'RSI: {value}'**
   String relativeStrengthIndex(String value);
 
-  /// No description provided for @gamePassed.
+  /// Label for game passed
   ///
   /// In en, this message translates to:
   /// **'Pass!'**
   String get gamePassed;
 
-  /// No description provided for @gameFailed.
+  /// Label for game failed
   ///
   /// In en, this message translates to:
   /// **'Fail'**
   String get gameFailed;
 
-  /// No description provided for @gameScoreValue.
+  /// Game score value
   ///
   /// In en, this message translates to:
   /// **'Score: {score}'**
