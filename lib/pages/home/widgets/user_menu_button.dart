@@ -35,7 +35,7 @@ class UserMenuButton extends StatelessWidget {
     }
 
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.account_circle, color: Colors.white),
+      icon: const Icon(Icons.account_circle, color: Colors.white, size: 28),
       tooltip: loc.userMenuButton,
       color: const Color(0xFF0066CC), // 改成跟 LanguageToggleDropdown 一樣
       constraints: const BoxConstraints(minWidth: 320, maxWidth: 360),

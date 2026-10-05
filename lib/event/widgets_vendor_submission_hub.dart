@@ -18,37 +18,45 @@ class VendorSubmissionHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FilledButton.tonalIcon(
-            onPressed: onSubmit,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(submitLabel),
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+          Tooltip(
+            message: submitLabel,
+            child: FilledButton.tonal(
+              onPressed: onSubmit,
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+              ),
+              child: Text(loc.vendorSubmitShort),
             ),
           ),
-          const SizedBox(width: 6),
-          OutlinedButton.icon(
-            onPressed: () => onFilterChanged(!showOnlyMySubmissions),
-            icon: Icon(
-              showOnlyMySubmissions
-                  ? Icons.inventory_2
-                  : Icons.inventory_2_outlined,
-              size: 18,
-            ),
-            label: Text(
-              showOnlyMySubmissions
-                  ? loc.vendorMySubmissions
-                  : loc.vendorAllActivities,
-            ),
-            style: OutlinedButton.styleFrom(
+          const SizedBox(width: 4),
+          SegmentedButton<bool>(
+            segments: [
+              ButtonSegment<bool>(
+                value: true,
+                label: Text(loc.vendorMineShort),
+              ),
+              ButtonSegment<bool>(
+                value: false,
+                label: Text(loc.vendorAllShort),
+              ),
+            ],
+            selected: {showOnlyMySubmissions},
+            showSelectedIcon: false,
+            onSelectionChanged: (selection) {
+              onFilterChanged(selection.first);
+            },
+            style: ButtonStyle(
               visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 8),
+              ),
             ),
           ),
         ],

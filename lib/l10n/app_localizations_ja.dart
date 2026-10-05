@@ -24,10 +24,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '審査状況が明確';
 
   @override
-  String get vendorSubmitActivity => '投稿';
+  String get vendorSubmitActivity => 'イベントを投稿';
 
   @override
-  String get vendorSubmitAttraction => '投稿';
+  String get vendorSubmitAttraction => '観光地を投稿';
 
   @override
   String get vendorMySubmissions => '自分の投稿';
@@ -36,7 +36,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorAllActivities => 'すべての投稿';
 
   @override
+  String get vendorSubmitShort => '投稿';
+
+  @override
+  String get vendorMineShort => '自分';
+
+  @override
+  String get vendorAllShort => '全て';
+
+  @override
   String get vendorSubmissionGuideTitle => 'イベントを見つけてもらう';
+
+  @override
+  String get vendorAttractionSubmissionGuideTitle => '観光地を見つけてもらう';
+
+  @override
+  String get attractionAddEdit => '観光地を追加／編集';
 
   @override
   String get vendorSubmissionGuideDescription => '正確な日付、会場、主催者、申込URLを入力してください。審査後に公開され、修正すると再審査となります。';
@@ -146,6 +161,66 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String vendorPendingReviewCount(int count) {
+    return '$count 件の投稿が審査待ちです';
+  }
+
+  @override
+  String get vendorPendingReviewHint => '審査状況をここで確認できます。承認後はすべてのユーザーに公開されます。';
+
+  @override
+  String vendorQuotaRemaining(int count, String suffix) {
+    return '残り $count$suffix';
+  }
+
+  @override
+  String get vendorClickThroughRate => '閲覧からクリック';
+
+  @override
+  String get vendorRegistrationRate => 'クリックから申込';
+
+  @override
+  String vendorPositiveActions(int count) {
+    return '保存・いいね $count 件';
+  }
+
+  @override
+  String get vendorNextStepFirstTitle => '最初の情報を公開しましょう';
+
+  @override
+  String get vendorNextStepFirstMessage => '正確な日付、場所、画像、申込リンクを含むイベントから始めましょう。';
+
+  @override
+  String get vendorNextStepReviewTitle => '投稿を審査中です';
+
+  @override
+  String get vendorNextStepReviewMessage => 'ここで結果を確認できます。承認後、予定を立てるすべてのユーザーに公開されます。';
+
+  @override
+  String get vendorNextStepExposureTitle => '第一印象をわかりやすく';
+
+  @override
+  String get vendorNextStepExposureMessage => '明確な名称、カバー画像、都市情報で、見つけやすく理解しやすくなります。';
+
+  @override
+  String get vendorNextStepClickTitle => '閲覧を興味につなげる';
+
+  @override
+  String get vendorNextStepClickMessage => '紹介文、見どころ、画像を改善し、開きたくなる理由を伝えましょう。';
+
+  @override
+  String get vendorNextStepRegistrationTitle => '申込をわかりやすく';
+
+  @override
+  String get vendorNextStepRegistrationMessage => '申込URLが有効で、申込方法と案内が明確か確認してください。';
+
+  @override
+  String get vendorNextStepGrowingTitle => '情報が行動につながっています';
+
+  @override
+  String get vendorNextStepGrowingMessage => '日付と空き状況を更新し、転換率を次の投稿改善に活用しましょう。';
+
+  @override
   String get vendorAnalyticsPageViews => 'ページ閲覧';
 
   @override
@@ -162,6 +237,75 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get vendorAnalyticsDislikes => '低評価';
+
+  @override
+  String vendorQualityProgress(int count, int total) {
+    return '投稿の完成度：$count／$total';
+  }
+
+  @override
+  String get vendorQualityName => 'タイトル';
+
+  @override
+  String get vendorQualityDate => '日付';
+
+  @override
+  String get vendorQualityCity => '都市';
+
+  @override
+  String get vendorQualityLocation => '場所';
+
+  @override
+  String get vendorQualityDescription => '説明';
+
+  @override
+  String get vendorQualityLink => '申込リンク';
+
+  @override
+  String get vendorContentMixTitle => 'コンテンツ概要';
+
+  @override
+  String vendorActivityAttractionMix(int activities, int attractions) {
+    return '有効なイベント $activities 件・観光地 $attractions 件';
+  }
+
+  @override
+  String vendorPublishedPendingMix(int published, int pending) {
+    return '公開 $published 件・審査待ち $pending 件';
+  }
+
+  @override
+  String get vendorRecentSubmissionsTitle => '最近の投稿';
+
+  @override
+  String get vendorRecentSubmissionsEmpty => '投稿はまだありません。最初のイベントまたは観光地を追加してください。';
+
+  @override
+  String get vendorActivityLabel => 'イベント';
+
+  @override
+  String get vendorAttractionLabel => '観光地';
+
+  @override
+  String get vendorUntitledSubmission => '無題の投稿';
+
+  @override
+  String get vendorQuotaFullHint => '上限に達しました。アップグレードするか、有効な投稿を削除してください。';
+
+  @override
+  String get vendorQuotaNearFullHint => '上限が近づいています。次の投稿前にプランをご確認ください。';
+
+  @override
+  String get vendorViewPlans => 'プランを見る';
+
+  @override
+  String get vendorAnalyticsEmpty => '公開コンテンツが閲覧・操作されると、ここに効果が表示されます。';
+
+  @override
+  String get vendorRegistrationFreeStart => '無料の主催者プランから開始';
+
+  @override
+  String get vendorRegistrationAnalytics => '同じワークスペースで成果を確認';
 
   @override
   String get publishedContentDeleteAdminOnly => '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
@@ -192,6 +336,57 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get adminVendorSubscriptionSaved => '主催者サブスクリプションを保存しました。';
+
+  @override
+  String get recordCategorySalary => '給与';
+
+  @override
+  String get recordCategoryBonus => '賞与';
+
+  @override
+  String get recordCategoryInvestmentIncome => '投資収入';
+
+  @override
+  String get recordCategoryAllowance => '手当';
+
+  @override
+  String get recordCategoryRefund => '返金';
+
+  @override
+  String get recordCategoryOtherIncome => 'その他の収入';
+
+  @override
+  String get languageEnglish => '英語';
+
+  @override
+  String get languageChinese => '中国語';
+
+  @override
+  String get languageJapanese => '日本語';
+
+  @override
+  String get languageKorean => '韓国語';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '$name が $time に対応';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI：$value';
+  }
+
+  @override
+  String get gamePassed => 'クリア！';
+
+  @override
+  String get gameFailed => '失敗';
+
+  @override
+  String gameScoreValue(num score) {
+    return 'スコア：$score';
+  }
 
   @override
   String get appTitle => '生活ナビゲーション';
@@ -1422,24 +1617,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recordCategoryReserved => '保持項目';
 
   @override
-  String get recordCategorySalary => '給与';
-
-  @override
-  String get recordCategoryBonus => '賞与';
-
-  @override
-  String get recordCategoryInvestmentIncome => '投資収入';
-
-  @override
-  String get recordCategoryAllowance => '手当';
-
-  @override
-  String get recordCategoryRefund => '返金';
-
-  @override
-  String get recordCategoryOtherIncome => 'その他の収入';
-
-  @override
   String get recordCategoryFood => '食費';
 
   @override
@@ -2613,38 +2790,5 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String deleteNumberedItem(int number, String name) {
     return '$number 番目の「$name」を削除しますか？';
-  }
-
-  @override
-  String get languageEnglish => '英語';
-
-  @override
-  String get languageChinese => '中国語';
-
-  @override
-  String get languageJapanese => '日本語';
-
-  @override
-  String get languageKorean => '韓国語';
-
-  @override
-  String feedbackProcessedBy(String name, String time) {
-    return '$name が $time に対応';
-  }
-
-  @override
-  String relativeStrengthIndex(String value) {
-    return 'RSI：$value';
-  }
-
-  @override
-  String get gamePassed => 'クリア！';
-
-  @override
-  String get gameFailed => '失敗';
-
-  @override
-  String gameScoreValue(num score) {
-    return 'スコア：$score';
   }
 }

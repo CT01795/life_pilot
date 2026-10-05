@@ -61,7 +61,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
 
   CalendarRepeatRule repeatOptions = CalendarRepeatRule.once;
   List<CalendarReminderOption> reminderOptions = const [
-    CalendarReminderOption.dayBefore8am
+    CalendarReminderOption.dayBefore8am,
   ];
   DateTime? reminderTime;
 
@@ -162,7 +162,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
     };
     for (final entry in fields.entries) {
       initController(
-          key: entry.key, initialValue: entry.value?.toString() ?? '');
+        key: entry.key,
+        initialValue: entry.value?.toString() ?? '',
+      );
     }
 
     // ✅ 初始化子事件控制器
@@ -199,18 +201,22 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
           key: '${entry.key}_sub_${sub.id}',
           initialValue:
               entry.value?.toString() == null || entry.value!.toString().isEmpty
-                  ? ''
-                  : entry.value!.toString(),
+              ? ''
+              : entry.value!.toString(),
         );
       }
     }
   }
 
   // 建立或取得控制器
-  TextEditingController initController(
-      {required String key, required String initialValue}) {
+  TextEditingController initController({
+    required String key,
+    required String initialValue,
+  }) {
     return controllerMap.putIfAbsent(
-        key, () => TextEditingController(text: initialValue));
+      key,
+      () => TextEditingController(text: initialValue),
+    );
   }
 
   TextEditingController getController({required String key}) {
@@ -251,8 +257,10 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
       if (parts.length == 2) {
         final field = parts[0];
         final nowId = parts[1];
-        final sub = subEvents.firstWhere((e) => e.id == nowId,
-            orElse: () => EventItem(id: nowId));
+        final sub = subEvents.firstWhere(
+          (e) => e.id == nowId,
+          orElse: () => EventItem(id: nowId),
+        );
         _updateSubEvent(key, sub, field, value, check);
         return;
       }
@@ -342,10 +350,17 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
     if (controllerMap[key]?.text != value) {
       controllerMap[key]?.text = value;
     }
+    onContentChanged?.call();
+    notifyListeners();
   }
 
   void _updateSubEvent(
-      String mapKey, EventItem sub, String key, String value, bool check) {
+    String mapKey,
+    EventItem sub,
+    String key,
+    String value,
+    bool check,
+  ) {
     switch (key) {
       case EventFields.country:
         sub.country = value;
@@ -378,9 +393,12 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             sub.ageMax != null &&
             sub.ageMin!.compareTo(sub.ageMax!) > 0) {
           sub.ageMax = sub.ageMin;
-          controllerMap[
-                  mapKey.replaceAll(EventFields.ageMin, EventFields.ageMax)]
-              ?.text = sub.ageMax.toString();
+          controllerMap[mapKey.replaceAll(
+                EventFields.ageMin,
+                EventFields.ageMax,
+              )]
+              ?.text = sub.ageMax
+              .toString();
         }
         break;
       case EventFields.ageMax:
@@ -390,9 +408,12 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             sub.ageMax != null &&
             sub.ageMin!.compareTo(sub.ageMax!) > 0) {
           sub.ageMin = sub.ageMax;
-          controllerMap[
-                  mapKey.replaceAll(EventFields.ageMax, EventFields.ageMin)]
-              ?.text = sub.ageMin.toString();
+          controllerMap[mapKey.replaceAll(
+                EventFields.ageMax,
+                EventFields.ageMin,
+              )]
+              ?.text = sub.ageMin
+              .toString();
         }
         break;
       case EventFields.isFree:
@@ -405,9 +426,12 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             sub.priceMax != null &&
             sub.priceMin!.compareTo(sub.priceMax!) > 0) {
           sub.priceMax = sub.priceMin;
-          controllerMap[
-                  mapKey.replaceAll(EventFields.priceMin, EventFields.priceMax)]
-              ?.text = sub.priceMax.toString();
+          controllerMap[mapKey.replaceAll(
+                EventFields.priceMin,
+                EventFields.priceMax,
+              )]
+              ?.text = sub.priceMax
+              .toString();
         }
         break;
       case EventFields.priceMax:
@@ -417,9 +441,12 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             sub.priceMax != null &&
             sub.priceMin!.compareTo(sub.priceMax!) > 0) {
           sub.priceMin = sub.priceMax;
-          controllerMap[
-                  mapKey.replaceAll(EventFields.priceMax, EventFields.priceMin)]
-              ?.text = sub.priceMin.toString();
+          controllerMap[mapKey.replaceAll(
+                EventFields.priceMax,
+                EventFields.priceMin,
+              )]
+              ?.text = sub.priceMin
+              .toString();
         }
         break;
       case EventFields.isOutdoor:
@@ -439,7 +466,8 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
 
   // 將目前表單內容轉換為 EventItem
   EventItem toEventItem() {
-    final addressUnchanged = existingEvent != null &&
+    final addressUnchanged =
+        existingEvent != null &&
         existingEvent!.country.trim() == country.trim() &&
         existingEvent!.city.trim() == city.trim() &&
         existingEvent!.location.trim() == location.trim();
@@ -456,65 +484,63 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
       final subCountry = EventCountry.normalize(getText(EventFields.country));
       final subCity = getText(EventFields.city);
       final subLocation = getText(EventFields.location);
-      final subAddressUnchanged = sub.country.trim() == subCountry &&
+      final subAddressUnchanged =
+          sub.country.trim() == subCountry &&
           sub.city.trim() == subCity.trim() &&
           sub.location.trim() == subLocation.trim();
       return sub.copyWith(
-        newSubEvents: [],
-        newMasterUrl: getText(EventFields.masterUrl),
-        newCountry: subCountry,
-        newCity: subCity,
-        newLocation: subLocation,
-        newName: getText(EventFields.name),
-        newType: getText(EventFields.type),
-        newDescription: getText(EventFields.description),
-        newUnit: getText(EventFields.unit),
-        newAgeMin: getText(EventFields.ageMin).isEmpty
-            ? null
-            : num.parse(getText(EventFields.ageMin)),
-        newAgeMax: getText(EventFields.ageMax).isEmpty
-            ? null
-            : num.parse(getText(EventFields.ageMax)),
-        newIsFree: getText(EventFields.isFree).isEmpty
-            ? null
-            : bool.parse(getText(EventFields.isFree)),
-        newPriceMin: getText(EventFields.priceMin).isEmpty
-            ? null
-            : num.parse(getText(EventFields.priceMin)),
-        newPriceMax: getText(EventFields.priceMax).isEmpty
-            ? null
-            : num.parse(getText(EventFields.priceMax)),
-        newIsOutdoor: getText(EventFields.isOutdoor).isEmpty
-            ? null
-            : bool.parse(getText(EventFields.isOutdoor)),
-        newIsLike: getText(EventFields.isLike).isEmpty
-            ? null
-            : bool.parse(getText(EventFields.isLike)),
-        newIsDislike: getText(EventFields.isDislike).isEmpty
-            ? null
-            : bool.parse(getText(EventFields.isDislike)),
-        newPageViews: existingEvent?.pageViews ?? pageViews,
-        newCardClicks: existingEvent?.cardClicks ?? cardClicks,
-        newSaves: existingEvent?.saves ?? saves,
-        newRegistrationClicks:
-            existingEvent?.registrationClicks ?? registrationClicks,
-        newLikeCounts: existingEvent?.likeCounts ?? likeCounts,
-        newDislikeCounts: existingEvent?.dislikeCounts ?? dislikeCounts,
-        newAccount: auth.currentAccount,
-        newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
-        newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
-        newMasterGraphUrl: sub.masterGraphUrl,
-        newSource: existingEvent?.source ?? source,
-      )
+          newSubEvents: [],
+          newMasterUrl: getText(EventFields.masterUrl),
+          newCountry: subCountry,
+          newCity: subCity,
+          newLocation: subLocation,
+          newName: getText(EventFields.name),
+          newType: getText(EventFields.type),
+          newDescription: getText(EventFields.description),
+          newUnit: getText(EventFields.unit),
+          newAgeMin: getText(EventFields.ageMin).isEmpty
+              ? null
+              : num.parse(getText(EventFields.ageMin)),
+          newAgeMax: getText(EventFields.ageMax).isEmpty
+              ? null
+              : num.parse(getText(EventFields.ageMax)),
+          newIsFree: getText(EventFields.isFree).isEmpty
+              ? null
+              : bool.parse(getText(EventFields.isFree)),
+          newPriceMin: getText(EventFields.priceMin).isEmpty
+              ? null
+              : num.parse(getText(EventFields.priceMin)),
+          newPriceMax: getText(EventFields.priceMax).isEmpty
+              ? null
+              : num.parse(getText(EventFields.priceMax)),
+          newIsOutdoor: getText(EventFields.isOutdoor).isEmpty
+              ? null
+              : bool.parse(getText(EventFields.isOutdoor)),
+          newIsLike: getText(EventFields.isLike).isEmpty
+              ? null
+              : bool.parse(getText(EventFields.isLike)),
+          newIsDislike: getText(EventFields.isDislike).isEmpty
+              ? null
+              : bool.parse(getText(EventFields.isDislike)),
+          newPageViews: existingEvent?.pageViews ?? pageViews,
+          newCardClicks: existingEvent?.cardClicks ?? cardClicks,
+          newSaves: existingEvent?.saves ?? saves,
+          newRegistrationClicks:
+              existingEvent?.registrationClicks ?? registrationClicks,
+          newLikeCounts: existingEvent?.likeCounts ?? likeCounts,
+          newDislikeCounts: existingEvent?.dislikeCounts ?? dislikeCounts,
+          newAccount: auth.currentAccount,
+          newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
+          newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
+          newMasterGraphUrl: sub.masterGraphUrl,
+          newSource: existingEvent?.source ?? source,
+        )
         ..mapLat = subAddressUnchanged ? sub.mapLat : null
         ..mapLng = subAddressUnchanged ? sub.mapLng : null;
     }).toList();
 
     // ✅ 再組主事件
-    return EventItem(
-      id: existingEvent?.id ?? uuid.v4(),
-      subEvents: updatedSubs,
-    )
+    return EventItem(id: existingEvent?.id ?? uuid.v4(), subEvents: updatedSubs)
       ..masterUrl = masterUrl
       ..startDate = startDate
       ..endDate = endDate
@@ -568,8 +594,10 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
   }
 
   // --- 語音控制區 ---
-  Future<void> startListening(
-      {required ValueChanged<String> onResult, required String key}) async {
+  Future<void> startListening({
+    required ValueChanged<String> onResult,
+    required String key,
+  }) async {
     final available = await _serviceSpeech.startListening(
       onResult: (text) {
         onResult(text);

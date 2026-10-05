@@ -24,10 +24,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '審核狀態清楚';
 
   @override
-  String get vendorSubmitActivity => '投稿';
+  String get vendorSubmitActivity => '投稿活動';
 
   @override
-  String get vendorSubmitAttraction => '投稿';
+  String get vendorSubmitAttraction => '投稿景點';
 
   @override
   String get vendorMySubmissions => '我的投稿';
@@ -36,7 +36,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorAllActivities => '全部投稿';
 
   @override
+  String get vendorSubmitShort => '投稿';
+
+  @override
+  String get vendorMineShort => '我的';
+
+  @override
+  String get vendorAllShort => '全部';
+
+  @override
   String get vendorSubmissionGuideTitle => '讓更多人發現您的活動';
+
+  @override
+  String get vendorAttractionSubmissionGuideTitle => '讓更多人發現您的景點';
+
+  @override
+  String get attractionAddEdit => '新增／編輯景點';
 
   @override
   String get vendorSubmissionGuideDescription => '請填寫正確日期、地點、主辦單位與報名網址。審核後對所有人公開；後續修改會重新送審。';
@@ -146,6 +161,66 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String vendorPendingReviewCount(int count) {
+    return '$count 筆投稿等待審核';
+  }
+
+  @override
+  String get vendorPendingReviewHint => '審核進度集中顯示於此；通過後所有使用者都能看見。';
+
+  @override
+  String vendorQuotaRemaining(int count, String suffix) {
+    return '尚可使用 $count$suffix';
+  }
+
+  @override
+  String get vendorClickThroughRate => '瀏覽轉點擊';
+
+  @override
+  String get vendorRegistrationRate => '點擊轉報名';
+
+  @override
+  String vendorPositiveActions(int count) {
+    return '收藏與喜歡 $count 次';
+  }
+
+  @override
+  String get vendorNextStepFirstTitle => '刊登第一筆內容';
+
+  @override
+  String get vendorNextStepFirstMessage => '先從一筆完整活動開始，填妥日期、地點、圖片與報名連結。';
+
+  @override
+  String get vendorNextStepReviewTitle => '投稿正在審核中';
+
+  @override
+  String get vendorNextStepReviewMessage => '可在此追蹤結果；通過後，所有正在規劃行程的使用者都能發現。';
+
+  @override
+  String get vendorNextStepExposureTitle => '先建立清楚的第一印象';
+
+  @override
+  String get vendorNextStepExposureMessage => '清楚的名稱、封面圖片與城市，能讓使用者更快找到並理解內容。';
+
+  @override
+  String get vendorNextStepClickTitle => '把瀏覽轉成興趣';
+
+  @override
+  String get vendorNextStepClickMessage => '強化開頭說明、活動亮點及圖片，讓規劃者知道值得點開的原因。';
+
+  @override
+  String get vendorNextStepRegistrationTitle => '讓報名更順暢';
+
+  @override
+  String get vendorNextStepRegistrationMessage => '請確認報名網址仍有效，且報名方式與行動提示足夠清楚。';
+
+  @override
+  String get vendorNextStepGrowingTitle => '內容已開始帶來行動';
+
+  @override
+  String get vendorNextStepGrowingMessage => '持續更新日期與名額，再利用轉換率改善下一筆投稿。';
+
+  @override
   String get vendorAnalyticsPageViews => '頁面瀏覽';
 
   @override
@@ -162,6 +237,75 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get vendorAnalyticsDislikes => '不喜歡';
+
+  @override
+  String vendorQualityProgress(int count, int total) {
+    return '投稿完整度：$count／$total';
+  }
+
+  @override
+  String get vendorQualityName => '標題';
+
+  @override
+  String get vendorQualityDate => '日期';
+
+  @override
+  String get vendorQualityCity => '城市';
+
+  @override
+  String get vendorQualityLocation => '地點';
+
+  @override
+  String get vendorQualityDescription => '說明';
+
+  @override
+  String get vendorQualityLink => '報名連結';
+
+  @override
+  String get vendorContentMixTitle => '內容概況';
+
+  @override
+  String vendorActivityAttractionMix(int activities, int attractions) {
+    return '有效活動 $activities 筆・有效景點 $attractions 筆';
+  }
+
+  @override
+  String vendorPublishedPendingMix(int published, int pending) {
+    return '已公開 $published 筆・待審核 $pending 筆';
+  }
+
+  @override
+  String get vendorRecentSubmissionsTitle => '近期投稿';
+
+  @override
+  String get vendorRecentSubmissionsEmpty => '尚未投稿，先新增第一筆活動或景點。';
+
+  @override
+  String get vendorActivityLabel => '活動';
+
+  @override
+  String get vendorAttractionLabel => '景點';
+
+  @override
+  String get vendorUntitledSubmission => '未命名投稿';
+
+  @override
+  String get vendorQuotaFullHint => '已有額度用完，請先升級方案或移除有效資料再新增。';
+
+  @override
+  String get vendorQuotaNearFullHint => '額度即將用完，建議投稿前先查看可用方案。';
+
+  @override
+  String get vendorViewPlans => '查看方案';
+
+  @override
+  String get vendorAnalyticsEmpty => '內容公開並產生瀏覽互動後，這裡會顯示成效資料。';
+
+  @override
+  String get vendorRegistrationFreeStart => '可先使用免費廠商方案';
+
+  @override
+  String get vendorRegistrationAnalytics => '在同一工作區查看內容成效';
 
   @override
   String get publishedContentDeleteAdminOnly => '已公開資料僅限管理員刪除。您仍可編輯，儲存後會轉為待審核。';
@@ -192,6 +336,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get adminVendorSubscriptionSaved => '廠商訂閱已儲存。';
+
+  @override
+  String get recordCategorySalary => '薪資';
+
+  @override
+  String get recordCategoryBonus => '獎金';
+
+  @override
+  String get recordCategoryInvestmentIncome => '投資收入';
+
+  @override
+  String get recordCategoryAllowance => '補助';
+
+  @override
+  String get recordCategoryRefund => '退款';
+
+  @override
+  String get recordCategoryOtherIncome => '其他收入';
+
+  @override
+  String get languageEnglish => '英文';
+
+  @override
+  String get languageChinese => '中文';
+
+  @override
+  String get languageJapanese => '日文';
+
+  @override
+  String get languageKorean => '韓文';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '由 $name 於 $time 處理';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return '相對強弱指標：$value';
+  }
+
+  @override
+  String get gamePassed => '過關！';
+
+  @override
+  String get gameFailed => '未過關';
+
+  @override
+  String gameScoreValue(num score) {
+    return '得分：$score';
+  }
 
   @override
   String get appTitle => '生活導航';
@@ -1422,24 +1617,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recordCategoryReserved => '保留項';
 
   @override
-  String get recordCategorySalary => '薪資';
-
-  @override
-  String get recordCategoryBonus => '獎金';
-
-  @override
-  String get recordCategoryInvestmentIncome => '投資收入';
-
-  @override
-  String get recordCategoryAllowance => '補助';
-
-  @override
-  String get recordCategoryRefund => '退款';
-
-  @override
-  String get recordCategoryOtherIncome => '其他收入';
-
-  @override
   String get recordCategoryFood => '食';
 
   @override
@@ -2613,38 +2790,5 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String deleteNumberedItem(int number, String name) {
     return '要刪除第 $number 項「$name」嗎？';
-  }
-
-  @override
-  String get languageEnglish => '英文';
-
-  @override
-  String get languageChinese => '中文';
-
-  @override
-  String get languageJapanese => '日文';
-
-  @override
-  String get languageKorean => '韓文';
-
-  @override
-  String feedbackProcessedBy(String name, String time) {
-    return '由 $name 於 $time 處理';
-  }
-
-  @override
-  String relativeStrengthIndex(String value) {
-    return '相對強弱指標：$value';
-  }
-
-  @override
-  String get gamePassed => '過關！';
-
-  @override
-  String get gameFailed => '未過關';
-
-  @override
-  String gameScoreValue(num score) {
-    return '得分：$score';
   }
 }

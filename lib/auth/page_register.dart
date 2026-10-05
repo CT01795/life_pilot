@@ -154,10 +154,45 @@ class _PageRegisterState extends State<PageRegister> {
                         color: Theme.of(
                           context,
                         ).colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                        child: ListTile(
-                          leading: const Icon(Icons.storefront_outlined),
-                          title: Text(loc.vendorRegistrationTitle),
-                          subtitle: Text(loc.vendorRegistrationDescription),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.storefront_outlined),
+                                  Gaps.w8,
+                                  Expanded(
+                                    child: Text(
+                                      loc.vendorRegistrationTitle,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Gaps.h4,
+                              Text(loc.vendorRegistrationDescription),
+                              Gaps.h12,
+                              _vendorRegistrationBenefit(
+                                Icons.rocket_launch_outlined,
+                                loc.vendorRegistrationFreeStart,
+                              ),
+                              _vendorRegistrationBenefit(
+                                Icons.fact_check_outlined,
+                                loc.vendorSubmissionBenefitReview,
+                              ),
+                              _vendorRegistrationBenefit(
+                                Icons.insights_outlined,
+                                loc.vendorRegistrationAnalytics,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Gaps.h12,
@@ -384,4 +419,15 @@ class _PageRegisterState extends State<PageRegister> {
       ),
     );
   }
+
+  Widget _vendorRegistrationBenefit(IconData icon, String text) => Padding(
+    padding: const EdgeInsets.only(top: 6),
+    child: Row(
+      children: [
+        Icon(icon, size: 18),
+        Gaps.w8,
+        Expanded(child: Text(text)),
+      ],
+    ),
+  );
 }

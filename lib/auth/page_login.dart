@@ -401,7 +401,26 @@ class _PageLoginState extends State<PageLogin> {
                                   Gaps.h4,
                                   Text(loc.vendorCreateAccountDescription),
                                   Gaps.h8,
-                                  OutlinedButton.icon(
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: [
+                                      _vendorBenefit(
+                                        Icons.campaign_outlined,
+                                        loc.vendorSubmissionBenefitReach,
+                                      ),
+                                      _vendorBenefit(
+                                        Icons.edit_note_outlined,
+                                        loc.vendorSubmissionBenefitManage,
+                                      ),
+                                      _vendorBenefit(
+                                        Icons.query_stats_outlined,
+                                        loc.vendorAnalyticsTitle,
+                                      ),
+                                    ],
+                                  ),
+                                  Gaps.h12,
+                                  FilledButton.icon(
                                     onPressed:
                                         _isSubmitting || _isSendingResetEmail
                                         ? null
@@ -426,4 +445,20 @@ class _PageLoginState extends State<PageLogin> {
       ),
     );
   }
+
+  Widget _vendorBenefit(IconData icon, String label) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16),
+        const SizedBox(width: 5),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
+      ],
+    ),
+  );
 }

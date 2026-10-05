@@ -211,7 +211,11 @@ class _PageEventAddState extends State<PageEventAdd> {
       value: controllerAdd,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(loc.eventAddEdit),
+          title: Text(
+            controllerAdd.tableName == TableNames.recommendPlaces
+                ? loc.attractionAddEdit
+                : loc.eventAddEdit,
+          ),
           actions: [
             PopScope(
               canPop: _allowPop || !_hasUnsavedChanges,
@@ -245,8 +249,17 @@ class _PageEventAddState extends State<PageEventAdd> {
               padding: Insets.directionalL4R4T4B8,
               children: [
                 if (widget.existingEvent == null &&
-                    controllerAdd.tableName == TableNames.recommendEvents)
+                    {
+                      TableNames.recommendEvents,
+                      TableNames.recommendPlaces,
+                    }.contains(controllerAdd.tableName))
                   _buildVendorSubmissionGuide(loc),
+                if (widget.existingEvent == null &&
+                    {
+                      TableNames.recommendEvents,
+                      TableNames.recommendPlaces,
+                    }.contains(controllerAdd.tableName))
+                  _buildSubmissionQuality(loc),
                 Card(
                   color: Colors.yellow[50],
                   child: Padding(
@@ -388,7 +401,9 @@ class _PageEventAddState extends State<PageEventAdd> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    loc.vendorSubmissionGuideTitle,
+                    controllerAdd.tableName == TableNames.recommendPlaces
+                        ? loc.vendorAttractionSubmissionGuideTitle
+                        : loc.vendorSubmissionGuideTitle,
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   Gaps.h4,
@@ -445,6 +460,69 @@ class _PageEventAddState extends State<PageEventAdd> {
                 ),
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSubmissionQuality(AppLocalizations loc) {
+    final colors = Theme.of(context).colorScheme;
+    return Consumer<ControllerPageEventAdd>(
+      builder: (context, ctl, _) {
+        final checks = <(String, bool)>[
+          (loc.vendorQualityName, ctl.name.trim().isNotEmpty),
+          (loc.vendorQualityDate, ctl.startDate != null),
+          (loc.vendorQualityCity, ctl.city.trim().isNotEmpty),
+          (loc.vendorQualityLocation, ctl.location.trim().isNotEmpty),
+          (loc.vendorQualityDescription, ctl.description.trim().isNotEmpty),
+          (loc.vendorQualityLink, (ctl.masterUrl ?? '').trim().isNotEmpty),
+        ];
+        final completed = checks.where((item) => item.$2).length;
+        return Card(
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.fact_check_outlined, color: colors.primary),
+                    Gaps.w8,
+                    Expanded(
+                      child: Text(
+                        loc.vendorQualityProgress(completed, checks.length),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text('$completed/${checks.length}'),
+                  ],
+                ),
+                Gaps.h8,
+                LinearProgressIndicator(value: completed / checks.length),
+                Gaps.h8,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: checks
+                      .map(
+                        (item) => Chip(
+                          visualDensity: VisualDensity.compact,
+                          avatar: Icon(
+                            item.$2
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            size: 17,
+                            color: item.$2 ? colors.primary : null,
+                          ),
+                          label: Text(item.$1),
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              ],
+            ),
           ),
         );
       },

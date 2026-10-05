@@ -77,12 +77,34 @@ class VendorContentMetrics {
     required this.pending,
     required this.activeEvents,
     required this.activeAttractions,
+    required this.recentSubmissions,
   });
 
   final int published;
   final int pending;
   final int activeEvents;
   final int activeAttractions;
+  final List<VendorRecentSubmission> recentSubmissions;
+}
+
+class VendorRecentSubmission {
+  const VendorRecentSubmission({
+    required this.id,
+    required this.name,
+    required this.city,
+    required this.isActivity,
+    required this.isApproved,
+    this.startDate,
+    this.endDate,
+  });
+
+  final String id;
+  final String name;
+  final String city;
+  final bool isActivity;
+  final bool isApproved;
+  final DateTime? startDate;
+  final DateTime? endDate;
 }
 
 class VendorEngagementMetrics {

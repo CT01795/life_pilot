@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/controller_event.dart';
+import 'package:life_pilot/event/model_event.dart';
+import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/page_event_add.dart';
+import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
+import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
@@ -126,14 +133,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          loc.vendorDashboardTitle,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        Gaps.h4,
-        Text(loc.vendorDashboardSubtitle),
+        _hero(loc, status),
         Gaps.h16,
         LayoutBuilder(
           builder: (context, constraints) {
@@ -172,6 +172,14 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
             );
           },
         ),
+        if (data.metrics.pending > 0) ...[
+          Gaps.h12,
+          _reviewStatus(loc, data.metrics.pending),
+        ],
+        Gaps.h12,
+        _contentMix(loc, data.metrics),
+        Gaps.h12,
+        _recentSubmissions(loc, data.metrics.recentSubmissions),
         Gaps.h16,
         Card(
           child: Padding(
@@ -204,6 +212,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                   isAdmin ? null : status.plan.imageMegabytes,
                   suffix: ' MB',
                 ),
+                if (!isAdmin) _quotaAction(loc, status),
               ],
             ),
           ),
@@ -211,26 +220,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
         Gaps.h12,
         _engagementSection(loc, data.engagement),
         Gaps.h12,
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            FilledButton.icon(
-              onPressed: () => context.read<ControllerPageMain>().changePage(
-                PageType.recommendEvent,
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(loc.vendorManageActivities),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => context.read<ControllerPageMain>().changePage(
-                PageType.recommendPlaces,
-              ),
-              icon: const Icon(Icons.add_location_alt_outlined),
-              label: Text(loc.vendorManageAttractions),
-            ),
-          ],
-        ),
+        _nextStep(loc, data),
         Gaps.h24,
         Container(
           key: _pricingKey,
@@ -284,6 +274,368 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     );
   }
 
+  Widget _hero(AppLocalizations loc, VendorSubscriptionStatus status) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [colors.primaryContainer, colors.tertiaryContainer],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final title = Row(
+                  children: [
+                    Icon(Icons.storefront_outlined, color: colors.primary),
+                    Gaps.w8,
+                    Expanded(
+                      child: Text(
+                        loc.vendorDashboardTitle,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+                final plan = Chip(
+                  avatar: const Icon(Icons.verified_outlined, size: 17),
+                  label: Text(
+                    vendorPlanVersionName(loc, status.plan),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+                if (constraints.maxWidth < 520) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      title,
+                      Gaps.h8,
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: plan,
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: title),
+                    Gaps.w8,
+                    plan,
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 6),
+            Text(loc.vendorDashboardSubtitle),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _openSubmission(TableNames.recommendEvents),
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text(loc.vendorSubmitActivity),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _openSubmission(TableNames.recommendPlaces),
+                  icon: const Icon(Icons.add_location_alt_outlined),
+                  label: Text(loc.vendorSubmitAttraction),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _reviewStatus(AppLocalizations loc, int pending) => Card(
+    color: Theme.of(context).colorScheme.secondaryContainer,
+    child: ListTile(
+      leading: const Icon(Icons.fact_check_outlined),
+      title: Text(
+        loc.vendorPendingReviewCount(pending),
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(loc.vendorPendingReviewHint),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: _openActivities,
+    ),
+  );
+
+  Widget _contentMix(AppLocalizations loc, VendorContentMetrics metrics) {
+    final total = metrics.activeEvents + metrics.activeAttractions;
+    final publishedTotal = metrics.published + metrics.pending;
+    final activityRatio = total == 0 ? 0.0 : metrics.activeEvents / total;
+    final publishedRatio = publishedTotal == 0
+        ? 0.0
+        : metrics.published / publishedTotal;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              loc.vendorContentMixTitle,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            Gaps.h12,
+            _mixLine(
+              loc.vendorActivityAttractionMix(
+                metrics.activeEvents,
+                metrics.activeAttractions,
+              ),
+              activityRatio,
+            ),
+            Gaps.h12,
+            _mixLine(
+              loc.vendorPublishedPendingMix(metrics.published, metrics.pending),
+              publishedRatio,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _mixLine(String label, double value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label),
+      Gaps.h4,
+      LinearProgressIndicator(value: value),
+    ],
+  );
+
+  Widget _recentSubmissions(
+    AppLocalizations loc,
+    List<VendorRecentSubmission> submissions,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              loc.vendorRecentSubmissionsTitle,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            Gaps.h8,
+            if (submissions.isEmpty)
+              Text(loc.vendorRecentSubmissionsEmpty)
+            else
+              ...submissions.map((submission) {
+                final date = submission.startDate ?? submission.endDate;
+                final details = <String>[
+                  submission.isActivity
+                      ? loc.vendorActivityLabel
+                      : loc.vendorAttractionLabel,
+                  if (submission.city.trim().isNotEmpty) submission.city.trim(),
+                  if (date != null) DateFormat.yMd(loc.localeName).format(date),
+                ].join(' · ');
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    submission.isActivity
+                        ? Icons.event_outlined
+                        : Icons.place_outlined,
+                  ),
+                  title: Text(
+                    submission.name.trim().isEmpty
+                        ? loc.vendorUntitledSubmission
+                        : submission.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(details),
+                  trailing: Chip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      submission.isApproved
+                          ? loc.publishedSubmission
+                          : loc.unpublishedSubmission,
+                    ),
+                  ),
+                  onTap: () => _openContent(submission.isActivity),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openContent(bool isActivity) =>
+      context.read<ControllerPageMain>().changePage(
+        isActivity ? PageType.recommendEvent : PageType.recommendPlaces,
+      );
+
+  Widget _quotaAction(AppLocalizations loc, VendorSubscriptionStatus status) {
+    double ratio(int used, int quota) => quota <= 0 ? 0 : used / quota;
+    final highest = [
+      ratio(status.eventUsed, status.plan.eventQuota),
+      ratio(status.attractionUsed, status.plan.attractionQuota),
+      ratio(status.imageBytesUsed, status.plan.imageMegabytes * 1024 * 1024),
+    ].reduce((left, right) => left > right ? left : right);
+    if (highest < 0.8) return const SizedBox.shrink();
+    final full = highest >= 1;
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded),
+          Gaps.w8,
+          Expanded(
+            child: Text(
+              full ? loc.vendorQuotaFullHint : loc.vendorQuotaNearFullHint,
+            ),
+          ),
+          TextButton(
+            onPressed: _scrollToPricing,
+            child: Text(loc.vendorViewPlans),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _scrollToPricing() {
+    final pricingContext = _pricingKey.currentContext;
+    if (pricingContext == null) return;
+    Scrollable.ensureVisible(
+      pricingContext,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      alignment: 0.05,
+    );
+  }
+
+  Widget _nextStep(AppLocalizations loc, _VendorDashboardData data) {
+    final metrics = data.metrics;
+    final engagement = data.engagement;
+    final (icon, title, message) = switch ((
+      metrics.activeEvents + metrics.activeAttractions,
+      metrics.pending,
+      engagement.pageViews,
+      engagement.cardClicks,
+      engagement.registrationClicks,
+    )) {
+      (0, _, _, _, _) => (
+        Icons.rocket_launch_outlined,
+        loc.vendorNextStepFirstTitle,
+        loc.vendorNextStepFirstMessage,
+      ),
+      (_, > 0, _, _, _) => (
+        Icons.schedule_outlined,
+        loc.vendorNextStepReviewTitle,
+        loc.vendorNextStepReviewMessage,
+      ),
+      (_, _, 0, _, _) => (
+        Icons.photo_camera_outlined,
+        loc.vendorNextStepExposureTitle,
+        loc.vendorNextStepExposureMessage,
+      ),
+      (_, _, _, 0, _) => (
+        Icons.ads_click_outlined,
+        loc.vendorNextStepClickTitle,
+        loc.vendorNextStepClickMessage,
+      ),
+      (_, _, _, _, 0) => (
+        Icons.link_outlined,
+        loc.vendorNextStepRegistrationTitle,
+        loc.vendorNextStepRegistrationMessage,
+      ),
+      _ => (
+        Icons.trending_up,
+        loc.vendorNextStepGrowingTitle,
+        loc.vendorNextStepGrowingMessage,
+      ),
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(child: Icon(icon)),
+            Gaps.w12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Gaps.h4,
+                  Text(message),
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    onPressed: _openActivities,
+                    icon: const Icon(Icons.arrow_forward),
+                    label: Text(loc.vendorManageActivities),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openActivities() =>
+      context.read<ControllerPageMain>().changePage(PageType.recommendEvent);
+
+  Future<void> _openSubmission(String tableName) async {
+    final controller = ControllerEvent(
+      auth: context.read<ControllerAuth>(),
+      serviceEvent: context.read<ServiceEvent>(),
+      serviceWeather: context.read<ServiceWeather>(),
+      tableName: tableName,
+      toTableName: TableNames.calendarEvents,
+      modelEvent: ModelEvent(),
+    );
+    try {
+      final event = await Navigator.of(context).push<EventItem?>(
+        MaterialPageRoute(
+          builder: (_) => PageEventAdd(controllerEvent: controller),
+        ),
+      );
+      if (event == null || !mounted) return;
+      await context.read<ControllerAuth>().refreshSubscriptionUsage();
+      _reload();
+    } finally {
+      controller.dispose();
+    }
+  }
+
   Future<void> _openVendorPlanManager() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -333,6 +685,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
         metrics.dislikes,
       ),
     ];
+    final hasEngagement = items.any((item) => item.$3 > 0);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -347,63 +700,122 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
             ),
             Gaps.h4,
             Text(loc.vendorAnalyticsDescription(metrics.analyticsDays)),
-            Gaps.h12,
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 720 ? 3 : 2;
-                final width =
-                    (constraints.maxWidth - (columns - 1) * 10) / columns;
-                return Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: items
-                      .map(
-                        (item) => SizedBox(
-                          width: width,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: [
-                                  Icon(item.$1, size: 20),
-                                  Gaps.w8,
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${item.$3}',
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                        ),
-                                        Text(
-                                          item.$2,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
+            if (!hasEngagement) ...[
+              Gaps.h16,
+              Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.insights_outlined, size: 40),
+                    Gaps.h8,
+                    Text(loc.vendorAnalyticsEmpty, textAlign: TextAlign.center),
+                    Gaps.h8,
+                    FilledButton.tonalIcon(
+                      onPressed: () =>
+                          _openSubmission(TableNames.recommendEvents),
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: Text(loc.vendorSubmitActivity),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Gaps.h12,
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _rateChip(
+                    Icons.ads_click_outlined,
+                    loc.vendorClickThroughRate,
+                    metrics.cardClicks,
+                    metrics.pageViews,
+                  ),
+                  _rateChip(
+                    Icons.how_to_reg_outlined,
+                    loc.vendorRegistrationRate,
+                    metrics.registrationClicks,
+                    metrics.cardClicks,
+                  ),
+                  Chip(
+                    avatar: const Icon(Icons.favorite_border, size: 17),
+                    label: Text(
+                      loc.vendorPositiveActions(metrics.saves + metrics.likes),
+                    ),
+                  ),
+                ],
+              ),
+              Gaps.h12,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 720 ? 3 : 2;
+                  final width =
+                      (constraints.maxWidth - (columns - 1) * 10) / columns;
+                  return Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: items
+                        .map(
+                          (item) => SizedBox(
+                            width: width,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    Icon(item.$1, size: 20),
+                                    Gaps.w8,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${item.$3}',
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                          ),
+                                          Text(
+                                            item.$2,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                      .toList(growable: false),
-                );
-              },
-            ),
+                        )
+                        .toList(growable: false),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _rateChip(
+    IconData icon,
+    String label,
+    int numerator,
+    int denominator,
+  ) {
+    final rate = denominator <= 0 ? 0 : numerator / denominator * 100;
+    return Chip(
+      avatar: Icon(icon, size: 17),
+      label: Text('$label ${rate.toStringAsFixed(1)}%'),
     );
   }
 
@@ -431,6 +843,11 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
     final progress = quota == null || quota <= 0
         ? 0.0
         : (used / quota).clamp(0.0, 1.0);
+    final remaining = quota == null
+        ? null
+        : (quota - used < 0 ? 0 : quota - used);
+    final nearlyFull = quota != null && quota > 0 && progress >= 0.8;
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -442,6 +859,18 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
               Text(quota == null ? '$used / ∞' : '$used / $quota$suffix'),
             ],
           ),
+          if (remaining != null) ...[
+            Gaps.h4,
+            Text(
+              loc.vendorQuotaRemaining(remaining, suffix),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: nearlyFull
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: nearlyFull ? FontWeight.w800 : null,
+              ),
+            ),
+          ],
           Gaps.h4,
           if (quota != null) LinearProgressIndicator(value: progress),
         ],

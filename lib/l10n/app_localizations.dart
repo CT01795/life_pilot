@@ -132,13 +132,13 @@ abstract class AppLocalizations {
   /// Label for vendor submit activity
   ///
   /// In en, this message translates to:
-  /// **'Add'**
+  /// **'Submit activity'**
   String get vendorSubmitActivity;
 
   /// Label for vendor submit attraction
   ///
   /// In en, this message translates to:
-  /// **'Add'**
+  /// **'Submit attraction'**
   String get vendorSubmitAttraction;
 
   /// Label for vendor my submissions
@@ -153,11 +153,41 @@ abstract class AppLocalizations {
   /// **'All submissions'**
   String get vendorAllActivities;
 
+  /// Short label for submitting vendor content
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get vendorSubmitShort;
+
+  /// Short label for the vendor's own submissions
+  ///
+  /// In en, this message translates to:
+  /// **'Mine'**
+  String get vendorMineShort;
+
+  /// Short label for all submissions
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get vendorAllShort;
+
   /// Label for vendor submission guide title
   ///
   /// In en, this message translates to:
   /// **'Help people discover your activity'**
   String get vendorSubmissionGuideTitle;
+
+  /// Label for vendor attraction submission guide title
+  ///
+  /// In en, this message translates to:
+  /// **'Help people discover your attraction'**
+  String get vendorAttractionSubmissionGuideTitle;
+
+  /// Title for adding or editing an attraction
+  ///
+  /// In en, this message translates to:
+  /// **'Add/Edit attraction'**
+  String get attractionAddEdit;
 
   /// Label for vendor submission guide description
   ///
@@ -345,6 +375,114 @@ abstract class AppLocalizations {
   /// **'Interactions with your activities and attractions during the latest {days} days.'**
   String vendorAnalyticsDescription(int days);
 
+  /// No description provided for @vendorPendingReviewCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} submissions awaiting review'**
+  String vendorPendingReviewCount(int count);
+
+  /// Vendor pending review guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Review status is kept here. Published listings become visible to everyone.'**
+  String get vendorPendingReviewHint;
+
+  /// No description provided for @vendorQuotaRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}{suffix} remaining'**
+  String vendorQuotaRemaining(int count, String suffix);
+
+  /// Vendor content click-through rate
+  ///
+  /// In en, this message translates to:
+  /// **'View-to-click'**
+  String get vendorClickThroughRate;
+
+  /// Vendor registration click conversion rate
+  ///
+  /// In en, this message translates to:
+  /// **'Click-to-registration'**
+  String get vendorRegistrationRate;
+
+  /// No description provided for @vendorPositiveActions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} saves and likes'**
+  String vendorPositiveActions(int count);
+
+  /// Vendor next action title
+  ///
+  /// In en, this message translates to:
+  /// **'Publish your first listing'**
+  String get vendorNextStepFirstTitle;
+
+  /// Vendor next action message
+  ///
+  /// In en, this message translates to:
+  /// **'Start with one complete activity: add an accurate date, place, image and registration link.'**
+  String get vendorNextStepFirstMessage;
+
+  /// Vendor next action title
+  ///
+  /// In en, this message translates to:
+  /// **'Your submission is being reviewed'**
+  String get vendorNextStepReviewTitle;
+
+  /// Vendor next action message
+  ///
+  /// In en, this message translates to:
+  /// **'You can track the result here. Once approved, everyone can discover it while planning.'**
+  String get vendorNextStepReviewMessage;
+
+  /// Vendor next action title
+  ///
+  /// In en, this message translates to:
+  /// **'Make the first impression count'**
+  String get vendorNextStepExposureTitle;
+
+  /// Vendor next action message
+  ///
+  /// In en, this message translates to:
+  /// **'A clear title, cover image and city help people discover and understand your listing.'**
+  String get vendorNextStepExposureMessage;
+
+  /// Vendor next action title
+  ///
+  /// In en, this message translates to:
+  /// **'Turn views into interest'**
+  String get vendorNextStepClickTitle;
+
+  /// Vendor next action message
+  ///
+  /// In en, this message translates to:
+  /// **'Strengthen the opening description, highlights and image so planners know why to open it.'**
+  String get vendorNextStepClickMessage;
+
+  /// Vendor next action title
+  ///
+  /// In en, this message translates to:
+  /// **'Make registration easier'**
+  String get vendorNextStepRegistrationTitle;
+
+  /// Vendor next action message
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the registration URL and call to action are clear and still available.'**
+  String get vendorNextStepRegistrationMessage;
+
+  /// Vendor next action title
+  ///
+  /// In en, this message translates to:
+  /// **'Your content is creating action'**
+  String get vendorNextStepGrowingTitle;
+
+  /// Vendor next action message
+  ///
+  /// In en, this message translates to:
+  /// **'Keep dates and availability current, then use the conversion rates to improve the next listing.'**
+  String get vendorNextStepGrowingMessage;
+
   /// Label for vendor analytics page views
   ///
   /// In en, this message translates to:
@@ -380,6 +518,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dislikes'**
   String get vendorAnalyticsDislikes;
+
+  /// Vendor submission quality progress
+  ///
+  /// In en, this message translates to:
+  /// **'Submission completeness: {count} of {total}'**
+  String vendorQualityProgress(int count, int total);
+
+  /// No description provided for @vendorQualityName.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get vendorQualityName;
+
+  /// No description provided for @vendorQualityDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get vendorQualityDate;
+
+  /// No description provided for @vendorQualityCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get vendorQualityCity;
+
+  /// No description provided for @vendorQualityLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get vendorQualityLocation;
+
+  /// No description provided for @vendorQualityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get vendorQualityDescription;
+
+  /// No description provided for @vendorQualityLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration link'**
+  String get vendorQualityLink;
+
+  /// No description provided for @vendorContentMixTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Content overview'**
+  String get vendorContentMixTitle;
+
+  /// Vendor active content mix
+  ///
+  /// In en, this message translates to:
+  /// **'{activities} active activities · {attractions} active attractions'**
+  String vendorActivityAttractionMix(int activities, int attractions);
+
+  /// Vendor review status mix
+  ///
+  /// In en, this message translates to:
+  /// **'{published} public · {pending} awaiting review'**
+  String vendorPublishedPendingMix(int published, int pending);
+
+  /// No description provided for @vendorRecentSubmissionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent submissions'**
+  String get vendorRecentSubmissionsTitle;
+
+  /// No description provided for @vendorRecentSubmissionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No submissions yet. Add your first activity or attraction.'**
+  String get vendorRecentSubmissionsEmpty;
+
+  /// No description provided for @vendorActivityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get vendorActivityLabel;
+
+  /// No description provided for @vendorAttractionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Attraction'**
+  String get vendorAttractionLabel;
+
+  /// No description provided for @vendorUntitledSubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled submission'**
+  String get vendorUntitledSubmission;
+
+  /// No description provided for @vendorQuotaFullHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An allowance is full. Upgrade or remove an active listing before adding more.'**
+  String get vendorQuotaFullHint;
+
+  /// No description provided for @vendorQuotaNearFullHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An allowance is almost full. Review the available plans before your next submission.'**
+  String get vendorQuotaNearFullHint;
+
+  /// No description provided for @vendorViewPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'View plans'**
+  String get vendorViewPlans;
+
+  /// No description provided for @vendorAnalyticsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance data appears after people discover and interact with your public content.'**
+  String get vendorAnalyticsEmpty;
+
+  /// No description provided for @vendorRegistrationFreeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with the free organizer plan'**
+  String get vendorRegistrationFreeStart;
+
+  /// No description provided for @vendorRegistrationAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'See content performance in one workspace'**
+  String get vendorRegistrationAnalytics;
 
   /// Label for published content delete admin only
   ///
@@ -440,6 +704,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Organizer subscription saved.'**
   String get adminVendorSubscriptionSaved;
+
+  /// No description provided for @recordCategorySalary.
+  ///
+  /// In en, this message translates to:
+  /// **'Salary'**
+  String get recordCategorySalary;
+
+  /// No description provided for @recordCategoryBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus'**
+  String get recordCategoryBonus;
+
+  /// No description provided for @recordCategoryInvestmentIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Investment income'**
+  String get recordCategoryInvestmentIncome;
+
+  /// No description provided for @recordCategoryAllowance.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowance'**
+  String get recordCategoryAllowance;
+
+  /// No description provided for @recordCategoryRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get recordCategoryRefund;
+
+  /// No description provided for @recordCategoryOtherIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Other income'**
+  String get recordCategoryOtherIncome;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese'**
+  String get languageChinese;
+
+  /// No description provided for @languageJapanese.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese'**
+  String get languageJapanese;
+
+  /// No description provided for @languageKorean.
+  ///
+  /// In en, this message translates to:
+  /// **'Korean'**
+  String get languageKorean;
+
+  /// No description provided for @feedbackProcessedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Processed by {name} at {time}'**
+  String feedbackProcessedBy(String name, String time);
+
+  /// No description provided for @relativeStrengthIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'RSI: {value}'**
+  String relativeStrengthIndex(String value);
+
+  /// No description provided for @gamePassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass!'**
+  String get gamePassed;
+
+  /// No description provided for @gameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fail'**
+  String get gameFailed;
+
+  /// No description provided for @gameScoreValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}'**
+  String gameScoreValue(num score);
 
   /// Label for app title
   ///
@@ -2793,7 +3147,7 @@ abstract class AppLocalizations {
   /// **'Edit record'**
   String get editRecord;
 
-  /// Button for adding a record with a structured form
+  /// Label for manualEntry
   ///
   /// In en, this message translates to:
   /// **'Manual entry'**
@@ -2840,42 +3194,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reserved'**
   String get recordCategoryReserved;
-
-  /// Accounting income category: salary
-  ///
-  /// In en, this message translates to:
-  /// **'Salary'**
-  String get recordCategorySalary;
-
-  /// Accounting income category: bonus
-  ///
-  /// In en, this message translates to:
-  /// **'Bonus'**
-  String get recordCategoryBonus;
-
-  /// Accounting income category: investment income
-  ///
-  /// In en, this message translates to:
-  /// **'Investment income'**
-  String get recordCategoryInvestmentIncome;
-
-  /// Accounting income category: allowance
-  ///
-  /// In en, this message translates to:
-  /// **'Allowance'**
-  String get recordCategoryAllowance;
-
-  /// Accounting income category: refund
-  ///
-  /// In en, this message translates to:
-  /// **'Refund'**
-  String get recordCategoryRefund;
-
-  /// Accounting income category: other income
-  ///
-  /// In en, this message translates to:
-  /// **'Other income'**
-  String get recordCategoryOtherIncome;
 
   /// Label for recordCategoryFood
   ///
@@ -5025,7 +5343,7 @@ abstract class AppLocalizations {
   /// **'P/E: {value}'**
   String priceEarningsRatio(String value);
 
-  /// No description provided for @stockNet.
+  /// Label for stockNet
   ///
   /// In en, this message translates to:
   /// **'Net'**
@@ -5036,60 +5354,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete item {number}, {name}?'**
   String deleteNumberedItem(int number, String name);
-
-  /// No description provided for @languageEnglish.
-  ///
-  /// In en, this message translates to:
-  /// **'English'**
-  String get languageEnglish;
-
-  /// No description provided for @languageChinese.
-  ///
-  /// In en, this message translates to:
-  /// **'Chinese'**
-  String get languageChinese;
-
-  /// No description provided for @languageJapanese.
-  ///
-  /// In en, this message translates to:
-  /// **'Japanese'**
-  String get languageJapanese;
-
-  /// No description provided for @languageKorean.
-  ///
-  /// In en, this message translates to:
-  /// **'Korean'**
-  String get languageKorean;
-
-  /// No description provided for @feedbackProcessedBy.
-  ///
-  /// In en, this message translates to:
-  /// **'Processed by {name} at {time}'**
-  String feedbackProcessedBy(String name, String time);
-
-  /// No description provided for @relativeStrengthIndex.
-  ///
-  /// In en, this message translates to:
-  /// **'RSI: {value}'**
-  String relativeStrengthIndex(String value);
-
-  /// No description provided for @gamePassed.
-  ///
-  /// In en, this message translates to:
-  /// **'Pass!'**
-  String get gamePassed;
-
-  /// No description provided for @gameFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Fail'**
-  String get gameFailed;
-
-  /// No description provided for @gameScoreValue.
-  ///
-  /// In en, this message translates to:
-  /// **'Score: {score}'**
-  String gameScoreValue(num score);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

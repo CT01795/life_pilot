@@ -24,10 +24,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorSubmissionBenefitReview => 'Clear review status';
 
   @override
-  String get vendorSubmitActivity => 'Add';
+  String get vendorSubmitActivity => 'Submit activity';
 
   @override
-  String get vendorSubmitAttraction => 'Add';
+  String get vendorSubmitAttraction => 'Submit attraction';
 
   @override
   String get vendorMySubmissions => 'My submissions';
@@ -36,7 +36,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorAllActivities => 'All submissions';
 
   @override
+  String get vendorSubmitShort => 'Submit';
+
+  @override
+  String get vendorMineShort => 'Mine';
+
+  @override
+  String get vendorAllShort => 'All';
+
+  @override
   String get vendorSubmissionGuideTitle => 'Help people discover your activity';
+
+  @override
+  String get vendorAttractionSubmissionGuideTitle => 'Help people discover your attraction';
+
+  @override
+  String get attractionAddEdit => 'Add/Edit attraction';
 
   @override
   String get vendorSubmissionGuideDescription => 'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.';
@@ -146,6 +161,66 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String vendorPendingReviewCount(int count) {
+    return '$count submissions awaiting review';
+  }
+
+  @override
+  String get vendorPendingReviewHint => 'Review status is kept here. Published listings become visible to everyone.';
+
+  @override
+  String vendorQuotaRemaining(int count, String suffix) {
+    return '$count$suffix remaining';
+  }
+
+  @override
+  String get vendorClickThroughRate => 'View-to-click';
+
+  @override
+  String get vendorRegistrationRate => 'Click-to-registration';
+
+  @override
+  String vendorPositiveActions(int count) {
+    return '$count saves and likes';
+  }
+
+  @override
+  String get vendorNextStepFirstTitle => 'Publish your first listing';
+
+  @override
+  String get vendorNextStepFirstMessage => 'Start with one complete activity: add an accurate date, place, image and registration link.';
+
+  @override
+  String get vendorNextStepReviewTitle => 'Your submission is being reviewed';
+
+  @override
+  String get vendorNextStepReviewMessage => 'You can track the result here. Once approved, everyone can discover it while planning.';
+
+  @override
+  String get vendorNextStepExposureTitle => 'Make the first impression count';
+
+  @override
+  String get vendorNextStepExposureMessage => 'A clear title, cover image and city help people discover and understand your listing.';
+
+  @override
+  String get vendorNextStepClickTitle => 'Turn views into interest';
+
+  @override
+  String get vendorNextStepClickMessage => 'Strengthen the opening description, highlights and image so planners know why to open it.';
+
+  @override
+  String get vendorNextStepRegistrationTitle => 'Make registration easier';
+
+  @override
+  String get vendorNextStepRegistrationMessage => 'Check that the registration URL and call to action are clear and still available.';
+
+  @override
+  String get vendorNextStepGrowingTitle => 'Your content is creating action';
+
+  @override
+  String get vendorNextStepGrowingMessage => 'Keep dates and availability current, then use the conversion rates to improve the next listing.';
+
+  @override
   String get vendorAnalyticsPageViews => 'Page views';
 
   @override
@@ -162,6 +237,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vendorAnalyticsDislikes => 'Dislikes';
+
+  @override
+  String vendorQualityProgress(int count, int total) {
+    return 'Submission completeness: $count of $total';
+  }
+
+  @override
+  String get vendorQualityName => 'Title';
+
+  @override
+  String get vendorQualityDate => 'Date';
+
+  @override
+  String get vendorQualityCity => 'City';
+
+  @override
+  String get vendorQualityLocation => 'Place';
+
+  @override
+  String get vendorQualityDescription => 'Description';
+
+  @override
+  String get vendorQualityLink => 'Registration link';
+
+  @override
+  String get vendorContentMixTitle => 'Content overview';
+
+  @override
+  String vendorActivityAttractionMix(int activities, int attractions) {
+    return '$activities active activities · $attractions active attractions';
+  }
+
+  @override
+  String vendorPublishedPendingMix(int published, int pending) {
+    return '$published public · $pending awaiting review';
+  }
+
+  @override
+  String get vendorRecentSubmissionsTitle => 'Recent submissions';
+
+  @override
+  String get vendorRecentSubmissionsEmpty => 'No submissions yet. Add your first activity or attraction.';
+
+  @override
+  String get vendorActivityLabel => 'Activity';
+
+  @override
+  String get vendorAttractionLabel => 'Attraction';
+
+  @override
+  String get vendorUntitledSubmission => 'Untitled submission';
+
+  @override
+  String get vendorQuotaFullHint => 'An allowance is full. Upgrade or remove an active listing before adding more.';
+
+  @override
+  String get vendorQuotaNearFullHint => 'An allowance is almost full. Review the available plans before your next submission.';
+
+  @override
+  String get vendorViewPlans => 'View plans';
+
+  @override
+  String get vendorAnalyticsEmpty => 'Performance data appears after people discover and interact with your public content.';
+
+  @override
+  String get vendorRegistrationFreeStart => 'Start with the free organizer plan';
+
+  @override
+  String get vendorRegistrationAnalytics => 'See content performance in one workspace';
 
   @override
   String get publishedContentDeleteAdminOnly => 'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
@@ -192,6 +336,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminVendorSubscriptionSaved => 'Organizer subscription saved.';
+
+  @override
+  String get recordCategorySalary => 'Salary';
+
+  @override
+  String get recordCategoryBonus => 'Bonus';
+
+  @override
+  String get recordCategoryInvestmentIncome => 'Investment income';
+
+  @override
+  String get recordCategoryAllowance => 'Allowance';
+
+  @override
+  String get recordCategoryRefund => 'Refund';
+
+  @override
+  String get recordCategoryOtherIncome => 'Other income';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChinese => 'Chinese';
+
+  @override
+  String get languageJapanese => 'Japanese';
+
+  @override
+  String get languageKorean => 'Korean';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return 'Processed by $name at $time';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI: $value';
+  }
+
+  @override
+  String get gamePassed => 'Pass!';
+
+  @override
+  String get gameFailed => 'Fail';
+
+  @override
+  String gameScoreValue(num score) {
+    return 'Score: $score';
+  }
 
   @override
   String get appTitle => 'Life Pilot';
@@ -1422,24 +1617,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordCategoryReserved => 'Reserved';
 
   @override
-  String get recordCategorySalary => 'Salary';
-
-  @override
-  String get recordCategoryBonus => 'Bonus';
-
-  @override
-  String get recordCategoryInvestmentIncome => 'Investment income';
-
-  @override
-  String get recordCategoryAllowance => 'Allowance';
-
-  @override
-  String get recordCategoryRefund => 'Refund';
-
-  @override
-  String get recordCategoryOtherIncome => 'Other income';
-
-  @override
   String get recordCategoryFood => 'Food';
 
   @override
@@ -2613,38 +2790,5 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String deleteNumberedItem(int number, String name) {
     return 'Delete item $number, $name?';
-  }
-
-  @override
-  String get languageEnglish => 'English';
-
-  @override
-  String get languageChinese => 'Chinese';
-
-  @override
-  String get languageJapanese => 'Japanese';
-
-  @override
-  String get languageKorean => 'Korean';
-
-  @override
-  String feedbackProcessedBy(String name, String time) {
-    return 'Processed by $name at $time';
-  }
-
-  @override
-  String relativeStrengthIndex(String value) {
-    return 'RSI: $value';
-  }
-
-  @override
-  String get gamePassed => 'Pass!';
-
-  @override
-  String get gameFailed => 'Fail';
-
-  @override
-  String gameScoreValue(num score) {
-    return 'Score: $score';
   }
 }

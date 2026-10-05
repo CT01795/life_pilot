@@ -5,9 +5,10 @@ import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:provider/provider.dart';
 
 class LanguageToggleDropdown extends StatelessWidget {
-  const LanguageToggleDropdown({super.key});
+  final bool compact;
 
-  // 語言代碼對應名稱
+  const LanguageToggleDropdown({super.key, this.compact = false});
+
   String getLanguageDisplayName(BuildContext context, String code) {
     final loc = AppLocalizations.of(context)!;
     switch (code) {
@@ -27,42 +28,67 @@ class LanguageToggleDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.watch<ProviderLocale>();
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<Locale>(
-        value: locale.locale,
-        dropdownColor: const Color(0xFF0066CC),
-        alignment: Alignment.centerRight, // Flutter 3.7+ 支援，靠右顯示 dropdown 的選單
-        icon: Icon(Icons.arrow_drop_down, color: Colors.white), // 自訂下拉箭頭顏色
-        selectedItemBuilder: (BuildContext context) {
-          return AppConfig.supportedLocales.map<Widget>((Locale locale) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end, // 靠右顯示
+    return PopupMenuButton<Locale>(
+      initialValue: locale.locale,
+      tooltip: AppLocalizations.of(context)!.language,
+      color: const Color(0xFF0066CC),
+      constraints: const BoxConstraints(minWidth: 180, maxWidth: 220),
+      position: PopupMenuPosition.under,
+      onSelected: (newLocale) {
+        context.read<ProviderLocale>().setLocale(locale: newLocale);
+      },
+      itemBuilder: (context) {
+        return AppConfig.supportedLocales.map((itemLocale) {
+          final isSelected = itemLocale == locale.locale;
+          return PopupMenuItem<Locale>(
+            value: itemLocale,
+            height: kMinInteractiveDimension,
+            child: Row(
               children: [
-                Icon(Icons.language, color: Colors.white, size: 30),
-                Text(
-                  getLanguageDisplayName(context, locale.languageCode),
-                  style: TextStyle(color: Colors.white, fontSize: 12),
+                SizedBox(
+                  width: 28,
+                  child: isSelected
+                      ? const Icon(Icons.check, color: Colors.white, size: 20)
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    getLanguageDisplayName(context, itemLocale.languageCode),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
-            );
-          }).toList();
-        },
-        items: AppConfig.supportedLocales.map((locale) {
-          return DropdownMenuItem<Locale>(
-            value: locale,
-            child: Text(
-              getLanguageDisplayName(context, locale.languageCode),
-              style: TextStyle(color: Colors.white),
             ),
           );
-        }).toList(),
-        onChanged: (Locale? newLocale) {
-          if (newLocale != null) {
-            // 直接改 ProviderLocale
-            context.read<ProviderLocale>().setLocale(locale: newLocale);
-          }
-        },
+        }).toList();
+      },
+      child: SizedBox(
+        width: compact ? 64 : null,
+        height: kToolbarHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Row(
+            mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.language, color: Colors.white, size: 28),
+              if (!compact) ...[
+                const SizedBox(width: 4),
+                Text(
+                  getLanguageDisplayName(context, locale.locale.languageCode),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ],
+              const Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
       ),
     );
   }

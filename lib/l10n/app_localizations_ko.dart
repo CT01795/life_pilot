@@ -24,10 +24,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vendorSubmissionBenefitReview => '명확한 심사 상태';
 
   @override
-  String get vendorSubmitActivity => '등록';
+  String get vendorSubmitActivity => '행사 등록';
 
   @override
-  String get vendorSubmitAttraction => '등록';
+  String get vendorSubmitAttraction => '명소 등록';
 
   @override
   String get vendorMySubmissions => '내 등록';
@@ -36,7 +36,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vendorAllActivities => '전체 등록';
 
   @override
+  String get vendorSubmitShort => '등록';
+
+  @override
+  String get vendorMineShort => '내 것';
+
+  @override
+  String get vendorAllShort => '전체';
+
+  @override
   String get vendorSubmissionGuideTitle => '더 많은 사람이 행사를 발견하게 하세요';
+
+  @override
+  String get vendorAttractionSubmissionGuideTitle => '더 많은 사람에게 명소 알리기';
+
+  @override
+  String get attractionAddEdit => '명소 추가/수정';
 
   @override
   String get vendorSubmissionGuideDescription => '정확한 날짜, 장소, 주최자, 신청 URL을 입력하세요. 심사 후 공개되며 수정하면 다시 심사를 받습니다.';
@@ -146,6 +161,66 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String vendorPendingReviewCount(int count) {
+    return '검토 대기 중인 등록 $count건';
+  }
+
+  @override
+  String get vendorPendingReviewHint => '검토 상태를 여기에서 확인할 수 있으며 승인 후 모든 사용자에게 공개됩니다.';
+
+  @override
+  String vendorQuotaRemaining(int count, String suffix) {
+    return '남은 한도 $count$suffix';
+  }
+
+  @override
+  String get vendorClickThroughRate => '조회 대비 클릭';
+
+  @override
+  String get vendorRegistrationRate => '클릭 대비 신청';
+
+  @override
+  String vendorPositiveActions(int count) {
+    return '저장 및 좋아요 $count회';
+  }
+
+  @override
+  String get vendorNextStepFirstTitle => '첫 콘텐츠를 등록하세요';
+
+  @override
+  String get vendorNextStepFirstMessage => '정확한 날짜, 장소, 이미지와 신청 링크가 있는 행사부터 시작하세요.';
+
+  @override
+  String get vendorNextStepReviewTitle => '등록 내용을 검토 중입니다';
+
+  @override
+  String get vendorNextStepReviewMessage => '여기에서 결과를 확인할 수 있으며 승인되면 일정을 계획하는 모든 사용자에게 공개됩니다.';
+
+  @override
+  String get vendorNextStepExposureTitle => '분명한 첫인상을 만드세요';
+
+  @override
+  String get vendorNextStepExposureMessage => '명확한 이름, 대표 이미지와 도시 정보는 콘텐츠를 더 쉽게 찾고 이해하게 합니다.';
+
+  @override
+  String get vendorNextStepClickTitle => '조회를 관심으로 바꾸세요';
+
+  @override
+  String get vendorNextStepClickMessage => '소개 문구, 주요 특징과 이미지를 보완해 클릭할 이유를 알려 주세요.';
+
+  @override
+  String get vendorNextStepRegistrationTitle => '신청을 더 쉽게 만드세요';
+
+  @override
+  String get vendorNextStepRegistrationMessage => '신청 URL이 유효하고 신청 방법과 안내가 명확한지 확인하세요.';
+
+  @override
+  String get vendorNextStepGrowingTitle => '콘텐츠가 행동을 만들고 있습니다';
+
+  @override
+  String get vendorNextStepGrowingMessage => '날짜와 이용 가능 정보를 최신으로 유지하고 전환율을 다음 등록 개선에 활용하세요.';
+
+  @override
   String get vendorAnalyticsPageViews => '페이지 조회';
 
   @override
@@ -162,6 +237,75 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get vendorAnalyticsDislikes => '싫어요';
+
+  @override
+  String vendorQualityProgress(int count, int total) {
+    return '게시물 완성도: $count/$total';
+  }
+
+  @override
+  String get vendorQualityName => '제목';
+
+  @override
+  String get vendorQualityDate => '날짜';
+
+  @override
+  String get vendorQualityCity => '도시';
+
+  @override
+  String get vendorQualityLocation => '장소';
+
+  @override
+  String get vendorQualityDescription => '설명';
+
+  @override
+  String get vendorQualityLink => '신청 링크';
+
+  @override
+  String get vendorContentMixTitle => '콘텐츠 현황';
+
+  @override
+  String vendorActivityAttractionMix(int activities, int attractions) {
+    return '진행 중인 행사 $activities개 · 명소 $attractions개';
+  }
+
+  @override
+  String vendorPublishedPendingMix(int published, int pending) {
+    return '공개 $published개 · 검토 대기 $pending개';
+  }
+
+  @override
+  String get vendorRecentSubmissionsTitle => '최근 게시물';
+
+  @override
+  String get vendorRecentSubmissionsEmpty => '아직 게시물이 없습니다. 첫 행사나 명소를 추가하세요.';
+
+  @override
+  String get vendorActivityLabel => '행사';
+
+  @override
+  String get vendorAttractionLabel => '명소';
+
+  @override
+  String get vendorUntitledSubmission => '제목 없는 게시물';
+
+  @override
+  String get vendorQuotaFullHint => '한도가 가득 찼습니다. 업그레이드하거나 진행 중인 게시물을 삭제하세요.';
+
+  @override
+  String get vendorQuotaNearFullHint => '한도가 거의 찼습니다. 다음 게시물 전에 요금제를 확인하세요.';
+
+  @override
+  String get vendorViewPlans => '요금제 보기';
+
+  @override
+  String get vendorAnalyticsEmpty => '공개 콘텐츠에 조회와 반응이 생기면 여기에 성과가 표시됩니다.';
+
+  @override
+  String get vendorRegistrationFreeStart => '무료 주최자 요금제로 시작';
+
+  @override
+  String get vendorRegistrationAnalytics => '한 작업 공간에서 콘텐츠 성과 확인';
 
   @override
   String get publishedContentDeleteAdminOnly => '공개된 정보는 관리자만 삭제할 수 있습니다. 수정 후 저장하면 검토 대기 상태로 돌아갑니다.';
@@ -192,6 +336,57 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get adminVendorSubscriptionSaved => '주최자 구독을 저장했습니다.';
+
+  @override
+  String get recordCategorySalary => '급여';
+
+  @override
+  String get recordCategoryBonus => '상여금';
+
+  @override
+  String get recordCategoryInvestmentIncome => '투자 수익';
+
+  @override
+  String get recordCategoryAllowance => '수당';
+
+  @override
+  String get recordCategoryRefund => '환불';
+
+  @override
+  String get recordCategoryOtherIncome => '기타 수입';
+
+  @override
+  String get languageEnglish => '영어';
+
+  @override
+  String get languageChinese => '중국어';
+
+  @override
+  String get languageJapanese => '일본어';
+
+  @override
+  String get languageKorean => '한국어';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '$name님이 $time에 처리';
+  }
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI: $value';
+  }
+
+  @override
+  String get gamePassed => '통과!';
+
+  @override
+  String get gameFailed => '실패';
+
+  @override
+  String gameScoreValue(num score) {
+    return '점수: $score';
+  }
 
   @override
   String get appTitle => '생활 내비게이션';
@@ -1422,24 +1617,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recordCategoryReserved => '보존 항목';
 
   @override
-  String get recordCategorySalary => '급여';
-
-  @override
-  String get recordCategoryBonus => '상여금';
-
-  @override
-  String get recordCategoryInvestmentIncome => '투자 수익';
-
-  @override
-  String get recordCategoryAllowance => '수당';
-
-  @override
-  String get recordCategoryRefund => '환불';
-
-  @override
-  String get recordCategoryOtherIncome => '기타 수입';
-
-  @override
   String get recordCategoryFood => '식비';
 
   @override
@@ -2613,38 +2790,5 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String deleteNumberedItem(int number, String name) {
     return '$number번 항목 \'$name\'을(를) 삭제할까요?';
-  }
-
-  @override
-  String get languageEnglish => '영어';
-
-  @override
-  String get languageChinese => '중국어';
-
-  @override
-  String get languageJapanese => '일본어';
-
-  @override
-  String get languageKorean => '한국어';
-
-  @override
-  String feedbackProcessedBy(String name, String time) {
-    return '$name님이 $time에 처리';
-  }
-
-  @override
-  String relativeStrengthIndex(String value) {
-    return 'RSI: $value';
-  }
-
-  @override
-  String get gamePassed => '통과!';
-
-  @override
-  String get gameFailed => '실패';
-
-  @override
-  String gameScoreValue(num score) {
-    return '점수: $score';
   }
 }

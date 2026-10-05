@@ -34,6 +34,7 @@ AppBar widgetsWhiteAppBar({
   List<AppBarMenuAction> extraMenuActions = const [],
 }) {
   return AppBar(
+    titleSpacing: titleWidget == null ? NavigationToolbar.kMiddleSpacing : 4,
     title:
         titleWidget ??
         Text(

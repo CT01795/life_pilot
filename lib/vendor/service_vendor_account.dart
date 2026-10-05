@@ -33,11 +33,11 @@ class ServiceVendorAccount {
     final responses = await Future.wait([
       supabase
           .from(TableNames.recommendEvents)
-          .select('id,is_approved,start_date,end_date')
+          .select('id,name,city,is_approved,start_date,end_date')
           .eq(Fields.account, normalized),
       supabase
           .from(TableNames.recommendPlaces)
-          .select('id,is_approved,start_date,end_date')
+          .select('id,name,city,is_approved,start_date,end_date')
           .eq(Fields.account, normalized),
     ]);
     final eventRows = (responses[0] as List<dynamic>)
@@ -56,11 +56,48 @@ class ServiceVendorAccount {
       return end == null || !end.toLocal().isBefore(date);
     }
 
+    VendorRecentSubmission submission(
+      Map<String, dynamic> row, {
+      required bool isActivity,
+    }) => VendorRecentSubmission(
+      id: row['id']?.toString() ?? '',
+      name: row['name']?.toString() ?? '',
+      city: row['city']?.toString() ?? '',
+      isActivity: isActivity,
+      isApproved: row['is_approved'] == true,
+      startDate: DateTime.tryParse(
+        row['start_date']?.toString() ?? '',
+      )?.toLocal(),
+      endDate: DateTime.tryParse(row['end_date']?.toString() ?? '')?.toLocal(),
+    );
+
+    final recentSubmissions =
+        <VendorRecentSubmission>[
+          ...eventRows.map((row) => submission(row, isActivity: true)),
+          ...attractionRows.map((row) => submission(row, isActivity: false)),
+        ]..sort((left, right) {
+          if (left.isApproved != right.isApproved) {
+            return left.isApproved ? 1 : -1;
+          }
+          final leftDate = left.startDate ?? left.endDate;
+          final rightDate = right.startDate ?? right.endDate;
+          if (leftDate == null && rightDate == null) return 0;
+          if (leftDate == null) return 1;
+          if (rightDate == null) return -1;
+          final leftUpcoming = !leftDate.isBefore(date);
+          final rightUpcoming = !rightDate.isBefore(date);
+          if (leftUpcoming != rightUpcoming) return leftUpcoming ? -1 : 1;
+          return leftUpcoming
+              ? leftDate.compareTo(rightDate)
+              : rightDate.compareTo(leftDate);
+        });
+
     return VendorContentMetrics(
       published: allRows.where((row) => row['is_approved'] == true).length,
       pending: allRows.where((row) => row['is_approved'] != true).length,
       activeEvents: eventRows.where(active).length,
       activeAttractions: attractionRows.where(active).length,
+      recentSubmissions: recentSubmissions.take(5).toList(growable: false),
     );
   }
 
