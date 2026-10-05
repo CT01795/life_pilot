@@ -18,7 +18,7 @@ class ControllerAuth extends SafeChangeNotifier {
   ControllerCalendar? controllerCalendar;
   final ModelDashboard? modelDashboard;
   StreamSubscription<AuthState>? _authSubscription;
-  StreamSubscription<void>? _externalSignedOutSubscription;
+  StreamSubscription<String?>? _externalAuthAccountSubscription;
   StreamSubscription<void>? _passwordRecoveryLinkSubscription;
   ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
@@ -30,7 +30,7 @@ class ControllerAuth extends SafeChangeNotifier {
     }
     _initialized = true;
     _listenAuthState();
-    _listenExternalSignedOut();
+    _listenExternalAuthAccount();
     _passwordRecoveryLinkSubscription = ServiceAuth.passwordRecoveryLinks
         .listen((_) {
           ServiceAuth.consumePasswordRecoveryLink();
@@ -42,11 +42,15 @@ class ControllerAuth extends SafeChangeNotifier {
   }
 
   void _listenAuthState() {
-    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) async {
       logger.i('Auth Event: ${data.event}');
       logger.i('Recovery User Present: ${data.session?.user != null}');
       logger.i('Current User Present: ${supabase.auth.currentUser != null}');
       if (data.event == AuthChangeEvent.passwordRecovery) {
+        // A recovery link may be opened while another account is still shown
+        // in this tab. Synchronize the recovered session first so no data from
+        // the previous account remains behind the reset-password page.
+        await checkLoginStatus();
         _update(() {
           _currentPage = AuthPage.resetPassword;
         });
@@ -56,12 +60,16 @@ class ControllerAuth extends SafeChangeNotifier {
     });
   }
 
-  void _listenExternalSignedOut() {
-    _externalSignedOutSubscription = externalSignedOutEvents.listen((_) {
-      if (_isLoggedIn) {
-        logger.i('Session was signed out from another browser tab.');
-        _handleSignedOut();
-      }
+  void _listenExternalAuthAccount() {
+    _externalAuthAccountSubscription = externalAuthAccountChanges.listen((
+      account,
+    ) {
+      if (!_isLoggedIn) return;
+      if (account != null && account.isEmpty) return;
+      final current = _currentAccount?.toLowerCase();
+      if (account != null && account == current) return;
+      logger.i('Session account changed in another browser tab.');
+      _handleSignedOut();
     });
   }
 
@@ -564,7 +572,7 @@ class ControllerAuth extends SafeChangeNotifier {
   @override
   void dispose() {
     _authSubscription?.cancel();
-    _externalSignedOutSubscription?.cancel();
+    _externalAuthAccountSubscription?.cancel();
     _passwordRecoveryLinkSubscription?.cancel();
     super.dispose();
   }

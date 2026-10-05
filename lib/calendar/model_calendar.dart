@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
@@ -67,9 +68,11 @@ class ModelCalendar {
       List<List<DateTime>> weeks = [];
       List<DateTime> currentWeek = [];
 
-      for (DateTime current = start;
-          !current.isAfter(end);
-          current = current.add(const Duration(days: 1))) {
+      for (
+        DateTime current = start;
+        !current.isAfter(end);
+        current = current.add(const Duration(days: 1))
+      ) {
         currentWeek.add(current);
         if (currentWeek.length == 7) {
           weeks.add(currentWeek);
@@ -114,8 +117,7 @@ class ModelCalendar {
 
       if (isDisposed) return [];
 
-      return [...?serverEvents, ...holidays]
-        ..sort((a, b) => a.startDate!.compareTo(b.startDate!));
+      return [...?serverEvents, ...holidays]..sort(_compareEventSchedule);
     } catch (e, st) {
       if (!isDisposed) {
         logger.e("❌ loadCalendarEvents error: $e", stackTrace: st);
@@ -124,19 +126,39 @@ class ModelCalendar {
     }
   }
 
+  static int _compareEventSchedule(EventItem left, EventItem right) {
+    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
+      right.startDate ?? DateTime(9999),
+    );
+    if (comparison != 0) return comparison;
+    comparison = _timeMinutes(
+      left.startTime,
+    ).compareTo(_timeMinutes(right.startTime));
+    if (comparison != 0) return comparison;
+    comparison = left.city.compareTo(right.city);
+    if (comparison != 0) return comparison;
+    comparison = left.location.compareTo(right.location);
+    return comparison != 0 ? comparison : left.name.compareTo(right.name);
+  }
+
+  static int _timeMinutes(TimeOfDay? time) =>
+      time == null ? 24 * 60 : time.hour * 60 + time.minute;
+
   void cacheMonthEvents(DateTime month, List<EventItem> inEvents) {
     final key = month.toMonthKey();
     final weeks = getWeeks(month);
     final tmp = groupEventsByWeekAndDay(weeks: weeks, inEvents: inEvents);
     cachedEvents[key] = tmp;
-    flatMonthEventsCache[key] =
-        {for (var e in inEvents) e.id: e}.values.toList();
+    flatMonthEventsCache[key] = {
+      for (var e in inEvents) e.id: e,
+    }.values.toList();
   }
 
   // 依照週、日將事件分組
-  Map<int, Map<int, List<EventItem>>> groupEventsByWeekAndDay(
-      {required List<List<DateTime>> weeks,
-      required List<EventItem> inEvents}) {
+  Map<int, Map<int, List<EventItem>>> groupEventsByWeekAndDay({
+    required List<List<DateTime>> weeks,
+    required List<EventItem> inEvents,
+  }) {
     final Map<int, Map<int, List<EventItem>>> result = {};
 
     for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
@@ -156,7 +178,7 @@ class ModelCalendar {
     return result;
   }
 
-// 查詢特定日期的事件
+  // 查詢特定日期的事件
   List<EventItem> getEventsOfDay(DateTime date) {
     final key = date.toMonthKey();
     Map<int, Map<int, List<EventItem>>> weeks = cachedEvents[key] ?? {};
@@ -196,16 +218,10 @@ class ModelCalendar {
 
   // 清除該事件相關月份的快取
   void updateCachedEvent({required EventItem event}) {
-    invalidateEventRange(
-      startDate: event.startDate,
-      endDate: event.endDate,
-    );
+    invalidateEventRange(startDate: event.startDate, endDate: event.endDate);
   }
 
-  void invalidateEventRange({
-    required DateTime? startDate,
-    DateTime? endDate,
-  }) {
+  void invalidateEventRange({required DateTime? startDate, DateTime? endDate}) {
     if (startDate == null && endDate == null) return;
 
     var first = startDate ?? endDate!;

@@ -230,6 +230,10 @@ class ModelEvent {
       comparison = _timeSortValue(
         right.startTime,
       ).compareTo(_timeSortValue(left.startTime));
+      if (comparison != 0) return comparison;
+      comparison = left.city.compareTo(right.city);
+      if (comparison != 0) return comparison;
+      comparison = left.location.compareTo(right.location);
       return comparison != 0 ? comparison : left.name.compareTo(right.name);
     });
     _invalidateFilteredEvents();

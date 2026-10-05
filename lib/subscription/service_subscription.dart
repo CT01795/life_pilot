@@ -1,5 +1,7 @@
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
@@ -85,7 +87,6 @@ class ServiceSubscription {
       supabase.rpc('get_my_subscription_usage'),
       supabase.rpc('get_my_subscription_status'),
       supabase.rpc('get_my_subscription_entitlements'),
-      _fetchRecommendationUsage(),
     ]);
     final rows = responses.first;
     final statusRows = responses[1] as List<dynamic>;
@@ -93,12 +94,16 @@ class ServiceSubscription {
     final status = statusRows.isEmpty
         ? <String, dynamic>{}
         : Map<String, dynamic>.from(statusRows.first as Map);
+    final recommendationUsage = await _fetchRecommendationUsage(
+      entitlementRows,
+      status,
+    );
     final items = <SubscriptionUsage>[
       ...(rows as List<dynamic>).map(
         (row) =>
             SubscriptionUsage.fromJson(Map<String, dynamic>.from(row as Map)),
       ),
-      ...(responses[3] as List<SubscriptionUsage>),
+      ...recommendationUsage,
     ];
 
     items.sort((a, b) {
@@ -160,19 +165,110 @@ class ServiceSubscription {
     );
   }
 
-  Future<List<SubscriptionUsage>> _fetchRecommendationUsage() async {
+  Future<List<SubscriptionUsage>> _fetchRecommendationUsage(
+    List<dynamic> entitlementRows,
+    Map<String, dynamic> status,
+  ) async {
     try {
-      final rows = await supabase.rpc('get_my_recommendation_submission_usage');
-      return (rows as List<dynamic>)
-          .map(
-            (row) => SubscriptionUsage.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ),
-          )
-          .toList(growable: false);
-    } on PostgrestException catch (error) {
-      if (error.code == '42883' || error.code == 'PGRST202') return const [];
-      rethrow;
+      final account = supabase.auth.currentUser?.email?.toLowerCase();
+      if (account == null || account.isEmpty) return const [];
+      final now = DateTime.now();
+      final today =
+          '${now.year.toString().padLeft(4, '0')}-'
+          '${now.month.toString().padLeft(2, '0')}-'
+          '${now.day.toString().padLeft(2, '0')}';
+      final results = await Future.wait<List<Map<String, dynamic>>>([
+        supabase
+            .from(TableNames.recommendEvents)
+            .select('id')
+            .ilike(Fields.account, account)
+            .or('end_date.gte.$today,start_date.gte.$today'),
+        supabase
+            .from(TableNames.recommendPlaces)
+            .select('id')
+            .ilike(Fields.account, account)
+            .or('end_date.gte.$today,start_date.gte.$today'),
+      ]);
+
+      var eventQuota = 0;
+      var attractionQuota = 0;
+      final activeCloudEntitlements = entitlementRows.where((raw) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final endsAt = DateTime.tryParse(row['ends_at']?.toString() ?? '');
+        return row['storage_plan']?.toString() == 'cloud' &&
+            endsAt != null &&
+            endsAt.isAfter(now);
+      });
+      for (final raw in activeCloudEntitlements) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final snapshot = Map<String, dynamic>.from(
+          row['entitlement_snapshot'] as Map? ?? const {},
+        );
+        final multiplier =
+            (row['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
+        eventQuota +=
+            ((snapshot['recommended_event_quota'] as num?)?.toInt() ?? 0) *
+            multiplier;
+        attractionQuota +=
+            ((snapshot['recommended_attraction_quota'] as num?)?.toInt() ?? 0) *
+            multiplier;
+      }
+      if (eventQuota == 0 && attractionQuota == 0) {
+        final versions = await fetchPricingVersions();
+        final currentVersionName = status['pricing_version_name']?.toString();
+        final currentMultiplier =
+            (status['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
+        final matchingCurrent = versions.where(
+          (version) =>
+              version.storagePlan == 'cloud' &&
+              version.name == currentVersionName,
+        );
+        if (matchingCurrent.isNotEmpty) {
+          eventQuota =
+              (matchingCurrent.first.quotas['recommended_events'] ?? 0) *
+              currentMultiplier;
+          attractionQuota =
+              (matchingCurrent.first.quotas['recommended_attractions'] ?? 0) *
+              currentMultiplier;
+        } else {
+          final freeVersions =
+              versions
+                  .where(
+                    (version) =>
+                        version.storagePlan == 'cloud' &&
+                        version.quarterlyPriceTwd == 0 &&
+                        !version.effectiveAt.isAfter(now),
+                  )
+                  .toList()
+                ..sort((a, b) => b.effectiveAt.compareTo(a.effectiveAt));
+          if (freeVersions.isNotEmpty) {
+            eventQuota = freeVersions.first.quotas['recommended_events'] ?? 0;
+            attractionQuota =
+                freeVersions.first.quotas['recommended_attractions'] ?? 0;
+          }
+        }
+      }
+      return [
+        SubscriptionUsage(
+          resource: 'recommended_events',
+          used: results[0].length,
+          quota: eventQuota,
+        ),
+        SubscriptionUsage(
+          resource: 'recommended_attractions',
+          used: results[1].length,
+          quota: attractionQuota,
+        ),
+      ];
+    } catch (error, stackTrace) {
+      // Recommendation counters must never prevent the rest of the account
+      // and subscription state from loading.
+      logger.e(
+        'Failed to load recommendation submission usage',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return const [];
     }
   }
 

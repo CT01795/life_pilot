@@ -11,6 +11,8 @@ abstract final class RecordCategories {
     'investment_income',
     'allowance',
     'refund',
+    'education',
+    'entertainment',
     'other_income',
   ];
 

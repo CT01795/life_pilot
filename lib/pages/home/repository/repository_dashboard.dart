@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:life_pilot/pages/home/model/accounting/income_expense_item.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 import 'package:life_pilot/pages/home/model/dashboard/dashboard_setting.dart';
@@ -30,7 +31,7 @@ class DashboardRepository {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    final tomorrow = today.add(const Duration(days: 3));
+    final rangeEnd = today.add(const Duration(days: 3));
 
     if (await _storesLocally) {
       final rows = await LocalDataStore.instance.list(
@@ -38,37 +39,61 @@ class DashboardRepository {
         resource: TableNames.calendarEvents,
       );
       final filtered =
-          rows.where((row) {
-            if (row['is_completed'] == true) return false;
-            final date = DateTime.tryParse(
-              row['start_date']?.toString() ?? '',
-            )?.toLocal();
-            return date != null &&
-                !date.isBefore(today) &&
-                date.isBefore(tomorrow);
-          }).toList()..sort(
-            (a, b) => (a['start_date']?.toString() ?? '').compareTo(
-              b['start_date']?.toString() ?? '',
-            ),
-          );
-      return filtered.map(CalendarEvent.fromJson).toList();
+          rows
+              .where((row) {
+                if (row['is_completed'] == true) return false;
+                final start = DateTime.tryParse(
+                  row['start_date']?.toString() ?? '',
+                )?.toLocal();
+                if (start == null) return false;
+                final end = DateTime.tryParse(
+                  row['end_date']?.toString() ?? '',
+                )?.toLocal();
+                final effectiveEnd = end ?? start;
+                return !effectiveEnd.isBefore(today) &&
+                    start.isBefore(rangeEnd);
+              })
+              .map(CalendarEvent.fromJson)
+              .toList()
+            ..sort(_compareCalendarEvents);
+      return filtered;
     }
 
     final result = await supabase
         .from(TableNames.calendarEvents)
         .select(
-          'id,name,start_date,start_time,end_date,end_time,city,location,'
+          'id,name,start_date,start_time,end_date,end_time,country,city,location,'
           'type,is_free,description,master_url,sub_events,is_completed',
         )
         .eq(Fields.account, account)
         .eq('is_completed', false)
-        .gte('start_date', today.toUtc().toIso8601String())
-        .lt('start_date', tomorrow.toUtc().toIso8601String())
-        .order('start_date', ascending: true)
-        .order('start_time', ascending: true);
+        .lt('start_date', rangeEnd.toUtc().toIso8601String())
+        .or(
+          'end_date.gte.${today.toUtc().toIso8601String()},'
+          'and(end_date.is.null,start_date.gte.${today.toUtc().toIso8601String()})',
+        );
 
-    return (result as List).map((e) => CalendarEvent.fromJson(e)).toList();
+    return (result as List).map((e) => CalendarEvent.fromJson(e)).toList()
+      ..sort(_compareCalendarEvents);
   }
+
+  static int _compareCalendarEvents(CalendarEvent left, CalendarEvent right) {
+    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
+      right.startDate ?? DateTime(9999),
+    );
+    if (comparison != 0) return comparison;
+    comparison = _timeMinutes(
+      left.startTime,
+    ).compareTo(_timeMinutes(right.startTime));
+    if (comparison != 0) return comparison;
+    comparison = (left.city ?? '').compareTo(right.city ?? '');
+    if (comparison != 0) return comparison;
+    comparison = (left.location ?? '').compareTo(right.location ?? '');
+    return comparison != 0 ? comparison : left.name.compareTo(right.name);
+  }
+
+  static int _timeMinutes(TimeOfDay? time) =>
+      time == null ? 24 * 60 : time.hour * 60 + time.minute;
 
   Future<List<CalendarEvent>> getSpecificEvent(
     String eventId,
@@ -244,7 +269,26 @@ class DashboardRepository {
       params: {'p_city': city, 'p_limit': 5},
     );
 
-    return (result as List).map((e) => RecommendedEvent.fromJson(e)).toList();
+    return (result as List).map((e) => RecommendedEvent.fromJson(e)).toList()
+      ..sort(_compareRecommendedEvents);
+  }
+
+  static int _compareRecommendedEvents(
+    RecommendedEvent left,
+    RecommendedEvent right,
+  ) {
+    var comparison = (left.startDate ?? DateTime(9999)).compareTo(
+      right.startDate ?? DateTime(9999),
+    );
+    if (comparison != 0) return comparison;
+    comparison = _timeMinutes(
+      left.startTime,
+    ).compareTo(_timeMinutes(right.startTime));
+    if (comparison != 0) return comparison;
+    comparison = (left.city ?? '').compareTo(right.city ?? '');
+    if (comparison != 0) return comparison;
+    comparison = (left.location ?? '').compareTo(right.location ?? '');
+    return comparison != 0 ? comparison : left.name.compareTo(right.name);
   }
 
   Future<List<DashboardCity>> loadPlaceCities() async {

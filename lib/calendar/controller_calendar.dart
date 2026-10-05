@@ -70,14 +70,8 @@ class ControllerCalendar extends SafeChangeNotifier {
 
   List<EventItem> get events => _modelCalendar.events;
 
-  void invalidateEventCache({
-    required DateTime? startDate,
-    DateTime? endDate,
-  }) {
-    _modelCalendar.invalidateEventRange(
-      startDate: startDate,
-      endDate: endDate,
-    );
+  void invalidateEventCache({required DateTime? startDate, DateTime? endDate}) {
+    _modelCalendar.invalidateEventRange(startDate: startDate, endDate: endDate);
   }
 
   static final DateTime baseDate = DateTime(1911, 1);
@@ -88,16 +82,17 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   // 建構子
   // ------------------------
-  ControllerCalendar(
-      {required ModelCalendar modelCalendar,
-      required ServiceEvent serviceEvent,
-      required this.auth,
-      required ControllerNotification controllerNotification,
-      required ServiceWeather serviceWeather,
-      required ProviderLocale localeProvider,
-      required String tableName,
-      required String toTableName,
-      required this.closeText}) {
+  ControllerCalendar({
+    required ModelCalendar modelCalendar,
+    required ServiceEvent serviceEvent,
+    required this.auth,
+    required ControllerNotification controllerNotification,
+    required ServiceWeather serviceWeather,
+    required ProviderLocale localeProvider,
+    required String tableName,
+    required String toTableName,
+    required this.closeText,
+  }) {
     _modelCalendar = modelCalendar;
     _serviceEvent = serviceEvent;
     _controllerNotification = controllerNotification;
@@ -218,10 +213,7 @@ class ControllerCalendar extends SafeChangeNotifier {
         continue;
       }
 
-      final vm = buildViewModel(
-        event: e,
-        loc: loc,
-      );
+      final vm = buildViewModel(event: e, loc: loc);
 
       if (vm.locationDisplay.isEmpty ||
           !seenLocations.add(vm.locationDisplay)) {
@@ -234,10 +226,8 @@ class ControllerCalendar extends SafeChangeNotifier {
 
     final requested = await Future.wait(
       weatherCandidates.map(
-        (event) => _serviceWeather.preloadWeather(
-          [event],
-          tableName: _tableName,
-        ),
+        (event) =>
+            _serviceWeather.preloadWeather([event], tableName: _tableName),
       ),
     );
     if (requested.any((value) => value)) notifyListeners();
@@ -254,9 +244,7 @@ class ControllerCalendar extends SafeChangeNotifier {
     EventViewModel tmp = EventViewModel.buildEventViewModel(
       event: event,
       parentLocation: '',
-      canDelete: canDelete(
-        account: event.account ?? '',
-      ),
+      canDelete: canDelete(account: event.account ?? ''),
       showSubEvents: true,
       loc: loc,
       tableName: _tableName,
@@ -266,8 +254,10 @@ class ControllerCalendar extends SafeChangeNotifier {
   }
 
   // 載入月曆事件（含服務端與假日）
-  Future<void> loadCalendarEvents(
-      {required DateTime month, bool notify = true}) async {
+  Future<void> loadCalendarEvents({
+    required DateTime month,
+    bool notify = true,
+  }) async {
     await reloadEvents(notify: notify, month: month);
   }
 
@@ -289,14 +279,18 @@ class ControllerCalendar extends SafeChangeNotifier {
       } else {
         await reloadEvents(month: targetMonth, notify: notify);
       }
-      unawaited(reloadEvents(
-        month: DateTime(targetMonth.year, targetMonth.month + 1),
-        notify: false,
-      ));
-      unawaited(reloadEvents(
-        month: DateTime(targetMonth.year, targetMonth.month - 1),
-        notify: false,
-      ));
+      unawaited(
+        reloadEvents(
+          month: DateTime(targetMonth.year, targetMonth.month + 1),
+          notify: false,
+        ),
+      );
+      unawaited(
+        reloadEvents(
+          month: DateTime(targetMonth.year, targetMonth.month - 1),
+          notify: false,
+        ),
+      );
     } finally {
       _isChangingMonth = false;
     }
@@ -304,9 +298,7 @@ class ControllerCalendar extends SafeChangeNotifier {
 
   Future<void> goToOffsetMonth({required int offset}) async {
     final current = _modelCalendar.currentMonth;
-    await goToMonth(
-      month: DateTime(current.year, current.month + offset),
-    );
+    await goToMonth(month: DateTime(current.year, current.month + offset));
   }
 
   // 移動到今天
@@ -343,8 +335,9 @@ class ControllerCalendar extends SafeChangeNotifier {
     final futures = <Future>[];
 
     for (final event in eventsToGenerate) {
-      final DateTime nextStart =
-          event.repeatOptions.getNextDate(event.startDate!);
+      final DateTime nextStart = event.repeatOptions.getNextDate(
+        event.startDate!,
+      );
       final DateTime? nextEnd = event.endDate != null
           ? event.repeatOptions.getNextDate(event.endDate!)
           : null;
@@ -356,21 +349,27 @@ class ControllerCalendar extends SafeChangeNotifier {
       );
 
       // 儲存新事件 & 安排提醒
-      futures.add(_serviceEvent.saveEvent(
+      futures.add(
+        _serviceEvent.saveEvent(
           currentAccount: auth?.currentAccount ?? '',
           event: newEvent,
           isNew: true,
-          tableName: _tableName));
-      futures
-          .add(_controllerNotification.scheduleEventReminders(event: newEvent));
+          tableName: _tableName,
+        ),
+      );
+      futures.add(
+        _controllerNotification.scheduleEventReminders(event: newEvent),
+      );
 
       // 更新舊事件的 repeatOption 為 'once'
-      futures.add(_serviceEvent.saveEvent(
-        currentAccount: auth?.currentAccount ?? '',
-        event: event.copyWith(newRepeatOptions: CalendarRepeatRule.once),
-        isNew: false,
-        tableName: _tableName,
-      ));
+      futures.add(
+        _serviceEvent.saveEvent(
+          currentAccount: auth?.currentAccount ?? '',
+          event: event.copyWith(newRepeatOptions: CalendarRepeatRule.once),
+          isNew: false,
+          tableName: _tableName,
+        ),
+      );
 
       dirtyMonths
         ..add(event.startDate!.toMonthKey())
@@ -387,14 +386,21 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ------------------------
   // 事件操作
   // ------------------------
-  Future<void> addEvent(EventItem newEvent,
-      {bool stayOnCurrentMonth = true}) async {
+  Future<void> addEvent(
+    EventItem newEvent, {
+    bool stayOnCurrentMonth = true,
+  }) async {
     _modelCalendar.updateCachedEvent(event: newEvent);
     if (!stayOnCurrentMonth) {
       await goToMonth(month: DateTimeFormatter.monthOnly(newEvent.startDate!));
+      return;
     }
-    await goToMonth(
-        month: DateTimeFormatter.monthOnly(_modelCalendar.currentMonth));
+    // Do not rely on goToMonth here. A month transition may already be in
+    // progress, in which case goToMonth intentionally returns early and the
+    // newly saved event would remain invisible until a manual refresh.
+    await reloadEvents(
+      month: DateTimeFormatter.monthOnly(_modelCalendar.currentMonth),
+    );
   }
 
   Future<void> onEditEvent({
@@ -420,9 +426,10 @@ class ControllerCalendar extends SafeChangeNotifier {
     await Future.wait([
       _controllerNotification.cancelAllEventReminders(eventId: event.id),
       _serviceEvent.deleteEvent(
-          currentAccount: auth!.currentAccount ?? '',
-          event: event,
-          tableName: _tableName)
+        currentAccount: auth!.currentAccount ?? '',
+        event: event,
+        tableName: _tableName,
+      ),
     ]);
 
     // 移除事件並更新快取
@@ -438,10 +445,21 @@ class ControllerCalendar extends SafeChangeNotifier {
     bool isNew = true,
   }) async {
     await _serviceEvent.saveEvent(
-        currentAccount: auth!.currentAccount ?? '',
-        event: newEvent,
-        isNew: isNew,
-        tableName: _tableName);
+      currentAccount: auth!.currentAccount ?? '',
+      event: newEvent,
+      isNew: isNew,
+      tableName: _tableName,
+    );
+    if (!isNew && oldEvent != null) {
+      invalidateEventCache(
+        startDate: oldEvent.startDate,
+        endDate: oldEvent.endDate,
+      );
+    }
+    invalidateEventCache(
+      startDate: newEvent.startDate,
+      endDate: newEvent.endDate,
+    );
     if (isNew) {
       await _controllerNotification.scheduleEventReminders(event: newEvent);
     } else if (oldEvent != null) {
@@ -520,9 +538,9 @@ class ControllerCalendar extends SafeChangeNotifier {
       try {
         final completedIds = auth!.preferredStorage == DataStorageLocation.local
             ? _modelCalendar.events
-                .where((event) => event.isCompleted)
-                .map((event) => event.id)
-                .toList(growable: false)
+                  .where((event) => event.isCompleted)
+                  .map((event) => event.id)
+                  .toList(growable: false)
             : await _serviceEvent.getCompletedCalendarEventIds(
                 account: account,
               );
@@ -563,19 +581,16 @@ class ControllerCalendar extends SafeChangeNotifier {
       final showEvent = todayEvents[0];
       final reminderRevision = webReminderRevision;
       _webNotificationTimer?.cancel();
-      _webNotificationTimer = Timer(
-        const Duration(seconds: 1),
-        () {
-          if (notifierDisposed || reminderRevision != webReminderRevision) {
-            return;
-          }
-          showWebOverlay(
-            title: showEvent.title,
-            body: showEvent.body,
-            tooltip: showEvent.message ?? '',
-          );
-        },
-      );
+      _webNotificationTimer = Timer(const Duration(seconds: 1), () {
+        if (notifierDisposed || reminderRevision != webReminderRevision) {
+          return;
+        }
+        showWebOverlay(
+          title: showEvent.title,
+          body: showEvent.body,
+          tooltip: showEvent.message ?? '',
+        );
+      });
     } else {
       // 非阻塞顯示多個事件
       for (final event in todayEvents) {
@@ -701,7 +716,10 @@ class ControllerCalendar extends SafeChangeNotifier {
     toggleEventSelection(event.id, isChecked);
 
     return await _serviceEventTransfer.toggleEventTransferIsAlreadyAdd(
-        event: event, toTableName: _toTableName, isChecked: isChecked);
+      event: event,
+      toTableName: _toTableName,
+      isChecked: isChecked,
+    );
   }
 
   String buildTransferMessage({
@@ -716,14 +734,14 @@ class ControllerCalendar extends SafeChangeNotifier {
     }
   }
 
-  Future<void> handleCrossMonthTap({
-    required DateTime tappedDate,
-  }) async {
+  Future<void> handleCrossMonthTap({required DateTime tappedDate}) async {
     if (tappedDate.month != currentMonth.month ||
         tappedDate.year != currentMonth.year) {
       // 預載其他月份事件，但不改 displayedMonth
       await loadCalendarEvents(
-          month: DateTime(tappedDate.year, tappedDate.month), notify: false);
+        month: DateTime(tappedDate.year, tappedDate.month),
+        notify: false,
+      );
       await goToMonth(month: currentMonth, notify: true);
     }
   }
@@ -752,14 +770,13 @@ class ControllerCalendar extends SafeChangeNotifier {
       Color(0xFF558B2F),
     ];
     final account = event.account?.toLowerCase() ?? '';
-    final index = account.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+    final index =
+        account.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
         sharedColors.length;
     return sharedColors[index];
   }
 
-  bool canDelete({
-    required String account,
-  }) {
+  bool canDelete({required String account}) {
     if (auth == null) {
       return false;
     }
@@ -783,16 +800,12 @@ class ControllerCalendar extends SafeChangeNotifier {
     required AppLocalizations loc,
   }) async {
     try {
-      await saveSettings(
-        event: event,
-        repeat: repeat,
-        reminders: reminders,
-      );
+      await saveSettings(event: event, repeat: repeat, reminders: reminders);
 
       if (reminders.isNotEmpty) {
         return {
           "msg":
-              '${loc.setAlarm} ${reminders.map((r) => r.label(loc)).join(", ")}'
+              '${loc.setAlarm} ${reminders.map((r) => r.label(loc)).join(", ")}',
         };
       } else {
         return {"msg": loc.cancelAlarm};
@@ -825,11 +838,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   // 開啟活動連結
   Future<void> onOpenLink(EventViewModel event) async {
     if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
-    await _launchUrl(
-      Uri.parse(event.masterUrl!),
-      event,
-      column: 'page_views',
-    );
+    await _launchUrl(Uri.parse(event.masterUrl!), event, column: 'page_views');
   }
 
   // 開啟地圖導航
@@ -838,20 +847,20 @@ class ControllerCalendar extends SafeChangeNotifier {
     final query = Uri.encodeComponent(event.locationDisplay);
 
     // Google Maps 網頁導航 URL
-    final googleMapsUrl =
-        Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$query');
-    await _launchUrl(
-      googleMapsUrl,
-      event,
-      column: 'card_clicks',
+    final googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$query',
     );
+    await _launchUrl(googleMapsUrl, event, column: 'card_clicks');
   }
 
   // ------------------ Private ------------------
 
   /// 統一處理 URL 開啟與事件計數
-  Future<void> _launchUrl(Uri uri, EventViewModel event,
-      {required String column}) async {
+  Future<void> _launchUrl(
+    Uri uri,
+    EventViewModel event, {
+    required String column,
+  }) async {
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
       await _incrementCounter(event, column);

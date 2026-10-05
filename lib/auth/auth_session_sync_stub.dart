@@ -1,3 +1,3 @@
 import 'dart:async';
 
-Stream<void> get externalSignedOutEvents => const Stream<void>.empty();
+Stream<String?> get externalAuthAccountChanges => const Stream<String?>.empty();

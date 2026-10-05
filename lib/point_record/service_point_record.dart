@@ -847,17 +847,16 @@ class ServicePointRecord {
         );
         return;
       }
-      await supabase.rpc(
-        'update_point_record_detail',
-        params: {
-          'p_detail_id': detailId,
-          'p_new_value': newValue,
-          'p_new_description': newDescription,
-          'p_new_date': newDate.toUtc().toIso8601String(),
-          'p_new_primary_category': newPrimaryCategory,
-          'p_new_group': newSecondaryCategory?.trim() ?? '',
-        },
-      );
+      await supabase
+          .from(TableNames.pointRecordDetail)
+          .update({
+            'value': newValue,
+            'description': newDescription,
+            'date': newDate.toUtc().toIso8601String(),
+            'primary_category': newPrimaryCategory,
+            'group': newSecondaryCategory?.trim() ?? '',
+          })
+          .eq(Fields.id, detailId);
     } catch (e, st) {
       logger.e('updatePointRecordDetail failed $e\n$st');
       rethrow;

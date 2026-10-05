@@ -119,6 +119,43 @@ void main() {
       'older',
     ]);
   });
+
+  test('memory ties sort by time then city location and name', () {
+    final today = DateTimeFormatter.dateOnly(DateTime.now());
+    final model = ModelEvent();
+    model.setEvents([
+      _event(
+        id: 'location-b',
+        name: 'A',
+        city: 'Taipei',
+        location: 'B',
+        startDate: today,
+        startTime: const TimeOfDay(hour: 9, minute: 0),
+      ),
+      _event(
+        id: 'city-first',
+        city: 'Kaohsiung',
+        location: 'Z',
+        startDate: today,
+        startTime: const TimeOfDay(hour: 9, minute: 0),
+      ),
+      _event(
+        id: 'later-time',
+        city: 'Kaohsiung',
+        location: 'A',
+        startDate: today,
+        startTime: const TimeOfDay(hour: 10, minute: 0),
+      ),
+    ]);
+
+    model.sortMemoryEvents();
+
+    expect(model.getFilteredEvents(loc).map((event) => event.id), [
+      'later-time',
+      'city-first',
+      'location-b',
+    ]);
+  });
 }
 
 EventItem _event({

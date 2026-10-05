@@ -66,7 +66,14 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     setState(() => _saving = true);
     try {
       final service = ServiceSubscription();
-      if (_additive && _plan == 'plus') {
+      final currentStoragePlan = _lookedUpSubscription?['storage_plan']
+          ?.toString();
+      final addsAnotherStoragePlan =
+          _plan == 'plus' &&
+          _subscriptionExists &&
+          currentStoragePlan != null &&
+          currentStoragePlan != _storagePlan;
+      if ((_additive || addsAnotherStoragePlan) && _plan == 'plus') {
         await service.addUserEntitlementAsAdmin(
           email: _email.text,
           storagePlan: _storagePlan,
