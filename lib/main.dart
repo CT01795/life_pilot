@@ -7,6 +7,7 @@ import 'package:life_pilot/apps/app_view.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/app_initializer.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/auth/service_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_notification.dart';
 import 'package:life_pilot/calendar/model_calendar.dart';
@@ -36,6 +37,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
     DartPluginRegistrant.ensureInitialized();
+  } else {
+    // Capture the recovery marker before Supabase exchanges the code and
+    // removes authentication parameters from the browser URL.
+    ServiceAuth.capturePasswordRecoveryUri(Uri.base);
   }
 
   await AppInitializer.init();
@@ -50,21 +55,13 @@ void main() async {
         Provider<ControllerNotification>(
           create: (_) => ControllerNotification(service: notificationService),
         ),
-        Provider<ServiceEvent>(
-          create: (_) => ServiceEvent(),
-        ),
-        Provider<ModelCalendar>(
-          create: (_) => ModelCalendar(),
-        ),
-        Provider<ModelEvent>(
-          create: (_) => ModelEvent(),
-        ),
+        Provider<ServiceEvent>(create: (_) => ServiceEvent()),
+        Provider<ModelCalendar>(create: (_) => ModelCalendar()),
+        Provider<ModelEvent>(create: (_) => ModelEvent()),
         Provider<ServiceExportPlatform>(
           create: (_) => ServiceExportPlatformImpl(),
         ),
-        Provider<ServiceExportExcel>(
-          create: (_) => ServiceExportExcel(),
-        ),
+        Provider<ServiceExportExcel>(create: (_) => ServiceExportExcel()),
         ChangeNotifierProvider(
           create: (_) => ProviderLocale(locale: const Locale(Locales.zh)),
         ),
@@ -74,36 +71,27 @@ void main() async {
             localeProvider: context.read<ProviderLocale>(),
           ),
         ),
+        ChangeNotifierProvider(create: (_) => ModelDashboardSetting()),
+        Provider<EventTrackingService>(create: (_) => EventTrackingService()),
+        Provider<CalendarService>(create: (_) => CalendarService()),
         ChangeNotifierProvider(
-          create: (_) => ModelDashboardSetting(),
-        ),
-        Provider<EventTrackingService>(
-          create: (_) => EventTrackingService(),
-        ),
-        Provider<CalendarService>(
-          create: (_) => CalendarService(),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => ControllerAuth(
-            modelDashboard: context.read<ModelDashboard>(),
-          ),
+          create: (context) =>
+              ControllerAuth(modelDashboard: context.read<ModelDashboard>()),
         ),
         //-------------- Weather --------------
-        Provider<ServiceWeather>(
-          lazy: true,
-          create: (_) => ServiceWeather(),
-        ),
+        Provider<ServiceWeather>(lazy: true, create: (_) => ServiceWeather()),
         //-------------- ModelAuthView (ControllerAuth)--------------
         ChangeNotifierProxyProvider<ControllerAuth, ModelAuthView>(
           create: (context) => ModelAuthView(context.read<ControllerAuth>()),
           update: (_, auth, model) => model ?? ModelAuthView(auth),
         ),
         //-------------- point record --------------
-        Provider<ServicePointRecord>(
-          create: (_) => ServicePointRecord(),
-        ),
-        ChangeNotifierProxyProvider2<ServicePointRecord, ControllerAuth,
-            ControllerPointRecordList>(
+        Provider<ServicePointRecord>(create: (_) => ServicePointRecord()),
+        ChangeNotifierProxyProvider2<
+          ServicePointRecord,
+          ControllerAuth,
+          ControllerPointRecordList
+        >(
           create: (context) => ControllerPointRecordList(
             service: context.read<ServicePointRecord>(),
             auth: context.read<ControllerAuth>(),
@@ -118,11 +106,12 @@ void main() async {
           },
         ),
         //-------------- accounting--------------
-        Provider<ServiceAccounting>(
-          create: (_) => ServiceAccounting(),
-        ),
-        ChangeNotifierProxyProvider2<ServiceAccounting, ControllerAuth,
-            ControllerAccountingList>(
+        Provider<ServiceAccounting>(create: (_) => ServiceAccounting()),
+        ChangeNotifierProxyProvider2<
+          ServiceAccounting,
+          ControllerAuth,
+          ControllerAccountingList
+        >(
           create: (context) => ControllerAccountingList(
             service: context.read<ServiceAccounting>(),
             auth: context.read<ControllerAuth>(),
@@ -138,13 +127,14 @@ void main() async {
         ),
         //-------------- ControllerCalendar (ModelCalendar, ControllerAuth, ServiceStorage, ProviderLocale)--------------
         ChangeNotifierProxyProvider6<
-            ModelCalendar,
-            ControllerAuth,
-            ServiceEvent,
-            ServiceWeather,
-            ControllerNotification,
-            ProviderLocale,
-            ControllerCalendar>(
+          ModelCalendar,
+          ControllerAuth,
+          ServiceEvent,
+          ServiceWeather,
+          ControllerNotification,
+          ProviderLocale,
+          ControllerCalendar
+        >(
           create: (context) {
             final locale = context.read<ProviderLocale>().locale;
             final loc = lookupAppLocalizations(locale);
@@ -160,23 +150,36 @@ void main() async {
               closeText: loc.close, // ✅ 使用當前語系
             );
           },
-          update: (context, modelCalendar, auth, serviceEvent, serviceWeather,
-              notification, locale, controller) {
-            controller ??= context.read<ControllerCalendar>();
-            // ✅ 更新 controller 裡的依賴，而不是 new 一個
-            controller.updateAuth(auth);
-            auth.controllerCalendar = controller;
-            // ✅ 更新 closeText
-            controller
-                .updateLocalization(lookupAppLocalizations(locale.locale));
+          update:
+              (
+                context,
+                modelCalendar,
+                auth,
+                serviceEvent,
+                serviceWeather,
+                notification,
+                locale,
+                controller,
+              ) {
+                controller ??= context.read<ControllerCalendar>();
+                // ✅ 更新 controller 裡的依賴，而不是 new 一個
+                controller.updateAuth(auth);
+                auth.controllerCalendar = controller;
+                // ✅ 更新 closeText
+                controller.updateLocalization(
+                  lookupAppLocalizations(locale.locale),
+                );
 
-            return controller;
-          },
+                return controller;
+              },
         ),
 
         //-------------- ControllerPageMain (ControllerAuth, ProviderLocale)--------------
-        ChangeNotifierProxyProvider2<ControllerAuth, ProviderLocale,
-            ControllerPageMain>(
+        ChangeNotifierProxyProvider2<
+          ControllerAuth,
+          ProviderLocale,
+          ControllerPageMain
+        >(
           create: (context) {
             final auth = context.read<ControllerAuth>();
             final locale = context.read<ProviderLocale>().locale;

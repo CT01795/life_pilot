@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
@@ -391,6 +392,7 @@ class ControllerAuth extends SafeChangeNotifier {
 
     modelDashboard?.switchAccount(null);
     controllerCalendar?.clearAll();
+    AppNavigator.returnToRoot();
     if (signedOutAccount != null) {
       LocalDataStore.instance.clearCreatePermission(signedOutAccount);
     }

@@ -10,6 +10,14 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
 class AppNavigator {
+  static void returnToRoot() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      final navigator = navigatorKey.currentState;
+      if (navigator == null) return;
+      navigator.popUntil((route) => route.isFirst);
+    });
+  }
+
   AppNavigator._(); // 私有構造，避免實例化
   // ---------------- SnackBar ----------------
   static void showSnackBar(
@@ -33,7 +41,8 @@ class AppNavigator {
   }
 
   // 顯示錯誤訊息
-  static void showErrorBar(String error) => showSnackBar('❌ $error', backgroundColor: Colors.redAccent);
+  static void showErrorBar(String error) =>
+      showSnackBar('❌ $error', backgroundColor: Colors.redAccent);
 
   // ---------------- 錯誤攔截 ----------------
   static void initErrorHandling() {

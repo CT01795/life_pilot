@@ -59,25 +59,7 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
   void _handleDeepLink(Uri uri) {
     final sanitizedUri = uri.replace(query: null, fragment: null);
     logger.i('DeepLink received: $sanitizedUri');
-    final fragment = uri.fragment;
-    final fragmentQuery = fragment.contains('?')
-        ? fragment.substring(fragment.indexOf('?') + 1)
-        : fragment;
-    Map<String, String> fragmentParameters = const {};
-    try {
-      fragmentParameters = Uri.splitQueryString(fragmentQuery);
-    } on FormatException catch (error, stackTrace) {
-      logger.e(
-        'Invalid password recovery URL fragment',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-    final isRecovery = uri.host == 'reset-password' ||
-        uri.path.contains('reset-password') ||
-        uri.queryParameters['type'] == 'recovery' ||
-        fragmentParameters['type'] == 'recovery';
-    if (isRecovery) ServiceAuth.markPasswordRecoveryLink();
+    ServiceAuth.capturePasswordRecoveryUri(uri);
   }
 
   @override
@@ -97,8 +79,10 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
             title: AppConfig.appTitle,
             builder: (context, child) {
               final mediaQuery = MediaQuery.of(context);
-              final scaleFactor =
-                  mediaQuery.textScaler.scale(1).clamp(1.5, 2.0).toDouble();
+              final scaleFactor = mediaQuery.textScaler
+                  .scale(1)
+                  .clamp(1.5, 2.0)
+                  .toDouble();
 
               return MediaQuery(
                 data: mediaQuery.copyWith(

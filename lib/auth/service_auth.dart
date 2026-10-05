@@ -14,6 +14,30 @@ class ServiceAuth {
   static Stream<void> get passwordRecoveryLinks =>
       _passwordRecoveryController.stream;
 
+  static bool isPasswordRecoveryUri(Uri uri) {
+    final fragment = uri.fragment;
+    final fragmentQuery = fragment.contains('?')
+        ? fragment.substring(fragment.indexOf('?') + 1)
+        : fragment;
+    Map<String, String> fragmentParameters = const {};
+    try {
+      fragmentParameters = Uri.splitQueryString(fragmentQuery);
+    } on FormatException {
+      // Supabase may briefly expose an incomplete fragment while restoring
+      // the session. The explicit path/query checks below remain usable.
+    }
+    return uri.host == 'reset-password' ||
+        uri.path.contains('reset-password') ||
+        uri.queryParameters['type'] == 'recovery' ||
+        uri.queryParameters['recovery'] == '1' ||
+        fragmentParameters['type'] == 'recovery' ||
+        fragmentParameters['recovery'] == '1';
+  }
+
+  static void capturePasswordRecoveryUri(Uri uri) {
+    if (isPasswordRecoveryUri(uri)) markPasswordRecoveryLink();
+  }
+
   static void markPasswordRecoveryLink() {
     _pendingPasswordRecovery = true;
     _passwordRecoveryController.add(null);
@@ -84,7 +108,7 @@ class ServiceAuth {
 
     return _handle(() async {
       final redirectTo = kIsWeb
-          ? 'https://ct01795.github.io/life_pilot/'
+          ? 'https://ct01795.github.io/life_pilot/?recovery=1'
           : 'lifepilot://reset-password';
 
       await supabase.auth.resetPasswordForEmail(email, redirectTo: redirectTo);

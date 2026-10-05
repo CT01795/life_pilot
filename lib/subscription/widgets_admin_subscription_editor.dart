@@ -52,9 +52,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _show(loc.adminSubscriptionLookupRequired);
       return;
     }
-    final matchingVersions = versions
-        .where((version) => version.storagePlan == _storagePlan)
-        .toList(growable: false);
+    final matchingVersions = _paidVersionsForStorage(versions);
     final selectedVersion =
         matchingVersions.any((version) => version.id == _versionId)
         ? _versionId
@@ -108,6 +106,16 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     context,
   ).showSnackBar(SnackBar(content: Text(message)));
 
+  List<SubscriptionPricingVersion> _paidVersionsForStorage(
+    List<SubscriptionPricingVersion> versions,
+  ) => versions
+      .where(
+        (version) =>
+            version.storagePlan == _storagePlan &&
+            version.quarterlyPriceTwd > 0,
+      )
+      .toList(growable: false);
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -115,9 +123,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       future: _versions,
       builder: (context, snapshot) {
         final versions = snapshot.data ?? const <SubscriptionPricingVersion>[];
-        final matchingVersions = versions
-            .where((version) => version.storagePlan == _storagePlan)
-            .toList(growable: false);
+        final matchingVersions = _paidVersionsForStorage(versions);
         final selectedVersion =
             matchingVersions.any((version) => version.id == _versionId)
             ? _versionId
