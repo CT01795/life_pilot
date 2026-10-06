@@ -85,9 +85,12 @@ class CalendarService {
   Future<bool> existsRecommendedPlaceToCal({
     required String account,
     required RecommendedPlace place,
+    DateTime? scheduledDate,
   }) async {
+    final selectedDate = DateTimeFormatter.dateOnly(
+      scheduledDate ?? DateTime.now(),
+    );
     if (await _storesLocally(account)) {
-      final today = DateTimeFormatter.dateOnly(DateTime.now());
       final rows = await LocalDataStore.instance.list(
         owner: account,
         resource: TableNames.calendarEvents,
@@ -96,23 +99,34 @@ class CalendarService {
         final date = DateTime.tryParse(
           row['start_date']?.toString() ?? '',
         )?.toLocal();
-        return row['name']?.toString() == place.name &&
+        return _sameText(row['name'], place.name) &&
+            _sameText(row[EventFields.country], place.country) &&
+            _sameText(row['city'], place.city) &&
+            _sameText(row['location'], place.location) &&
             date != null &&
-            DateUtils.isSameDay(date, today);
+            DateUtils.isSameDay(date, selectedDate);
       });
     }
-    final today = DateTimeFormatter.dateOnly(DateTime.now());
-    final tomorrow = today.add(const Duration(days: 1));
+    final nextDate = selectedDate.add(const Duration(days: 1));
     final result = await supabase
         .from(TableNames.calendarEvents)
-        .select(Fields.id)
-        .eq("name", place.name)
+        .select('name,country,city,location,start_date')
         .eq(Fields.account, account)
-        .gte("start_date", today.toUtc().toIso8601String())
-        .lt("start_date", tomorrow.toUtc().toIso8601String())
-        .maybeSingle();
-    return result != null;
+        .gte('start_date', selectedDate.toUtc().toIso8601String())
+        .lt('start_date', nextDate.toUtc().toIso8601String())
+        .limit(20);
+    return result.any(
+      (row) =>
+          _sameText(row['name'], place.name) &&
+          _sameText(row[EventFields.country], place.country) &&
+          _sameText(row['city'], place.city) &&
+          _sameText(row['location'], place.location),
+    );
   }
+
+  bool _sameText(Object? left, Object? right) =>
+      (left?.toString() ?? '').trim().toLowerCase() ==
+      (right?.toString() ?? '').trim().toLowerCase();
 
   /// 加入行事曆
   Future<CalendarEvent> addRecommendedPlaceToCal({

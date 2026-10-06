@@ -45,6 +45,7 @@ class GenericEventPage extends StatefulWidget {
   final EventHeaderBuilder? headerBuilder;
   final bool Function(EventItem event)? eventPredicate;
   final bool showAddAction;
+  final bool autoRefreshPublicEvents;
 
   const GenericEventPage({
     super.key,
@@ -58,6 +59,7 @@ class GenericEventPage extends StatefulWidget {
     this.headerBuilder,
     this.eventPredicate,
     this.showAddAction = true,
+    this.autoRefreshPublicEvents = false,
   });
 
   @override
@@ -110,10 +112,11 @@ class _GenericEventPageState extends State<GenericEventPage> {
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
     _hasLoaded = true;
-    // Opening the page should only load saved data. Public-source crawling is
-    // intentionally reserved for the explicit refresh action in the app bar.
     await _controller.loadEvents(isGetPublicEvents: false);
     await _controller.checkPublicEventsUpdatedToday();
+    if (widget.autoRefreshPublicEvents && _controller.canRefreshPublicEvents) {
+      await _controller.refreshPublicEvents();
+    }
   }
 
   Future<void> _onAddPressed(BuildContext context) async {

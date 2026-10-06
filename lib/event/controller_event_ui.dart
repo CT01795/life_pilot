@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
+import 'package:provider/provider.dart';
 
 Future<void> onEditPressed({
   required BuildContext context,
@@ -95,10 +98,15 @@ Future<void> onMemoryCheckboxChanged({
   }
 
   // 判斷是否已經存在
-  final isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
-    event,
-    tmpValue,
-  );
+  var isAlreadyAdded = false;
+  if (controller.fromTableName == TableNames.recommendPlaces) {
+    controller.toggleEventSelection(event.id, true);
+  } else {
+    isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
+      event,
+      tmpValue,
+    );
+  }
 
   // 顯示確認對話框
   final schedule = await confirmEventTransfer(
@@ -120,11 +128,34 @@ Future<void> onMemoryCheckboxChanged({
       // Do not let an older sub-event silently replace that selection.
       scheduledEvent.subEvents = [];
     }
-    await controller.handleEventCheckboxTransfer(
+    if (controller.fromTableName == TableNames.recommendPlaces) {
+      isAlreadyAdded = await controller.handleEventCheckboxIsAlreadyAdd(
+        scheduledEvent,
+        true,
+      );
+      if (isAlreadyAdded) {
+        final confirmed = await showConfirmationDialog(
+          content: loc.scheduleDuplicateConfirmation,
+          confirmText: loc.add,
+          cancelText: loc.cancel,
+        );
+        if (!confirmed) {
+          controller.toggleEventSelection(event.id, false);
+          return;
+        }
+      }
+    }
+    final addedEvent = await controller.handleEventCheckboxTransfer(
       tmpValue,
       isAlreadyAdded,
       scheduledEvent,
     );
+    if (addedEvent != null && context.mounted) {
+      context.read<ControllerCalendar>().invalidateEventCache(
+        startDate: addedEvent.startDate,
+        endDate: addedEvent.endDate,
+      );
+    }
     AppNavigator.showSnackBar(loc.eventAddOk);
   } else {
     controller.toggleEventSelection(event.id, false);

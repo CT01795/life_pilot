@@ -86,6 +86,7 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
         searchPanelBuilder: widgetsSearchPanel,
         headerBuilder: _buildVendorSubmissionHub,
         showAddAction: false,
+        autoRefreshPublicEvents: true,
         eventPredicate: _showOnlyMySubmissions
             ? (event) =>
                   (event.account ?? '').trim().toLowerCase() ==

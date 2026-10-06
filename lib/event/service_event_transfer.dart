@@ -29,8 +29,34 @@ class ServiceEventTransfer {
       dateS: now.subtract(Duration(days: 366)),
     );
 
-    return existingEvents?.any((e) => e.id == event.id) ?? false;
+    if (existingEvents?.any((e) => e.id == event.id) ?? false) return true;
+
+    if (toTableName != TableNames.calendarEvents || event.startDate == null) {
+      return false;
+    }
+
+    final selectedDate = DateUtils.dateOnly(event.startDate!);
+    final eventsOnSelectedDate = await serviceEvent.getEvents(
+      tableName: toTableName,
+      inputUser: currentAccount,
+      dateS: selectedDate,
+      dateE: selectedDate,
+    );
+    return eventsOnSelectedDate?.any(
+          (existing) =>
+              _sameText(existing.account, currentAccount) &&
+              _sameText(existing.name, event.name) &&
+              _sameText(existing.country, event.country) &&
+              _sameText(existing.city, event.city) &&
+              _sameText(existing.location, event.location) &&
+              existing.startDate != null &&
+              DateUtils.isSameDay(existing.startDate!, selectedDate),
+        ) ??
+        false;
   }
+
+  bool _sameText(String? left, String? right) =>
+      (left ?? '').trim().toLowerCase() == (right ?? '').trim().toLowerCase();
 
   Future<EventItem?> toggleEventTransfer({
     required EventItem event,
