@@ -61,9 +61,12 @@ Future<void> onDeletePressed({
     AppNavigator.showSnackBar(loc.deleteOk);
   } on EventDeleteException catch (error, stackTrace) {
     logger.e('Delete event blocked', error: error, stackTrace: stackTrace);
-    if (error.error == EventDeleteError.reviewProtected) {
-      AppNavigator.showErrorBar(loc.publishedContentDeleteAdminOnly);
-    }
+    final message = switch (error.error) {
+      EventDeleteError.published => loc.publishedContentDeleteAdminOnly,
+      EventDeleteError.previouslyPublished =>
+        loc.previouslyPublishedContentDeleteAdminOnly,
+    };
+    AppNavigator.showErrorBar(message);
     return;
   } catch (error, stackTrace) {
     logger.e('Delete event failed', error: error, stackTrace: stackTrace);

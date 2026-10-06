@@ -625,92 +625,112 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             ),
           ),
           Gaps.h8,
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 麥克風按鈕
-              FloatingActionButton.small(
-                tooltip: loc.accountingSpeechHint,
-                child: const Icon(Icons.mic),
-                onPressed: () async {
-                  final speechController = context.read<ControllerSpeech>();
-                  final text = await speechController.recordAndTranscribe();
-                  if (text.isNotEmpty) {
-                    setState(() {
-                      _speechTextController.text = text;
-                    });
-                  }
-                },
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
               ),
-              Gaps.w8,
-              // 可編輯文字欄位
-              Expanded(
-                child: TextField(
-                  controller: _speechTextController,
-                  autofocus: widget.returnAfterSubmit,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    hintText: loc.accountingSpeechHint,
-                    alignLabelWithHint: true,
-                  ),
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  minLines: 2,
-                  maxLines: null,
-                ),
-              ),
-              Gaps.w8,
-              Flexible(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (_speechTextController.text.isEmpty) return;
-                    final previews = controller.parseFromSpeech(
-                      _speechTextController.text,
-                      controller.currentCurrency ?? widget.account.currency,
-                      controller.currentExchangeRate,
-                    );
-                    for (final preview in previews) {
-                      preview.eventId = widget.linkedEventId;
-                      preview.date = _newRecordDate;
-                    }
-                    if (previews.isEmpty) return;
-                    final confirmed = await showVoiceConfirmDialog(
-                      context,
-                      previews,
-                    );
-                    if (confirmed != true) return;
-                    try {
-                      await controller.commitRecords(previews);
-                    } catch (error) {
-                      if (!context.mounted) return;
-                      final message = subscriptionErrorMessage(loc, error);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            message.isEmpty ? loc.unknownError : message,
-                          ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 麥克風按鈕
+                    FloatingActionButton(
+                      tooltip: loc.accountingSpeechHint,
+                      child: const Icon(Icons.mic_rounded, size: 30),
+                      onPressed: () async {
+                        final speechController = context
+                            .read<ControllerSpeech>();
+                        final text = await speechController
+                            .recordAndTranscribe();
+                        if (text.isNotEmpty) {
+                          setState(() {
+                            _speechTextController.text = text;
+                          });
+                        }
+                      },
+                    ),
+                    Gaps.w12,
+                    // 可編輯文字欄位
+                    Expanded(
+                      child: TextField(
+                        controller: _speechTextController,
+                        autofocus: widget.returnAfterSubmit,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          hintText: loc.accountingSpeechHint,
+                          alignLabelWithHint: true,
                         ),
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        minLines: 2,
+                        maxLines: null,
+                      ),
+                    ),
+                  ],
+                ),
+                Gaps.h12,
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.send_rounded),
+                    onPressed: () async {
+                      if (_speechTextController.text.isEmpty) return;
+                      final previews = controller.parseFromSpeech(
+                        _speechTextController.text,
+                        controller.currentCurrency ?? widget.account.currency,
+                        controller.currentExchangeRate,
                       );
-                      return;
-                    }
+                      for (final preview in previews) {
+                        preview.eventId = widget.linkedEventId;
+                        preview.date = _newRecordDate;
+                      }
+                      if (previews.isEmpty) return;
+                      final confirmed = await showVoiceConfirmDialog(
+                        context,
+                        previews,
+                      );
+                      if (confirmed != true) return;
+                      try {
+                        await controller.commitRecords(previews);
+                      } catch (error) {
+                        if (!context.mounted) return;
+                        final message = subscriptionErrorMessage(loc, error);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              message.isEmpty ? loc.unknownError : message,
+                            ),
+                          ),
+                        );
+                        return;
+                      }
 
-                    // 清空輸入框
-                    setState(() {
-                      _speechTextController.clear();
-                      _newRecordDate = DateTime.now();
-                    });
-                    if (widget.returnAfterSubmit && mounted) {
-                      Navigator.of(context).pop(true);
-                    }
-                  },
-                  child: Text(
-                    loc.recordSubmit,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                      // 清空輸入框
+                      setState(() {
+                        _speechTextController.clear();
+                        _newRecordDate = DateTime.now();
+                      });
+                      if (widget.returnAfterSubmit && mounted) {
+                        Navigator.of(context).pop(true);
+                      }
+                    },
+                    label: Text(
+                      loc.recordSubmit,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

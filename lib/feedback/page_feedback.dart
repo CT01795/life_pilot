@@ -3,6 +3,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/controller_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:provider/provider.dart';
 
@@ -46,7 +47,7 @@ class PageFeedbackBody extends StatelessWidget {
             Gaps.h8,
             ElevatedButton.icon(
               icon: const Icon(Icons.camera_alt),
-              label: Text(loc.captureScreen),
+              label: AdaptiveButtonLabel(loc.captureScreen),
               onPressed: controller.captureScreenshot,
             ),
             if (controller.screenshot.isNotEmpty == true)
@@ -80,7 +81,7 @@ class PageFeedbackBody extends StatelessWidget {
                   : () => controller.submit(context),
               child: controller.isSending
                   ? const CircularProgressIndicator()
-                  : Text(loc.recordSubmit),
+                  : AdaptiveButtonLabel(loc.recordSubmit),
             ),
           ],
         ),

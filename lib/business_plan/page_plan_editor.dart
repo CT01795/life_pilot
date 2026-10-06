@@ -3,6 +3,7 @@ import 'package:html_editor_enhanced/html_editor.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
 class PagePlanEditor extends StatefulWidget {
@@ -135,8 +136,8 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
               ),
               Gaps.h16,
               // Navigation
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              AdaptiveButtonBar(
+                alignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
                     onPressed: () async {
@@ -147,7 +148,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                         _loadCurrentAnswer();
                       }
                     },
-                    child: Text(loc.previous),
+                    child: AdaptiveButtonLabel(loc.previous),
                   ),
                   ElevatedButton(
                     onPressed: () async {
@@ -160,7 +161,7 @@ class _PagePlanEditorState extends State<PagePlanEditor> {
                         _loadCurrentAnswer();
                       }
                     },
-                    child: Text(loc.next),
+                    child: AdaptiveButtonLabel(loc.next),
                   ),
                 ],
               ),

@@ -5,6 +5,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/utils/record_categories.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 class EventCompletionChoice {
   const EventCompletionChoice({
@@ -366,67 +367,61 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
             ),
           ],
           Gaps.h16,
-          Row(
+          AdaptiveButtonBar(
+            alignment: MainAxisAlignment.end,
+            overflowAlignment: OverflowBarAlignment.end,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(loc.cancel),
-                ),
+              OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: AdaptiveButtonLabel(loc.cancel),
               ),
-              Gaps.w12,
-              Expanded(
-                child: ListenableBuilder(
-                  listenable: Listenable.merge([
-                    _accountingController,
-                    _pointController,
-                  ]),
-                  builder: (context, _) {
-                    final accountingValue = _parseAmount(_accountingController);
-                    final pointValue = int.tryParse(
-                      _pointController.text.trim(),
-                    );
-                    final canSubmit = _canSubmit(
-                      accountingValue: accountingValue,
-                      pointValue: pointValue,
-                    );
-                    return FilledButton.icon(
-                      onPressed: canSubmit
-                          ? () => Navigator.pop(
-                              context,
-                              EventCompletionChoice(
-                                addToMemory: _addToMemory,
-                                incomeValue:
-                                    _addAccounting && _accountingIsIncome
-                                    ? accountingValue
-                                    : null,
-                                incomeCategory: _accountingCategory,
-                                expenseValue:
-                                    _addAccounting && !_accountingIsIncome
-                                    ? accountingValue
-                                    : null,
-                                expenseCategory: _accountingCategory,
-                                pointValue: widget.allowPoints && _addPoints
-                                    ? (_pointsArePositive
-                                          ? pointValue
-                                          : -pointValue!)
-                                    : null,
-                                pointCategory: _pointCategory,
-                                recordedAt: DateTime(
-                                  _recordDate.year,
-                                  _recordDate.month,
-                                  _recordDate.day,
-                                  _recordTime.hour,
-                                  _recordTime.minute,
-                                ),
+              ListenableBuilder(
+                listenable: Listenable.merge([
+                  _accountingController,
+                  _pointController,
+                ]),
+                builder: (context, _) {
+                  final accountingValue = _parseAmount(_accountingController);
+                  final pointValue = int.tryParse(_pointController.text.trim());
+                  final canSubmit = _canSubmit(
+                    accountingValue: accountingValue,
+                    pointValue: pointValue,
+                  );
+                  return FilledButton.icon(
+                    onPressed: canSubmit
+                        ? () => Navigator.pop(
+                            context,
+                            EventCompletionChoice(
+                              addToMemory: _addToMemory,
+                              incomeValue: _addAccounting && _accountingIsIncome
+                                  ? accountingValue
+                                  : null,
+                              incomeCategory: _accountingCategory,
+                              expenseValue:
+                                  _addAccounting && !_accountingIsIncome
+                                  ? accountingValue
+                                  : null,
+                              expenseCategory: _accountingCategory,
+                              pointValue: widget.allowPoints && _addPoints
+                                  ? (_pointsArePositive
+                                        ? pointValue
+                                        : -pointValue!)
+                                  : null,
+                              pointCategory: _pointCategory,
+                              recordedAt: DateTime(
+                                _recordDate.year,
+                                _recordDate.month,
+                                _recordDate.day,
+                                _recordTime.hour,
+                                _recordTime.minute,
                               ),
-                            )
-                          : null,
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: Text(loc.confirm),
-                    );
-                  },
-                ),
+                            ),
+                          )
+                        : null,
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: AdaptiveButtonLabel(loc.confirm),
+                  );
+                },
               ),
             ],
           ),

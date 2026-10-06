@@ -15,6 +15,7 @@ import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
 import 'package:life_pilot/vendor/widgets_admin_vendor_pricing.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
 class PageVendorDashboard extends StatefulWidget {
@@ -100,7 +101,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                     child: FilledButton.icon(
                       onPressed: _reload,
                       icon: const Icon(Icons.refresh),
-                      label: Text(loc.retry),
+                      label: AdaptiveButtonLabel(loc.retry),
                     ),
                   ),
                 ],
@@ -240,7 +241,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
             child: FilledButton.icon(
               onPressed: _openVendorPlanManager,
               icon: const Icon(Icons.admin_panel_settings_outlined),
-              label: Text(loc.adminVendorPricingTitle),
+              label: AdaptiveButtonLabel(loc.adminVendorPricingTitle),
             ),
           ),
         ],
@@ -347,12 +348,12 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                 FilledButton.icon(
                   onPressed: () => _openSubmission(TableNames.recommendEvents),
                   icon: const Icon(Icons.add_circle_outline),
-                  label: Text(loc.vendorSubmitActivity),
+                  label: AdaptiveButtonLabel(loc.vendorSubmitActivity),
                 ),
                 FilledButton.tonalIcon(
                   onPressed: () => _openSubmission(TableNames.recommendPlaces),
                   icon: const Icon(Icons.add_location_alt_outlined),
-                  label: Text(loc.vendorSubmitAttraction),
+                  label: AdaptiveButtonLabel(loc.vendorSubmitAttraction),
                 ),
               ],
             ),
@@ -516,7 +517,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
           ),
           TextButton(
             onPressed: _scrollToPricing,
-            child: Text(loc.vendorViewPlans),
+            child: AdaptiveButtonLabel(loc.vendorViewPlans),
           ),
         ],
       ),
@@ -599,7 +600,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                   TextButton.icon(
                     onPressed: _openActivities,
                     icon: const Icon(Icons.arrow_forward),
-                    label: Text(loc.vendorManageActivities),
+                    label: AdaptiveButtonLabel(loc.vendorManageActivities),
                   ),
                 ],
               ),
@@ -713,7 +714,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                       onPressed: () =>
                           _openSubmission(TableNames.recommendEvents),
                       icon: const Icon(Icons.add_circle_outline),
-                      label: Text(loc.vendorSubmitActivity),
+                      label: AdaptiveButtonLabel(loc.vendorSubmitActivity),
                     ),
                   ],
                 ),

@@ -390,6 +390,9 @@ class ServiceEvent {
       if (ex.code == '23505') {
         throw const EventSaveException(EventSaveError.duplicate);
       }
+      if (ex.code == '42501') {
+        throw const EventSaveException(EventSaveError.permissionDenied);
+      }
       rethrow;
     } catch (ex, stacktrace) {
       logger.e("saveEvent error", error: ex, stackTrace: stacktrace);
@@ -440,16 +443,19 @@ class ServiceEvent {
               .eq(Fields.id, event.id)
               .eq(Fields.account, currentAccount)
               .maybeSingle();
-          if (reviewState != null &&
-              (reviewState[EventFields.isApproved] == true ||
-                  reviewState['was_approved'] == true)) {
-            throw const EventDeleteException(EventDeleteError.reviewProtected);
+          if (reviewState?[EventFields.isApproved] == true) {
+            throw const EventDeleteException(EventDeleteError.published);
+          }
+          if (reviewState?['was_approved'] == true) {
+            throw const EventDeleteException(
+              EventDeleteError.previouslyPublished,
+            );
           }
         } on PostgrestException catch (error) {
           // Before the review-history migration is installed, the currently
           // published flag still prevents accidental deletion.
           if (event.isApproved) {
-            throw const EventDeleteException(EventDeleteError.reviewProtected);
+            throw const EventDeleteException(EventDeleteError.published);
           }
           if (error.code != '42703' && error.code != 'PGRST204') rethrow;
         }

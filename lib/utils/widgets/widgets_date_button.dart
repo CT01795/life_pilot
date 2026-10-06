@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 Widget widgetsDateButton({
   required BuildContext context,
@@ -15,12 +16,10 @@ Widget widgetsDateButton({
       Expanded(
         child: ElevatedButton.icon(
           icon: Icon(icon),
-          label: Text(
+          label: AdaptiveButtonLabel(
             date == null
                 ? label
                 : date.formatDateString(passYear: true, formatShow: true),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
           onPressed: () async {
             final picked = await showDatePicker(

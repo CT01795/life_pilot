@@ -16,6 +16,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
@@ -174,6 +175,7 @@ class _PageEventAddState extends State<PageEventAdd> {
       final message = switch (error.error) {
         EventSaveError.missingName => loc.eventSaveError,
         EventSaveError.duplicate => loc.eventAlreadyExists,
+        EventSaveError.permissionDenied => loc.submissionPermissionDenied,
       };
       AppNavigator.showErrorBar(message);
     } catch (error) {
@@ -276,11 +278,11 @@ class _PageEventAddState extends State<PageEventAdd> {
                           ),
                         ),
                         Gaps.h8,
-                        Row(
+                        AdaptiveButtonBar(
                           children: [
                             ElevatedButton.icon(
                               icon: const Icon(Icons.auto_fix_high),
-                              label: Text(loc.parsing),
+                              label: AdaptiveButtonLabel(loc.parsing),
                               onPressed: () {
                                 controllerAdd.parseFacebookText(
                                   fbTextController.text,
@@ -292,7 +294,7 @@ class _PageEventAddState extends State<PageEventAdd> {
                               onPressed: () {
                                 fbTextController.clear();
                               },
-                              child: Text(loc.clear),
+                              child: AdaptiveButtonLabel(loc.clear),
                             ),
                           ],
                         ),
@@ -459,12 +461,10 @@ class _PageEventAddState extends State<PageEventAdd> {
                       child: OutlinedButton.icon(
                         onPressed: () => _pickEventImage(ctl),
                         icon: const Icon(Icons.add_photo_alternate_outlined),
-                        label: Text(
+                        label: AdaptiveButtonLabel(
                           imageValue == null || imageValue.isEmpty
                               ? _chooseImageLabel()
                               : _replaceImageLabel(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),

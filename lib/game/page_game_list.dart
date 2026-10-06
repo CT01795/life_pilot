@@ -15,6 +15,7 @@ import 'package:life_pilot/game/social/page_game_social.dart';
 import 'package:life_pilot/game/social/page_game_social_question_create.dart';
 import 'package:life_pilot/game/social/page_game_social_questions.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/game/model_game_item.dart';
 import 'package:life_pilot/game/model_game_user.dart';
 import 'package:life_pilot/game/grammar/page_game_grammar.dart';
@@ -730,84 +731,74 @@ class _PageGameListState extends State<PageGameList> {
                 ),
               Gaps.h8,
               if (_isSocialGame && _showQuestionManagementActions)
-                Row(
+                AdaptiveButtonBar(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.add),
-                        label: Text(loc.addQuestion),
-                        onPressed: () async {
-                          final added = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const PageGameSocialQuestionCreate(),
-                            ),
-                          );
-                          if (mounted && added == true) {
-                            setState(() => selectedQuestionBank = 'mine');
-                          }
-                        },
-                      ),
-                    ),
-                    Gaps.w8,
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.list_alt),
-                        label: Text(loc.myQuestions),
-                        onPressed: () => Navigator.push<void>(
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: AdaptiveButtonLabel(loc.addQuestion),
+                      onPressed: () async {
+                        final added = await Navigator.push<bool>(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const PageGameSocialQuestions(),
+                            builder: (_) =>
+                                const PageGameSocialQuestionCreate(),
                           ),
+                        );
+                        if (mounted && added == true) {
+                          setState(() => selectedQuestionBank = 'mine');
+                        }
+                      },
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.list_alt),
+                      label: AdaptiveButtonLabel(loc.myQuestions),
+                      onPressed: () => Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PageGameSocialQuestions(),
                         ),
                       ),
                     ),
                   ],
                 ),
               if (_supportsQuestionManagement && _showQuestionManagementActions)
-                Row(
+                AdaptiveButtonBar(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.add),
-                        label: Text(loc.addQuestion),
-                        onPressed:
-                            selectedGameName == null || selectedLevel == null
-                            ? null
-                            : () async {
-                                final added = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PageGameQuestionCreate(
-                                      gameName: selectedGameName!,
-                                      initialLevel: selectedLevel!,
-                                    ),
-                                  ),
-                                );
-                                if (mounted && added == true) {
-                                  setState(() => selectedQuestionBank = 'mine');
-                                }
-                              },
-                      ),
-                    ),
-                    Gaps.w8,
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.list_alt),
-                        label: Text(loc.myQuestions),
-                        onPressed: selectedGameName == null
-                            ? null
-                            : () => Navigator.push<void>(
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: AdaptiveButtonLabel(loc.addQuestion),
+                      onPressed:
+                          selectedGameName == null || selectedLevel == null
+                          ? null
+                          : () async {
+                              final added = await Navigator.push<bool>(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => PageGameMyQuestions(
+                                  builder: (_) => PageGameQuestionCreate(
                                     gameName: selectedGameName!,
-                                    initialLevel: selectedLevel ?? 1,
+                                    initialLevel: selectedLevel!,
                                   ),
                                 ),
+                              );
+                              if (mounted && added == true) {
+                                setState(() => selectedQuestionBank = 'mine');
+                              }
+                            },
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.list_alt),
+                      label: AdaptiveButtonLabel(loc.myQuestions),
+                      onPressed: selectedGameName == null
+                          ? null
+                          : () => Navigator.push<void>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PageGameMyQuestions(
+                                  gameName: selectedGameName!,
+                                  initialLevel: selectedLevel ?? 1,
+                                ),
                               ),
-                      ),
+                            ),
                     ),
                   ],
                 ),

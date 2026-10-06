@@ -18,7 +18,7 @@ class VendorSubmissionHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    const actionSize = Size(72, 48);
+    const minimumActionSize = Size(72, 48);
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -27,17 +27,19 @@ class VendorSubmissionHub extends StatelessWidget {
         children: [
           Tooltip(
             message: submitLabel,
-            child: SizedBox.fromSize(
-              size: actionSize,
-              child: FilledButton.tonal(
-                onPressed: onSubmit,
-                style: FilledButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                child: Text(loc.vendorSubmitShort),
+            child: FilledButton.tonal(
+              onPressed: onSubmit,
+              style: FilledButton.styleFrom(
+                minimumSize: minimumActionSize,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                textStyle: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              child: Text(
+                '+ ${loc.vendorSubmitShort}',
+                maxLines: 1,
+                softWrap: false,
               ),
             ),
           ),
@@ -46,11 +48,11 @@ class VendorSubmissionHub extends StatelessWidget {
             segments: [
               ButtonSegment<bool>(
                 value: true,
-                label: Text(loc.vendorMineShort),
+                label: Text(loc.vendorMineShort, maxLines: 1, softWrap: false),
               ),
               ButtonSegment<bool>(
                 value: false,
-                label: Text(loc.vendorAllShort),
+                label: Text(loc.vendorAllShort, maxLines: 1, softWrap: false),
               ),
             ],
             selected: {showOnlyMySubmissions},
@@ -59,13 +61,14 @@ class VendorSubmissionHub extends StatelessWidget {
               onFilterChanged(selection.first);
             },
             style: ButtonStyle(
-              minimumSize: const WidgetStatePropertyAll(actionSize),
-              maximumSize: const WidgetStatePropertyAll(actionSize),
-              padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+              minimumSize: const WidgetStatePropertyAll(minimumActionSize),
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 16),
+              ),
               textStyle: WidgetStatePropertyAll(
-                Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),

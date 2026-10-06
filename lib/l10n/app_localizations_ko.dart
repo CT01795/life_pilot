@@ -423,6 +423,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get publishedContentDeleteAdminOnly => '공개된 정보는 관리자만 삭제할 수 있습니다. 수정 후 저장하면 검토 대기 상태로 돌아갑니다.';
 
   @override
+  String get previouslyPublishedContentDeleteAdminOnly => '이 정보는 이전에 공개되었으므로 관리자만 삭제할 수 있습니다. 계속 수정한 뒤 재검토를 요청할 수 있습니다.';
+
+  @override
+  String get submissionPermissionDenied => '현재 이 계정에는 게시물 쓰기 권한이 없습니다. 관리자에게 게시 권한 업데이트를 요청해 주세요.';
+
+  @override
   String get publishedSubmission => '공개됨';
 
   @override

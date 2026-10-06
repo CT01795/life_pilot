@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/widgets/widgets_weather_icon.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/calendar/widgets_calendar_sub_card.dart';
+import 'package:life_pilot/event/widgets_event_utils.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
@@ -263,7 +264,7 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
     }
 
     final content = Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 52),
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 72),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -319,28 +320,26 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
           PositionedDirectional(
             end: Gaps.w16.width,
             bottom: Gaps.h8.height,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              spacing: eventCardActionSpacing,
               children: [
                 if (onAccounting != null)
-                  IconButton(
-                    icon: Icon(Icons.currency_exchange),
+                  EventCardActionButton(
+                    icon: Icons.currency_exchange,
                     tooltip: loc.accountRecords,
                     onPressed: onAccounting,
                   ),
                 if (onPoints != null)
-                  IconButton(
-                    icon: const Icon(Icons.stars_rounded),
+                  EventCardActionButton(
+                    icon: Icons.stars_rounded,
                     tooltip: loc.pointsRecord,
                     onPressed: onPoints,
                   ),
                 // 🗑 Delete（只有 canDelete）
                 if (eventViewModel.canDelete && onDelete != null)
-                  IconButton(
-                    icon: Icon(
-                      Icons.delete,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                  EventCardActionButton(
+                    icon: Icons.delete,
+                    color: Theme.of(context).colorScheme.error,
                     tooltip: loc.delete,
                     onPressed: onDelete,
                   ),

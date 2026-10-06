@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
 import 'package:life_pilot/utils/service/service_personal_data.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
 class PageAccountSecurity extends StatefulWidget {
@@ -310,7 +311,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                     FilledButton.icon(
                       onPressed: _busy ? null : _changePassword,
                       icon: const Icon(Icons.password_outlined),
-                      label: Text(loc.changePassword),
+                      label: AdaptiveButtonLabel(loc.changePassword),
                     ),
                     Gaps.h32,
                     const Divider(),
@@ -325,13 +326,13 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                     OutlinedButton.icon(
                       onPressed: _busy ? null : _sendResetEmail,
                       icon: const Icon(Icons.mark_email_read_outlined),
-                      label: Text(loc.resetByEmailVerification),
+                      label: AdaptiveButtonLabel(loc.resetByEmailVerification),
                     ),
                     Gaps.h8,
                     OutlinedButton.icon(
                       onPressed: _busy ? null : _contactAdministrator,
                       icon: const Icon(Icons.support_agent_outlined),
-                      label: Text(loc.askAdministrator),
+                      label: AdaptiveButtonLabel(loc.askAdministrator),
                     ),
                     if (isSysAdmin) ...[
                       Gaps.h32,
@@ -363,7 +364,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                       FilledButton.tonalIcon(
                         onPressed: _busy ? null : _createTemporaryPassword,
                         icon: const Icon(Icons.password_outlined),
-                        label: Text(loc.adminPasswordResetSend),
+                        label: AdaptiveButtonLabel(loc.adminPasswordResetSend),
                       ),
                       if (_temporaryPassword case final password?) ...[
                         Gaps.h16,
@@ -393,7 +394,9 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                                 OutlinedButton.icon(
                                   onPressed: _copyTemporaryPassword,
                                   icon: const Icon(Icons.copy_outlined),
-                                  label: Text(loc.adminTemporaryPasswordCopy),
+                                  label: AdaptiveButtonLabel(
+                                    loc.adminTemporaryPasswordCopy,
+                                  ),
                                 ),
                               ],
                             ),
@@ -407,7 +410,9 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                     OutlinedButton.icon(
                       onPressed: _busy ? null : _requestAccountDeletion,
                       icon: const Icon(Icons.person_remove_outlined),
-                      label: Text(loc.accountMenuAccountDeletion),
+                      label: AdaptiveButtonLabel(
+                        loc.accountMenuAccountDeletion,
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.error,
                         side: BorderSide(

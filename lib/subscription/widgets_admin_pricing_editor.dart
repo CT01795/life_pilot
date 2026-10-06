@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 class AdminPricingVersionEditor extends StatefulWidget {
   const AdminPricingVersionEditor({this.onSaved, super.key});
@@ -367,7 +368,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
                       ? Icons.add_chart_outlined
                       : Icons.save_outlined,
                 ),
-                label: Text(
+                label: AdaptiveButtonLabel(
                   _editingVersionId == null
                       ? loc.adminPricingCreate
                       : loc.adminPricingUpdate,
@@ -376,7 +377,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
               if (_editingVersionId != null)
                 OutlinedButton(
                   onPressed: _saving ? null : () => setState(_resetForm),
-                  child: Text(loc.cancel),
+                  child: AdaptiveButtonLabel(loc.cancel),
                 ),
             ],
           ),

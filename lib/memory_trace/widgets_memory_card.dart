@@ -8,6 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:life_pilot/event/widgets_event_image.dart';
+import 'package:life_pilot/event/widgets_event_utils.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
@@ -294,7 +295,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     }
 
     final content = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 50),
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 72),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -386,25 +387,26 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
           PositionedDirectional(
             end: Gaps.w16.width,
             bottom: Gaps.h8.height,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              spacing: eventCardActionSpacing,
               children: [
                 if (widget.onAccounting != null)
-                  IconButton(
-                    icon: Icon(Icons.currency_exchange),
+                  EventCardActionButton(
+                    icon: Icons.currency_exchange,
                     tooltip: loc.accountRecords,
                     onPressed: widget.onAccounting,
                   ),
                 if (widget.onPoints != null)
-                  IconButton(
-                    icon: const Icon(Icons.stars_rounded),
+                  EventCardActionButton(
+                    icon: Icons.stars_rounded,
                     tooltip: loc.pointsRecord,
                     onPressed: widget.onPoints,
                   ),
                 // 🗑 Delete（只有 canDelete）
                 if (widget.eventViewModel.canDelete && widget.onDelete != null)
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  EventCardActionButton(
+                    icon: Icons.delete,
+                    color: Colors.redAccent,
                     tooltip: loc.delete,
                     onPressed: widget.onDelete,
                   ),

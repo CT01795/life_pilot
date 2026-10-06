@@ -8,6 +8,7 @@ import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_quota_free_period.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/vendor/widgets_admin_vendor_pricing.dart';
@@ -426,7 +427,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
           FilledButton.icon(
             onPressed: null,
             icon: const Icon(Icons.shopping_bag_outlined),
-            label: Text(loc.subscriptionPurchaseComingSoon),
+            label: AdaptiveButtonLabel(loc.subscriptionPurchaseComingSoon),
           ),
           Gaps.h8,
           Text(

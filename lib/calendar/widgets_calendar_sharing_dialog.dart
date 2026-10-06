@@ -8,6 +8,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
 class CalendarSharingDialog extends StatefulWidget {
@@ -63,9 +64,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     if (mounted) {
       // Sharing can be accepted, declined, or stopped on another device.
       // Refresh the cached quota whenever this dialog reads server state.
-      unawaited(
-        context.read<ControllerAuth>().refreshSubscriptionUsage(),
-      );
+      unawaited(context.read<ControllerAuth>().refreshSubscriptionUsage());
     }
     if (mounted &&
         _emailsController.text.trim().isEmpty &&
@@ -225,7 +224,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                       OutlinedButton.icon(
                         onPressed: _reload,
                         icon: const Icon(Icons.refresh),
-                        label: Text(loc.retry),
+                        label: AdaptiveButtonLabel(loc.retry),
                       ),
                     ],
                   ),
@@ -666,7 +665,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                               accept: false,
                             ),
                           ),
-                    child: Text(loc.calendarInvitationDecline),
+                    child: AdaptiveButtonLabel(loc.calendarInvitationDecline),
                   ),
                   FilledButton(
                     onPressed: _submitting
@@ -678,7 +677,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
                             ),
                             successMessage: loc.calendarSharingUpdated,
                           ),
-                    child: Text(loc.calendarInvitationAccept),
+                    child: AdaptiveButtonLabel(loc.calendarInvitationAccept),
                   ),
                 ] else
                   TextButton(

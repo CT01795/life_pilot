@@ -40,7 +40,7 @@ void main() {
   ) async {
     await pumpHub(tester, locale: const Locale('en'), width: 220);
 
-    expect(find.text('Submit'), findsOneWidget);
+    expect(find.text('+ Submit'), findsOneWidget);
     expect(find.text('Mine'), findsOneWidget);
     expect(find.text('All'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -51,7 +51,7 @@ void main() {
   ) async {
     await pumpHub(tester, locale: const Locale('ja'), width: 220);
 
-    expect(find.text('\u6295\u7a3f'), findsOneWidget);
+    expect(find.text('+ \u6295\u7a3f'), findsOneWidget);
     expect(find.text('\u81ea\u5206'), findsOneWidget);
     expect(find.text('\u5168\u3066'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -89,6 +89,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('action widths grow with text and labels stay on one line', (
+    tester,
+  ) async {
+    await pumpHub(tester, locale: const Locale('en'), width: 420);
+
+    final submitButton = find.widgetWithText(FilledButton, '+ Submit');
+    expect(tester.getSize(submitButton).width, greaterThan(72));
+
+    for (final label in ['+ Submit', 'Mine', 'All']) {
+      final text = tester.widget<Text>(find.text(label));
+      expect(text.maxLines, 1);
+      expect(text.softWrap, isFalse);
+    }
     expect(tester.takeException(), isNull);
   });
 }

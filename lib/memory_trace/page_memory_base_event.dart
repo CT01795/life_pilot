@@ -178,19 +178,20 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
         title: widget.title,
         titleWidget: Align(
           alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: 72,
-            height: 48,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
             child: FilledButton.tonalIcon(
               onPressed: () => _onAddPressed(context),
               style: FilledButton.styleFrom(
-                padding: EdgeInsets.zero,
-                textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                minimumSize: const Size(72, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                textStyle: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               icon: const Icon(Icons.add),
-              label: Text(loc.add),
+              label: Text(loc.add, maxLines: 1, softWrap: false),
             ),
           ),
         ),

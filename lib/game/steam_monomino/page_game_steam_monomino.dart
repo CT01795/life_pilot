@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/steam_monomino/controller_game_steam_monomino.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/game/steam_monomino/model_game_steam_monomino.dart';
 import 'package:life_pilot/game/grammar/page_game_grammar.dart';
 import 'package:life_pilot/game/sentence/page_game_sentence.dart';
@@ -169,13 +170,12 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
           Gaps.h8,
           Padding(
             padding: const EdgeInsets.only(left: 20),
-            child: Row(
+            child: AdaptiveButtonBar(
               children: [
                 ElevatedButton(
                   onPressed: _checkPath,
-                  child: Text(loc.checkPath),
+                  child: AdaptiveButtonLabel(loc.checkPath),
                 ),
-                Gaps.w16,
                 if (controller.usedSteps > 20)
                   ElevatedButton(
                     onPressed: () async {
@@ -186,7 +186,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                       controller.clearHint();
                       setState(() {});
                     },
-                    child: Text('${loc.hint} 💡'),
+                    child: AdaptiveButtonLabel('${loc.hint} 💡'),
                   ),
               ],
             ),

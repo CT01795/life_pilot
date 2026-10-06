@@ -5,6 +5,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/steam_scratch/controller_game_steam_scratch.dart';
 import 'package:life_pilot/game/steam_scratch/controller_game_steam_scratch_level_generator.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/game/steam_scratch/model_game_steam_scratch_level.dart';
 import 'package:life_pilot/game/grammar/page_game_grammar.dart';
 import 'package:life_pilot/game/sentence/page_game_sentence.dart';
@@ -369,9 +370,9 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                         onPressed: () async {
                           await editorKey.currentState?.requestBlocklyJson();
                         },
-                        child: Text(
+                        child: AdaptiveButtonLabel(
                           loc.gameStart,
-                          style: TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ],

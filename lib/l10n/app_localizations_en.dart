@@ -423,6 +423,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get publishedContentDeleteAdminOnly => 'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
 
   @override
+  String get previouslyPublishedContentDeleteAdminOnly => 'This content was previously published and can only be deleted by an administrator. You can still edit and resubmit it for review.';
+
+  @override
+  String get submissionPermissionDenied => 'This account does not currently have submission write access. Please contact the administrator to update the submission permissions.';
+
+  @override
   String get publishedSubmission => 'Public';
 
   @override

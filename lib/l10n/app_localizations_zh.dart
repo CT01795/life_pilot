@@ -423,6 +423,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get publishedContentDeleteAdminOnly => '已公開資料僅限管理員刪除。您仍可編輯，儲存後會轉為待審核。';
 
   @override
+  String get previouslyPublishedContentDeleteAdminOnly => '此資料曾經公開，僅限管理員刪除。您仍可繼續編輯並重新送審。';
+
+  @override
+  String get submissionPermissionDenied => '目前帳號尚未取得投稿寫入權限，請聯絡管理員更新投稿權限設定。';
+
+  @override
   String get publishedSubmission => '已公開';
 
   @override

@@ -1,4 +1,4 @@
-enum EventSaveError { missingName, duplicate }
+enum EventSaveError { missingName, duplicate, permissionDenied }
 
 class EventSaveException implements Exception {
   const EventSaveException(this.error);

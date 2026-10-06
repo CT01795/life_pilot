@@ -409,7 +409,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     }
 
     final content = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 50),
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 72),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -573,8 +573,8 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           PositionedDirectional(
             end: Gaps.w16.width,
             bottom: Gaps.h8.height,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              spacing: eventCardActionSpacing,
               children: [
                 // 👍 Favor（登入即可）
                 if (widget.onLike != null)
@@ -601,15 +601,16 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                     tooltip: loc.dislike,
                   ),
                 if (widget.onAccounting != null)
-                  IconButton(
-                    icon: Icon(Icons.currency_exchange),
+                  EventCardActionButton(
+                    icon: Icons.currency_exchange,
                     tooltip: loc.accountRecords,
                     onPressed: widget.onAccounting,
                   ),
                 // 🗑 Delete（只有 canDelete）
                 if (widget.eventViewModel.canDelete && widget.onDelete != null)
-                  IconButton(
-                    icon: Icon(Icons.delete, color: colorScheme.error),
+                  EventCardActionButton(
+                    icon: Icons.delete,
+                    color: colorScheme.error,
                     tooltip: loc.delete,
                     onPressed: widget.onDelete,
                   ),

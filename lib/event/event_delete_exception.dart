@@ -1,4 +1,4 @@
-enum EventDeleteError { reviewProtected }
+enum EventDeleteError { published, previouslyPublished }
 
 class EventDeleteException implements Exception {
   const EventDeleteException(this.error);

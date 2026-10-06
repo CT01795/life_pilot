@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 class AdminSubscriptionEditor extends StatefulWidget {
   const AdminSubscriptionEditor({this.onSaved, super.key});
@@ -445,7 +446,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                             ? null
                             : _extendSubscription,
                         icon: const Icon(Icons.more_time),
-                        label: Text(loc.adminSubscriptionExtend),
+                        label: AdaptiveButtonLabel(loc.adminSubscriptionExtend),
                       ),
                     );
                     if (constraints.maxWidth < 420) {
@@ -501,7 +502,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.save_outlined),
-                    label: Text(loc.adminSubscriptionSave),
+                    label: AdaptiveButtonLabel(loc.adminSubscriptionSave),
                   ),
                 ),
               ),

@@ -8,6 +8,7 @@ import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
@@ -45,7 +46,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                         OutlinedButton.icon(
                           onPressed: controller.loadFeedback,
                           icon: const Icon(Icons.refresh),
-                          label: Text(loc.retry),
+                          label: AdaptiveButtonLabel(loc.retry),
                         ),
                       ],
                     ),

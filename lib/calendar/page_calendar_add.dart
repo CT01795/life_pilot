@@ -144,6 +144,7 @@ class _PageCalendarAddState extends State<PageCalendarAdd> {
       final message = switch (error.error) {
         EventSaveError.missingName => loc.eventSaveError,
         EventSaveError.duplicate => loc.eventAlreadyExists,
+        EventSaveError.permissionDenied => loc.eventSaveFailed,
       };
       AppNavigator.showErrorBar(message);
     } catch (error) {

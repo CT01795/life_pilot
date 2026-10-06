@@ -13,6 +13,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/widgets_event_image.dart';
@@ -137,6 +138,7 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
       final message = switch (error.error) {
         EventSaveError.missingName => loc.eventSaveError,
         EventSaveError.duplicate => loc.eventAlreadyExists,
+        EventSaveError.permissionDenied => loc.eventSaveFailed,
       };
       AppNavigator.showErrorBar(message);
     } catch (error) {
@@ -287,7 +289,7 @@ class _PageMemoryAddState extends State<PageMemoryAdd> {
                     OutlinedButton.icon(
                       onPressed: () => _pickImage(ctl),
                       icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: Text(
+                      label: AdaptiveButtonLabel(
                         imageValue == null || imageValue.isEmpty
                             ? loc.add
                             : loc.edit,

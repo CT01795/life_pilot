@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/auth/service_account_security.dart';
 import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
 enum _PasswordHelpChoice { emailVerification, administrator }
@@ -333,7 +334,7 @@ class _PageLoginState extends State<PageLogin> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : Text(loc.login),
+                              : AdaptiveButtonLabel(loc.login),
                         ),
                       ],
                     ),
@@ -354,7 +355,7 @@ class _PageLoginState extends State<PageLogin> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(
+                            : AdaptiveButtonLabel(
                                 _resetEmailCooldownSeconds > 0
                                     ? loc.resetPasswordCooldown(
                                         _resetEmailCooldownSeconds,
@@ -371,7 +372,7 @@ class _PageLoginState extends State<PageLogin> {
                           onPressed: _isSubmitting || _isSendingResetEmail
                               ? null
                               : _navigateToRegister,
-                          child: Text(loc.register),
+                          child: AdaptiveButtonLabel(loc.register),
                         ),
                       ],
                     ),
@@ -426,7 +427,9 @@ class _PageLoginState extends State<PageLogin> {
                                         ? null
                                         : _navigateToVendorRegister,
                                     icon: const Icon(Icons.campaign_outlined),
-                                    label: Text(loc.vendorCreateAccountAction),
+                                    label: AdaptiveButtonLabel(
+                                      loc.vendorCreateAccountAction,
+                                    ),
                                   ),
                                 ],
                               ),

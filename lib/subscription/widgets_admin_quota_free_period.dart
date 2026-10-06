@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 class AdminQuotaFreePeriod extends StatefulWidget {
   const AdminQuotaFreePeriod({super.key});
@@ -282,15 +283,15 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                   ? null
                   : (value) => setState(() => _enabled = value),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            AdaptiveButtonBar(
+              alignment: MainAxisAlignment.end,
+              overflowAlignment: OverflowBarAlignment.end,
               children: [
                 if (_editingId != null)
                   TextButton(
                     onPressed: _saving ? null : () => setState(_resetForm),
-                    child: Text(loc.cancel),
+                    child: AdaptiveButtonLabel(loc.cancel),
                   ),
-                const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: _saving ? null : _save,
                   icon: _saving
@@ -299,7 +300,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save_outlined),
-                  label: Text(loc.save),
+                  label: AdaptiveButtonLabel(loc.save),
                 ),
               ],
             ),

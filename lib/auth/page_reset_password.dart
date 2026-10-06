@@ -5,6 +5,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -64,22 +65,20 @@ class _PageResetPasswordState extends State<PageResetPassword> {
     final password = _passwordController.text;
 
     final user = supabase.auth.currentSession?.user;
-    logger.i(
-      'Reset target present: ${user != null}',
-    );
+    logger.i('Reset target present: ${user != null}');
     if (user == null) {
-      AppNavigator.showErrorBar(_authView.showLoginError(
-          message: ErrorFields.noRecoverySession, loc: loc));
+      AppNavigator.showErrorBar(
+        _authView.showLoginError(
+          message: ErrorFields.noRecoverySession,
+          loc: loc,
+        ),
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
-      await supabase.auth.updateUser(
-        UserAttributes(
-          password: password,
-        ),
-      );
+      await supabase.auth.updateUser(UserAttributes(password: password));
       if (!mounted) {
         return;
       }
@@ -93,8 +92,12 @@ class _PageResetPasswordState extends State<PageResetPassword> {
       AppNavigator.showSnackBar(loc.passwordUpdateSuccessful);
     } catch (e) {
       logger.e('Reset Password Error: $e');
-      AppNavigator.showErrorBar(_authView.showLoginError(
-          message: ErrorFields.resetPasswordError, loc: loc));
+      AppNavigator.showErrorBar(
+        _authView.showLoginError(
+          message: ErrorFields.resetPasswordError,
+          loc: loc,
+        ),
+      );
       return;
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -121,12 +124,12 @@ class _PageResetPasswordState extends State<PageResetPassword> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(loc.appTitle), actions: [
-        Tooltip(
-          message: loc.language,
-          child: LanguageToggleDropdown(),
-        ),
-      ]),
+      appBar: AppBar(
+        title: Text(loc.appTitle),
+        actions: [
+          Tooltip(message: loc.language, child: LanguageToggleDropdown()),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: Insets.all12,
         child: Center(
@@ -153,7 +156,8 @@ class _PageResetPasswordState extends State<PageResetPassword> {
                               : loc.hidePassword,
                           onPressed: () {
                             setState(
-                                () => _obscurePassword = !_obscurePassword);
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                           icon: Icon(
                             _obscurePassword
@@ -215,7 +219,7 @@ class _PageResetPasswordState extends State<PageResetPassword> {
                       },
                     ),
                     Gaps.h16,
-                    Row(
+                    AdaptiveButtonBar(
                       children: [
                         ElevatedButton(
                           onPressed: _isSubmitting
@@ -227,9 +231,10 @@ class _PageResetPasswordState extends State<PageResetPassword> {
                               ? const SizedBox.square(
                                   dimension: 18,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2.0),
+                                    strokeWidth: 2.0,
+                                  ),
                                 )
-                              : Text(loc.updatePassword),
+                              : AdaptiveButtonLabel(loc.updatePassword),
                         ),
                         Gaps.w8,
                         TextButton(
@@ -238,7 +243,7 @@ class _PageResetPasswordState extends State<PageResetPassword> {
                               : () async {
                                   await _goBack();
                                 },
-                          child: Text(loc.back),
+                          child: AdaptiveButtonLabel(loc.back),
                         ),
                       ],
                     ),

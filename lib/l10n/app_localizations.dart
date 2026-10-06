@@ -903,6 +903,18 @@ abstract class AppLocalizations {
   /// **'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.'**
   String get publishedContentDeleteAdminOnly;
 
+  /// Message shown when deleting previously published content
+  ///
+  /// In en, this message translates to:
+  /// **'This content was previously published and can only be deleted by an administrator. You can still edit and resubmit it for review.'**
+  String get previouslyPublishedContentDeleteAdminOnly;
+
+  /// Message shown when recommendation submission permission is missing
+  ///
+  /// In en, this message translates to:
+  /// **'This account does not currently have submission write access. Please contact the administrator to update the submission permissions.'**
+  String get submissionPermissionDenied;
+
   /// Label for published submission
   ///
   /// In en, this message translates to:

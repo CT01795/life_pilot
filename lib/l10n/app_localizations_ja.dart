@@ -423,6 +423,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get publishedContentDeleteAdminOnly => '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
 
   @override
+  String get previouslyPublishedContentDeleteAdminOnly => 'この情報は以前公開されていたため、削除できるのは管理者のみです。編集して再審査を申請できます。';
+
+  @override
+  String get submissionPermissionDenied => '現在、このアカウントには投稿の書き込み権限がありません。管理者に投稿権限の更新を依頼してください。';
+
+  @override
   String get publishedSubmission => '公開中';
 
   @override
