@@ -3273,6 +3273,12 @@ abstract class AppLocalizations {
   /// **'Could not update recommended events. Try again later.'**
   String get eventRefreshFailed;
 
+  /// Recommended event refresh failure summary
+  ///
+  /// In en, this message translates to:
+  /// **'Update not completed: {successful}/{attempted} sources succeeded; {failed} failed. Please try again later.'**
+  String eventRefreshFailedSummary(int successful, int attempted, int failed);
+
   /// Recommended event refresh already running message
   ///
   /// In en, this message translates to:
@@ -3284,6 +3290,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recommended events updated.'**
   String get eventRefreshSucceeded;
+
+  /// Recommended event refresh success summary
+  ///
+  /// In en, this message translates to:
+  /// **'Update completed: {successful}/{attempted} sources succeeded; {failed} failed.'**
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed);
 
   /// Label for eventSaved
   ///

@@ -215,9 +215,12 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         IconButton(
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(56, 56),
+                          ),
                           icon: Icon(
                             Icons.volume_up,
-                            size: 44,
+                            size: 48,
                             color: Color(0xFF26A69A),
                           ),
                           onPressed: () => controller.speak(

@@ -32,6 +32,29 @@ class PublicEventRefreshStatus {
   final bool running;
 }
 
+class PublicEventRefreshSummary {
+  const PublicEventRefreshSummary({
+    required this.attempted,
+    required this.successful,
+    required this.failed,
+  });
+
+  const PublicEventRefreshSummary.empty()
+      : attempted = 0,
+        successful = 0,
+        failed = 0;
+
+  final int attempted;
+  final int successful;
+  final int failed;
+
+  bool get hasAttempts => attempted > 0;
+
+  /// A refresh is only complete when at least half of the attempted sources
+  /// succeeded. Exactly 50% is accepted; anything lower remains retryable.
+  bool get hasSufficientSuccess => hasAttempts && successful * 2 >= attempted;
+}
+
 enum PublicEventRefreshExecution { performed, alreadyUpdated, running }
 
 class ServiceEventPublic {
@@ -42,6 +65,12 @@ class ServiceEventPublic {
   int _refreshSuccessfulSources = 0;
   int _refreshFailedSources = 0;
   int _refreshCandidateRows = 0;
+
+  PublicEventRefreshSummary get lastRefreshSummary => PublicEventRefreshSummary(
+        attempted: _refreshAttemptedSources,
+        successful: _refreshSuccessfulSources,
+        failed: _refreshFailedSources,
+      );
   ServiceEventPublic({
     this.perEventDelay = const Duration(seconds: 1),
     EventHttpRequester? httpRequester,
@@ -110,12 +139,44 @@ class ServiceEventPublic {
     );
   }
 
+  Future<void> _finishRefreshReliably(
+    String token, {
+    required bool completed,
+  }) async {
+    Object? lastError;
+    StackTrace? lastStackTrace;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        await _finishRefresh(token, completed: completed);
+        return;
+      } catch (error, stackTrace) {
+        lastError = error;
+        lastStackTrace = stackTrace;
+        if (attempt == 0) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+        }
+      }
+    }
+
+    // The first request may have reached the server even if its response was
+    // lost. Verify the resulting state before reporting a failure.
+    try {
+      final status = await getRefreshStatus();
+      if ((completed && status.updated) || (!completed && !status.running)) {
+        return;
+      }
+    } catch (_) {
+      // Preserve the original completion/abort error below.
+    }
+
+    Error.throwWithStackTrace(lastError!, lastStackTrace!);
+  }
+
   Future<void> _heartbeatRefresh(String token) async {
     try {
-      await apiSupabase.post(
-        'event/heartbeat_public_event_refresh',
-        {'token': token},
-      );
+      await apiSupabase.post('event/heartbeat_public_event_refresh', {
+        'token': token,
+      });
     } catch (error, stackTrace) {
       logger.e(
         'Public event refresh heartbeat failed',
@@ -154,13 +215,10 @@ class ServiceEventPublic {
   }
 
   Future<void> _markEventsUrlCompleted(String url, DateTime today) async {
-    await supabase.from(TableNames.recommendEventUrl).upsert(
-      {
-        'master_url': url,
-        'start_date': today.toUtc().toIso8601String(),
-      },
-      onConflict: 'master_url,start_date',
-    );
+    await supabase.from(TableNames.recommendEventUrl).upsert({
+      'master_url': url,
+      'start_date': today.toUtc().toIso8601String(),
+    }, onConflict: 'master_url,start_date');
   }
 
   Future<Set<String>> _insertIfNotExists(
@@ -288,9 +346,8 @@ class ServiceEventPublic {
     DateTime? endDate;
     final normalized = normalizeText(text1);
     final dateMatches = RegExp(
-            r'(?:(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2}))|(?:(\d{1,2})[\/\.\-](\d{1,2}))')
-        .allMatches(normalized)
-        .toList();
+      r'(?:(\d{4})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2}))|(?:(\d{1,2})[\/\.\-](\d{1,2}))',
+    ).allMatches(normalized).toList();
 
     if (dateMatches.isNotEmpty) {
       final m = dateMatches[0];
@@ -333,7 +390,9 @@ class ServiceEventPublic {
 
     // ========= 時間 =========
     final timeMatches = // ignore:
-        RegExp(r'(\d{1,2}):(\d{2})').allMatches(normalized).toList();
+        RegExp(
+      r'(\d{1,2}):(\d{2})',
+    ).allMatches(normalized).toList();
 
     TimeOfDay? startTime;
     TimeOfDay? endTime;
@@ -354,8 +413,9 @@ class ServiceEventPublic {
 
     // ========= 地點（強化） =========
     String location = "";
-    final locMatch =
-        RegExp(r'(?:地點|活動地點)\s*[：:\s*]?\s*(.+)').firstMatch(normalized);
+    final locMatch = RegExp(
+      r'(?:地點|活動地點)\s*[：:\s*]?\s*(.+)',
+    ).firstMatch(normalized);
     if (locMatch != null) {
       location = locMatch.group(1)!.trim();
     }
@@ -372,8 +432,9 @@ class ServiceEventPublic {
 
     // ========= 主辦 =========
     String unit = "";
-    final unitMatch =
-        RegExp(r'(?:主辦單位|主辦)[：:\s]*([^\n]+)').firstMatch(normalized);
+    final unitMatch = RegExp(
+      r'(?:主辦單位|主辦)[：:\s]*([^\n]+)',
+    ).firstMatch(normalized);
     if (unitMatch != null) {
       unit = unitMatch.group(1)!.trim();
     }
@@ -403,10 +464,9 @@ class ServiceEventPublic {
     if (match1 != null) return match1.group(1)!.trim();
 
     // 2️⃣ hashtag（過濾垃圾tag）
-    final matches = RegExp(r'#([\u4e00-\u9fa5A-Za-z0-9]+)')
-        .allMatches(text)
-        .map((e) => e.group(1)!)
-        .toList();
+    final matches = RegExp(
+      r'#([\u4e00-\u9fa5A-Za-z0-9]+)',
+    ).allMatches(text).map((e) => e.group(1)!).toList();
 
     for (var tag in matches) {
       if (tag.contains("節")) {
@@ -468,7 +528,7 @@ class ServiceEventPublic {
       "𝟲",
       "𝟳",
       "8",
-      "9"
+      "9",
     ];
     for (int i = 0; i < halfWidth.length; i++) {
       input = input.replaceAll(targetWidth[i], halfWidth[i]);
@@ -542,6 +602,11 @@ class ServiceEventPublic {
   }
 
   Future<PublicEventRefreshExecution> fetchAndSaveAllEvents() async {
+    _refreshAttemptedSources = 0;
+    _refreshSuccessfulSources = 0;
+    _refreshFailedSources = 0;
+    _refreshCandidateRows = 0;
+
     final isCurrentUserAdmin = supabase.auth.currentUser?.appMetadata['role'] ==
         AuthConstants.adminRole;
     final isMobileApp = !kIsWeb &&
@@ -563,23 +628,19 @@ class ServiceEventPublic {
       (_) => _heartbeatRefresh(refreshToken),
     );
     try {
-      _refreshAttemptedSources = 0;
-      _refreshSuccessfulSources = 0;
-      _refreshFailedSources = 0;
-      _refreshCandidateRows = 0;
       await _fetchAndSaveAllEvents();
       logger.i(
         'Public event refresh summary: attempted=$_refreshAttemptedSources; '
         'successful=$_refreshSuccessfulSources; failed=$_refreshFailedSources; '
         'candidates=$_refreshCandidateRows',
       );
-      if (_refreshSuccessfulSources == 0) {
+      if (!lastRefreshSummary.hasSufficientSuccess) {
         throw StateError(
-          'No public event source completed successfully; '
+          'Fewer than half of the public event sources completed successfully; '
           'the daily completion marker was not written.',
         );
       }
-      await _finishRefresh(refreshToken, completed: true);
+      await _finishRefreshReliably(refreshToken, completed: true);
       return PublicEventRefreshExecution.performed;
     } catch (error, stackTrace) {
       logger.e(
@@ -588,7 +649,7 @@ class ServiceEventPublic {
         stackTrace: stackTrace,
       );
       try {
-        await _finishRefresh(refreshToken, completed: false);
+        await _finishRefreshReliably(refreshToken, completed: false);
       } catch (abortError, abortStackTrace) {
         logger.e(
           'Release public event import failed',
@@ -623,26 +684,36 @@ class ServiceEventPublic {
         .map(EventDeduplicationKey.byName)
         .where((name) => name.isNotEmpty)
         .toSet();
-    dbNameDateSet.addAll(historyList
-        .map(EventDeduplicationKey.byNameIgnoringTime)
-        .where((name) => name.isNotEmpty)
-        .toSet());
-    dbNameDateSet.addAll(historyList
-        .map(EventDeduplicationKey.byId)
-        .where((id) => id.isNotEmpty)
-        .toSet());
-    dbNameDateSet.addAll(deletedList
-        .map(EventDeduplicationKey.byName)
-        .where((name) => name.isNotEmpty)
-        .toSet());
-    dbNameDateSet.addAll(deletedList
-        .map(EventDeduplicationKey.byNameIgnoringTime)
-        .where((name) => name.isNotEmpty)
-        .toSet());
-    dbNameDateSet.addAll(deletedList
-        .map(EventDeduplicationKey.byId)
-        .where((id) => id.isNotEmpty)
-        .toSet());
+    dbNameDateSet.addAll(
+      historyList
+          .map(EventDeduplicationKey.byNameIgnoringTime)
+          .where((name) => name.isNotEmpty)
+          .toSet(),
+    );
+    dbNameDateSet.addAll(
+      historyList
+          .map(EventDeduplicationKey.byId)
+          .where((id) => id.isNotEmpty)
+          .toSet(),
+    );
+    dbNameDateSet.addAll(
+      deletedList
+          .map(EventDeduplicationKey.byName)
+          .where((name) => name.isNotEmpty)
+          .toSet(),
+    );
+    dbNameDateSet.addAll(
+      deletedList
+          .map(EventDeduplicationKey.byNameIgnoringTime)
+          .where((name) => name.isNotEmpty)
+          .toSet(),
+    );
+    dbNameDateSet.addAll(
+      deletedList
+          .map(EventDeduplicationKey.byId)
+          .where((id) => id.isNotEmpty)
+          .toSet(),
+    );
     DateTime today = DateUtils.dateOnly(DateTime.now());
     //==================================== 取得外部資源事件 strolltimes.com/weekend ====================================
     String strolltimesWeekendUrl =
@@ -650,12 +721,19 @@ class ServiceEventPublic {
     if (await checkEventsUrl(strolltimesWeekendUrl, today)) {
       try {
         List<EventItem> strolltimesList = await fetchPageEventsStrolltimes(
-                strolltimesWeekendUrl, today, Source.strolltimesWeekend) ??
+              strolltimesWeekendUrl,
+              today,
+              Source.strolltimesWeekend,
+            ) ??
             [];
 
         //==================================== strolltimesList事件寫入 ====================================
         dbNameDateSet = await _insertIfNotExists(
-            strolltimesList, dbNameDateSet, strolltimesWeekendUrl, today);
+          strolltimesList,
+          dbNameDateSet,
+          strolltimesWeekendUrl,
+          today,
+        );
       } on Exception catch (ex) {
         _recordSourceFailure(strolltimesWeekendUrl, ex);
       }
@@ -667,11 +745,18 @@ class ServiceEventPublic {
         final res = await _http.get(Uri.parse(strolltimesEventsUrl));
         if (res.statusCode == 200) {
           String csv = res.body; //res.bodyBytes //utf8.decode(res['data']);
-          List<EventItem> strolltimesList =
-              parseStrolltimesCsv(csv, today, Source.strolltimesEventsData);
+          List<EventItem> strolltimesList = parseStrolltimesCsv(
+            csv,
+            today,
+            Source.strolltimesEventsData,
+          );
           //==================================== strolltimesList事件寫入 ====================================
           dbNameDateSet = await _insertIfNotExists(
-              strolltimesList, dbNameDateSet, strolltimesEventsUrl, today);
+            strolltimesList,
+            dbNameDateSet,
+            strolltimesEventsUrl,
+            today,
+          );
         }
       } on Exception catch (ex) {
         _recordSourceFailure(strolltimesEventsUrl, ex);
@@ -693,7 +778,7 @@ class ServiceEventPublic {
       15: "其他",
       17: "演唱會",
       19: "研習課程",
-      200: "閱讀"
+      200: "閱讀",
     };
     for (int i in tmpMap.keys) {
       final cloudCultureUrl =
@@ -702,12 +787,19 @@ class ServiceEventPublic {
       if (await checkEventsUrl(cloudCultureUrl, today)) {
         try {
           List<EventItem> cloudCultureList = await fetchPageEventsCloudCulture(
-                  cloudCultureUrl, today, Source.cloudCulture) ??
+                cloudCultureUrl,
+                today,
+                Source.cloudCulture,
+              ) ??
               [];
 
           //==================================== cloud.culture.tw事件寫入 ====================================
           dbNameDateSet = await _insertIfNotExists(
-              cloudCultureList, dbNameDateSet, cloudCultureUrl, today);
+            cloudCultureList,
+            dbNameDateSet,
+            cloudCultureUrl,
+            today,
+          );
         } on Exception catch (ex) {
           _recordSourceFailure(cloudCultureUrl, ex);
         }
@@ -721,11 +813,18 @@ class ServiceEventPublic {
     if (await checkEventsUrl(accupassUrl, today)) {
       try {
         List<EventItem> accupassList = await fetchPageEventsAccupass(
-                accupassUrl, today, Source.accupass) ??
+              accupassUrl,
+              today,
+              Source.accupass,
+            ) ??
             [];
 
         dbNameDateSet = await _insertIfNotExists(
-            accupassList, dbNameDateSet, accupassUrl, today);
+          accupassList,
+          dbNameDateSet,
+          accupassUrl,
+          today,
+        );
       } catch (ex) {
         _recordSourceFailure(accupassUrl, ex);
       }
@@ -739,11 +838,18 @@ class ServiceEventPublic {
         try {
           List<EventItem> paperWindmillList =
               await fetchPageEventsPaperWindmill(
-                      paperWindmillUrl, today, Source.paperwindmill) ??
+                    paperWindmillUrl,
+                    today,
+                    Source.paperwindmill,
+                  ) ??
                   [];
 
           dbNameDateSet = await _insertIfNotExists(
-              paperWindmillList, dbNameDateSet, paperWindmillUrl, today);
+            paperWindmillList,
+            dbNameDateSet,
+            paperWindmillUrl,
+            today,
+          );
         } catch (ex) {
           _recordSourceFailure(paperWindmillUrl, ex);
         }
@@ -760,11 +866,18 @@ class ServiceEventPublic {
       if (await checkEventsUrl(taiwanNetUrl, today)) {
         try {
           List<EventItem> taiwanNetList = await fetchPageEventsTaiwanNet(
-                  taiwanNetUrl, today, Source.taiwanNet) ??
+                taiwanNetUrl,
+                today,
+                Source.taiwanNet,
+              ) ??
               [];
 
           dbNameDateSet = await _insertIfNotExists(
-              taiwanNetList, dbNameDateSet, taiwanNetUrl, today);
+            taiwanNetList,
+            dbNameDateSet,
+            taiwanNetUrl,
+            today,
+          );
           pageIndex = pageIndex + 1;
           isBreakTime = taiwanNetList.isEmpty && pageIndex >= 15;
         } catch (ex) {
@@ -784,8 +897,12 @@ class ServiceEventPublic {
         List<EventItem> ntpcList =
             await fetchPageEventsNtpc(ntpcUrl, today, Source.ntpc) ?? [];
 
-        dbNameDateSet =
-            await _insertIfNotExists(ntpcList, dbNameDateSet, ntpcUrl, today);
+        dbNameDateSet = await _insertIfNotExists(
+          ntpcList,
+          dbNameDateSet,
+          ntpcUrl,
+          today,
+        );
       } catch (ex) {
         _recordSourceFailure(ntpcUrl, ex);
       }
@@ -799,11 +916,18 @@ class ServiceEventPublic {
       try {
         List<EventItem> taipeiOpenDataList =
             await fetchPageEventsTaipeiOpenData(
-                    taipeiOpenDataUrl, today, Source.taipeiOpenData) ??
+                  taipeiOpenDataUrl,
+                  today,
+                  Source.taipeiOpenData,
+                ) ??
                 [];
 
         dbNameDateSet = await _insertIfNotExists(
-            taipeiOpenDataList, dbNameDateSet, taipeiOpenDataUrl, today);
+          taipeiOpenDataList,
+          dbNameDateSet,
+          taipeiOpenDataUrl,
+          today,
+        );
       } catch (ex) {
         _recordSourceFailure(taipeiOpenDataUrl, ex);
       }
@@ -821,7 +945,11 @@ class ServiceEventPublic {
               await fetchPageEventsMoc(moclUrl, today, Source.mocGov) ?? [];
 
           dbNameDateSet = await _insertIfNotExists(
-              moclUrlList, dbNameDateSet, moclUrl, today);
+            moclUrlList,
+            dbNameDateSet,
+            moclUrl,
+            today,
+          );
         } catch (ex) {
           _recordSourceFailure(moclUrl, ex);
         }
@@ -830,10 +958,11 @@ class ServiceEventPublic {
   }
 
   Future<List<EventItem>?> fetchPageEventsTaipeiOpenData(
-      String url, DateTime today, String source) async {
-    final res = await _http.get(
-      Uri.parse(url),
-    );
+    String url,
+    DateTime today,
+    String source,
+  ) async {
+    final res = await _http.get(Uri.parse(url));
     if (res.statusCode != 200) {
       return [];
     }
@@ -860,8 +989,10 @@ class ServiceEventPublic {
         continue;
       }
 
-      final startTime =
-          TimeOfDay(hour: startDate.hour, minute: startDate.minute);
+      final startTime = TimeOfDay(
+        hour: startDate.hour,
+        minute: startDate.minute,
+      );
       TimeOfDay? endTime;
       if (endDate != null && startDate != endDate) {
         endTime = TimeOfDay(hour: endDate.hour, minute: endDate.minute);
@@ -870,29 +1001,34 @@ class ServiceEventPublic {
       final city = e["City"] ?? "";
       final location = (e["Address"] ?? "") + (e["Venue"] ?? "");
 
-      events.add(EventItem(
-        id: uuid.v4(),
-        name: e["Caption"] ?? "",
-        masterUrl: e["WebsiteLink"] ?? "",
-        startDate: startDate,
-        startTime: startTime,
-        endDate: endDate,
-        endTime: endTime,
-        city: city,
-        location: location,
-        unit: e["Company"] ?? "",
-        description: (e["Introduction"] ?? "") + "\n",
-        source: source,
-        account: AuthConstants.systemEventOwnerEmail,
-        type: category, // 👉 直接用 Category
-      ));
+      events.add(
+        EventItem(
+          id: uuid.v4(),
+          name: e["Caption"] ?? "",
+          masterUrl: e["WebsiteLink"] ?? "",
+          startDate: startDate,
+          startTime: startTime,
+          endDate: endDate,
+          endTime: endTime,
+          city: city,
+          location: location,
+          unit: e["Company"] ?? "",
+          description: (e["Introduction"] ?? "") + "\n",
+          source: source,
+          account: AuthConstants.systemEventOwnerEmail,
+          type: category, // 👉 直接用 Category
+        ),
+      );
     }
 
     return events;
   }
 
   Future<List<EventItem>?> fetchPageEventsNtpc(
-      String url, DateTime today, String source) async {
+    String url,
+    DateTime today,
+    String source,
+  ) async {
     final res = await _http.post(
       Uri.parse(url),
       headers: {
@@ -939,8 +1075,9 @@ class ServiceEventPublic {
       DateTime? endDate;
 
       // 抓所有 yyyy-mm-dd
-      final matches =
-          RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').allMatches(dateText).toList();
+      final matches = RegExp(
+        r'(\d{4})-(\d{1,2})-(\d{1,2})',
+      ).allMatches(dateText).toList();
 
       if (matches.isNotEmpty) {
         // 👉 第一個 = startDate
@@ -976,18 +1113,20 @@ class ServiceEventPublic {
         continue;
       }
       Map<String, String> tmp = extractLocation(name);
-      events.add(EventItem(
-        id: uuid.v4(),
-        name: tmp["name"]!,
-        masterUrl: href,
-        startDate: startDate,
-        endDate: endDate,
-        city: "新北市",
-        location: tmp["location"]!,
-        unit: unit,
-        account: AuthConstants.systemEventOwnerEmail,
-        source: source,
-      ));
+      events.add(
+        EventItem(
+          id: uuid.v4(),
+          name: tmp["name"]!,
+          masterUrl: href,
+          startDate: startDate,
+          endDate: endDate,
+          city: "新北市",
+          location: tmp["location"]!,
+          unit: unit,
+          account: AuthConstants.systemEventOwnerEmail,
+          source: source,
+        ),
+      );
     }
 
     return events;
@@ -1022,10 +1161,11 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 文化局 ====================================
   Future<List<EventItem>?> fetchPageEventsMoc(
-      String url, DateTime today, String source) async {
-    final res = await _http.get(
-      Uri.parse(url),
-    );
+    String url,
+    DateTime today,
+    String source,
+  ) async {
+    final res = await _http.get(Uri.parse(url));
     if (res.statusCode != 200) {
       return [];
     }
@@ -1049,10 +1189,9 @@ class ServiceEventPublic {
         TimeOfDay? startTime;
         TimeOfDay? endTime;
 
-        final dateMatch =
-            RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})\s*(\d{1,2}):(\d{2})')
-                .allMatches(dateText)
-                .toList();
+        final dateMatch = RegExp(
+          r'(\d{4})/(\d{1,2})/(\d{1,2})\s*(\d{1,2}):(\d{2})',
+        ).allMatches(dateText).toList();
         if (dateMatch.isNotEmpty) {
           int y = int.parse(dateMatch[0].group(1)!);
           int m = int.parse(dateMatch[0].group(2)!);
@@ -1093,21 +1232,23 @@ class ServiceEventPublic {
         // 活動類別
         String type = cells[5].text.trim();
 
-        events.add(EventItem(
-          id: uuid.v4(),
-          masterUrl: masterUrl,
-          startDate: startDate,
-          startTime: startTime,
-          endDate: endDate,
-          endTime: endTime,
-          city: city,
-          location: location,
-          name: title,
-          account: AuthConstants.systemEventOwnerEmail,
-          type: type,
-          description: "",
-          source: source,
-        ));
+        events.add(
+          EventItem(
+            id: uuid.v4(),
+            masterUrl: masterUrl,
+            startDate: startDate,
+            startTime: startTime,
+            endDate: endDate,
+            endTime: endTime,
+            city: city,
+            location: location,
+            name: title,
+            account: AuthConstants.systemEventOwnerEmail,
+            type: type,
+            description: "",
+            source: source,
+          ),
+        );
       } catch (e) {
         logger.e("解析 Moc 活動列錯誤: $e");
       }
@@ -1118,9 +1259,14 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 www.taiwan.net.tw ====================================
   Future<List<EventItem>?> fetchPageEventsTaiwanNet(
-      String url, DateTime today, String source) async {
-    final res = await apiSupabase
-        .post('event/get_public_event_url_data', {'url': url, 'method': 'GET'});
+    String url,
+    DateTime today,
+    String source,
+  ) async {
+    final res = await apiSupabase.post('event/get_public_event_url_data', {
+      'url': url,
+      'method': 'GET',
+    });
     if (res['status'] != 'ok') {
       return [];
     }
@@ -1148,8 +1294,9 @@ class ServiceEventPublic {
 
       // 簡單解析日期（範例: "每年3、12月" 或 "3/28–3/29"）
       DateTime? startDate;
-      final dateMatch0 =
-          RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})').firstMatch(dateText);
+      final dateMatch0 = RegExp(
+        r'(\d{4})/(\d{1,2})/(\d{1,2})',
+      ).firstMatch(dateText);
       if (dateMatch0 != null) {
         int year = int.parse(dateMatch0.group(1)!);
         int month = int.parse(dateMatch0.group(2)!);
@@ -1162,8 +1309,9 @@ class ServiceEventPublic {
         int day = int.parse(dateMatch1.group(2)!);
         startDate = DateTime(today.year, month, day);
       }
-      final dateMatch2 =
-          RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(dateText);
+      final dateMatch2 = RegExp(
+        r'(\d{4})-(\d{1,2})-(\d{1,2})',
+      ).firstMatch(dateText);
       if (startDate == null && dateMatch2 != null) {
         int year = int.parse(dateMatch2.group(1)!);
         int month = int.parse(dateMatch2.group(2)!);
@@ -1175,23 +1323,26 @@ class ServiceEventPublic {
       final leftDateText = dateText.split("~");
       DateTime? endDate;
       if (leftDateText.length > 1) {
-        final endDateMatch0 =
-            RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})').firstMatch(leftDateText[1]);
+        final endDateMatch0 = RegExp(
+          r'(\d{4})/(\d{1,2})/(\d{1,2})',
+        ).firstMatch(leftDateText[1]);
         if (endDateMatch0 != null) {
           int year = int.parse(endDateMatch0.group(1)!);
           int month = int.parse(endDateMatch0.group(2)!);
           int day = int.parse(endDateMatch0.group(3)!);
           endDate = DateTime(year, month, day);
         }
-        final endDateMatch1 =
-            RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(leftDateText[1]);
+        final endDateMatch1 = RegExp(
+          r'(\d{1,2})/(\d{1,2})',
+        ).firstMatch(leftDateText[1]);
         if (endDate == null && endDateMatch1 != null) {
           int month = int.parse(endDateMatch1.group(1)!);
           int day = int.parse(endDateMatch1.group(2)!);
           endDate = DateTime(today.year, month, day);
         }
-        final endDateMatch2 =
-            RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(leftDateText[1]);
+        final endDateMatch2 = RegExp(
+          r'(\d{4})-(\d{1,2})-(\d{1,2})',
+        ).firstMatch(leftDateText[1]);
         if (endDate == null && endDateMatch2 != null) {
           int year = int.parse(endDateMatch2.group(1)!);
           int month = int.parse(endDateMatch2.group(2)!);
@@ -1211,11 +1362,10 @@ class ServiceEventPublic {
       String? organizer;
       try {
         if (masterUrl.isNotEmpty) {
-          final detailRes =
-              await apiSupabase.post('event/get_public_event_url_data', {
-            'url': masterUrl,
-            'method': 'GET',
-          });
+          final detailRes = await apiSupabase.post(
+            'event/get_public_event_url_data',
+            {'url': masterUrl, 'method': 'GET'},
+          );
           if (detailRes['status'] == 'ok') {
             final detailDoc = parse(detailRes['data']);
             final infoTable = detailDoc.querySelector("dl.info-table");
@@ -1248,19 +1398,21 @@ class ServiceEventPublic {
         logger.e("抓取詳細頁錯誤: $e");
       }
 
-      events.add(EventItem(
-        id: uuid.v4(),
-        masterUrl: masterUrl,
-        startDate: startDate,
-        endDate: endDate,
-        city: city,
-        location: location,
-        name: title,
-        account: AuthConstants.systemEventOwnerEmail,
-        description: description,
-        unit: organizer ?? '',
-        source: source,
-      ));
+      events.add(
+        EventItem(
+          id: uuid.v4(),
+          masterUrl: masterUrl,
+          startDate: startDate,
+          endDate: endDate,
+          city: city,
+          location: location,
+          name: title,
+          account: AuthConstants.systemEventOwnerEmail,
+          description: description,
+          unit: organizer ?? '',
+          source: source,
+        ),
+      );
     }
 
     return events;
@@ -1268,10 +1420,11 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 PaperWindmill ====================================
   Future<List<EventItem>?> fetchPageEventsPaperWindmill(
-      String url, DateTime today, String source) async {
-    final res = await _http.get(
-      Uri.parse(url),
-    );
+    String url,
+    DateTime today,
+    String source,
+  ) async {
+    final res = await _http.get(Uri.parse(url));
     if (res.statusCode != 200) {
       return [];
     }
@@ -1284,9 +1437,7 @@ class ServiceEventPublic {
 
     for (var card in cards) {
       try {
-        final row = card.querySelector(
-          '.row.content-between.items-center',
-        );
+        final row = card.querySelector('.row.content-between.items-center');
 
         if (row == null) {
           continue;
@@ -1313,10 +1464,7 @@ class ServiceEventPublic {
 
         if (startDate.isBefore(today)) continue;
 
-        final startTime = TimeOfDay(
-          hour: hour,
-          minute: minute,
-        );
+        final startTime = TimeOfDay(hour: hour, minute: minute);
 
         final subtitle = spans[1].text.trim();
 
@@ -1376,10 +1524,11 @@ class ServiceEventPublic {
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsAccupass(
-      String inUrl, DateTime today, String source) async {
-    final res = await _http.get(
-      Uri.parse(inUrl),
-    );
+    String inUrl,
+    DateTime today,
+    String source,
+  ) async {
+    final res = await _http.get(Uri.parse(inUrl));
     if (res.statusCode != 200) {
       return [];
     }
@@ -1452,17 +1601,19 @@ class ServiceEventPublic {
             }
           }*/
 
-          events.add(EventItem(
-            id: map["eventIdNumber"],
-            masterUrl: detailUrl,
-            startDate: sdt,
-            endDate: edt,
-            city: city,
-            location: location,
-            name: map["name"],
-            account: AuthConstants.systemEventOwnerEmail,
-            source: source,
-          ));
+          events.add(
+            EventItem(
+              id: map["eventIdNumber"],
+              masterUrl: detailUrl,
+              startDate: sdt,
+              endDate: edt,
+              city: city,
+              location: location,
+              name: map["name"],
+              account: AuthConstants.systemEventOwnerEmail,
+              source: source,
+            ),
+          );
         }
       }
     }
@@ -1470,7 +1621,10 @@ class ServiceEventPublic {
   }
 
   List<EventItem> parseStrolltimesCsv(
-      String csvText, DateTime today, String source) {
+    String csvText,
+    DateTime today,
+    String source,
+  ) {
     final rows = const CsvToListConverter(
       eol: '\n',
       shouldParseNumbers: false,
@@ -1538,7 +1692,8 @@ class ServiceEventPublic {
           otherUrl += "${urls[i]}\n";
         }
       }
-      events.add(EventItem(
+      events.add(
+        EventItem(
           id: uuid.v4(),
           name: row[colsToDetail["name"] ?? 99]?.toString() ?? '',
           type: row[colsToDetail["type"] ?? 99]?.toString() ?? '',
@@ -1553,17 +1708,20 @@ class ServiceEventPublic {
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
           account: AuthConstants.systemEventOwnerEmail,
           source: source,
-          subEvents: []));
+          subEvents: [],
+        ),
+      );
     }
     return events;
   }
 
   //==================================== 取得外部資源事件 cloud.Culture ====================================
   Future<List<EventItem>?> fetchPageEventsCloudCulture(
-      String url, DateTime today, String source) async {
-    final res = await _http.get(
-      Uri.parse(url),
-    );
+    String url,
+    DateTime today,
+    String source,
+  ) async {
+    final res = await _http.get(Uri.parse(url));
     if (res.statusCode != 200) {
       return [];
     }
@@ -1594,7 +1752,7 @@ class ServiceEventPublic {
       "13": "競賽",
       "17": "演唱會",
       "19": "研習課程",
-      "200": "閱讀"
+      "200": "閱讀",
     };
     for (final item in data) {
       /// 1️⃣ 解析 endDate
@@ -1624,21 +1782,23 @@ class ServiceEventPublic {
       String location0 = show0['location'] ?? '';
       if (!tmpSet.contains(eventName)) {
         List<EventItem> subEvents = getSubEvents(showInfoList, uuid, eventName);
-        tmpList.add(EventItem(
-          id: uuid.v4(),
-          masterUrl: eventHref,
-          startDate: startDate,
-          startTime: subEvents[0].startTime,
-          endDate: endDate,
-          endTime: subEvents.length <= 1 ? subEvents[0].endTime : null,
-          type: category ?? '',
-          city: safeCity(location0),
-          location: "$locationName0(${safeAddress(location0)})",
-          name: eventName,
-          subEvents: subEvents.length <= 1 ? [] : subEvents,
-          account: AuthConstants.systemEventOwnerEmail,
-          source: source,
-        ));
+        tmpList.add(
+          EventItem(
+            id: uuid.v4(),
+            masterUrl: eventHref,
+            startDate: startDate,
+            startTime: subEvents[0].startTime,
+            endDate: endDate,
+            endTime: subEvents.length <= 1 ? subEvents[0].endTime : null,
+            type: category ?? '',
+            city: safeCity(location0),
+            location: "$locationName0(${safeAddress(location0)})",
+            name: eventName,
+            subEvents: subEvents.length <= 1 ? [] : subEvents,
+            account: AuthConstants.systemEventOwnerEmail,
+            source: source,
+          ),
+        );
         tmpSet.add(eventName);
       }
     }
@@ -1646,7 +1806,10 @@ class ServiceEventPublic {
   }
 
   List<EventItem> getSubEvents(
-      List<dynamic> showInfoList, Uuid uuid, String eventName) {
+    List<dynamic> showInfoList,
+    Uuid uuid,
+    String eventName,
+  ) {
     List<EventItem> subEvents = [];
     for (int i = 0; i < showInfoList.length; i++) {
       final show = showInfoList[i];
@@ -1658,32 +1821,35 @@ class ServiceEventPublic {
       final subEndDateStr = (show['endTime'] ?? '').toString();
       final subEndDateStrSplit = subEndDateStr.split(" ");
       final subEndDate = DateTimeParser.parseDate(subEndDateStrSplit[0]);
-      subEvents.add(EventItem(
-        id: uuid.v4(),
-        startDate: subStartDate,
-        startTime: subStartDateStrSplit.length > 1
-            ? DateTimeParser.parseTime(subStartDateStrSplit[1])
-            : null,
-        endDate: subEndDate,
-        endTime: subEndDateStrSplit.length > 1
-            ? DateTimeParser.parseTime(subEndDateStrSplit[1])
-            : null,
-        city: safeCity(location),
-        location: locationName,
-        name: eventName,
-        account: AuthConstants.systemEventOwnerEmail,
-      ));
+      subEvents.add(
+        EventItem(
+          id: uuid.v4(),
+          startDate: subStartDate,
+          startTime: subStartDateStrSplit.length > 1
+              ? DateTimeParser.parseTime(subStartDateStrSplit[1])
+              : null,
+          endDate: subEndDate,
+          endTime: subEndDateStrSplit.length > 1
+              ? DateTimeParser.parseTime(subEndDateStrSplit[1])
+              : null,
+          city: safeCity(location),
+          location: locationName,
+          name: eventName,
+          account: AuthConstants.systemEventOwnerEmail,
+        ),
+      );
     }
     return subEvents;
   }
 
   //==================================== 取得外部資源事件 strolltimesUrl ====================================
   Future<List<EventItem>?> fetchPageEventsStrolltimes(
-      String inUrl, DateTime today, String source) async {
+    String inUrl,
+    DateTime today,
+    String source,
+  ) async {
     //final url = Uri.parse(inUrl);
-    final res = await _http.get(
-      Uri.parse(inUrl),
-    );
+    final res = await _http.get(Uri.parse(inUrl));
     if (res.statusCode != 200) {
       return [];
     }
@@ -1696,9 +1862,7 @@ class ServiceEventPublic {
     List<EventItem> tmpList = [];
     final uuid = const Uuid();
     for (int i = 1; i < links.length; i++) {
-      final res2 = await _http.get(
-        Uri.parse(links[i]),
-      );
+      final res2 = await _http.get(Uri.parse(links[i]));
       if (res2.statusCode != 200) {
         return [];
       }
@@ -1733,17 +1897,19 @@ class ServiceEventPublic {
                 eventHref = inUrl.replaceAll("/weekend.json", '') + eventHref;
               }
               if (!tmpSet.contains(eventName)) {
-                tmpList.add(EventItem(
-                  id: uuid.v4(),
-                  masterUrl: eventHref,
-                  startDate: startDate,
-                  endDate: endDate,
-                  city: title,
-                  location: location,
-                  name: eventName,
-                  account: AuthConstants.systemEventOwnerEmail,
-                  source: source,
-                ));
+                tmpList.add(
+                  EventItem(
+                    id: uuid.v4(),
+                    masterUrl: eventHref,
+                    startDate: startDate,
+                    endDate: endDate,
+                    city: title,
+                    location: location,
+                    name: eventName,
+                    account: AuthConstants.systemEventOwnerEmail,
+                    source: source,
+                  ),
+                );
                 tmpSet.add(eventName);
               }
             }

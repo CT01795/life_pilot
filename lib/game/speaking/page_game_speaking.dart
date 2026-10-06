@@ -265,9 +265,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(64, 64),
+                            ),
                             icon: Icon(
                               Icons.volume_up,
-                              size: 50,
+                              size: 52,
                               color: isRecording
                                   ? Colors.grey
                                   : Color(0xFF26A69A),

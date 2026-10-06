@@ -134,6 +134,9 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(68, 68),
+                      ),
                       icon: Icon(
                         Icons.volume_up,
                         size: 60,

@@ -30,10 +30,17 @@ class AppTheme {
       ),
     ),
     iconTheme: const IconThemeData(size: 36),
+    iconButtonTheme: const IconButtonThemeData(
+      style: ButtonStyle(
+        iconSize: WidgetStatePropertyAll(28),
+        minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+        tapTargetSize: MaterialTapTargetSize.padded,
+      ),
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Color(0xFF0066CC),
-      iconTheme: IconThemeData(color: Colors.white),
-      actionsIconTheme: IconThemeData(color: Colors.black),
+      iconTheme: IconThemeData(color: Colors.white, size: 28),
+      actionsIconTheme: IconThemeData(color: Colors.black, size: 28),
       titleTextStyle: TextStyle(color: Colors.white),
       foregroundColor: Colors.white,
     ),

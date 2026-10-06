@@ -222,11 +222,25 @@ class _GenericEventPageState extends State<GenericEventPage> {
             ? () async {
                 final succeeded = await _controller.refreshPublicEvents();
                 if (!context.mounted) return;
+                final summary = _controller.lastPublicEventRefreshSummary;
+                final isRunning = _controller.publicEventsRefreshRunning;
                 AppNavigator.showSnackBar(
-                  succeeded
-                      ? loc.eventRefreshSucceeded
-                      : pageState.running
+                  isRunning
                       ? loc.eventRefreshRunning
+                      : summary.hasAttempts
+                      ? succeeded
+                            ? loc.eventRefreshSucceededSummary(
+                                summary.successful,
+                                summary.attempted,
+                                summary.failed,
+                              )
+                            : loc.eventRefreshFailedSummary(
+                                summary.successful,
+                                summary.attempted,
+                                summary.failed,
+                              )
+                      : succeeded
+                      ? loc.eventRefreshSucceeded
                       : loc.eventRefreshFailed,
                 );
               }

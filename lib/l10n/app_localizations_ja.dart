@@ -1694,10 +1694,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventRefreshFailed => 'おすすめイベントを更新できませんでした。後でもう一度お試しください。';
 
   @override
+  String eventRefreshFailedSummary(int successful, int attempted, int failed) {
+    return '更新未完了：$attempted件中$successful件成功、$failed件失敗しました。後でもう一度お試しください。';
+  }
+
+  @override
   String get eventRefreshRunning => 'おすすめイベントを更新しています。しばらくしてからご確認ください。';
 
   @override
   String get eventRefreshSucceeded => 'おすすめイベントを更新しました。';
+
+  @override
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
+    return '更新完了：$attempted件中$successful件成功、$failed件失敗しました。';
+  }
 
   @override
   String get eventSaved => '✅ イベントを保存しました';

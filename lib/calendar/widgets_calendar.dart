@@ -48,8 +48,8 @@ class CalendarAppBar extends StatelessWidget {
 
     // Use distinct phone/tablet sizes. Scaling directly from the screen made
     // tablet icons overlap, while a single small cap made them look undersized.
-    final double controlSize = isSmallScreen ? 40 : 56;
-    final double iconSize = isSmallScreen ? 28 : 36;
+    final double controlSize = isSmallScreen ? 48 : 64;
+    final double iconSize = isSmallScreen ? 32 : 42;
 
     Widget iconButton(IconData icon, VoidCallback onTap, String tooltip) {
       return SizedBox(
@@ -65,48 +65,60 @@ class CalendarAppBar extends StatelessWidget {
       );
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (storage == DataStorageLocation.cloud) ...[
-          iconButton(Icons.people_alt_outlined, onSharing, loc.calendarSharing),
-          Gaps.w8,
-        ],
-        iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth),
-        Gaps.w8,
-        SizedBox(
-          width: controlSize,
-          height: controlSize,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-            icon: Icon(Icons.today, size: iconSize, color: monthColor),
-            tooltip: loc.today,
-            onPressed: onToday,
-          ),
-        ),
-        Gaps.w8,
-        GestureDetector(
-          onTap: onMonthTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8),
-            child: Text(
-              monthLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: isSmallScreen ? 18 : 28,
-                color: monthColor,
-                fontWeight: FontWeight.bold,
+    return SizedBox(
+      width: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (storage == DataStorageLocation.cloud) ...[
+              iconButton(
+                Icons.people_alt_outlined,
+                onSharing,
+                loc.calendarSharing,
+              ),
+              Gaps.w8,
+            ],
+            iconButton(Icons.arrow_left_rounded, onPrevious, loc.previousMonth),
+            Gaps.w8,
+            SizedBox(
+              width: controlSize,
+              height: controlSize,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                icon: Icon(Icons.today, size: iconSize, color: monthColor),
+                tooltip: loc.today,
+                onPressed: onToday,
               ),
             ),
-          ),
+            Gaps.w8,
+            GestureDetector(
+              onTap: onMonthTap,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4 : 8,
+                ),
+                child: Text(
+                  monthLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 18 : 28,
+                    color: monthColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            iconButton(Icons.arrow_right_rounded, onNext, loc.nextMonth),
+            Gaps.w8,
+            iconButton(Icons.add, onAdd, loc.add),
+          ],
         ),
-        iconButton(Icons.arrow_right_rounded, onNext, loc.nextMonth),
-        Gaps.w8,
-        iconButton(Icons.add, onAdd, loc.add),
-      ],
+      ),
     );
   }
 }

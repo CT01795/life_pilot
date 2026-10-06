@@ -1694,10 +1694,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRefreshFailed => 'Could not update recommended events. Try again later.';
 
   @override
+  String eventRefreshFailedSummary(int successful, int attempted, int failed) {
+    return 'Update not completed: $successful/$attempted sources succeeded; $failed failed. Please try again later.';
+  }
+
+  @override
   String get eventRefreshRunning => 'Recommended events are being updated. Please check again later.';
 
   @override
   String get eventRefreshSucceeded => 'Recommended events updated.';
+
+  @override
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
+    return 'Update completed: $successful/$attempted sources succeeded; $failed failed.';
+  }
 
   @override
   String get eventSaved => '✅ Event saved';

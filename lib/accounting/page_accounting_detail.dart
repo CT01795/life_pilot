@@ -626,6 +626,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
           ),
           Gaps.h8,
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 麥克風按鈕
               FloatingActionButton.small(
@@ -650,8 +651,12 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     hintText: loc.accountingSpeechHint,
+                    alignLabelWithHint: true,
                   ),
-                  maxLines: 1,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  minLines: 2,
+                  maxLines: null,
                 ),
               ),
               Gaps.w8,

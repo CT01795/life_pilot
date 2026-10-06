@@ -867,6 +867,8 @@ class ControllerEvent extends SafeChangeNotifier {
   bool _publicEventsUpdatedToday = false;
   bool _publicEventsRefreshRunning = false;
   bool get publicEventsRefreshRunning => _publicEventsRefreshRunning;
+  PublicEventRefreshSummary get lastPublicEventRefreshSummary =>
+      _serviceEventPublic.lastRefreshSummary;
   bool _hasCheckedPublicEventsUpdate = false;
 
   bool get canRefreshPublicEvents {
@@ -936,6 +938,12 @@ class ControllerEvent extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
+      // Keep the action available after a failed batch or a lost finalize
+      // response. The server still prevents concurrent work and expires stale
+      // locks after its configured timeout.
+      _publicEventsUpdatedToday = false;
+      _publicEventsRefreshRunning = false;
+      _hasCheckedPublicEventsUpdate = true;
       return false;
     } finally {
       _isRefreshingPublicEvents = false;

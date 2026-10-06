@@ -134,11 +134,14 @@ class _PageGameSocialState extends State<PageGameSocial> {
                             IconButton(
                               tooltip: loc.speakingText,
                               onPressed: () => controller.speak(q.scene),
+                              style: IconButton.styleFrom(
+                                minimumSize: const Size(56, 56),
+                              ),
                               icon: const Icon(
                                 Icons.volume_up,
                                 color: Color(0xFF212121),
                               ),
-                              iconSize: isCompact ? 30 : 36,
+                              iconSize: isCompact ? 40 : 48,
                             ),
                             Gaps.w8,
                             Expanded(

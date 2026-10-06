@@ -1694,10 +1694,20 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventRefreshFailed => '추천 이벤트를 업데이트하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
   @override
+  String eventRefreshFailedSummary(int successful, int attempted, int failed) {
+    return '업데이트 미완료: $attempted개 소스 중 $successful개 성공, $failed개 실패했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+
+  @override
   String get eventRefreshRunning => '추천 이벤트를 업데이트하고 있습니다. 잠시 후 다시 확인해 주세요.';
 
   @override
   String get eventRefreshSucceeded => '추천 이벤트를 업데이트했습니다.';
+
+  @override
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
+    return '업데이트 완료: $attempted개 소스 중 $successful개 성공, $failed개 실패했습니다.';
+  }
 
   @override
   String get eventSaved => '✅ 이벤트가 저장되었습니다';

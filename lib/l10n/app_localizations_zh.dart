@@ -1694,10 +1694,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventRefreshFailed => '推薦活動更新失敗，請稍後再試。';
 
   @override
+  String eventRefreshFailedSummary(int successful, int attempted, int failed) {
+    return '更新未完成：共 $attempted 個來源，成功 $successful 個、失敗 $failed 個，請稍後再試。';
+  }
+
+  @override
   String get eventRefreshRunning => '推薦活動正在更新，請稍後再查看。';
 
   @override
   String get eventRefreshSucceeded => '推薦活動已更新。';
+
+  @override
+  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
+    return '更新完成：共 $attempted 個來源，成功 $successful 個、失敗 $failed 個。';
+  }
 
   @override
   String get eventSaved => '✅ 活動已儲存';

@@ -571,6 +571,7 @@ class _PagePointRecordDetailViewState
           ),
           Gaps.h8,
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 麥克風按鈕
               FloatingActionButton.small(
@@ -595,8 +596,12 @@ class _PagePointRecordDetailViewState
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     hintText: loc.pointsSpeechHint,
+                    alignLabelWithHint: true,
                   ),
-                  maxLines: 1,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  minLines: 2,
+                  maxLines: null,
                 ),
               ),
               Gaps.w8,

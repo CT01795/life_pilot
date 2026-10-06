@@ -59,6 +59,7 @@ PUBLIC_EVENT_SOURCE_HOSTS = {
 }
 PUBLIC_EVENT_REFRESH_COMPLETE = "__life_pilot_public_event_refresh_complete__"
 PUBLIC_EVENT_REFRESH_RUNNING_PREFIX = "__life_pilot_public_event_refresh_running__:"
+PUBLIC_EVENT_REFRESH_LOCK_TIMEOUT_MINUTES = 15
 RECOMMENDED_EVENT_CLEANUP_MARKER = "__life_pilot_recommended_event_cleanup__"
 _event_cleanup_rate_limiter = InMemoryRateLimiter(
     max_requests=10,
@@ -173,7 +174,8 @@ def _start_public_event_refresh() -> dict:
                 select substring(master_url from :token_start)
                 from public.recommended_event_url
                 where left(master_url, :prefix_length) = :running_prefix
-                  and start_date >= now() - interval '15 minutes'
+                  and start_date >=
+                      now() - (:lock_timeout_minutes * interval '1 minute')
                 order by start_date desc
                 limit 1
                 """
@@ -182,6 +184,7 @@ def _start_public_event_refresh() -> dict:
                 "token_start": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX) + 1,
                 "prefix_length": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX),
                 "running_prefix": PUBLIC_EVENT_REFRESH_RUNNING_PREFIX,
+                "lock_timeout_minutes": PUBLIC_EVENT_REFRESH_LOCK_TIMEOUT_MINUTES,
             },
         ).scalar()
         if active_token:
@@ -638,13 +641,15 @@ def public_events_updated_today():
                   select 1
                   from public.recommended_event_url
                   where left(master_url, :prefix_length) = :running_prefix
-                    and start_date >= now() - interval '15 minutes'
+                    and start_date >=
+                        now() - (:lock_timeout_minutes * interval '1 minute')
                 )
                 """
             ),
             {
                 "prefix_length": len(PUBLIC_EVENT_REFRESH_RUNNING_PREFIX),
                 "running_prefix": PUBLIC_EVENT_REFRESH_RUNNING_PREFIX,
+                "lock_timeout_minutes": PUBLIC_EVENT_REFRESH_LOCK_TIMEOUT_MINUTES,
             },
         ).scalar()
         return {"updated": bool(updated), "running": bool(running)}
