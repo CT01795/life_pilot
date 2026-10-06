@@ -464,30 +464,37 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          subtitle: Text(
-            '${record.displayTime}  '
-            '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+          subtitle: Row(
             children: [
-              Text(
-                record.value > 0
-                    ? '+${numberFormatter.format(record.value)} ${record.currency}'
-                    : '${numberFormatter.format(record.value)} ${record.currency}',
-                style: TextStyle(
-                  color: record.value >= 0 ? Colors.green : Colors.red,
-                  fontSize: 18,
+              Expanded(
+                child: Text(
+                  '${record.displayTime}  '
+                  '[${RecordCategories.label(AppLocalizations.of(context)!, record.primaryCategory)}]',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              IconButton(
-                tooltip: AppLocalizations.of(context)!.delete,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _deleteRecord(controller, record.id),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  record.value > 0
+                      ? '+${numberFormatter.format(record.value)} ${record.currency}'
+                      : '${numberFormatter.format(record.value)} ${record.currency}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    color: record.value >= 0 ? Colors.green : Colors.red,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ],
+          ),
+          trailing: IconButton(
+            tooltip: AppLocalizations.of(context)!.delete,
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _deleteRecord(controller, record.id),
           ),
           onTap: () async {
             final updated = await _showEditDetailDialog(
@@ -648,49 +655,55 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 ),
               ),
               Gaps.w8,
-              ElevatedButton(
-                onPressed: () async {
-                  if (_speechTextController.text.isEmpty) return;
-                  final previews = controller.parseFromSpeech(
-                    _speechTextController.text,
-                    controller.currentCurrency ?? widget.account.currency,
-                    controller.currentExchangeRate,
-                  );
-                  for (final preview in previews) {
-                    preview.eventId = widget.linkedEventId;
-                    preview.date = _newRecordDate;
-                  }
-                  if (previews.isEmpty) return;
-                  final confirmed = await showVoiceConfirmDialog(
-                    context,
-                    previews,
-                  );
-                  if (confirmed != true) return;
-                  try {
-                    await controller.commitRecords(previews);
-                  } catch (error) {
-                    if (!context.mounted) return;
-                    final message = subscriptionErrorMessage(loc, error);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          message.isEmpty ? loc.unknownError : message,
-                        ),
-                      ),
+              Flexible(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_speechTextController.text.isEmpty) return;
+                    final previews = controller.parseFromSpeech(
+                      _speechTextController.text,
+                      controller.currentCurrency ?? widget.account.currency,
+                      controller.currentExchangeRate,
                     );
-                    return;
-                  }
+                    for (final preview in previews) {
+                      preview.eventId = widget.linkedEventId;
+                      preview.date = _newRecordDate;
+                    }
+                    if (previews.isEmpty) return;
+                    final confirmed = await showVoiceConfirmDialog(
+                      context,
+                      previews,
+                    );
+                    if (confirmed != true) return;
+                    try {
+                      await controller.commitRecords(previews);
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      final message = subscriptionErrorMessage(loc, error);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            message.isEmpty ? loc.unknownError : message,
+                          ),
+                        ),
+                      );
+                      return;
+                    }
 
-                  // 清空輸入框
-                  setState(() {
-                    _speechTextController.clear();
-                    _newRecordDate = DateTime.now();
-                  });
-                  if (widget.returnAfterSubmit && mounted) {
-                    Navigator.of(context).pop(true);
-                  }
-                },
-                child: Text(loc.recordSubmit),
+                    // 清空輸入框
+                    setState(() {
+                      _speechTextController.clear();
+                      _newRecordDate = DateTime.now();
+                    });
+                    if (widget.returnAfterSubmit && mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  },
+                  child: Text(
+                    loc.recordSubmit,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ],
           ),

@@ -99,35 +99,66 @@ class PageFeedbackAdmin extends StatelessWidget {
                       return Selector<ControllerFeedbackAdmin, bool>(
                         selector: (_, c) => feedback.isOk ?? false,
                         builder: (context, isOk, child) {
+                          final statusDropdown = DropdownButton<String>(
+                            isExpanded: true,
+                            value: feedback.status,
+                            items: [
+                              DropdownMenuItem(
+                                value: 'in_progress',
+                                child: Text(loc.statusInProgress),
+                              ),
+                              DropdownMenuItem(
+                                value: 'pending',
+                                child: Text(loc.statusPending),
+                              ),
+                              DropdownMenuItem(
+                                value: 'completed',
+                                child: Text(loc.statusCompleted),
+                              ),
+                            ],
+                            onChanged: (status) {
+                              if (status != null) {
+                                controller.updateStatus(
+                                  feedback,
+                                  status,
+                                  auth.currentAccount ?? AuthConstants.guest,
+                                );
+                              }
+                            },
+                          );
+                          final compact =
+                              MediaQuery.sizeOf(context).width < 520;
                           return ListTile(
-                            title: Text(feedback.subject),
-                            subtitle: Text(feedback.content),
-                            trailing: DropdownButton<String>(
-                              value: feedback.status,
-                              items: [
-                                DropdownMenuItem(
-                                  value: 'in_progress',
-                                  child: Text(loc.statusInProgress),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'pending',
-                                  child: Text(loc.statusPending),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'completed',
-                                  child: Text(loc.statusCompleted),
-                                ),
-                              ],
-                              onChanged: (status) {
-                                if (status != null) {
-                                  controller.updateStatus(
-                                    feedback,
-                                    status,
-                                    auth.currentAccount ?? AuthConstants.guest,
-                                  );
-                                }
-                              },
+                            title: Text(
+                              feedback.subject,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                            subtitle: compact
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        feedback.content,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      SizedBox(
+                                        width: 180,
+                                        child: statusDropdown,
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    feedback.content,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                            trailing: compact
+                                ? null
+                                : SizedBox(width: 180, child: statusDropdown),
                             onTap: () async {
                               showDialog(
                                 context: context,

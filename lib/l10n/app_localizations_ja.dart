@@ -9,107 +9,1387 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get vendorSubmissionTitle => '投稿センター';
+  String get accessDenied => 'アクセス権限がありません';
 
   @override
-  String get vendorSubmissionDescription => '予定を計画しているユーザーにイベントやスポットを届け、公開後も投稿者が管理できます。';
+  String get activityName => 'アクティビティ名';
 
   @override
-  String get vendorSubmissionBenefitReach => '計画中の人に届ける';
+  String get add => '追加';
 
   @override
-  String get vendorSubmissionBenefitManage => '自分で情報を管理';
+  String get ageMax => '最大年齢';
 
   @override
-  String get vendorSubmissionBenefitReview => '審査状況が明確';
+  String get ageMin => '最低年齢';
 
   @override
-  String get vendorSubmitActivity => 'イベントを投稿';
+  String get ai => 'AIアシスタント';
 
   @override
-  String get vendorSubmitAttraction => '観光地を投稿';
+  String get alarmUpdateFailed => 'リマインダーを設定できませんでした。しばらくしてからもう一度お試しください';
 
   @override
-  String get vendorMySubmissions => '自分の投稿';
+  String get allCities => 'すべての都市';
 
   @override
-  String get vendorAllActivities => 'すべての投稿';
+  String get alreadyStarted => '開始済み';
 
   @override
-  String get vendorSubmitShort => '投稿';
+  String get amountLabel => '値';
 
   @override
-  String get vendorMineShort => '自分';
+  String get answerExample => '答えの例';
 
   @override
-  String get vendorAllShort => '全て';
+  String get answerHere => 'ここに回答';
 
   @override
-  String get vendorSubmissionGuideTitle => 'イベントを見つけてもらう';
+  String get answerOptions => '回答選択肢';
 
   @override
-  String get vendorAttractionSubmissionGuideTitle => '観光地を見つけてもらう';
+  String get answerOptionsHint => '選択肢はカンマで区切ってください';
 
   @override
-  String get attractionAddEdit => '観光地を追加／編集';
+  String get appTitle => '生活ナビゲーション';
 
   @override
-  String get vendorSubmissionGuideDescription => '正確な日付、会場、主催者、申込URLを入力してください。審査後に公開され、修正すると再審査となります。';
+  String get askAdministrator => '管理者に依頼';
 
   @override
-  String get vendorCreateAccountTitle => 'イベント主催者ですか？';
+  String get askAdministratorDescription => 'メールアプリで依頼を送信します。管理者が処理後に返信します。';
 
   @override
-  String get vendorCreateAccountDescription => 'アカウントを作成してイベントを投稿し、審査状況の確認や公開情報の更新ができます。';
+  String get back => '戻る';
 
   @override
-  String get vendorCreateAccountAction => 'アカウントを作成して投稿';
+  String get blocklyEditor => 'Blockly エディター';
 
   @override
-  String get vendorRegistrationTitle => '主催者アカウント';
+  String get cancel => 'キャンセル';
 
   @override
-  String get vendorRegistrationDescription => 'イベント、スポット、審査状況を管理する主催者ワークスペースを利用します。';
+  String get cancelAlarm => 'アラームキャンセル';
 
   @override
-  String get vendorDashboardTitle => '主催者ワークスペース';
+  String get captureScreen => '画面をキャプチャ';
 
   @override
-  String get vendorDashboardSubtitle => '投稿と審査状況を管理し、現在の利用枠を確認できます。';
+  String get categoryLabel => '分類';
 
   @override
-  String get vendorDashboardLoadFailed => '主催者情報を読み込めませんでした。';
+  String get check => '確認';
 
   @override
-  String get vendorActiveActivities => '公開中のイベント';
+  String get checkPath => '経路を確認';
 
   @override
-  String get vendorActiveAttractions => '公開中のスポット';
+  String get choosePhoto => '写真を選択';
 
   @override
-  String vendorCurrentPlan(String plan) {
-    return '現在のプラン：$plan';
+  String get clear => 'クリア';
+
+  @override
+  String get clickHereToSeeMore => 'もっと見る';
+
+  @override
+  String get close => '閉じる';
+
+  @override
+  String get completeAndReview => '完了して振り返る';
+
+  @override
+  String get confirm => '確定';
+
+  @override
+  String get confirmDelete => '削除しますか';
+
+  @override
+  String congratulationsScore(num score) {
+    return 'おめでとう！スコア：$score';
   }
 
   @override
-  String get vendorManageActivities => 'イベントを管理';
+  String get continueLabel => '続行';
 
   @override
-  String get vendorManageAttractions => 'スポットを管理';
-
-  @override
-  String get vendorPricingTitle => '主催者向けプラン';
-
-  @override
-  String get vendorPricingDescription => '無料で始め、必要に応じて公開件数と分析期間を拡張できます。';
-
-  @override
-  String get vendorPricingActiveOnlyNote => '利用枠は終了していない情報のみ数えます。終了済みの情報は公開枠を使用しません。';
-
-  @override
-  String vendorQuarterlyPrice(int price) {
-    return '四半期 NT\$$price';
+  String continueLevel(int level) {
+    return 'ステージ$levelを続ける';
   }
+
+  @override
+  String get correctAnswer => '正解';
+
+  @override
+  String get coverPhotoOptional => 'カバー写真（任意）';
+
+  @override
+  String get create => '作成';
+
+  @override
+  String get dataCleanupAction => '確認して整理';
+
+  @override
+  String get dataCleanupAll => 'すべて削除';
+
+  @override
+  String get dataCleanupAllConfirm => '選択した保存先の個人データをすべて削除しますか？元に戻せません。';
+
+  @override
+  String get dataCleanupConfirmTitle => '削除の確認';
+
+  @override
+  String get dataCleanupExcess => '超過分を削除';
+
+  @override
+  String get dataCleanupExcessConfirm => '現在の上限を超えたデータのみ削除しますか？元に戻せません。';
+
+  @override
+  String get dataCleanupFailed => 'データ整理に失敗しました';
+
+  @override
+  String get dataCleanupNoOverage => '現在、上限を超えたクラウドデータはありません。';
+
+  @override
+  String get dataCleanupSuccess => 'データ整理が完了しました';
+
+  @override
+  String get dataCleanupTargetEmail => 'ユーザー Email（空欄は自分）';
+
+  @override
+  String get dataCleanupTitle => 'データ整理';
+
+  @override
+  String get dataClearLocalAction => '端末データを削除';
+
+  @override
+  String get dataClearLocalConfirm => 'この端末の個人データをすべて完全に削除します。元に戻せません。削除後、クラウドへの切り替えを再試行できます。続行しますか？';
+
+  @override
+  String get dataClearLocalFailed => '端末データを削除できませんでした。後でもう一度お試しください。';
+
+  @override
+  String get dataClearLocalSuccess => '端末データを削除しました';
+
+  @override
+  String get dataClearLocalTitle => '端末データを削除';
+
+  @override
+  String get dataMoveToLocal => 'クラウドデータをこのデバイスへ移動';
+
+  @override
+  String get dataMoveToLocalConfirm => 'コピーと検証後にクラウドから削除され、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示されます。別の環境には自動表示されず、サイトデータを消去すると永久に失われる可能性があります。続行しますか？';
+
+  @override
+  String get dataMoveToLocalFailed => '一部のデータを移動できなかったため、クラウドの元データを保持しました。';
+
+  @override
+  String get dataMoveToLocalSuccess => 'クラウドデータをこのデバイスへ移動しました。';
+
+  @override
+  String get dateClear => '日付をクリア';
+
+  @override
+  String get days => '日';
+
+  @override
+  String get delete => '削除';
+
+  @override
+  String get deleteError => '削除失敗';
+
+  @override
+  String deleteNumberedItem(int number, String name) {
+    return '$number 番目の「$name」を削除しますか？';
+  }
+
+  @override
+  String get deleteOk => '✅ 削除完了';
+
+  @override
+  String get description => '説明';
+
+  @override
+  String get discardChanges => '変更を破棄';
+
+  @override
+  String get dislike => '嫌い';
+
+  @override
+  String get downloaded => '✅ ダウンロード済み';
+
+  @override
+  String get edit => '編集';
+
+  @override
+  String get email => 'メールアドレス';
+
+  @override
+  String get emailAlreadyInUse => 'このメールアドレスは既に登録されています。';
+
+  @override
+  String get emailNotConfirmed => 'メールアドレスが確認されていません';
+
+  @override
+  String get emailRateLimitExceeded => '確認メールの送信回数が多すぎます。しばらくしてからもう一度お試しください。';
+
+  @override
+  String get endDate => '終了日';
+
+  @override
+  String get endsToday => '開始済み、本日終了';
+
+  @override
+  String get endTime => '終了時間';
+
+  @override
+  String get englishRpgAdventureTitle => '英語 RPG アドベンチャー';
+
+  @override
+  String get enterAnswer => '回答を入力';
+
+  @override
+  String get excelColumnHeaderActivityName => 'アクティビティ名_______________________';
+
+  @override
+  String get excelColumnHeaderAgeMax => '最大年齢';
+
+  @override
+  String get excelColumnHeaderAgeMin => '最低年齢';
+
+  @override
+  String get excelColumnHeaderDescription => '説明______';
+
+  @override
+  String get excelColumnHeaderEndDate => '終了日__';
+
+  @override
+  String get excelColumnHeaderEndTime => '終了時間';
+
+  @override
+  String get excelColumnHeaderFee => '料金';
+
+  @override
+  String get excelColumnHeaderId => 'アクティビティ id_______________________';
+
+  @override
+  String get excelColumnHeaderIsFree => '無料 ?';
+
+  @override
+  String get excelColumnHeaderIsOutdoor => '屋外 ?';
+
+  @override
+  String get excelColumnHeaderKeywords => 'キーワード_______________________';
+
+  @override
+  String get excelColumnHeaderMasterUrl => 'アクティビティ url_______________________';
+
+  @override
+  String get excelColumnHeaderPriceMax => '最高価格';
+
+  @override
+  String get excelColumnHeaderPriceMin => '最低価格';
+
+  @override
+  String get excelColumnHeaderSponsor => '主催者';
+
+  @override
+  String get excelColumnHeaderStartDate => '開始日期__';
+
+  @override
+  String get excelColumnHeaderStartTime => '開始時間';
+
+  @override
+  String get externalLinkOpenFailed => 'リンクを開けませんでした。しばらくしてからもう一度お試しください';
+
+  @override
+  String get fee => '料金';
+
+  @override
+  String get free => '無料';
+
+  @override
+  String get go => '移動';
+
+  @override
+  String get hint => 'ヒント';
+
+  @override
+  String get indoor => '屋内';
+
+  @override
+  String get invalidEmail => 'メールアドレスの形式が正しくありません';
+
+  @override
+  String get isFree => '無料 ？';
+
+  @override
+  String get isOutdoor => '屋外 ?';
+
+  @override
+  String get keywords => 'キーワード';
+
+  @override
+  String get like => '好き';
+
+  @override
+  String get loading => '読み込み中…';
+
+  @override
+  String get loadingSections => 'セクションを読み込み中…';
+
+  @override
+  String get manualEntry => '手動追加';
+
+  @override
+  String get masterUrl => 'リンク';
+
+  @override
+  String get month => '月';
+
+  @override
+  String get moreActions => 'その他';
+
+  @override
+  String get networkError => '接続できません。ネットワークを確認してもう一度お試しください。';
+
+  @override
+  String get next => '次へ';
+
+  @override
+  String nextFreeHour(String startTime, String endTime) {
+    return '今日 $startTime～$endTime は予定なし';
+  }
+
+  @override
+  String get nextMonth => '来月';
+
+  @override
+  String get noData => 'データがありません';
+
+  @override
+  String get noEmailError => 'メールアドレスを入力してください';
+
+  @override
+  String get noInfoAvailable => '利用可能な情報はありません。';
+
+  @override
+  String get noPipes => 'パイプがありません';
+
+  @override
+  String get notFilled => '未入力';
+
+  @override
+  String get notSupportUpload => '⚠️ アップロードはサポートされていません';
+
+  @override
+  String ongoingUntil(String date) {
+    return '$dateまで開催中';
+  }
+
+  @override
+  String get openChatGPT => 'ChatGPTを開く';
+
+  @override
+  String get outdoor => '屋外';
+
+  @override
+  String get parsing => '解析する';
+
+  @override
+  String get pay => '支払う';
+
+  @override
+  String get postText => '全文を掲載してください';
+
+  @override
+  String get previous => '前へ';
+
+  @override
+  String get previousMonth => '先月';
+
+  @override
+  String priceEarningsRatio(String value) {
+    return 'PER：$value';
+  }
+
+  @override
+  String get priceMax => '最高価格';
+
+  @override
+  String get priceMin => '最低価格';
+
+  @override
+  String get publishedContentDeleteAdminOnly => '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
+
+  @override
+  String get publishedSubmission => '公開中';
+
+  @override
+  String get publishedSubmissionTooltip => 'この情報は公開され、すべてのユーザーが閲覧できます。';
+
+  @override
+  String get registrationSuccessful => '登録が完了しました。';
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI：$value';
+  }
+
+  @override
+  String get repeatOptions => '繰り返し回数';
+
+  @override
+  String get repeatOptionsEvery => '每';
+
+  @override
+  String get repeatOptionsEveryDay => '毎日';
+
+  @override
+  String get repeatOptionsEveryMonth => '每月';
+
+  @override
+  String get repeatOptionsEveryTwoMonths => '2か月ごと';
+
+  @override
+  String get repeatOptionsEveryTwoWeeks => '2週間ごと';
+
+  @override
+  String get repeatOptionsEveryWeek => '每週';
+
+  @override
+  String get repeatOptionsEveryYear => '每年';
+
+  @override
+  String get repeatOptionsOnce => '一度だけ';
+
+  @override
+  String get replacePhoto => '変更';
+
+  @override
+  String get requiredField => '必須項目です';
+
+  @override
+  String get restart => '再スタート';
+
+  @override
+  String get retry => '再試行';
+
+  @override
+  String get review => 'レビュー';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String get scrambledWords => '並べ替える単語';
+
+  @override
+  String get scrollThisArea => 'この範囲を上下にスクロール';
+
+  @override
+  String get search => '検索';
+
+  @override
+  String get searchKeywords => 'キーワード検索（カンマ区切り）';
+
+  @override
+  String get secondaryCategoryLabel => 'サブ分類';
+
+  @override
+  String get setAlarm => 'アラーム設定';
+
+  @override
+  String get setAlarmCompleted => '✅ アラームを設定しました';
+
+  @override
+  String get speak => '音声入力';
+
+  @override
+  String get speakingText => '読み上げるテキスト';
+
+  @override
+  String get speakingTitle => 'スピーキング';
+
+  @override
+  String get speakUp => '話してください';
+
+  @override
+  String get sponsor => '主催者';
+
+  @override
+  String get startDate => '開始日';
+
+  @override
+  String startsInDays(int count) {
+    return '$count日後に開始';
+  }
+
+  @override
+  String get startsToday => '今日開始';
+
+  @override
+  String get startsTomorrow => '明日開始';
+
+  @override
+  String get startTime => '開始時間';
+
+  @override
+  String get statusNotStarted => '未開始';
+
+  @override
+  String get subUrl => 'リンク';
+
+  @override
+  String get switchToList => 'リストに切り替え';
+
+  @override
+  String get toBeDetermined => '未定';
+
+  @override
+  String get today => '今日';
+
+  @override
+  String get todayLifeOverview => '今日の生活サマリー';
+
+  @override
+  String get todayLifeOverviewHint => '予定・収支・ポイントをまとめて確認できます。項目をタップして詳細を表示します。';
+
+  @override
+  String get toggleView => '表示切り替え';
+
+  @override
+  String get tooManyRequests => '操作が多すぎます。しばらくしてからもう一度お試しください。';
+
+  @override
+  String get totalAmount => '合計金額';
+
+  @override
+  String get twoOptionsRequired => '回答選択肢を2つ以上入力してください';
+
+  @override
+  String get unableToLoadDocument => 'このドキュメントを読み込めません。';
+
+  @override
+  String get unknownError => '不明なエラーです';
+
+  @override
+  String get unpublishedSubmission => '未公開';
+
+  @override
+  String get unpublishedSubmissionTooltip => 'この情報は審査待ちのため、現在は本人と管理者のみ閲覧できます。';
+
+  @override
+  String get unsavedChangesPrompt => '変更が保存されていません。破棄しますか？';
+
+  @override
+  String get uploadExcel => 'Csv にアップロード';
+
+  @override
+  String get uploadFailed => '❌ アップロードに失敗しました';
+
+  @override
+  String get uploadInProgress => '❌ 前回のファイルのアップロードはまだ進行中です。';
+
+  @override
+  String get uploadSuccess => '✅ アップロード成功';
+
+  @override
+  String get url => 'URL';
+
+  @override
+  String get weekDayFri => '金';
+
+  @override
+  String get weekDayMon => '月';
+
+  @override
+  String get weekDaySat => '土';
+
+  @override
+  String get weekDaySun => '日';
+
+  @override
+  String get weekDayThu => '木';
+
+  @override
+  String get weekDayTue => '火';
+
+  @override
+  String get weekDayWed => '水';
+
+  @override
+  String get wordSearchTitle => '単語検索';
+
+  @override
+  String get year => '年';
+
+  @override
+  String get accountSecurity => 'アカウント保護';
+
+  @override
+  String adminPasswordHelpBody(String account) {
+    return 'Life Pilot にログインできません。パスワード変更の対応をお願いします。\n\nアカウント：$account\n\n対応後、このメールアドレスに結果をご返信ください。';
+  }
+
+  @override
+  String adminPasswordHelpEmailUnavailable(String email) {
+    return 'メールアプリを開けません。$email にメールしてください。';
+  }
+
+  @override
+  String get adminPasswordHelpOpened => 'メールアプリを開きました。内容を確認して送信してください。';
+
+  @override
+  String get adminPasswordHelpSubject => 'Life Pilot パスワード変更依頼';
+
+  @override
+  String get adminPasswordResetDescription => '依頼者のアカウントメールを入力して一時パスワードを作成します。ユーザーに返信し、ログイン後すぐに変更するよう案内してください。';
+
+  @override
+  String get adminPasswordResetFailed => '一時パスワードを作成できませんでした。後でもう一度お試しください。';
+
+  @override
+  String get adminPasswordResetSend => '一時パスワードを作成';
+
+  @override
+  String get adminPasswordResetTitle => 'ユーザーのパスワード再設定を支援';
+
+  @override
+  String get adminPasswordResetUserEmail => 'ユーザーのメール';
+
+  @override
+  String get adminPasswordResetUserNotFound => 'このメールのユーザーが見つかりません。';
+
+  @override
+  String get adminTemporaryPasswordCopied => '一時パスワードをコピーしました。';
+
+  @override
+  String get adminTemporaryPasswordCopy => '一時パスワードをコピー';
+
+  @override
+  String adminTemporaryPasswordCreated(String email) {
+    return '$email の一時パスワードを作成しました。';
+  }
+
+  @override
+  String get adminTemporaryPasswordInstruction => 'コピーしてユーザーに返信し、ログイン後すぐに「アカウント保護」で変更するよう案内してください。';
+
+  @override
+  String get adminTemporaryPasswordLabel => '一時パスワード';
+
+  @override
+  String get changePassword => 'パスワード変更';
+
+  @override
+  String get changePasswordFailed => 'パスワードを変更できませんでした。もう一度お試しください。';
+
+  @override
+  String get changePasswordSuccessful => 'パスワードを変更しました。';
+
+  @override
+  String get confirmPassword => 'パスワードを確認';
+
+  @override
+  String get currentPassword => '現在のパスワード';
+
+  @override
+  String get currentPasswordIncorrect => '現在のパスワードが正しくありません。';
+
+  @override
+  String get hidePassword => 'パスワードを非表示';
+
+  @override
+  String get login => '  ログイン  ';
+
+  @override
+  String get loginAnonymously => 'ゲストログイン';
+
+  @override
+  String get loginError => 'ログイン失敗、もう一度お試しください。';
+
+  @override
+  String get loginRelated => 'loginRelated';
+
+  @override
+  String get logout => 'ログアウト';
+
+  @override
+  String get logoutConfirmation => '現在のアカウントからログアウトしますか？';
+
+  @override
+  String get logoutError => 'ログアウト失敗、もう一度お試しください。';
+
+  @override
+  String get moduleAuthorization => '機能権限';
+
+  @override
+  String get moduleAuthorizationDescription => '一般ユーザーに追加で許可する機能を設定します。ホームと機能メニューに同時に反映されます。';
+
+  @override
+  String get moduleAuthorizationLoadFailed => '機能権限を読み込めません。アカウントを確認して再試行してください。';
+
+  @override
+  String get moduleAuthorizationNoAccess => '追加機能は許可されていません。';
+
+  @override
+  String get moduleAuthorizationNotDeployed => '機能権限が未導入です。先に Supabase で権限 SQL を実行してください。';
+
+  @override
+  String get moduleAuthorizationSaved => '機能権限を更新しました。';
+
+  @override
+  String get moduleAuthorizationSaveFailed => '機能権限が正しく更新されませんでした。再検索してお試しください。';
+
+  @override
+  String get moduleAuthorizationSearchFirst => '先にユーザーのメールアドレスを入力して検索してください。';
+
+  @override
+  String get moduleAuthorizationUserNotFound => 'このメールアドレスのユーザーが見つかりません。';
+
+  @override
+  String get newPassword => '新しいパスワード';
+
+  @override
+  String get noPasswordError => 'パスワードを入力してください';
+
+  @override
+  String get noRecoverySession => 'システムは有効な「検証用資格情報」を見つけられないか、その資格情報の有効期限が切れています';
+
+  @override
+  String get password => 'パスワード';
+
+  @override
+  String get passwordDoesNotMeetPolicy => '新しいパスワードがセキュリティ要件を満たしていません。英字、数字、記号を追加してもう一度お試しください。';
+
+  @override
+  String get passwordHelpDescription => '現在のパスワードを忘れた場合は、確認メールで再設定するか、管理者に依頼できます。';
+
+  @override
+  String get passwordHelpTitle => 'その他の再設定方法';
+
+  @override
+  String get passwordMismatch => 'パスワードが一致しません。';
+
+  @override
+  String get passwordMustBeDifferent => '新しいパスワードは現在のパスワードと異なるものにしてください。';
+
+  @override
+  String get passwordReauthenticationRequired => 'セキュリティ保護のため、先にメール認証でパスワードを再設定してください。';
+
+  @override
+  String get passwordRecoveryChoiceDescription => '確認メールで自分で再設定するか、管理者にメールで依頼してください。';
+
+  @override
+  String get passwordRecoveryChoiceTitle => '再設定方法を選択';
+
+  @override
+  String get passwordUpdateSuccessful => 'パスワードを更新しました。新しいパスワードでログインしてください。';
+
+  @override
+  String get register => '  登録  ';
+
+  @override
+  String get registerError => '登録に失敗しました。もう一度お試しください。';
+
+  @override
+  String get registrationVerificationRequired => '登録が完了しました。メール認証後にログインしてください。';
+
+  @override
+  String get resetByEmailVerification => '確認メールで再設定';
+
+  @override
+  String get resetByEmailVerificationDescription => '新しいパスワードを設定するための安全なリンクをメールで送信します。';
+
+  @override
+  String get resetPassword => 'パスワード再設定';
+
+  @override
+  String resetPasswordCooldown(int seconds) {
+    return '$seconds秒後に再送信できます';
+  }
+
+  @override
+  String get resetPasswordEmail => 'パスワード再設定メールを送信しました。メールを確認してください。';
+
+  @override
+  String get resetPasswordEmailNotFound => '登録されていないメールアドレスです';
+
+  @override
+  String get resetPasswordError => 'パスワードのリセットに失敗しました。もう一度お試しください。';
+
+  @override
+  String get showPassword => 'パスワードを表示';
+
+  @override
+  String get updatePassword => 'パスワード更新';
+
+  @override
+  String get weakPassword => 'パスワードは8文字以上で入力してください。';
+
+  @override
+  String get wrongUserPassword => 'メールかパスワードが正しくありません';
+
+  @override
+  String get dashboardLoadFailed => '情報を読み込めませんでした。しばらくしてからもう一度お試しください';
+
+  @override
+  String get dashboardSettingSaveFailed => '設定を保存できませんでした。しばらくしてからもう一度お試しください';
+
+  @override
+  String get home => 'ホーム';
+
+  @override
+  String get homeInsightDiscover => '今日の予定はまだありません。気になるイベントやスポットから始めましょう。';
+
+  @override
+  String get homeInsightReadyForReview => '今日の予定は思い出・収支・ポイントと連携され、まとめて振り返れます。';
+
+  @override
+  String homeInsightResolveConflicts(int count) {
+    return '今日・明日の予定が$count件重複しています。先に調整することをおすすめします。';
+  }
+
+  @override
+  String homeInsightReviewOverdue(int count) {
+    return '今日終了した予定のうち$count件が未確認です。大切な用事を確認しましょう。';
+  }
+
+  @override
+  String get homeJourneyReviewHint => '予定の完了時に、思い出・収支・ポイントをまとめて記録できます';
+
+  @override
+  String get language => '言語';
+
+  @override
+  String get languageChinese => '中国語';
+
+  @override
+  String get languageEnglish => '英語';
+
+  @override
+  String get languageJapanese => '日本語';
+
+  @override
+  String get languageKorean => '韓国語';
+
+  @override
+  String get pageRelated => 'pageRelated';
+
+  @override
+  String get pageSelectorTooltip => '機能メニュー';
+
+  @override
+  String get settings => '設定';
+
+  @override
+  String get userMenuButton => 'ユーザー選択';
+
+  @override
+  String get accountDeletionCloudOnly => 'アカウント削除の申請はクラウドモードでのみ利用できます。先に保存先をクラウドに切り替えてください。';
+
+  @override
+  String get adminPricingAccountingQuota => '家計簿明細';
+
+  @override
+  String get adminPricingAnswerDays => '解答履歴の日数';
+
+  @override
+  String get adminPricingCalendarQuota => '予定件数';
+
+  @override
+  String get adminPricingCreate => '版を作成';
+
+  @override
+  String get adminPricingCreated => '新しい料金版を作成しました。既存の特典は変わりません';
+
+  @override
+  String adminPricingCreateFailed(String error) {
+    return '料金版を保存できません：$error';
+  }
+
+  @override
+  String adminPricingDeleteConfirmation(String name) {
+    return '$name を削除しますか？どの契約や権利にも使用されていない場合のみ削除できます。';
+  }
+
+  @override
+  String get adminPricingDeleted => '料金バージョンを削除しました。';
+
+  @override
+  String get adminPricingDeleteInUse => 'この料金バージョンは契約または権利で使用中のため削除できません。';
+
+  @override
+  String get adminPricingDeleteTitle => '料金バージョンを削除';
+
+  @override
+  String get adminPricingEffectiveDate => '適用日';
+
+  @override
+  String get adminPricingGameQuota => '自作問題';
+
+  @override
+  String get adminPricingImageQuota => '画像容量（MB）';
+
+  @override
+  String get adminPricingLocalZeroUnlimited => 'ローカル Plus では、上限欄の 0 は無制限を意味します。';
+
+  @override
+  String get adminPricingMemoryQuota => '思い出';
+
+  @override
+  String get adminPricingPointQuota => 'ポイント明細';
+
+  @override
+  String get adminPricingQuarterlyPrice => '四半期料金（TWD）';
+
+  @override
+  String get adminPricingRequired => '版名とすべての数値を入力してください';
+
+  @override
+  String get adminPricingShareQuota => '共有人数';
+
+  @override
+  String get adminPricingSubtitle => '今後の支払いと追加購入にのみ適用';
+
+  @override
+  String get adminPricingTitle => 'ユーザー料金版を作成';
+
+  @override
+  String get adminPricingUpdate => 'バージョンを更新';
+
+  @override
+  String get adminPricingUpdated => 'ユーザー料金版を更新しました。既存の契約内容は変わりません';
+
+  @override
+  String get adminPricingVersionHint => '例：2026-Q4';
+
+  @override
+  String get adminPricingVersionName => '版名';
+
+  @override
+  String get adminSubscriptionAddQuota => '現在の特典を残して上限を追加';
+
+  @override
+  String get adminSubscriptionAddQuotaHint => '新しい上限を未期限切れの上限に加算します';
+
+  @override
+  String get adminSubscriptionCloud => 'クラウド';
+
+  @override
+  String get adminSubscriptionDeleteAll => '購読と上限設定をすべて削除';
+
+  @override
+  String adminSubscriptionDeleteConfirmation(String email) {
+    return '$email の購読と上限設定を削除しますか？ユーザーデータは削除されません。';
+  }
+
+  @override
+  String get adminSubscriptionDeleted => '購読と上限設定を削除しました。';
+
+  @override
+  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
+    return 'この $version 上限だけを削除しますか？他の上限とユーザーデータは保持されます。';
+  }
+
+  @override
+  String get adminSubscriptionDeleteTitle => '購読設定を削除';
+
+  @override
+  String get adminSubscriptionEmail => 'ユーザーEmail';
+
+  @override
+  String get adminSubscriptionEntitlementDeleted => 'この上限を削除しました。他の上限は保持されています。';
+
+  @override
+  String get adminSubscriptionEntitlements => '作成済みの上限';
+
+  @override
+  String get adminSubscriptionExpiry => '特典期限';
+
+  @override
+  String get adminSubscriptionExtend => '延長';
+
+  @override
+  String get adminSubscriptionExtend90Days => '90日延長';
+
+  @override
+  String get adminSubscriptionExtended => '購読期間を90日延長しました。';
+
+  @override
+  String adminSubscriptionExtendedDays(int days) {
+    return 'サブスクリプションを$days日延長しました。';
+  }
+
+  @override
+  String get adminSubscriptionExtensionDays => '延長日数';
+
+  @override
+  String get adminSubscriptionFree => '無料';
+
+  @override
+  String get adminSubscriptionInactiveWarning => '3か月間変更がない場合、アカウントとクラウドデータを削除します。';
+
+  @override
+  String get adminSubscriptionInvalidExtensionDays => '1～3650日の範囲で入力してください。';
+
+  @override
+  String get adminSubscriptionLoadedForEditing => '現在の購読を読み込みました。編集して保存できます。';
+
+  @override
+  String get adminSubscriptionLocal => '本体無制限';
+
+  @override
+  String get adminSubscriptionLookupRequired => '先にデータを検索してください。';
+
+  @override
+  String get adminSubscriptionMultiplier => '上限倍率';
+
+  @override
+  String get adminSubscriptionNoExpiry => '無料版に期限はありません';
+
+  @override
+  String get adminSubscriptionNoPricing => '先に料金版を作成してください';
+
+  @override
+  String get adminSubscriptionNote => '補足';
+
+  @override
+  String get adminSubscriptionNotFound => '購読データが見つかりません';
+
+  @override
+  String get adminSubscriptionNotFoundCreate => 'このユーザーの新しい購読を作成できます。';
+
+  @override
+  String get adminSubscriptionPaid => '有料';
+
+  @override
+  String get adminSubscriptionPlan => 'プラン';
+
+  @override
+  String get adminSubscriptionPricingVersion => '料金版';
+
+  @override
+  String get adminSubscriptionSave => '購読を保存';
+
+  @override
+  String get adminSubscriptionSaved => '購読設定を保存しました';
+
+  @override
+  String adminSubscriptionSaveFailed(String error) {
+    return '保存失敗：$error';
+  }
+
+  @override
+  String get adminSubscriptionStoragePlan => '保存プラン';
+
+  @override
+  String get adminSubscriptionSubtitle => '購入時の料金と上限を適用';
+
+  @override
+  String adminSubscriptionTimes(int count) {
+    return '$count倍';
+  }
+
+  @override
+  String get adminSubscriptionTitle => '購読管理';
+
+  @override
+  String get adminSubscriptionUserNotFound => 'ユーザーアカウントが見つかりません';
+
+  @override
+  String get adminVendorPricingCreated => '主催者料金バージョンを作成しました。';
+
+  @override
+  String get adminVendorPricingSubtitle => '今後の購入は最新の有効バージョンを使用し、既存の権利は購入時の内容を保持します。';
+
+  @override
+  String get adminVendorPricingTitle => 'ベンダー料金バージョンを作成';
+
+  @override
+  String get adminVendorPricingUpdated => '主催者料金バージョンを更新しました。';
+
+  @override
+  String get adminVendorSubscriptionSaved => '主催者サブスクリプションを保存しました。';
+
+  @override
+  String get adminVendorSubscriptionSubtitle => '料金バージョン、利用枠倍率、有効期限を指定します。';
+
+  @override
+  String get adminVendorSubscriptionTitle => '主催者サブスクリプション管理';
+
+  @override
+  String get calendarInvitationQuotaExceeded => 'カレンダー共有の上限に達しました。既存の共有を削除するか、プランを変更してください。';
+
+  @override
+  String get dataCleanupCloudExplanation => 'クラウドの超過状況を確認し、超過分のみ、または全データを削除できます。';
+
+  @override
+  String get dataStorageCloud => 'クラウド';
+
+  @override
+  String get dataStorageCloudWarning => 'クラウドデータは複数端末で利用でき、プランの上限が適用されます。';
+
+  @override
+  String get dataStorageLocal => 'このデバイス';
+
+  @override
+  String get dataStorageLocalPlanRequired => 'デバイス Plus の支払いと管理者による有効化の後に切り替えてください。';
+
+  @override
+  String get dataStorageLocalWarning => 'ローカルデータは、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示できます。別のデバイス、ブラウザ、プロファイルには自動表示されません。アプリの削除やサイト／ブラウザデータの消去で永久に失われる可能性があります。プラン上限内であればクラウドへ戻せます。';
+
+  @override
+  String get dataStorageTitle => '保存先';
+
+  @override
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    return 'アップロードをキャンセルしました：$resource はクラウドで $used 件使用中です。今回 $incoming 件を追加すると、プラン上限 $quota 件を超えます。';
+  }
+
+  @override
+  String get dataUploadToCloud => 'ローカルデータをクラウドへアップロード（管理者）';
+
+  @override
+  String get dataUploadToCloudAction => 'ローカルデータをクラウドへ移動';
+
+  @override
+  String get dataUploadToCloudConfirm => 'クラウドと競合しないデータのみアップロードします。失敗したデータはこの端末に残ります。続行しますか？';
+
+  @override
+  String get dataUploadToCloudFailed => '一部のデータをアップロードできなかったため、この端末に保持しました。';
+
+  @override
+  String get dataUploadToCloudSuccess => 'ローカルデータをクラウドへアップロードしました。';
+
+  @override
+  String get quotaFreePeriodActive => '現在有効';
+
+  @override
+  String get quotaFreePeriodAutomaticHint => '設定した開始日時から終了日時までのみ容量制限を停止します。';
+
+  @override
+  String get quotaFreePeriodClear => '設定を削除';
+
+  @override
+  String get quotaFreePeriodClearConfirm => '容量無制限期間を削除しますか？通常のプラン上限が直ちに適用されます。';
+
+  @override
+  String get quotaFreePeriodCleared => '容量無制限キャンペーンを削除しました。';
+
+  @override
+  String get quotaFreePeriodDescription => 'この期間に追加するクラウドデータはプラン上限の対象外です。終了後は自動的に通常の上限へ戻ります。';
+
+  @override
+  String get quotaFreePeriodDisabled => '無効';
+
+  @override
+  String get quotaFreePeriodEdit => '期間を編集';
+
+  @override
+  String get quotaFreePeriodEmpty => '容量無制限期間は設定されていません。';
+
+  @override
+  String get quotaFreePeriodEnabled => 'この期間を有効にする';
+
+  @override
+  String get quotaFreePeriodEnd => '終了日時';
+
+  @override
+  String get quotaFreePeriodEnded => '終了済み';
+
+  @override
+  String get quotaFreePeriodInvalidRange => '終了日時は開始日時より後にしてください。';
+
+  @override
+  String get quotaFreePeriodName => 'キャンペーン名';
+
+  @override
+  String get quotaFreePeriodNew => '期間を作成';
+
+  @override
+  String get quotaFreePeriodSaved => '容量無制限キャンペーンを保存しました。';
+
+  @override
+  String get quotaFreePeriodSaveFailed => '容量無制限キャンペーンを保存できませんでした。';
+
+  @override
+  String get quotaFreePeriodScheduled => '開始予定';
+
+  @override
+  String get quotaFreePeriodStart => '開始日時';
+
+  @override
+  String get quotaFreePeriodTitle => '容量無制限キャンペーン';
+
+  @override
+  String get quotaFreePeriodUnnamed => '名称未設定キャンペーン';
+
+  @override
+  String get recordCategoryAllowance => '手当';
+
+  @override
+  String get subscriptionActualQuotaTitle => '現在のバージョンと利用量';
+
+  @override
+  String subscriptionCloudVersionName(String version) {
+    return 'クラウド $version';
+  }
+
+  @override
+  String get subscriptionCommonFeatures => '両プランに含まれる機能';
+
+  @override
+  String get subscriptionCommonFeaturesDetail => 'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とビジネスプランは管理者専用です。';
+
+  @override
+  String get subscriptionCurrentAdmin => '現在の権限：管理者（無制限）';
+
+  @override
+  String get subscriptionCurrentCloudPlus => '現在：クラウド Plus';
+
+  @override
+  String get subscriptionCurrentFree => '現在のプラン：クラウド無料';
+
+  @override
+  String get subscriptionCurrentLocalPlus => '現在：ローカル Plus';
+
+  @override
+  String get subscriptionCurrentPlus => '現在のプラン：Plus';
+
+  @override
+  String get subscriptionDeleteRecordHint => '削除すると今日の小計と合計も再計算されます。';
+
+  @override
+  String subscriptionDowngradeWarning(String date) {
+    return 'クラウドデータが無料枠を超えています。$date までに超過分を移動または削除してください。';
+  }
+
+  @override
+  String get subscriptionEffectiveDate => '適用開始日';
+
+  @override
+  String get subscriptionFreeName => 'クラウド無料プラン';
+
+  @override
+  String get subscriptionFreePersonalRecords => 'クラウド保存：カレンダー、家計簿、ポイント、思い出を各30件まで';
+
+  @override
+  String get subscriptionFreePrice => 'NT\$0';
+
+  @override
+  String get subscriptionImagePlusOnly => '画像のアップロードはPlusで利用できます。';
+
+  @override
+  String get subscriptionImageStorage => '画像容量';
+
+  @override
+  String get subscriptionInactiveAccountWarning => '無料アカウントに有効期限はありません。3か月間データの追加・変更がない場合、アカウントとクラウドデータは自動的に削除されます。';
+
+  @override
+  String get subscriptionLatestLocalVersionTitle => '次回の支払いに適用されるローカル Plus 版';
+
+  @override
+  String get subscriptionLocalAnswerHistory => '本体の解答履歴は無制限';
+
+  @override
+  String get subscriptionLocalPaidFeature => 'このデバイスの記録と画像は無制限。他のデバイスには自動表示されません';
+
+  @override
+  String get subscriptionLocalPaidName => 'デバイス Plus';
+
+  @override
+  String get subscriptionLocalPaidPrice => '四半期 NT\$129';
+
+  @override
+  String subscriptionLocalUsage(int used) {
+    return 'このデバイス：$used 件／無制限';
+  }
+
+  @override
+  String subscriptionLocalVersionName(String version) {
+    return 'デバイス $version';
+  }
+
+  @override
+  String subscriptionNextCloudVersionName(String version) {
+    return '次回支払い：クラウド $version';
+  }
+
+  @override
+  String get subscriptionNextCloudVersionTitle => '次回の支払いに適用されるクラウド版';
+
+  @override
+  String subscriptionNextLocalVersionName(String version) {
+    return '次回支払い：デバイス $version';
+  }
+
+  @override
+  String get subscriptionNextVersionTitle => '次回支払いに適用される最新版';
+
+  @override
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    return '$resource：$used/$quota（$excess 件超過）';
+  }
+
+  @override
+  String get subscriptionPlansTitle => 'プランとサブスクリプション';
+
+  @override
+  String get subscriptionPlusName => 'クラウド Plus';
+
+  @override
+  String get subscriptionPlusPersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
+
+  @override
+  String get subscriptionPlusPrice => '四半期 NT\$129から';
+
+  @override
+  String get subscriptionPricingVersion => '現在のバージョン';
+
+  @override
+  String get subscriptionPurchaseComingSoon => 'アプリ内サブスクリプションは近日公開';
+
+  @override
+  String get subscriptionPurchaseExplanation => '現在Plusは購入できません。ストア決済開始後、このページに正式価格、更新条件、購入、購入の復元、サブスクリプション管理を表示します。';
+
+  @override
+  String get subscriptionQuarterlyPayment => '四半期料金';
+
+  @override
+  String get subscriptionQuotaMultiplier => '容量倍率';
+
+  @override
+  String get subscriptionQuotaReached => '現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。';
+
+  @override
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
+    return 'クラウド上限に達しました。$quota 件中 $used 件を使用中で、あと $remaining 件追加できます。古いデータを削除するか、このデバイスへ切り替えるか、Plusへアップグレードしてください。';
+  }
+
+  @override
+  String get subscriptionRenewalRequired => '有料期間が終了しました。更新するか、すべてのクラウドデータをこの端末へ移動するまでクラウドは読み取り専用です。';
+
+  @override
+  String subscriptionUsage(int used, int quota) {
+    return '使用済み $used／$quota';
+  }
+
+  @override
+  String subscriptionValidUntil(String date) {
+    return '有効期限：$date';
+  }
+
+  @override
+  String subscriptionVersionOffer(String version, String date, int price) {
+    return '$version・$date適用・四半期NT\$$price';
+  }
+
+  @override
+  String get vendorContentQuotaReached => '公開枠が上限に達しました。公開中の情報を削除するか、主催者プランをアップグレードしてください。';
+
+  @override
+  String get vendorImageQuotaReached => '画像容量が上限に達しました。画像を削除するか、主催者プランをアップグレードしてください。';
 
   @override
   String vendorPlanActivityQuota(int count) {
@@ -127,167 +1407,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String vendorPlanAnalyticsDays(int count) {
-    return '直近 $count 日間の分析';
-  }
+  String get vendorPricingActiveOnlyNote => '利用枠は終了していない情報のみ数えます。終了済みの情報は公開枠を使用しません。';
 
   @override
-  String get vendorContentQuotaReached => '公開枠が上限に達しました。公開中の情報を削除するか、主催者プランをアップグレードしてください。';
+  String get vendorPricingDescription => '無料で始め、必要に応じて公開件数と分析期間を拡張できます。';
 
   @override
-  String get vendorImageQuotaReached => '画像容量が上限に達しました。画像を削除するか、主催者プランをアップグレードしてください。';
-
-  @override
-  String get vendorAnalyticsDays => '分析日数';
-
-  @override
-  String get vendorPlanFreeName => '無料プラン';
-
-  @override
-  String get vendorPlanPartnerName => 'パートナープラン';
-
-  @override
-  String get vendorPlanGrowthName => '成長プラン';
-
-  @override
-  String get vendorPlanCustomName => 'カスタムプラン';
-
-  @override
-  String get vendorAnalyticsTitle => '効果分析';
-
-  @override
-  String vendorAnalyticsDescription(int days) {
-    return '直近 $days 日間のイベントとスポットへの反応です。';
-  }
-
-  @override
-  String vendorPendingReviewCount(int count) {
-    return '$count 件の投稿が審査待ちです';
-  }
-
-  @override
-  String get vendorPendingReviewHint => '審査状況をここで確認できます。承認後はすべてのユーザーに公開されます。';
-
-  @override
-  String vendorQuotaRemaining(int count, String suffix) {
-    return '残り $count$suffix';
-  }
-
-  @override
-  String get vendorClickThroughRate => '閲覧からクリック';
-
-  @override
-  String get vendorRegistrationRate => 'クリックから申込';
-
-  @override
-  String vendorPositiveActions(int count) {
-    return '保存・いいね $count 件';
-  }
-
-  @override
-  String get vendorNextStepFirstTitle => '最初の情報を公開しましょう';
-
-  @override
-  String get vendorNextStepFirstMessage => '正確な日付、場所、画像、申込リンクを含むイベントから始めましょう。';
-
-  @override
-  String get vendorNextStepReviewTitle => '投稿を審査中です';
-
-  @override
-  String get vendorNextStepReviewMessage => 'ここで結果を確認できます。承認後、予定を立てるすべてのユーザーに公開されます。';
-
-  @override
-  String get vendorNextStepExposureTitle => '第一印象をわかりやすく';
-
-  @override
-  String get vendorNextStepExposureMessage => '明確な名称、カバー画像、都市情報で、見つけやすく理解しやすくなります。';
-
-  @override
-  String get vendorNextStepClickTitle => '閲覧を興味につなげる';
-
-  @override
-  String get vendorNextStepClickMessage => '紹介文、見どころ、画像を改善し、開きたくなる理由を伝えましょう。';
-
-  @override
-  String get vendorNextStepRegistrationTitle => '申込をわかりやすく';
-
-  @override
-  String get vendorNextStepRegistrationMessage => '申込URLが有効で、申込方法と案内が明確か確認してください。';
-
-  @override
-  String get vendorNextStepGrowingTitle => '情報が行動につながっています';
-
-  @override
-  String get vendorNextStepGrowingMessage => '日付と空き状況を更新し、転換率を次の投稿改善に活用しましょう。';
-
-  @override
-  String get vendorAnalyticsPageViews => 'ページ閲覧';
-
-  @override
-  String get vendorAnalyticsCardClicks => 'コンテンツクリック';
-
-  @override
-  String get vendorAnalyticsRegistrationClicks => '申込クリック';
-
-  @override
-  String get vendorAnalyticsSaves => '保存';
-
-  @override
-  String get vendorAnalyticsLikes => 'いいね';
-
-  @override
-  String get vendorAnalyticsDislikes => '低評価';
-
-  @override
-  String vendorQualityProgress(int count, int total) {
-    return '投稿の完成度：$count／$total';
-  }
-
-  @override
-  String get vendorQualityName => 'タイトル';
-
-  @override
-  String get vendorQualityDate => '日付';
-
-  @override
-  String get vendorQualityCity => '都市';
-
-  @override
-  String get vendorQualityLocation => '場所';
-
-  @override
-  String get vendorQualityDescription => '説明';
-
-  @override
-  String get vendorQualityLink => '申込リンク';
-
-  @override
-  String get vendorContentMixTitle => 'コンテンツ概要';
-
-  @override
-  String vendorActivityAttractionMix(int activities, int attractions) {
-    return '有効なイベント $activities 件・観光地 $attractions 件';
-  }
-
-  @override
-  String vendorPublishedPendingMix(int published, int pending) {
-    return '公開 $published 件・審査待ち $pending 件';
-  }
-
-  @override
-  String get vendorRecentSubmissionsTitle => '最近の投稿';
-
-  @override
-  String get vendorRecentSubmissionsEmpty => '投稿はまだありません。最初のイベントまたは観光地を追加してください。';
-
-  @override
-  String get vendorActivityLabel => 'イベント';
-
-  @override
-  String get vendorAttractionLabel => '観光地';
-
-  @override
-  String get vendorUntitledSubmission => '無題の投稿';
+  String get vendorPricingTitle => '主催者向けプラン';
 
   @override
   String get vendorQuotaFullHint => '上限に達しました。アップグレードするか、有効な投稿を削除してください。';
@@ -296,492 +1422,319 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vendorQuotaNearFullHint => '上限が近づいています。次の投稿前にプランをご確認ください。';
 
   @override
-  String get vendorViewPlans => 'プランを見る';
-
-  @override
-  String get vendorAnalyticsEmpty => '公開コンテンツが閲覧・操作されると、ここに効果が表示されます。';
-
-  @override
-  String get vendorRegistrationFreeStart => '無料の主催者プランから開始';
-
-  @override
-  String get vendorRegistrationAnalytics => '同じワークスペースで成果を確認';
-
-  @override
-  String get publishedContentDeleteAdminOnly => '公開済みの情報を削除できるのは管理者のみです。編集して保存すると審査待ちに戻ります。';
-
-  @override
-  String get adminVendorPricingTitle => 'ベンダー料金バージョンを作成';
-
-  @override
-  String get adminVendorPricingSubtitle => '今後の購入は最新の有効バージョンを使用し、既存の権利は購入時の内容を保持します。';
-
-  @override
-  String get adminVendorPricingCreated => '主催者料金バージョンを作成しました。';
-
-  @override
-  String get adminVendorPricingUpdated => '主催者料金バージョンを更新しました。';
-
-  @override
-  String get adminVendorExistingPlans => '既存の料金バージョン';
-
-  @override
-  String get adminPricingUpdate => 'バージョンを更新';
-
-  @override
-  String get adminVendorSubscriptionTitle => '主催者サブスクリプション管理';
-
-  @override
-  String get adminVendorSubscriptionSubtitle => '料金バージョン、利用枠倍率、有効期限を指定します。';
-
-  @override
-  String get adminVendorSubscriptionSaved => '主催者サブスクリプションを保存しました。';
-
-  @override
-  String get recordCategorySalary => '給与';
-
-  @override
-  String get recordCategoryBonus => '賞与';
-
-  @override
-  String get recordCategoryInvestmentIncome => '投資収入';
-
-  @override
-  String get recordCategoryAllowance => '手当';
-
-  @override
-  String get recordCategoryRefund => '返金';
-
-  @override
-  String get recordCategoryOtherIncome => 'その他の収入';
-
-  @override
-  String get languageEnglish => '英語';
-
-  @override
-  String get languageChinese => '中国語';
-
-  @override
-  String get languageJapanese => '日本語';
-
-  @override
-  String get languageKorean => '韓国語';
-
-  @override
-  String feedbackProcessedBy(String name, String time) {
-    return '$name が $time に対応';
+  String vendorQuotaRemaining(int count, String suffix) {
+    return '残り $count$suffix';
   }
 
   @override
-  String relativeStrengthIndex(String value) {
-    return 'RSI：$value';
+  String get weatherClouds => 'くもり';
+
+  @override
+  String get addToSchedule => '旅程に追加する';
+
+  @override
+  String get calendarCancelAllShares => 'すべての共有を停止';
+
+  @override
+  String get calendarCancelSingleShare => 'この予定の共有を停止';
+
+  @override
+  String get calendarInvitationAccept => '承認';
+
+  @override
+  String get calendarInvitationAccepted => '承認済み';
+
+  @override
+  String get calendarInvitationAccountNotFound => 'アカウントが見つかりません。';
+
+  @override
+  String get calendarInvitationDecline => '拒否';
+
+  @override
+  String get calendarInvitationDeclined => '拒否済み';
+
+  @override
+  String get calendarInvitationDuplicate => 'これらの予定はすでにこのアカウントと共有されています。';
+
+  @override
+  String get calendarInvitationEventUnavailable => '選択した予定が存在しないか共有できません。更新して選び直してください。';
+
+  @override
+  String get calendarInvitationFailed => 'カレンダーの招待を更新できませんでした。';
+
+  @override
+  String calendarInvitationFailedWithReason(String reason) {
+    return 'カレンダーの招待を更新できませんでした：$reason';
   }
 
   @override
-  String get gamePassed => 'クリア！';
+  String get calendarInvitationPending => '承認待ち';
 
   @override
-  String get gameFailed => '失敗';
+  String get calendarInvitationRevoke => '共有を停止';
 
   @override
-  String gameScoreValue(num score) {
-    return 'スコア：$score';
+  String get calendarInvitationRevoked => '共有停止';
+
+  @override
+  String get calendarInvitationSelfInvite => '自分のアカウントを招待することはできません。';
+
+  @override
+  String get calendarInvitationSent => '招待を送信しました。';
+
+  @override
+  String get calendarInvitationStateChanged => '招待の状態が変更されました。更新してもう一度操作してください。';
+
+  @override
+  String get calendarInvite => '閲覧者を招待';
+
+  @override
+  String get calendarInviteHint => 'メールをカンマまたは改行で区切って入力';
+
+  @override
+  String get calendarNoShareableEvents => '共有できる予定はありません。';
+
+  @override
+  String get calendarNoSharedEvents => '現在共有中の予定はありません。';
+
+  @override
+  String get calendarReceivedInvitations => '受信した招待';
+
+  @override
+  String get calendarSearchEmail => 'メールアドレス';
+
+  @override
+  String get calendarSearchEvent => '予定';
+
+  @override
+  String get calendarSelectEventRequired => '共有する予定を1件以上選択してください。';
+
+  @override
+  String get calendarSentInvitations => '送信した招待';
+
+  @override
+  String get calendarShareAllEvents => 'すべての予定を共有';
+
+  @override
+  String calendarSharedBy(String account) {
+    return '$account が共有';
   }
 
   @override
-  String get appTitle => '生活ナビゲーション';
+  String get calendarSharedReadOnly => '共有カレンダー・閲覧のみ';
 
   @override
-  String get language => '言語';
+  String get calendarShareEvents => '共有する予定を選択';
 
   @override
-  String get loginRelated => 'loginRelated';
+  String get calendarSharing => '共有カレンダー';
 
   @override
-  String get passwordRecoveryChoiceTitle => '再設定方法を選択';
+  String get calendarSharingUpdated => 'カレンダー共有を更新しました。';
 
   @override
-  String get passwordRecoveryChoiceDescription => '確認メールで自分で再設定するか、管理者にメールで依頼してください。';
+  String get calendarStopReceiving => '表示を停止';
 
   @override
-  String get resetByEmailVerification => '確認メールで再設定';
+  String get eventReminder => 'イベント通知';
 
   @override
-  String get resetByEmailVerificationDescription => '新しいパスワードを設定するための安全なリンクをメールで送信します。';
+  String get eventReminderDesc => '間もなく開始するイベントをお知らせします';
 
   @override
-  String get askAdministrator => '管理者に依頼';
+  String get eventReminderToday => '今日のイベント通知';
 
   @override
-  String get askAdministratorDescription => 'メールアプリで依頼を送信します。管理者が処理後に返信します。';
+  String get pagCalendar => 'pagCalendar';
 
   @override
-  String get adminPasswordHelpSubject => 'Life Pilot パスワード変更依頼';
+  String get reminderOptions => '通知オプション';
 
   @override
-  String adminPasswordHelpBody(String account) {
-    return 'Life Pilot にログインできません。パスワード変更の対応をお願いします。\n\nアカウント：$account\n\n対応後、このメールアドレスに結果をご返信ください。';
+  String get reminderOptions15MinutesBefore => '15分前';
+
+  @override
+  String get reminderOptions30MinutesBefore => '30分前';
+
+  @override
+  String get reminderOptionsDefaultDayBefore8am => '前日の8時';
+
+  @override
+  String get reminderOptionsDefaultSameDay8am => '当日8時';
+
+  @override
+  String get reminderOptionsOneHourBefore => '1時間前';
+
+  @override
+  String get reminderOptionsOneMonthBefore => '1か月前';
+
+  @override
+  String get reminderOptionsOneWeekBefore => '1週間前';
+
+  @override
+  String get reminderOptionsTwoDaysBefore => '2日前';
+
+  @override
+  String get reminderOptionsTwoWeeksBefore => '2週間前';
+
+  @override
+  String get scheduleAlreadyStarted => '予定は開始済みです';
+
+  @override
+  String get scheduleAwaitingReview => '確認待ちの予定';
+
+  @override
+  String scheduleConflictBeforeSave(int count, String details) {
+    return 'この時間は未完了の予定$count件と重複しています：\n$details\nそれでも保存しますか？';
   }
 
   @override
-  String get adminPasswordHelpOpened => 'メールアプリを開きました。内容を確認して送信してください。';
-
-  @override
-  String adminPasswordHelpEmailUnavailable(String email) {
-    return 'メールアプリを開けません。$email にメールしてください。';
+  String scheduleConflictCount(int count) {
+    return '今日・明日に$count件の予定時間が重複しています';
   }
 
   @override
-  String get passwordHelpTitle => 'その他の再設定方法';
-
-  @override
-  String get passwordHelpDescription => '現在のパスワードを忘れた場合は、確認メールで再設定するか、管理者に依頼できます。';
-
-  @override
-  String get login => '  ログイン  ';
-
-  @override
-  String get loginAnonymously => 'ゲストログイン';
-
-  @override
-  String get logout => 'ログアウト';
-
-  @override
-  String get logoutConfirmation => '現在のアカウントからログアウトしますか？';
-
-  @override
-  String get resetPassword => 'パスワード再設定';
-
-  @override
-  String get resetPasswordEmail => 'パスワード再設定メールを送信しました。メールを確認してください。';
-
-  @override
-  String resetPasswordCooldown(int seconds) {
-    return '$seconds秒後に再送信できます';
+  String scheduleConflictToday(int count) {
+    return '今日の予定に時間重複が$count件あります';
   }
 
   @override
-  String get noEmailError => 'メールアドレスを入力してください';
-
-  @override
-  String get invalidEmail => 'メールアドレスの形式が正しくありません';
-
-  @override
-  String get noPasswordError => 'パスワードを入力してください';
-
-  @override
-  String get noRecoverySession => 'システムは有効な「検証用資格情報」を見つけられないか、その資格情報の有効期限が切れています';
-
-  @override
-  String get resetPasswordError => 'パスワードのリセットに失敗しました。もう一度お試しください。';
-
-  @override
-  String get resetPasswordEmailNotFound => '登録されていないメールアドレスです';
-
-  @override
-  String get wrongUserPassword => 'メールかパスワードが正しくありません';
-
-  @override
-  String get emailNotConfirmed => 'メールアドレスが確認されていません';
-
-  @override
-  String get tooManyRequests => '操作が多すぎます。しばらくしてからもう一度お試しください。';
-
-  @override
-  String get emailRateLimitExceeded => '確認メールの送信回数が多すぎます。しばらくしてからもう一度お試しください。';
-
-  @override
-  String get networkError => '接続できません。ネットワークを確認してもう一度お試しください。';
-
-  @override
-  String get email => 'メールアドレス';
-
-  @override
-  String get password => 'パスワード';
-
-  @override
-  String get register => '  登録  ';
-
-  @override
-  String get updatePassword => 'パスワード更新';
-
-  @override
-  String get accountSecurity => 'アカウント保護';
-
-  @override
-  String get currentPassword => '現在のパスワード';
-
-  @override
-  String get newPassword => '新しいパスワード';
-
-  @override
-  String get changePassword => 'パスワード変更';
-
-  @override
-  String get changePasswordSuccessful => 'パスワードを変更しました。';
-
-  @override
-  String get changePasswordFailed => 'パスワードを変更できませんでした。もう一度お試しください。';
-
-  @override
-  String get currentPasswordIncorrect => '現在のパスワードが正しくありません。';
-
-  @override
-  String get passwordMustBeDifferent => '新しいパスワードは現在のパスワードと異なるものにしてください。';
-
-  @override
-  String get passwordDoesNotMeetPolicy => '新しいパスワードがセキュリティ要件を満たしていません。英字、数字、記号を追加してもう一度お試しください。';
-
-  @override
-  String get passwordReauthenticationRequired => 'セキュリティ保護のため、先にメール認証でパスワードを再設定してください。';
-
-  @override
-  String get adminPasswordResetTitle => 'ユーザーのパスワード再設定を支援';
-
-  @override
-  String get adminPasswordResetDescription => '依頼者のアカウントメールを入力して一時パスワードを作成します。ユーザーに返信し、ログイン後すぐに変更するよう案内してください。';
-
-  @override
-  String get adminPasswordResetUserEmail => 'ユーザーのメール';
-
-  @override
-  String get adminPasswordResetSend => '一時パスワードを作成';
-
-  @override
-  String adminTemporaryPasswordCreated(String email) {
-    return '$email の一時パスワードを作成しました。';
+  String scheduleConflictTomorrow(int count) {
+    return '明日の予定に時間重複が$count件あります';
   }
 
   @override
-  String get adminTemporaryPasswordLabel => '一時パスワード';
+  String get scheduleDuplicateConfirmation => 'この項目はすでにカレンダーにあります。もう一度追加しますか？';
 
   @override
-  String get adminTemporaryPasswordInstruction => 'コピーしてユーザーに返信し、ログイン後すぐに「アカウント保護」で変更するよう案内してください。';
+  String get scheduleNeedsReview => '予定は終了しています。完了したか確認してください。';
 
   @override
-  String get adminTemporaryPasswordCopy => '一時パスワードをコピー';
+  String scheduleNeedsReviewCount(int count) {
+    return '確認待ちの予定が$count件あります';
+  }
 
   @override
-  String get adminTemporaryPasswordCopied => '一時パスワードをコピーしました。';
+  String scheduleStartsInHours(int count) {
+    return '$count時間後に開始';
+  }
 
   @override
-  String get adminPasswordResetUserNotFound => 'このメールのユーザーが見つかりません。';
+  String scheduleStartsInMinutes(int count) {
+    return '$count分後に開始';
+  }
 
   @override
-  String get adminPasswordResetFailed => '一時パスワードを作成できませんでした。後でもう一度お試しください。';
+  String get todaySchedule => '本日の予定';
 
   @override
-  String get publishedSubmission => '公開中';
+  String tomorrowScheduleCount(int count) {
+    return '明日の予定：$count件';
+  }
 
   @override
-  String get publishedSubmissionTooltip => 'この情報は公開され、すべてのユーザーが閲覧できます。';
+  String get upcomingSchedule => '今後の予定';
 
   @override
-  String get unpublishedSubmission => '未公開';
+  String viewRemainingSchedules(int count) {
+    return '残り$count件の予定を見る';
+  }
 
   @override
-  String get unpublishedSubmissionTooltip => 'この情報は審査待ちのため、現在は本人と管理者のみ閲覧できます。';
-
-  @override
-  String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
-
-  @override
-  String get questionBank => '問題集';
-
-  @override
-  String get adminQuestionBank => '管理者の問題集';
-
-  @override
-  String get myQuestionBank => '自分の問題集';
-
-  @override
-  String get localQuestionBankOnly => '本体モードでは、この端末の個人問題集のみ使用できます。管理者問題集は利用できません。';
-
-  @override
-  String get addQuestion => '問題を追加';
-
-  @override
-  String get question => '問題';
-
-  @override
-  String get correctAnswer => '正解';
-
-  @override
-  String get categoryLabel => '分類';
-
-  @override
-  String get secondaryCategoryLabel => 'サブ分類';
-
-  @override
-  String get amountLabel => '値';
-
-  @override
-  String get dataExportSummarySheet => 'エクスポート概要';
-
-  @override
-  String get questionGroup => '問題グループ';
-
-  @override
-  String get answerOptions => '回答選択肢';
-
-  @override
-  String get answerOptionsHint => '選択肢はカンマで区切ってください';
-
-  @override
-  String get scrambledWords => '並べ替える単語';
-
-  @override
-  String get speakingText => '読み上げるテキスト';
-
-  @override
-  String get requiredField => '必須項目です';
-
-  @override
-  String get twoOptionsRequired => '回答選択肢を2つ以上入力してください';
-
-  @override
-  String get questionAdded => '問題を自分の問題集に追加しました';
-
-  @override
-  String get grammarQuestionHelp => '一般文法では We are young のような完成した文を入力すると、are が自動的に空欄になります。plural カテゴリーでは head と heads だけを入力します。';
-
-  @override
-  String get sentenceQuestionHelp => 'mother や I love apples のように、完成した単語または正しい文だけを入力してください。並べ替え形式に自動変換されます。';
-
-  @override
-  String get grammarBaseWord => '単語の原形（例：head）';
-
-  @override
-  String get completedGrammarQuestion => '答えを含む完成した問題（例：We are young）';
-
-  @override
-  String get grammarAnswerMustAppear => '空欄を自動作成するため、完成した問題に正解を含めてください。';
-
-  @override
-  String get questionExample => '問題の例';
-
-  @override
-  String get answerExample => '答えの例';
-
-  @override
-  String get sentenceOrWord => '完成した単語または正しい文';
-
-  @override
-  String get customQuestionGroup => '＋新しいカテゴリーを作成';
-
-  @override
-  String get newQuestionGroup => '新しいカテゴリー名';
-
-  @override
-  String get questionGroupLevelNumber => 'カテゴリー末尾の level 数字（空欄は 1）';
-
-  @override
-  String get questionGroupLevelRange => 'level 数字は 1 から 30 の範囲で入力してください。';
-
-  @override
-  String get speakingQuestionHelp => '読み上げる単語または文を入力してください。例：Nice to meet you。';
-
-  @override
-  String get translationQuestionHelp => '問題に原文、正解に翻訳を入力します。同じグループに3問以上作成すると、誤答を2つ生成できます。';
-
-  @override
-  String get japaneseTranslationQuestionHelp => '問題に日本語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
-
-  @override
-  String get koreanTranslationQuestionHelp => '問題に韓国語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
-
-  @override
-  String get wordSearchQuestionHelp => '問題に英単語、正解に意味を入力します。例：apple／りんご。';
-
-  @override
-  String get duplicateQuestion => '同じ問題と答えが選択した問題グループにすでに存在します。';
-
-  @override
-  String get myQuestionBankEmpty => 'このレベルで使用できる問題がありません。先に問題を追加してください。';
-
-  @override
-  String get threeQuestionsRequired => 'このレベルで使用できる問題が、問題集全体で3問以上必要です。';
-
-  @override
-  String get questionBankInsufficient => '選択した問題集には、このレベルで使用できる問題が足りません。';
-
-  @override
-  String get myQuestions => '自分の問題';
-
-  @override
-  String get noMyQuestions => 'このゲームにはまだ問題を追加していません。';
-
-  @override
-  String get questionDeleted => '問題を削除しました';
-
-  @override
-  String get editQuestion => '問題を編集';
-
-  @override
-  String get questionUpdated => '問題を更新しました';
-
-  @override
-  String get back => '戻る';
-
-  @override
-  String get loginError => 'ログイン失敗、もう一度お試しください。';
-
-  @override
-  String get logoutError => 'ログアウト失敗、もう一度お試しください。';
-
-  @override
-  String get registerError => '登録に失敗しました。もう一度お試しください。';
-
-  @override
-  String get emailAlreadyInUse => 'このメールアドレスは既に登録されています。';
-
-  @override
-  String get weakPassword => 'パスワードは8文字以上で入力してください。';
-
-  @override
-  String get unknownError => '不明なエラーです';
-
-  @override
-  String get pageRelated => 'pageRelated';
-
-  @override
-  String get settings => '設定';
-
-  @override
-  String get pageSelectorTooltip => '機能メニュー';
-
-  @override
-  String get userMenuButton => 'ユーザー選択';
-
-  @override
-  String get home => 'ホーム';
-
-  @override
-  String get completeEventTitle => '旅程を完成させてください';
-
-  @override
-  String get completeAndReview => '完了して振り返る';
+  String get attractionAddEdit => '観光地を追加／編集';
 
   @override
   String get completeEventMessage => '完了すると、この旅行は本日のリストから消えます。';
 
   @override
-  String get noInfoAvailable => '利用可能な情報はありません。';
+  String get completeEventTitle => '旅程を完成させてください';
 
   @override
-  String get openMap => 'ナビゲーション';
+  String get eventAdd => 'イベントを追加';
 
   @override
-  String get selectCity => '都市を選択';
+  String get eventAdd1 => 'カレンダーにイベントを追加';
 
   @override
-  String get selectAccount => 'アカウントを選択';
+  String get eventAddEdit => 'イベントの追加／編集';
+
+  @override
+  String get eventAddError => 'このイベントを繰り返して追加しますか';
+
+  @override
+  String get eventAddOk => '✅ イベントを追加しました';
+
+  @override
+  String get eventAddSub => 'サブ項目を追加';
+
+  @override
+  String get eventAlreadyExists => 'このイベントは既に存在します';
+
+  @override
+  String get eventCompleted => '予定を完了しました';
+
+  @override
+  String eventCompletedWithRecords(String items) {
+    return '予定を完了しました：$items';
+  }
+
+  @override
+  String get eventDelete => 'イベントを削除';
+
+  @override
+  String get eventExpense => '支出';
+
+  @override
+  String get eventIncome => '収入';
+
+  @override
+  String get eventRefresh => 'おすすめイベントを更新';
+
+  @override
+  String get eventRefreshFailed => 'おすすめイベントを更新できませんでした。後でもう一度お試しください。';
+
+  @override
+  String get eventRefreshRunning => 'おすすめイベントを更新しています。しばらくしてからご確認ください。';
+
+  @override
+  String get eventRefreshSucceeded => 'おすすめイベントを更新しました。';
+
+  @override
+  String get eventSaved => '✅ イベントを保存しました';
+
+  @override
+  String get eventSaveError => 'イベント名は空にできません';
+
+  @override
+  String get eventSaveFailed => 'イベントを保存できませんでした。しばらくしてからもう一度お試しください';
+
+  @override
+  String eventSessionCount(int count) {
+    return '全$count回';
+  }
+
+  @override
+  String get eventSub => 'サブイベント';
+
+  @override
+  String get findRecommendedEvent => 'イベントを探す';
+
+  @override
+  String get findRecommendedPlace => 'スポットを探す';
+
+  @override
+  String multiDayEvent(int count) {
+    return '連続$count日間';
+  }
+
+  @override
+  String get noEventsToUpload => '❌ アップロードするイベントはありません';
+
+  @override
+  String get pageRecommendEvent => 'pageRecommendEvent';
 
   @override
   String get personalEvent => '個人のイベント';
-
-  @override
-  String get stock => 'ストック';
 
   @override
   String get recommendEvent => 'おすすめイベント';
@@ -796,172 +1749,323 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recommendPlacesZero => '現在、おすすめのスポットはありません';
 
   @override
-  String get memoryTrace => '思い出の回廊';
+  String get vendorActiveActivities => '公開中のイベント';
 
   @override
-  String get memoryTraceZero => 'さあ、思い出を追加しよう！';
+  String get vendorActiveAttractions => '公開中のスポット';
 
   @override
-  String get accountPersonal => '個人的';
+  String vendorActivityAttractionMix(int activities, int attractions) {
+    return '有効なイベント $activities 件・観光地 $attractions 件';
+  }
 
   @override
-  String get accountProject => '旅';
+  String get vendorActivityLabel => 'イベント';
 
   @override
-  String get pointGroup => 'グループ';
+  String get vendorAllActivities => 'すべての投稿';
 
   @override
-  String get stockSelectDate => '株価日付';
+  String get vendorAllShort => '全て';
 
   @override
-  String get statusInProgress => '進行中';
+  String get vendorAnalyticsCardClicks => 'コンテンツクリック';
 
   @override
-  String get statusNotStarted => '未開始';
+  String get vendorAnalyticsDays => '分析日数';
 
   @override
-  String get statusCompleted => '完了';
+  String vendorAnalyticsDescription(int days) {
+    return '直近 $days 日間のイベントとスポットへの反応です。';
+  }
 
   @override
-  String get statusPending => '未処理';
+  String get vendorAnalyticsDislikes => '低評価';
 
   @override
-  String get noData => 'データがありません';
+  String get vendorAnalyticsEmpty => '公開コンテンツが閲覧・操作されると、ここに効果が表示されます。';
 
   @override
-  String get accountMaster => 'グループ';
+  String get vendorAnalyticsLikes => 'いいね';
 
   @override
-  String get accountRecords => '収支記録';
+  String get vendorAnalyticsPageViews => 'ページ閲覧';
 
   @override
-  String get todayIncomeExpense => '本日の収支';
+  String get vendorAnalyticsRegistrationClicks => '申込クリック';
 
   @override
-  String get todayPoints => '今日のポイント';
+  String get vendorAnalyticsSaves => '保存';
 
   @override
-  String get totalAmount => '合計金額';
+  String get vendorAnalyticsTitle => '効果分析';
 
   @override
-  String get totalPoints => '合計ポイント';
+  String get vendorAttractionLabel => '観光地';
 
   @override
-  String get pointsRecord => 'ポイント記録';
+  String get vendorAttractionSubmissionGuideTitle => '観光地を見つけてもらう';
 
   @override
-  String get game => 'ゲーム';
+  String get vendorClickThroughRate => '閲覧からクリック';
 
   @override
-  String get gameStart => '開始';
+  String get vendorContentMixTitle => 'コンテンツ概要';
 
   @override
-  String get gameNoRecords => 'ゲーム記録はありません';
+  String get vendorCreateAccountAction => 'アカウントを作成して投稿';
 
   @override
-  String get gameLevel => 'レベル';
+  String get vendorCreateAccountDescription => 'アカウントを作成してイベントを投稿し、審査状況の確認や公開情報の更新ができます。';
 
   @override
-  String get gameScore => 'スコア';
+  String get vendorCreateAccountTitle => 'イベント主催者ですか？';
 
   @override
-  String get ai => 'AIアシスタント';
+  String get vendorDashboardLoadFailed => '主催者情報を読み込めませんでした。';
 
   @override
-  String get feedback => 'フィードバック';
+  String get vendorDashboardSubtitle => '投稿と審査状況を管理し、現在の利用枠を確認できます。';
 
   @override
-  String get businessPlan => 'ビジネスプラン';
+  String get vendorDashboardTitle => '主催者ワークスペース';
 
   @override
-  String get pageRecommendEvent => 'pageRecommendEvent';
+  String get vendorManageActivities => 'イベントを管理';
 
   @override
-  String get search => '検索';
+  String get vendorManageAttractions => 'スポットを管理';
 
   @override
-  String get recordSearchHint => '説明またはサブカテゴリを検索';
+  String get vendorMineShort => '自分';
 
   @override
-  String get recordAllCategories => 'すべてのカテゴリ';
+  String get vendorMySubmissions => '自分の投稿';
 
   @override
-  String get recordNetChange => '差引変動';
+  String get vendorNextStepClickMessage => '紹介文、見どころ、画像を改善し、開きたくなる理由を伝えましょう。';
 
   @override
-  String get moreActions => 'その他';
+  String get vendorNextStepClickTitle => '閲覧を興味につなげる';
 
   @override
-  String get toggleView => '表示切り替え';
+  String get vendorNextStepExposureMessage => '明確な名称、カバー画像、都市情報で、見つけやすく理解しやすくなります。';
 
   @override
-  String get exportExcel => 'Excelにエクスポート';
+  String get vendorNextStepExposureTitle => '第一印象をわかりやすく';
 
   @override
-  String get eventAdd => 'イベントを追加';
+  String get vendorNextStepFirstMessage => '正確な日付、場所、画像、申込リンクを含むイベントから始めましょう。';
 
   @override
-  String get eventAdd1 => 'カレンダーにイベントを追加';
+  String get vendorNextStepFirstTitle => '最初の情報を公開しましょう';
 
   @override
-  String get eventAddOk => '✅ イベントを追加しました';
+  String get vendorNextStepGrowingMessage => '日付と空き状況を更新し、転換率を次の投稿改善に活用しましょう。';
 
   @override
-  String get eventAddError => 'このイベントを繰り返して追加しますか';
+  String get vendorNextStepGrowingTitle => '情報が行動につながっています';
 
   @override
-  String get memoryAdd => '思い出を追加';
+  String get vendorNextStepRegistrationMessage => '申込URLが有効で、申込方法と案内が明確か確認してください。';
 
   @override
-  String get memoryAddOk => '✅ 思い出が追加されました';
+  String get vendorNextStepRegistrationTitle => '申込をわかりやすく';
 
   @override
-  String get memoryAddError => 'もう一度思い出を追加しますか';
+  String get vendorNextStepReviewMessage => 'ここで結果を確認できます。承認後、予定を立てるすべてのユーザーに公開されます。';
 
   @override
-  String get uploadExcel => 'Csv にアップロード';
+  String get vendorNextStepReviewTitle => '投稿を審査中です';
 
   @override
-  String get uploadFailed => '❌ アップロードに失敗しました';
+  String vendorPendingReviewCount(int count) {
+    return '$count 件の投稿が審査待ちです';
+  }
 
   @override
-  String get uploadInProgress => '❌ 前回のファイルのアップロードはまだ進行中です。';
+  String get vendorPendingReviewHint => '審査状況をここで確認できます。承認後はすべてのユーザーに公開されます。';
 
   @override
-  String get uploadSuccess => '✅ アップロード成功';
+  String vendorPositiveActions(int count) {
+    return '保存・いいね $count 件';
+  }
 
   @override
-  String get notSupportUpload => '⚠️ アップロードはサポートされていません';
+  String vendorPublishedPendingMix(int published, int pending) {
+    return '公開 $published 件・審査待ち $pending 件';
+  }
 
   @override
-  String get noEventsToUpload => '❌ アップロードするイベントはありません';
+  String get vendorQualityCity => '都市';
 
   @override
-  String get noEventsToExport => '❌ エクスポートするイベントがありません';
+  String get vendorQualityDate => '日付';
 
   @override
-  String get exportFailed => '❌ エクスポート失敗';
+  String get vendorQualityDescription => '説明';
 
   @override
-  String get exportInProgress => '❌ 以前のファイルのエクスポートはまだ進行中です。';
+  String get vendorQualityLink => '申込リンク';
 
   @override
-  String get exportSuccess => '✅ エクスポート成功';
+  String get vendorQualityLocation => '場所';
 
   @override
-  String get notSupportExport => '⚠️ このプラットフォームではエクスポート非対応です';
+  String get vendorQualityName => 'タイトル';
 
   @override
-  String get excelColumnHeaderId => 'アクティビティ id_______________________';
+  String vendorQualityProgress(int count, int total) {
+    return '投稿の完成度：$count／$total';
+  }
 
   @override
-  String get excelColumnHeaderMasterUrl => 'アクティビティ url_______________________';
+  String vendorQuarterlyPrice(int price) {
+    return '四半期 NT\$$price';
+  }
 
   @override
-  String get excelColumnHeaderActivityName => 'アクティビティ名_______________________';
+  String get vendorRecentSubmissionsEmpty => '投稿はまだありません。最初のイベントまたは観光地を追加してください。';
 
   @override
-  String get excelColumnHeaderKeywords => 'キーワード_______________________';
+  String get vendorRecentSubmissionsTitle => '最近の投稿';
+
+  @override
+  String get vendorRegistrationAnalytics => '同じワークスペースで成果を確認';
+
+  @override
+  String get vendorRegistrationDescription => 'イベント、スポット、審査状況を管理する主催者ワークスペースを利用します。';
+
+  @override
+  String get vendorRegistrationFreeStart => '無料の主催者プランから開始';
+
+  @override
+  String get vendorRegistrationRate => 'クリックから申込';
+
+  @override
+  String get vendorRegistrationTitle => '主催者アカウント';
+
+  @override
+  String get vendorSubmissionBenefitManage => '自分で情報を管理';
+
+  @override
+  String get vendorSubmissionBenefitReach => '計画中の人に届ける';
+
+  @override
+  String get vendorSubmissionBenefitReview => '審査状況が明確';
+
+  @override
+  String get vendorSubmissionDescription => '予定を計画しているユーザーにイベントやスポットを届け、公開後も投稿者が管理できます。';
+
+  @override
+  String get vendorSubmissionGuideDescription => '正確な日付、会場、主催者、申込URLを入力してください。審査後に公開され、修正すると再審査となります。';
+
+  @override
+  String get vendorSubmissionGuideTitle => 'イベントを見つけてもらう';
+
+  @override
+  String get vendorSubmissionTitle => '投稿センター';
+
+  @override
+  String get vendorSubmitActivity => 'イベントを投稿';
+
+  @override
+  String get vendorSubmitAttraction => '観光地を投稿';
+
+  @override
+  String get vendorSubmitShort => '投稿';
+
+  @override
+  String get vendorUntitledSubmission => '無題の投稿';
+
+  @override
+  String viewRemainingRecommendations(int count) {
+    return '残り$count件のおすすめを見る';
+  }
+
+  @override
+  String get weekendEvent => '週末イベント';
+
+  @override
+  String get city => '市区町村';
+
+  @override
+  String get country => '国';
+
+  @override
+  String get countryAustralia => 'オーストラリア';
+
+  @override
+  String get countryCanada => 'カナダ';
+
+  @override
+  String get countryChina => '中国';
+
+  @override
+  String get countryFrance => 'フランス';
+
+  @override
+  String get countryGermany => 'ドイツ';
+
+  @override
+  String get countryHongKong => '香港';
+
+  @override
+  String get countryIndia => 'インド';
+
+  @override
+  String get countryIndonesia => 'インドネシア';
+
+  @override
+  String get countryItaly => 'イタリア';
+
+  @override
+  String get countryJapan => '日本';
+
+  @override
+  String get countryMacau => 'マカオ';
+
+  @override
+  String get countryMalaysia => 'マレーシア';
+
+  @override
+  String get countryNetherlands => 'オランダ';
+
+  @override
+  String get countryNewZealand => 'ニュージーランド';
+
+  @override
+  String get countryPhilippines => 'フィリピン';
+
+  @override
+  String get countrySingapore => 'シンガポール';
+
+  @override
+  String get countrySouthKorea => '韓国';
+
+  @override
+  String get countrySpain => 'スペイン';
+
+  @override
+  String get countrySwitzerland => 'スイス';
+
+  @override
+  String get countryTaiwan => '台湾';
+
+  @override
+  String get countryThailand => 'タイ';
+
+  @override
+  String get countryUnitedArabEmirates => 'アラブ首長国連邦';
+
+  @override
+  String get countryUnitedKingdom => 'イギリス';
+
+  @override
+  String get countryUnitedStates => 'アメリカ';
+
+  @override
+  String get countryVietnam => 'ベトナム';
 
   @override
   String get excelColumnHeaderCity => '市区町村';
@@ -970,799 +2074,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get excelColumnHeaderLocation => '場所____________________';
 
   @override
-  String get excelColumnHeaderFee => '料金';
-
-  @override
-  String get excelColumnHeaderStartDate => '開始日期__';
-
-  @override
-  String get excelColumnHeaderStartTime => '開始時間';
-
-  @override
-  String get excelColumnHeaderEndDate => '終了日__';
-
-  @override
-  String get excelColumnHeaderEndTime => '終了時間';
-
-  @override
-  String get excelColumnHeaderDescription => '説明______';
-
-  @override
-  String get excelColumnHeaderSponsor => '主催者';
-
-  @override
-  String get excelColumnHeaderAgeMin => '最低年齢';
-
-  @override
-  String get excelColumnHeaderAgeMax => '最大年齢';
-
-  @override
-  String get excelColumnHeaderIsFree => '無料 ?';
-
-  @override
-  String get excelColumnHeaderPriceMin => '最低価格';
-
-  @override
-  String get excelColumnHeaderPriceMax => '最高価格';
-
-  @override
-  String get excelColumnHeaderIsOutdoor => '屋外 ?';
-
-  @override
-  String get downloaded => '✅ ダウンロード済み';
-
-  @override
-  String get activityName => 'アクティビティ名';
-
-  @override
-  String get keywords => 'キーワード';
-
-  @override
-  String get city => '市区町村';
-
-  @override
   String get location => '場所';
-
-  @override
-  String get fee => '料金';
-
-  @override
-  String get startDate => '開始日';
-
-  @override
-  String get startTime => '開始時間';
-
-  @override
-  String get businessHours => '営業時間';
-
-  @override
-  String get endDate => '終了日';
-
-  @override
-  String get endTime => '終了時間';
-
-  @override
-  String get description => '説明';
-
-  @override
-  String get sponsor => '主催者';
-
-  @override
-  String get ageMin => '最低年齢';
-
-  @override
-  String get ageMax => '最大年齢';
-
-  @override
-  String get priceMin => '最低価格';
-
-  @override
-  String get priceMax => '最高価格';
-
-  @override
-  String get isFree => '無料 ？';
-
-  @override
-  String get isOutdoor => '屋外 ?';
-
-  @override
-  String get toBeDetermined => '未定';
-
-  @override
-  String get free => '無料';
-
-  @override
-  String get pay => '支払う';
-
-  @override
-  String get outdoor => '屋外';
-
-  @override
-  String get indoor => '屋内';
-
-  @override
-  String get masterUrl => 'リンク';
-
-  @override
-  String get subUrl => 'リンク';
-
-  @override
-  String get eventSaved => '✅ イベントを保存しました';
-
-  @override
-  String get eventSaveError => 'イベント名は空にできません';
-
-  @override
-  String get eventAlreadyExists => 'このイベントは既に存在します';
-
-  @override
-  String get eventSaveFailed => 'イベントを保存できませんでした。しばらくしてからもう一度お試しください';
-
-  @override
-  String get dashboardLoadFailed => '情報を読み込めませんでした。しばらくしてからもう一度お試しください';
-
-  @override
-  String get retry => '再試行';
-
-  @override
-  String get externalLinkOpenFailed => 'リンクを開けませんでした。しばらくしてからもう一度お試しください';
-
-  @override
-  String get dashboardSettingSaveFailed => '設定を保存できませんでした。しばらくしてからもう一度お試しください';
-
-  @override
-  String get accountListLoadFailed => 'アカウント一覧を読み込めませんでした。しばらくしてからもう一度お試しください';
-
-  @override
-  String get accountListEmpty => 'アカウントがまだ作成されていません。作成してから選択してください。';
-
-  @override
-  String get unsavedChangesPrompt => '変更が保存されていません。破棄しますか？';
-
-  @override
-  String get discardChanges => '変更を破棄';
-
-  @override
-  String get eventAddEdit => 'イベントの追加／編集';
-
-  @override
-  String get eventAddSub => 'サブ項目を追加';
-
-  @override
-  String get eventSub => 'サブイベント';
-
-  @override
-  String get save => '保存';
-
-  @override
-  String get searchKeywords => 'キーワード検索（カンマ区切り）';
-
-  @override
-  String get dateClear => '日付をクリア';
-
-  @override
-  String get add => '追加';
-
-  @override
-  String get edit => '編集';
-
-  @override
-  String get review => 'レビュー';
-
-  @override
-  String get cancel => 'キャンセル';
-
-  @override
-  String get delete => '削除';
-
-  @override
-  String get like => '好き';
-
-  @override
-  String get dislike => '嫌い';
-
-  @override
-  String get eventDelete => 'イベントを削除';
-
-  @override
-  String get deleteOk => '✅ 削除完了';
-
-  @override
-  String get deleteError => '削除失敗';
-
-  @override
-  String get todaySchedule => '本日の予定';
-
-  @override
-  String get upcomingSchedule => '今後の予定';
-
-  @override
-  String get homeJourneyReviewHint => '予定の完了時に、思い出・収支・ポイントをまとめて記録できます';
-
-  @override
-  String get todayLifeOverview => '今日の生活サマリー';
-
-  @override
-  String get todayLifeOverviewHint => '予定・収支・ポイントをまとめて確認できます。項目をタップして詳細を表示します。';
-
-  @override
-  String get homeInsightDiscover => '今日の予定はまだありません。気になるイベントやスポットから始めましょう。';
-
-  @override
-  String get homeInsightConnectAccounts => '収支とポイントのアカウントを選ぶと、予定の完了時にまとめて振り返れます。';
-
-  @override
-  String get homeInsightReadyForReview => '今日の予定は思い出・収支・ポイントと連携され、まとめて振り返れます。';
-
-  @override
-  String get quickAddAccounting => 'かんたん収支記録';
-
-  @override
-  String get quickAddPoints => 'かんたんポイント記録';
-
-  @override
-  String get findRecommendedEvent => 'イベントを探す';
-
-  @override
-  String get findRecommendedPlace => 'スポットを探す';
-
-  @override
-  String get startsToday => '今日開始';
-
-  @override
-  String get alreadyStarted => '開始済み';
-
-  @override
-  String get startsTomorrow => '明日開始';
-
-  @override
-  String startsInDays(int count) {
-    return '$count日後に開始';
-  }
-
-  @override
-  String eventSessionCount(int count) {
-    return '全$count回';
-  }
-
-  @override
-  String memoryCountForDay(int count) {
-    return '思い出$count件';
-  }
-
-  @override
-  String gameProgressSummary(int passed, int total) {
-    return '$totalステージ中$passedステージクリア';
-  }
-
-  @override
-  String gameRecentBestScore(String score) {
-    return '最近の最高 $score';
-  }
-
-  @override
-  String get addToSchedule => '旅程に追加する';
-
-  @override
-  String get scheduleDuplicateConfirmation => 'この項目はすでにカレンダーにあります。もう一度追加しますか？';
-
-  @override
-  String get clickHereToSeeMore => 'もっと見る';
-
-  @override
-  String get close => '閉じる';
-
-  @override
-  String get weatherForecast => '天気予報';
-
-  @override
-  String get weatherTemperature => '気温';
-
-  @override
-  String get weatherMinimum => '最低';
-
-  @override
-  String get weatherMaximum => '最高';
-
-  @override
-  String get weatherThunderstorm => '雷雨';
-
-  @override
-  String get weatherDrizzle => '霧雨';
-
-  @override
-  String get weatherRain => '雨';
-
-  @override
-  String get weatherSnow => '雪';
-
-  @override
-  String get weatherMist => '霧';
-
-  @override
-  String get weatherClear => '晴れ';
-
-  @override
-  String get weatherClouds => 'くもり';
-
-  @override
-  String get url => 'URL';
-
-  @override
-  String get speak => '音声入力';
-
-  @override
-  String get speakUp => '話してください';
-
-  @override
-  String get pagCalendar => 'pagCalendar';
-
-  @override
-  String get weekDaySun => '日';
-
-  @override
-  String get weekDayMon => '月';
-
-  @override
-  String get weekDayTue => '火';
-
-  @override
-  String get weekDayWed => '水';
-
-  @override
-  String get weekDayThu => '木';
-
-  @override
-  String get weekDayFri => '金';
-
-  @override
-  String get weekDaySat => '土';
-
-  @override
-  String get year => '年';
-
-  @override
-  String get month => '月';
-
-  @override
-  String get confirm => '確定';
-
-  @override
-  String get confirmDelete => '削除しますか';
-
-  @override
-  String get setAlarm => 'アラーム設定';
-
-  @override
-  String get cancelAlarm => 'アラームキャンセル';
-
-  @override
-  String get setAlarmCompleted => '✅ アラームを設定しました';
-
-  @override
-  String get alarmUpdateFailed => 'リマインダーを設定できませんでした。しばらくしてからもう一度お試しください';
-
-  @override
-  String get previousMonth => '先月';
-
-  @override
-  String get today => '今日';
-
-  @override
-  String get nextMonth => '来月';
-
-  @override
-  String get postText => '全文を掲載してください';
-
-  @override
-  String get parsing => '解析する';
-
-  @override
-  String get clear => 'クリア';
-
-  @override
-  String get repeatOptions => '繰り返し回数';
-
-  @override
-  String get repeatOptionsOnce => '一度だけ';
-
-  @override
-  String get repeatOptionsEveryDay => '毎日';
-
-  @override
-  String get repeatOptionsEveryWeek => '每週';
-
-  @override
-  String get repeatOptionsEveryTwoWeeks => '2週間ごと';
-
-  @override
-  String get repeatOptionsEveryMonth => '每月';
-
-  @override
-  String get repeatOptionsEveryTwoMonths => '2か月ごと';
-
-  @override
-  String get repeatOptionsEveryYear => '每年';
-
-  @override
-  String get repeatOptionsEvery => '每';
-
-  @override
-  String get reminderOptions => '通知オプション';
-
-  @override
-  String get reminderOptions15MinutesBefore => '15分前';
-
-  @override
-  String get reminderOptions30MinutesBefore => '30分前';
-
-  @override
-  String get reminderOptionsOneHourBefore => '1時間前';
-
-  @override
-  String get reminderOptionsDefaultSameDay8am => '当日8時';
-
-  @override
-  String get reminderOptionsDefaultDayBefore8am => '前日の8時';
-
-  @override
-  String get reminderOptionsTwoDaysBefore => '2日前';
-
-  @override
-  String get reminderOptionsOneWeekBefore => '1週間前';
-
-  @override
-  String get reminderOptionsTwoWeeksBefore => '2週間前';
-
-  @override
-  String get reminderOptionsOneMonthBefore => '1か月前';
-
-  @override
-  String get eventReminder => 'イベント通知';
-
-  @override
-  String get eventReminderToday => '今日のイベント通知';
-
-  @override
-  String get eventReminderDesc => '間もなく開始するイベントをお知らせします';
-
-  @override
-  String get privacyPolicy => 'プライバシーポリシー';
-
-  @override
-  String get termsOfService => '利用規約';
-
-  @override
-  String get requestAccountDeletion => 'アカウント削除を申請';
-
-  @override
-  String get accountDeletionRequestDescription => '申請は管理者に送られ、管理者が承認した後にアカウントとデータが削除されます。';
-
-  @override
-  String get continueLabel => '続行';
-
-  @override
-  String get accountDeletionEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
-
-  @override
-  String get requestDataExport => '個人データのエクスポートを申請';
-
-  @override
-  String get dataExportRequestDescription => 'クラウドと端末の個人データをExcelファイルとして直接ダウンロードします。';
-
-  @override
-  String get dataExportIncludedPages => 'ダウンロード内容：カレンダー、思い出、支出、ポイント。';
-
-  @override
-  String get dataExportEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
-
-  @override
-  String get accountDeletionCompleted => '削除申請を管理者に送信しました。';
-
-  @override
-  String accountDeletionFailed(Object message) {
-    return 'アカウントの削除に失敗しました: $message';
-  }
-
-  @override
-  String get accountDeletionCloudOnly => 'アカウント削除の申請はクラウドモードでのみ利用できます。先に保存先をクラウドに切り替えてください。';
-
-  @override
-  String get accountDeletionPending => '申請中';
-
-  @override
-  String get accountDeletionPendingDescription => 'アカウント削除申請は管理者の確認待ちです。削除を取りやめる場合は、申請の取消を依頼できます。';
-
-  @override
-  String get accountDeletionCancelRequest => '申請を取り消す';
-
-  @override
-  String get accountDeletionCancellationSubmitted => '取消申請を送信しました。管理者の確認待ちです。';
-
-  @override
-  String get accountDeletionCancellationPending => '取消申請は管理者の確認待ちです。';
-
-  @override
-  String get adminAccountDeletionCancellationRequested => 'ユーザーがアカウント削除の取消を申請しました。';
-
-  @override
-  String get adminAccountDeletionConfirmCancellation => '取消を確認';
-
-  @override
-  String get adminAccountDeletionCancellationConfirmed => '取消を確認し、元の削除申請を削除しました。';
-
-  @override
-  String get adminAccountDeletionCompleted => 'アカウントと関連データを削除しました。';
-
-  @override
-  String dataExportCompleted(Object path) {
-    return 'データを出力しました: $path';
-  }
-
-  @override
-  String dataExportFailed(Object message) {
-    return 'データの出力に失敗しました: $message';
-  }
-
-  @override
-  String get agreeToLegalTermsPrefix => '次の内容を読み、同意します：';
-
-  @override
-  String get acceptLegalTermsRequired => '登録する前に、プライバシーポリシーと利用規約に同意してください。';
-
-  @override
-  String get legalTermsConnector => 'と';
-
-  @override
-  String get accountMenuDataExport => 'データを出力';
-
-  @override
-  String get accountMenuAccountDeletion => 'アカウントを削除';
-
-  @override
-  String get readLegalTermsRequired => '同意する前に、プライバシーポリシーと利用規約を最後までお読みください。';
-
-  @override
-  String get legalDocumentReadComplete => '閲覧が完了しました';
-
-  @override
-  String get legalDocumentRead => '閲覧済み';
-
-  @override
-  String get registrationSuccessful => '登録が完了しました。';
-
-  @override
-  String get registrationVerificationRequired => '登録が完了しました。メール認証後にログインしてください。';
-
-  @override
-  String get confirmPassword => 'パスワードを確認';
-
-  @override
-  String get passwordMismatch => 'パスワードが一致しません。';
-
-  @override
-  String get showPassword => 'パスワードを表示';
-
-  @override
-  String get hidePassword => 'パスワードを非表示';
-
-  @override
-  String get passwordUpdateSuccessful => 'パスワードを更新しました。新しいパスワードでログインしてください。';
-
-  @override
-  String get stockUpdateInProgress => '株式データとモデルを更新しています。完了後、新しい結果が自動的に表示されます。';
-
-  @override
-  String get stockUpdateSucceeded => '株式データとモデルの更新が完了しました。';
-
-  @override
-  String get stockUpdateFailed => '株式データの更新に失敗しました。前回利用可能なデータを表示しています。';
-
-  @override
-  String get stockNoData => '現在表示できる株式データはありません。';
-
-  @override
-  String get stockLoadFailed => '株式データを読み込めませんでした。もう一度お試しください。';
-
-  @override
-  String get stockRetry => '最新データを読み込む';
-
-  @override
-  String get stockDashboardTitle => '📊 市場ダッシュボード';
-
-  @override
-  String get stockForeignBuy => '外国人投資家買い越しランキング';
-
-  @override
-  String get stockForeignSell => '外国人投資家売り越しランキング';
-
-  @override
-  String get stockThousandLots => '千ロット';
-
-  @override
-  String stockClosingPrice(String value) {
-    return '終値：$value';
-  }
-
-  @override
-  String stockTradingVolume(String value) {
-    return '出来高：$valueロット';
-  }
-
-  @override
-  String get editRecord => '明細を編集';
-
-  @override
-  String get manualEntry => '手動追加';
-
-  @override
-  String get recordDate => '日付';
-
-  @override
-  String get recordTime => '時刻';
-
-  @override
-  String get recordValue => '値';
-
-  @override
-  String get recordPrimaryCategory => 'カテゴリ';
-
-  @override
-  String get recordSecondaryCategory => 'サブカテゴリ（任意）';
-
-  @override
-  String get recordCategoryUncategorized => '未分類';
-
-  @override
-  String get recordCategoryReserved => '保持項目';
-
-  @override
-  String get recordCategoryFood => '食費';
-
-  @override
-  String get recordCategoryClothing => '衣類';
-
-  @override
-  String get recordCategoryHousing => '住居';
-
-  @override
-  String get recordCategoryTransportation => '交通';
-
-  @override
-  String get recordCategoryEducation => '教育';
-
-  @override
-  String get recordCategoryEntertainment => '娯楽';
-
-  @override
-  String get recordCategoryVirtue => '徳育';
-
-  @override
-  String get recordCategoryIntelligence => '知育';
-
-  @override
-  String get recordCategoryFitness => '体育';
-
-  @override
-  String get recordCategorySocial => '群育';
-
-  @override
-  String get recordCategoryArts => '美育';
-
-  @override
-  String get recordTotal => '合計';
-
-  @override
-  String get recordPleaseConfirm => '確認してください';
-
-  @override
-  String get recordSubmit => '送信';
-
-  @override
-  String get accountNew => '新しいアカウント';
-
-  @override
-  String get accountName => 'アカウント名';
-
-  @override
-  String get accountCreate => '作成';
-
-  @override
-  String get accountDefault => 'デフォルト';
-
-  @override
-  String get accountAlreadyExists => 'アカウントはすでに存在します';
-
-  @override
-  String accountDeleteConfirmation(String name) {
-    return '$name を削除しますか？';
-  }
-
-  @override
-  String get accountSetMainCurrency => '基準通貨を設定';
-
-  @override
-  String get accountSwitchCurrency => '通貨を切り替え';
-
-  @override
-  String get currencyLabel => '通貨単位';
-
-  @override
-  String get accountingSpeechHint => '例：金額を追加／減算';
-
-  @override
-  String get pointsSpeechHint => '例：ポイントを追加／減算';
-
-  @override
-  String get accountingUnit => '円';
-
-  @override
-  String get pointsUnit => 'ポイント';
-
-  @override
-  String get eventIncome => '収入';
-
-  @override
-  String get eventExpense => '支出';
-
-  @override
-  String get eventPointIncrease => '加点';
-
-  @override
-  String get eventPointDecrease => '減点';
-
-  @override
-  String get eventCompleted => '予定を完了しました';
-
-  @override
-  String eventCompletedWithRecords(String items) {
-    return '予定を完了しました：$items';
-  }
-
-  @override
-  String get eventMemory => '思い出';
-
-  @override
-  String get eventRefresh => 'おすすめイベントを更新';
-
-  @override
-  String get eventRefreshSucceeded => 'おすすめイベントを更新しました。';
-
-  @override
-  String get eventRefreshFailed => 'おすすめイベントを更新できませんでした。後でもう一度お試しください。';
-
-  @override
-  String get eventRefreshRunning => 'おすすめイベントを更新しています。しばらくしてからご確認ください。';
-
-  @override
-  String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。代わりに無効化できます。';
-
-  @override
-  String get questionStatus => '問題の状態';
-
-  @override
-  String get allQuestionStatuses => 'すべての状態';
-
-  @override
-  String get activeQuestion => '使用中';
-
-  @override
-  String get inactiveQuestion => '無効';
-
-  @override
-  String get deactivateQuestion => '問題を無効化';
-
-  @override
-  String get reactivateQuestion => '問題を再有効化';
-
-  @override
-  String get questionDeactivated => '問題を無効化しました。';
-
-  @override
-  String get questionReactivated => '問題を再有効化しました。';
-
-  @override
-  String get questionStatusUpdateFailed => '問題の状態を更新できませんでした。もう一度お試しください。';
 
   @override
   String get mapCoordinateBackfill => '地図座標を補完';
@@ -1776,606 +2088,59 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get calendarSharing => '共有カレンダー';
+  String get openMap => 'ナビゲーション';
 
   @override
-  String get calendarInvite => '閲覧者を招待';
+  String get selectCity => '都市を選択';
 
   @override
-  String get calendarInviteHint => 'メールをカンマまたは改行で区切って入力';
+  String get switchToMap => '地図に切り替え';
 
   @override
-  String get calendarSentInvitations => '送信した招待';
+  String get weatherClear => '晴れ';
 
   @override
-  String get calendarReceivedInvitations => '受信した招待';
+  String get weatherDrizzle => '霧雨';
 
   @override
-  String get calendarInvitationPending => '承認待ち';
+  String get weatherForecast => '天気予報';
 
   @override
-  String get calendarInvitationAccepted => '承認済み';
+  String get weatherMaximum => '最高';
 
   @override
-  String get calendarInvitationDeclined => '拒否済み';
+  String get weatherMinimum => '最低';
 
   @override
-  String get calendarInvitationRevoked => '共有停止';
+  String get weatherMist => '霧';
 
   @override
-  String get calendarInvitationAccept => '承認';
+  String get weatherRain => '雨';
 
   @override
-  String get calendarInvitationDecline => '拒否';
+  String get weatherSnow => '雪';
 
   @override
-  String get calendarInvitationRevoke => '共有を停止';
+  String get weatherTemperature => '気温';
 
   @override
-  String get calendarInvitationSent => '招待を送信しました。';
+  String get weatherThunderstorm => '雷雨';
 
   @override
-  String get calendarSharingUpdated => 'カレンダー共有を更新しました。';
+  String get eventMemory => '思い出';
 
   @override
-  String get calendarInvitationFailed => 'カレンダーの招待を更新できませんでした。';
+  String get memoryAdd => '思い出を追加';
 
   @override
-  String get calendarInvitationQuotaExceeded => 'カレンダー共有の上限に達しました。既存の共有を削除するか、プランを変更してください。';
+  String get memoryAddError => 'もう一度思い出を追加しますか';
 
   @override
-  String get calendarInvitationDuplicate => 'これらの予定はすでにこのアカウントと共有されています。';
+  String get memoryAddOk => '✅ 思い出が追加されました';
 
   @override
-  String get calendarInvitationAccountNotFound => 'アカウントが見つかりません。';
-
-  @override
-  String get calendarInvitationSelfInvite => '自分のアカウントを招待することはできません。';
-
-  @override
-  String get calendarInvitationEventUnavailable => '選択した予定が存在しないか共有できません。更新して選び直してください。';
-
-  @override
-  String get calendarInvitationStateChanged => '招待の状態が変更されました。更新してもう一度操作してください。';
-
-  @override
-  String calendarInvitationFailedWithReason(String reason) {
-    return 'カレンダーの招待を更新できませんでした：$reason';
-  }
-
-  @override
-  String get adminSubscriptionExtended => '購読期間を90日延長しました。';
-
-  @override
-  String get adminSubscriptionExtend90Days => '90日延長';
-
-  @override
-  String get adminSubscriptionExtensionDays => '延長日数';
-
-  @override
-  String get adminSubscriptionExtend => '延長';
-
-  @override
-  String get adminSubscriptionLookupRequired => '先にデータを検索してください。';
-
-  @override
-  String get adminSubscriptionNotFound => '購読データが見つかりません';
-
-  @override
-  String get adminSubscriptionNotFoundCreate => 'このユーザーの新しい購読を作成できます。';
-
-  @override
-  String get adminSubscriptionUserNotFound => 'ユーザーアカウントが見つかりません';
-
-  @override
-  String get adminSubscriptionLoadedForEditing => '現在の購読を読み込みました。編集して保存できます。';
-
-  @override
-  String get adminSubscriptionDeleteTitle => '購読設定を削除';
-
-  @override
-  String adminSubscriptionDeleteConfirmation(String email) {
-    return '$email の購読と上限設定を削除しますか？ユーザーデータは削除されません。';
-  }
-
-  @override
-  String get adminSubscriptionDeleted => '購読と上限設定を削除しました。';
-
-  @override
-  String get adminSubscriptionEntitlements => '作成済みの上限';
-
-  @override
-  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
-    return 'この $version 上限だけを削除しますか？他の上限とユーザーデータは保持されます。';
-  }
-
-  @override
-  String get adminSubscriptionEntitlementDeleted => 'この上限を削除しました。他の上限は保持されています。';
-
-  @override
-  String get adminSubscriptionDeleteAll => '購読と上限設定をすべて削除';
-
-  @override
-  String get adminSubscriptionInvalidExtensionDays => '1～3650日の範囲で入力してください。';
-
-  @override
-  String adminSubscriptionExtendedDays(int days) {
-    return 'サブスクリプションを$days日延長しました。';
-  }
-
-  @override
-  String get days => '日';
-
-  @override
-  String calendarSharedBy(String account) {
-    return '$account が共有';
-  }
-
-  @override
-  String get calendarSharedReadOnly => '共有カレンダー・閲覧のみ';
-
-  @override
-  String get calendarShareEvents => '共有する予定を選択';
-
-  @override
-  String get calendarSearchEmail => 'メールアドレス';
-
-  @override
-  String get calendarSearchEvent => '予定';
-
-  @override
-  String get scrollThisArea => 'この範囲を上下にスクロール';
-
-  @override
-  String get calendarNoShareableEvents => '共有できる予定はありません。';
-
-  @override
-  String get calendarSelectEventRequired => '共有する予定を1件以上選択してください。';
-
-  @override
-  String get calendarStopReceiving => '表示を停止';
-
-  @override
-  String get calendarShareAllEvents => 'すべての予定を共有';
-
-  @override
-  String get calendarNoSharedEvents => '現在共有中の予定はありません。';
-
-  @override
-  String get calendarCancelSingleShare => 'この予定の共有を停止';
-
-  @override
-  String get calendarCancelAllShares => 'すべての共有を停止';
-
-  @override
-  String subscriptionUsage(int used, int quota) {
-    return '使用済み $used／$quota';
-  }
-
-  @override
-  String subscriptionLocalUsage(int used) {
-    return 'このデバイス：$used 件／無制限';
-  }
-
-  @override
-  String get subscriptionQuotaReached => '現在のプランの上限に達しました。古いデータを削除してから追加するか、Plusへアップグレードしてください。';
-
-  @override
-  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    return 'クラウド上限に達しました。$quota 件中 $used 件を使用中で、あと $remaining 件追加できます。古いデータを削除するか、このデバイスへ切り替えるか、Plusへアップグレードしてください。';
-  }
-
-  @override
-  String get subscriptionImagePlusOnly => '画像のアップロードはPlusで利用できます。';
-
-  @override
-  String get subscriptionDeleteRecordHint => '削除すると今日の小計と合計も再計算されます。';
-
-  @override
-  String get dataStorageTitle => '保存先';
-
-  @override
-  String get dataStorageCloud => 'クラウド';
-
-  @override
-  String get dataStorageLocal => 'このデバイス';
-
-  @override
-  String get dataStorageLocalWarning => 'ローカルデータは、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示できます。別のデバイス、ブラウザ、プロファイルには自動表示されません。アプリの削除やサイト／ブラウザデータの消去で永久に失われる可能性があります。プラン上限内であればクラウドへ戻せます。';
-
-  @override
-  String get dataStorageCloudWarning => 'クラウドデータは複数端末で利用でき、プランの上限が適用されます。';
-
-  @override
-  String get dataMoveToLocal => 'クラウドデータをこのデバイスへ移動';
-
-  @override
-  String get dataMoveToLocalConfirm => 'コピーと検証後にクラウドから削除され、このデバイス、ブラウザ、現在のブラウザプロファイルでのみ表示されます。別の環境には自動表示されず、サイトデータを消去すると永久に失われる可能性があります。続行しますか？';
-
-  @override
-  String get dataMoveToLocalSuccess => 'クラウドデータをこのデバイスへ移動しました。';
-
-  @override
-  String get dataMoveToLocalFailed => '一部のデータを移動できなかったため、クラウドの元データを保持しました。';
-
-  @override
-  String get dataStorageLocalPlanRequired => 'デバイス Plus の支払いと管理者による有効化の後に切り替えてください。';
-
-  @override
-  String get dataUploadToCloud => 'ローカルデータをクラウドへアップロード（管理者）';
-
-  @override
-  String get dataUploadToCloudAction => 'ローカルデータをクラウドへ移動';
-
-  @override
-  String get dataUploadToCloudConfirm => 'クラウドと競合しないデータのみアップロードします。失敗したデータはこの端末に残ります。続行しますか？';
-
-  @override
-  String get dataUploadToCloudSuccess => 'ローカルデータをクラウドへアップロードしました。';
-
-  @override
-  String get dataUploadToCloudFailed => '一部のデータをアップロードできなかったため、この端末に保持しました。';
-
-  @override
-  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
-    return 'アップロードをキャンセルしました：$resource はクラウドで $used 件使用中です。今回 $incoming 件を追加すると、プラン上限 $quota 件を超えます。';
-  }
-
-  @override
-  String get subscriptionRenewalRequired => '有料期間が終了しました。更新するか、すべてのクラウドデータをこの端末へ移動するまでクラウドは読み取り専用です。';
-
-  @override
-  String get subscriptionPlansTitle => 'プランとサブスクリプション';
-
-  @override
-  String get subscriptionCurrentFree => '現在のプラン：クラウド無料';
-
-  @override
-  String get subscriptionCurrentAdmin => '現在の権限：管理者（無制限）';
-
-  @override
-  String get subscriptionCurrentPlus => '現在のプラン：Plus';
-
-  @override
-  String get subscriptionCurrentCloudPlus => '現在：クラウド Plus';
-
-  @override
-  String get dataClearLocalTitle => '端末データを削除';
-
-  @override
-  String get dataClearLocalConfirm => 'この端末の個人データをすべて完全に削除します。元に戻せません。削除後、クラウドへの切り替えを再試行できます。続行しますか？';
-
-  @override
-  String get dataClearLocalAction => '端末データを削除';
-
-  @override
-  String get dataClearLocalSuccess => '端末データを削除しました';
-
-  @override
-  String get dataClearLocalFailed => '端末データを削除できませんでした。後でもう一度お試しください。';
-
-  @override
-  String get subscriptionCurrentLocalPlus => '現在：ローカル Plus';
-
-  @override
-  String subscriptionValidUntil(String date) {
-    return '有効期限：$date';
-  }
-
-  @override
-  String get subscriptionFreeName => 'クラウド無料プラン';
-
-  @override
-  String get subscriptionFreePrice => 'NT\$0';
-
-  @override
-  String get subscriptionPlusName => 'クラウド Plus';
-
-  @override
-  String get subscriptionPlusPrice => '四半期 NT\$129から';
-
-  @override
-  String get subscriptionFreePersonalRecords => 'クラウド保存：カレンダー、家計簿、ポイント、思い出を各30件まで';
-
-  @override
-  String get subscriptionPlusPersonalRecords => 'カレンダー、家計簿、ポイント、思い出のクラウドデータ各300件';
-
-  @override
-  String get subscriptionCommonFeatures => '両プランに含まれる機能';
-
-  @override
-  String get subscriptionCommonFeaturesDetail => 'カレンダー、家計簿、ポイント、おすすめイベント・スポット、管理者問題集。本体保存データは無制限です。株式とビジネスプランは管理者専用です。';
-
-  @override
-  String get subscriptionPurchaseComingSoon => 'アプリ内サブスクリプションは近日公開';
-
-  @override
-  String get subscriptionPurchaseExplanation => '現在Plusは購入できません。ストア決済開始後、このページに正式価格、更新条件、購入、購入の復元、サブスクリプション管理を表示します。';
-
-  @override
-  String get subscriptionInactiveAccountWarning => '無料アカウントに有効期限はありません。3か月間データの追加・変更がない場合、アカウントとクラウドデータは自動的に削除されます。';
-
-  @override
-  String get subscriptionPricingVersion => '現在のバージョン';
-
-  @override
-  String get subscriptionEffectiveDate => '適用開始日';
-
-  @override
-  String get subscriptionQuotaMultiplier => '容量倍率';
-
-  @override
-  String get subscriptionQuarterlyPayment => '四半期料金';
-
-  @override
-  String get subscriptionActualQuotaTitle => '現在のバージョンと利用量';
-
-  @override
-  String get subscriptionImageStorage => '画像容量';
-
-  @override
-  String get subscriptionNextVersionTitle => '次回支払いに適用される最新版';
-
-  @override
-  String get subscriptionNextCloudVersionTitle => '次回の支払いに適用されるクラウド版';
-
-  @override
-  String get subscriptionLatestLocalVersionTitle => '次回の支払いに適用されるローカル Plus 版';
-
-  @override
-  String subscriptionVersionOffer(String version, String date, int price) {
-    return '$version・$date適用・四半期NT\$$price';
-  }
-
-  @override
-  String get subscriptionLocalPaidName => 'デバイス Plus';
-
-  @override
-  String subscriptionCloudVersionName(String version) {
-    return 'クラウド $version';
-  }
-
-  @override
-  String subscriptionLocalVersionName(String version) {
-    return 'デバイス $version';
-  }
-
-  @override
-  String subscriptionNextCloudVersionName(String version) {
-    return '次回支払い：クラウド $version';
-  }
-
-  @override
-  String subscriptionNextLocalVersionName(String version) {
-    return '次回支払い：デバイス $version';
-  }
-
-  @override
-  String get subscriptionLocalPaidPrice => '四半期 NT\$129';
-
-  @override
-  String get subscriptionLocalPaidFeature => 'このデバイスの記録と画像は無制限。他のデバイスには自動表示されません';
-
-  @override
-  String get subscriptionLocalAnswerHistory => '本体の解答履歴は無制限';
-
-  @override
-  String get adminPricingTitle => 'ユーザー料金版を作成';
-
-  @override
-  String get adminPricingSubtitle => '今後の支払いと追加購入にのみ適用';
-
-  @override
-  String get adminPricingRequired => '版名とすべての数値を入力してください';
-
-  @override
-  String get adminPricingCreated => '新しい料金版を作成しました。既存の特典は変わりません';
-
-  @override
-  String get adminPricingUpdated => 'ユーザー料金版を更新しました。既存の契約内容は変わりません';
-
-  @override
-  String get adminUserExistingPlans => '既存のユーザー料金版';
-
-  @override
-  String get adminPricingDeleteTitle => '料金バージョンを削除';
-
-  @override
-  String adminPricingDeleteConfirmation(String name) {
-    return '$name を削除しますか？どの契約や権利にも使用されていない場合のみ削除できます。';
-  }
-
-  @override
-  String get adminPricingDeleted => '料金バージョンを削除しました。';
-
-  @override
-  String get adminPricingDeleteInUse => 'この料金バージョンは契約または権利で使用中のため削除できません。';
-
-  @override
-  String adminPricingCreateFailed(String error) {
-    return '料金版を保存できません：$error';
-  }
-
-  @override
-  String get adminPricingVersionName => '版名';
-
-  @override
-  String get adminPricingVersionHint => '例：2026-Q4';
-
-  @override
-  String get adminPricingEffectiveDate => '適用日';
-
-  @override
-  String get adminPricingCreate => '版を作成';
-
-  @override
-  String get adminPricingQuarterlyPrice => '四半期料金（TWD）';
-
-  @override
-  String get adminPricingCalendarQuota => '予定件数';
-
-  @override
-  String get adminPricingAccountingQuota => '家計簿明細';
-
-  @override
-  String get adminPricingPointQuota => 'ポイント明細';
-
-  @override
-  String get adminPricingMemoryQuota => '思い出';
-
-  @override
-  String get adminPricingGameQuota => '自作問題';
-
-  @override
-  String get adminPricingShareQuota => '共有人数';
-
-  @override
-  String get adminPricingImageQuota => '画像容量（MB）';
-
-  @override
-  String get adminPricingAnswerDays => '解答履歴の日数';
-
-  @override
-  String get adminPricingLocalZeroUnlimited => 'ローカル Plus では、上限欄の 0 は無制限を意味します。';
-
-  @override
-  String subscriptionDowngradeWarning(String date) {
-    return 'クラウドデータが無料枠を超えています。$date までに超過分を移動または削除してください。';
-  }
-
-  @override
-  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
-    return '$resource：$used/$quota（$excess 件超過）';
-  }
-
-  @override
-  String get adminSubscriptionTitle => '購読管理';
-
-  @override
-  String get adminSubscriptionSubtitle => '購入時の料金と上限を適用';
-
-  @override
-  String get adminSubscriptionEmail => 'ユーザーEmail';
-
-  @override
-  String get adminSubscriptionPlan => 'プラン';
-
-  @override
-  String get adminSubscriptionFree => '無料';
-
-  @override
-  String get adminSubscriptionPaid => '有料';
-
-  @override
-  String get adminSubscriptionNoPricing => '先に料金版を作成してください';
-
-  @override
-  String get adminSubscriptionSaved => '購読設定を保存しました';
-
-  @override
-  String adminSubscriptionSaveFailed(String error) {
-    return '保存失敗：$error';
-  }
-
-  @override
-  String get adminSubscriptionNoExpiry => '無料版に期限はありません';
-
-  @override
-  String get adminSubscriptionInactiveWarning => '3か月間変更がない場合、アカウントとクラウドデータを削除します。';
-
-  @override
-  String get adminSubscriptionAddQuota => '現在の特典を残して上限を追加';
-
-  @override
-  String get adminSubscriptionAddQuotaHint => '新しい上限を未期限切れの上限に加算します';
-
-  @override
-  String get adminSubscriptionStoragePlan => '保存プラン';
-
-  @override
-  String get adminSubscriptionCloud => 'クラウド';
-
-  @override
-  String get adminSubscriptionLocal => '本体無制限';
-
-  @override
-  String get adminSubscriptionPricingVersion => '料金版';
-
-  @override
-  String get adminSubscriptionMultiplier => '上限倍率';
-
-  @override
-  String adminSubscriptionTimes(int count) {
-    return '$count倍';
-  }
-
-  @override
-  String get adminSubscriptionExpiry => '特典期限';
-
-  @override
-  String get adminSubscriptionNote => '補足';
-
-  @override
-  String get adminSubscriptionSave => '購読を保存';
-
-  @override
-  String get dataCleanupTitle => 'データ整理';
-
-  @override
-  String get dataCleanupAction => '確認して整理';
-
-  @override
-  String get dataCleanupTargetEmail => 'ユーザー Email（空欄は自分）';
-
-  @override
-  String get dataCleanupLocalExplanation => '端末データは無制限です。この端末の個人データをすべて削除できます。';
-
-  @override
-  String get dataCleanupCloudExplanation => 'クラウドの超過状況を確認し、超過分のみ、または全データを削除できます。';
-
-  @override
-  String get dataCleanupNoOverage => '現在、上限を超えたクラウドデータはありません。';
-
-  @override
-  String get dataCleanupExcess => '超過分を削除';
-
-  @override
-  String get dataCleanupAll => 'すべて削除';
-
-  @override
-  String get dataCleanupConfirmTitle => '削除の確認';
-
-  @override
-  String get dataCleanupExcessConfirm => '現在の上限を超えたデータのみ削除しますか？元に戻せません。';
-
-  @override
-  String get dataCleanupAllConfirm => '選択した保存先の個人データをすべて削除しますか？元に戻せません。';
-
-  @override
-  String get dataCleanupSuccess => 'データ整理が完了しました';
-
-  @override
-  String get dataCleanupFailed => 'データ整理に失敗しました';
-
-  @override
-  String get scheduleAlreadyStarted => '予定は開始済みです';
-
-  @override
-  String scheduleStartsInMinutes(int count) {
-    return '$count分後に開始';
-  }
-
-  @override
-  String scheduleStartsInHours(int count) {
-    return '$count時間後に開始';
-  }
-
-  @override
-  String get endsToday => '開始済み、本日終了';
-
-  @override
-  String ongoingUntil(String date) {
-    return '$dateまで開催中';
+  String memoryCountForDay(int count) {
+    return '思い出$count件';
   }
 
   @override
@@ -2384,367 +2149,366 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String gameRecentPracticeSummary(int attempts, int passed) {
-    return '最近$attempts回練習、$passed回クリア';
-  }
-
-  @override
-  String scheduleConflictCount(int count) {
-    return '今日・明日に$count件の予定時間が重複しています';
-  }
-
-  @override
-  String scheduleConflictBeforeSave(int count, String details) {
-    return 'この時間は未完了の予定$count件と重複しています：\n$details\nそれでも保存しますか？';
-  }
-
-  @override
-  String tomorrowScheduleCount(int count) {
-    return '明日の予定：$count件';
-  }
-
-  @override
-  String nextFreeHour(String startTime, String endTime) {
-    return '今日 $startTime～$endTime は予定なし';
-  }
-
-  @override
-  String get scheduleNeedsReview => '予定は終了しています。完了したか確認してください。';
-
-  @override
-  String scheduleNeedsReviewCount(int count) {
-    return '確認待ちの予定が$count件あります';
-  }
-
-  @override
-  String get scheduleAwaitingReview => '確認待ちの予定';
-
-  @override
-  String homeInsightReviewOverdue(int count) {
-    return '今日終了した予定のうち$count件が未確認です。大切な用事を確認しましょう。';
-  }
-
-  @override
-  String homeInsightResolveConflicts(int count) {
-    return '今日・明日の予定が$count件重複しています。先に調整することをおすすめします。';
-  }
-
-  @override
   String memoryJourneySummary(int memoryCount, int dayCount, int cityCount) {
     return '読み込み済みの思い出$memoryCount件・$dayCount日・$cityCount都市';
   }
 
   @override
-  String viewRemainingSchedules(int count) {
-    return '残り$count件の予定を見る';
+  String get memoryTrace => '思い出の回廊';
+
+  @override
+  String get memoryTraceZero => 'さあ、思い出を追加しよう！';
+
+  @override
+  String get accountAlreadyExists => 'アカウントはすでに存在します';
+
+  @override
+  String get accountCreate => '作成';
+
+  @override
+  String get accountDefault => 'デフォルト';
+
+  @override
+  String accountDeleteConfirmation(String name) {
+    return '$name を削除しますか？';
   }
 
   @override
-  String viewRemainingRecommendations(int count) {
-    return '残り$count件のおすすめを見る';
+  String get accountingSpeechHint => '例：金額を追加／減算';
+
+  @override
+  String get accountingUnit => '円';
+
+  @override
+  String get accountListEmpty => 'アカウントがまだ作成されていません。作成してから選択してください。';
+
+  @override
+  String get accountListLoadFailed => 'アカウント一覧を読み込めませんでした。しばらくしてからもう一度お試しください';
+
+  @override
+  String get accountMaster => 'グループ';
+
+  @override
+  String get accountName => 'アカウント名';
+
+  @override
+  String get accountNew => '新しいアカウント';
+
+  @override
+  String get accountPersonal => '個人的';
+
+  @override
+  String get accountProject => '旅';
+
+  @override
+  String get accountRecords => '収支記録';
+
+  @override
+  String get accountSetMainCurrency => '基準通貨を設定';
+
+  @override
+  String get accountSwitchCurrency => '通貨を切り替え';
+
+  @override
+  String get currencyLabel => '通貨単位';
+
+  @override
+  String get editRecord => '明細を編集';
+
+  @override
+  String get homeInsightConnectAccounts => '収支とポイントのアカウントを選ぶと、予定の完了時にまとめて振り返れます。';
+
+  @override
+  String get quickAddAccounting => 'かんたん収支記録';
+
+  @override
+  String get recordAllCategories => 'すべてのカテゴリ';
+
+  @override
+  String get recordCategoryArts => '美育';
+
+  @override
+  String get recordCategoryBonus => '賞与';
+
+  @override
+  String get recordCategoryClothing => '衣類';
+
+  @override
+  String get recordCategoryEducation => '教育';
+
+  @override
+  String get recordCategoryEntertainment => '娯楽';
+
+  @override
+  String get recordCategoryFitness => '体育';
+
+  @override
+  String get recordCategoryFood => '食費';
+
+  @override
+  String get recordCategoryHousing => '住居';
+
+  @override
+  String get recordCategoryIntelligence => '知育';
+
+  @override
+  String get recordCategoryInvestmentIncome => '投資収入';
+
+  @override
+  String get recordCategoryOtherIncome => 'その他の収入';
+
+  @override
+  String get recordCategoryRefund => '返金';
+
+  @override
+  String get recordCategoryReserved => '保持項目';
+
+  @override
+  String get recordCategorySalary => '給与';
+
+  @override
+  String get recordCategoryTransportation => '交通';
+
+  @override
+  String get recordCategoryUncategorized => '未分類';
+
+  @override
+  String get recordCategoryVirtue => '徳育';
+
+  @override
+  String get recordDate => '日付';
+
+  @override
+  String get recordNetChange => '差引変動';
+
+  @override
+  String get recordPleaseConfirm => '確認してください';
+
+  @override
+  String get recordPrimaryCategory => 'カテゴリ';
+
+  @override
+  String get recordSearchHint => '説明またはサブカテゴリを検索';
+
+  @override
+  String get recordSecondaryCategory => 'サブカテゴリ（任意）';
+
+  @override
+  String get recordSubmit => '送信';
+
+  @override
+  String get recordTime => '時刻';
+
+  @override
+  String get recordTotal => '合計';
+
+  @override
+  String get recordValue => '値';
+
+  @override
+  String get selectAccount => 'アカウントを選択';
+
+  @override
+  String get todayIncomeExpense => '本日の収支';
+
+  @override
+  String get eventPointDecrease => '減点';
+
+  @override
+  String get eventPointIncrease => '加点';
+
+  @override
+  String get pointGroup => 'グループ';
+
+  @override
+  String get pointsRecord => 'ポイント記録';
+
+  @override
+  String get pointsSpeechHint => '例：ポイントを追加／減算';
+
+  @override
+  String get pointsUnit => 'ポイント';
+
+  @override
+  String get quickAddPoints => 'かんたんポイント記録';
+
+  @override
+  String get todayPoints => '今日のポイント';
+
+  @override
+  String get totalPoints => '合計ポイント';
+
+  @override
+  String get activeQuestion => '使用中';
+
+  @override
+  String get addQuestion => '問題を追加';
+
+  @override
+  String get adminQuestionBank => '管理者の問題集';
+
+  @override
+  String get allQuestionStatuses => 'すべての状態';
+
+  @override
+  String get completedGrammarQuestion => '答えを含む完成した問題（例：We are young）';
+
+  @override
+  String get customQuestionGroup => '＋新しいカテゴリーを作成';
+
+  @override
+  String get deactivateQuestion => '問題を無効化';
+
+  @override
+  String get duplicateQuestion => '同じ問題と答えが選択した問題グループにすでに存在します。';
+
+  @override
+  String get editQuestion => '問題を編集';
+
+  @override
+  String get game => 'ゲーム';
+
+  @override
+  String get gameFailed => '失敗';
+
+  @override
+  String get gameLevel => 'レベル';
+
+  @override
+  String get gameNoRecords => 'ゲーム記録はありません';
+
+  @override
+  String get gamePassed => 'クリア！';
+
+  @override
+  String gameProgressSummary(int passed, int total) {
+    return '$totalステージ中$passedステージクリア';
   }
 
   @override
-  String scheduleConflictToday(int count) {
-    return '今日の予定に時間重複が$count件あります';
+  String gameRecentBestScore(String score) {
+    return '最近の最高 $score';
   }
 
   @override
-  String scheduleConflictTomorrow(int count) {
-    return '明日の予定に時間重複が$count件あります';
+  String gameRecentPracticeSummary(int attempts, int passed) {
+    return '最近$attempts回練習、$passed回クリア';
   }
 
   @override
-  String get weekendEvent => '週末イベント';
+  String get gameScore => 'スコア';
 
   @override
-  String multiDayEvent(int count) {
-    return '連続$count日間';
+  String gameScoreValue(num score) {
+    return 'スコア：$score';
   }
 
   @override
-  String continueLevel(int level) {
-    return 'ステージ$levelを続ける';
-  }
-
-  @override
-  String get moduleAuthorization => '機能権限';
-
-  @override
-  String get moduleAuthorizationDescription => '一般ユーザーに追加で許可する機能を設定します。ホームと機能メニューに同時に反映されます。';
-
-  @override
-  String get moduleAuthorizationSearchFirst => '先にユーザーのメールアドレスを入力して検索してください。';
-
-  @override
-  String get moduleAuthorizationNoAccess => '追加機能は許可されていません。';
-
-  @override
-  String get moduleAuthorizationSaved => '機能権限を更新しました。';
-
-  @override
-  String get moduleAuthorizationLoadFailed => '機能権限を読み込めません。アカウントを確認して再試行してください。';
-
-  @override
-  String get moduleAuthorizationNotDeployed => '機能権限が未導入です。先に Supabase で権限 SQL を実行してください。';
-
-  @override
-  String get moduleAuthorizationUserNotFound => 'このメールアドレスのユーザーが見つかりません。';
-
-  @override
-  String get moduleAuthorizationSaveFailed => '機能権限が正しく更新されませんでした。再検索してお試しください。';
-
-  @override
-  String get quotaFreePeriodTitle => '容量無制限キャンペーン';
-
-  @override
-  String get quotaFreePeriodDescription => 'この期間に追加するクラウドデータはプラン上限の対象外です。終了後は自動的に通常の上限へ戻ります。';
-
-  @override
-  String get quotaFreePeriodName => 'キャンペーン名';
-
-  @override
-  String get quotaFreePeriodStart => '開始日時';
-
-  @override
-  String get quotaFreePeriodEnd => '終了日時';
-
-  @override
-  String get quotaFreePeriodEnabled => 'この期間を有効にする';
-
-  @override
-  String get quotaFreePeriodAutomaticHint => '設定した開始日時から終了日時までのみ容量制限を停止します。';
-
-  @override
-  String get quotaFreePeriodInvalidRange => '終了日時は開始日時より後にしてください。';
-
-  @override
-  String get quotaFreePeriodSaved => '容量無制限キャンペーンを保存しました。';
-
-  @override
-  String get quotaFreePeriodSaveFailed => '容量無制限キャンペーンを保存できませんでした。';
-
-  @override
-  String get quotaFreePeriodClear => '設定を削除';
-
-  @override
-  String get quotaFreePeriodClearConfirm => '容量無制限期間を削除しますか？通常のプラン上限が直ちに適用されます。';
-
-  @override
-  String get quotaFreePeriodCleared => '容量無制限キャンペーンを削除しました。';
-
-  @override
-  String get quotaFreePeriodNew => '期間を作成';
-
-  @override
-  String get quotaFreePeriodEdit => '期間を編集';
-
-  @override
-  String get quotaFreePeriodEmpty => '容量無制限期間は設定されていません。';
-
-  @override
-  String get quotaFreePeriodUnnamed => '名称未設定キャンペーン';
-
-  @override
-  String get quotaFreePeriodActive => '現在有効';
-
-  @override
-  String get quotaFreePeriodScheduled => '開始予定';
-
-  @override
-  String get quotaFreePeriodEnded => '終了済み';
-
-  @override
-  String get quotaFreePeriodDisabled => '無効';
-
-  @override
-  String get country => '国';
-
-  @override
-  String get coverPhotoOptional => 'カバー写真（任意）';
-
-  @override
-  String get choosePhoto => '写真を選択';
-
-  @override
-  String get replacePhoto => '変更';
-
-  @override
-  String get allCities => 'すべての都市';
-
-  @override
-  String get switchToList => 'リストに切り替え';
-
-  @override
-  String get switchToMap => '地図に切り替え';
-
-  @override
-  String get countryTaiwan => '台湾';
-
-  @override
-  String get countryJapan => '日本';
-
-  @override
-  String get countrySouthKorea => '韓国';
-
-  @override
-  String get countrySingapore => 'シンガポール';
-
-  @override
-  String get countryUnitedStates => 'アメリカ';
-
-  @override
-  String get countryCanada => 'カナダ';
-
-  @override
-  String get countryChina => '中国';
-
-  @override
-  String get countryHongKong => '香港';
-
-  @override
-  String get countryMacau => 'マカオ';
-
-  @override
-  String get countryThailand => 'タイ';
-
-  @override
-  String get countryVietnam => 'ベトナム';
-
-  @override
-  String get countryMalaysia => 'マレーシア';
-
-  @override
-  String get countryIndonesia => 'インドネシア';
-
-  @override
-  String get countryPhilippines => 'フィリピン';
-
-  @override
-  String get countryAustralia => 'オーストラリア';
-
-  @override
-  String get countryNewZealand => 'ニュージーランド';
-
-  @override
-  String get countryUnitedKingdom => 'イギリス';
-
-  @override
-  String get countryFrance => 'フランス';
-
-  @override
-  String get countryGermany => 'ドイツ';
-
-  @override
-  String get countryItaly => 'イタリア';
-
-  @override
-  String get countrySpain => 'スペイン';
-
-  @override
-  String get countryNetherlands => 'オランダ';
-
-  @override
-  String get countrySwitzerland => 'スイス';
-
-  @override
-  String get countryIndia => 'インド';
-
-  @override
-  String get countryUnitedArabEmirates => 'アラブ首長国連邦';
-
-  @override
-  String get feedbackPurpose => '目的';
-
-  @override
-  String get feedbackContent => '内容';
-
-  @override
-  String get captureScreen => '画面をキャプチャ';
-
-  @override
-  String get feedbackRequired => '目的と内容を入力してください。';
-
-  @override
-  String get feedbackSent => 'フィードバックを送信しました。';
-
-  @override
-  String feedbackSendFailed(String error) {
-    return 'フィードバックを送信できません：$error';
-  }
-
-  @override
-  String get accessDenied => 'アクセス権限がありません';
-
-  @override
-  String get selectTemplate => 'テンプレートを選択';
-
-  @override
-  String get planTitle => 'プランのタイトル';
-
-  @override
-  String get create => '作成';
-
-  @override
-  String get enterAnswer => '回答を入力';
-
-  @override
-  String get previous => '前へ';
-
-  @override
-  String get next => '次へ';
-
-  @override
-  String get loadingSections => 'セクションを読み込み中…';
-
-  @override
-  String get loading => '読み込み中…';
-
-  @override
-  String get notFilled => 'Not filled in yet';
-
-  @override
-  String get untitledPlan => 'Untitled plan';
-
-  @override
-  String get openChatGPT => 'Open ChatGPT';
-
-  @override
-  String get unableToLoadDocument => 'Unable to load this document.';
+  String get gameStart => '開始';
 
   @override
   String gameTitleScore(String game, num score) {
-    return '$game ($score/100)';
+    return '$game（$score/100）';
   }
 
   @override
-  String congratulationsScore(num score) {
-    return 'おめでとう！スコア：$score';
-  }
+  String get grammarAnswerMustAppear => '空欄を自動作成するため、完成した問題に正解を含めてください。';
 
   @override
-  String get wordSearchTitle => '単語検索';
+  String get grammarBaseWord => '単語の原形（例：head）';
 
   @override
-  String get translationTitle => '翻訳';
+  String get grammarQuestionHelp => '一般文法では We are young のような完成した文を入力すると、are が自動的に空欄になります。plural カテゴリーでは head と heads だけを入力します。';
 
   @override
-  String get socialTitle => 'ソーシャル';
+  String get inactiveQuestion => '無効';
 
   @override
-  String get speakingTitle => 'スピーキング';
+  String get japaneseTranslationQuestionHelp => '問題に日本語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
 
   @override
-  String get englishRpgAdventureTitle => '英語 RPG アドベンチャー';
+  String get koreanTranslationQuestionHelp => '問題に韓国語、正解に翻訳を入力します。同じグループに3問以上作成してください。';
 
   @override
-  String get answerHere => 'ここに回答';
+  String get leaveGameConfirmation => 'ゲームを終了して前のページに戻りますか？';
 
   @override
-  String get check => '確認';
+  String get localQuestionBankOnly => '本体モードでは、この端末の個人問題集のみ使用できます。管理者問題集は利用できません。';
 
   @override
-  String get restart => '再スタート';
+  String get monominoGameTitle => 'モノミノゲーム';
+
+  @override
+  String get myQuestionBank => '自分の問題集';
+
+  @override
+  String get myQuestionBankEmpty => 'このレベルで使用できる問題がありません。先に問題を追加してください。';
+
+  @override
+  String get myQuestions => '自分の問題';
+
+  @override
+  String get newQuestionGroup => '新しいカテゴリー名';
+
+  @override
+  String get noMyQuestions => 'このゲームにはまだ問題を追加していません。';
+
+  @override
+  String get polyominoGameTitle => 'ポリオミノゲーム';
+
+  @override
+  String get puzzleMapTitle => '地図パズル';
+
+  @override
+  String get question => '問題';
+
+  @override
+  String get questionAdded => '問題を自分の問題集に追加しました';
+
+  @override
+  String get questionBank => '問題集';
+
+  @override
+  String get questionBankInsufficient => '選択した問題集には、このレベルで使用できる問題が足りません。';
+
+  @override
+  String get questionDeactivated => '問題を無効化しました。';
+
+  @override
+  String get questionDeleted => '問題を削除しました';
+
+  @override
+  String get questionExample => '問題の例';
+
+  @override
+  String get questionGroup => '問題グループ';
+
+  @override
+  String get questionGroupLevelNumber => 'カテゴリー末尾の level 数字（空欄は 1）';
+
+  @override
+  String get questionGroupLevelRange => 'level 数字は 1 から 30 の範囲で入力してください。';
+
+  @override
+  String get questionHasAnswersDeleteBlocked => 'この問題には解答履歴があるため削除できません。代わりに無効化できます。';
+
+  @override
+  String get questionReactivated => '問題を再有効化しました。';
+
+  @override
+  String get questionStatus => '問題の状態';
+
+  @override
+  String get questionStatusUpdateFailed => '問題の状態を更新できませんでした。もう一度お試しください。';
+
+  @override
+  String get questionUpdated => '問題を更新しました';
+
+  @override
+  String get reactivateQuestion => '問題を再有効化';
+
+  @override
+  String get recordCategorySocial => '群育';
 
   @override
   String get scratchGameTitle => 'Scratch ゲーム';
@@ -2753,42 +2517,278 @@ class AppLocalizationsJa extends AppLocalizations {
   String get scratchMazeTitle => 'Scratch 迷路ゲーム';
 
   @override
-  String get blocklyEditor => 'Blockly エディター';
+  String get sentenceOrWord => '完成した単語または正しい文';
 
   @override
-  String get puzzleMapTitle => '地図パズル';
+  String get sentenceQuestionHelp => 'mother や I love apples のように、完成した単語または正しい文だけを入力してください。並べ替え形式に自動変換されます。';
 
   @override
-  String get hint => 'ヒント';
+  String get socialTitle => 'ソーシャル';
 
   @override
-  String get monominoGameTitle => 'モノミノゲーム';
+  String get speakingQuestionHelp => '読み上げる単語または文を入力してください。例：Nice to meet you。';
 
   @override
-  String get checkPath => '経路を確認';
+  String get threeQuestionsRequired => 'このレベルで使用できる問題が、問題集全体で3問以上必要です。';
 
   @override
-  String get polyominoGameTitle => 'ポリオミノゲーム';
+  String get translationQuestionHelp => '問題に原文、正解に翻訳を入力します。同じグループに3問以上作成すると、誤答を2つ生成できます。';
 
   @override
-  String get noPipes => 'パイプがありません';
+  String get translationTitle => '翻訳';
 
   @override
-  String get go => '移動';
+  String get wordSearchQuestionHelp => '問題に英単語、正解に意味を入力します。例：apple／りんご。';
 
   @override
   String get wordSentenceBuilderTitle => '単語と文の組み立て';
 
   @override
-  String priceEarningsRatio(String value) {
-    return 'PER：$value';
+  String get adminUserExistingPlans => '既存のユーザー料金版';
+
+  @override
+  String get adminVendorExistingPlans => '既存の料金バージョン';
+
+  @override
+  String get businessHours => '営業時間';
+
+  @override
+  String get businessPlan => 'ビジネスプラン';
+
+  @override
+  String get dataCleanupLocalExplanation => '端末データは無制限です。この端末の個人データをすべて削除できます。';
+
+  @override
+  String get planTitle => 'プランのタイトル';
+
+  @override
+  String get selectTemplate => 'テンプレートを選択';
+
+  @override
+  String get untitledPlan => '無題のプラン';
+
+  @override
+  String vendorCurrentPlan(String plan) {
+    return '現在のプラン：$plan';
   }
+
+  @override
+  String vendorPlanAnalyticsDays(int count) {
+    return '直近 $count 日間の分析';
+  }
+
+  @override
+  String get vendorPlanCustomName => 'カスタムプラン';
+
+  @override
+  String get vendorPlanFreeName => '無料プラン';
+
+  @override
+  String get vendorPlanGrowthName => '成長プラン';
+
+  @override
+  String get vendorPlanPartnerName => 'パートナープラン';
+
+  @override
+  String get vendorViewPlans => 'プランを見る';
+
+  @override
+  String get stock => 'ストック';
+
+  @override
+  String stockClosingPrice(String value) {
+    return '終値：$value';
+  }
+
+  @override
+  String get stockDashboardTitle => '📊 市場ダッシュボード';
+
+  @override
+  String get stockForeignBuy => '外国人投資家買い越しランキング';
+
+  @override
+  String get stockForeignSell => '外国人投資家売り越しランキング';
+
+  @override
+  String get stockLoadFailed => '株式データを読み込めませんでした。もう一度お試しください。';
 
   @override
   String get stockNet => '差引';
 
   @override
-  String deleteNumberedItem(int number, String name) {
-    return '$number 番目の「$name」を削除しますか？';
+  String get stockNoData => '現在表示できる株式データはありません。';
+
+  @override
+  String get stockRetry => '最新データを読み込む';
+
+  @override
+  String get stockSelectDate => '株価日付';
+
+  @override
+  String get stockThousandLots => '千ロット';
+
+  @override
+  String stockTradingVolume(String value) {
+    return '出来高：$valueロット';
   }
+
+  @override
+  String get stockUpdateFailed => '株式データの更新に失敗しました。前回利用可能なデータを表示しています。';
+
+  @override
+  String get stockUpdateInProgress => '株式データとモデルを更新しています。完了後、新しい結果が自動的に表示されます。';
+
+  @override
+  String get stockUpdateSucceeded => '株式データとモデルの更新が完了しました。';
+
+  @override
+  String get feedback => 'フィードバック';
+
+  @override
+  String get feedbackContent => '内容';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return '$name が $time に対応';
+  }
+
+  @override
+  String get feedbackPurpose => '目的';
+
+  @override
+  String get feedbackRequired => '目的と内容を入力してください。';
+
+  @override
+  String feedbackSendFailed(String error) {
+    return 'フィードバックを送信できません：$error';
+  }
+
+  @override
+  String get feedbackSent => 'フィードバックを送信しました。';
+
+  @override
+  String get statusCompleted => '完了';
+
+  @override
+  String get statusInProgress => '進行中';
+
+  @override
+  String get statusPending => '未処理';
+
+  @override
+  String get acceptLegalTermsRequired => '登録する前に、プライバシーポリシーと利用規約に同意してください。';
+
+  @override
+  String get accountDeletionCancellationPending => '取消申請は管理者の確認待ちです。';
+
+  @override
+  String get accountDeletionCancellationSubmitted => '取消申請を送信しました。管理者の確認待ちです。';
+
+  @override
+  String get accountDeletionCancelRequest => '申請を取り消す';
+
+  @override
+  String get accountDeletionCompleted => '削除申請を管理者に送信しました。';
+
+  @override
+  String get accountDeletionEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
+
+  @override
+  String accountDeletionFailed(Object message) {
+    return 'アカウントの削除に失敗しました: $message';
+  }
+
+  @override
+  String get accountDeletionPending => '申請中';
+
+  @override
+  String get accountDeletionPendingDescription => 'アカウント削除申請は管理者の確認待ちです。削除を取りやめる場合は、申請の取消を依頼できます。';
+
+  @override
+  String get accountDeletionRequestDescription => '申請は管理者に送られ、管理者が承認した後にアカウントとデータが削除されます。';
+
+  @override
+  String get accountMenuAccountDeletion => 'アカウントを削除';
+
+  @override
+  String get accountMenuDataExport => 'データを出力';
+
+  @override
+  String get adminAccountDeletionCancellationConfirmed => '取消を確認し、元の削除申請を削除しました。';
+
+  @override
+  String get adminAccountDeletionCancellationRequested => 'ユーザーがアカウント削除の取消を申請しました。';
+
+  @override
+  String get adminAccountDeletionCompleted => 'アカウントと関連データを削除しました。';
+
+  @override
+  String get adminAccountDeletionConfirmCancellation => '取消を確認';
+
+  @override
+  String get agreeToLegalTermsPrefix => '次の内容を読み、同意します：';
+
+  @override
+  String dataExportCompleted(Object path) {
+    return 'データを出力しました: $path';
+  }
+
+  @override
+  String get dataExportEmailUnavailable => 'メールアプリを開けません。minavi@alumni.nccu.edu.tw までご連絡ください。';
+
+  @override
+  String dataExportFailed(Object message) {
+    return 'データの出力に失敗しました: $message';
+  }
+
+  @override
+  String get dataExportIncludedPages => 'ダウンロード内容：カレンダー、思い出、支出、ポイント。';
+
+  @override
+  String get dataExportRequestDescription => 'クラウドと端末の個人データをExcelファイルとして直接ダウンロードします。';
+
+  @override
+  String get dataExportSummarySheet => 'エクスポート概要';
+
+  @override
+  String get exportExcel => 'Excelにエクスポート';
+
+  @override
+  String get exportFailed => '❌ エクスポート失敗';
+
+  @override
+  String get exportInProgress => '❌ 以前のファイルのエクスポートはまだ進行中です。';
+
+  @override
+  String get exportSuccess => '✅ エクスポート成功';
+
+  @override
+  String get legalDocumentRead => '閲覧済み';
+
+  @override
+  String get legalDocumentReadComplete => '閲覧が完了しました';
+
+  @override
+  String get legalTermsConnector => 'と';
+
+  @override
+  String get noEventsToExport => '❌ エクスポートするイベントがありません';
+
+  @override
+  String get notSupportExport => '⚠️ このプラットフォームではエクスポート非対応です';
+
+  @override
+  String get privacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String get readLegalTermsRequired => '同意する前に、プライバシーポリシーと利用規約を最後までお読みください。';
+
+  @override
+  String get requestAccountDeletion => 'アカウント削除を申請';
+
+  @override
+  String get requestDataExport => '個人データのエクスポートを申請';
+
+  @override
+  String get termsOfService => '利用規約';
 }

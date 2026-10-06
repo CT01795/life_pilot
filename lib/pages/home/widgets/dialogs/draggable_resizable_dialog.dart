@@ -15,8 +15,7 @@ class DraggableResizableDialog extends StatefulWidget {
       _DraggableResizableDialogState();
 }
 
-class _DraggableResizableDialogState
-    extends State<DraggableResizableDialog> {
+class _DraggableResizableDialogState extends State<DraggableResizableDialog> {
   double? width;
   double? height;
   double? top;
@@ -61,10 +60,11 @@ class _DraggableResizableDialogState
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     if (!initialized) {
-      width = screenSize.width * 0.66;
-      height = screenSize.height * 0.8;
-      top = 50;
-      left = screenSize.width * 0.33;
+      final compact = screenSize.width < 600;
+      width = compact ? screenSize.width : screenSize.width * 0.66;
+      height = compact ? screenSize.height : screenSize.height * 0.8;
+      top = compact ? 0 : 50;
+      left = compact ? 0 : screenSize.width * 0.33;
 
       initialized = true;
     }
@@ -76,9 +76,7 @@ class _DraggableResizableDialogState
           onTap: () {
             Navigator.of(context).pop();
           },
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.02),
-          ),
+          child: Container(color: Colors.black.withValues(alpha: 0.02)),
         ),
 
         // 可拖動視窗
@@ -91,11 +89,8 @@ class _DraggableResizableDialogState
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow:[
-                const BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 10,
-                )
+              boxShadow: [
+                const BoxShadow(color: Colors.black26, blurRadius: 10),
               ],
             ),
             child: Column(
@@ -133,30 +128,30 @@ class _DraggableResizableDialogState
                     },
 
                     child: Container(
-                      height:40,
-                      padding:
-                      const EdgeInsets.symmetric(horizontal:8),
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: const BoxDecoration(
-                        color:Colors.blue,
-                        borderRadius:
-                        BorderRadius.vertical(
-                          top:Radius.circular(12),
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(12),
                         ),
                       ),
-                      child:Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                        children:[
-                          Text(
-                            widget.title,
-                            style:const TextStyle(
-                              color:Colors.white,
-                              fontWeight:FontWeight.bold,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           Row(
                             mainAxisSize: MainAxisSize.min,
-                            children:[
+                            children: [
                               IconButton(
                                 icon: Icon(
                                   isMaximized
@@ -164,7 +159,7 @@ class _DraggableResizableDialogState
                                       : Icons.fullscreen,
                                   color: Colors.white,
                                 ),
-                                onPressed: (){
+                                onPressed: () {
                                   toggleMaximize(screenSize);
                                 },
                               ),
@@ -173,7 +168,7 @@ class _DraggableResizableDialogState
                                   Icons.close,
                                   color: Colors.white,
                                 ),
-                                onPressed: (){
+                                onPressed: () {
                                   Navigator.of(context).pop();
                                 },
                               ),
@@ -186,59 +181,58 @@ class _DraggableResizableDialogState
                 ),
                 // Body
                 Expanded(
-                  child:Stack(
-                    children:[
+                  child: Stack(
+                    children: [
                       Padding(
                         padding: const EdgeInsets.all(8),
-                        child: ClipRect(
-                          child: widget.child,
-                        ),
+                        child: ClipRect(child: widget.child),
                       ),
                       // resize handle
                       Positioned(
-                        right:8,
-                        bottom:8,
-                        child:GestureDetector(
-                          onPanUpdate:(details){
-                            setState((){
+                        right: 8,
+                        bottom: 8,
+                        child: GestureDetector(
+                          onPanUpdate: (details) {
+                            setState(() {
                               width = width! + details.delta.dx;
                               height = height! + details.delta.dy;
                               // 最小尺寸
-                              if(width! < 350){
-                                width = 350;
+                              final minWidth = screenSize.width < 350
+                                  ? screenSize.width
+                                  : 350.0;
+                              if (width! < minWidth) {
+                                width = minWidth;
                               }
-                              if(height! < 250){
+                              if (height! < 250) {
                                 height = 250;
                               }
                               // 最大尺寸
-                              if(width! > screenSize.width){
+                              if (width! > screenSize.width) {
                                 width = screenSize.width;
                               }
-                              if(height! > screenSize.height){
+                              if (height! > screenSize.height) {
                                 height = screenSize.height;
                               }
                             });
                           },
-                          child:Container(
-                            width:30,
-                            height:30,
-                            decoration:BoxDecoration(
-                              color:Colors.blue,
-                              borderRadius:
-                              BorderRadius.circular(4),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            child:
-                            const Icon(
+                            child: const Icon(
                               Icons.drag_handle,
-                              size:16,
-                              color:Colors.white,
+                              size: 16,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      )
+                      ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),

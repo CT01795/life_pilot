@@ -433,27 +433,39 @@ class _PageEventAddState extends State<PageEventAdd> {
                 WidgetsEventImage(value: imageValue, height: 190),
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(
-                        _imageLabel(),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _imageLabel(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        if (imageValue != null && imageValue.isNotEmpty)
+                          IconButton(
+                            tooltip: loc.delete,
+                            onPressed: () => ctl.setMasterGraphUrl(null),
+                            icon: const Icon(Icons.delete_outline_rounded),
+                          ),
+                      ],
                     ),
-                    if (imageValue != null && imageValue.isNotEmpty)
-                      IconButton(
-                        tooltip: loc.delete,
-                        onPressed: () => ctl.setMasterGraphUrl(null),
-                        icon: const Icon(Icons.delete_outline_rounded),
-                      ),
-                    OutlinedButton.icon(
-                      onPressed: () => _pickEventImage(ctl),
-                      icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: Text(
-                        imageValue == null || imageValue.isEmpty
-                            ? _chooseImageLabel()
-                            : _replaceImageLabel(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _pickEventImage(ctl),
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: Text(
+                          imageValue == null || imageValue.isEmpty
+                              ? _chooseImageLabel()
+                              : _replaceImageLabel(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ],
@@ -859,11 +871,14 @@ class _PageEventAddState extends State<PageEventAdd> {
               fields: fields,
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '#${index + 1} ${DateFormat('MM/dd').format(d.startDate!)} ${d.startTime!.format(context)} ${d.name.substring(0, d.name.length > 5 ? 5 : d.name.length)}${d.name.length > 5 ? '...' : ''}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    '#${index + 1} ${DateFormat('MM/dd').format(d.startDate!)} ${d.startTime!.format(context)} ${d.name.substring(0, d.name.length > 5 ? 5 : d.name.length)}${d.name.length > 5 ? '...' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.pinkAccent),

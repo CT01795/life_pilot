@@ -421,20 +421,17 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   ),
                   onTap: _pickExpiry,
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _extensionDays,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: loc.adminSubscriptionExtensionDays,
-                          suffixText: loc.days,
-                        ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final field = TextField(
+                      controller: _extensionDays,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: loc.adminSubscriptionExtensionDays,
+                        suffixText: loc.days,
                       ),
-                    ),
-                    Gaps.w8,
-                    Tooltip(
+                    );
+                    final action = Tooltip(
                       message: !_lookupMatchesCurrentEmail
                           ? loc.adminSubscriptionLookupRequired
                           : !_subscriptionExists
@@ -450,8 +447,28 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                         icon: const Icon(Icons.more_time),
                         label: Text(loc.adminSubscriptionExtend),
                       ),
-                    ),
-                  ],
+                    );
+                    if (constraints.maxWidth < 420) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          field,
+                          Gaps.h8,
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: action,
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: field),
+                        Gaps.w8,
+                        action,
+                      ],
+                    );
+                  },
                 ),
               ],
               TextField(

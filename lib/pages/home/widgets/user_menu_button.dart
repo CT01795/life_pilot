@@ -34,11 +34,16 @@ class UserMenuButton extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final availableMenuWidth = MediaQuery.sizeOf(context).width - 24;
+    final menuWidth = availableMenuWidth.clamp(240.0, 360.0);
     return PopupMenuButton<String>(
       icon: const Icon(Icons.account_circle, color: Colors.white, size: 28),
       tooltip: loc.userMenuButton,
       color: const Color(0xFF0066CC), // 改成跟 LanguageToggleDropdown 一樣
-      constraints: const BoxConstraints(minWidth: 320, maxWidth: 360),
+      constraints: BoxConstraints(
+        minWidth: menuWidth < 320 ? menuWidth : 320,
+        maxWidth: menuWidth,
+      ),
       onSelected: (value) async {
         switch (value) {
           case "feedback":

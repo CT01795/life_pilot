@@ -110,7 +110,9 @@ class _GenericEventPageState extends State<GenericEventPage> {
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
     _hasLoaded = true;
-    await _controller.loadEvents(isGetPublicEvents: true);
+    // Opening the page should only load saved data. Public-source crawling is
+    // intentionally reserved for the explicit refresh action in the app bar.
+    await _controller.loadEvents(isGetPublicEvents: false);
     await _controller.checkPublicEventsUpdatedToday();
   }
 
@@ -123,7 +125,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
 
     if (newEvent != null) {
       await widget.auth.refreshSubscriptionUsage();
-      await _controller.loadEvents(isGetPublicEvents: true);
+      await _controller.loadEvents(isGetPublicEvents: false);
     }
   }
 

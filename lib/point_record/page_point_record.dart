@@ -274,8 +274,8 @@ class _AccountCard extends StatelessWidget {
                       }
                     },
                     child: Container(
-                      width: 120,
-                      height: 120,
+                      width: MediaQuery.sizeOf(context).width < 400 ? 84 : 120,
+                      height: MediaQuery.sizeOf(context).width < 400 ? 84 : 120,
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(16),
@@ -304,7 +304,9 @@ class _AccountCard extends StatelessWidget {
                     ),
                   ),
 
-                  Gaps.w16,
+                  SizedBox(
+                    width: MediaQuery.sizeOf(context).width < 400 ? 8 : 16,
+                  ),
                   // ===== 文字 =====
                   Expanded(
                     child: Column(
@@ -315,10 +317,12 @@ class _AccountCard extends StatelessWidget {
                               ? loc.accountDefault
                               : account.accountName,
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF212121), // 深灰
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Gaps.h4,
                         // Points

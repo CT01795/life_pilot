@@ -242,26 +242,28 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
                       (version) => ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.sell_outlined),
-                        title: Text(version.name),
+                        title: Text(
+                          version.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         subtitle: Text(
                           '${version.storagePlan == 'local' ? loc.dataStorageLocal : loc.dataStorageCloud} · ${loc.vendorQuarterlyPrice(version.quarterlyPriceTwd)}',
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: loc.edit,
-                              onPressed: _saving
-                                  ? null
-                                  : () => _editVersion(version),
-                              icon: const Icon(Icons.edit_outlined),
-                            ),
-                            IconButton(
-                              tooltip: loc.delete,
-                              onPressed: _saving
-                                  ? null
-                                  : () => _deleteVersion(version),
-                              icon: const Icon(Icons.delete_outline),
+                        trailing: PopupMenuButton<String>(
+                          enabled: !_saving,
+                          tooltip: MaterialLocalizations.of(
+                            context,
+                          ).showMenuTooltip,
+                          onSelected: (action) {
+                            if (action == 'edit') _editVersion(version);
+                            if (action == 'delete') _deleteVersion(version);
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(value: 'edit', child: Text(loc.edit)),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(loc.delete),
                             ),
                           ],
                         ),

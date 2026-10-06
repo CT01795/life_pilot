@@ -54,7 +54,7 @@ class _PageRecommendPlacesState extends State<PageRecommendPlaces> {
     );
     if (event == null || !mounted) return;
     await context.read<ControllerAuth>().refreshSubscriptionUsage();
-    await _controllerEvent.loadEvents(isGetPublicEvents: true);
+    await _controllerEvent.loadEvents(isGetPublicEvents: false);
   }
 
   Widget _buildVendorSubmissionHub(BuildContext context) {
@@ -75,32 +75,34 @@ class _PageRecommendPlacesState extends State<PageRecommendPlaces> {
     final auth = context.read<ControllerAuth>();
     // ✅ 回傳 Provider Scope，包住整個頁面
     return ChangeNotifierProvider.value(
-        value: _controllerEvent,
-        child: GenericEventPage(
-          auth: auth,
-          controllerEvent: _controllerEvent,
-          title: '',
-          emptyText: loc.recommendPlacesZero,
-          enableCityFilter: true,
-          searchPanelBuilder: widgetsSearchPanel,
-          headerBuilder: _buildVendorSubmissionHub,
-          showAddAction: false,
-          eventPredicate: _showOnlyMySubmissions
-              ? (event) =>
-                    (event.account ?? '').trim().toLowerCase() ==
-                    (auth.currentAccount ?? '').trim().toLowerCase()
-              : null,
-          listBuilder: ({
-            required List<EventItem> filteredEvents,
-            required ScrollController scrollController,
-          }) {
-            return WidgetsEventList(
-              filteredEvents: filteredEvents,
-              scrollController: scrollController,
-              controllerEvent: _controllerEvent,
-              auth: auth,
-            );
-          },
-        ));
+      value: _controllerEvent,
+      child: GenericEventPage(
+        auth: auth,
+        controllerEvent: _controllerEvent,
+        title: '',
+        emptyText: loc.recommendPlacesZero,
+        enableCityFilter: true,
+        searchPanelBuilder: widgetsSearchPanel,
+        headerBuilder: _buildVendorSubmissionHub,
+        showAddAction: false,
+        eventPredicate: _showOnlyMySubmissions
+            ? (event) =>
+                  (event.account ?? '').trim().toLowerCase() ==
+                  (auth.currentAccount ?? '').trim().toLowerCase()
+            : null,
+        listBuilder:
+            ({
+              required List<EventItem> filteredEvents,
+              required ScrollController scrollController,
+            }) {
+              return WidgetsEventList(
+                filteredEvents: filteredEvents,
+                scrollController: scrollController,
+                controllerEvent: _controllerEvent,
+                auth: auth,
+              );
+            },
+      ),
+    );
   }
 }

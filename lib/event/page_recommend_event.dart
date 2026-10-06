@@ -39,10 +39,6 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
       toTableName: TableNames.calendarEvents,
       modelEvent: ModelEvent(),
     );
-    /*WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _controllerEvent.loadEvents(isGetPublicEvents: true);
-    });*/
   }
 
   @override
@@ -59,7 +55,7 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
     );
     if (event == null || !mounted) return;
     await context.read<ControllerAuth>().refreshSubscriptionUsage();
-    await _controllerEvent.loadEvents(isGetPublicEvents: true);
+    await _controllerEvent.loadEvents(isGetPublicEvents: false);
   }
 
   Widget _buildVendorSubmissionHub(BuildContext context) {

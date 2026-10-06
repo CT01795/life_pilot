@@ -9,107 +9,1387 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get vendorSubmissionTitle => 'Submission center';
+  String get accessDenied => 'Access denied';
 
   @override
-  String get vendorSubmissionDescription => 'Publish activities and attractions where people plan their time. Keep ownership and update your listing after review.';
+  String get activityName => 'Activity name';
 
   @override
-  String get vendorSubmissionBenefitReach => 'Reach active planners';
+  String get add => 'Add';
 
   @override
-  String get vendorSubmissionBenefitManage => 'Manage your own information';
+  String get ageMax => 'Max Age';
 
   @override
-  String get vendorSubmissionBenefitReview => 'Clear review status';
+  String get ageMin => 'Min. Age';
 
   @override
-  String get vendorSubmitActivity => 'Submit activity';
+  String get ai => 'AI';
 
   @override
-  String get vendorSubmitAttraction => 'Submit attraction';
+  String get alarmUpdateFailed => 'Could not update the reminder. Please try again later';
 
   @override
-  String get vendorMySubmissions => 'My submissions';
+  String get allCities => 'All cities';
 
   @override
-  String get vendorAllActivities => 'All submissions';
+  String get alreadyStarted => 'Already started';
 
   @override
-  String get vendorSubmitShort => 'Submit';
+  String get amountLabel => 'Value';
 
   @override
-  String get vendorMineShort => 'Mine';
+  String get answerExample => 'Answer example';
 
   @override
-  String get vendorAllShort => 'All';
+  String get answerHere => 'Answer here';
 
   @override
-  String get vendorSubmissionGuideTitle => 'Help people discover your activity';
+  String get answerOptions => 'Answer options';
 
   @override
-  String get vendorAttractionSubmissionGuideTitle => 'Help people discover your attraction';
+  String get answerOptionsHint => 'Separate options with commas';
 
   @override
-  String get attractionAddEdit => 'Add/Edit attraction';
+  String get appTitle => 'Life Pilot';
 
   @override
-  String get vendorSubmissionGuideDescription => 'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.';
+  String get askAdministrator => 'Ask the administrator';
 
   @override
-  String get vendorCreateAccountTitle => 'Organizing an event?';
+  String get askAdministratorDescription => 'Open your email app and send a request. The administrator will reply after handling it.';
 
   @override
-  String get vendorCreateAccountDescription => 'Create an account to submit activities, follow review status and keep your public information up to date.';
+  String get back => 'Back';
 
   @override
-  String get vendorCreateAccountAction => 'Create an account and submit';
+  String get blocklyEditor => 'Blockly Editor';
 
   @override
-  String get vendorRegistrationTitle => 'Organizer account';
+  String get cancel => 'Cancel';
 
   @override
-  String get vendorRegistrationDescription => 'This account opens an organizer workspace for managing activities, attractions and review status.';
+  String get cancelAlarm => 'Cancel alarm';
 
   @override
-  String get vendorDashboardTitle => 'Organizer workspace';
+  String get captureScreen => 'Capture screen';
 
   @override
-  String get vendorDashboardSubtitle => 'Manage submissions, follow review status and keep track of your current allowance.';
+  String get categoryLabel => 'Category';
 
   @override
-  String get vendorDashboardLoadFailed => 'Organizer information could not be loaded.';
+  String get check => 'Check';
 
   @override
-  String get vendorActiveActivities => 'Active activities';
+  String get checkPath => 'Check the path';
 
   @override
-  String get vendorActiveAttractions => 'Active attractions';
+  String get choosePhoto => 'Choose photo';
 
   @override
-  String vendorCurrentPlan(String plan) {
-    return 'Current plan: $plan';
+  String get clear => 'Clear';
+
+  @override
+  String get clickHereToSeeMore => 'See more...';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get completeAndReview => 'Complete & review';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get confirmDelete => 'Confirm delete?';
+
+  @override
+  String congratulationsScore(num score) {
+    return 'Congratulations! Score: $score';
   }
 
   @override
-  String get vendorManageActivities => 'Manage activities';
+  String get continueLabel => 'Continue';
 
   @override
-  String get vendorManageAttractions => 'Manage attractions';
-
-  @override
-  String get vendorPricingTitle => 'Organizer plans';
-
-  @override
-  String get vendorPricingDescription => 'Start free, then expand the number of public listings and the reporting period as your organization grows.';
-
-  @override
-  String get vendorPricingActiveOnlyNote => 'Listing allowances count content that has not ended. Expired content does not occupy an active-listing allowance.';
-
-  @override
-  String vendorQuarterlyPrice(int price) {
-    return 'NT\$$price / quarter';
+  String continueLevel(int level) {
+    return 'Continue level $level';
   }
+
+  @override
+  String get correctAnswer => 'Correct answer';
+
+  @override
+  String get coverPhotoOptional => 'Cover photo (optional)';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get dataCleanupAction => 'Review and clean up';
+
+  @override
+  String get dataCleanupAll => 'Clear all';
+
+  @override
+  String get dataCleanupAllConfirm => 'Delete all personal data in the selected storage? This cannot be undone.';
+
+  @override
+  String get dataCleanupConfirmTitle => 'Confirm deletion';
+
+  @override
+  String get dataCleanupExcess => 'Remove excess';
+
+  @override
+  String get dataCleanupExcessConfirm => 'Delete only records above the current allowance? This cannot be undone.';
+
+  @override
+  String get dataCleanupFailed => 'Data cleanup failed';
+
+  @override
+  String get dataCleanupNoOverage => 'No cloud data currently exceeds the allowance.';
+
+  @override
+  String get dataCleanupSuccess => 'Data cleanup completed';
+
+  @override
+  String get dataCleanupTargetEmail => 'User email (blank means yourself)';
+
+  @override
+  String get dataCleanupTitle => 'Data cleanup';
+
+  @override
+  String get dataClearLocalAction => 'Clear device data';
+
+  @override
+  String get dataClearLocalConfirm => 'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?';
+
+  @override
+  String get dataClearLocalFailed => 'Could not clear device data. Try again later.';
+
+  @override
+  String get dataClearLocalSuccess => 'Device data cleared';
+
+  @override
+  String get dataClearLocalTitle => 'Clear device data';
+
+  @override
+  String get dataMoveToLocal => 'Move cloud data to this device';
+
+  @override
+  String get dataMoveToLocalConfirm => 'Cloud data will be copied and verified before it is removed from the cloud. It will then be visible only on this device, browser, and browser profile. It will not automatically appear elsewhere, and removing the app or clearing site data may permanently delete it. Continue?';
+
+  @override
+  String get dataMoveToLocalFailed => 'Some data could not be moved. Cloud originals were retained.';
+
+  @override
+  String get dataMoveToLocalSuccess => 'Cloud data was moved to this device.';
+
+  @override
+  String get dateClear => 'Date clear';
+
+  @override
+  String get days => 'days';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteError => 'Delete failed';
+
+  @override
+  String deleteNumberedItem(int number, String name) {
+    return 'Delete item $number, $name?';
+  }
+
+  @override
+  String get deleteOk => '✅ Deletion completed';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get discardChanges => 'Discard changes';
+
+  @override
+  String get dislike => 'Dislike';
+
+  @override
+  String get downloaded => '✅ Downloaded';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get emailAlreadyInUse => 'Email already in uUse.';
+
+  @override
+  String get emailNotConfirmed => 'Email not confirmed';
+
+  @override
+  String get emailRateLimitExceeded => 'Too many verification emails have been requested. Please try again later.';
+
+  @override
+  String get endDate => 'End date';
+
+  @override
+  String get endsToday => 'Already started, ends today';
+
+  @override
+  String get endTime => 'End time';
+
+  @override
+  String get englishRpgAdventureTitle => 'English RPG Adventure';
+
+  @override
+  String get enterAnswer => 'Enter your answer';
+
+  @override
+  String get excelColumnHeaderActivityName => 'Activity name_______________________';
+
+  @override
+  String get excelColumnHeaderAgeMax => 'Max Age';
+
+  @override
+  String get excelColumnHeaderAgeMin => 'Min. Age';
+
+  @override
+  String get excelColumnHeaderDescription => 'Description______';
+
+  @override
+  String get excelColumnHeaderEndDate => 'End Date__';
+
+  @override
+  String get excelColumnHeaderEndTime => 'End Time';
+
+  @override
+  String get excelColumnHeaderFee => 'Fee';
+
+  @override
+  String get excelColumnHeaderId => 'Activity id_______________________';
+
+  @override
+  String get excelColumnHeaderIsFree => 'Free ?';
+
+  @override
+  String get excelColumnHeaderIsOutdoor => 'Outdoor ?';
+
+  @override
+  String get excelColumnHeaderKeywords => 'Keywords_______________________';
+
+  @override
+  String get excelColumnHeaderMasterUrl => 'Activity url_______________________';
+
+  @override
+  String get excelColumnHeaderPriceMax => 'Max Price';
+
+  @override
+  String get excelColumnHeaderPriceMin => 'Min. Price';
+
+  @override
+  String get excelColumnHeaderSponsor => 'Sponsor';
+
+  @override
+  String get excelColumnHeaderStartDate => 'Start Date__';
+
+  @override
+  String get excelColumnHeaderStartTime => 'Start Time';
+
+  @override
+  String get externalLinkOpenFailed => 'Could not open the link. Please try again later';
+
+  @override
+  String get fee => 'Fee';
+
+  @override
+  String get free => 'Free';
+
+  @override
+  String get go => 'Go';
+
+  @override
+  String get hint => 'Hint';
+
+  @override
+  String get indoor => 'Indoor';
+
+  @override
+  String get invalidEmail => 'Account format error';
+
+  @override
+  String get isFree => 'Free ?';
+
+  @override
+  String get isOutdoor => 'Outdoor ?';
+
+  @override
+  String get keywords => 'Keywords';
+
+  @override
+  String get like => 'Like';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get loadingSections => 'Loading sections...';
+
+  @override
+  String get manualEntry => 'Manual entry';
+
+  @override
+  String get masterUrl => 'Link';
+
+  @override
+  String get month => 'Month';
+
+  @override
+  String get moreActions => 'More';
+
+  @override
+  String get networkError => 'Unable to connect. Check your network and try again.';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String nextFreeHour(String startTime, String endTime) {
+    return 'No schedule today from $startTime to $endTime';
+  }
+
+  @override
+  String get nextMonth => 'Next month';
+
+  @override
+  String get noData => 'No data';
+
+  @override
+  String get noEmailError => 'Please enter your email address.';
+
+  @override
+  String get noInfoAvailable => 'No information available.';
+
+  @override
+  String get noPipes => 'No pipes';
+
+  @override
+  String get notFilled => 'Not filled in yet';
+
+  @override
+  String get notSupportUpload => '⚠️ Not support upload';
+
+  @override
+  String ongoingUntil(String date) {
+    return 'Ongoing until $date';
+  }
+
+  @override
+  String get openChatGPT => 'Open ChatGPT';
+
+  @override
+  String get outdoor => 'Outdoor';
+
+  @override
+  String get parsing => 'Parsing';
+
+  @override
+  String get pay => 'Pay';
+
+  @override
+  String get postText => 'Post the full text';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get previousMonth => 'Previous month';
+
+  @override
+  String priceEarningsRatio(String value) {
+    return 'P/E: $value';
+  }
+
+  @override
+  String get priceMax => 'Max Price';
+
+  @override
+  String get priceMin => 'Min. Price';
+
+  @override
+  String get publishedContentDeleteAdminOnly => 'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
+
+  @override
+  String get publishedSubmission => 'Public';
+
+  @override
+  String get publishedSubmissionTooltip => 'This information is public and can be viewed by everyone.';
+
+  @override
+  String get registrationSuccessful => 'Registration successful.';
+
+  @override
+  String relativeStrengthIndex(String value) {
+    return 'RSI: $value';
+  }
+
+  @override
+  String get repeatOptions => 'Repeat times';
+
+  @override
+  String get repeatOptionsEvery => 'Every';
+
+  @override
+  String get repeatOptionsEveryDay => 'Every day';
+
+  @override
+  String get repeatOptionsEveryMonth => 'Every month';
+
+  @override
+  String get repeatOptionsEveryTwoMonths => 'Every two months';
+
+  @override
+  String get repeatOptionsEveryTwoWeeks => 'Every two weeks';
+
+  @override
+  String get repeatOptionsEveryWeek => 'Every week';
+
+  @override
+  String get repeatOptionsEveryYear => 'Every year';
+
+  @override
+  String get repeatOptionsOnce => 'Once';
+
+  @override
+  String get replacePhoto => 'Replace';
+
+  @override
+  String get requiredField => 'This field is required';
+
+  @override
+  String get restart => 'Restart';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get scrambledWords => 'Words to rearrange';
+
+  @override
+  String get scrollThisArea => 'Scroll within this area';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get searchKeywords => 'Keyword (comma separated)';
+
+  @override
+  String get secondaryCategoryLabel => 'Subcategory';
+
+  @override
+  String get setAlarm => 'Set alarm';
+
+  @override
+  String get setAlarmCompleted => '✅ Set alarm completed';
+
+  @override
+  String get speak => 'Voice input';
+
+  @override
+  String get speakingText => 'Text to speak';
+
+  @override
+  String get speakingTitle => 'Speaking';
+
+  @override
+  String get speakUp => 'Speak up';
+
+  @override
+  String get sponsor => 'Sponsor';
+
+  @override
+  String get startDate => 'Start date';
+
+  @override
+  String startsInDays(int count) {
+    return 'Starts in $count days';
+  }
+
+  @override
+  String get startsToday => 'Starts today';
+
+  @override
+  String get startsTomorrow => 'Starts tomorrow';
+
+  @override
+  String get startTime => 'Start time';
+
+  @override
+  String get statusNotStarted => 'Not started';
+
+  @override
+  String get subUrl => 'Link';
+
+  @override
+  String get switchToList => 'Switch to list';
+
+  @override
+  String get toBeDetermined => 'To Be Determined';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get todayLifeOverview => 'Today\'s Life Overview';
+
+  @override
+  String get todayLifeOverviewHint => 'See your schedule, money, and points together. Tap an item for details.';
+
+  @override
+  String get toggleView => 'Toggle View';
+
+  @override
+  String get tooManyRequests => 'Too many requests. Please try again later.';
+
+  @override
+  String get totalAmount => 'Total Amount';
+
+  @override
+  String get twoOptionsRequired => 'Enter at least two answer options';
+
+  @override
+  String get unableToLoadDocument => 'Unable to load this document.';
+
+  @override
+  String get unknownError => 'Unknown error';
+
+  @override
+  String get unpublishedSubmission => 'Not public yet';
+
+  @override
+  String get unpublishedSubmissionTooltip => 'This information is awaiting review and is currently visible only to you and administrators.';
+
+  @override
+  String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
+
+  @override
+  String get uploadExcel => 'Upload Csv';
+
+  @override
+  String get uploadFailed => '❌ Upload failed';
+
+  @override
+  String get uploadInProgress => '❌ The previous file upload is still in progress.';
+
+  @override
+  String get uploadSuccess => '✅ Upload successful';
+
+  @override
+  String get url => 'URL';
+
+  @override
+  String get weekDayFri => 'Fri';
+
+  @override
+  String get weekDayMon => 'Mon';
+
+  @override
+  String get weekDaySat => 'Sat';
+
+  @override
+  String get weekDaySun => 'Sun';
+
+  @override
+  String get weekDayThu => 'Thu';
+
+  @override
+  String get weekDayTue => 'Tue';
+
+  @override
+  String get weekDayWed => 'Wed';
+
+  @override
+  String get wordSearchTitle => 'Word Search';
+
+  @override
+  String get year => 'Year';
+
+  @override
+  String get accountSecurity => 'Account security';
+
+  @override
+  String adminPasswordHelpBody(String account) {
+    return 'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: $account\n\nPlease reply to this email after the request has been handled.';
+  }
+
+  @override
+  String adminPasswordHelpEmailUnavailable(String email) {
+    return 'The email app could not be opened. Please email $email.';
+  }
+
+  @override
+  String get adminPasswordHelpOpened => 'Your email app is open. Review the message and send it.';
+
+  @override
+  String get adminPasswordHelpSubject => 'Life Pilot password change request';
+
+  @override
+  String get adminPasswordResetDescription => 'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.';
+
+  @override
+  String get adminPasswordResetFailed => 'The temporary password could not be created. Try again later.';
+
+  @override
+  String get adminPasswordResetSend => 'Create temporary password';
+
+  @override
+  String get adminPasswordResetTitle => 'Help a user reset their password';
+
+  @override
+  String get adminPasswordResetUserEmail => 'User email';
+
+  @override
+  String get adminPasswordResetUserNotFound => 'No user was found for this email.';
+
+  @override
+  String get adminTemporaryPasswordCopied => 'Temporary password copied.';
+
+  @override
+  String get adminTemporaryPasswordCopy => 'Copy temporary password';
+
+  @override
+  String adminTemporaryPasswordCreated(String email) {
+    return 'A temporary password was created for $email.';
+  }
+
+  @override
+  String get adminTemporaryPasswordInstruction => 'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.';
+
+  @override
+  String get adminTemporaryPasswordLabel => 'Temporary password';
+
+  @override
+  String get changePassword => 'Change password';
+
+  @override
+  String get changePasswordFailed => 'Password update failed. Check your current password and try again.';
+
+  @override
+  String get changePasswordSuccessful => 'Your password has been updated.';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get currentPassword => 'Current password';
+
+  @override
+  String get currentPasswordIncorrect => 'The current password is incorrect.';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get login => '  Login  ';
+
+  @override
+  String get loginAnonymously => 'Guest Login';
+
+  @override
+  String get loginError => 'Login failed. Please try again.';
+
+  @override
+  String get loginRelated => 'loginRelated';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get logoutConfirmation => 'Log out of the current account?';
+
+  @override
+  String get logoutError => 'Logout failed. Please try again.';
+
+  @override
+  String get moduleAuthorization => 'Access';
+
+  @override
+  String get moduleAuthorizationDescription => 'Choose the extra features available to a user. Home and the feature menu update together.';
+
+  @override
+  String get moduleAuthorizationLoadFailed => 'Could not load feature access. Check the account or try again.';
+
+  @override
+  String get moduleAuthorizationNoAccess => 'No extra features are enabled.';
+
+  @override
+  String get moduleAuthorizationNotDeployed => 'Feature access is not deployed. Run the authorization SQL in Supabase first.';
+
+  @override
+  String get moduleAuthorizationSaved => 'Feature access updated.';
+
+  @override
+  String get moduleAuthorizationSaveFailed => 'Feature access was not updated correctly. Search again and retry.';
+
+  @override
+  String get moduleAuthorizationSearchFirst => 'Enter and search for a user email first.';
+
+  @override
+  String get moduleAuthorizationUserNotFound => 'No user was found for that email address.';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get noPasswordError => 'Please enter your password.';
+
+  @override
+  String get noRecoverySession => 'The system cannot find a valid [verification credential], or the credential has expired.';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get passwordDoesNotMeetPolicy => 'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.';
+
+  @override
+  String get passwordHelpDescription => 'If you forgot your current password, reset it by verification email or ask the administrator for help.';
+
+  @override
+  String get passwordHelpTitle => 'Other reset options';
+
+  @override
+  String get passwordMismatch => 'Passwords do not match.';
+
+  @override
+  String get passwordMustBeDifferent => 'The new password must be different from the current password.';
+
+  @override
+  String get passwordReauthenticationRequired => 'For security, reset your password through email verification first.';
+
+  @override
+  String get passwordRecoveryChoiceDescription => 'Reset it yourself using a verification email, or email the administrator for help.';
+
+  @override
+  String get passwordRecoveryChoiceTitle => 'Choose a reset method';
+
+  @override
+  String get passwordUpdateSuccessful => 'Password updated. Please sign in with your new password.';
+
+  @override
+  String get register => '  Register  ';
+
+  @override
+  String get registerError => 'Registration failed. Please try again.';
+
+  @override
+  String get registrationVerificationRequired => 'Registration successful. Please verify your email before signing in.';
+
+  @override
+  String get resetByEmailVerification => 'Reset by verification email';
+
+  @override
+  String get resetByEmailVerificationDescription => 'We will email you a secure link so you can set a new password.';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String resetPasswordCooldown(int seconds) {
+    return 'Retry in ${seconds}s';
+  }
+
+  @override
+  String get resetPasswordEmail => 'Password reset email sent. Please check your inbox.';
+
+  @override
+  String get resetPasswordEmailNotFound => 'Account not found';
+
+  @override
+  String get resetPasswordError => 'Reset password failed. Please try again.';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get updatePassword => 'Update Password';
+
+  @override
+  String get weakPassword => 'Password must be at least 8 characters.';
+
+  @override
+  String get wrongUserPassword => 'User or Password is wrong';
+
+  @override
+  String get dashboardLoadFailed => 'Could not load this information. Please try again later';
+
+  @override
+  String get dashboardSettingSaveFailed => 'Could not save the setting. Please try again later';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get homeInsightDiscover => 'Nothing planned today. Start with an event or place that interests you.';
+
+  @override
+  String get homeInsightReadyForReview => 'Today\'s schedule is connected to memories, money, and points for one-step review.';
+
+  @override
+  String homeInsightResolveConflicts(int count) {
+    return '$count schedules overlap today or tomorrow. Consider adjusting your plan first.';
+  }
+
+  @override
+  String homeInsightReviewOverdue(int count) {
+    return '$count ended schedules still need review today. Do not let important tasks slip away.';
+  }
+
+  @override
+  String get homeJourneyReviewHint => 'Complete a schedule and record memories, money, and points together';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageChinese => 'Chinese';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageJapanese => 'Japanese';
+
+  @override
+  String get languageKorean => 'Korean';
+
+  @override
+  String get pageRelated => 'pageRelated';
+
+  @override
+  String get pageSelectorTooltip => 'Function menu';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get userMenuButton => 'User Menu';
+
+  @override
+  String get accountDeletionCloudOnly => 'Account deletion requests are available in cloud mode only. Switch the storage location to cloud before submitting a request.';
+
+  @override
+  String get adminPricingAccountingQuota => 'Accounting records';
+
+  @override
+  String get adminPricingAnswerDays => 'Answer history days';
+
+  @override
+  String get adminPricingCalendarQuota => 'Calendar records';
+
+  @override
+  String get adminPricingCreate => 'Create version';
+
+  @override
+  String get adminPricingCreated => 'New pricing version created; existing benefits are unchanged';
+
+  @override
+  String adminPricingCreateFailed(String error) {
+    return 'Unable to save the pricing version: $error';
+  }
+
+  @override
+  String adminPricingDeleteConfirmation(String name) {
+    return 'Delete $name? This is only allowed when no subscription or entitlement uses it.';
+  }
+
+  @override
+  String get adminPricingDeleted => 'Pricing version deleted.';
+
+  @override
+  String get adminPricingDeleteInUse => 'This pricing version is still used by a subscription or entitlement and cannot be deleted.';
+
+  @override
+  String get adminPricingDeleteTitle => 'Delete pricing version';
+
+  @override
+  String get adminPricingEffectiveDate => 'Effective date';
+
+  @override
+  String get adminPricingGameQuota => 'Custom questions';
+
+  @override
+  String get adminPricingImageQuota => 'Images (MB)';
+
+  @override
+  String get adminPricingLocalZeroUnlimited => 'For Local Plus, 0 in a quota field means unlimited.';
+
+  @override
+  String get adminPricingMemoryQuota => 'Memories';
+
+  @override
+  String get adminPricingPointQuota => 'Point records';
+
+  @override
+  String get adminPricingQuarterlyPrice => 'Quarterly price (TWD)';
+
+  @override
+  String get adminPricingRequired => 'Enter a version name and all numbers';
+
+  @override
+  String get adminPricingShareQuota => 'Calendar shares';
+
+  @override
+  String get adminPricingSubtitle => 'Applies to future payments and add-ons only';
+
+  @override
+  String get adminPricingTitle => 'Create user pricing version';
+
+  @override
+  String get adminPricingUpdate => 'Update version';
+
+  @override
+  String get adminPricingUpdated => 'User pricing version updated; existing subscription snapshots are unchanged';
+
+  @override
+  String get adminPricingVersionHint => 'Example: 2026-Q4';
+
+  @override
+  String get adminPricingVersionName => 'Version name';
+
+  @override
+  String get adminSubscriptionAddQuota => 'Add quota without replacing current benefits';
+
+  @override
+  String get adminSubscriptionAddQuotaHint => 'The new quota is added to unexpired quota';
+
+  @override
+  String get adminSubscriptionCloud => 'Cloud';
+
+  @override
+  String get adminSubscriptionDeleteAll => 'Delete all subscription and quota settings';
+
+  @override
+  String adminSubscriptionDeleteConfirmation(String email) {
+    return 'Delete the subscription and quota settings for $email? The user\'s data will not be deleted.';
+  }
+
+  @override
+  String get adminSubscriptionDeleted => 'Subscription and quota settings deleted.';
+
+  @override
+  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
+    return 'Delete only the $version allowance? Other allowances and user data will be kept.';
+  }
+
+  @override
+  String get adminSubscriptionDeleteTitle => 'Delete subscription settings';
+
+  @override
+  String get adminSubscriptionEmail => 'User email';
+
+  @override
+  String get adminSubscriptionEntitlementDeleted => 'This allowance was deleted. Other allowances were kept.';
+
+  @override
+  String get adminSubscriptionEntitlements => 'Created allowances';
+
+  @override
+  String get adminSubscriptionExpiry => 'Benefit expiry';
+
+  @override
+  String get adminSubscriptionExtend => 'Extend';
+
+  @override
+  String get adminSubscriptionExtend90Days => 'Extend 90 days';
+
+  @override
+  String get adminSubscriptionExtended => 'Subscription extended by 90 days.';
+
+  @override
+  String adminSubscriptionExtendedDays(int days) {
+    return 'Subscription extended by $days days.';
+  }
+
+  @override
+  String get adminSubscriptionExtensionDays => 'Extension days';
+
+  @override
+  String get adminSubscriptionFree => 'Free';
+
+  @override
+  String get adminSubscriptionInactiveWarning => 'The account and cloud data are removed after 3 months without changes.';
+
+  @override
+  String get adminSubscriptionInvalidExtensionDays => 'Enter a number from 1 to 3650.';
+
+  @override
+  String get adminSubscriptionLoadedForEditing => 'The current subscription is ready to edit and save.';
+
+  @override
+  String get adminSubscriptionLocal => 'Local unlimited';
+
+  @override
+  String get adminSubscriptionLookupRequired => 'Search for the user first.';
+
+  @override
+  String get adminSubscriptionMultiplier => 'Quota multiplier';
+
+  @override
+  String get adminSubscriptionNoExpiry => 'The free plan has no expiry date';
+
+  @override
+  String get adminSubscriptionNoPricing => 'Create a pricing version first';
+
+  @override
+  String get adminSubscriptionNote => 'Note';
+
+  @override
+  String get adminSubscriptionNotFound => 'No subscription found';
+
+  @override
+  String get adminSubscriptionNotFoundCreate => 'You can create a new subscription for this user.';
+
+  @override
+  String get adminSubscriptionPaid => 'Paid';
+
+  @override
+  String get adminSubscriptionPlan => 'Plan';
+
+  @override
+  String get adminSubscriptionPricingVersion => 'Pricing version';
+
+  @override
+  String get adminSubscriptionSave => 'Save subscription';
+
+  @override
+  String get adminSubscriptionSaved => 'Subscription saved';
+
+  @override
+  String adminSubscriptionSaveFailed(String error) {
+    return 'Save failed: $error';
+  }
+
+  @override
+  String get adminSubscriptionStoragePlan => 'Storage plan';
+
+  @override
+  String get adminSubscriptionSubtitle => 'Apply the pricing and quota purchased';
+
+  @override
+  String adminSubscriptionTimes(int count) {
+    return '$count×';
+  }
+
+  @override
+  String get adminSubscriptionTitle => 'Manage subscription';
+
+  @override
+  String get adminSubscriptionUserNotFound => 'User account not found';
+
+  @override
+  String get adminVendorPricingCreated => 'Organizer pricing version created.';
+
+  @override
+  String get adminVendorPricingSubtitle => 'Future purchases use the latest effective version; existing entitlements keep their snapshot.';
+
+  @override
+  String get adminVendorPricingTitle => 'Create vendor pricing version';
+
+  @override
+  String get adminVendorPricingUpdated => 'Organizer pricing version updated.';
+
+  @override
+  String get adminVendorSubscriptionSaved => 'Organizer subscription saved.';
+
+  @override
+  String get adminVendorSubscriptionSubtitle => 'Assign a pricing version, allowance multiplier and expiry date to an organizer account.';
+
+  @override
+  String get adminVendorSubscriptionTitle => 'Manage organizer subscription';
+
+  @override
+  String get calendarInvitationQuotaExceeded => 'You have reached the calendar sharing limit. Please remove an existing share or upgrade your plan.';
+
+  @override
+  String get dataCleanupCloudExplanation => 'Review current cloud overages, then remove only the excess or all personal cloud data.';
+
+  @override
+  String get dataStorageCloud => 'Cloud';
+
+  @override
+  String get dataStorageCloudWarning => 'Cloud data is available across devices and is subject to your plan limits.';
+
+  @override
+  String get dataStorageLocal => 'This device';
+
+  @override
+  String get dataStorageLocalPlanRequired => 'Complete Device Plus payment and wait for admin activation before switching.';
+
+  @override
+  String get dataStorageLocalWarning => 'Local data is visible only on this device, browser, and browser profile. It will not automatically appear on another device, browser, or profile. Removing the app or clearing site or browser data may permanently delete it. It can be moved to the cloud when it fits your plan limits.';
+
+  @override
+  String get dataStorageTitle => 'Storage';
+
+  @override
+  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+    return 'Upload cancelled: $resource currently uses $used cloud records; this upload adds $incoming, but the plan limit is $quota.';
+  }
+
+  @override
+  String get dataUploadToCloud => 'Upload local data to cloud (Admin)';
+
+  @override
+  String get dataUploadToCloudAction => 'Move local data to cloud';
+
+  @override
+  String get dataUploadToCloudConfirm => 'All local data will first be checked against your current plan limits. Local copies are deleted and cloud mode is enabled only after the entire upload is verified. If it exceeds a limit or fails, local mode remains active. Continue?';
+
+  @override
+  String get dataUploadToCloudFailed => 'The upload was cancelled. All local records remain on this device.';
+
+  @override
+  String get dataUploadToCloudSuccess => 'Local data was uploaded to the cloud.';
+
+  @override
+  String get quotaFreePeriodActive => 'Active now';
+
+  @override
+  String get quotaFreePeriodAutomaticHint => 'Limits are suspended only between the selected start and end times.';
+
+  @override
+  String get quotaFreePeriodClear => 'Clear setting';
+
+  @override
+  String get quotaFreePeriodClearConfirm => 'Remove the configured no-limit period? Normal plan limits will apply immediately.';
+
+  @override
+  String get quotaFreePeriodCleared => 'No-limit promotion removed.';
+
+  @override
+  String get quotaFreePeriodDescription => 'New cloud records do not count against plan limits during this period. Normal limits resume automatically afterward.';
+
+  @override
+  String get quotaFreePeriodDisabled => 'Disabled';
+
+  @override
+  String get quotaFreePeriodEdit => 'Edit period';
+
+  @override
+  String get quotaFreePeriodEmpty => 'No no-limit periods have been configured.';
+
+  @override
+  String get quotaFreePeriodEnabled => 'Enable this period';
+
+  @override
+  String get quotaFreePeriodEnd => 'Ends';
+
+  @override
+  String get quotaFreePeriodEnded => 'Ended';
+
+  @override
+  String get quotaFreePeriodInvalidRange => 'The end time must be later than the start time.';
+
+  @override
+  String get quotaFreePeriodName => 'Promotion name';
+
+  @override
+  String get quotaFreePeriodNew => 'Create a period';
+
+  @override
+  String get quotaFreePeriodSaved => 'No-limit promotion saved.';
+
+  @override
+  String get quotaFreePeriodSaveFailed => 'Could not save the no-limit promotion.';
+
+  @override
+  String get quotaFreePeriodScheduled => 'Scheduled';
+
+  @override
+  String get quotaFreePeriodStart => 'Starts';
+
+  @override
+  String get quotaFreePeriodTitle => 'No-limit promotion';
+
+  @override
+  String get quotaFreePeriodUnnamed => 'Unnamed promotion';
+
+  @override
+  String get recordCategoryAllowance => 'Allowance';
+
+  @override
+  String get subscriptionActualQuotaTitle => 'Your current version and usage';
+
+  @override
+  String subscriptionCloudVersionName(String version) {
+    return 'Cloud $version';
+  }
+
+  @override
+  String get subscriptionCommonFeatures => 'Included with both plans';
+
+  @override
+  String get subscriptionCommonFeaturesDetail => 'Calendar, accounting, points, recommended events and attractions, and the administrator question bank. Local-device data remains unlimited. Stocks and Business Plan are administrator-only.';
+
+  @override
+  String get subscriptionCurrentAdmin => 'Current access: Administrator (unlimited)';
+
+  @override
+  String get subscriptionCurrentCloudPlus => 'Current: Cloud Plus';
+
+  @override
+  String get subscriptionCurrentFree => 'Current plan: Cloud Free';
+
+  @override
+  String get subscriptionCurrentLocalPlus => 'Current: Local Plus';
+
+  @override
+  String get subscriptionCurrentPlus => 'Current plan: Plus';
+
+  @override
+  String get subscriptionDeleteRecordHint => 'Deleting this record will also recalculate today and total values.';
+
+  @override
+  String subscriptionDowngradeWarning(String date) {
+    return 'Your cloud data exceeds the free allowance. Remove or move the excess by $date.';
+  }
+
+  @override
+  String get subscriptionEffectiveDate => 'Effective date';
+
+  @override
+  String get subscriptionFreeName => 'Cloud Free';
+
+  @override
+  String get subscriptionFreePersonalRecords => 'Cloud storage: up to 30 records each for calendar, accounting, points, and memories';
+
+  @override
+  String get subscriptionFreePrice => 'Free';
+
+  @override
+  String get subscriptionImagePlusOnly => 'Photo uploads are available with Plus.';
+
+  @override
+  String get subscriptionImageStorage => 'Photo storage';
+
+  @override
+  String get subscriptionInactiveAccountWarning => 'Free accounts have no expiry date. If no data is added or changed for 3 months, the account and its cloud data will be automatically removed.';
+
+  @override
+  String get subscriptionLatestLocalVersionTitle => 'Local Plus version for the next payment';
+
+  @override
+  String get subscriptionLocalAnswerHistory => 'Unlimited local answer history';
+
+  @override
+  String get subscriptionLocalPaidFeature => 'Unlimited records and photos on this device; data does not automatically appear on other devices';
+
+  @override
+  String get subscriptionLocalPaidName => 'Device Plus';
+
+  @override
+  String get subscriptionLocalPaidPrice => 'NT\$129 / quarter';
+
+  @override
+  String subscriptionLocalUsage(int used) {
+    return 'Stored on this device: $used / Unlimited';
+  }
+
+  @override
+  String subscriptionLocalVersionName(String version) {
+    return 'Device $version';
+  }
+
+  @override
+  String subscriptionNextCloudVersionName(String version) {
+    return 'Next payment: Cloud $version';
+  }
+
+  @override
+  String get subscriptionNextCloudVersionTitle => 'Cloud version for the next payment';
+
+  @override
+  String subscriptionNextLocalVersionName(String version) {
+    return 'Next payment: Device $version';
+  }
+
+  @override
+  String get subscriptionNextVersionTitle => 'Latest version for your next payment';
+
+  @override
+  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+    return '$resource: $used/$quota (over by $excess)';
+  }
+
+  @override
+  String get subscriptionPlansTitle => 'Plans and subscription';
+
+  @override
+  String get subscriptionPlusName => 'Cloud Plus';
+
+  @override
+  String get subscriptionPlusPersonalRecords => '300 cloud records each for calendar, accounting, points, and memories';
+
+  @override
+  String get subscriptionPlusPrice => 'From NT\$129 / quarter';
+
+  @override
+  String get subscriptionPricingVersion => 'Current version';
+
+  @override
+  String get subscriptionPurchaseComingSoon => 'In-app subscription coming soon';
+
+  @override
+  String get subscriptionPurchaseExplanation => 'Plus cannot be purchased yet. Once store billing is available, this page will show the official price, renewal terms, purchase, restore, and subscription management actions.';
+
+  @override
+  String get subscriptionQuarterlyPayment => 'Quarterly payment';
+
+  @override
+  String get subscriptionQuotaMultiplier => 'Quota multiplier';
+
+  @override
+  String get subscriptionQuotaReached => 'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.';
+
+  @override
+  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
+    return 'Cloud limit reached: $used of $quota records are in use, so $remaining more can be added. Delete an older record, switch to this device, or upgrade to Plus.';
+  }
+
+  @override
+  String get subscriptionRenewalRequired => 'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.';
+
+  @override
+  String subscriptionUsage(int used, int quota) {
+    return 'Used $used / $quota';
+  }
+
+  @override
+  String subscriptionValidUntil(String date) {
+    return 'Valid until $date';
+  }
+
+  @override
+  String subscriptionVersionOffer(String version, String date, int price) {
+    return '$version · Effective $date · NT\$$price per quarter';
+  }
+
+  @override
+  String get vendorContentQuotaReached => 'The active-listing allowance is full. Remove an active listing or upgrade the organizer plan.';
+
+  @override
+  String get vendorImageQuotaReached => 'The organizer image allowance is full. Remove images or upgrade the organizer plan.';
 
   @override
   String vendorPlanActivityQuota(int count) {
@@ -127,167 +1407,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String vendorPlanAnalyticsDays(int count) {
-    return 'Analytics for the latest $count days';
-  }
+  String get vendorPricingActiveOnlyNote => 'Listing allowances count content that has not ended. Expired content does not occupy an active-listing allowance.';
 
   @override
-  String get vendorContentQuotaReached => 'The active-listing allowance is full. Remove an active listing or upgrade the organizer plan.';
+  String get vendorPricingDescription => 'Start free, then expand the number of public listings and the reporting period as your organization grows.';
 
   @override
-  String get vendorImageQuotaReached => 'The organizer image allowance is full. Remove images or upgrade the organizer plan.';
-
-  @override
-  String get vendorAnalyticsDays => 'Analytics days';
-
-  @override
-  String get vendorPlanFreeName => 'Free plan';
-
-  @override
-  String get vendorPlanPartnerName => 'Partner plan';
-
-  @override
-  String get vendorPlanGrowthName => 'Growth plan';
-
-  @override
-  String get vendorPlanCustomName => 'Custom plan';
-
-  @override
-  String get vendorAnalyticsTitle => 'Performance analytics';
-
-  @override
-  String vendorAnalyticsDescription(int days) {
-    return 'Interactions with your activities and attractions during the latest $days days.';
-  }
-
-  @override
-  String vendorPendingReviewCount(int count) {
-    return '$count submissions awaiting review';
-  }
-
-  @override
-  String get vendorPendingReviewHint => 'Review status is kept here. Published listings become visible to everyone.';
-
-  @override
-  String vendorQuotaRemaining(int count, String suffix) {
-    return '$count$suffix remaining';
-  }
-
-  @override
-  String get vendorClickThroughRate => 'View-to-click';
-
-  @override
-  String get vendorRegistrationRate => 'Click-to-registration';
-
-  @override
-  String vendorPositiveActions(int count) {
-    return '$count saves and likes';
-  }
-
-  @override
-  String get vendorNextStepFirstTitle => 'Publish your first listing';
-
-  @override
-  String get vendorNextStepFirstMessage => 'Start with one complete activity: add an accurate date, place, image and registration link.';
-
-  @override
-  String get vendorNextStepReviewTitle => 'Your submission is being reviewed';
-
-  @override
-  String get vendorNextStepReviewMessage => 'You can track the result here. Once approved, everyone can discover it while planning.';
-
-  @override
-  String get vendorNextStepExposureTitle => 'Make the first impression count';
-
-  @override
-  String get vendorNextStepExposureMessage => 'A clear title, cover image and city help people discover and understand your listing.';
-
-  @override
-  String get vendorNextStepClickTitle => 'Turn views into interest';
-
-  @override
-  String get vendorNextStepClickMessage => 'Strengthen the opening description, highlights and image so planners know why to open it.';
-
-  @override
-  String get vendorNextStepRegistrationTitle => 'Make registration easier';
-
-  @override
-  String get vendorNextStepRegistrationMessage => 'Check that the registration URL and call to action are clear and still available.';
-
-  @override
-  String get vendorNextStepGrowingTitle => 'Your content is creating action';
-
-  @override
-  String get vendorNextStepGrowingMessage => 'Keep dates and availability current, then use the conversion rates to improve the next listing.';
-
-  @override
-  String get vendorAnalyticsPageViews => 'Page views';
-
-  @override
-  String get vendorAnalyticsCardClicks => 'Content clicks';
-
-  @override
-  String get vendorAnalyticsRegistrationClicks => 'Registration clicks';
-
-  @override
-  String get vendorAnalyticsSaves => 'Saves';
-
-  @override
-  String get vendorAnalyticsLikes => 'Likes';
-
-  @override
-  String get vendorAnalyticsDislikes => 'Dislikes';
-
-  @override
-  String vendorQualityProgress(int count, int total) {
-    return 'Submission completeness: $count of $total';
-  }
-
-  @override
-  String get vendorQualityName => 'Title';
-
-  @override
-  String get vendorQualityDate => 'Date';
-
-  @override
-  String get vendorQualityCity => 'City';
-
-  @override
-  String get vendorQualityLocation => 'Place';
-
-  @override
-  String get vendorQualityDescription => 'Description';
-
-  @override
-  String get vendorQualityLink => 'Registration link';
-
-  @override
-  String get vendorContentMixTitle => 'Content overview';
-
-  @override
-  String vendorActivityAttractionMix(int activities, int attractions) {
-    return '$activities active activities · $attractions active attractions';
-  }
-
-  @override
-  String vendorPublishedPendingMix(int published, int pending) {
-    return '$published public · $pending awaiting review';
-  }
-
-  @override
-  String get vendorRecentSubmissionsTitle => 'Recent submissions';
-
-  @override
-  String get vendorRecentSubmissionsEmpty => 'No submissions yet. Add your first activity or attraction.';
-
-  @override
-  String get vendorActivityLabel => 'Activity';
-
-  @override
-  String get vendorAttractionLabel => 'Attraction';
-
-  @override
-  String get vendorUntitledSubmission => 'Untitled submission';
+  String get vendorPricingTitle => 'Organizer plans';
 
   @override
   String get vendorQuotaFullHint => 'An allowance is full. Upgrade or remove an active listing before adding more.';
@@ -296,492 +1422,319 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vendorQuotaNearFullHint => 'An allowance is almost full. Review the available plans before your next submission.';
 
   @override
-  String get vendorViewPlans => 'View plans';
-
-  @override
-  String get vendorAnalyticsEmpty => 'Performance data appears after people discover and interact with your public content.';
-
-  @override
-  String get vendorRegistrationFreeStart => 'Start with the free organizer plan';
-
-  @override
-  String get vendorRegistrationAnalytics => 'See content performance in one workspace';
-
-  @override
-  String get publishedContentDeleteAdminOnly => 'Published content can only be deleted by an administrator. You can edit it; after saving, it returns to pending review.';
-
-  @override
-  String get adminVendorPricingTitle => 'Create vendor pricing version';
-
-  @override
-  String get adminVendorPricingSubtitle => 'Future purchases use the latest effective version; existing entitlements keep their snapshot.';
-
-  @override
-  String get adminVendorPricingCreated => 'Organizer pricing version created.';
-
-  @override
-  String get adminVendorPricingUpdated => 'Organizer pricing version updated.';
-
-  @override
-  String get adminVendorExistingPlans => 'Existing pricing versions';
-
-  @override
-  String get adminPricingUpdate => 'Update version';
-
-  @override
-  String get adminVendorSubscriptionTitle => 'Manage organizer subscription';
-
-  @override
-  String get adminVendorSubscriptionSubtitle => 'Assign a pricing version, allowance multiplier and expiry date to an organizer account.';
-
-  @override
-  String get adminVendorSubscriptionSaved => 'Organizer subscription saved.';
-
-  @override
-  String get recordCategorySalary => 'Salary';
-
-  @override
-  String get recordCategoryBonus => 'Bonus';
-
-  @override
-  String get recordCategoryInvestmentIncome => 'Investment income';
-
-  @override
-  String get recordCategoryAllowance => 'Allowance';
-
-  @override
-  String get recordCategoryRefund => 'Refund';
-
-  @override
-  String get recordCategoryOtherIncome => 'Other income';
-
-  @override
-  String get languageEnglish => 'English';
-
-  @override
-  String get languageChinese => 'Chinese';
-
-  @override
-  String get languageJapanese => 'Japanese';
-
-  @override
-  String get languageKorean => 'Korean';
-
-  @override
-  String feedbackProcessedBy(String name, String time) {
-    return 'Processed by $name at $time';
+  String vendorQuotaRemaining(int count, String suffix) {
+    return '$count$suffix remaining';
   }
 
   @override
-  String relativeStrengthIndex(String value) {
-    return 'RSI: $value';
+  String get weatherClouds => 'Cloudy';
+
+  @override
+  String get addToSchedule => 'Add to schedule';
+
+  @override
+  String get calendarCancelAllShares => 'Stop sharing all events';
+
+  @override
+  String get calendarCancelSingleShare => 'Stop sharing this event';
+
+  @override
+  String get calendarInvitationAccept => 'Accept';
+
+  @override
+  String get calendarInvitationAccepted => 'Accepted';
+
+  @override
+  String get calendarInvitationAccountNotFound => 'That account could not be found.';
+
+  @override
+  String get calendarInvitationDecline => 'Decline';
+
+  @override
+  String get calendarInvitationDeclined => 'Declined';
+
+  @override
+  String get calendarInvitationDuplicate => 'These events are already shared with this account.';
+
+  @override
+  String get calendarInvitationEventUnavailable => 'The selected event no longer exists or cannot be shared. Refresh and select it again.';
+
+  @override
+  String get calendarInvitationFailed => 'Calendar invitation could not be updated.';
+
+  @override
+  String calendarInvitationFailedWithReason(String reason) {
+    return 'Calendar invitation could not be updated: $reason';
   }
 
   @override
-  String get gamePassed => 'Pass!';
+  String get calendarInvitationPending => 'Pending';
 
   @override
-  String get gameFailed => 'Fail';
+  String get calendarInvitationRevoke => 'Stop sharing';
 
   @override
-  String gameScoreValue(num score) {
-    return 'Score: $score';
+  String get calendarInvitationRevoked => 'Revoked';
+
+  @override
+  String get calendarInvitationSelfInvite => 'You cannot invite your own account.';
+
+  @override
+  String get calendarInvitationSent => 'Invitation sent.';
+
+  @override
+  String get calendarInvitationStateChanged => 'The invitation status changed. Refresh and try again.';
+
+  @override
+  String get calendarInvite => 'Invite viewers';
+
+  @override
+  String get calendarInviteHint => 'Enter account emails, separated by commas or new lines';
+
+  @override
+  String get calendarNoShareableEvents => 'There are no events available to share.';
+
+  @override
+  String get calendarNoSharedEvents => 'No events are currently shared.';
+
+  @override
+  String get calendarReceivedInvitations => 'Received invitations';
+
+  @override
+  String get calendarSearchEmail => 'Email';
+
+  @override
+  String get calendarSearchEvent => 'Event';
+
+  @override
+  String get calendarSelectEventRequired => 'Select at least one event to share.';
+
+  @override
+  String get calendarSentInvitations => 'Sent invitations';
+
+  @override
+  String get calendarShareAllEvents => 'Share all events';
+
+  @override
+  String calendarSharedBy(String account) {
+    return 'Shared by $account';
   }
 
   @override
-  String get appTitle => 'Life Pilot';
+  String get calendarSharedReadOnly => 'Shared calendar · Read only';
 
   @override
-  String get language => 'Language';
+  String get calendarShareEvents => 'Choose events to share';
 
   @override
-  String get loginRelated => 'loginRelated';
+  String get calendarSharing => 'Calendar sharing';
 
   @override
-  String get passwordRecoveryChoiceTitle => 'Choose a reset method';
+  String get calendarSharingUpdated => 'Calendar sharing updated.';
 
   @override
-  String get passwordRecoveryChoiceDescription => 'Reset it yourself using a verification email, or email the administrator for help.';
+  String get calendarStopReceiving => 'Stop viewing';
 
   @override
-  String get resetByEmailVerification => 'Reset by verification email';
+  String get eventReminder => 'Event reminder';
 
   @override
-  String get resetByEmailVerificationDescription => 'We will email you a secure link so you can set a new password.';
+  String get eventReminderDesc => 'Remind you of upcoming events';
 
   @override
-  String get askAdministrator => 'Ask the administrator';
+  String get eventReminderToday => 'Today event reminder';
 
   @override
-  String get askAdministratorDescription => 'Open your email app and send a request. The administrator will reply after handling it.';
+  String get pagCalendar => 'pagCalendar';
 
   @override
-  String get adminPasswordHelpSubject => 'Life Pilot password change request';
+  String get reminderOptions => 'Reminder time';
 
   @override
-  String adminPasswordHelpBody(String account) {
-    return 'Hello, I cannot sign in to Life Pilot. Please help with my password change.\n\nAccount: $account\n\nPlease reply to this email after the request has been handled.';
+  String get reminderOptions15MinutesBefore => '15 minutes before';
+
+  @override
+  String get reminderOptions30MinutesBefore => '30 minutes before';
+
+  @override
+  String get reminderOptionsDefaultDayBefore8am => '1 day before 8 am';
+
+  @override
+  String get reminderOptionsDefaultSameDay8am => 'Sam day 8 am';
+
+  @override
+  String get reminderOptionsOneHourBefore => '1 hour before';
+
+  @override
+  String get reminderOptionsOneMonthBefore => '1 month before';
+
+  @override
+  String get reminderOptionsOneWeekBefore => '1 week before';
+
+  @override
+  String get reminderOptionsTwoDaysBefore => '2 days before';
+
+  @override
+  String get reminderOptionsTwoWeeksBefore => '2 weeks before';
+
+  @override
+  String get scheduleAlreadyStarted => 'Schedule already started';
+
+  @override
+  String get scheduleAwaitingReview => 'Schedule awaiting review';
+
+  @override
+  String scheduleConflictBeforeSave(int count, String details) {
+    return 'This time overlaps with $count unfinished schedule items:\n$details\nSave anyway?';
   }
 
   @override
-  String get adminPasswordHelpOpened => 'Your email app is open. Review the message and send it.';
-
-  @override
-  String adminPasswordHelpEmailUnavailable(String email) {
-    return 'The email app could not be opened. Please email $email.';
+  String scheduleConflictCount(int count) {
+    return '$count schedule time conflicts today and tomorrow';
   }
 
   @override
-  String get passwordHelpTitle => 'Other reset options';
-
-  @override
-  String get passwordHelpDescription => 'If you forgot your current password, reset it by verification email or ask the administrator for help.';
-
-  @override
-  String get login => '  Login  ';
-
-  @override
-  String get loginAnonymously => 'Guest Login';
-
-  @override
-  String get logout => 'Logout';
-
-  @override
-  String get logoutConfirmation => 'Log out of the current account?';
-
-  @override
-  String get resetPassword => 'Reset Password';
-
-  @override
-  String get resetPasswordEmail => 'Password reset email sent. Please check your inbox.';
-
-  @override
-  String resetPasswordCooldown(int seconds) {
-    return 'Retry in ${seconds}s';
+  String scheduleConflictToday(int count) {
+    return 'Today has $count schedule time conflicts';
   }
 
   @override
-  String get noEmailError => 'Please enter your email address.';
-
-  @override
-  String get invalidEmail => 'Account format error';
-
-  @override
-  String get noPasswordError => 'Please enter your password.';
-
-  @override
-  String get noRecoverySession => 'The system cannot find a valid [verification credential], or the credential has expired.';
-
-  @override
-  String get resetPasswordError => 'Reset password failed. Please try again.';
-
-  @override
-  String get resetPasswordEmailNotFound => 'Account not found';
-
-  @override
-  String get wrongUserPassword => 'User or Password is wrong';
-
-  @override
-  String get emailNotConfirmed => 'Email not confirmed';
-
-  @override
-  String get tooManyRequests => 'Too many requests. Please try again later.';
-
-  @override
-  String get emailRateLimitExceeded => 'Too many verification emails have been requested. Please try again later.';
-
-  @override
-  String get networkError => 'Unable to connect. Check your network and try again.';
-
-  @override
-  String get email => 'Email';
-
-  @override
-  String get password => 'Password';
-
-  @override
-  String get register => '  Register  ';
-
-  @override
-  String get updatePassword => 'Update Password';
-
-  @override
-  String get accountSecurity => 'Account security';
-
-  @override
-  String get currentPassword => 'Current password';
-
-  @override
-  String get newPassword => 'New password';
-
-  @override
-  String get changePassword => 'Change password';
-
-  @override
-  String get changePasswordSuccessful => 'Your password has been updated.';
-
-  @override
-  String get changePasswordFailed => 'Password update failed. Check your current password and try again.';
-
-  @override
-  String get currentPasswordIncorrect => 'The current password is incorrect.';
-
-  @override
-  String get passwordMustBeDifferent => 'The new password must be different from the current password.';
-
-  @override
-  String get passwordDoesNotMeetPolicy => 'The new password does not meet the security requirements. Add letters, numbers, or symbols and try again.';
-
-  @override
-  String get passwordReauthenticationRequired => 'For security, reset your password through email verification first.';
-
-  @override
-  String get adminPasswordResetTitle => 'Help a user reset their password';
-
-  @override
-  String get adminPasswordResetDescription => 'Enter the requester\'s account email to create a temporary password. Reply to the user and ask them to change it immediately after signing in.';
-
-  @override
-  String get adminPasswordResetUserEmail => 'User email';
-
-  @override
-  String get adminPasswordResetSend => 'Create temporary password';
-
-  @override
-  String adminTemporaryPasswordCreated(String email) {
-    return 'A temporary password was created for $email.';
+  String scheduleConflictTomorrow(int count) {
+    return 'Tomorrow has $count schedule time conflicts';
   }
 
   @override
-  String get adminTemporaryPasswordLabel => 'Temporary password';
+  String get scheduleDuplicateConfirmation => 'This item is already in your calendar. Add it again?';
 
   @override
-  String get adminTemporaryPasswordInstruction => 'Copy and reply with it, then ask the user to change it in Account security immediately after signing in.';
+  String get scheduleNeedsReview => 'This schedule has ended. Check whether it is complete.';
 
   @override
-  String get adminTemporaryPasswordCopy => 'Copy temporary password';
+  String scheduleNeedsReviewCount(int count) {
+    return '$count schedules need review';
+  }
 
   @override
-  String get adminTemporaryPasswordCopied => 'Temporary password copied.';
+  String scheduleStartsInHours(int count) {
+    return 'Starts in $count hr';
+  }
 
   @override
-  String get adminPasswordResetUserNotFound => 'No user was found for this email.';
+  String scheduleStartsInMinutes(int count) {
+    return 'Starts in $count min';
+  }
 
   @override
-  String get adminPasswordResetFailed => 'The temporary password could not be created. Try again later.';
+  String get todaySchedule => 'Today\'s schedule';
 
   @override
-  String get publishedSubmission => 'Public';
+  String tomorrowScheduleCount(int count) {
+    return 'Tomorrow: $count schedules';
+  }
 
   @override
-  String get publishedSubmissionTooltip => 'This information is public and can be viewed by everyone.';
+  String get upcomingSchedule => 'Upcoming Schedule';
 
   @override
-  String get unpublishedSubmission => 'Not public yet';
+  String viewRemainingSchedules(int count) {
+    return 'View $count more schedules';
+  }
 
   @override
-  String get unpublishedSubmissionTooltip => 'This information is awaiting review and is currently visible only to you and administrators.';
-
-  @override
-  String get leaveGameConfirmation => 'Leave this game and return to the previous page?';
-
-  @override
-  String get questionBank => 'Question bank';
-
-  @override
-  String get adminQuestionBank => 'Admin question bank';
-
-  @override
-  String get myQuestionBank => 'My question bank';
-
-  @override
-  String get localQuestionBankOnly => 'Local mode only uses your question bank on this device. The admin question bank is unavailable.';
-
-  @override
-  String get addQuestion => 'Add question';
-
-  @override
-  String get question => 'Question';
-
-  @override
-  String get correctAnswer => 'Correct answer';
-
-  @override
-  String get categoryLabel => 'Category';
-
-  @override
-  String get secondaryCategoryLabel => 'Subcategory';
-
-  @override
-  String get amountLabel => 'Value';
-
-  @override
-  String get dataExportSummarySheet => 'Export summary';
-
-  @override
-  String get questionGroup => 'Question group';
-
-  @override
-  String get answerOptions => 'Answer options';
-
-  @override
-  String get answerOptionsHint => 'Separate options with commas';
-
-  @override
-  String get scrambledWords => 'Words to rearrange';
-
-  @override
-  String get speakingText => 'Text to speak';
-
-  @override
-  String get requiredField => 'This field is required';
-
-  @override
-  String get twoOptionsRequired => 'Enter at least two answer options';
-
-  @override
-  String get questionAdded => 'Question added to your question bank';
-
-  @override
-  String get grammarQuestionHelp => 'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.';
-
-  @override
-  String get sentenceQuestionHelp => 'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.';
-
-  @override
-  String get grammarBaseWord => 'Base word (for example, head)';
-
-  @override
-  String get completedGrammarQuestion => 'Complete question with the answer (for example, We are young)';
-
-  @override
-  String get grammarAnswerMustAppear => 'The complete question must contain the correct answer so the blank can be created automatically.';
-
-  @override
-  String get questionExample => 'Question example';
-
-  @override
-  String get answerExample => 'Answer example';
-
-  @override
-  String get sentenceOrWord => 'Complete word or correct sentence';
-
-  @override
-  String get customQuestionGroup => '+ Create a new category';
-
-  @override
-  String get newQuestionGroup => 'New category name';
-
-  @override
-  String get questionGroupLevelNumber => 'Level number after the category (blank means 1)';
-
-  @override
-  String get questionGroupLevelRange => 'The level number must be between 1 and 30.';
-
-  @override
-  String get speakingQuestionHelp => 'Enter the word or sentence the user should read aloud. Example: Nice to meet you.';
-
-  @override
-  String get translationQuestionHelp => 'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.';
-
-  @override
-  String get japaneseTranslationQuestionHelp => 'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
-
-  @override
-  String get koreanTranslationQuestionHelp => 'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
-
-  @override
-  String get wordSearchQuestionHelp => 'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.';
-
-  @override
-  String get duplicateQuestion => 'The same question and answer already exist in your selected question group.';
-
-  @override
-  String get myQuestionBankEmpty => 'Your question bank has no questions available for this level. Add a question first.';
-
-  @override
-  String get threeQuestionsRequired => 'This question bank needs at least 3 available questions for the current level.';
-
-  @override
-  String get questionBankInsufficient => 'The selected question bank does not have enough questions for this level.';
-
-  @override
-  String get myQuestions => 'My questions';
-
-  @override
-  String get noMyQuestions => 'You have not added any questions for this game yet.';
-
-  @override
-  String get questionDeleted => 'Question deleted';
-
-  @override
-  String get editQuestion => 'Edit question';
-
-  @override
-  String get questionUpdated => 'Question updated';
-
-  @override
-  String get back => 'Back';
-
-  @override
-  String get loginError => 'Login failed. Please try again.';
-
-  @override
-  String get logoutError => 'Logout failed. Please try again.';
-
-  @override
-  String get registerError => 'Registration failed. Please try again.';
-
-  @override
-  String get emailAlreadyInUse => 'Email already in uUse.';
-
-  @override
-  String get weakPassword => 'Password must be at least 8 characters.';
-
-  @override
-  String get unknownError => 'Unknown error';
-
-  @override
-  String get pageRelated => 'pageRelated';
-
-  @override
-  String get settings => 'Settings';
-
-  @override
-  String get pageSelectorTooltip => 'Function menu';
-
-  @override
-  String get userMenuButton => 'User Menu';
-
-  @override
-  String get home => 'Home';
-
-  @override
-  String get completeEventTitle => 'Complete the schedule';
-
-  @override
-  String get completeAndReview => 'Complete & review';
+  String get attractionAddEdit => 'Add/Edit attraction';
 
   @override
   String get completeEventMessage => 'Once completed, this trip will disappear from today\'s list.';
 
   @override
-  String get noInfoAvailable => 'No information available.';
+  String get completeEventTitle => 'Complete the schedule';
 
   @override
-  String get openMap => 'Navigation';
+  String get eventAdd => 'Add';
 
   @override
-  String get selectCity => 'Select city';
+  String get eventAdd1 => 'Add to calendar';
 
   @override
-  String get selectAccount => 'Select account';
+  String get eventAddEdit => 'Add/Edit';
+
+  @override
+  String get eventAddError => 'Add it repeatedly';
+
+  @override
+  String get eventAddOk => '✅ Event added';
+
+  @override
+  String get eventAddSub => 'Add detailed activities';
+
+  @override
+  String get eventAlreadyExists => 'This event already exists';
+
+  @override
+  String get eventCompleted => 'Schedule completed';
+
+  @override
+  String eventCompletedWithRecords(String items) {
+    return 'Schedule completed: $items';
+  }
+
+  @override
+  String get eventDelete => 'Delete event';
+
+  @override
+  String get eventExpense => 'Expense';
+
+  @override
+  String get eventIncome => 'Income';
+
+  @override
+  String get eventRefresh => 'Update recommended events';
+
+  @override
+  String get eventRefreshFailed => 'Could not update recommended events. Try again later.';
+
+  @override
+  String get eventRefreshRunning => 'Recommended events are being updated. Please check again later.';
+
+  @override
+  String get eventRefreshSucceeded => 'Recommended events updated.';
+
+  @override
+  String get eventSaved => '✅ Event saved';
+
+  @override
+  String get eventSaveError => 'Activity name cannot be empty';
+
+  @override
+  String get eventSaveFailed => 'Could not save the event. Please try again later';
+
+  @override
+  String eventSessionCount(int count) {
+    return '$count sessions';
+  }
+
+  @override
+  String get eventSub => 'Detailed activities';
+
+  @override
+  String get findRecommendedEvent => 'Find an event';
+
+  @override
+  String get findRecommendedPlace => 'Find a place';
+
+  @override
+  String multiDayEvent(int count) {
+    return '$count consecutive days';
+  }
+
+  @override
+  String get noEventsToUpload => '❌ No events to upload';
+
+  @override
+  String get pageRecommendEvent => 'pageRecommendEvent';
 
   @override
   String get personalEvent => 'Personal';
-
-  @override
-  String get stock => 'Stock';
 
   @override
   String get recommendEvent => 'Event';
@@ -796,172 +1749,323 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recommendPlacesZero => 'No recommended places at the moment';
 
   @override
-  String get memoryTrace => 'Memory Trace';
+  String get vendorActiveActivities => 'Active activities';
 
   @override
-  String get memoryTraceZero => 'Go add some memories!';
+  String get vendorActiveAttractions => 'Active attractions';
 
   @override
-  String get accountPersonal => 'Personal';
+  String vendorActivityAttractionMix(int activities, int attractions) {
+    return '$activities active activities · $attractions active attractions';
+  }
 
   @override
-  String get accountProject => 'Journey';
+  String get vendorActivityLabel => 'Activity';
 
   @override
-  String get pointGroup => 'Group';
+  String get vendorAllActivities => 'All submissions';
 
   @override
-  String get stockSelectDate => 'Stock date';
+  String get vendorAllShort => 'All';
 
   @override
-  String get statusInProgress => 'In progress';
+  String get vendorAnalyticsCardClicks => 'Content clicks';
 
   @override
-  String get statusNotStarted => 'Not started';
+  String get vendorAnalyticsDays => 'Analytics days';
 
   @override
-  String get statusCompleted => 'Completed';
+  String vendorAnalyticsDescription(int days) {
+    return 'Interactions with your activities and attractions during the latest $days days.';
+  }
 
   @override
-  String get statusPending => 'Pending';
+  String get vendorAnalyticsDislikes => 'Dislikes';
 
   @override
-  String get noData => 'No data';
+  String get vendorAnalyticsEmpty => 'Performance data appears after people discover and interact with your public content.';
 
   @override
-  String get accountMaster => 'Master';
+  String get vendorAnalyticsLikes => 'Likes';
 
   @override
-  String get accountRecords => 'Account Records';
+  String get vendorAnalyticsPageViews => 'Page views';
 
   @override
-  String get todayIncomeExpense => 'Today\'s Income and Expenses';
+  String get vendorAnalyticsRegistrationClicks => 'Registration clicks';
 
   @override
-  String get todayPoints => 'Today\'s Points';
+  String get vendorAnalyticsSaves => 'Saves';
 
   @override
-  String get totalAmount => 'Total Amount';
+  String get vendorAnalyticsTitle => 'Performance analytics';
 
   @override
-  String get totalPoints => 'Total Points';
+  String get vendorAttractionLabel => 'Attraction';
 
   @override
-  String get pointsRecord => 'Points Record';
+  String get vendorAttractionSubmissionGuideTitle => 'Help people discover your attraction';
 
   @override
-  String get game => 'Game';
+  String get vendorClickThroughRate => 'View-to-click';
 
   @override
-  String get gameStart => 'Start';
+  String get vendorContentMixTitle => 'Content overview';
 
   @override
-  String get gameNoRecords => 'No game records';
+  String get vendorCreateAccountAction => 'Create an account and submit';
 
   @override
-  String get gameLevel => 'Level';
+  String get vendorCreateAccountDescription => 'Create an account to submit activities, follow review status and keep your public information up to date.';
 
   @override
-  String get gameScore => 'Score';
+  String get vendorCreateAccountTitle => 'Organizing an event?';
 
   @override
-  String get ai => 'AI';
+  String get vendorDashboardLoadFailed => 'Organizer information could not be loaded.';
 
   @override
-  String get feedback => 'Feedback';
+  String get vendorDashboardSubtitle => 'Manage submissions, follow review status and keep track of your current allowance.';
 
   @override
-  String get businessPlan => 'Business Plan';
+  String get vendorDashboardTitle => 'Organizer workspace';
 
   @override
-  String get pageRecommendEvent => 'pageRecommendEvent';
+  String get vendorManageActivities => 'Manage activities';
 
   @override
-  String get search => 'Search';
+  String get vendorManageAttractions => 'Manage attractions';
 
   @override
-  String get recordSearchHint => 'Search description or subcategory';
+  String get vendorMineShort => 'Mine';
 
   @override
-  String get recordAllCategories => 'All categories';
+  String get vendorMySubmissions => 'My submissions';
 
   @override
-  String get recordNetChange => 'Net change';
+  String get vendorNextStepClickMessage => 'Strengthen the opening description, highlights and image so planners know why to open it.';
 
   @override
-  String get moreActions => 'More';
+  String get vendorNextStepClickTitle => 'Turn views into interest';
 
   @override
-  String get toggleView => 'Toggle View';
+  String get vendorNextStepExposureMessage => 'A clear title, cover image and city help people discover and understand your listing.';
 
   @override
-  String get exportExcel => 'Export';
+  String get vendorNextStepExposureTitle => 'Make the first impression count';
 
   @override
-  String get eventAdd => 'Add';
+  String get vendorNextStepFirstMessage => 'Start with one complete activity: add an accurate date, place, image and registration link.';
 
   @override
-  String get eventAdd1 => 'Add to calendar';
+  String get vendorNextStepFirstTitle => 'Publish your first listing';
 
   @override
-  String get eventAddOk => '✅ Event added';
+  String get vendorNextStepGrowingMessage => 'Keep dates and availability current, then use the conversion rates to improve the next listing.';
 
   @override
-  String get eventAddError => 'Add it repeatedly';
+  String get vendorNextStepGrowingTitle => 'Your content is creating action';
 
   @override
-  String get memoryAdd => 'Add Memory';
+  String get vendorNextStepRegistrationMessage => 'Check that the registration URL and call to action are clear and still available.';
 
   @override
-  String get memoryAddOk => '✅ Memory Added';
+  String get vendorNextStepRegistrationTitle => 'Make registration easier';
 
   @override
-  String get memoryAddError => 'Do you want to add the memory again';
+  String get vendorNextStepReviewMessage => 'You can track the result here. Once approved, everyone can discover it while planning.';
 
   @override
-  String get uploadExcel => 'Upload Csv';
+  String get vendorNextStepReviewTitle => 'Your submission is being reviewed';
 
   @override
-  String get uploadFailed => '❌ Upload failed';
+  String vendorPendingReviewCount(int count) {
+    return '$count submissions awaiting review';
+  }
 
   @override
-  String get uploadInProgress => '❌ The previous file upload is still in progress.';
+  String get vendorPendingReviewHint => 'Review status is kept here. Published listings become visible to everyone.';
 
   @override
-  String get uploadSuccess => '✅ Upload successful';
+  String vendorPositiveActions(int count) {
+    return '$count saves and likes';
+  }
 
   @override
-  String get notSupportUpload => '⚠️ Not support upload';
+  String vendorPublishedPendingMix(int published, int pending) {
+    return '$published public · $pending awaiting review';
+  }
 
   @override
-  String get noEventsToUpload => '❌ No events to upload';
+  String get vendorQualityCity => 'City';
 
   @override
-  String get noEventsToExport => '❌ No events to export';
+  String get vendorQualityDate => 'Date';
 
   @override
-  String get exportFailed => '❌ Export failed';
+  String get vendorQualityDescription => 'Description';
 
   @override
-  String get exportInProgress => '❌ The previous file export is still in progress.';
+  String get vendorQualityLink => 'Registration link';
 
   @override
-  String get exportSuccess => '✅ Export successful';
+  String get vendorQualityLocation => 'Place';
 
   @override
-  String get notSupportExport => '⚠️ Not support export';
+  String get vendorQualityName => 'Title';
 
   @override
-  String get excelColumnHeaderId => 'Activity id_______________________';
+  String vendorQualityProgress(int count, int total) {
+    return 'Submission completeness: $count of $total';
+  }
 
   @override
-  String get excelColumnHeaderMasterUrl => 'Activity url_______________________';
+  String vendorQuarterlyPrice(int price) {
+    return 'NT\$$price / quarter';
+  }
 
   @override
-  String get excelColumnHeaderActivityName => 'Activity name_______________________';
+  String get vendorRecentSubmissionsEmpty => 'No submissions yet. Add your first activity or attraction.';
 
   @override
-  String get excelColumnHeaderKeywords => 'Keywords_______________________';
+  String get vendorRecentSubmissionsTitle => 'Recent submissions';
+
+  @override
+  String get vendorRegistrationAnalytics => 'See content performance in one workspace';
+
+  @override
+  String get vendorRegistrationDescription => 'This account opens an organizer workspace for managing activities, attractions and review status.';
+
+  @override
+  String get vendorRegistrationFreeStart => 'Start with the free organizer plan';
+
+  @override
+  String get vendorRegistrationRate => 'Click-to-registration';
+
+  @override
+  String get vendorRegistrationTitle => 'Organizer account';
+
+  @override
+  String get vendorSubmissionBenefitManage => 'Manage your own information';
+
+  @override
+  String get vendorSubmissionBenefitReach => 'Reach active planners';
+
+  @override
+  String get vendorSubmissionBenefitReview => 'Clear review status';
+
+  @override
+  String get vendorSubmissionDescription => 'Publish activities and attractions where people plan their time. Keep ownership and update your listing after review.';
+
+  @override
+  String get vendorSubmissionGuideDescription => 'Add an accurate date, place, organizer and registration link. Your submission becomes public after review; later edits return it for review.';
+
+  @override
+  String get vendorSubmissionGuideTitle => 'Help people discover your activity';
+
+  @override
+  String get vendorSubmissionTitle => 'Submission center';
+
+  @override
+  String get vendorSubmitActivity => 'Submit activity';
+
+  @override
+  String get vendorSubmitAttraction => 'Submit attraction';
+
+  @override
+  String get vendorSubmitShort => 'Submit';
+
+  @override
+  String get vendorUntitledSubmission => 'Untitled submission';
+
+  @override
+  String viewRemainingRecommendations(int count) {
+    return 'View $count more recommendations';
+  }
+
+  @override
+  String get weekendEvent => 'Weekend event';
+
+  @override
+  String get city => 'City';
+
+  @override
+  String get country => 'Country';
+
+  @override
+  String get countryAustralia => 'Australia';
+
+  @override
+  String get countryCanada => 'Canada';
+
+  @override
+  String get countryChina => 'China';
+
+  @override
+  String get countryFrance => 'France';
+
+  @override
+  String get countryGermany => 'Germany';
+
+  @override
+  String get countryHongKong => 'Hong Kong';
+
+  @override
+  String get countryIndia => 'India';
+
+  @override
+  String get countryIndonesia => 'Indonesia';
+
+  @override
+  String get countryItaly => 'Italy';
+
+  @override
+  String get countryJapan => 'Japan';
+
+  @override
+  String get countryMacau => 'Macau';
+
+  @override
+  String get countryMalaysia => 'Malaysia';
+
+  @override
+  String get countryNetherlands => 'Netherlands';
+
+  @override
+  String get countryNewZealand => 'New Zealand';
+
+  @override
+  String get countryPhilippines => 'Philippines';
+
+  @override
+  String get countrySingapore => 'Singapore';
+
+  @override
+  String get countrySouthKorea => 'South Korea';
+
+  @override
+  String get countrySpain => 'Spain';
+
+  @override
+  String get countrySwitzerland => 'Switzerland';
+
+  @override
+  String get countryTaiwan => 'Taiwan';
+
+  @override
+  String get countryThailand => 'Thailand';
+
+  @override
+  String get countryUnitedArabEmirates => 'United Arab Emirates';
+
+  @override
+  String get countryUnitedKingdom => 'United Kingdom';
+
+  @override
+  String get countryUnitedStates => 'United States';
+
+  @override
+  String get countryVietnam => 'Vietnam';
 
   @override
   String get excelColumnHeaderCity => 'City';
@@ -970,799 +2074,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excelColumnHeaderLocation => 'Location____________________';
 
   @override
-  String get excelColumnHeaderFee => 'Fee';
-
-  @override
-  String get excelColumnHeaderStartDate => 'Start Date__';
-
-  @override
-  String get excelColumnHeaderStartTime => 'Start Time';
-
-  @override
-  String get excelColumnHeaderEndDate => 'End Date__';
-
-  @override
-  String get excelColumnHeaderEndTime => 'End Time';
-
-  @override
-  String get excelColumnHeaderDescription => 'Description______';
-
-  @override
-  String get excelColumnHeaderSponsor => 'Sponsor';
-
-  @override
-  String get excelColumnHeaderAgeMin => 'Min. Age';
-
-  @override
-  String get excelColumnHeaderAgeMax => 'Max Age';
-
-  @override
-  String get excelColumnHeaderIsFree => 'Free ?';
-
-  @override
-  String get excelColumnHeaderPriceMin => 'Min. Price';
-
-  @override
-  String get excelColumnHeaderPriceMax => 'Max Price';
-
-  @override
-  String get excelColumnHeaderIsOutdoor => 'Outdoor ?';
-
-  @override
-  String get downloaded => '✅ Downloaded';
-
-  @override
-  String get activityName => 'Activity name';
-
-  @override
-  String get keywords => 'Keywords';
-
-  @override
-  String get city => 'City';
-
-  @override
   String get location => 'Location';
-
-  @override
-  String get fee => 'Fee';
-
-  @override
-  String get startDate => 'Start date';
-
-  @override
-  String get startTime => 'Start time';
-
-  @override
-  String get businessHours => 'Business hours';
-
-  @override
-  String get endDate => 'End date';
-
-  @override
-  String get endTime => 'End time';
-
-  @override
-  String get description => 'Description';
-
-  @override
-  String get sponsor => 'Sponsor';
-
-  @override
-  String get ageMin => 'Min. Age';
-
-  @override
-  String get ageMax => 'Max Age';
-
-  @override
-  String get priceMin => 'Min. Price';
-
-  @override
-  String get priceMax => 'Max Price';
-
-  @override
-  String get isFree => 'Free ?';
-
-  @override
-  String get isOutdoor => 'Outdoor ?';
-
-  @override
-  String get toBeDetermined => 'To Be Determined';
-
-  @override
-  String get free => 'Free';
-
-  @override
-  String get pay => 'Pay';
-
-  @override
-  String get outdoor => 'Outdoor';
-
-  @override
-  String get indoor => 'Indoor';
-
-  @override
-  String get masterUrl => 'Link';
-
-  @override
-  String get subUrl => 'Link';
-
-  @override
-  String get eventSaved => '✅ Event saved';
-
-  @override
-  String get eventSaveError => 'Activity name cannot be empty';
-
-  @override
-  String get eventAlreadyExists => 'This event already exists';
-
-  @override
-  String get eventSaveFailed => 'Could not save the event. Please try again later';
-
-  @override
-  String get dashboardLoadFailed => 'Could not load this information. Please try again later';
-
-  @override
-  String get retry => 'Retry';
-
-  @override
-  String get externalLinkOpenFailed => 'Could not open the link. Please try again later';
-
-  @override
-  String get dashboardSettingSaveFailed => 'Could not save the setting. Please try again later';
-
-  @override
-  String get accountListLoadFailed => 'Could not load the account list. Please try again later';
-
-  @override
-  String get accountListEmpty => 'No account has been created yet. Create one before selecting it.';
-
-  @override
-  String get unsavedChangesPrompt => 'Your changes have not been saved. Discard them?';
-
-  @override
-  String get discardChanges => 'Discard changes';
-
-  @override
-  String get eventAddEdit => 'Add/Edit';
-
-  @override
-  String get eventAddSub => 'Add detailed activities';
-
-  @override
-  String get eventSub => 'Detailed activities';
-
-  @override
-  String get save => 'Save';
-
-  @override
-  String get searchKeywords => 'Keyword (comma separated)';
-
-  @override
-  String get dateClear => 'Date clear';
-
-  @override
-  String get add => 'Add';
-
-  @override
-  String get edit => 'Edit';
-
-  @override
-  String get review => 'Review';
-
-  @override
-  String get cancel => 'Cancel';
-
-  @override
-  String get delete => 'Delete';
-
-  @override
-  String get like => 'Like';
-
-  @override
-  String get dislike => 'Dislike';
-
-  @override
-  String get eventDelete => 'Delete event';
-
-  @override
-  String get deleteOk => '✅ Deletion completed';
-
-  @override
-  String get deleteError => 'Delete failed';
-
-  @override
-  String get todaySchedule => 'Today\'s schedule';
-
-  @override
-  String get upcomingSchedule => 'Upcoming Schedule';
-
-  @override
-  String get homeJourneyReviewHint => 'Complete a schedule and record memories, money, and points together';
-
-  @override
-  String get todayLifeOverview => 'Today\'s Life Overview';
-
-  @override
-  String get todayLifeOverviewHint => 'See your schedule, money, and points together. Tap an item for details.';
-
-  @override
-  String get homeInsightDiscover => 'Nothing planned today. Start with an event or place that interests you.';
-
-  @override
-  String get homeInsightConnectAccounts => 'Choose money and points accounts to review your day in one step.';
-
-  @override
-  String get homeInsightReadyForReview => 'Today\'s schedule is connected to memories, money, and points for one-step review.';
-
-  @override
-  String get quickAddAccounting => 'Quick money entry';
-
-  @override
-  String get quickAddPoints => 'Quick points entry';
-
-  @override
-  String get findRecommendedEvent => 'Find an event';
-
-  @override
-  String get findRecommendedPlace => 'Find a place';
-
-  @override
-  String get startsToday => 'Starts today';
-
-  @override
-  String get alreadyStarted => 'Already started';
-
-  @override
-  String get startsTomorrow => 'Starts tomorrow';
-
-  @override
-  String startsInDays(int count) {
-    return 'Starts in $count days';
-  }
-
-  @override
-  String eventSessionCount(int count) {
-    return '$count sessions';
-  }
-
-  @override
-  String memoryCountForDay(int count) {
-    return '$count memories';
-  }
-
-  @override
-  String gameProgressSummary(int passed, int total) {
-    return 'Passed $passed of $total levels';
-  }
-
-  @override
-  String gameRecentBestScore(String score) {
-    return 'Recent best $score';
-  }
-
-  @override
-  String get addToSchedule => 'Add to schedule';
-
-  @override
-  String get scheduleDuplicateConfirmation => 'This item is already in your calendar. Add it again?';
-
-  @override
-  String get clickHereToSeeMore => 'See more...';
-
-  @override
-  String get close => 'Close';
-
-  @override
-  String get weatherForecast => 'Weather forecast';
-
-  @override
-  String get weatherTemperature => 'Temperature';
-
-  @override
-  String get weatherMinimum => 'Low';
-
-  @override
-  String get weatherMaximum => 'High';
-
-  @override
-  String get weatherThunderstorm => 'Thunderstorm';
-
-  @override
-  String get weatherDrizzle => 'Drizzle';
-
-  @override
-  String get weatherRain => 'Rain';
-
-  @override
-  String get weatherSnow => 'Snow';
-
-  @override
-  String get weatherMist => 'Mist';
-
-  @override
-  String get weatherClear => 'Clear';
-
-  @override
-  String get weatherClouds => 'Cloudy';
-
-  @override
-  String get url => 'URL';
-
-  @override
-  String get speak => 'Voice input';
-
-  @override
-  String get speakUp => 'Speak up';
-
-  @override
-  String get pagCalendar => 'pagCalendar';
-
-  @override
-  String get weekDaySun => 'Sun';
-
-  @override
-  String get weekDayMon => 'Mon';
-
-  @override
-  String get weekDayTue => 'Tue';
-
-  @override
-  String get weekDayWed => 'Wed';
-
-  @override
-  String get weekDayThu => 'Thu';
-
-  @override
-  String get weekDayFri => 'Fri';
-
-  @override
-  String get weekDaySat => 'Sat';
-
-  @override
-  String get year => 'Year';
-
-  @override
-  String get month => 'Month';
-
-  @override
-  String get confirm => 'Confirm';
-
-  @override
-  String get confirmDelete => 'Confirm delete?';
-
-  @override
-  String get setAlarm => 'Set alarm';
-
-  @override
-  String get cancelAlarm => 'Cancel alarm';
-
-  @override
-  String get setAlarmCompleted => '✅ Set alarm completed';
-
-  @override
-  String get alarmUpdateFailed => 'Could not update the reminder. Please try again later';
-
-  @override
-  String get previousMonth => 'Previous month';
-
-  @override
-  String get today => 'Today';
-
-  @override
-  String get nextMonth => 'Next month';
-
-  @override
-  String get postText => 'Post the full text';
-
-  @override
-  String get parsing => 'Parsing';
-
-  @override
-  String get clear => 'Clear';
-
-  @override
-  String get repeatOptions => 'Repeat times';
-
-  @override
-  String get repeatOptionsOnce => 'Once';
-
-  @override
-  String get repeatOptionsEveryDay => 'Every day';
-
-  @override
-  String get repeatOptionsEveryWeek => 'Every week';
-
-  @override
-  String get repeatOptionsEveryTwoWeeks => 'Every two weeks';
-
-  @override
-  String get repeatOptionsEveryMonth => 'Every month';
-
-  @override
-  String get repeatOptionsEveryTwoMonths => 'Every two months';
-
-  @override
-  String get repeatOptionsEveryYear => 'Every year';
-
-  @override
-  String get repeatOptionsEvery => 'Every';
-
-  @override
-  String get reminderOptions => 'Reminder time';
-
-  @override
-  String get reminderOptions15MinutesBefore => '15 minutes before';
-
-  @override
-  String get reminderOptions30MinutesBefore => '30 minutes before';
-
-  @override
-  String get reminderOptionsOneHourBefore => '1 hour before';
-
-  @override
-  String get reminderOptionsDefaultSameDay8am => 'Sam day 8 am';
-
-  @override
-  String get reminderOptionsDefaultDayBefore8am => '1 day before 8 am';
-
-  @override
-  String get reminderOptionsTwoDaysBefore => '2 days before';
-
-  @override
-  String get reminderOptionsOneWeekBefore => '1 week before';
-
-  @override
-  String get reminderOptionsTwoWeeksBefore => '2 weeks before';
-
-  @override
-  String get reminderOptionsOneMonthBefore => '1 month before';
-
-  @override
-  String get eventReminder => 'Event reminder';
-
-  @override
-  String get eventReminderToday => 'Today event reminder';
-
-  @override
-  String get eventReminderDesc => 'Remind you of upcoming events';
-
-  @override
-  String get privacyPolicy => 'Privacy Policy';
-
-  @override
-  String get termsOfService => 'Terms of Service';
-
-  @override
-  String get requestAccountDeletion => 'Request account deletion';
-
-  @override
-  String get accountDeletionRequestDescription => 'Your request will be sent to an administrator. The account and related data will be deleted only after approval.';
-
-  @override
-  String get continueLabel => 'Continue';
-
-  @override
-  String get accountDeletionEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
-
-  @override
-  String get requestDataExport => 'Request personal data export';
-
-  @override
-  String get dataExportRequestDescription => 'An Excel file containing your cloud and local personal data will be downloaded to this device.';
-
-  @override
-  String get dataExportIncludedPages => 'Included pages: calendar, memories, accounting records, and point records.';
-
-  @override
-  String get dataExportEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
-
-  @override
-  String get accountDeletionCompleted => 'Your deletion request was sent to an administrator.';
-
-  @override
-  String accountDeletionFailed(Object message) {
-    return 'Account deletion failed: $message';
-  }
-
-  @override
-  String get accountDeletionCloudOnly => 'Account deletion requests are available in cloud mode only. Switch the storage location to cloud before submitting a request.';
-
-  @override
-  String get accountDeletionPending => 'Request pending';
-
-  @override
-  String get accountDeletionPendingDescription => 'Your account deletion request is waiting for administrator review. You can request cancellation if you no longer want to delete the account.';
-
-  @override
-  String get accountDeletionCancelRequest => 'Cancel request';
-
-  @override
-  String get accountDeletionCancellationSubmitted => 'Cancellation requested. Waiting for administrator confirmation.';
-
-  @override
-  String get accountDeletionCancellationPending => 'Cancellation is waiting for administrator confirmation.';
-
-  @override
-  String get adminAccountDeletionCancellationRequested => 'The user requested cancellation of account deletion.';
-
-  @override
-  String get adminAccountDeletionConfirmCancellation => 'Confirm cancellation';
-
-  @override
-  String get adminAccountDeletionCancellationConfirmed => 'Cancellation confirmed and the original deletion request was removed.';
-
-  @override
-  String get adminAccountDeletionCompleted => 'The account and its related data were deleted.';
-
-  @override
-  String dataExportCompleted(Object path) {
-    return 'Your data export is ready: $path';
-  }
-
-  @override
-  String dataExportFailed(Object message) {
-    return 'Data export failed: $message';
-  }
-
-  @override
-  String get agreeToLegalTermsPrefix => 'I have read and agree to the ';
-
-  @override
-  String get acceptLegalTermsRequired => 'Please agree to the Privacy Policy and Terms of Service before registering.';
-
-  @override
-  String get legalTermsConnector => ' and ';
-
-  @override
-  String get accountMenuDataExport => 'Export data';
-
-  @override
-  String get accountMenuAccountDeletion => 'Delete account';
-
-  @override
-  String get readLegalTermsRequired => 'Please read both the Privacy Policy and Terms of Service before agreeing.';
-
-  @override
-  String get legalDocumentReadComplete => 'Reading complete';
-
-  @override
-  String get legalDocumentRead => 'Read';
-
-  @override
-  String get registrationSuccessful => 'Registration successful.';
-
-  @override
-  String get registrationVerificationRequired => 'Registration successful. Please verify your email before signing in.';
-
-  @override
-  String get confirmPassword => 'Confirm password';
-
-  @override
-  String get passwordMismatch => 'Passwords do not match.';
-
-  @override
-  String get showPassword => 'Show password';
-
-  @override
-  String get hidePassword => 'Hide password';
-
-  @override
-  String get passwordUpdateSuccessful => 'Password updated. Please sign in with your new password.';
-
-  @override
-  String get stockUpdateInProgress => 'Stock data and model are updating. New results will appear automatically.';
-
-  @override
-  String get stockUpdateSucceeded => 'Stock data and model update completed.';
-
-  @override
-  String get stockUpdateFailed => 'The stock update failed. The last available data is still displayed.';
-
-  @override
-  String get stockNoData => 'No stock data is currently available.';
-
-  @override
-  String get stockLoadFailed => 'Stock data could not be loaded. Please try again.';
-
-  @override
-  String get stockRetry => 'Load latest data';
-
-  @override
-  String get stockDashboardTitle => '📊 Market dashboard';
-
-  @override
-  String get stockForeignBuy => 'Net foreign buy ranking';
-
-  @override
-  String get stockForeignSell => 'Net foreign sell ranking';
-
-  @override
-  String get stockThousandLots => ' thousand lots';
-
-  @override
-  String stockClosingPrice(String value) {
-    return 'Closing price: $value';
-  }
-
-  @override
-  String stockTradingVolume(String value) {
-    return 'Trading volume: $value lots';
-  }
-
-  @override
-  String get editRecord => 'Edit record';
-
-  @override
-  String get manualEntry => 'Manual entry';
-
-  @override
-  String get recordDate => 'Date';
-
-  @override
-  String get recordTime => 'Time';
-
-  @override
-  String get recordValue => 'Value';
-
-  @override
-  String get recordPrimaryCategory => 'Category';
-
-  @override
-  String get recordSecondaryCategory => 'Custom subcategory (optional)';
-
-  @override
-  String get recordCategoryUncategorized => 'Uncategorized';
-
-  @override
-  String get recordCategoryReserved => 'Reserved';
-
-  @override
-  String get recordCategoryFood => 'Food';
-
-  @override
-  String get recordCategoryClothing => 'Clothing';
-
-  @override
-  String get recordCategoryHousing => 'Housing';
-
-  @override
-  String get recordCategoryTransportation => 'Transportation';
-
-  @override
-  String get recordCategoryEducation => 'Education';
-
-  @override
-  String get recordCategoryEntertainment => 'Entertainment';
-
-  @override
-  String get recordCategoryVirtue => 'Virtue';
-
-  @override
-  String get recordCategoryIntelligence => 'Intelligence';
-
-  @override
-  String get recordCategoryFitness => 'Fitness';
-
-  @override
-  String get recordCategorySocial => 'Social';
-
-  @override
-  String get recordCategoryArts => 'Arts';
-
-  @override
-  String get recordTotal => 'Total';
-
-  @override
-  String get recordPleaseConfirm => 'Please confirm';
-
-  @override
-  String get recordSubmit => 'Submit';
-
-  @override
-  String get accountNew => 'New account';
-
-  @override
-  String get accountName => 'Account name';
-
-  @override
-  String get accountCreate => 'Create';
-
-  @override
-  String get accountDefault => 'Default';
-
-  @override
-  String get accountAlreadyExists => 'Account already exists';
-
-  @override
-  String accountDeleteConfirmation(String name) {
-    return 'Delete $name?';
-  }
-
-  @override
-  String get accountSetMainCurrency => 'Set main currency';
-
-  @override
-  String get accountSwitchCurrency => 'Switch currency';
-
-  @override
-  String get currencyLabel => 'Currency';
-
-  @override
-  String get accountingSpeechHint => 'For example: add/subtract an amount';
-
-  @override
-  String get pointsSpeechHint => 'For example: add/subtract points';
-
-  @override
-  String get accountingUnit => '';
-
-  @override
-  String get pointsUnit => 'points';
-
-  @override
-  String get eventIncome => 'Income';
-
-  @override
-  String get eventExpense => 'Expense';
-
-  @override
-  String get eventPointIncrease => 'Add points';
-
-  @override
-  String get eventPointDecrease => 'Deduct points';
-
-  @override
-  String get eventCompleted => 'Schedule completed';
-
-  @override
-  String eventCompletedWithRecords(String items) {
-    return 'Schedule completed: $items';
-  }
-
-  @override
-  String get eventMemory => 'Memory';
-
-  @override
-  String get eventRefresh => 'Update recommended events';
-
-  @override
-  String get eventRefreshSucceeded => 'Recommended events updated.';
-
-  @override
-  String get eventRefreshFailed => 'Could not update recommended events. Try again later.';
-
-  @override
-  String get eventRefreshRunning => 'Recommended events are being updated. Please check again later.';
-
-  @override
-  String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can deactivate it instead.';
-
-  @override
-  String get questionStatus => 'Question status';
-
-  @override
-  String get allQuestionStatuses => 'All statuses';
-
-  @override
-  String get activeQuestion => 'Active';
-
-  @override
-  String get inactiveQuestion => 'Inactive';
-
-  @override
-  String get deactivateQuestion => 'Deactivate question';
-
-  @override
-  String get reactivateQuestion => 'Reactivate question';
-
-  @override
-  String get questionDeactivated => 'Question deactivated.';
-
-  @override
-  String get questionReactivated => 'Question reactivated.';
-
-  @override
-  String get questionStatusUpdateFailed => 'Question status could not be updated. Please try again.';
 
   @override
   String get mapCoordinateBackfill => 'Fill map coordinates';
@@ -1776,606 +2088,59 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get calendarSharing => 'Calendar sharing';
+  String get openMap => 'Navigation';
 
   @override
-  String get calendarInvite => 'Invite viewers';
+  String get selectCity => 'Select city';
 
   @override
-  String get calendarInviteHint => 'Enter account emails, separated by commas or new lines';
+  String get switchToMap => 'Switch to map';
 
   @override
-  String get calendarSentInvitations => 'Sent invitations';
+  String get weatherClear => 'Clear';
 
   @override
-  String get calendarReceivedInvitations => 'Received invitations';
+  String get weatherDrizzle => 'Drizzle';
 
   @override
-  String get calendarInvitationPending => 'Pending';
+  String get weatherForecast => 'Weather forecast';
 
   @override
-  String get calendarInvitationAccepted => 'Accepted';
+  String get weatherMaximum => 'High';
 
   @override
-  String get calendarInvitationDeclined => 'Declined';
+  String get weatherMinimum => 'Low';
 
   @override
-  String get calendarInvitationRevoked => 'Revoked';
+  String get weatherMist => 'Mist';
 
   @override
-  String get calendarInvitationAccept => 'Accept';
+  String get weatherRain => 'Rain';
 
   @override
-  String get calendarInvitationDecline => 'Decline';
+  String get weatherSnow => 'Snow';
 
   @override
-  String get calendarInvitationRevoke => 'Stop sharing';
+  String get weatherTemperature => 'Temperature';
 
   @override
-  String get calendarInvitationSent => 'Invitation sent.';
+  String get weatherThunderstorm => 'Thunderstorm';
 
   @override
-  String get calendarSharingUpdated => 'Calendar sharing updated.';
+  String get eventMemory => 'Memory';
 
   @override
-  String get calendarInvitationFailed => 'Calendar invitation could not be updated.';
+  String get memoryAdd => 'Add Memory';
 
   @override
-  String get calendarInvitationQuotaExceeded => 'You have reached the calendar sharing limit. Please remove an existing share or upgrade your plan.';
+  String get memoryAddError => 'Do you want to add the memory again';
 
   @override
-  String get calendarInvitationDuplicate => 'These events are already shared with this account.';
+  String get memoryAddOk => '✅ Memory Added';
 
   @override
-  String get calendarInvitationAccountNotFound => 'That account could not be found.';
-
-  @override
-  String get calendarInvitationSelfInvite => 'You cannot invite your own account.';
-
-  @override
-  String get calendarInvitationEventUnavailable => 'The selected event no longer exists or cannot be shared. Refresh and select it again.';
-
-  @override
-  String get calendarInvitationStateChanged => 'The invitation status changed. Refresh and try again.';
-
-  @override
-  String calendarInvitationFailedWithReason(String reason) {
-    return 'Calendar invitation could not be updated: $reason';
-  }
-
-  @override
-  String get adminSubscriptionExtended => 'Subscription extended by 90 days.';
-
-  @override
-  String get adminSubscriptionExtend90Days => 'Extend 90 days';
-
-  @override
-  String get adminSubscriptionExtensionDays => 'Extension days';
-
-  @override
-  String get adminSubscriptionExtend => 'Extend';
-
-  @override
-  String get adminSubscriptionLookupRequired => 'Search for the user first.';
-
-  @override
-  String get adminSubscriptionNotFound => 'No subscription found';
-
-  @override
-  String get adminSubscriptionNotFoundCreate => 'You can create a new subscription for this user.';
-
-  @override
-  String get adminSubscriptionUserNotFound => 'User account not found';
-
-  @override
-  String get adminSubscriptionLoadedForEditing => 'The current subscription is ready to edit and save.';
-
-  @override
-  String get adminSubscriptionDeleteTitle => 'Delete subscription settings';
-
-  @override
-  String adminSubscriptionDeleteConfirmation(String email) {
-    return 'Delete the subscription and quota settings for $email? The user\'s data will not be deleted.';
-  }
-
-  @override
-  String get adminSubscriptionDeleted => 'Subscription and quota settings deleted.';
-
-  @override
-  String get adminSubscriptionEntitlements => 'Created allowances';
-
-  @override
-  String adminSubscriptionDeleteEntitlementConfirmation(String version) {
-    return 'Delete only the $version allowance? Other allowances and user data will be kept.';
-  }
-
-  @override
-  String get adminSubscriptionEntitlementDeleted => 'This allowance was deleted. Other allowances were kept.';
-
-  @override
-  String get adminSubscriptionDeleteAll => 'Delete all subscription and quota settings';
-
-  @override
-  String get adminSubscriptionInvalidExtensionDays => 'Enter a number from 1 to 3650.';
-
-  @override
-  String adminSubscriptionExtendedDays(int days) {
-    return 'Subscription extended by $days days.';
-  }
-
-  @override
-  String get days => 'days';
-
-  @override
-  String calendarSharedBy(String account) {
-    return 'Shared by $account';
-  }
-
-  @override
-  String get calendarSharedReadOnly => 'Shared calendar · Read only';
-
-  @override
-  String get calendarShareEvents => 'Choose events to share';
-
-  @override
-  String get calendarSearchEmail => 'Email';
-
-  @override
-  String get calendarSearchEvent => 'Event';
-
-  @override
-  String get scrollThisArea => 'Scroll within this area';
-
-  @override
-  String get calendarNoShareableEvents => 'There are no events available to share.';
-
-  @override
-  String get calendarSelectEventRequired => 'Select at least one event to share.';
-
-  @override
-  String get calendarStopReceiving => 'Stop viewing';
-
-  @override
-  String get calendarShareAllEvents => 'Share all events';
-
-  @override
-  String get calendarNoSharedEvents => 'No events are currently shared.';
-
-  @override
-  String get calendarCancelSingleShare => 'Stop sharing this event';
-
-  @override
-  String get calendarCancelAllShares => 'Stop sharing all events';
-
-  @override
-  String subscriptionUsage(int used, int quota) {
-    return 'Used $used / $quota';
-  }
-
-  @override
-  String subscriptionLocalUsage(int used) {
-    return 'Stored on this device: $used / Unlimited';
-  }
-
-  @override
-  String get subscriptionQuotaReached => 'This plan has reached its limit. Delete older data before adding more, or upgrade to Plus.';
-
-  @override
-  String subscriptionQuotaReachedDetail(int used, int quota, int remaining) {
-    return 'Cloud limit reached: $used of $quota records are in use, so $remaining more can be added. Delete an older record, switch to this device, or upgrade to Plus.';
-  }
-
-  @override
-  String get subscriptionImagePlusOnly => 'Photo uploads are available with Plus.';
-
-  @override
-  String get subscriptionDeleteRecordHint => 'Deleting this record will also recalculate today and total values.';
-
-  @override
-  String get dataStorageTitle => 'Storage';
-
-  @override
-  String get dataStorageCloud => 'Cloud';
-
-  @override
-  String get dataStorageLocal => 'This device';
-
-  @override
-  String get dataStorageLocalWarning => 'Local data is visible only on this device, browser, and browser profile. It will not automatically appear on another device, browser, or profile. Removing the app or clearing site or browser data may permanently delete it. It can be moved to the cloud when it fits your plan limits.';
-
-  @override
-  String get dataStorageCloudWarning => 'Cloud data is available across devices and is subject to your plan limits.';
-
-  @override
-  String get dataMoveToLocal => 'Move cloud data to this device';
-
-  @override
-  String get dataMoveToLocalConfirm => 'Cloud data will be copied and verified before it is removed from the cloud. It will then be visible only on this device, browser, and browser profile. It will not automatically appear elsewhere, and removing the app or clearing site data may permanently delete it. Continue?';
-
-  @override
-  String get dataMoveToLocalSuccess => 'Cloud data was moved to this device.';
-
-  @override
-  String get dataMoveToLocalFailed => 'Some data could not be moved. Cloud originals were retained.';
-
-  @override
-  String get dataStorageLocalPlanRequired => 'Complete Device Plus payment and wait for admin activation before switching.';
-
-  @override
-  String get dataUploadToCloud => 'Upload local data to cloud (Admin)';
-
-  @override
-  String get dataUploadToCloudAction => 'Move local data to cloud';
-
-  @override
-  String get dataUploadToCloudConfirm => 'All local data will first be checked against your current plan limits. Local copies are deleted and cloud mode is enabled only after the entire upload is verified. If it exceeds a limit or fails, local mode remains active. Continue?';
-
-  @override
-  String get dataUploadToCloudSuccess => 'Local data was uploaded to the cloud.';
-
-  @override
-  String get dataUploadToCloudFailed => 'The upload was cancelled. All local records remain on this device.';
-
-  @override
-  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
-    return 'Upload cancelled: $resource currently uses $used cloud records; this upload adds $incoming, but the plan limit is $quota.';
-  }
-
-  @override
-  String get subscriptionRenewalRequired => 'Your paid period has ended. Cloud data is read-only until you renew or move all cloud data to this device.';
-
-  @override
-  String get subscriptionPlansTitle => 'Plans and subscription';
-
-  @override
-  String get subscriptionCurrentFree => 'Current plan: Cloud Free';
-
-  @override
-  String get subscriptionCurrentAdmin => 'Current access: Administrator (unlimited)';
-
-  @override
-  String get subscriptionCurrentPlus => 'Current plan: Plus';
-
-  @override
-  String get subscriptionCurrentCloudPlus => 'Current: Cloud Plus';
-
-  @override
-  String get dataClearLocalTitle => 'Clear device data';
-
-  @override
-  String get dataClearLocalConfirm => 'This permanently deletes all personal data on this device and cannot be undone. You can then try switching to cloud storage. Continue?';
-
-  @override
-  String get dataClearLocalAction => 'Clear device data';
-
-  @override
-  String get dataClearLocalSuccess => 'Device data cleared';
-
-  @override
-  String get dataClearLocalFailed => 'Could not clear device data. Try again later.';
-
-  @override
-  String get subscriptionCurrentLocalPlus => 'Current: Local Plus';
-
-  @override
-  String subscriptionValidUntil(String date) {
-    return 'Valid until $date';
-  }
-
-  @override
-  String get subscriptionFreeName => 'Cloud Free';
-
-  @override
-  String get subscriptionFreePrice => 'Free';
-
-  @override
-  String get subscriptionPlusName => 'Cloud Plus';
-
-  @override
-  String get subscriptionPlusPrice => 'From NT\$129 / quarter';
-
-  @override
-  String get subscriptionFreePersonalRecords => 'Cloud storage: up to 30 records each for calendar, accounting, points, and memories';
-
-  @override
-  String get subscriptionPlusPersonalRecords => '300 cloud records each for calendar, accounting, points, and memories';
-
-  @override
-  String get subscriptionCommonFeatures => 'Included with both plans';
-
-  @override
-  String get subscriptionCommonFeaturesDetail => 'Calendar, accounting, points, recommended events and attractions, and the administrator question bank. Local-device data remains unlimited. Stocks and Business Plan are administrator-only.';
-
-  @override
-  String get subscriptionPurchaseComingSoon => 'In-app subscription coming soon';
-
-  @override
-  String get subscriptionPurchaseExplanation => 'Plus cannot be purchased yet. Once store billing is available, this page will show the official price, renewal terms, purchase, restore, and subscription management actions.';
-
-  @override
-  String get subscriptionInactiveAccountWarning => 'Free accounts have no expiry date. If no data is added or changed for 3 months, the account and its cloud data will be automatically removed.';
-
-  @override
-  String get subscriptionPricingVersion => 'Current version';
-
-  @override
-  String get subscriptionEffectiveDate => 'Effective date';
-
-  @override
-  String get subscriptionQuotaMultiplier => 'Quota multiplier';
-
-  @override
-  String get subscriptionQuarterlyPayment => 'Quarterly payment';
-
-  @override
-  String get subscriptionActualQuotaTitle => 'Your current version and usage';
-
-  @override
-  String get subscriptionImageStorage => 'Photo storage';
-
-  @override
-  String get subscriptionNextVersionTitle => 'Latest version for your next payment';
-
-  @override
-  String get subscriptionNextCloudVersionTitle => 'Cloud version for the next payment';
-
-  @override
-  String get subscriptionLatestLocalVersionTitle => 'Local Plus version for the next payment';
-
-  @override
-  String subscriptionVersionOffer(String version, String date, int price) {
-    return '$version · Effective $date · NT\$$price per quarter';
-  }
-
-  @override
-  String get subscriptionLocalPaidName => 'Device Plus';
-
-  @override
-  String subscriptionCloudVersionName(String version) {
-    return 'Cloud $version';
-  }
-
-  @override
-  String subscriptionLocalVersionName(String version) {
-    return 'Device $version';
-  }
-
-  @override
-  String subscriptionNextCloudVersionName(String version) {
-    return 'Next payment: Cloud $version';
-  }
-
-  @override
-  String subscriptionNextLocalVersionName(String version) {
-    return 'Next payment: Device $version';
-  }
-
-  @override
-  String get subscriptionLocalPaidPrice => 'NT\$129 / quarter';
-
-  @override
-  String get subscriptionLocalPaidFeature => 'Unlimited records and photos on this device; data does not automatically appear on other devices';
-
-  @override
-  String get subscriptionLocalAnswerHistory => 'Unlimited local answer history';
-
-  @override
-  String get adminPricingTitle => 'Create user pricing version';
-
-  @override
-  String get adminPricingSubtitle => 'Applies to future payments and add-ons only';
-
-  @override
-  String get adminPricingRequired => 'Enter a version name and all numbers';
-
-  @override
-  String get adminPricingCreated => 'New pricing version created; existing benefits are unchanged';
-
-  @override
-  String get adminPricingUpdated => 'User pricing version updated; existing subscription snapshots are unchanged';
-
-  @override
-  String get adminUserExistingPlans => 'Existing user pricing versions';
-
-  @override
-  String get adminPricingDeleteTitle => 'Delete pricing version';
-
-  @override
-  String adminPricingDeleteConfirmation(String name) {
-    return 'Delete $name? This is only allowed when no subscription or entitlement uses it.';
-  }
-
-  @override
-  String get adminPricingDeleted => 'Pricing version deleted.';
-
-  @override
-  String get adminPricingDeleteInUse => 'This pricing version is still used by a subscription or entitlement and cannot be deleted.';
-
-  @override
-  String adminPricingCreateFailed(String error) {
-    return 'Unable to save the pricing version: $error';
-  }
-
-  @override
-  String get adminPricingVersionName => 'Version name';
-
-  @override
-  String get adminPricingVersionHint => 'Example: 2026-Q4';
-
-  @override
-  String get adminPricingEffectiveDate => 'Effective date';
-
-  @override
-  String get adminPricingCreate => 'Create version';
-
-  @override
-  String get adminPricingQuarterlyPrice => 'Quarterly price (TWD)';
-
-  @override
-  String get adminPricingCalendarQuota => 'Calendar records';
-
-  @override
-  String get adminPricingAccountingQuota => 'Accounting records';
-
-  @override
-  String get adminPricingPointQuota => 'Point records';
-
-  @override
-  String get adminPricingMemoryQuota => 'Memories';
-
-  @override
-  String get adminPricingGameQuota => 'Custom questions';
-
-  @override
-  String get adminPricingShareQuota => 'Calendar shares';
-
-  @override
-  String get adminPricingImageQuota => 'Images (MB)';
-
-  @override
-  String get adminPricingAnswerDays => 'Answer history days';
-
-  @override
-  String get adminPricingLocalZeroUnlimited => 'For Local Plus, 0 in a quota field means unlimited.';
-
-  @override
-  String subscriptionDowngradeWarning(String date) {
-    return 'Your cloud data exceeds the free allowance. Remove or move the excess by $date.';
-  }
-
-  @override
-  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
-    return '$resource: $used/$quota (over by $excess)';
-  }
-
-  @override
-  String get adminSubscriptionTitle => 'Manage subscription';
-
-  @override
-  String get adminSubscriptionSubtitle => 'Apply the pricing and quota purchased';
-
-  @override
-  String get adminSubscriptionEmail => 'User email';
-
-  @override
-  String get adminSubscriptionPlan => 'Plan';
-
-  @override
-  String get adminSubscriptionFree => 'Free';
-
-  @override
-  String get adminSubscriptionPaid => 'Paid';
-
-  @override
-  String get adminSubscriptionNoPricing => 'Create a pricing version first';
-
-  @override
-  String get adminSubscriptionSaved => 'Subscription saved';
-
-  @override
-  String adminSubscriptionSaveFailed(String error) {
-    return 'Save failed: $error';
-  }
-
-  @override
-  String get adminSubscriptionNoExpiry => 'The free plan has no expiry date';
-
-  @override
-  String get adminSubscriptionInactiveWarning => 'The account and cloud data are removed after 3 months without changes.';
-
-  @override
-  String get adminSubscriptionAddQuota => 'Add quota without replacing current benefits';
-
-  @override
-  String get adminSubscriptionAddQuotaHint => 'The new quota is added to unexpired quota';
-
-  @override
-  String get adminSubscriptionStoragePlan => 'Storage plan';
-
-  @override
-  String get adminSubscriptionCloud => 'Cloud';
-
-  @override
-  String get adminSubscriptionLocal => 'Local unlimited';
-
-  @override
-  String get adminSubscriptionPricingVersion => 'Pricing version';
-
-  @override
-  String get adminSubscriptionMultiplier => 'Quota multiplier';
-
-  @override
-  String adminSubscriptionTimes(int count) {
-    return '$count×';
-  }
-
-  @override
-  String get adminSubscriptionExpiry => 'Benefit expiry';
-
-  @override
-  String get adminSubscriptionNote => 'Note';
-
-  @override
-  String get adminSubscriptionSave => 'Save subscription';
-
-  @override
-  String get dataCleanupTitle => 'Data cleanup';
-
-  @override
-  String get dataCleanupAction => 'Review and clean up';
-
-  @override
-  String get dataCleanupTargetEmail => 'User email (blank means yourself)';
-
-  @override
-  String get dataCleanupLocalExplanation => 'Device data is unlimited. You can clear all personal data stored on this device.';
-
-  @override
-  String get dataCleanupCloudExplanation => 'Review current cloud overages, then remove only the excess or all personal cloud data.';
-
-  @override
-  String get dataCleanupNoOverage => 'No cloud data currently exceeds the allowance.';
-
-  @override
-  String get dataCleanupExcess => 'Remove excess';
-
-  @override
-  String get dataCleanupAll => 'Clear all';
-
-  @override
-  String get dataCleanupConfirmTitle => 'Confirm deletion';
-
-  @override
-  String get dataCleanupExcessConfirm => 'Delete only records above the current allowance? This cannot be undone.';
-
-  @override
-  String get dataCleanupAllConfirm => 'Delete all personal data in the selected storage? This cannot be undone.';
-
-  @override
-  String get dataCleanupSuccess => 'Data cleanup completed';
-
-  @override
-  String get dataCleanupFailed => 'Data cleanup failed';
-
-  @override
-  String get scheduleAlreadyStarted => 'Schedule already started';
-
-  @override
-  String scheduleStartsInMinutes(int count) {
-    return 'Starts in $count min';
-  }
-
-  @override
-  String scheduleStartsInHours(int count) {
-    return 'Starts in $count hr';
-  }
-
-  @override
-  String get endsToday => 'Already started, ends today';
-
-  @override
-  String ongoingUntil(String date) {
-    return 'Ongoing until $date';
+  String memoryCountForDay(int count) {
+    return '$count memories';
   }
 
   @override
@@ -2384,333 +2149,262 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String gameRecentPracticeSummary(int attempts, int passed) {
-    return '$attempts recent attempts, $passed passed';
-  }
-
-  @override
-  String scheduleConflictCount(int count) {
-    return '$count schedule time conflicts today and tomorrow';
-  }
-
-  @override
-  String scheduleConflictBeforeSave(int count, String details) {
-    return 'This time overlaps with $count unfinished schedule items:\n$details\nSave anyway?';
-  }
-
-  @override
-  String tomorrowScheduleCount(int count) {
-    return 'Tomorrow: $count schedules';
-  }
-
-  @override
-  String nextFreeHour(String startTime, String endTime) {
-    return 'No schedule today from $startTime to $endTime';
-  }
-
-  @override
-  String get scheduleNeedsReview => 'This schedule has ended. Check whether it is complete.';
-
-  @override
-  String scheduleNeedsReviewCount(int count) {
-    return '$count schedules need review';
-  }
-
-  @override
-  String get scheduleAwaitingReview => 'Schedule awaiting review';
-
-  @override
-  String homeInsightReviewOverdue(int count) {
-    return '$count ended schedules still need review today. Do not let important tasks slip away.';
-  }
-
-  @override
-  String homeInsightResolveConflicts(int count) {
-    return '$count schedules overlap today or tomorrow. Consider adjusting your plan first.';
-  }
-
-  @override
   String memoryJourneySummary(int memoryCount, int dayCount, int cityCount) {
     return '$memoryCount loaded memories across $dayCount days and $cityCount cities';
   }
 
   @override
-  String viewRemainingSchedules(int count) {
-    return 'View $count more schedules';
+  String get memoryTrace => 'Memory Trace';
+
+  @override
+  String get memoryTraceZero => 'Go add some memories!';
+
+  @override
+  String get accountAlreadyExists => 'Account already exists';
+
+  @override
+  String get accountCreate => 'Create';
+
+  @override
+  String get accountDefault => 'Default';
+
+  @override
+  String accountDeleteConfirmation(String name) {
+    return 'Delete $name?';
   }
 
   @override
-  String viewRemainingRecommendations(int count) {
-    return 'View $count more recommendations';
+  String get accountingSpeechHint => 'For example: add/subtract an amount';
+
+  @override
+  String get accountingUnit => '';
+
+  @override
+  String get accountListEmpty => 'No account has been created yet. Create one before selecting it.';
+
+  @override
+  String get accountListLoadFailed => 'Could not load the account list. Please try again later';
+
+  @override
+  String get accountMaster => 'Master';
+
+  @override
+  String get accountName => 'Account name';
+
+  @override
+  String get accountNew => 'New account';
+
+  @override
+  String get accountPersonal => 'Personal';
+
+  @override
+  String get accountProject => 'Journey';
+
+  @override
+  String get accountRecords => 'Account Records';
+
+  @override
+  String get accountSetMainCurrency => 'Set main currency';
+
+  @override
+  String get accountSwitchCurrency => 'Switch currency';
+
+  @override
+  String get currencyLabel => 'Currency';
+
+  @override
+  String get editRecord => 'Edit record';
+
+  @override
+  String get homeInsightConnectAccounts => 'Choose money and points accounts to review your day in one step.';
+
+  @override
+  String get quickAddAccounting => 'Quick money entry';
+
+  @override
+  String get recordAllCategories => 'All categories';
+
+  @override
+  String get recordCategoryArts => 'Arts';
+
+  @override
+  String get recordCategoryBonus => 'Bonus';
+
+  @override
+  String get recordCategoryClothing => 'Clothing';
+
+  @override
+  String get recordCategoryEducation => 'Education';
+
+  @override
+  String get recordCategoryEntertainment => 'Entertainment';
+
+  @override
+  String get recordCategoryFitness => 'Fitness';
+
+  @override
+  String get recordCategoryFood => 'Food';
+
+  @override
+  String get recordCategoryHousing => 'Housing';
+
+  @override
+  String get recordCategoryIntelligence => 'Intelligence';
+
+  @override
+  String get recordCategoryInvestmentIncome => 'Investment income';
+
+  @override
+  String get recordCategoryOtherIncome => 'Other income';
+
+  @override
+  String get recordCategoryRefund => 'Refund';
+
+  @override
+  String get recordCategoryReserved => 'Reserved';
+
+  @override
+  String get recordCategorySalary => 'Salary';
+
+  @override
+  String get recordCategoryTransportation => 'Transportation';
+
+  @override
+  String get recordCategoryUncategorized => 'Uncategorized';
+
+  @override
+  String get recordCategoryVirtue => 'Virtue';
+
+  @override
+  String get recordDate => 'Date';
+
+  @override
+  String get recordNetChange => 'Net change';
+
+  @override
+  String get recordPleaseConfirm => 'Please confirm';
+
+  @override
+  String get recordPrimaryCategory => 'Category';
+
+  @override
+  String get recordSearchHint => 'Search description or subcategory';
+
+  @override
+  String get recordSecondaryCategory => 'Custom subcategory (optional)';
+
+  @override
+  String get recordSubmit => 'Submit';
+
+  @override
+  String get recordTime => 'Time';
+
+  @override
+  String get recordTotal => 'Total';
+
+  @override
+  String get recordValue => 'Value';
+
+  @override
+  String get selectAccount => 'Select account';
+
+  @override
+  String get todayIncomeExpense => 'Today\'s Income and Expenses';
+
+  @override
+  String get eventPointDecrease => 'Deduct points';
+
+  @override
+  String get eventPointIncrease => 'Add points';
+
+  @override
+  String get pointGroup => 'Group';
+
+  @override
+  String get pointsRecord => 'Points Record';
+
+  @override
+  String get pointsSpeechHint => 'For example: add/subtract points';
+
+  @override
+  String get pointsUnit => 'points';
+
+  @override
+  String get quickAddPoints => 'Quick points entry';
+
+  @override
+  String get todayPoints => 'Today\'s Points';
+
+  @override
+  String get totalPoints => 'Total Points';
+
+  @override
+  String get activeQuestion => 'Active';
+
+  @override
+  String get addQuestion => 'Add question';
+
+  @override
+  String get adminQuestionBank => 'Admin question bank';
+
+  @override
+  String get allQuestionStatuses => 'All statuses';
+
+  @override
+  String get completedGrammarQuestion => 'Complete question with the answer (for example, We are young)';
+
+  @override
+  String get customQuestionGroup => '+ Create a new category';
+
+  @override
+  String get deactivateQuestion => 'Deactivate question';
+
+  @override
+  String get duplicateQuestion => 'The same question and answer already exist in your selected question group.';
+
+  @override
+  String get editQuestion => 'Edit question';
+
+  @override
+  String get game => 'Game';
+
+  @override
+  String get gameFailed => 'Fail';
+
+  @override
+  String get gameLevel => 'Level';
+
+  @override
+  String get gameNoRecords => 'No game records';
+
+  @override
+  String get gamePassed => 'Pass!';
+
+  @override
+  String gameProgressSummary(int passed, int total) {
+    return 'Passed $passed of $total levels';
   }
 
   @override
-  String scheduleConflictToday(int count) {
-    return 'Today has $count schedule time conflicts';
+  String gameRecentBestScore(String score) {
+    return 'Recent best $score';
   }
 
   @override
-  String scheduleConflictTomorrow(int count) {
-    return 'Tomorrow has $count schedule time conflicts';
+  String gameRecentPracticeSummary(int attempts, int passed) {
+    return '$attempts recent attempts, $passed passed';
   }
 
   @override
-  String get weekendEvent => 'Weekend event';
+  String get gameScore => 'Score';
 
   @override
-  String multiDayEvent(int count) {
-    return '$count consecutive days';
+  String gameScoreValue(num score) {
+    return 'Score: $score';
   }
 
   @override
-  String continueLevel(int level) {
-    return 'Continue level $level';
-  }
-
-  @override
-  String get moduleAuthorization => 'Access';
-
-  @override
-  String get moduleAuthorizationDescription => 'Choose the extra features available to a user. Home and the feature menu update together.';
-
-  @override
-  String get moduleAuthorizationSearchFirst => 'Enter and search for a user email first.';
-
-  @override
-  String get moduleAuthorizationNoAccess => 'No extra features are enabled.';
-
-  @override
-  String get moduleAuthorizationSaved => 'Feature access updated.';
-
-  @override
-  String get moduleAuthorizationLoadFailed => 'Could not load feature access. Check the account or try again.';
-
-  @override
-  String get moduleAuthorizationNotDeployed => 'Feature access is not deployed. Run the authorization SQL in Supabase first.';
-
-  @override
-  String get moduleAuthorizationUserNotFound => 'No user was found for that email address.';
-
-  @override
-  String get moduleAuthorizationSaveFailed => 'Feature access was not updated correctly. Search again and retry.';
-
-  @override
-  String get quotaFreePeriodTitle => 'No-limit promotion';
-
-  @override
-  String get quotaFreePeriodDescription => 'New cloud records do not count against plan limits during this period. Normal limits resume automatically afterward.';
-
-  @override
-  String get quotaFreePeriodName => 'Promotion name';
-
-  @override
-  String get quotaFreePeriodStart => 'Starts';
-
-  @override
-  String get quotaFreePeriodEnd => 'Ends';
-
-  @override
-  String get quotaFreePeriodEnabled => 'Enable this period';
-
-  @override
-  String get quotaFreePeriodAutomaticHint => 'Limits are suspended only between the selected start and end times.';
-
-  @override
-  String get quotaFreePeriodInvalidRange => 'The end time must be later than the start time.';
-
-  @override
-  String get quotaFreePeriodSaved => 'No-limit promotion saved.';
-
-  @override
-  String get quotaFreePeriodSaveFailed => 'Could not save the no-limit promotion.';
-
-  @override
-  String get quotaFreePeriodClear => 'Clear setting';
-
-  @override
-  String get quotaFreePeriodClearConfirm => 'Remove the configured no-limit period? Normal plan limits will apply immediately.';
-
-  @override
-  String get quotaFreePeriodCleared => 'No-limit promotion removed.';
-
-  @override
-  String get quotaFreePeriodNew => 'Create a period';
-
-  @override
-  String get quotaFreePeriodEdit => 'Edit period';
-
-  @override
-  String get quotaFreePeriodEmpty => 'No no-limit periods have been configured.';
-
-  @override
-  String get quotaFreePeriodUnnamed => 'Unnamed promotion';
-
-  @override
-  String get quotaFreePeriodActive => 'Active now';
-
-  @override
-  String get quotaFreePeriodScheduled => 'Scheduled';
-
-  @override
-  String get quotaFreePeriodEnded => 'Ended';
-
-  @override
-  String get quotaFreePeriodDisabled => 'Disabled';
-
-  @override
-  String get country => 'Country';
-
-  @override
-  String get coverPhotoOptional => 'Cover photo (optional)';
-
-  @override
-  String get choosePhoto => 'Choose photo';
-
-  @override
-  String get replacePhoto => 'Replace';
-
-  @override
-  String get allCities => 'All cities';
-
-  @override
-  String get switchToList => 'Switch to list';
-
-  @override
-  String get switchToMap => 'Switch to map';
-
-  @override
-  String get countryTaiwan => 'Taiwan';
-
-  @override
-  String get countryJapan => 'Japan';
-
-  @override
-  String get countrySouthKorea => 'South Korea';
-
-  @override
-  String get countrySingapore => 'Singapore';
-
-  @override
-  String get countryUnitedStates => 'United States';
-
-  @override
-  String get countryCanada => 'Canada';
-
-  @override
-  String get countryChina => 'China';
-
-  @override
-  String get countryHongKong => 'Hong Kong';
-
-  @override
-  String get countryMacau => 'Macau';
-
-  @override
-  String get countryThailand => 'Thailand';
-
-  @override
-  String get countryVietnam => 'Vietnam';
-
-  @override
-  String get countryMalaysia => 'Malaysia';
-
-  @override
-  String get countryIndonesia => 'Indonesia';
-
-  @override
-  String get countryPhilippines => 'Philippines';
-
-  @override
-  String get countryAustralia => 'Australia';
-
-  @override
-  String get countryNewZealand => 'New Zealand';
-
-  @override
-  String get countryUnitedKingdom => 'United Kingdom';
-
-  @override
-  String get countryFrance => 'France';
-
-  @override
-  String get countryGermany => 'Germany';
-
-  @override
-  String get countryItaly => 'Italy';
-
-  @override
-  String get countrySpain => 'Spain';
-
-  @override
-  String get countryNetherlands => 'Netherlands';
-
-  @override
-  String get countrySwitzerland => 'Switzerland';
-
-  @override
-  String get countryIndia => 'India';
-
-  @override
-  String get countryUnitedArabEmirates => 'United Arab Emirates';
-
-  @override
-  String get feedbackPurpose => 'Purpose';
-
-  @override
-  String get feedbackContent => 'Content';
-
-  @override
-  String get captureScreen => 'Capture screen';
-
-  @override
-  String get feedbackRequired => 'Purpose and content are required.';
-
-  @override
-  String get feedbackSent => 'Feedback sent successfully.';
-
-  @override
-  String feedbackSendFailed(String error) {
-    return 'Could not send feedback: $error';
-  }
-
-  @override
-  String get accessDenied => 'Access denied';
-
-  @override
-  String get selectTemplate => 'Select template';
-
-  @override
-  String get planTitle => 'Plan title';
-
-  @override
-  String get create => 'Create';
-
-  @override
-  String get enterAnswer => 'Enter your answer';
-
-  @override
-  String get previous => 'Previous';
-
-  @override
-  String get next => 'Next';
-
-  @override
-  String get loadingSections => 'Loading sections...';
-
-  @override
-  String get loading => 'Loading...';
-
-  @override
-  String get notFilled => 'Not filled in yet';
-
-  @override
-  String get untitledPlan => 'Untitled plan';
-
-  @override
-  String get openChatGPT => 'Open ChatGPT';
-
-  @override
-  String get unableToLoadDocument => 'Unable to load this document.';
+  String get gameStart => 'Start';
 
   @override
   String gameTitleScore(String game, num score) {
@@ -2718,33 +2412,103 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String congratulationsScore(num score) {
-    return 'Congratulations! Score: $score';
-  }
+  String get grammarAnswerMustAppear => 'The complete question must contain the correct answer so the blank can be created automatically.';
 
   @override
-  String get wordSearchTitle => 'Word Search';
+  String get grammarBaseWord => 'Base word (for example, head)';
 
   @override
-  String get translationTitle => 'Translation';
+  String get grammarQuestionHelp => 'For grammar questions, enter a complete sentence such as We are young; are becomes the blank automatically. For the plural category, enter only head and heads.';
 
   @override
-  String get socialTitle => 'Social';
+  String get inactiveQuestion => 'Inactive';
 
   @override
-  String get speakingTitle => 'Speaking';
+  String get japaneseTranslationQuestionHelp => 'Enter Japanese in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
 
   @override
-  String get englishRpgAdventureTitle => 'English RPG Adventure';
+  String get koreanTranslationQuestionHelp => 'Enter Korean in Question and its translation in Correct answer. Create at least 3 questions in the same group.';
 
   @override
-  String get answerHere => 'Answer here';
+  String get leaveGameConfirmation => 'Leave this game and return to the previous page?';
 
   @override
-  String get check => 'Check';
+  String get localQuestionBankOnly => 'Local mode only uses your question bank on this device. The admin question bank is unavailable.';
 
   @override
-  String get restart => 'Restart';
+  String get monominoGameTitle => 'Monomino Game';
+
+  @override
+  String get myQuestionBank => 'My question bank';
+
+  @override
+  String get myQuestionBankEmpty => 'Your question bank has no questions available for this level. Add a question first.';
+
+  @override
+  String get myQuestions => 'My questions';
+
+  @override
+  String get newQuestionGroup => 'New category name';
+
+  @override
+  String get noMyQuestions => 'You have not added any questions for this game yet.';
+
+  @override
+  String get polyominoGameTitle => 'Polyomino Game';
+
+  @override
+  String get puzzleMapTitle => 'Puzzle Map';
+
+  @override
+  String get question => 'Question';
+
+  @override
+  String get questionAdded => 'Question added to your question bank';
+
+  @override
+  String get questionBank => 'Question bank';
+
+  @override
+  String get questionBankInsufficient => 'The selected question bank does not have enough questions for this level.';
+
+  @override
+  String get questionDeactivated => 'Question deactivated.';
+
+  @override
+  String get questionDeleted => 'Question deleted';
+
+  @override
+  String get questionExample => 'Question example';
+
+  @override
+  String get questionGroup => 'Question group';
+
+  @override
+  String get questionGroupLevelNumber => 'Level number after the category (blank means 1)';
+
+  @override
+  String get questionGroupLevelRange => 'The level number must be between 1 and 30.';
+
+  @override
+  String get questionHasAnswersDeleteBlocked => 'This question has answer history and cannot be deleted. You can deactivate it instead.';
+
+  @override
+  String get questionReactivated => 'Question reactivated.';
+
+  @override
+  String get questionStatus => 'Question status';
+
+  @override
+  String get questionStatusUpdateFailed => 'Question status could not be updated. Please try again.';
+
+  @override
+  String get questionUpdated => 'Question updated';
+
+  @override
+  String get reactivateQuestion => 'Reactivate question';
+
+  @override
+  String get recordCategorySocial => 'Social';
 
   @override
   String get scratchGameTitle => 'Scratch Game';
@@ -2753,42 +2517,278 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scratchMazeTitle => 'Scratch Game (Maze)';
 
   @override
-  String get blocklyEditor => 'Blockly Editor';
+  String get sentenceOrWord => 'Complete word or correct sentence';
 
   @override
-  String get puzzleMapTitle => 'Puzzle Map';
+  String get sentenceQuestionHelp => 'Enter a complete word or correct sentence, such as mother or I love apples. It will be split into rearrangeable parts automatically.';
 
   @override
-  String get hint => 'Hint';
+  String get socialTitle => 'Social';
 
   @override
-  String get monominoGameTitle => 'Monomino Game';
+  String get speakingQuestionHelp => 'Enter the word or sentence the user should read aloud. Example: Nice to meet you.';
 
   @override
-  String get checkPath => 'Check the path';
+  String get threeQuestionsRequired => 'This question bank needs at least 3 available questions for the current level.';
 
   @override
-  String get polyominoGameTitle => 'Polyomino Game';
+  String get translationQuestionHelp => 'Enter the source text and its translation. Create at least 3 questions in the same group so the game can generate two incorrect choices.';
 
   @override
-  String get noPipes => 'No pipes';
+  String get translationTitle => 'Translation';
 
   @override
-  String get go => 'Go';
+  String get wordSearchQuestionHelp => 'Enter an English word in Question and its meaning in Correct answer. Example: apple / 蘋果.';
 
   @override
   String get wordSentenceBuilderTitle => 'Word and Sentence Builder';
 
   @override
-  String priceEarningsRatio(String value) {
-    return 'P/E: $value';
+  String get adminUserExistingPlans => 'Existing user pricing versions';
+
+  @override
+  String get adminVendorExistingPlans => 'Existing pricing versions';
+
+  @override
+  String get businessHours => 'Business hours';
+
+  @override
+  String get businessPlan => 'Business Plan';
+
+  @override
+  String get dataCleanupLocalExplanation => 'Device data is unlimited. You can clear all personal data stored on this device.';
+
+  @override
+  String get planTitle => 'Plan title';
+
+  @override
+  String get selectTemplate => 'Select template';
+
+  @override
+  String get untitledPlan => 'Untitled plan';
+
+  @override
+  String vendorCurrentPlan(String plan) {
+    return 'Current plan: $plan';
   }
+
+  @override
+  String vendorPlanAnalyticsDays(int count) {
+    return 'Analytics for the latest $count days';
+  }
+
+  @override
+  String get vendorPlanCustomName => 'Custom plan';
+
+  @override
+  String get vendorPlanFreeName => 'Free plan';
+
+  @override
+  String get vendorPlanGrowthName => 'Growth plan';
+
+  @override
+  String get vendorPlanPartnerName => 'Partner plan';
+
+  @override
+  String get vendorViewPlans => 'View plans';
+
+  @override
+  String get stock => 'Stock';
+
+  @override
+  String stockClosingPrice(String value) {
+    return 'Closing price: $value';
+  }
+
+  @override
+  String get stockDashboardTitle => '📊 Market dashboard';
+
+  @override
+  String get stockForeignBuy => 'Net foreign buy ranking';
+
+  @override
+  String get stockForeignSell => 'Net foreign sell ranking';
+
+  @override
+  String get stockLoadFailed => 'Stock data could not be loaded. Please try again.';
 
   @override
   String get stockNet => 'Net';
 
   @override
-  String deleteNumberedItem(int number, String name) {
-    return 'Delete item $number, $name?';
+  String get stockNoData => 'No stock data is currently available.';
+
+  @override
+  String get stockRetry => 'Load latest data';
+
+  @override
+  String get stockSelectDate => 'Stock date';
+
+  @override
+  String get stockThousandLots => ' thousand lots';
+
+  @override
+  String stockTradingVolume(String value) {
+    return 'Trading volume: $value lots';
   }
+
+  @override
+  String get stockUpdateFailed => 'The stock update failed. The last available data is still displayed.';
+
+  @override
+  String get stockUpdateInProgress => 'Stock data and model are updating. New results will appear automatically.';
+
+  @override
+  String get stockUpdateSucceeded => 'Stock data and model update completed.';
+
+  @override
+  String get feedback => 'Feedback';
+
+  @override
+  String get feedbackContent => 'Content';
+
+  @override
+  String feedbackProcessedBy(String name, String time) {
+    return 'Processed by $name at $time';
+  }
+
+  @override
+  String get feedbackPurpose => 'Purpose';
+
+  @override
+  String get feedbackRequired => 'Purpose and content are required.';
+
+  @override
+  String feedbackSendFailed(String error) {
+    return 'Could not send feedback: $error';
+  }
+
+  @override
+  String get feedbackSent => 'Feedback sent successfully.';
+
+  @override
+  String get statusCompleted => 'Completed';
+
+  @override
+  String get statusInProgress => 'In progress';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get acceptLegalTermsRequired => 'Please agree to the Privacy Policy and Terms of Service before registering.';
+
+  @override
+  String get accountDeletionCancellationPending => 'Cancellation is waiting for administrator confirmation.';
+
+  @override
+  String get accountDeletionCancellationSubmitted => 'Cancellation requested. Waiting for administrator confirmation.';
+
+  @override
+  String get accountDeletionCancelRequest => 'Cancel request';
+
+  @override
+  String get accountDeletionCompleted => 'Your deletion request was sent to an administrator.';
+
+  @override
+  String get accountDeletionEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
+
+  @override
+  String accountDeletionFailed(Object message) {
+    return 'Account deletion failed: $message';
+  }
+
+  @override
+  String get accountDeletionPending => 'Request pending';
+
+  @override
+  String get accountDeletionPendingDescription => 'Your account deletion request is waiting for administrator review. You can request cancellation if you no longer want to delete the account.';
+
+  @override
+  String get accountDeletionRequestDescription => 'Your request will be sent to an administrator. The account and related data will be deleted only after approval.';
+
+  @override
+  String get accountMenuAccountDeletion => 'Delete account';
+
+  @override
+  String get accountMenuDataExport => 'Export data';
+
+  @override
+  String get adminAccountDeletionCancellationConfirmed => 'Cancellation confirmed and the original deletion request was removed.';
+
+  @override
+  String get adminAccountDeletionCancellationRequested => 'The user requested cancellation of account deletion.';
+
+  @override
+  String get adminAccountDeletionCompleted => 'The account and its related data were deleted.';
+
+  @override
+  String get adminAccountDeletionConfirmCancellation => 'Confirm cancellation';
+
+  @override
+  String get agreeToLegalTermsPrefix => 'I have read and agree to the ';
+
+  @override
+  String dataExportCompleted(Object path) {
+    return 'Your data export is ready: $path';
+  }
+
+  @override
+  String get dataExportEmailUnavailable => 'Unable to open your email app. Please email minavi@alumni.nccu.edu.tw.';
+
+  @override
+  String dataExportFailed(Object message) {
+    return 'Data export failed: $message';
+  }
+
+  @override
+  String get dataExportIncludedPages => 'Included pages: calendar, memories, accounting records, and point records.';
+
+  @override
+  String get dataExportRequestDescription => 'An Excel file containing your cloud and local personal data will be downloaded to this device.';
+
+  @override
+  String get dataExportSummarySheet => 'Export summary';
+
+  @override
+  String get exportExcel => 'Export';
+
+  @override
+  String get exportFailed => '❌ Export failed';
+
+  @override
+  String get exportInProgress => '❌ The previous file export is still in progress.';
+
+  @override
+  String get exportSuccess => '✅ Export successful';
+
+  @override
+  String get legalDocumentRead => 'Read';
+
+  @override
+  String get legalDocumentReadComplete => 'Reading complete';
+
+  @override
+  String get legalTermsConnector => ' and ';
+
+  @override
+  String get noEventsToExport => '❌ No events to export';
+
+  @override
+  String get notSupportExport => '⚠️ Not support export';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get readLegalTermsRequired => 'Please read both the Privacy Policy and Terms of Service before agreeing.';
+
+  @override
+  String get requestAccountDeletion => 'Request account deletion';
+
+  @override
+  String get requestDataExport => 'Request personal data export';
+
+  @override
+  String get termsOfService => 'Terms of Service';
 }

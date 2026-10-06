@@ -261,26 +261,31 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                           (plan) => ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(Icons.sell_outlined),
-                            title: Text(vendorPlanVersionName(loc, plan)),
+                            title: Text(
+                              vendorPlanVersionName(loc, plan),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             subtitle: Text(
                               loc.vendorQuarterlyPrice(plan.quarterlyPriceTwd),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  tooltip: loc.edit,
-                                  onPressed: _savingPricing
-                                      ? null
-                                      : () => _editPricing(plan),
-                                  icon: const Icon(Icons.edit_outlined),
+                            trailing: PopupMenuButton<String>(
+                              enabled: !_savingPricing,
+                              tooltip: MaterialLocalizations.of(
+                                context,
+                              ).showMenuTooltip,
+                              onSelected: (action) {
+                                if (action == 'edit') _editPricing(plan);
+                                if (action == 'delete') _deletePricing(plan);
+                              },
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text(loc.edit),
                                 ),
-                                IconButton(
-                                  tooltip: loc.delete,
-                                  onPressed: _savingPricing
-                                      ? null
-                                      : () => _deletePricing(plan),
-                                  icon: const Icon(Icons.delete_outline),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(loc.delete),
                                 ),
                               ],
                             ),
