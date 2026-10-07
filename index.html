@@ -18,6 +18,16 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <!--
+    Keep the browser layout viewport and Flutter's view metrics in sync while
+    the mobile on-screen keyboard opens or closes. Without an explicit policy,
+    Chromium can resize only the visual viewport for one frame and Flutter may
+    briefly calculate a negative bottom inset.
+  -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+  >
   <meta name="description" content="Plan your schedule, discover experiences, and stay on top of everyday finances.">
 
   <!-- iOS meta tags & icons -->
