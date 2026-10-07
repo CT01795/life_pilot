@@ -3,20 +3,13 @@ import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_account_selector.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
 
-class PointSelectorButton extends StatefulWidget {
+class PointSelectorButton extends StatelessWidget {
   const PointSelectorButton({super.key});
-
-  @override
-  State<PointSelectorButton> createState() => _PointSelectorButtonState();
-}
-
-class _PointSelectorButtonState extends State<PointSelectorButton> {
-  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -30,157 +23,38 @@ class _PointSelectorButtonState extends State<PointSelectorButton> {
     final dashboard = context.read<ModelDashboard>();
     final auth = context.read<ModelAuthView>();
 
-    return Tooltip(
-      message: loc.selectAccount,
-      child: ActionChip(
-        avatar: _isLoading
-            ? const SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.stars),
-        label: SizedBox(
-          width: double.infinity,
-          child: Text(
-            accountName ?? loc.selectAccount,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.left,
-          ),
-        ),
-        onPressed: _isLoading
-            ? null
-            : () async {
-                setState(() => _isLoading = true);
-                try {
-                  final accounts = await context
-                      .read<ServicePointRecord>()
-                      .fetchAccounts(
-                        user: auth.account ?? '',
-                        projectLimit: 2,
-                        includeGraph: false,
-                      );
-
-                  if (!context.mounted) return;
-
-                  if (accounts.isEmpty) {
-                    await showDialog<void>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        content: Text(loc.accountListEmpty),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(loc.cancel),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              context.read<ControllerPageMain>().changePage(
-                                PageType.pointsRecord,
-                              );
-                            },
-                            child: Text(loc.pointsRecord),
-                          ),
-                        ],
-                      ),
-                    );
-                    return;
-                  }
-
-                  final selected = await showDialog<Map<String, String>>(
-                    context: context,
-                    builder: (dialogContext) {
-                      final hasClearOption = accountId != null;
-                      final itemCount =
-                          accounts.length + (hasClearOption ? 1 : 0);
-                      final maxContentHeight =
-                          MediaQuery.sizeOf(dialogContext).height * 0.6;
-                      final contentHeight = (itemCount * 72.0)
-                          .clamp(72.0, maxContentHeight)
-                          .toDouble();
-                      return AlertDialog(
-                        title: Text(loc.selectAccount),
-                        contentPadding: const EdgeInsets.fromLTRB(
-                          12,
-                          8,
-                          12,
-                          12,
-                        ),
-                        content: SizedBox(
-                          width: MediaQuery.sizeOf(
-                            dialogContext,
-                          ).width.clamp(0, 420).toDouble(),
-                          height: contentHeight,
-                          child: ListView.separated(
-                            itemCount: itemCount,
-                            separatorBuilder: (_, _) =>
-                                const Divider(height: 1),
-                            itemBuilder: (_, index) {
-                              if (hasClearOption && index == 0) {
-                                return ListTile(
-                                  leading: const Icon(Icons.clear),
-                                  title: Text(loc.clear),
-                                  onTap: () => Navigator.pop(
-                                    dialogContext,
-                                    const <String, String>{},
-                                  ),
-                                );
-                              }
-                              final accountIndex =
-                                  index - (hasClearOption ? 1 : 0);
-                              final account = accounts[accountIndex];
-                              return ListTile(
-                                title: Text(account.accountName),
-                                subtitle: Text(
-                                  _categoryLabel(loc, account.category),
-                                ),
-                                onTap: () => Navigator.pop(dialogContext, {
-                                  Fields.id: account.id,
-                                  'name': account.accountName,
-                                }),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  );
-
-                  if (selected == null || auth.account == null) return;
-
-                  try {
-                    await dashboard.changePointAccount(
-                      account: auth.account!,
-                      accountId: selected[Fields.id],
-                      accountName: selected['name'],
-                    );
-                  } catch (_) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(loc.dashboardSettingSaveFailed)),
-                      );
-                    }
-                  }
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(loc.accountListLoadFailed)),
-                    );
-                  }
-                } finally {
-                  if (mounted) setState(() => _isLoading = false);
-                }
-              },
-      ),
+    return DashboardAccountSelector(
+      icon: Icons.stars,
+      selectedAccountId: accountId,
+      selectedAccountName: accountName,
+      accountPageLabel: loc.pointsRecord,
+      loadAccounts: () async {
+        final accounts = await context.read<ServicePointRecord>().fetchAccounts(
+          user: auth.account ?? '',
+          projectLimit: 2,
+          includeGraph: false,
+        );
+        return accounts
+            .map(
+              (account) => DashboardAccountOption(
+                id: account.id,
+                name: account.accountName,
+                category: account.category,
+              ),
+            )
+            .toList(growable: false);
+      },
+      onChanged: (selected) async {
+        final user = auth.account;
+        if (user == null) return;
+        await dashboard.changePointAccount(
+          account: user,
+          accountId: selected?.id,
+          accountName: selected?.name,
+        );
+      },
+      onOpenAccountPage: () =>
+          context.read<ControllerPageMain>().changePage(PageType.pointsRecord),
     );
-  }
-
-  String _categoryLabel(AppLocalizations loc, String category) {
-    return switch (category) {
-      'project' => loc.accountProject,
-      'master' => loc.accountMaster,
-      _ => loc.accountPersonal,
-    };
   }
 }
