@@ -92,12 +92,6 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   String _recordSearchQuery = '';
   String? _selectedRecordCategory;
 
-  ModelAccountingDetail? _latestRegularRecord(
-    ControllerAccountingDetail controller,
-  ) => controller.todayRecords
-      .where((record) => record.primaryCategory != RecordCategories.reserved)
-      .firstOrNull;
-
   @override
   void initState() {
     super.initState();
@@ -203,16 +197,6 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
         );
       },
     );
-  }
-
-  String formatRecordTime(DateTime time) {
-    final now = DateTime.now();
-
-    if (time.year == now.year) {
-      return DateFormat('M/d HH:mm').format(time);
-    } else {
-      return DateFormat('yyyy/M/d HH:mm').format(time);
-    }
   }
 
   @override
@@ -641,7 +625,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                     icon: const Icon(Icons.send_rounded),
                     onPressed: () async {
                       if (_speechTextController.text.isEmpty) return;
-                      final latest = _latestRegularRecord(controller);
+                      final latest = firstRecordOutsideCategory(
+                        controller.todayRecords,
+                        excludedCategory: RecordCategories.reserved,
+                        primaryCategoryOf: (record) => record.primaryCategory,
+                      );
                       final previews = controller.parseFromSpeech(
                         _speechTextController.text,
                         latest?.currency ??
@@ -706,7 +694,11 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     BuildContext context,
     ControllerAccountingDetail controller,
   ) async {
-    final latest = _latestRegularRecord(controller);
+    final latest = firstRecordOutsideCategory(
+      controller.todayRecords,
+      excludedCategory: RecordCategories.reserved,
+      primaryCategoryOf: (record) => record.primaryCategory,
+    );
     final draft = AccountingPreview(
       description: '',
       value: latest?.value ?? -1,

@@ -25,3 +25,14 @@ List<T> filterRecordItems<T>(
       })
       .toList(growable: false);
 }
+
+T? firstRecordOutsideCategory<T>(
+  Iterable<T> records, {
+  required String excludedCategory,
+  required String Function(T record) primaryCategoryOf,
+}) {
+  for (final record in records) {
+    if (primaryCategoryOf(record) != excludedCategory) return record;
+  }
+  return null;
+}

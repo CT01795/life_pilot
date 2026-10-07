@@ -37,6 +37,31 @@ void main() {
   test('combines category and search filters', () {
     expect(filter(query: 'bus', category: 'food'), isEmpty);
   });
+
+  test('returns the first record outside the excluded category', () {
+    const withReservedFirst = [
+      _Record('Balance', 'reserved', null),
+      ...records,
+    ];
+
+    final result = firstRecordOutsideCategory(
+      withReservedFirst,
+      excludedCategory: 'reserved',
+      primaryCategoryOf: (record) => record.primaryCategory,
+    );
+
+    expect(result, records.first);
+  });
+
+  test('returns null when every record has the excluded category', () {
+    final result = firstRecordOutsideCategory(
+      const [_Record('Balance', 'reserved', null)],
+      excludedCategory: 'reserved',
+      primaryCategoryOf: (record) => record.primaryCategory,
+    );
+
+    expect(result, isNull);
+  });
 }
 
 class _Record {

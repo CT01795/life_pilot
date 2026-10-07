@@ -93,12 +93,6 @@ class _PagePointRecordDetailViewState
   String _recordSearchQuery = '';
   String? _selectedRecordCategory;
 
-  ModelPointRecordDetail? _latestRegularRecord(
-    ControllerPointRecordDetail controller,
-  ) => controller.todayRecords
-      .where((record) => record.primaryCategory != RecordCategories.reserved)
-      .firstOrNull;
-
   @override
   void initState() {
     super.initState();
@@ -201,16 +195,6 @@ class _PagePointRecordDetailViewState
         );
       },
     );
-  }
-
-  String formatRecordTime(DateTime time) {
-    final now = DateTime.now();
-
-    if (time.year == now.year) {
-      return DateFormat('M/d HH:mm').format(time);
-    } else {
-      return DateFormat('yyyy/M/d HH:mm').format(time);
-    }
   }
 
   @override
@@ -586,7 +570,11 @@ class _PagePointRecordDetailViewState
                     icon: const Icon(Icons.send_rounded),
                     onPressed: () async {
                       if (_speechTextController.text.isEmpty) return;
-                      final latest = _latestRegularRecord(controller);
+                      final latest = firstRecordOutsideCategory(
+                        controller.todayRecords,
+                        excludedCategory: RecordCategories.reserved,
+                        primaryCategoryOf: (record) => record.primaryCategory,
+                      );
                       final previews = controller.parseFromSpeech(
                         _speechTextController.text,
                       );
@@ -648,7 +636,11 @@ class _PagePointRecordDetailViewState
     BuildContext context,
     ControllerPointRecordDetail controller,
   ) async {
-    final latest = _latestRegularRecord(controller);
+    final latest = firstRecordOutsideCategory(
+      controller.todayRecords,
+      excludedCategory: RecordCategories.reserved,
+      primaryCategoryOf: (record) => record.primaryCategory,
+    );
     final draft = PointRecordPreview(
       description: '',
       value: latest?.value ?? 1,
