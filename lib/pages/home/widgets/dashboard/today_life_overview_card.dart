@@ -776,7 +776,7 @@ class _OverviewMetric extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(statusIcon, size: 16, color: accentColor),
-                          const SizedBox(width: 4),
+                          Gaps.w8,
                           Text(
                             value,
                             maxLines: 1,

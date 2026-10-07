@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
 
 class VendorSubmissionHub extends StatelessWidget {
   const VendorSubmissionHub({
@@ -46,7 +47,7 @@ class VendorSubmissionHub extends StatelessWidget {
             ),
           ),
           if (showSubmissionFilter) ...[
-            const SizedBox(width: 12),
+            Gaps.w12,
             SegmentedButton<bool>(
               segments: [
                 ButtonSegment<bool>(

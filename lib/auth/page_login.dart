@@ -459,7 +459,7 @@ class _PageLoginState extends State<PageLogin> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 16),
-        const SizedBox(width: 5),
+        Gaps.w8,
         Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],
     ),

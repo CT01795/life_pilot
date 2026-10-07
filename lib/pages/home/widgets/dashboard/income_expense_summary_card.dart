@@ -82,7 +82,7 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                       onPressed: () => openHomeAccountingQuickAdd(context),
                       icon: const Icon(Icons.add_circle_outline),
                     ),
-                    const SizedBox(width: 8),
+                    Gaps.w8,
                     const Expanded(child: AccountSelectorButton()),
                   ],
                   if (!isExpanded)

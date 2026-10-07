@@ -79,7 +79,7 @@ class PointSummaryCard extends StatelessWidget {
                       onPressed: () => openHomePointQuickAdd(context),
                       icon: const Icon(Icons.add_circle_outline),
                     ),
-                    const SizedBox(width: 8),
+                    Gaps.w8,
                     const Expanded(child: PointSelectorButton()),
                   ],
                   if (!isExpanded)

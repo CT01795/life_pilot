@@ -463,7 +463,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
                               size: 16,
                               color: colorScheme.primary,
                             ),
-                            const SizedBox(width: 5),
+                            Gaps.w8,
                             Text(
                               highlight.label,
                               style: Theme.of(context).textTheme.labelMedium

@@ -668,7 +668,7 @@ class _JourneyStep extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 15, color: colors.onPrimaryContainer),
-          const SizedBox(width: 5),
+          Gaps.w8,
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(

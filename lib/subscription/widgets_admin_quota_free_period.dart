@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 class AdminQuotaFreePeriod extends StatefulWidget {
@@ -229,7 +230,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            const SizedBox(height: 12),
+            Gaps.h12,
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
@@ -237,7 +238,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                 prefixIcon: const Icon(Icons.campaign_outlined),
               ),
             ),
-            const SizedBox(height: 12),
+            Gaps.h12,
             LayoutBuilder(
               builder: (context, constraints) {
                 final start = _DateTimeButton(
@@ -268,7 +269,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                 return Row(
                   children: [
                     Expanded(child: start),
-                    const SizedBox(width: 12),
+                    Gaps.w12,
                     Expanded(child: end),
                   ],
                 );

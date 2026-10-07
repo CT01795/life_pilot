@@ -145,7 +145,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                                         maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
+                                      Gaps.h4,
                                       SizedBox(
                                         width: 180,
                                         child: statusDropdown,

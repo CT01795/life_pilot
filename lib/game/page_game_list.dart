@@ -1397,7 +1397,7 @@ class _GameProgressOverview extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.history_toggle_off, size: 17),
-                        const SizedBox(width: 3),
+                        Gaps.w8,
                         Text(
                           '$recentPassed/$recentAttempts',
                           style: Theme.of(context).textTheme.labelMedium

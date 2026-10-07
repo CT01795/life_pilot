@@ -4,6 +4,7 @@ import 'package:life_pilot/auth/model_auth_view.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/widgets/page_selector_dropdown.dart';
 import 'package:life_pilot/pages/home/widgets/user_menu_button.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_startup.dart';
 import 'package:life_pilot/utils/widgets/widgets_language_toggle_dropdown.dart';
 import 'package:provider/provider.dart';
@@ -67,9 +68,9 @@ class MainPageBar extends StatelessWidget implements PreferredSizeWidget {
           message: loc.language,
           child: LanguageToggleDropdown(compact: useCompactActions),
         ),
-        const SizedBox(width: 8),
+        Gaps.w8,
         const SizedBox(width: 52, child: UserMenuButton()),
-        const SizedBox(width: 4),
+        Gaps.w8,
       ],
     );
   }

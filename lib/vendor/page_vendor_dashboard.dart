@@ -338,9 +338,9 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                 );
               },
             ),
-            const SizedBox(height: 6),
+            Gaps.h8,
             Text(loc.vendorDashboardSubtitle),
-            const SizedBox(height: 14),
+            Gaps.h12,
             Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -596,7 +596,7 @@ class _PageVendorDashboardState extends State<PageVendorDashboard> {
                   ),
                   Gaps.h4,
                   Text(message),
-                  const SizedBox(height: 10),
+                  Gaps.h12,
                   TextButton.icon(
                     onPressed: _openActivities,
                     icon: const Icon(Icons.arrow_forward),

@@ -11,6 +11,7 @@ import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_dialog.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_trailing.dart';
 import 'package:life_pilot/point_record/controller_point_record_list.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 
 class WidgetsMemoryList extends StatelessWidget {
@@ -119,7 +120,7 @@ class WidgetsMemoryList extends StatelessWidget {
                       Icons.auto_stories_outlined,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(width: 8),
+                    Gaps.w8,
                     Expanded(
                       child: Text(
                         dateFormats.month.format(date),
@@ -320,7 +321,7 @@ class _MemoryJourneySummary extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.route_outlined, color: colors.onSecondaryContainer),
-          const SizedBox(width: 10),
+          Gaps.w8,
           Expanded(
             child: Text(
               loc.memoryJourneySummary(memoryCount, dayCount, cityCount),

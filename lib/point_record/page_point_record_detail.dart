@@ -415,7 +415,7 @@ class _PagePointRecordDetailViewState
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
+              Gaps.w8,
               Flexible(
                 child: Text(
                   record.value > 0

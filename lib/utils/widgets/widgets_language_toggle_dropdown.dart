@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,7 @@ class LanguageToggleDropdown extends StatelessWidget {
                       ? const Icon(Icons.check, color: Colors.white, size: 20)
                       : null,
                 ),
-                const SizedBox(width: 8),
+                Gaps.w8,
                 Expanded(
                   child: Text(
                     getLanguageDisplayName(context, itemLocale.languageCode),
@@ -77,7 +78,7 @@ class LanguageToggleDropdown extends StatelessWidget {
             children: [
               const Icon(Icons.language, color: Colors.white, size: 28),
               if (!compact) ...[
-                const SizedBox(width: 4),
+                Gaps.w8,
                 Text(
                   getLanguageDisplayName(context, locale.locale.languageCode),
                   maxLines: 1,
