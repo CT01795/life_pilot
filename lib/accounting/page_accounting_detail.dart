@@ -14,8 +14,10 @@ import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/utils/record_categories.dart';
 import 'package:life_pilot/utils/record_date_time.dart';
+import 'package:life_pilot/utils/record_filter.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/widgets/widgets_record_explorer.dart';
+import 'package:life_pilot/utils/widgets/widgets_record_input.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
@@ -263,24 +265,15 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   List<ModelAccountingDetail> _filterRecords(
     List<ModelAccountingDetail> records,
     AppLocalizations loc,
-  ) {
-    final query = _recordSearchQuery.trim().toLowerCase();
-    return records
-        .where((record) {
-          if (_selectedRecordCategory != null &&
-              record.primaryCategory != _selectedRecordCategory) {
-            return false;
-          }
-          if (query.isEmpty) return true;
-          return record.description.toLowerCase().contains(query) ||
-              (record.secondaryCategory ?? '').toLowerCase().contains(query) ||
-              RecordCategories.label(
-                loc,
-                record.primaryCategory,
-              ).toLowerCase().contains(query);
-        })
-        .toList(growable: false);
-  }
+  ) => filterRecordItems(
+    records,
+    query: _recordSearchQuery,
+    selectedCategory: _selectedRecordCategory,
+    descriptionOf: (record) => record.description,
+    primaryCategoryOf: (record) => record.primaryCategory,
+    secondaryCategoryOf: (record) => record.secondaryCategory,
+    categoryLabelOf: (category) => RecordCategories.label(loc, category),
+  );
 
   Widget _buildRecordExplorer(
     BuildContext context,
@@ -565,50 +558,9 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   }
 
   Widget _buildNewRecordDatePicker(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final locale = Localizations.localeOf(context).toString();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          OutlinedButton.icon(
-            icon: const Icon(Icons.calendar_today_outlined),
-            label: Text(
-              '${loc.recordDate}: ${DateFormat.yMd(locale).format(_newRecordDate)}',
-            ),
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _newRecordDate,
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now().add(const Duration(days: 3650)),
-              );
-              if (picked == null || !mounted) return;
-              setState(() {
-                _newRecordDate = replaceRecordDate(_newRecordDate, picked);
-              });
-            },
-          ),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.access_time),
-            label: Text(
-              '${loc.recordTime}: ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_newRecordDate))}',
-            ),
-            onPressed: () async {
-              final picked = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay.fromDateTime(_newRecordDate),
-              );
-              if (picked == null || !mounted) return;
-              setState(() {
-                _newRecordDate = replaceRecordTime(_newRecordDate, picked);
-              });
-            },
-          ),
-        ],
-      ),
+    return WidgetsRecordDateTimePicker(
+      value: _newRecordDate,
+      onChanged: (value) => setState(() => _newRecordDate = value),
     );
   }
 
