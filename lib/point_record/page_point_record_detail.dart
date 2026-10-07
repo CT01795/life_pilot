@@ -91,6 +91,12 @@ class _PagePointRecordDetailViewState
   String _recordSearchQuery = '';
   String? _selectedRecordCategory;
 
+  ModelPointRecordDetail? _latestRegularRecord(
+    ControllerPointRecordDetail controller,
+  ) => controller.todayRecords
+      .where((record) => record.primaryCategory != RecordCategories.reserved)
+      .firstOrNull;
+
   @override
   void initState() {
     super.initState();
@@ -628,12 +634,17 @@ class _PagePointRecordDetailViewState
                     icon: const Icon(Icons.send_rounded),
                     onPressed: () async {
                       if (_speechTextController.text.isEmpty) return;
+                      final latest = _latestRegularRecord(controller);
                       final previews = controller.parseFromSpeech(
                         _speechTextController.text,
                       );
                       for (final preview in previews) {
                         preview.eventId = widget.linkedEventId;
                         preview.date = _newRecordDate;
+                        preview.primaryCategory =
+                            latest?.primaryCategory ??
+                            RecordCategories.uncategorized;
+                        preview.secondaryCategory = latest?.secondaryCategory;
                       }
                       if (previews.isEmpty) return;
                       final confirmed = await showVoiceConfirmDialog(
@@ -685,9 +696,7 @@ class _PagePointRecordDetailViewState
     BuildContext context,
     ControllerPointRecordDetail controller,
   ) async {
-    final latest = controller.todayRecords.isEmpty
-        ? null
-        : controller.todayRecords.first;
+    final latest = _latestRegularRecord(controller);
     final draft = PointRecordPreview(
       description: '',
       value: latest?.value ?? 1,
@@ -695,6 +704,7 @@ class _PagePointRecordDetailViewState
       date: _newRecordDate,
       primaryCategory:
           latest?.primaryCategory ?? RecordCategories.uncategorized,
+      secondaryCategory: latest?.secondaryCategory,
     );
     final record = await _showEditDetailDialog(context, draft, isNew: true);
     if (record == null) return;

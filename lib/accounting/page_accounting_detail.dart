@@ -90,6 +90,12 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
   String _recordSearchQuery = '';
   String? _selectedRecordCategory;
 
+  ModelAccountingDetail? _latestRegularRecord(
+    ControllerAccountingDetail controller,
+  ) => controller.todayRecords
+      .where((record) => record.primaryCategory != RecordCategories.reserved)
+      .firstOrNull;
+
   @override
   void initState() {
     super.initState();
@@ -683,14 +689,21 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                     icon: const Icon(Icons.send_rounded),
                     onPressed: () async {
                       if (_speechTextController.text.isEmpty) return;
+                      final latest = _latestRegularRecord(controller);
                       final previews = controller.parseFromSpeech(
                         _speechTextController.text,
-                        controller.currentCurrency ?? widget.account.currency,
+                        latest?.currency ??
+                            controller.currentCurrency ??
+                            widget.account.currency,
                         controller.currentExchangeRate,
                       );
                       for (final preview in previews) {
                         preview.eventId = widget.linkedEventId;
                         preview.date = _newRecordDate;
+                        preview.primaryCategory =
+                            latest?.primaryCategory ??
+                            RecordCategories.uncategorized;
+                        preview.secondaryCategory = latest?.secondaryCategory;
                       }
                       if (previews.isEmpty) return;
                       final confirmed = await showVoiceConfirmDialog(
@@ -741,18 +754,20 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
     BuildContext context,
     ControllerAccountingDetail controller,
   ) async {
-    final latest = controller.todayRecords.isEmpty
-        ? null
-        : controller.todayRecords.first;
+    final latest = _latestRegularRecord(controller);
     final draft = AccountingPreview(
       description: '',
       value: latest?.value ?? -1,
-      currency: controller.currentCurrency ?? widget.account.currency,
+      currency:
+          latest?.currency ??
+          controller.currentCurrency ??
+          widget.account.currency,
       exchangeRate: controller.currentExchangeRate,
       eventId: widget.linkedEventId,
       date: _newRecordDate,
       primaryCategory:
           latest?.primaryCategory ?? RecordCategories.uncategorized,
+      secondaryCategory: latest?.secondaryCategory,
     );
     final record = await _showEditDetailDialog(context, draft, isNew: true);
     if (record == null) return;

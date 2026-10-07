@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/record_row_utils.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 
@@ -534,7 +535,6 @@ class ServiceAccounting {
     bool includeReservedRecords = true,
   }) async {
     if (await _storesLocally) {
-      final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
       final rows = await LocalDataStore.instance.list(
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
@@ -549,37 +549,16 @@ class ServiceAccounting {
         (sum, row) =>
             sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
       );
-      final filtered =
-          accountRows.where((row) {
-            if (includeReservedRecords &&
-                row['primary_category'] == 'reserved') {
-              return true;
-            }
-            final date = DateTime.tryParse(row['date']?.toString() ?? '');
-            return date != null &&
-                !date.isBefore(dateFrom) &&
-                date.isBefore(upperBound);
-          }).toList()..sort(
-            (a, b) => (b['date']?.toString() ?? '').compareTo(
-              a['date']?.toString() ?? '',
-            ),
-          );
-      if (includeLatestFallback &&
-          !filtered.any((row) => row['primary_category'] != 'reserved')) {
-        final fallback =
-            accountRows
-                .where((row) => row['primary_category'] != 'reserved')
-                .toList()
-              ..sort(
-                (a, b) => (b['date']?.toString() ?? '').compareTo(
-                  a['date']?.toString() ?? '',
-                ),
-              );
-        if (fallback.isNotEmpty) filtered.add(fallback.first);
-      }
+      final filtered = filterRecordRows(
+        accountRows,
+        from: dateFrom,
+        to: dateTo,
+        includeLatestFallback: includeLatestFallback,
+        includeReservedRecords: includeReservedRecords,
+      );
       return filtered.map((row) => _mapDetail(row, balance)).toList();
     }
-    final upperBound = DateTime(dateTo.year, dateTo.month, dateTo.day + 1);
+    final upperBound = recordDayUpperBound(dateTo);
     var query = supabase
         .from(TableNames.accountingDetail)
         .select()
@@ -603,24 +582,23 @@ class ServiceAccounting {
         resource: TableNames.accountingDetail,
       );
       result.addAll(
-        localRows.where((row) {
-          if (row['account_id']?.toString() != accountId ||
-              row['type']?.toString().toLowerCase() != type.toLowerCase()) {
-            return false;
-          }
-          if (includeReservedRecords && row['primary_category'] == 'reserved') {
-            return true;
-          }
-          final date = DateTime.tryParse(row['date']?.toString() ?? '');
-          return date != null &&
-              !date.isBefore(dateFrom) &&
-              date.isBefore(upperBound);
-        }),
+        localRows.where(
+          (row) =>
+              recordRowMatchesAccountAndType(
+                row,
+                accountId: accountId,
+                type: type,
+              ) &&
+              recordRowIsInRange(
+                row,
+                from: dateFrom,
+                upperBound: upperBound,
+                includeReservedRecords: includeReservedRecords,
+              ),
+        ),
       );
     }
-    final hasRegularRecord = result.any(
-      (row) => row['primary_category'] != 'reserved',
-    );
+    final hasRegularRecord = result.any((row) => !isReservedRecordRow(row));
     if (includeLatestFallback && !hasRegularRecord) {
       final fallback = await supabase
           .from(TableNames.accountingDetail)
@@ -657,14 +635,7 @@ class ServiceAccounting {
                 sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
           );
     }
-    final unique =
-        <String, Map<String, dynamic>>{
-          for (final row in result) row[Fields.id].toString(): row,
-        }.values.toList()..sort(
-          (a, b) => (b['date']?.toString() ?? '').compareTo(
-            a['date']?.toString() ?? '',
-          ),
-        );
+    final unique = uniqueRecordRowsNewestFirst(result);
     return unique.map((detail) => _mapDetail(detail, balance)).toList();
   }
 
@@ -678,14 +649,16 @@ class ServiceAccounting {
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
       );
-      return rows.any((row) {
-        final date = DateTime.tryParse(row['date']?.toString() ?? '');
-        return row['account_id']?.toString() == accountId &&
-            row['type']?.toString().toLowerCase() == type.toLowerCase() &&
-            row['primary_category'] != 'reserved' &&
-            date != null &&
-            date.isBefore(before);
-      });
+      return hasRecordRowBefore(
+        rows.where(
+          (row) => recordRowMatchesAccountAndType(
+            row,
+            accountId: accountId,
+            type: type,
+          ),
+        ),
+        before,
+      );
     }
     final rows = await supabase
         .from(TableNames.accountingDetail)
@@ -708,21 +681,16 @@ class ServiceAccounting {
         owner: _localOwner!,
         resource: TableNames.accountingDetail,
       );
-      final dates =
-          rows
-              .where(
-                (row) =>
-                    row['account_id']?.toString() == accountId &&
-                    row['type']?.toString().toLowerCase() ==
-                        type.toLowerCase() &&
-                    row['primary_category'] != 'reserved',
-              )
-              .map((row) => DateTime.tryParse(row['date']?.toString() ?? ''))
-              .whereType<DateTime>()
-              .where((date) => date.isBefore(before))
-              .toList()
-            ..sort((a, b) => b.compareTo(a));
-      return dates.isEmpty ? null : dates.first.toLocal();
+      return latestRecordRowDateBefore(
+        rows.where(
+          (row) => recordRowMatchesAccountAndType(
+            row,
+            accountId: accountId,
+            type: type,
+          ),
+        ),
+        before,
+      );
     }
     final rows = await supabase
         .from(TableNames.accountingDetail)
