@@ -62,11 +62,12 @@ Future<ScheduleDateTimeChoice?> confirmEventTransfer({
   required bool isAlreadyAdded,
 }) async {
   final now = DateTime.now();
-  final initialDate =
-      event.startDate is DateTime &&
-          !(event.startDate as DateTime).isBefore(DateUtils.dateOnly(now))
-      ? event.startDate as DateTime
-      : now;
+  final initialDate = initialRecommendedScheduleDate(
+    sourceDate: event.startDate is DateTime
+        ? event.startDate as DateTime
+        : null,
+    currentDateTime: now,
+  );
   final initialTime = initialRecommendedScheduleTime(
     selectedDate: initialDate,
     sourceTime: event.startTime is TimeOfDay

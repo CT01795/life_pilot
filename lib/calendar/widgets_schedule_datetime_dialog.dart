@@ -13,6 +13,16 @@ class ScheduleDateTimeChoice {
       DateTime(date.year, date.month, date.day, time.hour, time.minute);
 }
 
+DateTime initialRecommendedScheduleDate({
+  DateTime? sourceDate,
+  DateTime? currentDateTime,
+}) {
+  final today = DateUtils.dateOnly(currentDateTime ?? DateTime.now());
+  if (sourceDate == null) return today;
+  final sourceDay = DateUtils.dateOnly(sourceDate);
+  return sourceDay.isBefore(today) ? today : sourceDay;
+}
+
 TimeOfDay initialRecommendedScheduleTime({
   required DateTime selectedDate,
   TimeOfDay? sourceTime,

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
-import 'package:life_pilot/calendar/controller_calendar.dart';
-import 'package:life_pilot/calendar/widgets_schedule_datetime_dialog.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
@@ -15,14 +13,11 @@ import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_load_failure.d
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_section_loading.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/place_selector_button.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/recommendation_highlights.dart';
-import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
+import 'package:life_pilot/pages/home/widgets/dashboard/recommendation_calendar_actions.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
-import 'package:life_pilot/utils/widgets/widgets_confirmation_dialog.dart';
 import 'package:provider/provider.dart';
-
-import '../../../../utils/logger.dart';
 
 class RecommendPlaceCard extends StatelessWidget {
   final bool isExpanded;
@@ -35,6 +30,63 @@ class RecommendPlaceCard extends StatelessWidget {
     required this.hasRequestedData,
     required this.onExpansionChanged,
   });
+
+  Future<void> _addToCalendar({
+    required BuildContext context,
+    required RecommendedPlace place,
+    required String account,
+    required AppLocalizations loc,
+  }) async {
+    final calendar = context.read<CalendarService>();
+    final tracking = context.read<EventTrackingService>();
+    try {
+      final schedule = await chooseRecommendationSchedule(
+        context: context,
+        title: place.name,
+        sourceDate: DateTime.now(),
+        sourceTime: place.startTime,
+      );
+      if (schedule == null) return;
+
+      final isDuplicate = await calendar.existsRecommendedPlaceToCal(
+        account: account,
+        place: place,
+        scheduledDate: schedule.date,
+      );
+      if (isDuplicate) {
+        final confirmed = await confirmRecommendationDuplicate(loc: loc);
+        if (!confirmed) return;
+      }
+
+      final addedEvent = await calendar.addRecommendedPlaceToCal(
+        account: account,
+        place: place,
+        id: null,
+        scheduledDate: schedule.date,
+        scheduledTime: schedule.time,
+      );
+      if (!context.mounted) return;
+      publishAddedCalendarEvent(
+        context: context,
+        event: addedEvent,
+        account: account,
+        loc: loc,
+      );
+      await tracking.incrementEventCounter(
+        eventId: place.id,
+        eventName: place.name,
+        column: 'saves',
+      );
+    } catch (error, stackTrace) {
+      showRecommendationCalendarAddFailure(
+        context: context,
+        loc: loc,
+        error: error,
+        stackTrace: stackTrace,
+        source: 'recommended place',
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,101 +174,12 @@ class RecommendPlaceCard extends StatelessWidget {
                             child: Transform.scale(
                               scale: 1.5, // 放大倍率
                               child: AsyncActionCheckbox(
-                                onAccepted: () async {
-                                  final calendar = context
-                                      .read<CalendarService>();
-                                  final calendarController = context
-                                      .read<ControllerCalendar>();
-                                  final dashboard = context
-                                      .read<ModelDashboard>();
-                                  try {
-                                    if (!context.mounted) return;
-                                    final now = DateTime.now();
-                                    final schedule =
-                                        await showScheduleDateTimeDialog(
-                                          context,
-                                          title: e.name,
-                                          initialDate: now,
-                                          initialTime:
-                                              initialRecommendedScheduleTime(
-                                                selectedDate: now,
-                                                sourceTime: e.startTime,
-                                                currentDateTime: now,
-                                              ),
-                                        );
-                                    if (schedule == null) return;
-
-                                    final isDuplicate = await calendar
-                                        .existsRecommendedPlaceToCal(
-                                          account: account!,
-                                          place: e,
-                                          scheduledDate: schedule.date,
-                                        );
-                                    if (isDuplicate) {
-                                      final confirmed =
-                                          await showConfirmationDialog(
-                                            content: loc
-                                                .scheduleDuplicateConfirmation,
-                                            confirmText: loc.add,
-                                            cancelText: loc.cancel,
-                                          );
-                                      if (!confirmed) return;
-                                    }
-
-                                    final addedEvent = await calendar
-                                        .addRecommendedPlaceToCal(
-                                          account: account,
-                                          place: e,
-                                          id: null,
-                                          scheduledDate: schedule.date,
-                                          scheduledTime: schedule.time,
-                                        );
-                                    dashboard.addUpcomingEvent(
-                                      addedEvent,
-                                      account: account,
-                                    );
-                                    calendarController.invalidateEventCache(
-                                      startDate: addedEvent.startDate,
-                                      endDate: addedEvent.endDate,
-                                    );
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text(loc.eventAddOk)),
-                                      );
-                                    }
-                                    await tracking.incrementEventCounter(
-                                      eventId: e.id,
-                                      eventName:
-                                          e.name, // 或者用 eventViewModel.name
-                                      column: 'saves',
-                                    ); //收藏到行事曆
-                                  } catch (e, stackTrace) {
-                                    logger.e(
-                                      'Could not add recommended place to calendar.',
-                                      error: e,
-                                      stackTrace: stackTrace,
-                                    );
-                                    if (context.mounted) {
-                                      final message = subscriptionErrorMessage(
-                                        loc,
-                                        e,
-                                      );
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            message.isNotEmpty
-                                                ? message
-                                                : loc.eventSaveFailed,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
+                                onAccepted: () => _addToCalendar(
+                                  context: context,
+                                  place: e,
+                                  account: account!,
+                                  loc: loc,
+                                ),
                               ),
                             ),
                           ),

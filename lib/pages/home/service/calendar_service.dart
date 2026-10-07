@@ -44,12 +44,9 @@ class CalendarService {
     TimeOfDay? scheduledTime,
   }) async {
     final today = DateTimeFormatter.dateOnly(DateTime.now());
-    final originalStart = event.startDate ?? today;
-    final startDate =
-        scheduledDate ??
-        (DateTimeFormatter.dateOnly(originalStart).isBefore(today)
-            ? today
-            : originalStart);
+    final sourceDate = DateTimeFormatter.dateOnly(event.startDate ?? today);
+    final defaultDate = sourceDate.isBefore(today) ? today : sourceDate;
+    final startDate = DateTimeFormatter.dateOnly(scheduledDate ?? defaultDate);
     final data = <String, Object?>{
       // 新的 id
       Fields.id: id ?? const Uuid().v4(),
