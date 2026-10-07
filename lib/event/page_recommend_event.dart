@@ -58,11 +58,15 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
     await _controllerEvent.loadEvents(isGetPublicEvents: false);
   }
 
-  Widget _buildVendorSubmissionHub(BuildContext context) {
+  Widget _buildVendorSubmissionHub(
+    BuildContext context, {
+    required bool isVendor,
+  }) {
     final loc = AppLocalizations.of(context)!;
     return VendorSubmissionHub(
       submitLabel: loc.vendorSubmitActivity,
       showOnlyMySubmissions: _showOnlyMySubmissions,
+      showSubmissionFilter: !isVendor,
       onSubmit: _openSubmissionForm,
       onFilterChanged: (selected) {
         setState(() => _showOnlyMySubmissions = selected);
@@ -74,6 +78,12 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final auth = context.read<ControllerAuth>();
+    final isVendor = context.select<ControllerAuth, bool>(
+      (controller) => controller.isVendor,
+    );
+    final currentAccount = context.select<ControllerAuth, String?>(
+      (controller) => controller.currentAccount,
+    );
     // ✅ 回傳 Provider Scope，包住整個頁面
     return ChangeNotifierProvider.value(
       value: _controllerEvent,
@@ -84,13 +94,17 @@ class _PageRecommendEventState extends State<PageRecommendEvent> {
         emptyText: loc.recommendEventZero,
         enableCityFilter: true,
         searchPanelBuilder: widgetsSearchPanel,
-        headerBuilder: _buildVendorSubmissionHub,
+        headerBuilder: (context) =>
+            _buildVendorSubmissionHub(context, isVendor: isVendor),
         showAddAction: false,
         autoRefreshPublicEvents: true,
-        eventPredicate: _showOnlyMySubmissions
-            ? (event) =>
-                  (event.account ?? '').trim().toLowerCase() ==
-                  (auth.currentAccount ?? '').trim().toLowerCase()
+        eventPredicate: isVendor || _showOnlyMySubmissions
+            ? (event) => shouldShowSubmission(
+                isVendor: isVendor,
+                showOnlyMySubmissions: _showOnlyMySubmissions,
+                submissionAccount: event.account,
+                currentAccount: currentAccount,
+              )
             : null,
         listBuilder:
             ({

@@ -8,6 +8,7 @@ void main() {
     WidgetTester tester, {
     required Locale locale,
     required double width,
+    bool showSubmissionFilter = true,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -26,6 +27,7 @@ void main() {
                 showOnlyMySubmissions: false,
                 onSubmit: () {},
                 onFilterChanged: (_) {},
+                showSubmissionFilter: showSubmissionFilter,
               ),
             ),
           ),
@@ -106,5 +108,42 @@ void main() {
       expect(text.softWrap, isFalse);
     }
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('vendor mode shows submit without mine and all filters', (
+    tester,
+  ) async {
+    await pumpHub(
+      tester,
+      locale: const Locale('en'),
+      width: 220,
+      showSubmissionFilter: false,
+    );
+
+    expect(find.text('+ Submit'), findsOneWidget);
+    expect(find.text('Mine'), findsNothing);
+    expect(find.text('All'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('vendor submissions are always restricted to the current account', () {
+    expect(
+      shouldShowSubmission(
+        isVendor: true,
+        showOnlyMySubmissions: false,
+        submissionAccount: ' Vendor@Example.com ',
+        currentAccount: 'vendor@example.com',
+      ),
+      isTrue,
+    );
+    expect(
+      shouldShowSubmission(
+        isVendor: true,
+        showOnlyMySubmissions: false,
+        submissionAccount: 'other@example.com',
+        currentAccount: 'vendor@example.com',
+      ),
+      isFalse,
+    );
   });
 }

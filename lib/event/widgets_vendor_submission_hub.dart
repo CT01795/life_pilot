@@ -8,12 +8,14 @@ class VendorSubmissionHub extends StatelessWidget {
     required this.showOnlyMySubmissions,
     required this.onSubmit,
     required this.onFilterChanged,
+    this.showSubmissionFilter = true,
   });
 
   final String submitLabel;
   final bool showOnlyMySubmissions;
   final VoidCallback onSubmit;
   final ValueChanged<bool> onFilterChanged;
+  final bool showSubmissionFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -43,37 +45,54 @@ class VendorSubmissionHub extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          SegmentedButton<bool>(
-            segments: [
-              ButtonSegment<bool>(
-                value: true,
-                label: Text(loc.vendorMineShort, maxLines: 1, softWrap: false),
-              ),
-              ButtonSegment<bool>(
-                value: false,
-                label: Text(loc.vendorAllShort, maxLines: 1, softWrap: false),
-              ),
-            ],
-            selected: {showOnlyMySubmissions},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) {
-              onFilterChanged(selection.first);
-            },
-            style: ButtonStyle(
-              minimumSize: const WidgetStatePropertyAll(minimumActionSize),
-              padding: const WidgetStatePropertyAll(
-                EdgeInsets.symmetric(horizontal: 16),
-              ),
-              textStyle: WidgetStatePropertyAll(
-                Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+          if (showSubmissionFilter) ...[
+            const SizedBox(width: 12),
+            SegmentedButton<bool>(
+              segments: [
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(
+                    loc.vendorMineShort,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text(loc.vendorAllShort, maxLines: 1, softWrap: false),
+                ),
+              ],
+              selected: {showOnlyMySubmissions},
+              showSelectedIcon: false,
+              onSelectionChanged: (selection) {
+                onFilterChanged(selection.first);
+              },
+              style: ButtonStyle(
+                minimumSize: const WidgetStatePropertyAll(minimumActionSize),
+                padding: const WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 16),
+                ),
+                textStyle: WidgetStatePropertyAll(
+                  Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
+}
+
+bool shouldShowSubmission({
+  required bool isVendor,
+  required bool showOnlyMySubmissions,
+  required String? submissionAccount,
+  required String? currentAccount,
+}) {
+  if (!isVendor && !showOnlyMySubmissions) return true;
+  return submissionAccount?.trim().toLowerCase() ==
+      currentAccount?.trim().toLowerCase();
 }
