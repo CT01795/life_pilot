@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/event/event_item_schedule_comparator.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/utils/const.dart';
-import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -472,7 +472,8 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         existingEvent!.city.trim() == city.trim() &&
         existingEvent!.location.trim() == location.trim();
     // ✅ 先更新 subEvents 的內容
-    final sortedSubs = List<EventItem>.from(subEvents)..sort(_compareEvents);
+    final sortedSubs = List<EventItem>.from(subEvents)
+      ..sort(EventItemScheduleComparator.compare);
     //subEvents.sort(_compareEvents);
 
     final updatedSubs = sortedSubs.map((sub) {
@@ -575,22 +576,6 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
       ..source = existingEvent?.source ?? source
       ..mapLat = addressUnchanged ? existingEvent?.mapLat : null
       ..mapLng = addressUnchanged ? existingEvent?.mapLng : null;
-  }
-
-  int _compareEvents(EventItem a, EventItem b) {
-    int compareDate(DateTime? x, DateTime? y) =>
-        (x ?? DateTime(2100)).compareTo(y ?? DateTime(2100));
-
-    int compare = compareDate(a.startDate, b.startDate);
-    if (compare != 0) return compare;
-
-    compare = DateTimeCompare.compareTimeOfDay(a.startTime, b.startTime);
-    if (compare != 0) return compare;
-
-    compare = compareDate(a.endDate, b.endDate);
-    if (compare != 0) return compare;
-
-    return DateTimeCompare.compareTimeOfDay(a.endTime, b.endTime);
   }
 
   // --- 語音控制區 ---
