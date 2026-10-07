@@ -65,4 +65,43 @@ void main() {
     expect(result.map((row) => row['id']), ['same', 'other']);
     expect(result.first['date'], '2026-10-03T08:00:00.000');
   });
+
+  test('latest account row matches type case-insensitively', () {
+    final latest = latestRecordRowForAccountAndType(
+      [
+        {
+          'id': 'older',
+          'account_id': 'account-1',
+          'type': 'Balance',
+          'date': '2026-09-01T08:00:00.000',
+        },
+        {
+          'id': 'newer',
+          'account_id': 'account-1',
+          'type': 'balance',
+          'date': '2026-10-01T08:00:00.000',
+        },
+        {
+          'id': 'other',
+          'account_id': 'account-2',
+          'type': 'balance',
+          'date': '2026-10-02T08:00:00.000',
+        },
+      ],
+      accountId: 'account-1',
+      type: 'BALANCE',
+    );
+
+    expect(latest?['id'], 'newer');
+  });
+
+  test('latest event row returns the newest linked detail', () {
+    final latest = latestRecordRowForEvent([
+      {'id': 'older', 'event_id': 'event-1', 'date': '2026-09-01T08:00:00.000'},
+      {'id': 'newer', 'event_id': 'event-1', 'date': '2026-10-01T08:00:00.000'},
+      {'id': 'other', 'event_id': 'event-2', 'date': '2026-10-02T08:00:00.000'},
+    ], 'event-1');
+
+    expect(latest?['id'], 'newer');
+  });
 }

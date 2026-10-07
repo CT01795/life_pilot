@@ -35,21 +35,11 @@ class ServicePointRecord {
         owner: _localOwner!,
         resource: TableNames.pointRecordDetail,
       );
-      final matches =
-          rows
-              .where(
-                (item) =>
-                    item['account_id']?.toString() == accountId &&
-                    item['type']?.toString().toLowerCase() ==
-                        type.toLowerCase(),
-              )
-              .toList()
-            ..sort(
-              (a, b) => (b['date']?.toString() ?? '').compareTo(
-                a['date']?.toString() ?? '',
-              ),
-            );
-      if (matches.isNotEmpty) row = matches.first;
+      row = latestRecordRowForAccountAndType(
+        rows,
+        accountId: accountId,
+        type: type,
+      );
     } else {
       final rows = await supabase
           .from(TableNames.pointRecordDetail)
@@ -103,16 +93,10 @@ class ServicePointRecord {
             owner: _localOwner!,
             resource: TableNames.pointRecordDetail,
           );
-          final linkedDetails =
-              details
-                  .where((row) => row['event_id']?.toString() == eventId)
-                  .toList()
-                ..sort(
-                  (a, b) => (b['date']?.toString() ?? '').compareTo(
-                    a['date']?.toString() ?? '',
-                  ),
-                );
-          accountId = linkedDetails.firstOrNull?['account_id']?.toString();
+          accountId = latestRecordRowForEvent(
+            details,
+            eventId,
+          )?['account_id']?.toString();
         }
         final response = rows
             .where(

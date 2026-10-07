@@ -21,6 +21,28 @@ bool recordRowMatchesAccountAndType(
     row['account_id']?.toString() == accountId &&
     row['type']?.toString().toLowerCase() == type.toLowerCase();
 
+RecordRow? latestRecordRowWhere(
+  Iterable<RecordRow> rows,
+  bool Function(RecordRow row) matches,
+) {
+  final matching = rows.where(matches).toList();
+  sortRecordRowsNewestFirst(matching);
+  return matching.isEmpty ? null : matching.first;
+}
+
+RecordRow? latestRecordRowForAccountAndType(
+  Iterable<RecordRow> rows, {
+  required String accountId,
+  required String type,
+}) => latestRecordRowWhere(
+  rows,
+  (row) =>
+      recordRowMatchesAccountAndType(row, accountId: accountId, type: type),
+);
+
+RecordRow? latestRecordRowForEvent(Iterable<RecordRow> rows, String eventId) =>
+    latestRecordRowWhere(rows, (row) => row['event_id']?.toString() == eventId);
+
 bool recordRowIsInRange(
   RecordRow row, {
   required DateTime from,
