@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:life_pilot/event/service_event_public.dart';
+import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -48,10 +48,10 @@ class CalendarEvent {
     return CalendarEvent(
       id: json[Fields.id]?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      startDate: DateTimeParser.parseDate(json['start_date']),
-      startTime: DateTimeParser.parseTime(json['start_time']),
-      endDate: DateTimeParser.parseDate(json['end_date']),
-      endTime: DateTimeParser.parseTime(json['end_time']),
+      startDate: EventDateTimeParser.parseDate(json['start_date']),
+      startTime: EventDateTimeParser.parseTime(json['start_time']),
+      endDate: EventDateTimeParser.parseDate(json['end_date']),
+      endTime: EventDateTimeParser.parseTime(json['end_time']),
       country: EventCountry.normalize(json[EventFields.country]?.toString()),
       city: json['city']?.toString(),
       location: json['location']?.toString(),
@@ -88,11 +88,11 @@ class CalendarEvent {
     final selectedDate = DateUtils.dateOnly(date);
     return subEvents
         .where((subEvent) {
-          final start = DateTimeParser.parseDate(subEvent['start_date']);
+          final start = EventDateTimeParser.parseDate(subEvent['start_date']);
           if (start == null) return false;
           final startDate = DateUtils.dateOnly(start);
           final endDate = DateUtils.dateOnly(
-            DateTimeParser.parseDate(subEvent['end_date']) ?? start,
+            EventDateTimeParser.parseDate(subEvent['end_date']) ?? start,
           );
           return !selectedDate.isBefore(startDate) &&
               !selectedDate.isAfter(endDate);

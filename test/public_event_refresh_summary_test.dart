@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_pilot/event/service_event_public.dart';
+import 'package:life_pilot/event/public_event_refresh.dart';
 
 void main() {
   test('refresh requires at least half of attempted sources to succeed', () {

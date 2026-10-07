@@ -7,6 +7,7 @@ import 'package:life_pilot/event/controller_page_event_add.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/event/model_event.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/public_event_refresh.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';

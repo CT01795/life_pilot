@@ -4,7 +4,7 @@ import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
-import 'package:life_pilot/event/service_event_public.dart';
+import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/extension.dart';
 
 class ServiceExportExcel {
@@ -34,7 +34,7 @@ class ServiceExportExcel {
       loc.excelColumnHeaderPriceMax,
       loc.excelColumnHeaderIsOutdoor,
       loc.excelColumnHeaderId,
-      loc.excelColumnHeaderMasterUrl
+      loc.excelColumnHeaderMasterUrl,
     ];
 
     sheet.appendRow(headers.map(_textCell).toList());
@@ -48,11 +48,12 @@ class ServiceExportExcel {
     return Uint8List.fromList(excel.encode()!);
   }
 
-  void _appendEventRow(
-      {required Sheet sheet,
-      required EventBase event,
-      String indent = '',
-      required AppLocalizations loc}) {
+  void _appendEventRow({
+    required Sheet sheet,
+    required EventBase event,
+    String indent = '',
+    required AppLocalizations loc,
+  }) {
     final row = [
       _textCell('$indent${event.name}'),
       _textCell(event.type),
@@ -67,14 +68,16 @@ class ServiceExportExcel {
       _textCell(event.unit),
       _textCell(event.ageMin?.toString() ?? ''),
       _textCell(event.ageMax?.toString() ?? ''),
-      _textCell(event.isFree == null
-          ? ''
-          : (event.isFree! ? loc.free : loc.pay)),
+      _textCell(
+        event.isFree == null ? '' : (event.isFree! ? loc.free : loc.pay),
+      ),
       _textCell(event.priceMin?.toString() ?? ''),
       _textCell(event.priceMax?.toString() ?? ''),
-      _textCell(event.isOutdoor == null
-          ? ''
-          : (event.isOutdoor! ? loc.outdoor : loc.indoor)),
+      _textCell(
+        event.isOutdoor == null
+            ? ''
+            : (event.isOutdoor! ? loc.outdoor : loc.indoor),
+      ),
       _textCell(event.id),
       _textCell(event.masterUrl ?? ''),
     ];
@@ -134,42 +137,78 @@ class ServiceExportExcel {
     for (int i = 1; i < rows.length; i++) {
       final row = rows[i];
       if (row.isEmpty || row.length <= 17) continue;
-      events.add(EventItem(
+      events.add(
+        EventItem(
           name: row[colsToDetail["name"] ?? 99]?.toString() ?? '',
           type: row[colsToDetail["type"] ?? 99]?.toString() ?? '',
           city: row[colsToDetail["city"] ?? 99]?.toString() ?? '',
           location: row[colsToDetail["location"] ?? 99]?.toString() ?? '',
           //fee: row[?]?.toString(),
           startDate: DateTime.tryParse(
-              row[colsToDetail["startDate"] ?? 99]?.toString() ?? ''),
-          startTime: DateTimeParser.parseTime(
-              row[colsToDetail["startTime"] ?? 99]?.toString() ?? ''),
+            row[colsToDetail["startDate"] ?? 99]?.toString() ?? '',
+          ),
+          startTime: EventDateTimeParser.parseTime(
+            row[colsToDetail["startTime"] ?? 99]?.toString() ?? '',
+          ),
           endDate: DateTime.tryParse(
-              row[colsToDetail["endDate"] ?? 99]?.toString() ?? ''),
-          endTime: DateTimeParser.parseTime(
-              row[colsToDetail["endTime"] ?? 99]?.toString() ?? ''),
+            row[colsToDetail["endDate"] ?? 99]?.toString() ?? '',
+          ),
+          endTime: EventDateTimeParser.parseTime(
+            row[colsToDetail["endTime"] ?? 99]?.toString() ?? '',
+          ),
           description: row[colsToDetail["description"] ?? 99]?.toString() ?? '',
           unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
-          ageMin: (row[colsToDetail["ageMin"] ?? 99]?.toString() ?? '').trim().isNotEmpty
+          ageMin:
+              (row[colsToDetail["ageMin"] ?? 99]?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
               ? num.parse(
-                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim())
+                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim(),
+                )
               : null,
-          ageMax: (row[colsToDetail["ageMax"] ?? 99]?.toString() ?? '').trim().isNotEmpty
+          ageMax:
+              (row[colsToDetail["ageMax"] ?? 99]?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
               ? num.parse(
-                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim())
+                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim(),
+                )
               : null,
           isFree:
-              (row[colsToDetail["isFree"] ?? 99]?.toString() ?? '').trim().isNotEmpty
-                  ? row[colsToDetail["isFree"] ?? 99]?.toString().contains(loc.free)
-                  : null,
-          priceMin: (row[colsToDetail["priceMin"] ?? 99]?.toString() ?? '').trim().isNotEmpty
-              ? num.parse(row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim())
+              (row[colsToDetail["isFree"] ?? 99]?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? row[colsToDetail["isFree"] ?? 99]?.toString().contains(loc.free)
               : null,
-          priceMax: (row[colsToDetail["priceMax"] ?? 99]?.toString() ?? '').trim().isNotEmpty ? num.parse(row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim()) : null,
-          isOutdoor: (row[colsToDetail["isOutdoor"] ?? 99]?.toString() ?? '').trim().isNotEmpty ? row[colsToDetail["isOutdoor"] ?? 99]?.toString().contains(loc.outdoor) : null,
+          priceMin:
+              (row[colsToDetail["priceMin"] ?? 99]?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim(),
+                )
+              : null,
+          priceMax:
+              (row[colsToDetail["priceMax"] ?? 99]?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim(),
+                )
+              : null,
+          isOutdoor:
+              (row[colsToDetail["isOutdoor"] ?? 99]?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? row[colsToDetail["isOutdoor"] ?? 99]?.toString().contains(
+                  loc.outdoor,
+                )
+              : null,
           id: row[colsToDetail["id"] ?? 99]?.toString(),
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
-          subEvents: []));
+          subEvents: [],
+        ),
+      );
     }
     return events;
   }
@@ -184,7 +223,7 @@ class ServiceExportExcel {
       final tmp = headerRow[i]?.value?.toString();
       if (tmp == null) {
         continue;
-      }else if (tmp.contains(loc.activityName)) {
+      } else if (tmp.contains(loc.activityName)) {
         colsToDetail["name"] = i;
       } else if (tmp.contains(loc.keywords)) {
         colsToDetail["type"] = i;
@@ -226,42 +265,82 @@ class ServiceExportExcel {
     for (int i = 1; i < sheet.rows.length; i++) {
       final row = sheet.rows[i];
       if (row.isEmpty || row.length <= 17) continue;
-      events.add(EventItem(
+      events.add(
+        EventItem(
           name: row[colsToDetail["name"] ?? 99]?.value?.toString() ?? '',
           type: row[colsToDetail["type"] ?? 99]?.value?.toString() ?? '',
           city: row[colsToDetail["city"] ?? 99]?.value?.toString() ?? '',
-          location: row[colsToDetail["location"] ?? 99]?.value?.toString() ?? '',
+          location:
+              row[colsToDetail["location"] ?? 99]?.value?.toString() ?? '',
           //fee: row[?]?.value?.toString(),
           startDate: DateTime.tryParse(
-              row[colsToDetail["startDate"] ?? 99]?.value?.toString() ?? ''),
-          startTime: DateTimeParser.parseTime(
-              row[colsToDetail["startTime"] ?? 99]?.value?.toString() ?? ''),
+            row[colsToDetail["startDate"] ?? 99]?.value?.toString() ?? '',
+          ),
+          startTime: EventDateTimeParser.parseTime(
+            row[colsToDetail["startTime"] ?? 99]?.value?.toString() ?? '',
+          ),
           endDate: DateTime.tryParse(
-              row[colsToDetail["endDate"] ?? 99]?.value?.toString() ?? ''),
-          endTime: DateTimeParser.parseTime(
-              row[colsToDetail["endTime"] ?? 99]?.value?.toString() ?? ''),
-          description: row[colsToDetail["description"] ?? 99]?.value?.toString() ?? '',
+            row[colsToDetail["endDate"] ?? 99]?.value?.toString() ?? '',
+          ),
+          endTime: EventDateTimeParser.parseTime(
+            row[colsToDetail["endTime"] ?? 99]?.value?.toString() ?? '',
+          ),
+          description:
+              row[colsToDetail["description"] ?? 99]?.value?.toString() ?? '',
           unit: row[colsToDetail["unit"] ?? 99]?.value?.toString() ?? '',
-          ageMin: (row[colsToDetail["ageMin"] ?? 99]?.value?.toString() ?? '').trim().isNotEmpty
+          ageMin:
+              (row[colsToDetail["ageMin"] ?? 99]?.value?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
               ? num.parse(
-                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim())
+                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim(),
+                )
               : null,
-          ageMax: (row[colsToDetail["ageMax"] ?? 99]?.value?.toString() ?? '').trim().isNotEmpty
+          ageMax:
+              (row[colsToDetail["ageMax"] ?? 99]?.value?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
               ? num.parse(
-                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim())
+                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim(),
+                )
               : null,
           isFree:
-              (row[colsToDetail["isFree"] ?? 99]?.value?.toString() ?? '').trim().isNotEmpty
-                  ? row[colsToDetail["isFree"] ?? 99]?.value?.toString().contains(loc.free)
-                  : null,
-          priceMin: (row[colsToDetail["priceMin"] ?? 99]?.value?.toString() ?? '').trim().isNotEmpty
-              ? num.parse(row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim())
+              (row[colsToDetail["isFree"] ?? 99]?.value?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? row[colsToDetail["isFree"] ?? 99]?.value?.toString().contains(
+                  loc.free,
+                )
               : null,
-          priceMax: (row[colsToDetail["priceMax"] ?? 99]?.value?.toString() ?? '').trim().isNotEmpty ? num.parse(row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim()) : null,
-          isOutdoor: (row[colsToDetail["isOutdoor"] ?? 99]?.value?.toString() ?? '').trim().isNotEmpty ? row[colsToDetail["isOutdoor"] ?? 99]?.value?.toString().contains(loc.outdoor) : null,
+          priceMin:
+              (row[colsToDetail["priceMin"] ?? 99]?.value?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim(),
+                )
+              : null,
+          priceMax:
+              (row[colsToDetail["priceMax"] ?? 99]?.value?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? num.parse(
+                  row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim(),
+                )
+              : null,
+          isOutdoor:
+              (row[colsToDetail["isOutdoor"] ?? 99]?.value?.toString() ?? '')
+                  .trim()
+                  .isNotEmpty
+              ? row[colsToDetail["isOutdoor"] ?? 99]?.value
+                    ?.toString()
+                    .contains(loc.outdoor)
+              : null,
           id: row[colsToDetail["id"] ?? 99]?.value?.toString(),
           masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.value?.toString(),
-          subEvents: []));
+          subEvents: [],
+        ),
+      );
     }
     return events;
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:life_pilot/event/service_event_public.dart';
+import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/extension.dart';
@@ -46,16 +46,14 @@ class RecommendedPlace {
     this.lng,
   });
 
-  factory RecommendedPlace.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory RecommendedPlace.fromJson(Map<String, dynamic> json) {
     return RecommendedPlace(
       id: json[Fields.id] as String,
       name: json['name'] ?? '',
-      startDate: DateTimeParser.parseDate(json['start_date']),
-      startTime: DateTimeParser.parseTime(json['start_time']),
-      endDate: DateTimeParser.parseDate(json['end_date']),
-      endTime: DateTimeParser.parseTime(json['end_time']),
+      startDate: EventDateTimeParser.parseDate(json['start_date']),
+      startTime: EventDateTimeParser.parseTime(json['start_time']),
+      endDate: EventDateTimeParser.parseDate(json['end_date']),
+      endTime: EventDateTimeParser.parseTime(json['end_time']),
       country: EventCountry.normalize(json[EventFields.country]?.toString()),
       city: json['city'],
       location: json['location'],
