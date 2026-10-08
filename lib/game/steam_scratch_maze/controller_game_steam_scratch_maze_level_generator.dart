@@ -15,8 +15,10 @@ class GameSteamScratchMazeLevelGenerator {
     final height = width;
 
     // false = 牆, true = 路
-    final maze =
-        List.generate(width, (_) => List.generate(height, (_) => false));
+    final maze = List.generate(
+      width,
+      (_) => List.generate(height, (_) => false),
+    );
     final fruits = <ModelGameSteamScratchMazeFruit>[];
 
     const startX = 0;

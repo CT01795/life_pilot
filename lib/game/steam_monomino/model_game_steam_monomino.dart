@@ -48,8 +48,11 @@ class ModelGameMonominoLevel {
   List<Point<int>> solutionPath = [];
   Set<Point<int>> highlighted = {};
 
-  ModelGameMonominoLevel(
-      {required this.levelNumber, required this.rows, required this.cols}) {
+  ModelGameMonominoLevel({
+    required this.levelNumber,
+    required this.rows,
+    required this.cols,
+  }) {
     remainingFixed = [];
     _generateLevel();
   }
@@ -58,7 +61,9 @@ class ModelGameMonominoLevel {
 
   void _generateLevel() {
     board = List.generate(
-        rows, (_) => List.generate(cols, (_) => ModelGameMonominoTile()));
+      rows,
+      (_) => List.generate(cols, (_) => ModelGameMonominoTile()),
+    );
     start = Point(0, 0);
     goal = Point(rows - 1, cols - 1);
     parent = {};
@@ -246,7 +251,8 @@ class ModelGameMonominoLevel {
   }
 
   List<Point<int>> findShortestPathThroughFixedArrows(
-      List<Point<int>> fixedPoints) {
+    List<Point<int>> fixedPoints,
+  ) {
     if (fixedPoints.isEmpty) return solutionPath;
 
     List<Point<int>> finalPath = [];
@@ -279,7 +285,10 @@ class ModelGameMonominoLevel {
   }
 
   List<Point<int>> bfsShortestPath(
-      Point<int> start, Point<int> goal, Set<Point<int>> used) {
+    Point<int> start,
+    Point<int> goal,
+    Set<Point<int>> used,
+  ) {
     Queue<_BFSNode> queue = Queue();
     Map<Point<int>, Point<int>?> parent = {};
     queue.add(_BFSNode(start, null, 0));

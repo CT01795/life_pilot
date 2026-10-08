@@ -48,8 +48,11 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
         if (_isDisposed) return;
         isFinished = true;
       } catch (error, stackTrace) {
-        logger.e('Save speaking score failed',
-            error: error, stackTrace: stackTrace);
+        logger.e(
+          'Save speaking score failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
         if (!_isDisposed) loadError = error;
       }
       if (!_isDisposed) {
@@ -77,8 +80,11 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
         questionBank: questionBank,
       );
     } catch (error, stackTrace) {
-      logger.e('Load speaking question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load speaking question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
       return null;
     }
@@ -116,7 +122,8 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
 
     String right = currentQuestion!.correctAnswer.toLowerCase();
     String my = answer.toLowerCase();
-    isRightAnswer = right == my ||
+    isRightAnswer =
+        right == my ||
         right.replaceAll(" ", '').replaceAll(".", '') ==
             my.replaceAll(" ", '').replaceAll(".", '');
     int seconds = 1;
@@ -144,10 +151,12 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
       unawaited(loadNextQuestion());
     });
 
-    unawaited(_submitAnswerSafely(
-      questionId: currentQuestion!.questionId,
-      answer: currentQuestion!.correctAnswer,
-    ));
+    unawaited(
+      _submitAnswerSafely(
+        questionId: currentQuestion!.questionId,
+        answer: currentQuestion!.correctAnswer,
+      ),
+    );
     _notifyIfActive();
   }
 
@@ -163,8 +172,11 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
         isRightAnswer: true,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit speaking answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit speaking answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

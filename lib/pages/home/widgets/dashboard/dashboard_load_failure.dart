@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 
 class DashboardLoadFailure extends StatefulWidget {
-  const DashboardLoadFailure({
-    required this.onRetry,
-    super.key,
-  });
+  const DashboardLoadFailure({required this.onRetry, super.key});
 
   final Future<void> Function() onRetry;
 
@@ -37,10 +34,7 @@ class _DashboardLoadFailureState extends State<DashboardLoadFailure> {
               dimension: 24,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : TextButton(
-              onPressed: _retry,
-              child: Text(loc.retry),
-            ),
+          : TextButton(onPressed: _retry, child: Text(loc.retry)),
     );
   }
 }

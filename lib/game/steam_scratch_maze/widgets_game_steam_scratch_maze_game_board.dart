@@ -7,7 +7,11 @@ class WidgetsGameSteamScratchMazeGameBoard extends StatelessWidget {
   final ControllerGameSteamScratchMaze game;
   final double tileSize;
 
-  const WidgetsGameSteamScratchMazeGameBoard({super.key, required this.game, required this.tileSize,});
+  const WidgetsGameSteamScratchMazeGameBoard({
+    super.key,
+    required this.game,
+    required this.tileSize,
+  });
 
   // 隨機水果 icon
   static final List<IconData> fruitIcons = [
@@ -16,7 +20,7 @@ class WidgetsGameSteamScratchMazeGameBoard extends StatelessWidget {
     Icons.favorite_rounded,
     Icons.star_rounded,
     Icons.diamond_rounded,
-    Icons.cake_rounded
+    Icons.cake_rounded,
   ];
 
   static IconData getRandomFruitIconStatic() {
@@ -31,7 +35,7 @@ class WidgetsGameSteamScratchMazeGameBoard extends StatelessWidget {
     // --------------------------
     final maxX = game.level.treasure.x.toInt();
     final maxY = game.level.treasure.y.toInt();
-    
+
     return Stack(
       children: [
         // --------------------------
@@ -56,45 +60,53 @@ class WidgetsGameSteamScratchMazeGameBoard extends StatelessWidget {
         // --------------------------
         // 障礙物（深木頭風格）
         // --------------------------
-        ...game.level.obstacles.map((o) => Positioned(
-              left: o.x * tileSize,
-              bottom: o.y * tileSize,
-              child: Container(
-                width: tileSize,
-                height: tileSize,
-                decoration: BoxDecoration(
-                  color: Colors.brown.shade500,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 3,
-                        offset: Offset(2, 2))
-                  ],
-                ),
+        ...game.level.obstacles.map(
+          (o) => Positioned(
+            left: o.x * tileSize,
+            bottom: o.y * tileSize,
+            child: Container(
+              width: tileSize,
+              height: tileSize,
+              decoration: BoxDecoration(
+                color: Colors.brown.shade500,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 3,
+                    offset: Offset(2, 2),
+                  ),
+                ],
               ),
-            )),
+            ),
+          ),
+        ),
 
         // --------------------------
         // 水果（隨機一次，不會閃動）
         // --------------------------
-        ...game.level.fruits.map((f) => Positioned(
-              left: f.x * tileSize,
-              bottom: f.y * tileSize,
-              child: Icon(
-                f.collected ? Icons.circle_outlined : f.icon,
-                color: f.collected ? Colors.transparent : Colors.pink.shade400,
-                size: tileSize,
-              ),
-            )),
+        ...game.level.fruits.map(
+          (f) => Positioned(
+            left: f.x * tileSize,
+            bottom: f.y * tileSize,
+            child: Icon(
+              f.collected ? Icons.circle_outlined : f.icon,
+              color: f.collected ? Colors.transparent : Colors.pink.shade400,
+              size: tileSize,
+            ),
+          ),
+        ),
         // --------------------------
         // 角色（主題色）
         // --------------------------
         Positioned(
           left: game.state.x * tileSize,
           bottom: game.state.y * tileSize,
-          child: Icon(Icons.directions_walk_rounded,
-              color: Colors.indigo.shade600, size: tileSize),
+          child: Icon(
+            Icons.directions_walk_rounded,
+            color: Colors.indigo.shade600,
+            size: tileSize,
+          ),
         ),
         // --------------------------
         // 寶藏（金色 + 陰影）

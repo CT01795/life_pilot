@@ -5,9 +5,7 @@ import 'package:life_pilot/pages/home/model/dashboard/dashboard_city.dart';
 class CitySearchDelegate extends SearchDelegate<String> {
   final List<DashboardCity> cities;
 
-  CitySearchDelegate(
-    this.cities,
-  );
+  CitySearchDelegate(this.cities);
 
   @override
   List<Widget>? buildActions(BuildContext context) {
@@ -19,7 +17,7 @@ class CitySearchDelegate extends SearchDelegate<String> {
         onPressed: () {
           query = '';
         },
-      )
+      ),
     ];
   }
 
@@ -28,10 +26,7 @@ class CitySearchDelegate extends SearchDelegate<String> {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
-        close(
-          context,
-          '',
-        );
+        close(context, '');
       },
     );
   }
@@ -53,9 +48,7 @@ class CitySearchDelegate extends SearchDelegate<String> {
     }).toList();
 
     if (list.isEmpty) {
-      return Center(
-        child: Text(AppLocalizations.of(context)!.noInfoAvailable),
-      );
+      return Center(child: Text(AppLocalizations.of(context)!.noInfoAvailable));
     }
 
     return ListView.builder(
@@ -66,14 +59,9 @@ class CitySearchDelegate extends SearchDelegate<String> {
 
         return ListTile(
           title: Text(city.name),
-          trailing: Badge(
-            label: Text('${city.count}'),
-          ),
+          trailing: Badge(label: Text('${city.count}')),
           onTap: () {
-            close(
-              context,
-              city.name,
-            );
+            close(context, city.name);
           },
         );
       },

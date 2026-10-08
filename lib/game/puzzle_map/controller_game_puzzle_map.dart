@@ -17,11 +17,12 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
   bool _scoreSaved = false;
   DateTime _lastNotify = DateTime.now();
 
-  ControllerGamePuzzleMap(
-      {required this.userName,
-      required this.service,
-      required this.gameId, // 初始化
-      required this.gameLevel});
+  ControllerGamePuzzleMap({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel,
+  });
 
   int get rowsCount => rows;
   int get colsCount => cols;
@@ -107,8 +108,12 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
     notifyListeners();
   }
 
-  void _moveGroup(List<ModelGamePuzzlePiece> group, Offset totalOffset,
-      double tileWidth, double tileHeight) {
+  void _moveGroup(
+    List<ModelGamePuzzlePiece> group,
+    Offset totalOffset,
+    double tileWidth,
+    double tileHeight,
+  ) {
     if (group.isEmpty) return;
 
     final newIndices = <ModelGamePuzzlePiece, int>{};
@@ -117,10 +122,11 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
       final col = p.currentIndex % cols;
       final row = p.currentIndex ~/ cols;
 
-      final newCol = ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
-              tileWidth) //給手指 15% 的安全邊距
-          .floor()
-          .clamp(0, cols - 1);
+      final newCol =
+          ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
+                  tileWidth) //給手指 15% 的安全邊距
+              .floor()
+              .clamp(0, cols - 1);
       final newRow = ((row * tileHeight + totalOffset.dy) / tileHeight)
           .floor()
           .clamp(0, rows - 1);

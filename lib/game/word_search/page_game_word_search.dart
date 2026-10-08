@@ -5,6 +5,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
@@ -109,6 +110,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
             title: Text(
               loc.gameTitleScore(loc.wordSearchTitle, controller.score),
             ),
+            actions: const [GameHelpButton()],
           ),
           body: Column(
             children: [

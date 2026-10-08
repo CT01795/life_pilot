@@ -480,16 +480,19 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                     Gaps.h32,
                     const Divider(),
                     Gaps.h16,
-                    OutlinedButton.icon(
-                      onPressed: _busy ? null : _requestAccountDeletion,
-                      icon: const Icon(Icons.person_remove_outlined),
-                      label: AdaptiveButtonLabel(
-                        loc.accountMenuAccountDeletion,
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.error,
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.error,
+                    Tooltip(
+                      message: loc.accountDeletionAdminReviewHint,
+                      child: OutlinedButton.icon(
+                        onPressed: _busy ? null : _requestAccountDeletion,
+                        icon: const Icon(Icons.person_remove_outlined),
+                        label: AdaptiveButtonLabel(
+                          loc.accountMenuAccountDeletion,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       ),
                     ),

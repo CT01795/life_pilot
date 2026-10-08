@@ -6,7 +6,7 @@ class ModelGameGrammarQuestion {
   final String type;
   bool? isRight;
 
-  ModelGameGrammarQuestion ({
+  ModelGameGrammarQuestion({
     required this.questionId,
     required this.question,
     required this.options,

@@ -11,6 +11,7 @@ import 'package:life_pilot/game/speaking/page_game_speaking.dart';
 import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/word_search/page_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:life_pilot/game/steam_polyomino/widgets_game_steam_polyomino_block.dart';
 import 'package:life_pilot/game/steam_polyomino/widgets_game_steam_polyomino_tile.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -78,8 +79,10 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
         ),
         title: Text(loc.polyominoGameTitle),
         actions: [
+          const GameHelpButton(),
           IconButton(
             icon: Icon(Icons.lightbulb_outline),
+            tooltip: loc.hint,
             onPressed: () {
               setState(() => ctrl.highlightHint());
               Future.delayed(const Duration(seconds: 2), () {
@@ -115,6 +118,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        tooltip: loc.submitAnswer,
         child: const Icon(Icons.check),
         onPressed: () async {
           final ok = await ctrl.isLevelComplete();
@@ -189,6 +193,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
   }
 
   Widget _buildWaitingArea(BoxConstraints cons) {
+    final loc = AppLocalizations.of(context)!;
     const padding = 16.0;
     final totalW = cons.maxWidth * 0.4 - padding * 3;
     final totalH = cons.maxHeight - padding * 2;
@@ -260,16 +265,19 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                   showPipe: true,
                 ),
                 childWhenDragging: const SizedBox.shrink(),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => b.rotateRight());
-                    // 旋轉時不再重新計算 unitSize
-                  },
-                  child: PolyominoBlockWidget(
-                    block: b,
-                    unitSize: waitingUnit,
-                    grid: ctrl.grid,
-                    showPipe: true,
+                child: Tooltip(
+                  message: loc.dragItem,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => b.rotateRight());
+                      // 旋轉時不再重新計算 unitSize
+                    },
+                    child: PolyominoBlockWidget(
+                      block: b,
+                      unitSize: waitingUnit,
+                      grid: ctrl.grid,
+                      showPipe: true,
+                    ),
                   ),
                 ),
               );
@@ -282,6 +290,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
 
   // ---------- 右側格子畫布 ----------
   Widget _buildGridArea(BoxConstraints cons) {
+    final loc = AppLocalizations.of(context)!;
     final rows = ctrl.levelData.rows;
     final cols = ctrl.levelData.cols;
 
@@ -355,7 +364,10 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                             setState(() => waiting.add(block));
                           }
                         },
-                        child: PolyominoTileWidget(tile: tile, size: cell),
+                        child: Tooltip(
+                          message: loc.dragItem,
+                          child: PolyominoTileWidget(tile: tile, size: cell),
+                        ),
                       );
                     }
                     return PolyominoTileWidget(tile: tile, size: cell);

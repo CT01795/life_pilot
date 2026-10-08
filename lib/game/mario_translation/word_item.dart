@@ -9,7 +9,11 @@ import 'package:life_pilot/game/mario_translation/page_game_mario_translation.da
 import 'package:life_pilot/game/mario_translation/player.dart';
 import 'package:life_pilot/utils/const.dart';
 
-class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation>, TapCallbacks {
+class WordItem extends PositionComponent
+    with
+        CollisionCallbacks,
+        HasGameRef<PageGameMarioTranslation>,
+        TapCallbacks {
   final String word;
   final Function(String) onCollect;
   final VoidCallback? onHitByBullet;
@@ -23,9 +27,9 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
     required Vector2 position,
     required this.onCollect,
   }) : super(
-    position: position,
-    size: Vector2(200, 50), // ⭐ 一定要有
-  );
+         position: position,
+         size: Vector2(200, 50), // ⭐ 一定要有
+       );
 
   @override
   void onTapDown(TapDownEvent event) {
@@ -45,19 +49,24 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
   @override
   Future<void> onLoad() async {
     // 白底
-    add(RectangleComponent(
-      size: size,
-      paint: Paint()..color = GameColors.card
-                    ..style = PaintingStyle.fill,
-    ));
+    add(
+      RectangleComponent(
+        size: size,
+        paint: Paint()
+          ..color = GameColors.card
+          ..style = PaintingStyle.fill,
+      ),
+    );
 
-    add(RectangleComponent(
-      size: size,
-      paint: Paint()
-        ..color = Colors.white.withOpacity(0.08)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-    ));
+    add(
+      RectangleComponent(
+        size: size,
+        paint: Paint()
+          ..color = Colors.white.withOpacity(0.08)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      ),
+    );
 
     // 文字，自動換行
     final textPaint = TextPaint(
@@ -68,16 +77,18 @@ class WordItem extends PositionComponent with CollisionCallbacks, HasGameRef<Pag
       ),
     );
 
-    add(TextBoxComponent(
-      text: word,
-      textRenderer: textPaint,
-      boxConfig: TextBoxConfig(
-        maxWidth: size.x,               // 限制文字寬度
-        margins: Insets.l8, // ⭐ 左邊留 8 像素
+    add(
+      TextBoxComponent(
+        text: word,
+        textRenderer: textPaint,
+        boxConfig: TextBoxConfig(
+          maxWidth: size.x, // 限制文字寬度
+          margins: Insets.l8, // ⭐ 左邊留 8 像素
+        ),
+        anchor: Anchor.center,
+        position: size / 2,
       ),
-      anchor: Anchor.center,
-      position: size / 2,
-    ));
+    );
 
     // 碰撞
     add(RectangleHitbox());

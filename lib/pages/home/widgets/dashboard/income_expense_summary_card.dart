@@ -78,7 +78,7 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                 children: [
                   if (isExpanded) ...[
                     IconButton(
-                      tooltip: loc.add,
+                      tooltip: loc.addAccountingDetail,
                       onPressed: () => openHomeAccountingQuickAdd(context),
                       icon: const Icon(Icons.add_circle_outline),
                     ),
@@ -92,6 +92,9 @@ class IncomeExpenseSummaryCard extends StatelessWidget {
                       isLoading: isLoading,
                     ),
                   IconButton(
+                    tooltip: isExpanded
+                        ? loc.collapseSection
+                        : loc.expandSection,
                     onPressed: () => onExpansionChanged(!isExpanded),
                     icon: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,

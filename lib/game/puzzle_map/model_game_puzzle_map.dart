@@ -7,5 +7,8 @@ class ModelGamePuzzleMap {
 class ModelGamePuzzlePiece {
   int correctIndex;
   int currentIndex;
-  ModelGamePuzzlePiece({required this.correctIndex, required this.currentIndex});
+  ModelGamePuzzlePiece({
+    required this.correctIndex,
+    required this.currentIndex,
+  });
 }

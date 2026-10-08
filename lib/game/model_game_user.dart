@@ -10,16 +10,17 @@ class ModelGameUser {
   String? gameName = '';
   int? level; // 追蹤使用者闖到哪一關
   bool? isPass;
-  ModelGameUser(
-      {this.id,
-      this.userName,
-      this.gameId,
-      this.score,
-      this.createdAt,
-      this.gameType,
-      this.gameName,
-      this.level,
-      this.isPass});
+  ModelGameUser({
+    this.id,
+    this.userName,
+    this.gameId,
+    this.score,
+    this.createdAt,
+    this.gameType,
+    this.gameName,
+    this.level,
+    this.isPass,
+  });
 
   factory ModelGameUser.fromMap(Map<String, dynamic> map) {
     return ModelGameUser(

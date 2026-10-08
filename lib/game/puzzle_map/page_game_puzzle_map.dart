@@ -14,6 +14,7 @@ import 'package:life_pilot/game/speaking/page_game_speaking.dart';
 import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/word_search/page_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 
 class PageGamePuzzleMap extends StatefulWidget {
@@ -142,6 +143,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
         ),
         title: Text(loc.puzzleMapTitle),
         actions: [
+          const GameHelpButton(),
           IconButton(
             icon: Icon(Icons.lightbulb_outline, color: Colors.white),
             tooltip: loc.hint,
@@ -152,6 +154,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             },
           ),
           PopupMenuButton<int>(
+            tooltip: loc.difficulty,
             onSelected: (size) {
               setState(() {
                 gameSize = size; // 更新 state 中的 gridSize
@@ -171,6 +174,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
           IconButton(
             icon: const Icon(Icons.check),
             color: Colors.white,
+            tooltip: loc.submitAnswer,
             onPressed: _check,
           ),
         ],

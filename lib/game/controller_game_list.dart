@@ -45,7 +45,9 @@ class ControllerGameList extends SafeChangeNotifier {
 
   // 查詢目前使用者的分數紀錄
   Future<List<ModelGameUser>> loadUserProgress(
-      String gameType, String gameName) async {
+    String gameType,
+    String gameName,
+  ) async {
     // 組 key
     final key = '$gameType|$gameName';
     final cached = _userProgressCache[key];
@@ -55,8 +57,11 @@ class ControllerGameList extends SafeChangeNotifier {
     _notifyIfActive();
 
     try {
-      final progress =
-          await serviceGame.fetchUserProgress(userName, gameType, gameName);
+      final progress = await serviceGame.fetchUserProgress(
+        userName,
+        gameType,
+        gameName,
+      );
       if (!_isDisposed) {
         // 存到快取
         _userProgressCache[key] = progress;

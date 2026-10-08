@@ -5,7 +5,7 @@ class ModelGameWordSearch {
   final String question;
   bool? found;
 
-  ModelGameWordSearch ({
+  ModelGameWordSearch({
     required this.questionId,
     required this.question,
     this.found,
@@ -20,11 +20,7 @@ class LetterCell {
   bool selected = false;
   bool correct = false;
 
-  LetterCell({
-    required this.row,
-    required this.col,
-    required this.letter,
-  });
+  LetterCell({required this.row, required this.col, required this.letter});
 }
 
 class WordSearchBoard {
@@ -35,10 +31,7 @@ class WordSearchBoard {
   WordSearchBoard(this.size) {
     grid = List.generate(
       size,
-      (r) => List.generate(
-        size,
-        (c) => LetterCell(row: r, col: c, letter: ''),
-      ),
+      (r) => List.generate(size, (c) => LetterCell(row: r, col: c, letter: '')),
     );
   }
 
@@ -68,9 +61,7 @@ class WordSearchBoard {
 
   final placementLength = max(wordLength, 1);
   final minRow = rowDirection < 0 ? placementLength - 1 : 0;
-  final maxRow = rowDirection > 0
-      ? boardSize - placementLength
-      : boardSize - 1;
+  final maxRow = rowDirection > 0 ? boardSize - placementLength : boardSize - 1;
   final minCol = columnDirection < 0 ? placementLength - 1 : 0;
   final maxCol = columnDirection > 0
       ? boardSize - placementLength

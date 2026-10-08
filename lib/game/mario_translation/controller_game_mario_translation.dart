@@ -28,13 +28,14 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
   int answeredCount = 0;
   int maxQuestions = 10;
 
-  ControllerGameMarioTranslation(
-      {required this.userName,
-      required this.service,
-      required this.gameId, // 初始化
-      required this.gameLevel,
-      this.questionBank = 'admin',
-      required this.maxQuestions});
+  ControllerGameMarioTranslation({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel,
+    this.questionBank = 'admin',
+    required this.maxQuestions,
+  });
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text) async {
@@ -52,8 +53,11 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
         languageCode: containsChinese ? 'zh' : 'en-US',
       );
     } catch (error, stackTrace) {
-      logger.e('Mario translation audio failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Mario translation audio failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -97,7 +101,7 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
       final normalized = answer.toLowerCase();
       final isRightAnswer =
           normalized == currentQuestion!.correctAnswer.toLowerCase() ||
-              synonyms[q]?.contains(normalized) == true;
+          synonyms[q]?.contains(normalized) == true;
       if (isRightAnswer) {
         score += 4;
       } else {
@@ -110,11 +114,13 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
       if (answeredCount >= maxQuestions) {
         isFinished = true;
       }
-      unawaited(_submitAnswerSafely(
-        questionId: currentQuestion!.questionId,
-        answer: answer,
-        isRightAnswer: isRightAnswer,
-      ));
+      unawaited(
+        _submitAnswerSafely(
+          questionId: currentQuestion!.questionId,
+          answer: answer,
+          isRightAnswer: isRightAnswer,
+        ),
+      );
       return isRightAnswer;
     } finally {
       isAnswering = false;
@@ -140,8 +146,11 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
     try {
       return await service.getSynonyms(question);
     } catch (error, stackTrace) {
-      logger.e('Load Mario translation synonyms failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load Mario translation synonyms failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return <String>{};
     }
   }
@@ -159,8 +168,11 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit Mario translation answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit Mario translation answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 }

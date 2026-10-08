@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AsyncActionCheckbox extends StatefulWidget {
-  const AsyncActionCheckbox({
-    required this.onAccepted,
-    super.key,
-  });
+  const AsyncActionCheckbox({required this.onAccepted, super.key});
 
   final Future<void> Function() onAccepted;
 

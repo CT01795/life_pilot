@@ -33,14 +33,15 @@ class ControllerGameTranslation extends SafeChangeNotifier {
   int answeredCount = 0;
   int maxQuestions = 10;
 
-  ControllerGameTranslation(
-      {required this.userName,
-      required this.service,
-      required this.gameId, // 初始化
-      required this.gameLevel,
-      required this.gameName,
-      this.questionBank = 'admin',
-      required this.maxQuestions});
+  ControllerGameTranslation({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel,
+    required this.gameName,
+    this.questionBank = 'admin',
+    required this.maxQuestions,
+  });
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> _speak(String text, String group, bool isQuestion) async {
@@ -74,8 +75,11 @@ class ControllerGameTranslation extends SafeChangeNotifier {
     try {
       await _speak(text, group, isQuestion);
     } catch (error, stackTrace) {
-      logger.e('Translation audio failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Translation audio failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -111,8 +115,11 @@ class ControllerGameTranslation extends SafeChangeNotifier {
         questionBank: questionBank,
       );
     } catch (error, stackTrace) {
-      logger.e('Load translation question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load translation question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
       return null;
     }
@@ -136,7 +143,7 @@ class ControllerGameTranslation extends SafeChangeNotifier {
       final normalized = answer.toLowerCase();
       final isRightAnswer =
           normalized == currentQuestion!.correctAnswer.toLowerCase() ||
-              synonyms[q]?.contains(normalized) == true;
+          synonyms[q]?.contains(normalized) == true;
 
       int seconds = 1;
       if (isRightAnswer) {
@@ -159,14 +166,19 @@ class ControllerGameTranslation extends SafeChangeNotifier {
           unawaited(loadNextQuestion());
         });
       }
-      unawaited(_submitAnswerSafely(
-        questionId: currentQuestion!.questionId,
-        answer: answer,
-        isRightAnswer: isRightAnswer,
-      ));
+      unawaited(
+        _submitAnswerSafely(
+          questionId: currentQuestion!.questionId,
+          answer: answer,
+          isRightAnswer: isRightAnswer,
+        ),
+      );
     } catch (error, stackTrace) {
-      logger.e('Answer translation question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Answer translation question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
     } finally {
       if (!_isDisposed) {
@@ -189,8 +201,11 @@ class ControllerGameTranslation extends SafeChangeNotifier {
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit translation answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit translation answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -214,8 +229,11 @@ class ControllerGameTranslation extends SafeChangeNotifier {
       if (_isDisposed) return;
       isFinished = true;
     } catch (error, stackTrace) {
-      logger.e('Save translation score failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Save translation score failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
     } finally {
       if (!_isDisposed) {

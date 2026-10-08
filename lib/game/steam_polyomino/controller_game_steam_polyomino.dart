@@ -15,12 +15,13 @@ class ControllerGameSteamPolyomino extends SafeChangeNotifier {
   final List<ModelGamePolyominoPipeBlock> placedBlocks = [];
   bool _scoreSaved = false;
 
-  ControllerGameSteamPolyomino(
-      {required this.userName,
-      required this.service,
-      required this.gameId, // 初始化
-      required this.gameLevel,
-      required ModelGamePolyominoLevelData level}) {
+  ControllerGameSteamPolyomino({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel,
+    required ModelGamePolyominoLevelData level,
+  }) {
     levelData = level;
     _initGrid();
     _markStartGoal();
@@ -170,7 +171,9 @@ class ControllerGameSteamPolyomino extends SafeChangeNotifier {
 
   Future<bool> isLevelComplete() async {
     final visited = List.generate(
-        levelData.rows, (_) => List.filled(levelData.cols, false));
+      levelData.rows,
+      (_) => List.filled(levelData.cols, false),
+    );
 
     final q = Queue<Point<int>>();
     q.add(levelData.start);

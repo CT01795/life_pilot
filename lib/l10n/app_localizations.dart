@@ -120,7 +120,7 @@ abstract class AppLocalizations {
   /// Local storage is selected without an active Device plan
   ///
   /// In en, this message translates to:
-  /// **'Current storage: This device (no active Device plan; view or delete only)'**
+  /// **'Current storage: This device (no active Device plan)'**
   String get subscriptionCurrentLocalInactive;
 
   /// Local storage is temporarily available during a no-limit promotion
@@ -315,6 +315,48 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @maximizeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximize window'**
+  String get maximizeWindow;
+
+  /// No description provided for @restoreWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore window'**
+  String get restoreWindow;
+
+  /// No description provided for @resizeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to resize the window'**
+  String get resizeWindow;
+
+  /// No description provided for @expandSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get expandSection;
+
+  /// No description provided for @collapseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapseSection;
+
+  /// No description provided for @addAccountingDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Add accounting entry'**
+  String get addAccountingDetail;
+
+  /// No description provided for @addPointDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Add points entry'**
+  String get addPointDetail;
+
   /// Action for completing a schedule and recording its review
   ///
   /// In en, this message translates to:
@@ -372,7 +414,7 @@ abstract class AppLocalizations {
   /// Label for dataCleanupAction
   ///
   /// In en, this message translates to:
-  /// **'Review and clean up'**
+  /// **'Review and choose excess or all data'**
   String get dataCleanupAction;
 
   /// Label for dataCleanupAll
@@ -1122,8 +1164,80 @@ abstract class AppLocalizations {
   /// Label for speakingText
   ///
   /// In en, this message translates to:
-  /// **'Text to speak'**
+  /// **'Play audio'**
   String get speakingText;
+
+  /// No description provided for @gameInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'How to play'**
+  String get gameInstructions;
+
+  /// No description provided for @gameInstructionsGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the prompts to complete the question. Use the speaker to play audio. Tap the microphone to start speaking and tap again to finish. Drag movable blocks to their targets, then check or submit after answering.'**
+  String get gameInstructionsGeneral;
+
+  /// No description provided for @startSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to start speaking'**
+  String get startSpeaking;
+
+  /// No description provided for @finishSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to finish'**
+  String get finishSpeaking;
+
+  /// No description provided for @answerBeforeCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer before checking'**
+  String get answerBeforeCheck;
+
+  /// No description provided for @dragItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag'**
+  String get dragItem;
+
+  /// No description provided for @submitAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submitAnswer;
+
+  /// No description provided for @difficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get difficulty;
+
+  /// No description provided for @moveLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move left'**
+  String get moveLeft;
+
+  /// No description provided for @moveRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move right'**
+  String get moveRight;
+
+  /// No description provided for @jump.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump'**
+  String get jump;
+
+  /// No description provided for @shoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot'**
+  String get shoot;
 
   /// Label for speakingTitle
   ///
@@ -2133,6 +2247,24 @@ abstract class AppLocalizations {
   /// **'User email'**
   String get adminSubscriptionEmail;
 
+  /// No description provided for @adminSubscriptionEmailOrAllHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an email for one user, or search while blank to list everyone.'**
+  String get adminSubscriptionEmailOrAllHint;
+
+  /// No description provided for @adminSubscriptionAllUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'All users: subscriptions and combined quotas'**
+  String get adminSubscriptionAllUsers;
+
+  /// Number of active user allowances
+  ///
+  /// In en, this message translates to:
+  /// **'{count} active allowances'**
+  String adminSubscriptionActiveCount(int count);
+
   /// One allowance deleted
   ///
   /// In en, this message translates to:
@@ -2150,6 +2282,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Benefit expiry'**
   String get adminSubscriptionExpiry;
+
+  /// No description provided for @adminSubscriptionExpiryMustBeFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'The expiry must be later than now. For same-day expiry, choose tomorrow or later.'**
+  String get adminSubscriptionExpiryMustBeFuture;
+
+  /// No description provided for @adminSubscriptionSimilarQuotaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Similar quota already exists'**
+  String get adminSubscriptionSimilarQuotaTitle;
+
+  /// No description provided for @adminSubscriptionSimilarQuotaMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This user already has the same plan, storage location, and multiplier. Add another entitlement anyway?'**
+  String get adminSubscriptionSimilarQuotaMessage;
+
+  /// No description provided for @adminSubscriptionAddQuotaConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add anyway'**
+  String get adminSubscriptionAddQuotaConfirm;
 
   /// Admin subscription extension action
   ///
@@ -2565,6 +2721,30 @@ abstract class AppLocalizations {
   /// **'No-limit promotion'**
   String get quotaFreePeriodTitle;
 
+  /// No description provided for @quotaFreePeriodTargetAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligible accounts'**
+  String get quotaFreePeriodTargetAccounts;
+
+  /// No description provided for @quotaFreePeriodTargetAccountsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter multiple emails separated by commas or new lines. Leave blank for all regular users.'**
+  String get quotaFreePeriodTargetAccountsHint;
+
+  /// No description provided for @quotaFreePeriodAllUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to all regular users'**
+  String get quotaFreePeriodAllUsers;
+
+  /// No description provided for @quotaFreePeriodSelectedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {count} selected accounts'**
+  String quotaFreePeriodSelectedUsers(int count);
+
   /// User-facing no-limit promotion banner
   ///
   /// In en, this message translates to:
@@ -2702,6 +2882,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your cloud data exceeds the free allowance. Remove or move the excess by {date}.'**
   String subscriptionDowngradeWarning(String date);
+
+  /// No description provided for @subscriptionExpiringSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription expires within {days} days'**
+  String subscriptionExpiringSoon(int days);
+
+  /// No description provided for @subscriptionExpiringCloudImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Without renewal, adding and editing stops. Data above the cloud quota remaining after expiry enters the cleanup process.'**
+  String get subscriptionExpiringCloudImpact;
+
+  /// No description provided for @subscriptionExpiringLocalImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Without renewal, local data becomes read/delete only; adding and editing stops.'**
+  String get subscriptionExpiringLocalImpact;
+
+  /// No description provided for @subscriptionQuotaScheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota changes at expiry'**
+  String get subscriptionQuotaScheduleTitle;
+
+  /// No description provided for @subscriptionQuotaAfterExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Available quota after {date}'**
+  String subscriptionQuotaAfterExpiry(String date);
 
   /// Label for subscriptionEffectiveDate
   ///
@@ -2996,6 +3206,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to schedule'**
   String get addToSchedule;
+
+  /// No description provided for @addSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Add schedule'**
+  String get addSchedule;
 
   /// Label for calendarCancelAllShares
   ///
@@ -4317,6 +4533,18 @@ abstract class AppLocalizations {
   /// **'Add Memory'**
   String get memoryAdd;
 
+  /// No description provided for @addRecordToMemoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this record to memories'**
+  String get addRecordToMemoryHint;
+
+  /// No description provided for @expandToAddRecordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand to add a record'**
+  String get expandToAddRecordHint;
+
   /// Label for memoryAddError
   ///
   /// In en, this message translates to:
@@ -4388,6 +4616,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For example: add/subtract an amount'**
   String get accountingSpeechHint;
+
+  /// No description provided for @accountingSpeechExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to speak, for example: lunch expense 120; salary income 30,000'**
+  String get accountingSpeechExample;
 
   /// Label for accountingUnit
   ///
@@ -4688,6 +4922,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For example: add/subtract points'**
   String get pointsSpeechHint;
+
+  /// No description provided for @pointsSpeechExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to speak, for example: exercise plus 10 points; late minus 2 points'**
+  String get pointsSpeechExample;
 
   /// Label for pointsUnit
   ///
@@ -5409,6 +5649,12 @@ abstract class AppLocalizations {
   /// **'Delete account'**
   String get accountMenuAccountDeletion;
 
+  /// No description provided for @accountDeletionAdminReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit an account and data deletion request for administrator review.'**
+  String get accountDeletionAdminReviewHint;
+
   /// Short account menu label for data export
   ///
   /// In en, this message translates to:
@@ -5472,7 +5718,7 @@ abstract class AppLocalizations {
   /// Personal data export request explanation
   ///
   /// In en, this message translates to:
-  /// **'An Excel file containing your cloud and local personal data will be downloaded to this device.'**
+  /// **'Your personal data will be downloaded as Excel. Recommended events and attractions are excluded; the workbook lists all included data.'**
   String get dataExportRequestDescription;
 
   /// Personal data export summary sheet name

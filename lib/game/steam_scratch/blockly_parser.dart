@@ -96,42 +96,44 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
             if (statements.isNotEmpty) thenCmds = parseBlocks(statements[0]);
             if (statements.length > 1) elseCmds = parseBlocks(statements[1]);
 
-            cmds.add(IfElseCommand(
-              condition: (g) {
-                final valueIf0 = b.getElement('value'); // IF0
-                final logicCompare = valueIf0?.getElement('shadow');
-                if (logicCompare == null ||
-                    logicCompare.getAttribute('type') != 'logic_compare') {
-                  return false;
-                }
-
-                // ignore: deprecated_member_use
-                final op = logicCompare.getElement('field')?.text ?? 'EQ';
-                final aVal = getValue(getNamedValue(logicCompare, 'A'), g);
-                final bVal = getValue(getNamedValue(logicCompare, 'B'), g);
-
-                if (aVal == null || bVal == null) return false;
-
-                switch (op) {
-                  case 'EQ':
-                    return aVal == bVal;
-                  case 'NEQ':
-                    return aVal != bVal;
-                  case 'GT':
-                    return aVal > bVal;
-                  case 'LT':
-                    return aVal < bVal;
-                  case 'GTE':
-                    return aVal >= bVal;
-                  case 'LTE':
-                    return aVal <= bVal;
-                  default:
+            cmds.add(
+              IfElseCommand(
+                condition: (g) {
+                  final valueIf0 = b.getElement('value'); // IF0
+                  final logicCompare = valueIf0?.getElement('shadow');
+                  if (logicCompare == null ||
+                      logicCompare.getAttribute('type') != 'logic_compare') {
                     return false;
-                }
-              },
-              thenCommands: thenCmds,
-              elseCommands: elseCmds,
-            ));
+                  }
+
+                  // ignore: deprecated_member_use
+                  final op = logicCompare.getElement('field')?.text ?? 'EQ';
+                  final aVal = getValue(getNamedValue(logicCompare, 'A'), g);
+                  final bVal = getValue(getNamedValue(logicCompare, 'B'), g);
+
+                  if (aVal == null || bVal == null) return false;
+
+                  switch (op) {
+                    case 'EQ':
+                      return aVal == bVal;
+                    case 'NEQ':
+                      return aVal != bVal;
+                    case 'GT':
+                      return aVal > bVal;
+                    case 'LT':
+                      return aVal < bVal;
+                    case 'GTE':
+                      return aVal >= bVal;
+                    case 'LTE':
+                      return aVal <= bVal;
+                    default:
+                      return false;
+                  }
+                },
+                thenCommands: thenCmds,
+                elseCommands: elseCmds,
+              ),
+            );
           }
           break;
       }

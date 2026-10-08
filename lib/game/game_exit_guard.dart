@@ -25,7 +25,8 @@ class _GameExitGuardState extends State<GameExitGuard> {
 
     _isConfirming = true;
     final loc = AppLocalizations.of(context)!;
-    final shouldLeave = await showDialog<bool>(
+    final shouldLeave =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             content: Text(loc.leaveGameConfirmation),

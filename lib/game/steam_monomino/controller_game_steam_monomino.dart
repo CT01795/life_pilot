@@ -17,11 +17,12 @@ class ControllerGameSteamMonomino extends SafeChangeNotifier {
   List<EnumMonominoTileDirection> remainingTiles = [];
   bool _scoreSaved = false;
 
-  ControllerGameSteamMonomino(
-      {required this.userName,
-      required this.service,
-      required this.gameId, // 初始化
-      required this.gameLevel}) {
+  ControllerGameSteamMonomino({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel,
+  }) {
     // 初始化 level
     level = _generateLevel(gameLevel);
     startLevel();
@@ -40,7 +41,10 @@ class ControllerGameSteamMonomino extends SafeChangeNotifier {
     int size =
         baseSize + (levelNumber - 1); // e.g. level 1 -> 4x4, level 2 -> 5x5
     return ModelGameMonominoLevel(
-        levelNumber: levelNumber, rows: size, cols: size);
+      levelNumber: levelNumber,
+      rows: size,
+      cols: size,
+    );
   }
 
   void resetLevel() {
@@ -52,8 +56,13 @@ class ControllerGameSteamMonomino extends SafeChangeNotifier {
     notifyListeners();
   }
 
-  void placeTile(int row, int col, int? fromRow, int? fromCol,
-      EnumMonominoTileDirection? to) {
+  void placeTile(
+    int row,
+    int col,
+    int? fromRow,
+    int? fromCol,
+    EnumMonominoTileDirection? to,
+  ) {
     if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
 
     ModelGameMonominoTile tileTarget = level.board[row][col];

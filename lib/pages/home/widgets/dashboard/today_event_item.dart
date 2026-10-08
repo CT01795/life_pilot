@@ -10,11 +10,7 @@ class TodayEventItem extends StatelessWidget {
   final CalendarEvent event;
   final ValueChanged<bool?>? onChanged;
 
-  const TodayEventItem({
-    super.key,
-    required this.event,
-    this.onChanged,
-  });
+  const TodayEventItem({super.key, required this.event, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +25,7 @@ class TodayEventItem extends StatelessWidget {
             message: loc.completeEventTitle,
             child: Transform.scale(
               scale: 1.5, // 放大倍率
-              child: Checkbox(
-                value: event.isCompleted,
-                onChanged: onChanged,
-              ),
+              child: Checkbox(value: event.isCompleted, onChanged: onChanged),
             ),
           ),
           Gaps.w8,
@@ -56,7 +49,8 @@ class TodayEventItem extends StatelessWidget {
                               context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text(loc.externalLinkOpenFailed)),
+                                content: Text(loc.externalLinkOpenFailed),
+                              ),
                             );
                           }
                         },
@@ -65,15 +59,16 @@ class TodayEventItem extends StatelessWidget {
                     style: TextStyle(
                       color:
                           (event.masterUrl == null || event.masterUrl!.isEmpty)
-                              ? Colors.black
-                              : Colors.blue,
+                          ? Colors.black
+                          : Colors.blue,
                     ),
                   ),
                 ),
               ),
               Gaps.h16,
               Tooltip(
-                message: ((event.city != null && event.city!.isNotEmpty) ||
+                message:
+                    ((event.city != null && event.city!.isNotEmpty) ||
                         (event.location != null && event.location!.isNotEmpty))
                     ? loc.openMap
                     : '',
@@ -92,22 +87,19 @@ class TodayEventItem extends StatelessWidget {
                     }
                   },
                   child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if ((event.city != null && event.city!.isNotEmpty) ||
-                            (event.location != null &&
-                                event.location!.isNotEmpty))
-                          const Icon(
-                            Icons.location_pin,
-                          ),
-                        Gaps.w8,
-                        Text(
-                          '${event.city ?? ''} ${event.location ?? ''}',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ]),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if ((event.city != null && event.city!.isNotEmpty) ||
+                          (event.location != null &&
+                              event.location!.isNotEmpty))
+                        const Icon(Icons.location_pin),
+                      Gaps.w8,
+                      Text(
+                        '${event.city ?? ''} ${event.location ?? ''}',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Divider(),

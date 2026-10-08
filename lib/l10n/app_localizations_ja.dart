@@ -117,6 +117,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get close => '閉じる';
 
   @override
+  String get maximizeWindow => 'ウィンドウを最大化';
+
+  @override
+  String get restoreWindow => 'ウィンドウを元に戻す';
+
+  @override
+  String get resizeWindow => 'ドラッグしてサイズを変更';
+
+  @override
+  String get expandSection => '展開';
+
+  @override
+  String get collapseSection => '折りたたむ';
+
+  @override
+  String get addAccountingDetail => '家計簿明細を追加';
+
+  @override
+  String get addPointDetail => 'ポイント明細を追加';
+
+  @override
   String get completeAndReview => '完了して振り返る';
 
   @override
@@ -148,7 +169,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get create => '作成';
 
   @override
-  String get dataCleanupAction => '確認して整理';
+  String get dataCleanupAction => '超過分または全データを確認して整理';
 
   @override
   String get dataCleanupAll => 'すべて削除';
@@ -533,7 +554,43 @@ class AppLocalizationsJa extends AppLocalizations {
   String get speak => '音声入力';
 
   @override
-  String get speakingText => '読み上げるテキスト';
+  String get speakingText => '音声を再生';
+
+  @override
+  String get gameInstructions => '遊び方';
+
+  @override
+  String get gameInstructionsGeneral => '画面の案内に従って問題を完成してください。スピーカーで音声を再生できます。マイクをタップして話し始め、もう一度タップして終了します。動かせるブロックは目的の位置へドラッグし、回答後に確認または送信してください。';
+
+  @override
+  String get startSpeaking => 'タップして話す';
+
+  @override
+  String get finishSpeaking => 'タップして終了';
+
+  @override
+  String get answerBeforeCheck => '回答後に確認';
+
+  @override
+  String get dragItem => 'ドラッグ';
+
+  @override
+  String get submitAnswer => '送信';
+
+  @override
+  String get difficulty => '難易度';
+
+  @override
+  String get moveLeft => '左へ移動';
+
+  @override
+  String get moveRight => '右へ移動';
+
+  @override
+  String get jump => 'ジャンプ';
+
+  @override
+  String get shoot => '発射';
 
   @override
   String get speakingTitle => 'スピーキング';
@@ -1066,6 +1123,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminSubscriptionEmail => 'ユーザーEmail';
 
   @override
+  String get adminSubscriptionEmailOrAllHint => 'メールを入力して個別検索。空欄で検索すると全員を表示します。';
+
+  @override
+  String get adminSubscriptionAllUsers => '全ユーザーの契約と合計容量';
+
+  @override
+  String adminSubscriptionActiveCount(int count) {
+    return '有効な上限 $count 件';
+  }
+
+  @override
   String get adminSubscriptionEntitlementDeleted => 'この上限を削除しました。他の上限は保持されています。';
 
   @override
@@ -1073,6 +1141,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get adminSubscriptionExpiry => '特典期限';
+
+  @override
+  String get adminSubscriptionExpiryMustBeFuture => '終了日は現在より後にしてください。同日終了の場合は明日以降を選択してください。';
+
+  @override
+  String get adminSubscriptionSimilarQuotaTitle => '同様の容量があります';
+
+  @override
+  String get adminSubscriptionSimilarQuotaMessage => '同じプラン、保存先、倍率の権利がすでにあります。それでも追加しますか？';
+
+  @override
+  String get adminSubscriptionAddQuotaConfirm => '追加する';
 
   @override
   String get adminSubscriptionExtend => '延長';
@@ -1290,6 +1370,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quotaFreePeriodTitle => '容量無制限キャンペーン';
 
   @override
+  String get quotaFreePeriodTargetAccounts => '対象アカウント';
+
+  @override
+  String get quotaFreePeriodTargetAccountsHint => '複数のメールをカンマまたは改行で区切って入力します。空欄の場合はすべての一般ユーザーが対象です。';
+
+  @override
+  String get quotaFreePeriodAllUsers => 'すべての一般ユーザーが対象';
+
+  @override
+  String quotaFreePeriodSelectedUsers(int count) {
+    return '指定した $count アカウントのみ';
+  }
+
+  @override
   String get quotaFreePeriodUserBanner => 'キャンペーン期間中は新規データが無制限で、クラウドとこの端末を自由に切り替えられます。終了後は通常のプラン上限に戻ります。';
 
   @override
@@ -1366,6 +1460,25 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String subscriptionDowngradeWarning(String date) {
     return 'クラウドデータが無料枠を超えています。$date までに超過分を移動または削除してください。';
+  }
+
+  @override
+  String subscriptionExpiringSoon(int days) {
+    return 'サブスクリプションは $days 日以内に終了します';
+  }
+
+  @override
+  String get subscriptionExpiringCloudImpact => '更新しない場合、追加・編集はできません。終了後の有効なクラウド枠を超えるデータは整理対象になります。';
+
+  @override
+  String get subscriptionExpiringLocalImpact => '更新しない場合、端末データは閲覧・削除のみとなり、追加・編集はできません。';
+
+  @override
+  String get subscriptionQuotaScheduleTitle => '期限後の容量変化';
+
+  @override
+  String subscriptionQuotaAfterExpiry(String date) {
+    return '$date 終了後の利用可能枠';
   }
 
   @override
@@ -1542,6 +1655,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get addToSchedule => '旅程に追加する';
+
+  @override
+  String get addSchedule => '予定を追加';
 
   @override
   String get calendarCancelAllShares => 'すべての共有を停止';
@@ -2254,6 +2370,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get memoryAdd => '思い出を追加';
 
   @override
+  String get addRecordToMemoryHint => '思い出に記録を追加';
+
+  @override
+  String get expandToAddRecordHint => '展開して記録を追加';
+
+  @override
   String get memoryAddError => 'もう一度思い出を追加しますか';
 
   @override
@@ -2296,6 +2418,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get accountingSpeechHint => '例：金額を追加／減算';
+
+  @override
+  String get accountingSpeechExample => 'タップして話します。例：昼食の支出 120、給与の収入 30,000';
 
   @override
   String get accountingUnit => '円';
@@ -2446,6 +2571,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pointsSpeechHint => '例：ポイントを追加／減算';
+
+  @override
+  String get pointsSpeechExample => 'タップして話します。例：運動で 10 ポイント加算、遅刻で 2 ポイント減算';
 
   @override
   String get pointsUnit => 'ポイント';
@@ -2832,6 +2960,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountMenuAccountDeletion => 'アカウントを削除';
 
   @override
+  String get accountDeletionAdminReviewHint => 'アカウントとデータの削除申請を管理者へ送信します。';
+
+  @override
   String get accountMenuDataExport => 'データを出力';
 
   @override
@@ -2866,7 +2997,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataExportIncludedPages => 'ダウンロード内容：カレンダー、思い出、支出、ポイント。';
 
   @override
-  String get dataExportRequestDescription => 'クラウドと端末の個人データをExcelファイルとして直接ダウンロードします。';
+  String get dataExportRequestDescription => '個人データを Excel でダウンロードします。おすすめイベントとスポットは含まれません。対象データは Excel 内で確認できます。';
 
   @override
   String get dataExportSummarySheet => 'エクスポート概要';

@@ -156,32 +156,38 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
           Gaps.h4,
           Text(loc.completeEventMessage),
           Gaps.h12,
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _addToMemory,
-            title: Text(loc.memoryAdd),
-            secondary: const Icon(Icons.auto_stories_outlined),
-            controlAffinity: ListTileControlAffinity.trailing,
-            onChanged: (value) {
-              setState(() => _addToMemory = value ?? false);
-            },
-          ),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _addAccounting,
-            title: Text(loc.accountRecords),
-            subtitle: Text(
-              widget.accountingAccountName ?? loc.accountListEmpty,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          Tooltip(
+            message: loc.addRecordToMemoryHint,
+            child: CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _addToMemory,
+              title: Text(loc.memoryAdd),
+              secondary: const Icon(Icons.auto_stories_outlined),
+              controlAffinity: ListTileControlAffinity.trailing,
+              onChanged: (value) {
+                setState(() => _addToMemory = value ?? false);
+              },
             ),
-            secondary: const Icon(Icons.payments_outlined),
-            controlAffinity: ListTileControlAffinity.trailing,
-            onChanged: widget.accountingAccountName == null
-                ? null
-                : (value) {
-                    setState(() => _addAccounting = value ?? false);
-                  },
+          ),
+          Tooltip(
+            message: loc.expandToAddRecordHint,
+            child: CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _addAccounting,
+              title: Text(loc.accountRecords),
+              subtitle: Text(
+                widget.accountingAccountName ?? loc.accountListEmpty,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              secondary: const Icon(Icons.payments_outlined),
+              controlAffinity: ListTileControlAffinity.trailing,
+              onChanged: widget.accountingAccountName == null
+                  ? null
+                  : (value) {
+                      setState(() => _addAccounting = value ?? false);
+                    },
+            ),
           ),
           if (_addAccounting) ...[
             Gaps.h8,
@@ -249,20 +255,23 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
             ),
           ],
           if (widget.allowPoints)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _addPoints,
-              title: Text(loc.pointsRecord),
-              subtitle: Text(
-                widget.pointAccountName ?? loc.accountListEmpty,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            Tooltip(
+              message: loc.expandToAddRecordHint,
+              child: CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _addPoints,
+                title: Text(loc.pointsRecord),
+                subtitle: Text(
+                  widget.pointAccountName ?? loc.accountListEmpty,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                secondary: const Icon(Icons.stars_outlined),
+                controlAffinity: ListTileControlAffinity.trailing,
+                onChanged: widget.pointAccountName == null
+                    ? null
+                    : (value) => setState(() => _addPoints = value ?? false),
               ),
-              secondary: const Icon(Icons.stars_outlined),
-              controlAffinity: ListTileControlAffinity.trailing,
-              onChanged: widget.pointAccountName == null
-                  ? null
-                  : (value) => setState(() => _addPoints = value ?? false),
             ),
           if (widget.allowPoints && _addPoints) ...[
             Gaps.h8,

@@ -56,8 +56,11 @@ class ControllerGameGrammar extends SafeChangeNotifier {
         if (_isDisposed) return;
         isFinished = true;
       } catch (error, stackTrace) {
-        logger.e('Save grammar score failed',
-            error: error, stackTrace: stackTrace);
+        logger.e(
+          'Save grammar score failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
         if (!_isDisposed) loadError = error;
       }
       if (!_isDisposed) {
@@ -80,9 +83,13 @@ class ControllerGameGrammar extends SafeChangeNotifier {
     isLoading = false;
     _notifyIfActive();
     if (currentQuestion != null) {
-      unawaited(_speakSafely(currentQuestion!.question
-          .replaceAll("______", currentQuestion!.correctAnswer)
-          .replaceAll("<-->", ",")));
+      unawaited(
+        _speakSafely(
+          currentQuestion!.question
+              .replaceAll("______", currentQuestion!.correctAnswer)
+              .replaceAll("<-->", ","),
+        ),
+      );
     }
   }
 
@@ -94,8 +101,11 @@ class ControllerGameGrammar extends SafeChangeNotifier {
         questionBank: questionBank,
       );
     } catch (error, stackTrace) {
-      logger.e('Load grammar question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load grammar question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
       return null;
     }
@@ -117,10 +127,7 @@ class ControllerGameGrammar extends SafeChangeNotifier {
       return;
     }
 
-    await _ttsAudio.speak(
-      text: text,
-      languageCode: 'en-US',
-    );
+    await _ttsAudio.speak(text: text, languageCode: 'en-US');
   }
 
   Future<void> answer(String answer) async {
@@ -136,11 +143,13 @@ class ControllerGameGrammar extends SafeChangeNotifier {
     _notifyIfActive();
 
     // async submitAnswer 不阻塞 UI
-    unawaited(_submitAnswerSafely(
-      questionId: currentQuestion!.questionId,
-      answer: answer,
-      isRightAnswer: isRightAnswer ?? false,
-    ));
+    unawaited(
+      _submitAnswerSafely(
+        questionId: currentQuestion!.questionId,
+        answer: answer,
+        isRightAnswer: isRightAnswer ?? false,
+      ),
+    );
 
     final delay = (isRightAnswer ?? false) ? 1 : 2;
     _nextQuestionTimer = Timer(Duration(seconds: delay), () {
@@ -161,8 +170,11 @@ class ControllerGameGrammar extends SafeChangeNotifier {
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit grammar answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit grammar answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

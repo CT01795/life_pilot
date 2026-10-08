@@ -12,8 +12,8 @@ class GoogleTtsAudio {
     http.Client? client,
     this.requestTimeout = const Duration(seconds: 10),
     this.playbackTimeout = const Duration(minutes: 2),
-  })  : _player = player ?? AudioPlayer(),
-        _client = client ?? http.Client();
+  }) : _player = player ?? AudioPlayer(),
+       _client = client ?? http.Client();
 
   final AudioPlayer _player;
   final http.Client _client;
@@ -34,28 +34,18 @@ class GoogleTtsAudio {
     if (!_activeRequests.add(cacheKey)) return;
 
     try {
-      final bytes = _cache[cacheKey] ??
+      final bytes =
+          _cache[cacheKey] ??
           await _download(spokenText, languageCode, cacheKey);
       if (bytes == null || _disposed) return;
 
       final playbackComplete = _player.onPlayerComplete.first;
       await _player.play(BytesSource(bytes));
-      await playbackComplete.timeout(
-        playbackTimeout,
-        onTimeout: () {},
-      );
+      await playbackComplete.timeout(playbackTimeout, onTimeout: () {});
     } on TimeoutException catch (error, stackTrace) {
-      logger.w(
-        'Google TTS timed out',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      logger.w('Google TTS timed out', error: error, stackTrace: stackTrace);
     } catch (error, stackTrace) {
-      logger.e(
-        'Google TTS failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      logger.e('Google TTS failed', error: error, stackTrace: stackTrace);
     } finally {
       _activeRequests.remove(cacheKey);
     }
@@ -66,24 +56,23 @@ class GoogleTtsAudio {
     String languageCode,
     String cacheKey,
   ) async {
-    final url = Uri.https(
-      'translate.google.com',
-      '/translate_tts',
-      {
-        'ie': 'UTF-8',
-        'tl': languageCode,
-        'client': 'tw-ob',
-        'q': text,
-      },
-    );
-    final response = await _client.get(
-      url,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 Chrome/115 Safari/537.36',
-        'Referer': url.toString(),
-      },
-    ).timeout(requestTimeout);
+    final url = Uri.https('translate.google.com', '/translate_tts', {
+      'ie': 'UTF-8',
+      'tl': languageCode,
+      'client': 'tw-ob',
+      'q': text,
+    });
+    final response = await _client
+        .get(
+          url,
+          headers: {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                'AppleWebKit/537.36 Chrome/115 Safari/537.36',
+            'Referer': url.toString(),
+          },
+        )
+        .timeout(requestTimeout);
 
     if (response.statusCode != 200) {
       logger.e('Google TTS error: ${response.statusCode}');

@@ -32,13 +32,14 @@ class ControllerGameSocial extends SafeChangeNotifier {
   int answeredCount = 0;
   int maxQuestions = 10;
 
-  ControllerGameSocial(
-      {required this.userName,
-      required this.service,
-      required this.gameId, // 初始化
-      required this.gameLevel,
-      this.questionBank = 'admin',
-      required this.maxQuestions});
+  ControllerGameSocial({
+    required this.userName,
+    required this.service,
+    required this.gameId, // 初始化
+    required this.gameLevel,
+    this.questionBank = 'admin',
+    required this.maxQuestions,
+  });
 
   final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text) async {
@@ -82,11 +83,17 @@ class ControllerGameSocial extends SafeChangeNotifier {
 
   Future<ModelGameSocial?> _fetchQuestionSafely() async {
     try {
-      return await service.fetchSocialQuestion(userName, gameLevel,
-          questionBank: questionBank);
+      return await service.fetchSocialQuestion(
+        userName,
+        gameLevel,
+        questionBank: questionBank,
+      );
     } catch (error, stackTrace) {
-      logger.e('Load social question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load social question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
       return null;
     }
@@ -132,11 +139,13 @@ class ControllerGameSocial extends SafeChangeNotifier {
       isFinished = true;
       _notifyIfActive();
     }
-    unawaited(_submitAnswerSafely(
-      questionId: currentQuestion!.id,
-      answer: answer,
-      isRightAnswer: isRightAnswer,
-    ));
+    unawaited(
+      _submitAnswerSafely(
+        questionId: currentQuestion!.id,
+        answer: answer,
+        isRightAnswer: isRightAnswer,
+      ),
+    );
   }
 
   Future<void> _submitAnswerSafely({
@@ -152,8 +161,11 @@ class ControllerGameSocial extends SafeChangeNotifier {
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit social answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit social answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -168,8 +180,11 @@ class ControllerGameSocial extends SafeChangeNotifier {
       if (_isDisposed) return;
       isFinished = true;
     } catch (error, stackTrace) {
-      logger.e('Save social score failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Save social score failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
     } finally {
       if (!_isDisposed) {

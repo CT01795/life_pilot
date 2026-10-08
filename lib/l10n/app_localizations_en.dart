@@ -117,6 +117,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get maximizeWindow => 'Maximize window';
+
+  @override
+  String get restoreWindow => 'Restore window';
+
+  @override
+  String get resizeWindow => 'Drag to resize the window';
+
+  @override
+  String get expandSection => 'Expand';
+
+  @override
+  String get collapseSection => 'Collapse';
+
+  @override
+  String get addAccountingDetail => 'Add accounting entry';
+
+  @override
+  String get addPointDetail => 'Add points entry';
+
+  @override
   String get completeAndReview => 'Complete & review';
 
   @override
@@ -148,7 +169,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get create => 'Create';
 
   @override
-  String get dataCleanupAction => 'Review and clean up';
+  String get dataCleanupAction => 'Review and choose excess or all data';
 
   @override
   String get dataCleanupAll => 'Clear all';
@@ -533,7 +554,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speak => 'Voice input';
 
   @override
-  String get speakingText => 'Text to speak';
+  String get speakingText => 'Play audio';
+
+  @override
+  String get gameInstructions => 'How to play';
+
+  @override
+  String get gameInstructionsGeneral => 'Follow the prompts to complete the question. Use the speaker to play audio. Tap the microphone to start speaking and tap again to finish. Drag movable blocks to their targets, then check or submit after answering.';
+
+  @override
+  String get startSpeaking => 'Tap to start speaking';
+
+  @override
+  String get finishSpeaking => 'Tap to finish';
+
+  @override
+  String get answerBeforeCheck => 'Answer before checking';
+
+  @override
+  String get dragItem => 'Drag';
+
+  @override
+  String get submitAnswer => 'Submit';
+
+  @override
+  String get difficulty => 'Difficulty';
+
+  @override
+  String get moveLeft => 'Move left';
+
+  @override
+  String get moveRight => 'Move right';
+
+  @override
+  String get jump => 'Jump';
+
+  @override
+  String get shoot => 'Shoot';
 
   @override
   String get speakingTitle => 'Speaking';
@@ -1066,6 +1123,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionEmail => 'User email';
 
   @override
+  String get adminSubscriptionEmailOrAllHint => 'Enter an email for one user, or search while blank to list everyone.';
+
+  @override
+  String get adminSubscriptionAllUsers => 'All users: subscriptions and combined quotas';
+
+  @override
+  String adminSubscriptionActiveCount(int count) {
+    return '$count active allowances';
+  }
+
+  @override
   String get adminSubscriptionEntitlementDeleted => 'This allowance was deleted. Other allowances were kept.';
 
   @override
@@ -1073,6 +1141,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminSubscriptionExpiry => 'Benefit expiry';
+
+  @override
+  String get adminSubscriptionExpiryMustBeFuture => 'The expiry must be later than now. For same-day expiry, choose tomorrow or later.';
+
+  @override
+  String get adminSubscriptionSimilarQuotaTitle => 'Similar quota already exists';
+
+  @override
+  String get adminSubscriptionSimilarQuotaMessage => 'This user already has the same plan, storage location, and multiplier. Add another entitlement anyway?';
+
+  @override
+  String get adminSubscriptionAddQuotaConfirm => 'Add anyway';
 
   @override
   String get adminSubscriptionExtend => 'Extend';
@@ -1290,6 +1370,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quotaFreePeriodTitle => 'No-limit promotion';
 
   @override
+  String get quotaFreePeriodTargetAccounts => 'Eligible accounts';
+
+  @override
+  String get quotaFreePeriodTargetAccountsHint => 'Enter multiple emails separated by commas or new lines. Leave blank for all regular users.';
+
+  @override
+  String get quotaFreePeriodAllUsers => 'Applies to all regular users';
+
+  @override
+  String quotaFreePeriodSelectedUsers(int count) {
+    return 'Only $count selected accounts';
+  }
+
+  @override
   String get quotaFreePeriodUserBanner => 'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.';
 
   @override
@@ -1366,6 +1460,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String subscriptionDowngradeWarning(String date) {
     return 'Your cloud data exceeds the free allowance. Remove or move the excess by $date.';
+  }
+
+  @override
+  String subscriptionExpiringSoon(int days) {
+    return 'Subscription expires within $days days';
+  }
+
+  @override
+  String get subscriptionExpiringCloudImpact => 'Without renewal, adding and editing stops. Data above the cloud quota remaining after expiry enters the cleanup process.';
+
+  @override
+  String get subscriptionExpiringLocalImpact => 'Without renewal, local data becomes read/delete only; adding and editing stops.';
+
+  @override
+  String get subscriptionQuotaScheduleTitle => 'Quota changes at expiry';
+
+  @override
+  String subscriptionQuotaAfterExpiry(String date) {
+    return 'Available quota after $date';
   }
 
   @override
@@ -1542,6 +1655,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToSchedule => 'Add to schedule';
+
+  @override
+  String get addSchedule => 'Add schedule';
 
   @override
   String get calendarCancelAllShares => 'Stop sharing all events';
@@ -2254,6 +2370,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get memoryAdd => 'Add Memory';
 
   @override
+  String get addRecordToMemoryHint => 'Add this record to memories';
+
+  @override
+  String get expandToAddRecordHint => 'Expand to add a record';
+
+  @override
   String get memoryAddError => 'Do you want to add the memory again';
 
   @override
@@ -2296,6 +2418,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountingSpeechHint => 'For example: add/subtract an amount';
+
+  @override
+  String get accountingSpeechExample => 'Tap to speak, for example: lunch expense 120; salary income 30,000';
 
   @override
   String get accountingUnit => '';
@@ -2446,6 +2571,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pointsSpeechHint => 'For example: add/subtract points';
+
+  @override
+  String get pointsSpeechExample => 'Tap to speak, for example: exercise plus 10 points; late minus 2 points';
 
   @override
   String get pointsUnit => 'points';
@@ -2832,6 +2960,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountMenuAccountDeletion => 'Delete account';
 
   @override
+  String get accountDeletionAdminReviewHint => 'Submit an account and data deletion request for administrator review.';
+
+  @override
   String get accountMenuDataExport => 'Export data';
 
   @override
@@ -2866,7 +2997,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataExportIncludedPages => 'Included pages: calendar, memories, accounting records, and point records.';
 
   @override
-  String get dataExportRequestDescription => 'An Excel file containing your cloud and local personal data will be downloaded to this device.';
+  String get dataExportRequestDescription => 'Your personal data will be downloaded as Excel. Recommended events and attractions are excluded; the workbook lists all included data.';
 
   @override
   String get dataExportSummarySheet => 'Export summary';

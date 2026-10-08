@@ -16,7 +16,7 @@ class PolyominoBlockWidget extends StatelessWidget {
     required this.showPipe,
   });
 
- @override
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: block.width * unitSize,

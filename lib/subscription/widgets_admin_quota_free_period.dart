@@ -18,6 +18,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
   final _service = ServiceSubscription();
   final _nameController = TextEditingController();
   final _reminderDaysController = TextEditingController();
+  final _targetAccountsController = TextEditingController();
   List<QuotaFreePeriod> _periods = const [];
   String? _editingId;
   DateTime _startsAt = DateTime.now();
@@ -36,6 +37,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
   void dispose() {
     _nameController.dispose();
     _reminderDaysController.dispose();
+    _targetAccountsController.dispose();
     super.dispose();
   }
 
@@ -43,6 +45,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
     _editingId = null;
     _nameController.clear();
     _reminderDaysController.clear();
+    _targetAccountsController.clear();
     _startsAt = DateTime.now();
     _endsAt = DateTime.now().add(const Duration(days: 30));
     _enabled = true;
@@ -67,6 +70,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
       _editingId = period.id;
       _nameController.text = period.name;
       _reminderDaysController.text = period.reminderDays?.toString() ?? '';
+      _targetAccountsController.text = period.targetAccounts.join('\n');
       _startsAt = period.startsAt;
       _endsAt = period.endsAt;
       _enabled = period.enabled;
@@ -111,6 +115,12 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
         endsAt: _endsAt,
         enabled: _enabled,
         reminderDays: reminderDays,
+        targetAccounts: _targetAccountsController.text
+            .split(RegExp(r'[,;\s]+'))
+            .map((value) => value.trim().toLowerCase())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList(growable: false),
       );
       if (!mounted) return;
       _resetForm();
@@ -215,6 +225,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                     '${formatter.format(period.startsAt)} – '
                     '${formatter.format(period.endsAt)}\n'
                     '${_statusLabel(loc, period)}'
+                    '${period.targetAccounts.isEmpty ? '\n${loc.quotaFreePeriodAllUsers}' : '\n${loc.quotaFreePeriodSelectedUsers(period.targetAccounts.length)}'}'
                     '${period.reminderDays == null ? '' : '\n${loc.quotaFreePeriodReminderSummary(period.reminderDays!)}'}',
                   ),
                   isThreeLine: true,
@@ -261,6 +272,18 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                 labelText: loc.quotaFreePeriodReminderDays,
                 helperText: loc.quotaFreePeriodReminderDaysHint,
                 prefixIcon: const Icon(Icons.notifications_active_outlined),
+              ),
+            ),
+            Gaps.h12,
+            TextField(
+              controller: _targetAccountsController,
+              keyboardType: TextInputType.emailAddress,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: loc.quotaFreePeriodTargetAccounts,
+                helperText: loc.quotaFreePeriodTargetAccountsHint,
+                prefixIcon: const Icon(Icons.group_outlined),
               ),
             ),
             Gaps.h12,

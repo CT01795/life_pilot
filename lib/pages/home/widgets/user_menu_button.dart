@@ -10,6 +10,7 @@ import 'package:life_pilot/feedback/controller_feedback.dart';
 import 'package:life_pilot/feedback/page_feedback.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/page_subscription_plans.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -29,6 +30,9 @@ class UserMenuButton extends StatelessWidget {
     );
     final isVendor = context.select<ControllerAuth, bool>(
       (controller) => controller.isVendor,
+    );
+    final isCloudStorage = context.select<ControllerAuth, bool>(
+      (controller) => controller.preferredStorage == DataStorageLocation.cloud,
     );
     if (auth.account == null || auth.account!.isEmpty) {
       return const SizedBox.shrink();
@@ -158,25 +162,26 @@ class UserMenuButton extends StatelessWidget {
           ),
         ),
         if (isSysAdmin)
-          PopupMenuItem(
-            value: "moduleAuthorization",
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: Colors.white,
-                ),
-                Gaps.w8,
-                Expanded(
-                  child: Text(
-                    loc.moduleAuthorization,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white),
+          if (isCloudStorage)
+            PopupMenuItem(
+              value: "moduleAuthorization",
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.admin_panel_settings_outlined,
+                    color: Colors.white,
                   ),
-                ),
-              ],
+                  Gaps.w8,
+                  Expanded(
+                    child: Text(
+                      loc.moduleAuthorization,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         if (!isVendor && (isSysAdmin || !auth.quotaFreePeriodActive))
           PopupMenuItem(
             value: "subscriptionPlans",

@@ -7,7 +7,8 @@ import 'package:life_pilot/game/mario_translation/page_game_mario_translation.da
 import 'package:life_pilot/game/mario_translation/word_item.dart';
 import 'package:life_pilot/utils/const.dart';
 
-class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
+class Bullet extends CircleComponent
+    with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
   final double speed;
   late final Vector2 velocity;
   Bullet({
@@ -15,17 +16,17 @@ class Bullet extends CircleComponent with CollisionCallbacks, HasGameRef<PageGam
     required Vector2 direction,
     this.speed = 300,
   }) : super(
-          position: position,
-          radius: 8,
-          paint: Paint()
-            ..shader = RadialGradient(
-              colors: [
-                GameColors.bullet.withOpacity(1),
-                GameColors.bullet.withOpacity(0.2),
-              ],
-            ).createShader(Rect.fromCircle(center: Offset.zero, radius: 10)),
-          priority: 20,
-        ){
+         position: position,
+         radius: 8,
+         paint: Paint()
+           ..shader = RadialGradient(
+             colors: [
+               GameColors.bullet.withOpacity(1),
+               GameColors.bullet.withOpacity(0.2),
+             ],
+           ).createShader(Rect.fromCircle(center: Offset.zero, radius: 10)),
+         priority: 20,
+       ) {
     velocity = direction.normalized() * speed;
   }
 

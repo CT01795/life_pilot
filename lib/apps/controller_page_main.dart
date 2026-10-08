@@ -63,6 +63,7 @@ class ControllerPageMain extends SafeChangeNotifier {
   bool _modulesLoading = false;
   int _moduleRequest = 0;
   PageType _selectedPage;
+  final Map<PageType, String?> _pendingCities = {};
   Timer? _debounce;
 
   ControllerAuth get auth => _auth;
@@ -85,8 +86,11 @@ class ControllerPageMain extends SafeChangeNotifier {
 
   bool canAccess(PageType page) => availablePages.contains(page);
 
-  void changePage(PageType newPage) {
+  void changePage(PageType newPage, {String? city}) {
     if (!canAccess(newPage)) return;
+    if (city != null) {
+      _pendingCities[newPage] = city.trim().isEmpty ? null : city.trim();
+    }
     if (newPage == PageType.ai) {
       unawaited(_openAI());
       return;
@@ -95,6 +99,8 @@ class ControllerPageMain extends SafeChangeNotifier {
     _selectedPage = newPage;
     _notifyDebounced();
   }
+
+  String? takePendingCity(PageType page) => _pendingCities.remove(page);
 
   Future<void> refreshModules() => _reloadModules(force: true);
 

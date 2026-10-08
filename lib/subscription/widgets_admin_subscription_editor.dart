@@ -28,9 +28,11 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   bool _additive = false;
   Map<String, dynamic>? _lookedUpSubscription;
   List<Map<String, dynamic>> _lookedUpEntitlements = const [];
+  List<Map<String, dynamic>> _allUserSubscriptions = const [];
   bool _lookupLoading = false;
   bool _hasLookedUp = false;
   String? _lookedUpEmail;
+  String? _editingEntitlementId;
 
   @override
   void initState() {
@@ -62,6 +64,38 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _show(loc.adminSubscriptionNoPricing);
       return;
     }
+    if (_plan == 'plus' &&
+        (_expiry == null || !_expiry!.isAfter(DateTime.now()))) {
+      _show(loc.adminSubscriptionExpiryMustBeFuture);
+      return;
+    }
+    if (_plan == 'plus' &&
+        _editingEntitlementId == null &&
+        _lookedUpEntitlements.any(
+          (row) =>
+              row['storage_plan']?.toString() == _storagePlan &&
+              row['pricing_version_id']?.toString() == selectedVersion &&
+              (row['quota_multiplier'] as num?)?.toInt() == _multiplier,
+        )) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(loc.adminSubscriptionSimilarQuotaTitle),
+          content: Text(loc.adminSubscriptionSimilarQuotaMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(loc.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(loc.adminSubscriptionAddQuotaConfirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
     setState(() => _saving = true);
     try {
       final service = ServiceSubscription();
@@ -72,7 +106,16 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
           _subscriptionExists &&
           currentStoragePlan != null &&
           currentStoragePlan != _storagePlan;
-      if ((_additive || addsAnotherStoragePlan) && _plan == 'plus') {
+      if (_editingEntitlementId != null && _plan == 'plus') {
+        await service.updateUserEntitlementAsAdmin(
+          entitlementId: _editingEntitlementId!,
+          storagePlan: _storagePlan,
+          pricingVersionId: selectedVersion!,
+          multiplier: _multiplier,
+          endsAt: _expiry!,
+          note: _note.text,
+        );
+      } else if ((_additive || addsAnotherStoragePlan) && _plan == 'plus') {
         await service.addUserEntitlementAsAdmin(
           email: _email.text,
           storagePlan: _storagePlan,
@@ -148,6 +191,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                       onChanged: (_) => _clearLookupWhenEmailChanged(),
                       decoration: InputDecoration(
                         labelText: loc.adminSubscriptionEmail,
+                        helperText: loc.adminSubscriptionEmailOrAllHint,
                         prefixIcon: const Icon(Icons.alternate_email),
                       ),
                     ),
@@ -165,7 +209,47 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                   ),
                 ],
               ),
-              if (_subscriptionExists)
+              if (_allUserSubscriptions.isNotEmpty) ...[
+                Gaps.h8,
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    loc.adminSubscriptionAllUsers,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 320),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _allUserSubscriptions.length,
+                    itemBuilder: (context, index) {
+                      final row = _allUserSubscriptions[index];
+                      final email =
+                          row['account']?.toString() ??
+                          row['email']?.toString() ??
+                          '';
+                      final activeCount =
+                          (row['active_entitlements'] as num?)?.toInt() ?? 0;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.person_outline),
+                        title: Text(email),
+                        subtitle: Text(
+                          loc.adminSubscriptionActiveCount(activeCount),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () async {
+                          _email.text = email;
+                          _allUserSubscriptions = const [];
+                          await _lookupSubscription();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+              if (_subscriptionExists && _lookedUpEntitlements.isEmpty)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.verified_user_outlined),
@@ -212,12 +296,27 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                       '${entitlement['storage_plan'] ?? '-'} · '
                       '${_formatEntitlementDate(entitlement['ends_at'])}',
                     ),
-                    trailing: IconButton(
-                      tooltip: loc.delete,
-                      onPressed: _saving
-                          ? null
-                          : () => _deleteEntitlement(entitlement),
-                      icon: const Icon(Icons.delete_outline),
+                    trailing: Wrap(
+                      spacing: 2,
+                      children: [
+                        IconButton(
+                          tooltip: loc.edit,
+                          onPressed: _saving
+                              ? null
+                              : () => _loadEntitlementIntoForm(
+                                  entitlement,
+                                  versions,
+                                ),
+                          icon: const Icon(Icons.edit_outlined),
+                        ),
+                        IconButton(
+                          tooltip: loc.delete,
+                          onPressed: _saving
+                              ? null
+                              : () => _deleteEntitlement(entitlement),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
                     ),
                   ),
               ],
@@ -520,18 +619,43 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 36500)),
     );
-    if (value != null) setState(() => _expiry = value);
+    if (value != null) {
+      setState(
+        () =>
+            _expiry = DateTime(value.year, value.month, value.day, 23, 59, 59),
+      );
+    }
   }
 
   Future<void> _lookupSubscription() async {
     final email = _normalizedEmail;
-    if (email.isEmpty) return;
+    if (email.isEmpty) {
+      setState(() => _lookupLoading = true);
+      try {
+        final rows = await ServiceSubscription()
+            .fetchAllUserSubscriptionSummariesAsAdmin();
+        if (!mounted) return;
+        setState(() => _allUserSubscriptions = rows);
+      } catch (error) {
+        if (mounted) {
+          _show(
+            AppLocalizations.of(
+              context,
+            )!.adminSubscriptionSaveFailed(error.toString()),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _lookupLoading = false);
+      }
+      return;
+    }
     setState(() {
       _lookupLoading = true;
       _hasLookedUp = false;
       _lookedUpEmail = null;
       _lookedUpSubscription = null;
       _lookedUpEntitlements = const [];
+      _allUserSubscriptions = const [];
     });
     try {
       final service = ServiceSubscription();
@@ -712,6 +836,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   void _setPlan(String value) {
     setState(() {
       _plan = value;
+      _editingEntitlementId = null;
       _expiry = _plan == 'free'
           ? null
           : (_expiry ?? DateTime.now().add(const Duration(days: 90)));
@@ -740,6 +865,33 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _lookedUpEmail = null;
       _lookedUpSubscription = null;
       _lookedUpEntitlements = const [];
+      _editingEntitlementId = null;
     });
+  }
+
+  void _loadEntitlementIntoForm(
+    Map<String, dynamic> entitlement,
+    List<SubscriptionPricingVersion> versions,
+  ) {
+    final storagePlan = entitlement['storage_plan']?.toString() ?? 'cloud';
+    final versionId = entitlement['pricing_version_id']?.toString();
+    final versionExists = versions.any(
+      (version) =>
+          version.id == versionId && version.storagePlan == storagePlan,
+    );
+    final expiry = DateTime.tryParse(
+      entitlement['ends_at']?.toString() ?? '',
+    )?.toLocal();
+    setState(() {
+      _plan = 'plus';
+      _storagePlan = storagePlan;
+      _versionId = versionExists ? versionId : null;
+      _multiplier = (entitlement['quota_multiplier'] as num?)?.toInt() ?? 1;
+      _expiry = expiry;
+      _note.text = entitlement['admin_note']?.toString() ?? '';
+      _editingEntitlementId = entitlement['id']?.toString();
+      _additive = false;
+    });
+    _show(AppLocalizations.of(context)!.adminSubscriptionLoadedForEditing);
   }
 }

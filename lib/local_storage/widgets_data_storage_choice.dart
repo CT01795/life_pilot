@@ -22,7 +22,6 @@ class DataStorageChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final isLocal = value == DataStorageLocation.local;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -37,6 +36,7 @@ class DataStorageChoice extends StatelessWidget {
             _StorageOption(
               icon: Icons.cloud_outlined,
               label: loc.dataStorageCloud,
+              description: loc.dataStorageCloudWarning,
               selected: value == DataStorageLocation.cloud,
               enabled: onChanged != null,
               onTap: () => onChanged?.call(DataStorageLocation.cloud),
@@ -45,6 +45,7 @@ class DataStorageChoice extends StatelessWidget {
             _StorageOption(
               icon: Icons.devices_outlined,
               label: loc.dataStorageLocal,
+              description: loc.dataStorageLocalWarning,
               subtitle: localSubscriptionActive
                   ? null
                   : localPromotionAccess
@@ -53,26 +54,6 @@ class DataStorageChoice extends StatelessWidget {
               selected: value == DataStorageLocation.local,
               enabled: onChanged != null && localEnabled,
               onTap: () => onChanged?.call(DataStorageLocation.local),
-            ),
-            Gaps.h8,
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  isLocal ? Icons.info_outline : Icons.cloud_done_outlined,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-                Gaps.w8,
-                Expanded(
-                  child: Text(
-                    isLocal
-                        ? loc.dataStorageLocalWarning
-                        : loc.dataStorageCloudWarning,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
@@ -89,6 +70,7 @@ class _StorageOption extends StatelessWidget {
     required this.enabled,
     required this.onTap,
     this.subtitle,
+    this.description,
   });
 
   final IconData icon;
@@ -97,6 +79,7 @@ class _StorageOption extends StatelessWidget {
   final bool enabled;
   final VoidCallback onTap;
   final String? subtitle;
+  final String? description;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +99,18 @@ class _StorageOption extends StatelessWidget {
         onTap: enabled ? onTap : null,
         leading: Icon(icon),
         title: Text(label, maxLines: 2),
-        subtitle: subtitle == null ? null : Text(subtitle!),
+        subtitle: (subtitle == null && description == null)
+            ? null
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (description != null) Text(description!),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(subtitle!, style: TextStyle(color: colors.error)),
+                  ],
+                ],
+              ),
         trailing: selected
             ? Icon(Icons.check_circle, color: colors.secondary)
             : const Icon(Icons.circle_outlined),

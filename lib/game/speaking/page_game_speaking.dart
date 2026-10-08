@@ -10,6 +10,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -252,6 +253,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                   title: Text(
                     loc.gameTitleScore(loc.speakingTitle, controller.score),
                   ),
+                  actions: const [GameHelpButton()],
                 ),
                 body: Column(
                   children: [
@@ -265,6 +267,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
+                            tooltip: loc.speakingText,
                             style: IconButton.styleFrom(
                               minimumSize: const Size(64, 64),
                             ),
@@ -303,6 +306,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
+                            tooltip: isRecording
+                                ? loc.finishSpeaking
+                                : loc.startSpeaking,
                             icon: Icon(
                               !isRecording
                                   ? Icons.mic_none

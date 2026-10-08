@@ -52,8 +52,11 @@ class ControllerGameSentence extends SafeChangeNotifier {
         if (_isDisposed) return;
         isFinished = true;
       } catch (error, stackTrace) {
-        logger.e('Save sentence score failed',
-            error: error, stackTrace: stackTrace);
+        logger.e(
+          'Save sentence score failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
         if (!_isDisposed) loadError = error;
       }
       if (!_isDisposed) {
@@ -71,9 +74,10 @@ class ControllerGameSentence extends SafeChangeNotifier {
     // 🔹 初始化答案槽 & 選項
     if (currentQuestion != null) {
       answerSlots = List.filled(currentQuestion!.options.length, null);
-      options = List.generate(currentQuestion!.options.length,
-          (i) => WordItem(id: Uuid().v4(), text: currentQuestion!.options[i]))
-        ..shuffle();
+      options = List.generate(
+        currentQuestion!.options.length,
+        (i) => WordItem(id: Uuid().v4(), text: currentQuestion!.options[i]),
+      )..shuffle();
     }
 
     isLoading = false;
@@ -91,8 +95,11 @@ class ControllerGameSentence extends SafeChangeNotifier {
         questionBank: questionBank,
       );
     } catch (error, stackTrace) {
-      logger.e('Load sentence question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load sentence question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
       return null;
     }
@@ -181,11 +188,13 @@ class ControllerGameSentence extends SafeChangeNotifier {
       unawaited(loadNextQuestion());
     });
 
-    unawaited(_submitAnswerSafely(
-      questionId: currentQuestion!.questionId,
-      answer: userAnswer,
-      isRightAnswer: isRightAnswer ?? false,
-    ));
+    unawaited(
+      _submitAnswerSafely(
+        questionId: currentQuestion!.questionId,
+        answer: userAnswer,
+        isRightAnswer: isRightAnswer ?? false,
+      ),
+    );
 
     return true;
   }
@@ -203,8 +212,11 @@ class ControllerGameSentence extends SafeChangeNotifier {
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit sentence answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit sentence answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

@@ -36,8 +36,8 @@ class AuthConstants {
   static const adminRole = 'admin';
   static const email = 'email';
   static const minimumPasswordLength = 8;
-  static const privacyPolicyVersion = '2026-08-12';
-  static const termsOfServiceVersion = '2026-08-12';
+  static const privacyPolicyVersion = '2026-10-08';
+  static const termsOfServiceVersion = '2026-10-08';
 }
 
 // -------------------- Source --------------------

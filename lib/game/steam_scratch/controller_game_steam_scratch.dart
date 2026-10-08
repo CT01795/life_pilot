@@ -218,8 +218,10 @@ class ControllerGameSteamScratch {
 
     // 先更新位置
     state.x = state.x.clamp(-1, level.treasure.x + 1);
-    state.y =
-        state.y.clamp(-1, level.treasure.y + 1); // ✅ 防止已卸載 widget 呼叫 setState
+    state.y = state.y.clamp(
+      -1,
+      level.treasure.y + 1,
+    ); // ✅ 防止已卸載 widget 呼叫 setState
     stateNotifier.value = state.copy();
 
     // 掉下懸崖檢查
@@ -228,7 +230,8 @@ class ControllerGameSteamScratch {
         state.y < 0 ||
         state.y > level.treasure.y) {
       _notifyEvent(
-          ModelGameEvent(EnumGameEventType.obstacle, "Fall off a cliff！"));
+        ModelGameEvent(EnumGameEventType.obstacle, "Fall off a cliff！"),
+      );
       return false; // 停止遊戲
     }
 
@@ -243,7 +246,8 @@ class ControllerGameSteamScratch {
       if (obs.x == state.x && obs.y == state.y) {
         state.score += obs.scoreValue;
         _notifyEvent(
-            ModelGameEvent(EnumGameEventType.obstacle, "Hit an obstacle！"));
+          ModelGameEvent(EnumGameEventType.obstacle, "Hit an obstacle！"),
+        );
         return true;
       }
     }
@@ -256,8 +260,9 @@ class ControllerGameSteamScratch {
       if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
         fruit.collected = true;
         state.score += fruit.scoreValue;
-        _notifyEvent(ModelGameEvent(
-            EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
+        _notifyEvent(
+          ModelGameEvent(EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"),
+        );
       }
     }
   }
@@ -269,14 +274,22 @@ class ControllerGameSteamScratch {
         state.y == level.treasure.y) {
       if (state.score <
           min((level.levelNumber * 0.5).toInt(), level.fruits.length)) {
-        _notifyEvent(ModelGameEvent(EnumGameEventType.warning,
-            "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!"));
+        _notifyEvent(
+          ModelGameEvent(
+            EnumGameEventType.warning,
+            "Eat at least ${min((level.levelNumber * 0.5).toInt(), level.fruits.length)} foods !!",
+          ),
+        );
         return true;
       }
       state.treasureCollected = true;
       state.score += level.treasure.scoreValue;
-      _notifyEvent(ModelGameEvent(
-          EnumGameEventType.treasure, "Treasure found！Score: ${state.score}"));
+      _notifyEvent(
+        ModelGameEvent(
+          EnumGameEventType.treasure,
+          "Treasure found！Score: ${state.score}",
+        ),
+      );
       try {
         await _saveScore(true);
       } catch (_) {

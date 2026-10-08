@@ -115,7 +115,7 @@ class CalendarAppBar extends StatelessWidget {
             ),
             iconButton(Icons.arrow_right_rounded, onNext, loc.nextMonth),
             Gaps.w8,
-            iconButton(Icons.add, onAdd, loc.add),
+            iconButton(Icons.add, onAdd, loc.addSchedule),
           ],
         ),
       ),

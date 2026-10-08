@@ -23,6 +23,7 @@ class ServiceSubscription {
     required DateTime endsAt,
     required bool enabled,
     int? reminderDays,
+    List<String> targetAccounts = const [],
   }) async {
     await supabase.rpc(
       'admin_set_quota_free_period',
@@ -33,6 +34,7 @@ class ServiceSubscription {
         'p_ends_at': endsAt.toUtc().toIso8601String(),
         'p_enabled': enabled,
         'p_reminder_days': reminderDays,
+        'p_target_accounts': targetAccounts,
       },
     );
   }
@@ -55,6 +57,14 @@ class ServiceSubscription {
             as List<dynamic>;
     if (rows.isEmpty) return null;
     return Map<String, dynamic>.from(rows.first as Map);
+  }
+
+  Future<List<Map<String, dynamic>>>
+  fetchAllUserSubscriptionSummariesAsAdmin() async {
+    final rows = await supabase.rpc('admin_list_user_subscription_summaries');
+    return (rows as List<dynamic>)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
   }
 
   Future<List<SubscriptionCleanupPreview>> fetchCleanupPreview({
@@ -100,13 +110,29 @@ class ServiceSubscription {
       entitlementRows,
       status,
     );
-    final items = <SubscriptionUsage>[
+    var items = <SubscriptionUsage>[
       ...(rows as List<dynamic>).map(
         (row) =>
             SubscriptionUsage.fromJson(Map<String, dynamic>.from(row as Map)),
       ),
       ...recommendationUsage,
     ];
+    final cumulativeQuotas = await _fetchCumulativeQuotas(
+      storagePlan: status['storage_plan']?.toString() ?? 'cloud',
+    );
+    if (cumulativeQuotas.isNotEmpty) {
+      items = items
+          .map(
+            (item) => cumulativeQuotas.containsKey(item.resource)
+                ? SubscriptionUsage(
+                    resource: item.resource,
+                    used: item.used,
+                    quota: cumulativeQuotas[item.resource]!,
+                  )
+                : item,
+          )
+          .toList(growable: true);
+    }
 
     items.sort((a, b) {
       const resourceOrder = [
@@ -165,6 +191,27 @@ class ServiceSubscription {
           )
           .toList(),
     );
+  }
+
+  Future<Map<String, int>> _fetchCumulativeQuotas({
+    required String storagePlan,
+  }) async {
+    try {
+      final rows = await supabase.rpc(
+        'get_my_cumulative_subscription_quotas',
+        params: {'p_storage_plan': storagePlan},
+      );
+      return {
+        for (final raw in rows as List<dynamic>)
+          if (raw case final Map row)
+            row['resource'].toString(): (row['quota'] as num?)?.toInt() ?? 0,
+      };
+    } on PostgrestException catch (error) {
+      // Older databases continue using get_my_subscription_usage until the
+      // cumulative-quota RPC is installed.
+      if (error.code == '42883' || error.code == 'PGRST202') return const {};
+      rethrow;
+    }
   }
 
   Future<List<SubscriptionUsage>> _fetchRecommendationUsage(
@@ -344,6 +391,27 @@ class ServiceSubscription {
     );
   }
 
+  Future<void> updateUserEntitlementAsAdmin({
+    required String entitlementId,
+    required String storagePlan,
+    required String pricingVersionId,
+    required int multiplier,
+    required DateTime endsAt,
+    required String note,
+  }) async {
+    await supabase.rpc(
+      'admin_update_user_subscription_entitlement',
+      params: {
+        'p_entitlement_id': entitlementId,
+        'p_storage_plan': storagePlan,
+        'p_pricing_version_id': pricingVersionId,
+        'p_quota_multiplier': multiplier,
+        'p_ends_at': endsAt.toUtc().toIso8601String(),
+        'p_admin_note': note.trim(),
+      },
+    );
+  }
+
   Future<void> setUserSubscriptionV2AsAdmin({
     required String email,
     required String plan,
@@ -472,6 +540,7 @@ class QuotaFreePeriod {
     required this.enabled,
     required this.isActive,
     this.reminderDays,
+    this.targetAccounts = const [],
   });
 
   final String id;
@@ -481,6 +550,7 @@ class QuotaFreePeriod {
   final bool enabled;
   final bool isActive;
   final int? reminderDays;
+  final List<String> targetAccounts;
 
   factory QuotaFreePeriod.fromJson(Map<String, dynamic> json) =>
       QuotaFreePeriod(
@@ -491,6 +561,10 @@ class QuotaFreePeriod {
         enabled: json['enabled'] == true,
         isActive: json['is_active'] == true,
         reminderDays: (json['reminder_days'] as num?)?.toInt(),
+        targetAccounts: (json['target_accounts'] as List? ?? const [])
+            .map((value) => value.toString().trim().toLowerCase())
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false),
       );
 }
 

@@ -244,8 +244,9 @@ class ControllerGameSteamScratchMaze {
       if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
         fruit.collected = true;
         state.score += fruit.scoreValue;
-        _notifyEvent(ModelGameEvent(
-            EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"));
+        _notifyEvent(
+          ModelGameEvent(EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"),
+        );
       }
     }
   }
@@ -257,8 +258,12 @@ class ControllerGameSteamScratchMaze {
         state.y == level.treasure.y) {
       state.treasureCollected = true;
       state.score += level.treasure.scoreValue;
-      _notifyEvent(ModelGameEvent(
-          EnumGameEventType.treasure, "Treasure found！Score: ${state.score}"));
+      _notifyEvent(
+        ModelGameEvent(
+          EnumGameEventType.treasure,
+          "Treasure found！Score: ${state.score}",
+        ),
+      );
       try {
         await _saveScore(true);
       } catch (_) {

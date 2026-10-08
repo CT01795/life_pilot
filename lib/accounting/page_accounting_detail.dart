@@ -586,7 +586,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                   children: [
                     // 麥克風按鈕
                     FloatingActionButton(
-                      tooltip: loc.accountingSpeechHint,
+                      tooltip: loc.accountingSpeechExample,
                       child: const Icon(Icons.mic_rounded, size: 30),
                       onPressed: () async {
                         final speechController = context

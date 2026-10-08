@@ -7,8 +7,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 class PageGameSteamScratchMazeBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
-  const PageGameSteamScratchMazeBlocklyEditor(
-      {super.key, required this.onCommandsReady});
+  const PageGameSteamScratchMazeBlocklyEditor({
+    super.key,
+    required this.onCommandsReady,
+  });
 
   @override
   State<PageGameSteamScratchMazeBlocklyEditor> createState() =>
@@ -53,7 +55,9 @@ class PageGameSteamScratchMazeBlocklyEditorState
     windowMaxBlocksPending = value; // 無論 if
     try {
       if (windowMaxBlocksPending != null) {
-        await controller.runJavaScript("setMaxBlocksFromFlutter($windowMaxBlocksPending)");
+        await controller.runJavaScript(
+          "setMaxBlocksFromFlutter($windowMaxBlocksPending)",
+        );
       }
     } catch (ex) {
       logger.e(ex.toString());

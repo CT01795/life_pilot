@@ -29,14 +29,22 @@ class ModelGameSteamScratchMazeTreasure {
   int x;
   int y;
   int scoreValue;
-  ModelGameSteamScratchMazeTreasure({required this.x, required this.y, this.scoreValue = 10});
+  ModelGameSteamScratchMazeTreasure({
+    required this.x,
+    required this.y,
+    this.scoreValue = 10,
+  });
 }
 
 class ModelGameSteamScratchMazeObstacle {
   int x;
   int y;
   int scoreValue;
-  ModelGameSteamScratchMazeObstacle({required this.x, required this.y, this.scoreValue = -1});
+  ModelGameSteamScratchMazeObstacle({
+    required this.x,
+    required this.y,
+    this.scoreValue = -1,
+  });
 }
 
 class ModelGameSteamScratchMazeFruit {
@@ -46,6 +54,11 @@ class ModelGameSteamScratchMazeFruit {
   bool collected = false;
   IconData icon;
   ModelGameSteamScratchMazeFruit({
-    required this.x, required this.y, this.scoreValue = 1, IconData? icon,
-  }) : icon = icon ?? WidgetsGameSteamScratchMazeGameBoard.getRandomFruitIconStatic();
+    required this.x,
+    required this.y,
+    this.scoreValue = 1,
+    IconData? icon,
+  }) : icon =
+           icon ??
+           WidgetsGameSteamScratchMazeGameBoard.getRandomFruitIconStatic();
 }

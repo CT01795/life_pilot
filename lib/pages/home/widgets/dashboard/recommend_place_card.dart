@@ -304,6 +304,10 @@ class RecommendPlaceCard extends StatelessWidget {
                   onPressed: () {
                     context.read<ControllerPageMain>().changePage(
                       PageType.recommendPlaces,
+                      city: context
+                          .read<ModelDashboard>()
+                          .setting
+                          .recommendPlaceCity,
                     );
                   },
                   child: Text(

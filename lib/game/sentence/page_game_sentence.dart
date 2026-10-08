@@ -8,6 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
@@ -75,6 +76,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
+        actions: const [GameHelpButton()],
         backgroundColor: Color(0xFF4DB6AC),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -134,6 +136,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
+                      tooltip: loc.speakingText,
                       style: IconButton.styleFrom(
                         minimumSize: const Size(68, 68),
                       ),
@@ -147,21 +150,26 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                       ),
                     ),
                     Gaps.w36,
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF00897B),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
+                    Tooltip(
+                      message: controller.canCheckAnswer
+                          ? loc.check
+                          : loc.answerBeforeCheck,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF00897B),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        onPressed: controller.canCheckAnswer ? onAnswer : null,
+                        child: Text(
+                          loc.check,
+                          style: TextStyle(fontSize: 24, color: Colors.white),
                         ),
-                      ),
-                      onPressed: controller.canCheckAnswer ? onAnswer : null,
-                      child: Text(
-                        loc.check,
-                        style: TextStyle(fontSize: 24, color: Colors.white),
                       ),
                     ),
                   ],

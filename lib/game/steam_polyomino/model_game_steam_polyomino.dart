@@ -48,13 +48,13 @@ class ModelGamePolyominoPipeBlock extends SafeChangeNotifier {
   int get width => cells.isEmpty
       ? 1
       : cells.map((c) => c.x).reduce(max) -
-          cells.map((c) => c.x).reduce(min) +
-          1;
+            cells.map((c) => c.x).reduce(min) +
+            1;
   int get height => cells.isEmpty
       ? 1
       : cells.map((c) => c.y).reduce(max) -
-          cells.map((c) => c.y).reduce(min) +
-          1;
+            cells.map((c) => c.y).reduce(min) +
+            1;
 
   // 右旋 90°，任意形狀 block 皆適用
   void rotateRight() {
@@ -80,10 +80,10 @@ class ModelGamePolyominoPipeBlock extends SafeChangeNotifier {
 
   ModelGamePolyominoPipeBlock clone() {
     return ModelGamePolyominoPipeBlock(
-      id: id,
-      cells: List.from(cells),
-      connections: connections.map((c) => List<bool>.from(c)).toList(),
-    )
+        id: id,
+        cells: List.from(cells),
+        connections: connections.map((c) => List<bool>.from(c)).toList(),
+      )
       ..originX = originX
       ..originY = originY;
   }
@@ -97,13 +97,14 @@ class ModelGamePolyominoLevelData {
   final List<ModelGamePolyominoPipeBlock> availableBlocks;
   final List<Point<int>> path;
 
-  ModelGamePolyominoLevelData(
-      {required this.rows,
-      required this.cols,
-      required this.start,
-      required this.goal,
-      required this.availableBlocks,
-      required this.path});
+  ModelGamePolyominoLevelData({
+    required this.rows,
+    required this.cols,
+    required this.start,
+    required this.goal,
+    required this.availableBlocks,
+    required this.path,
+  });
 }
 
 class ModelGamePolyominoLevelFactory {
@@ -174,7 +175,11 @@ class ModelGamePolyominoLevelFactory {
   }
 
   static List<Point<int>> _generatePath(
-      Point<int> start, Point<int> goal, int rows, int level) {
+    Point<int> start,
+    Point<int> goal,
+    int rows,
+    int level,
+  ) {
     final rnd = Random();
     List<Point<int>> path;
     double rate = 20;
@@ -287,7 +292,11 @@ class ModelGamePolyominoLevelFactory {
   }
 
   static List<ModelGamePolyominoPipeBlock> pathToPipeBlocks(
-      List<Point<int>> path, Point<int> start, Point<int> goal, int level) {
+    List<Point<int>> path,
+    Point<int> start,
+    Point<int> goal,
+    int level,
+  ) {
     List<ModelGamePolyominoPipeBlock> blocks = [];
     int id = 1;
     int i = 0;
@@ -348,11 +357,13 @@ class ModelGamePolyominoLevelFactory {
         connections.add([up, right, down, left]);
       }
 
-      blocks.add(ModelGamePolyominoPipeBlock(
-        id: id++,
-        cells: cells,
-        connections: connections,
-      ));
+      blocks.add(
+        ModelGamePolyominoPipeBlock(
+          id: id++,
+          cells: cells,
+          connections: connections,
+        ),
+      );
 
       // 下一段
       i = end;

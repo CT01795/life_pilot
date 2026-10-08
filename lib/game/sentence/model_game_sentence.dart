@@ -17,14 +17,12 @@ class ModelGameSentence {
   });
 
   String buildUserAnswer(List<WordItem?> slots) {
-  return slots
-    .map((e) => e?.text ?? '')
-    .join(type == 'word' ? '' : ' ');
-}
+    return slots.map((e) => e?.text ?? '').join(type == 'word' ? '' : ' ');
+  }
 }
 
 class WordItem {
-  final String id;     // 唯一識別
+  final String id; // 唯一識別
   final String text;
 
   WordItem({required this.id, required this.text});

@@ -13,8 +13,10 @@ import '../../utils/logger.dart';
 class PageGameSteamScratchBlocklyEditor extends StatefulWidget {
   final Function(List<Command>) onCommandsReady;
 
-  const PageGameSteamScratchBlocklyEditor(
-      {super.key, required this.onCommandsReady});
+  const PageGameSteamScratchBlocklyEditor({
+    super.key,
+    required this.onCommandsReady,
+  });
 
   @override
   State<PageGameSteamScratchBlocklyEditor> createState() =>
@@ -33,9 +35,11 @@ class PageGameSteamScratchBlocklyEditorState
     logger.i("🌟 Web Editor State 建立成功：$this");
     if (!_iframeRegistered) {
       // ignore: undefined_prefixed_name
-      platformViewRegistry.registerViewFactory('blockly-iframe-scratch', (int viewId) {
+      platformViewRegistry.registerViewFactory('blockly-iframe-scratch', (
+        int viewId,
+      ) {
         final frame = html.IFrameElement()
-      ..src = 'assets/assets/blockly/index.html'
+          ..src = 'assets/assets/blockly/index.html'
           ..style.border = 'none'
           ..width = '100%'
           ..height = '100%';
@@ -101,10 +105,10 @@ class PageGameSteamScratchBlocklyEditorState
   void _sendPendingMaxBlocks() {
     if (windowMaxBlocksPending == null) return;
     logger.i("🌟 Web setMaxBlocks sendMaxBlocksToIframe");
-    iframe?.contentWindow?.postMessage(
-      {'type': 'set_max_blocks', 'maxBlocks': windowMaxBlocksPending},
-      '*',
-    );
+    iframe?.contentWindow?.postMessage({
+      'type': 'set_max_blocks',
+      'maxBlocks': windowMaxBlocksPending,
+    }, '*');
     windowMaxBlocksPending = null;
   }
 

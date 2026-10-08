@@ -117,6 +117,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get close => '닫기';
 
   @override
+  String get maximizeWindow => '창 최대화';
+
+  @override
+  String get restoreWindow => '창 복원';
+
+  @override
+  String get resizeWindow => '드래그하여 창 크기 조정';
+
+  @override
+  String get expandSection => '펼치기';
+
+  @override
+  String get collapseSection => '접기';
+
+  @override
+  String get addAccountingDetail => '가계부 내역 추가';
+
+  @override
+  String get addPointDetail => '포인트 내역 추가';
+
+  @override
   String get completeAndReview => '완료 및 돌아보기';
 
   @override
@@ -148,7 +169,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get create => '만들기';
 
   @override
-  String get dataCleanupAction => '확인 후 정리';
+  String get dataCleanupAction => '초과 또는 전체 데이터 확인 및 정리';
 
   @override
   String get dataCleanupAll => '전체 삭제';
@@ -533,7 +554,43 @@ class AppLocalizationsKo extends AppLocalizations {
   String get speak => '음성 입력';
 
   @override
-  String get speakingText => '말할 문장';
+  String get speakingText => '음성 재생';
+
+  @override
+  String get gameInstructions => '게임 설명';
+
+  @override
+  String get gameInstructionsGeneral => '화면 안내에 따라 문제를 완료하세요. 스피커로 음성을 재생할 수 있습니다. 마이크를 눌러 말하기를 시작하고 다시 눌러 완료하세요. 이동 가능한 블록은 목표 위치로 드래그한 뒤 답변 후 확인 또는 제출하세요.';
+
+  @override
+  String get startSpeaking => '눌러서 말하기 시작';
+
+  @override
+  String get finishSpeaking => '눌러서 완료';
+
+  @override
+  String get answerBeforeCheck => '답변 후 확인';
+
+  @override
+  String get dragItem => '드래그';
+
+  @override
+  String get submitAnswer => '제출';
+
+  @override
+  String get difficulty => '난이도';
+
+  @override
+  String get moveLeft => '왼쪽으로 이동';
+
+  @override
+  String get moveRight => '오른쪽으로 이동';
+
+  @override
+  String get jump => '점프';
+
+  @override
+  String get shoot => '발사';
 
   @override
   String get speakingTitle => '말하기';
@@ -1066,6 +1123,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adminSubscriptionEmail => '사용자 이메일';
 
   @override
+  String get adminSubscriptionEmailOrAllHint => '이메일을 입력해 개별 조회하거나 비운 채 검색해 전체를 표시하세요.';
+
+  @override
+  String get adminSubscriptionAllUsers => '모든 사용자의 구독 및 합산 한도';
+
+  @override
+  String adminSubscriptionActiveCount(int count) {
+    return '유효 한도 $count건';
+  }
+
+  @override
   String get adminSubscriptionEntitlementDeleted => '이 한도를 삭제했습니다. 다른 한도는 유지됩니다.';
 
   @override
@@ -1073,6 +1141,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get adminSubscriptionExpiry => '혜택 만료일';
+
+  @override
+  String get adminSubscriptionExpiryMustBeFuture => '만료일은 현재보다 이후여야 합니다. 같은 날 만료하려면 내일 이후를 선택하세요.';
+
+  @override
+  String get adminSubscriptionSimilarQuotaTitle => '유사한 한도가 이미 있습니다';
+
+  @override
+  String get adminSubscriptionSimilarQuotaMessage => '동일한 요금제, 저장 위치, 배수의 권한이 이미 있습니다. 그래도 추가할까요?';
+
+  @override
+  String get adminSubscriptionAddQuotaConfirm => '그래도 추가';
 
   @override
   String get adminSubscriptionExtend => '연장';
@@ -1290,6 +1370,20 @@ class AppLocalizationsKo extends AppLocalizations {
   String get quotaFreePeriodTitle => '용량 무제한 프로모션';
 
   @override
+  String get quotaFreePeriodTargetAccounts => '적용 계정';
+
+  @override
+  String get quotaFreePeriodTargetAccountsHint => '여러 이메일을 쉼표 또는 줄바꿈으로 구분해 입력하세요. 비워 두면 모든 일반 사용자에게 적용됩니다.';
+
+  @override
+  String get quotaFreePeriodAllUsers => '모든 일반 사용자에게 적용';
+
+  @override
+  String quotaFreePeriodSelectedUsers(int count) {
+    return '지정한 $count개 계정에만 적용';
+  }
+
+  @override
   String get quotaFreePeriodUserBanner => '프로모션 기간에는 새 데이터를 무제한으로 추가하고 클라우드와 이 기기 사이를 자유롭게 전환할 수 있습니다. 종료 후에는 기존 요금제 한도가 다시 적용됩니다.';
 
   @override
@@ -1366,6 +1460,25 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String subscriptionDowngradeWarning(String date) {
     return '클라우드 데이터가 무료 한도를 초과했습니다. $date까지 초과 데이터를 이동하거나 삭제하세요.';
+  }
+
+  @override
+  String subscriptionExpiringSoon(int days) {
+    return '구독이 $days일 이내에 만료됩니다';
+  }
+
+  @override
+  String get subscriptionExpiringCloudImpact => '갱신하지 않으면 추가와 수정이 중단됩니다. 만료 후 유효한 클라우드 한도를 초과한 데이터는 정리 절차에 들어갑니다.';
+
+  @override
+  String get subscriptionExpiringLocalImpact => '갱신하지 않으면 기기 데이터는 조회와 삭제만 가능하며 추가와 수정은 중단됩니다.';
+
+  @override
+  String get subscriptionQuotaScheduleTitle => '만료 후 한도 변화';
+
+  @override
+  String subscriptionQuotaAfterExpiry(String date) {
+    return '$date 만료 후 사용 가능 한도';
   }
 
   @override
@@ -1542,6 +1655,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get addToSchedule => '일정에 추가';
+
+  @override
+  String get addSchedule => '일정 추가';
 
   @override
   String get calendarCancelAllShares => '모든 공유 중지';
@@ -2254,6 +2370,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get memoryAdd => '추억 추가';
 
   @override
+  String get addRecordToMemoryHint => '추억에 기록 추가';
+
+  @override
+  String get expandToAddRecordHint => '펼쳐서 기록 추가';
+
+  @override
   String get memoryAddError => '추억을 다시 추가하시겠습니까';
 
   @override
@@ -2296,6 +2418,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get accountingSpeechHint => '예: 금액 추가/차감';
+
+  @override
+  String get accountingSpeechExample => '눌러서 말하세요. 예: 점심 지출 120, 급여 수입 30,000';
 
   @override
   String get accountingUnit => '';
@@ -2446,6 +2571,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pointsSpeechHint => '예: 포인트 추가/차감';
+
+  @override
+  String get pointsSpeechExample => '눌러서 말하세요. 예: 운동 10점 추가, 지각 2점 차감';
 
   @override
   String get pointsUnit => '포인트';
@@ -2832,6 +2960,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountMenuAccountDeletion => '계정 삭제';
 
   @override
+  String get accountDeletionAdminReviewHint => '계정과 데이터 삭제 요청을 관리자에게 제출합니다.';
+
+  @override
   String get accountMenuDataExport => '데이터 내보내기';
 
   @override
@@ -2866,7 +2997,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dataExportIncludedPages => '다운로드 내용: 캘린더, 추억, 회계 기록 및 포인트 기록입니다.';
 
   @override
-  String get dataExportRequestDescription => '클라우드와 기기의 개인 데이터를 Excel 파일로 직접 다운로드합니다.';
+  String get dataExportRequestDescription => '개인 데이터를 Excel로 다운로드합니다. 추천 이벤트와 장소는 제외되며, 포함된 데이터는 Excel에서 확인할 수 있습니다.';
 
   @override
   String get dataExportSummarySheet => '내보내기 요약';

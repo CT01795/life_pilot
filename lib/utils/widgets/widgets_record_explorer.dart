@@ -22,7 +22,7 @@ class RecordExplorerMetric {
   final Color color;
 }
 
-class WidgetsRecordExplorer extends StatelessWidget {
+class WidgetsRecordExplorer extends StatefulWidget {
   const WidgetsRecordExplorer({
     super.key,
     required this.searchController,
@@ -45,6 +45,19 @@ class WidgetsRecordExplorer extends StatelessWidget {
   final List<RecordExplorerMetric> metrics;
 
   @override
+  State<WidgetsRecordExplorer> createState() => _WidgetsRecordExplorerState();
+}
+
+class _WidgetsRecordExplorerState extends State<WidgetsRecordExplorer> {
+  final ScrollController _categoryScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _categoryScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Padding(
@@ -61,39 +74,47 @@ class WidgetsRecordExplorer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
-                controller: searchController,
+                controller: widget.searchController,
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: searchHint,
+                  hintText: widget.searchHint,
                   prefixIcon: const Icon(Icons.search),
-                  suffixIcon: searchController.text.isEmpty
+                  suffixIcon: widget.searchController.text.isEmpty
                       ? null
                       : IconButton(
-                          tooltip: clearTooltip,
+                          tooltip: widget.clearTooltip,
                           onPressed: () {
-                            searchController.clear();
-                            onSearchChanged('');
+                            widget.searchController.clear();
+                            widget.onSearchChanged('');
                           },
                           icon: const Icon(Icons.clear),
                         ),
                 ),
-                onChanged: onSearchChanged,
+                onChanged: widget.onSearchChanged,
               ),
               Gaps.h8,
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final category in categories) ...[
-                      FilterChip(
-                        selected: selectedCategory == category.value,
-                        label: Text(category.label),
-                        onSelected: (_) => onCategorySelected(category.value),
-                      ),
-                      Gaps.w8,
+              Scrollbar(
+                controller: _categoryScrollController,
+                thumbVisibility: true,
+                scrollbarOrientation: ScrollbarOrientation.bottom,
+                child: SingleChildScrollView(
+                  controller: _categoryScrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      for (final category in widget.categories) ...[
+                        FilterChip(
+                          selected: widget.selectedCategory == category.value,
+                          label: Text(category.label),
+                          onSelected: (_) =>
+                              widget.onCategorySelected(category.value),
+                        ),
+                        Gaps.w8,
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               Gaps.h8,
@@ -103,11 +124,17 @@ class WidgetsRecordExplorer extends StatelessWidget {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (var index = 0; index < metrics.length; index++) ...[
+                      for (
+                        var index = 0;
+                        index < widget.metrics.length;
+                        index++
+                      ) ...[
                         if (index > 0) Gaps.w8,
                         SizedBox(
                           width: width,
-                          child: _RecordMetricTile(metric: metrics[index]),
+                          child: _RecordMetricTile(
+                            metric: widget.metrics[index],
+                          ),
                         ),
                       ],
                     ],

@@ -531,7 +531,7 @@ class _PagePointRecordDetailViewState
                   children: [
                     // 麥克風按鈕
                     FloatingActionButton(
-                      tooltip: loc.pointsSpeechHint,
+                      tooltip: loc.pointsSpeechExample,
                       child: const Icon(Icons.mic_rounded, size: 30),
                       onPressed: () async {
                         final speechController = context

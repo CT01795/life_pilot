@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 
 class DraggableResizableDialog extends StatefulWidget {
   final String title;
@@ -58,6 +59,7 @@ class _DraggableResizableDialogState extends State<DraggableResizableDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final screenSize = MediaQuery.of(context).size;
     if (!initialized) {
       final compact = screenSize.width < 600;
@@ -153,6 +155,9 @@ class _DraggableResizableDialogState extends State<DraggableResizableDialog> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
+                                tooltip: isMaximized
+                                    ? loc.restoreWindow
+                                    : loc.maximizeWindow,
                                 icon: Icon(
                                   isMaximized
                                       ? Icons.close_fullscreen
@@ -164,6 +169,7 @@ class _DraggableResizableDialogState extends State<DraggableResizableDialog> {
                                 },
                               ),
                               IconButton(
+                                tooltip: loc.close,
                                 icon: const Icon(
                                   Icons.close,
                                   color: Colors.white,
@@ -191,41 +197,44 @@ class _DraggableResizableDialogState extends State<DraggableResizableDialog> {
                       Positioned(
                         right: 8,
                         bottom: 8,
-                        child: GestureDetector(
-                          onPanUpdate: (details) {
-                            setState(() {
-                              width = width! + details.delta.dx;
-                              height = height! + details.delta.dy;
-                              // 最小尺寸
-                              final minWidth = screenSize.width < 350
-                                  ? screenSize.width
-                                  : 350.0;
-                              if (width! < minWidth) {
-                                width = minWidth;
-                              }
-                              if (height! < 250) {
-                                height = 250;
-                              }
-                              // 最大尺寸
-                              if (width! > screenSize.width) {
-                                width = screenSize.width;
-                              }
-                              if (height! > screenSize.height) {
-                                height = screenSize.height;
-                              }
-                            });
-                          },
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Icon(
-                              Icons.drag_handle,
-                              size: 16,
-                              color: Colors.white,
+                        child: Tooltip(
+                          message: loc.resizeWindow,
+                          child: GestureDetector(
+                            onPanUpdate: (details) {
+                              setState(() {
+                                width = width! + details.delta.dx;
+                                height = height! + details.delta.dy;
+                                // 最小尺寸
+                                final minWidth = screenSize.width < 350
+                                    ? screenSize.width
+                                    : 350.0;
+                                if (width! < minWidth) {
+                                  width = minWidth;
+                                }
+                                if (height! < 250) {
+                                  height = 250;
+                                }
+                                // 最大尺寸
+                                if (width! > screenSize.width) {
+                                  width = screenSize.width;
+                                }
+                                if (height! > screenSize.height) {
+                                  height = screenSize.height;
+                                }
+                              });
+                            },
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.drag_handle,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),

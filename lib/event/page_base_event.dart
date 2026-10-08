@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/controller_appbar_actions.dart';
+import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -9,6 +10,7 @@ import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/service/export/service_export_excel.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:provider/provider.dart';
@@ -94,6 +96,15 @@ class _GenericEventPageState extends State<GenericEventPage> {
   @override
   void initState() {
     super.initState();
+    final page =
+        widget.controllerEvent.fromTableName == TableNames.recommendPlaces
+        ? PageType.recommendPlaces
+        : widget.controllerEvent.fromTableName == TableNames.recommendEvents
+        ? PageType.recommendEvent
+        : null;
+    if (page != null) {
+      _selectedCity = context.read<ControllerPageMain>().takePendingCity(page);
+    }
     _appBarHandler = ControllerAppBarActions(
       auth: widget.auth,
       modelEvent: widget.controllerEvent.modelEvent, // 使用頁面同一個 model

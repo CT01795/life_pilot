@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:life_pilot/game/mario_translation/bullet.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 
-// ignore: deprecated_member_use
-class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMarioTranslation> {
+class Player extends SpriteComponent
+    with KeyboardHandler, HasGameReference<PageGameMarioTranslation> {
   Vector2 velocity = Vector2.zero();
   final double speed = 200;
   final double jumpSpeed = -400;
@@ -17,7 +17,7 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
   double blinkInterval = 0.1; // 閃爍速度
 
   Player({required super.position, required super.size});
-  double get playerFixedY => gameRef.ground.position.y - gameRef.sizeX;
+  double get playerFixedY => game.ground.position.y - game.sizeX;
 
   void moveLeft(bool pressed) {
     if (pressed) {
@@ -49,7 +49,7 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
       position: position + Vector2(size.x / 2, size.y / 2),
       direction: Vector2(facing.toDouble(), 0), // ⭐ 左右
     );
-    gameRef.add(bullet);
+    game.add(bullet);
   }
 
   @override
@@ -65,7 +65,7 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
   }
 
   double shootCooldown = 0;
-  
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -80,7 +80,7 @@ class Player extends SpriteComponent with KeyboardHandler, HasGameRef<PageGameMa
       isOnGround = true;
     }
     // ⭐ 限制左右邊界
-    position.x = position.x.clamp(0, gameRef.screenW - size.x);
+    position.x = position.x.clamp(0, game.screenW - size.x);
 
     // ⭐ 閃爍邏輯
     if (isInvincible) {

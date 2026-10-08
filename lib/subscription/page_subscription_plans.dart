@@ -122,24 +122,37 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
         displayedUsage[entry.key] = SubscriptionUsage(
           resource: entry.key,
           used: current?.used ?? 0,
-          quota:
-              auth.isSysAdmin ||
-                  (currentPricingVersion.storagePlan == 'local' &&
-                      entry.value == 0)
+          quota: auth.isSysAdmin
               ? -1
-              : entry.value *
-                    (subscription.isPlus ? subscription.quotaMultiplier : 1),
+              : current?.quota ??
+                    ((currentPricingVersion.storagePlan == 'local' &&
+                            entry.value == 0)
+                        ? -1
+                        : entry.value *
+                              (subscription.isPlus
+                                  ? subscription.quotaMultiplier
+                                  : 1)),
         );
       }
     }
     final currentStoragePlan = auth.preferredStorage.name;
     final currentEntitlements = subscription.entitlements
-        .where((item) => item.storagePlan == currentStoragePlan)
+        .where(
+          (item) =>
+              item.storagePlan == currentStoragePlan &&
+              item.endsAt.isAfter(DateTime.now()),
+        )
         .toList(growable: false);
-    final displayedEntitlements = currentEntitlements.length > 1
-        ? currentEntitlements
-        : const <SubscriptionEntitlement>[];
-    final endDate = subscription.currentPeriodEnd;
+    final quotaExpiryStages = _buildQuotaExpiryStages(
+      currentEntitlements,
+      fallbackQuotas: currentStoragePlan == 'cloud'
+          ? _latestFreeCloudVersion?.quotas
+          : null,
+    ).take(2).toList(growable: false);
+    final sortedExpiryDates =
+        currentEntitlements.map((item) => item.endsAt).toList()..sort();
+    final endDate =
+        sortedExpiryDates.firstOrNull ?? subscription.currentPeriodEnd;
     final dates = MaterialLocalizations.of(context);
     String? formatDate(DateTime? value) {
       if (value == null) return null;
@@ -150,8 +163,10 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
     }
 
     final endLabel = formatDate(endDate);
-    final pricingEffectiveLabel = formatDate(subscription.pricingEffectiveAt);
     final graceLabel = formatDate(subscription.downgradeGraceEndsAt);
+    final expiryDays = endDate == null
+        ? null
+        : (endDate.toLocal().difference(DateTime.now()).inHours / 24).ceil();
     final overages = displayedUsage.values
         .where((usage) => !usage.isUnlimited && usage.used > usage.quota)
         .toList(growable: false);
@@ -199,6 +214,25 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                   : Text(loc.subscriptionInactiveAccountWarning),
             ),
           ),
+          if (!auth.isSysAdmin &&
+              subscription.isPlus &&
+              expiryDays != null &&
+              expiryDays >= 0 &&
+              expiryDays <= 15) ...[
+            Gaps.h12,
+            Card(
+              color: Theme.of(context).colorScheme.tertiaryContainer,
+              child: ListTile(
+                leading: const Icon(Icons.notification_important_outlined),
+                title: Text(loc.subscriptionExpiringSoon(expiryDays)),
+                subtitle: Text(
+                  localStorageSelected
+                      ? loc.subscriptionExpiringLocalImpact
+                      : loc.subscriptionExpiringCloudImpact,
+                ),
+              ),
+            ),
+          ],
           if (graceLabel != null && overages.isNotEmpty) ...[
             Gaps.h12,
             Card(
@@ -264,57 +298,24 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               ),
             ),
           ],
-          if (subscription.isPlus) ...[
+          if (quotaExpiryStages.isNotEmpty) ...[
             Gaps.h16,
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Wrap(
-                  spacing: 24,
-                  runSpacing: 12,
-                  children: [
-                    _Fact(
-                      label: loc.subscriptionPricingVersion,
-                      value: subscription.pricingVersionName ?? '-',
-                    ),
-                    if (pricingEffectiveLabel != null)
-                      _Fact(
-                        label: loc.subscriptionEffectiveDate,
-                        value: pricingEffectiveLabel,
-                      ),
-                    _Fact(
-                      label: loc.subscriptionQuotaMultiplier,
-                      value: '${subscription.quotaMultiplier}×',
-                    ),
-                    if (subscription.quarterlyPricePaidTwd != null)
-                      _Fact(
-                        label: loc.subscriptionQuarterlyPayment,
-                        value: 'NT\$${subscription.quarterlyPricePaidTwd}',
-                      ),
-                  ],
-                ),
-              ),
+            Text(
+              loc.subscriptionQuotaScheduleTitle,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            Gaps.h16,
-          ],
-          if (displayedEntitlements.isNotEmpty) ...[
-            ...displayedEntitlements.map(
-              (entitlement) => Card(
+            Gaps.h8,
+            ...quotaExpiryStages.map(
+              (stage) => Card(
                 child: ExpansionTile(
-                  leading: const Icon(Icons.confirmation_number_outlined),
+                  leading: const Icon(Icons.event_busy_outlined),
                   title: Text(
-                    loc.subscriptionVersionOffer(
-                      entitlement.versionName,
-                      formatDate(entitlement.effectiveAt)!,
-                      entitlement.pricePaidTwd,
+                    loc.subscriptionQuotaAfterExpiry(
+                      formatDate(stage.expiresAt)!,
                     ),
-                  ),
-                  subtitle: Text(
-                    '${entitlement.multiplier}× · '
-                    '${loc.subscriptionValidUntil(formatDate(entitlement.endsAt)!)}',
                   ),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  children: entitlement.quotas.entries
+                  children: stage.remainingQuotas.entries
                       .where(
                         (entry) =>
                             entry.key != 'answer_history_days' &&
@@ -325,8 +326,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                           loc,
                           entry.key,
                           entry.value,
-                          zeroMeansNotLimited:
-                              entitlement.storagePlan == 'local',
+                          zeroMeansNotLimited: currentStoragePlan == 'local',
                         );
                         return Row(
                           children: [
@@ -667,24 +667,42 @@ String _quotaValue(
       : value.toString();
 }
 
-class _Fact extends StatelessWidget {
-  const _Fact({required this.label, required this.value});
+class _QuotaExpiryStage {
+  const _QuotaExpiryStage({
+    required this.expiresAt,
+    required this.remainingQuotas,
+  });
 
-  final String label;
-  final String value;
+  final DateTime expiresAt;
+  final Map<String, int> remainingQuotas;
+}
 
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 150,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-        Gaps.h4,
-        Text(value, style: Theme.of(context).textTheme.titleMedium),
-      ],
-    ),
-  );
+List<_QuotaExpiryStage> _buildQuotaExpiryStages(
+  List<SubscriptionEntitlement> entitlements, {
+  Map<String, int>? fallbackQuotas,
+}) {
+  final expiries = entitlements.map((item) => item.endsAt).toSet().toList()
+    ..sort();
+  return expiries
+      .map((expiresAt) {
+        final remaining = <String, int>{...?fallbackQuotas};
+        for (final entitlement in entitlements.where(
+          (item) => item.endsAt.isAfter(expiresAt),
+        )) {
+          for (final entry in entitlement.quotas.entries) {
+            remaining.update(
+              entry.key,
+              (value) => value + entry.value * entitlement.multiplier,
+              ifAbsent: () => entry.value * entitlement.multiplier,
+            );
+          }
+        }
+        return _QuotaExpiryStage(
+          expiresAt: expiresAt,
+          remainingQuotas: remaining,
+        );
+      })
+      .toList(growable: false);
 }
 
 class _PlanCard extends StatelessWidget {

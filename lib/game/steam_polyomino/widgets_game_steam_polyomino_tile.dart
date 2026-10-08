@@ -5,13 +5,19 @@ import 'package:life_pilot/game/steam_polyomino/model_game_steam_polyomino.dart'
 class PolyominoTileWidget extends StatelessWidget {
   final ModelGamePolyominoTile tile;
   final double size;
-  const PolyominoTileWidget({super.key, required this.tile, required this.size});
+  const PolyominoTileWidget({
+    super.key,
+    required this.tile,
+    required this.size,
+  });
 
   @override
   Widget build(BuildContext context) {
     Color bg = _tileColor();
     // ⭐ 如果是 Hint 且有方向 → 顯示 Hint block 的管線
-    if ((tile.highlight && tile.hintDirs != null) || tile.type == EnumPolyominoTileType.start || tile.type == EnumPolyominoTileType.goal) {
+    if ((tile.highlight && tile.hintDirs != null) ||
+        tile.type == EnumPolyominoTileType.start ||
+        tile.type == EnumPolyominoTileType.goal) {
       return Container(
         width: size,
         height: size,
@@ -22,7 +28,7 @@ class PolyominoTileWidget extends StatelessWidget {
             tile.hintDirs?[1] ?? tile.right,
             tile.hintDirs?[2] ?? tile.down,
             tile.hintDirs?[3] ?? tile.left,
-            color:const Color(0xFF2D6EDB),
+            color: const Color(0xFF2D6EDB),
             thickness: 6,
           ),
         ),
@@ -47,7 +53,7 @@ class PolyominoTileWidget extends StatelessWidget {
                 tile.down,
                 tile.left,
                 color: const Color(0xFF4A90E2),
-                thickness:6,
+                thickness: 6,
               ),
             )
           : const SizedBox.shrink(),
@@ -72,7 +78,11 @@ class PolyominoPipePainter extends CustomPainter {
   final bool up, right, down, left;
   final Color color;
   final double thickness;
-  PolyominoPipePainter(this.up, this.right, this.down, this.left, {
+  PolyominoPipePainter(
+    this.up,
+    this.right,
+    this.down,
+    this.left, {
     this.color = Colors.orange,
     this.thickness = 6,
   });

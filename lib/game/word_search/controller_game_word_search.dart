@@ -65,8 +65,11 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
 
       await _ttsAudio.speak(text: text, languageCode: 'en-US');
     } catch (error, stackTrace) {
-      logger.e('Word search audio failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Word search audio failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -106,8 +109,11 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
         questionBank: questionBank,
       );
     } catch (error, stackTrace) {
-      logger.e('Load word search question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load word search question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
       return null;
     }
@@ -291,8 +297,11 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
-      logger.e('Submit word search answer failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Submit word search answer failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -316,8 +325,11 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
       if (_isDisposed) return;
       isFinished = true;
     } catch (error, stackTrace) {
-      logger.e('Save word search score failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Save word search score failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) loadError = error;
     } finally {
       if (!_isDisposed) {

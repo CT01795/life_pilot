@@ -1,7 +1,7 @@
 class ModelGameTranslation {
   final String questionId;
   final String question;
-  final String group; 
+  final String group;
   final List<String> options; // 3 個答案
   final String correctAnswer;
   bool? isRight;

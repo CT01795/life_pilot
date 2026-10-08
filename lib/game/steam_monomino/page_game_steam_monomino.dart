@@ -12,6 +12,7 @@ import 'package:life_pilot/game/speaking/page_game_speaking.dart';
 import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/word_search/page_game_word_search.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:life_pilot/game/steam_monomino/widgets_game_steam_monomino.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -164,6 +165,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
           },
         ),
         title: Text(loc.monominoGameTitle),
+        actions: const [GameHelpButton()],
       ),
       body: Column(
         children: [
@@ -172,9 +174,12 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
             padding: const EdgeInsets.only(left: 20),
             child: AdaptiveButtonBar(
               children: [
-                ElevatedButton(
-                  onPressed: _checkPath,
-                  child: AdaptiveButtonLabel(loc.checkPath),
+                Tooltip(
+                  message: loc.submitAnswer,
+                  child: ElevatedButton(
+                    onPressed: _checkPath,
+                    child: AdaptiveButtonLabel(loc.checkPath),
+                  ),
                 ),
                 if (controller.usedSteps > 20)
                   ElevatedButton(

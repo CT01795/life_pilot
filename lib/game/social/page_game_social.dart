@@ -4,6 +4,7 @@ import 'package:life_pilot/game/social/controller_game_social.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 
 // ignore: must_be_immutable
@@ -110,6 +111,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
               },
             ),
             title: Text(loc.gameTitleScore(loc.socialTitle, controller.score)),
+            actions: const [GameHelpButton()],
           ),
           body: SafeArea(
             child: SingleChildScrollView(

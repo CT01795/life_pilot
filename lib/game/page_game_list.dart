@@ -935,112 +935,140 @@ class _PageGameListState extends State<PageGameList> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.center, // 水平置中
                                           children: [
-                                            GestureDetector(
-                                              onTapDown: (_) {
-                                                if (game1.isLoaded) {
-                                                  game1.player.moveLeft(true);
-                                                }
-                                              },
-                                              onTapUp: (_) {
-                                                if (game1.isLoaded) {
-                                                  game1.player.moveLeft(false);
-                                                }
-                                              },
-                                              child: Container(
-                                                width: 60,
-                                                height: 60,
-                                                decoration: BoxDecoration(
-                                                  color: GameColors.buttonBase,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.white12,
+                                            Tooltip(
+                                              message: loc.moveLeft,
+                                              child: GestureDetector(
+                                                onTapDown: (_) {
+                                                  if (game1.isLoaded) {
+                                                    game1.player.moveLeft(true);
+                                                  }
+                                                },
+                                                onTapUp: (_) {
+                                                  if (game1.isLoaded) {
+                                                    game1.player.moveLeft(
+                                                      false,
+                                                    );
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: 60,
+                                                  height: 60,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        GameColors.buttonBase,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white12,
+                                                    ),
                                                   ),
-                                                ),
-                                                child: Icon(
-                                                  Icons.arrow_back_rounded,
-                                                  color: Colors.white70,
-                                                  size: 60,
+                                                  child: Icon(
+                                                    Icons.arrow_back_rounded,
+                                                    color: Colors.white70,
+                                                    size: 60,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                             Gaps.w16,
-                                            GestureDetector(
-                                              onTapDown: (_) {
-                                                if (game1.isLoaded) {
-                                                  game1.player.moveRight(true);
-                                                }
-                                              },
-                                              onTapUp: (_) {
-                                                if (game1.isLoaded) {
-                                                  game1.player.moveRight(false);
-                                                }
-                                              },
-                                              child: Container(
-                                                width: 60,
-                                                height: 60,
-                                                decoration: BoxDecoration(
-                                                  color: GameColors.buttonBase,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.white12,
+                                            Tooltip(
+                                              message: loc.moveRight,
+                                              child: GestureDetector(
+                                                onTapDown: (_) {
+                                                  if (game1.isLoaded) {
+                                                    game1.player.moveRight(
+                                                      true,
+                                                    );
+                                                  }
+                                                },
+                                                onTapUp: (_) {
+                                                  if (game1.isLoaded) {
+                                                    game1.player.moveRight(
+                                                      false,
+                                                    );
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: 60,
+                                                  height: 60,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        GameColors.buttonBase,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white12,
+                                                    ),
                                                   ),
-                                                ),
-                                                child: Icon(
-                                                  Icons.arrow_forward_rounded,
-                                                  color: Colors.white70,
-                                                  size: 60,
+                                                  child: Icon(
+                                                    Icons.arrow_forward_rounded,
+                                                    color: Colors.white70,
+                                                    size: 60,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                             Gaps.w16,
-                                            GestureDetector(
-                                              onTap: () {
-                                                if (game1.isLoaded) {
-                                                  game1.player.jump();
-                                                }
-                                              },
-                                              child: Container(
-                                                width: 60,
-                                                height: 60,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      GameColors.buttonAccent,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.white12,
+                                            Tooltip(
+                                              message: loc.jump,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  if (game1.isLoaded) {
+                                                    game1.player.jump();
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: 60,
+                                                  height: 60,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        GameColors.buttonAccent,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white12,
+                                                    ),
                                                   ),
-                                                ),
-                                                child: Icon(
-                                                  Icons.arrow_upward_rounded,
-                                                  color: Colors.white70,
-                                                  size: 60,
+                                                  child: Icon(
+                                                    Icons.arrow_upward_rounded,
+                                                    color: Colors.white70,
+                                                    size: 60,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                             Gaps.w16,
-                                            GestureDetector(
-                                              onTap: () async {
-                                                if (game1.isLoaded) {
-                                                  await game1.shoot();
-                                                }
-                                              },
-                                              child: Container(
-                                                width: 60,
-                                                height: 60,
-                                                decoration: BoxDecoration(
-                                                  color: Color(0xFFC94B4B),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: Colors.white12,
+                                            Tooltip(
+                                              message: loc.shoot,
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  if (game1.isLoaded) {
+                                                    await game1.shoot();
+                                                  }
+                                                },
+                                                child: Container(
+                                                  width: 60,
+                                                  height: 60,
+                                                  decoration: BoxDecoration(
+                                                    color: Color(0xFFC94B4B),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white12,
+                                                    ),
                                                   ),
-                                                ),
-                                                child: Icon(
-                                                  Icons.circle,
-                                                  color: Colors.white70,
+                                                  child: Icon(
+                                                    Icons.circle,
+                                                    color: Colors.white70,
+                                                  ),
                                                 ),
                                               ),
                                             ),

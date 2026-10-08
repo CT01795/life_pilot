@@ -187,8 +187,15 @@ class ControllerAuth extends SafeChangeNotifier {
     try {
       final periods = await ServiceSubscription().fetchQuotaFreePeriods();
       _scheduleQuotaFreePeriodRefresh(periods);
+      final account = _currentAccount?.trim().toLowerCase();
       final activePeriod = periods
-          .where((period) => period.isActive)
+          .where(
+            (period) =>
+                period.isActive &&
+                (period.targetAccounts.isEmpty ||
+                    (account != null &&
+                        period.targetAccounts.contains(account))),
+          )
           .firstOrNull;
       _quotaFreePeriodEndsAt = activePeriod?.endsAt;
       _quotaFreePeriodEndingInDays = null;
