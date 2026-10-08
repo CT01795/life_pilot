@@ -593,6 +593,7 @@ class _PageEventAddState extends State<PageEventAdd> {
           initialValue: ctl.isFree == null
               ? ''
               : ctl.isFree.toString().toLowerCase(), // 預設值
+          isExpanded: true,
           decoration: InputDecoration(labelText: e.value),
           items: [
             DropdownMenuItem(value: '', child: Text(loc.toBeDetermined)),
@@ -612,6 +613,7 @@ class _PageEventAddState extends State<PageEventAdd> {
           initialValue: ctl.isOutdoor == null
               ? ''
               : ctl.isOutdoor.toString().toLowerCase(), // 預設值
+          isExpanded: true,
           decoration: InputDecoration(labelText: e.value),
           items: [
             DropdownMenuItem(value: '', child: Text(loc.toBeDetermined)),

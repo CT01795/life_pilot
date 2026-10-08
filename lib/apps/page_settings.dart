@@ -21,6 +21,16 @@ class PageSettings extends StatefulWidget {
 class _PageSettingsState extends State<PageSettings> {
   bool _transferring = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ControllerAuth>().refreshSubscriptionUsage();
+      }
+    });
+  }
+
   Future<void> _move({required bool upload}) async {
     if (_transferring) return;
     final auth = context.read<ControllerAuth>();
@@ -131,7 +141,12 @@ class _PageSettingsState extends State<PageSettings> {
           localEnabled:
               auth.preferredStorage == DataStorageLocation.local ||
               auth.canUseLocalStorage,
-          localSubscriptionActive: auth.canUseLocalStorage,
+          localSubscriptionActive:
+              auth.isSysAdmin || auth.hasActiveLocalSubscription,
+          localPromotionAccess:
+              !auth.isSysAdmin &&
+              auth.quotaFreePeriodActive &&
+              !auth.hasActiveLocalSubscription,
           onChanged: auth.isAnonymous
               ? null
               : (value) {

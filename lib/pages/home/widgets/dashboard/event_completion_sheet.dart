@@ -326,41 +326,35 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
               margin: EdgeInsets.zero,
               child: Column(
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.calendar_today_outlined),
-                    title: Text(loc.recordDate),
-                    trailing: TextButton(
-                      onPressed: () async {
-                        final value = await showDatePicker(
-                          context: context,
-                          initialDate: _recordDate,
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2200),
-                        );
-                        if (value != null && mounted) {
-                          setState(() => _recordDate = value);
-                        }
-                      },
-                      child: Text(
-                        DateFormat.yMMMd(loc.localeName).format(_recordDate),
-                      ),
-                    ),
+                  _CompletionDateTimeRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: loc.recordDate,
+                    value: DateFormat.yMMMd(loc.localeName).format(_recordDate),
+                    onPressed: () async {
+                      final value = await showDatePicker(
+                        context: context,
+                        initialDate: _recordDate,
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime(2200),
+                      );
+                      if (value != null && mounted) {
+                        setState(() => _recordDate = value);
+                      }
+                    },
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.schedule_outlined),
-                    title: Text(loc.recordTime),
-                    trailing: TextButton(
-                      onPressed: () async {
-                        final value = await showTimePicker(
-                          context: context,
-                          initialTime: _recordTime,
-                        );
-                        if (value != null && mounted) {
-                          setState(() => _recordTime = value);
-                        }
-                      },
-                      child: Text(_recordTime.format(context)),
-                    ),
+                  _CompletionDateTimeRow(
+                    icon: Icons.schedule_outlined,
+                    label: loc.recordTime,
+                    value: _recordTime.format(context),
+                    onPressed: () async {
+                      final value = await showTimePicker(
+                        context: context,
+                        initialTime: _recordTime,
+                      );
+                      if (value != null && mounted) {
+                        setState(() => _recordTime = value);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -438,4 +432,39 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
             (accountingValue != null && accountingValue > 0)) &&
         (!_addPoints || (pointValue != null && pointValue > 0));
   }
+}
+
+class _CompletionDateTimeRow extends StatelessWidget {
+  const _CompletionDateTimeRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(icon),
+            Gaps.w16,
+            Expanded(child: Text(label)),
+          ],
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: TextButton(onPressed: onPressed, child: Text(value)),
+        ),
+      ],
+    ),
+  );
 }

@@ -118,24 +118,36 @@ class _AdminAccountDeletionRequestsState
                   final email = request['email']?.toString() ?? '';
                   final status = request['status']?.toString() ?? 'pending';
                   final isCancellation = status == 'cancel_pending';
-                  return ListTile(
-                    title: Text(email),
-                    subtitle: Text(
-                      isCancellation
-                          ? loc.adminAccountDeletionCancellationRequested
-                          : request['requested_at']?.toString() ?? '',
-                    ),
-                    trailing: FilledButton(
-                      onPressed: _busy || id.isEmpty
-                          ? null
-                          : () => isCancellation
-                                ? _confirmCancellation(id)
-                                : _approve(id),
-                      child: Text(
-                        isCancellation
-                            ? loc.adminAccountDeletionConfirmCancellation
-                            : loc.continueLabel,
-                      ),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(email),
+                          subtitle: Text(
+                            isCancellation
+                                ? loc.adminAccountDeletionCancellationRequested
+                                : request['requested_at']?.toString() ?? '',
+                          ),
+                        ),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: FilledButton(
+                            onPressed: _busy || id.isEmpty
+                                ? null
+                                : () => isCancellation
+                                      ? _confirmCancellation(id)
+                                      : _approve(id),
+                            child: Text(
+                              isCancellation
+                                  ? loc.adminAccountDeletionConfirmCancellation
+                                  : loc.continueLabel,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }).toList(),

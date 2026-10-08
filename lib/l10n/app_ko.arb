@@ -1,5 +1,5 @@
 {
-  "localSubscriptionRequiredForChanges": "기기 요금제 비활성／보기 및 삭제만 가능. 유효한 구독이 없어 데이터를 추가하거나 수정할 수 없습니다. 구독 후 관리자 활성화를 기다려 주세요.",
+  "localSubscriptionRequiredForChanges": "기기 요금제가 비활성 상태입니다. 조회와 삭제만 가능합니다. 구독 후 관리자에게 활성화를 요청해 주세요.",
   "@localSubscriptionRequiredForChanges": {"description": "기기 요금제가 비활성일 때 표시하는 읽기 전용 안내"},
   "quotaNotLimited": "제한 없음",
   "@quotaNotLimited": {"description": "로컬 요금제 한도 없음 표시"},
@@ -9,6 +9,8 @@
   "@subscriptionCurrentLocalInactive": {"description": "로컬 저장을 선택했지만 활성 구독이 없는 상태"},
   "subscriptionCurrentLocalPromotion": "현재 저장 위치: 이 기기(프로모션 기간 이용)",
   "@subscriptionCurrentLocalPromotion": {"description": "프로모션 기간에 로컬 저장이 임시로 제공되는 상태"},
+  "dataStorageLocalPromotionNoSubscription": "프로모션 기간에는 임시로 사용할 수 있습니다. 기기 요금제 미구독 시 종료 후에는 조회와 삭제만 가능합니다.",
+  "@dataStorageLocalPromotionNoSubscription": {"description": "유효한 기기 요금제 없이 프로모션 중 로컬 저장을 사용할 때의 안내"},
   "accountNoLongerAvailable": "계정이 삭제되었거나 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.",
   "@accountNoLongerAvailable": {"description": "원격 계정이 없거나 세션이 유효하지 않을 때 표시하는 메시지"},
   "@@locale": "ko",

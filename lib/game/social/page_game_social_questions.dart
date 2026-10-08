@@ -10,10 +10,8 @@ import 'package:provider/provider.dart';
 
 enum _StatusFilter { all, active, inactive }
 
-typedef SocialQuestionCreatePageBuilder = Widget Function(
-  String initialTitle,
-  String? initialCategory,
-);
+typedef SocialQuestionCreatePageBuilder =
+    Widget Function(String initialTitle, String? initialCategory);
 
 class PageGameSocialQuestions extends StatefulWidget {
   const PageGameSocialQuestions({
@@ -47,10 +45,10 @@ class _PageState extends State<PageGameSocialQuestions> {
 
   bool get _hasMore => _questions.length < _totalCount;
   String get _statusValue => switch (_status) {
-        _StatusFilter.all => 'all',
-        _StatusFilter.active => 'active',
-        _StatusFilter.inactive => 'inactive',
-      };
+    _StatusFilter.all => 'all',
+    _StatusFilter.active => 'active',
+    _StatusFilter.inactive => 'inactive',
+  };
 
   @override
   void initState() {
@@ -86,15 +84,19 @@ class _PageState extends State<PageGameSocialQuestions> {
       final categories = await categoriesFuture;
       if (!mounted || generation != _generation) return;
       setState(() {
-        _questions =
-            append ? [..._questions, ...page.questions] : page.questions;
+        _questions = append
+            ? [..._questions, ...page.questions]
+            : page.questions;
         _totalCount = page.totalCount;
         _categories = categories;
         _loaded = true;
       });
     } catch (error, stackTrace) {
-      logger.e('Load Social questions failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Load Social questions failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (mounted && generation == _generation) {
         if (append || _loaded) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -126,19 +128,15 @@ class _PageState extends State<PageGameSocialQuestions> {
   }
 
   Future<void> _add() async {
-    final createPage = widget.createPageBuilder?.call(
-          _appliedKeyword,
-          _selectedCategory,
-        ) ??
+    final createPage =
+        widget.createPageBuilder?.call(_appliedKeyword, _selectedCategory) ??
         PageGameSocialQuestionCreate(
           initialTitle: _appliedKeyword,
           initialCategory: _selectedCategory,
         );
     final added = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => createPage,
-      ),
+      MaterialPageRoute(builder: (_) => createPage),
     );
     if (added == true && mounted) await _load();
   }
@@ -155,21 +153,29 @@ class _PageState extends State<PageGameSocialQuestions> {
     setState(() => _busyIds.add(question.id));
     try {
       await _service.setMySocialQuestionActive(
-          id: question.id, isActive: nextValue);
+        id: question.id,
+        isActive: nextValue,
+      );
       if (!mounted) return;
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            Text(nextValue ? loc.questionReactivated : loc.questionDeactivated),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            nextValue ? loc.questionReactivated : loc.questionDeactivated,
+          ),
+        ),
+      );
     } catch (error, stackTrace) {
-      logger.e('Update Social status failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Update Social status failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.questionStatusUpdateFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.questionStatusUpdateFailed)));
       }
     } finally {
       if (mounted) setState(() => _busyIds.remove(question.id));
@@ -178,7 +184,8 @@ class _PageState extends State<PageGameSocialQuestions> {
 
   Future<void> _delete(MySocialQuestion question) async {
     final loc = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             content: Text(loc.confirmDelete),
@@ -204,17 +211,22 @@ class _PageState extends State<PageGameSocialQuestions> {
       if (!mounted) return;
       await context.read<ControllerAuth>().refreshSubscriptionUsage();
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(loc.questionDeleted)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.questionDeleted)));
     } catch (error, stackTrace) {
-      logger.e('Delete Social question failed',
-          error: error, stackTrace: stackTrace);
+      logger.e(
+        'Delete Social question failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (mounted) {
         final message = error is GameQuestionHasAnswersException
             ? loc.questionHasAnswersDeleteBlocked
             : loc.deleteError;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _busyIds.remove(question.id));
@@ -229,168 +241,172 @@ class _PageState extends State<PageGameSocialQuestions> {
       body: _loading && !_loaded
           ? const Center(child: CircularProgressIndicator())
           : _loadError && !_loaded
-              ? Center(
-                  child:
-                      ElevatedButton(onPressed: _load, child: Text(loc.retry)),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      const SubscriptionUsageBanner(
-                        resource: 'game_questions',
-                      ),
-                      if (_loading) ...[
-                        const LinearProgressIndicator(),
-                        Gaps.h16,
-                      ],
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          labelText: loc.searchKeywords,
-                          border: const OutlineInputBorder(),
-                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                            valueListenable: _searchController,
-                            builder: (context, value, _) => Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (value.text.isNotEmpty)
-                                  IconButton(
-                                    tooltip: loc.clear,
-                                    onPressed: _loading
-                                        ? null
-                                        : () {
-                                            _searchController.clear();
-                                            setState(() {
-                                              _appliedKeyword = '';
-                                            });
-                                            _load();
-                                          },
-                                    icon: const Icon(Icons.clear),
-                                  ),
-                                IconButton(
-                                  tooltip: loc.search,
-                                  onPressed: _loading ? null : _applySearch,
-                                  icon: const Icon(Icons.search),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) {
-                          if (!_loading) _applySearch();
-                        },
-                      ),
-                      Gaps.h16,
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey(_selectedCategory),
-                              initialValue: _selectedCategory,
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                labelText: loc.questionGroup,
-                                border: const OutlineInputBorder(),
+          ? Center(
+              child: ElevatedButton(onPressed: _load, child: Text(loc.retry)),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const SubscriptionUsageBanner(resource: 'game_questions'),
+                  if (_loading) ...[const LinearProgressIndicator(), Gaps.h16],
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: loc.searchKeywords,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _searchController,
+                        builder: (context, value, _) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (value.text.isNotEmpty)
+                              IconButton(
+                                tooltip: loc.clear,
+                                onPressed: _loading
+                                    ? null
+                                    : () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _appliedKeyword = '';
+                                        });
+                                        _load();
+                                      },
+                                icon: const Icon(Icons.clear),
                               ),
-                              items: _categories
-                                  .map((category) => DropdownMenuItem(
-                                        value: category,
-                                        child: Text(category,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis),
-                                      ))
-                                  .toList(),
-                              onChanged: _loading
-                                  ? null
-                                  : (value) {
-                                      setState(() => _selectedCategory = value);
-                                      _load();
-                                    },
-                            ),
-                          ),
-                          if (_selectedCategory != null) ...[
-                            Gaps.w8,
                             IconButton(
-                              tooltip: loc.clear,
-                              onPressed: _loading
-                                  ? null
-                                  : () {
-                                      setState(() => _selectedCategory = null);
-                                      _load();
-                                    },
-                              icon: const Icon(Icons.filter_alt_off),
+                              tooltip: loc.search,
+                              onPressed: _loading ? null : _applySearch,
+                              icon: const Icon(Icons.search),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) {
+                      if (!_loading) _applySearch();
+                    },
+                  ),
+                  Gaps.h16,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          key: ValueKey(_selectedCategory),
+                          initialValue: _selectedCategory,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: loc.questionGroup,
+                            border: const OutlineInputBorder(),
+                          ),
+                          items: _categories
+                              .map(
+                                (category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(
+                                    category,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _loading
+                              ? null
+                              : (value) {
+                                  setState(() => _selectedCategory = value);
+                                  _load();
+                                },
+                        ),
+                      ),
+                      if (_selectedCategory != null) ...[
+                        Gaps.w8,
+                        IconButton(
+                          tooltip: loc.clear,
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  setState(() => _selectedCategory = null);
+                                  _load();
+                                },
+                          icon: const Icon(Icons.filter_alt_off),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Gaps.h16,
+                  DropdownButtonFormField<_StatusFilter>(
+                    initialValue: _status,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: loc.questionStatus,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: _StatusFilter.all,
+                        child: Text(loc.allQuestionStatuses),
+                      ),
+                      DropdownMenuItem(
+                        value: _StatusFilter.active,
+                        child: Text(loc.activeQuestion),
+                      ),
+                      DropdownMenuItem(
+                        value: _StatusFilter.inactive,
+                        child: Text(loc.inactiveQuestion),
+                      ),
+                    ],
+                    onChanged: _loading
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _status = value);
+                              _load();
+                            }
+                          },
+                  ),
+                  Gaps.h16,
+                  Text('${_questions.length} / $_totalCount'),
+                  Gaps.h8,
+                  if (_questions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Column(
+                        children: [
+                          Text(loc.noMyQuestions),
+                          if (_appliedKeyword.isNotEmpty) ...[
+                            Gaps.h16,
+                            FilledButton.icon(
+                              onPressed: _loading ? null : _add,
+                              icon: const Icon(Icons.add),
+                              label: Text(loc.addQuestion),
                             ),
                           ],
                         ],
                       ),
-                      Gaps.h16,
-                      DropdownButtonFormField<_StatusFilter>(
-                        initialValue: _status,
-                        decoration: InputDecoration(
-                          labelText: loc.questionStatus,
-                          border: const OutlineInputBorder(),
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                              value: _StatusFilter.all,
-                              child: Text(loc.allQuestionStatuses)),
-                          DropdownMenuItem(
-                              value: _StatusFilter.active,
-                              child: Text(loc.activeQuestion)),
-                          DropdownMenuItem(
-                              value: _StatusFilter.inactive,
-                              child: Text(loc.inactiveQuestion)),
-                        ],
-                        onChanged: _loading
+                    ),
+                  ..._questions.map((question) => _card(question, loc)),
+                  if (_hasMore)
+                    Center(
+                      child: TextButton(
+                        onPressed: _loadingMore
                             ? null
-                            : (value) {
-                                if (value != null) {
-                                  setState(() => _status = value);
-                                  _load();
-                                }
-                              },
-                      ),
-                      Gaps.h16,
-                      Text('${_questions.length} / $_totalCount'),
-                      Gaps.h8,
-                      if (_questions.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Column(
-                            children: [
-                              Text(loc.noMyQuestions),
-                              if (_appliedKeyword.isNotEmpty) ...[
-                                Gaps.h16,
-                                FilledButton.icon(
-                                  onPressed: _loading ? null : _add,
-                                  icon: const Icon(Icons.add),
-                                  label: Text(loc.addQuestion),
+                            : () => _load(append: true),
+                        child: _loadingMore
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ..._questions.map((question) => _card(question, loc)),
-                      if (_hasMore)
-                        Center(
-                          child: TextButton(
-                            onPressed:
-                                _loadingMore ? null : () => _load(append: true),
-                            child: _loadingMore
-                                ? const SizedBox.square(
-                                    dimension: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : Text(loc.clickHereToSeeMore),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                              )
+                            : Text(loc.clickHereToSeeMore),
+                      ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -433,9 +449,11 @@ class _PageState extends State<PageGameSocialQuestions> {
                     PopupMenuItem(value: 'edit', child: Text(loc.edit)),
                     PopupMenuItem(
                       value: 'toggle',
-                      child: Text(question.isActive
-                          ? loc.deactivateQuestion
-                          : loc.reactivateQuestion),
+                      child: Text(
+                        question.isActive
+                            ? loc.deactivateQuestion
+                            : loc.reactivateQuestion,
+                      ),
                     ),
                     PopupMenuItem(value: 'delete', child: Text(loc.delete)),
                   ],

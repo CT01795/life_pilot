@@ -53,6 +53,7 @@ Future<ScheduleDateTimeChoice?> showScheduleDateTimeDialog(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
+        scrollable: true,
         title: Text(loc.addToSchedule),
         content: SizedBox(
           width: MediaQuery.sizeOf(context).width.clamp(0, 420).toDouble(),
@@ -66,39 +67,31 @@ Future<ScheduleDateTimeChoice?> showScheduleDateTimeDialog(
                 Text(description),
               ],
               Gaps.h16,
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: Text(loc.recordDate),
-                trailing: TextButton(
-                  onPressed: () async {
-                    final value = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime(2200),
-                    );
-                    if (value != null) setState(() => selectedDate = value);
-                  },
-                  child: Text(
-                    DateFormat.yMMMd(loc.localeName).format(selectedDate),
-                  ),
-                ),
+              _SchedulePickerRow(
+                icon: Icons.calendar_today_outlined,
+                label: loc.recordDate,
+                value: DateFormat.yMMMd(loc.localeName).format(selectedDate),
+                onPressed: () async {
+                  final value = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime(2200),
+                  );
+                  if (value != null) setState(() => selectedDate = value);
+                },
               ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.schedule_outlined),
-                title: Text(loc.recordTime),
-                trailing: TextButton(
-                  onPressed: () async {
-                    final value = await showTimePicker(
-                      context: context,
-                      initialTime: selectedTime,
-                    );
-                    if (value != null) setState(() => selectedTime = value);
-                  },
-                  child: Text(selectedTime.format(context)),
-                ),
+              _SchedulePickerRow(
+                icon: Icons.schedule_outlined,
+                label: loc.recordTime,
+                value: selectedTime.format(context),
+                onPressed: () async {
+                  final value = await showTimePicker(
+                    context: context,
+                    initialTime: selectedTime,
+                  );
+                  if (value != null) setState(() => selectedTime = value);
+                },
               ),
             ],
           ),
@@ -117,6 +110,41 @@ Future<ScheduleDateTimeChoice?> showScheduleDateTimeDialog(
           ),
         ],
       ),
+    ),
+  );
+}
+
+class _SchedulePickerRow extends StatelessWidget {
+  const _SchedulePickerRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(icon),
+            Gaps.w16,
+            Expanded(child: Text(label)),
+          ],
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: TextButton(onPressed: onPressed, child: Text(value)),
+        ),
+      ],
     ),
   );
 }

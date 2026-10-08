@@ -133,6 +133,7 @@ class _PagePointRecordDetailViewState
               (p) => p.value != 0 && p.description.trim().isNotEmpty,
             );
             return AlertDialog(
+              scrollable: true,
               title: Text(loc.recordPleaseConfirm),
               content: Column(
                 mainAxisSize: MainAxisSize.min,

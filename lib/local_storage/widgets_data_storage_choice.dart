@@ -9,6 +9,7 @@ class DataStorageChoice extends StatelessWidget {
     required this.onChanged,
     this.localEnabled = true,
     this.localSubscriptionActive = true,
+    this.localPromotionAccess = false,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class DataStorageChoice extends StatelessWidget {
   final ValueChanged<DataStorageLocation>? onChanged;
   final bool localEnabled;
   final bool localSubscriptionActive;
+  final bool localPromotionAccess;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,8 @@ class DataStorageChoice extends StatelessWidget {
               label: loc.dataStorageLocal,
               subtitle: localSubscriptionActive
                   ? null
+                  : localPromotionAccess
+                  ? loc.dataStorageLocalPromotionNoSubscription
                   : loc.localSubscriptionRequiredForChanges,
               selected: value == DataStorageLocation.local,
               enabled: onChanged != null && localEnabled,

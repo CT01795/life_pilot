@@ -119,8 +119,7 @@ class ControllerAuth extends SafeChangeNotifier {
   int? get quotaFreePeriodEndingInDays => _quotaFreePeriodEndingInDays;
   DateTime? get quotaFreePeriodEndsAt => _quotaFreePeriodEndsAt;
   bool get isPlus => isSysAdmin || _subscription.isPlus;
-  bool get canUseLocalStorage {
-    if (isSysAdmin || _quotaFreePeriodActive) return true;
+  bool get hasActiveLocalSubscription {
     final now = DateTime.now();
     final hasActiveLocalEntitlement = _subscription.entitlements.any(
       (entitlement) =>
@@ -133,6 +132,9 @@ class ControllerAuth extends SafeChangeNotifier {
         (periodEnd == null || periodEnd.isAfter(now));
     return hasActiveLocalPlan || hasActiveLocalEntitlement;
   }
+
+  bool get canUseLocalStorage =>
+      isSysAdmin || _quotaFreePeriodActive || hasActiveLocalSubscription;
 
   void _syncLocalCreatePermission() {
     final account = _currentAccount;
@@ -352,35 +354,56 @@ class ControllerAuth extends SafeChangeNotifier {
       'recommended_attractions': ?recommendedAttractionUsage,
     };
 
+    final now = DateTime.now();
     final localEntitlements =
         base.entitlements
-            .where((entitlement) => entitlement.storagePlan == 'local')
+            .where(
+              (entitlement) =>
+                  entitlement.storagePlan == 'local' &&
+                  entitlement.endsAt.isAfter(now),
+            )
             .toList(growable: false)
           ..sort((a, b) => b.endsAt.compareTo(a.endsAt));
     final localEntitlement = localEntitlements.firstOrNull;
-    final baseIsLocal = base.storagePlan == 'local';
+    final basePeriodEnd = base.currentPeriodEnd;
+    final baseIsActiveLocal =
+        base.isPlus &&
+        base.storagePlan == 'local' &&
+        (basePeriodEnd == null || basePeriodEnd.isAfter(now));
+
+    if (!baseIsActiveLocal && localEntitlement == null) {
+      return SubscriptionSnapshot(
+        plan: 'free',
+        usage: localUsage,
+        status: 'inactive',
+        storagePlan: 'local',
+        lastDataActivityAt: base.lastDataActivityAt,
+        downgradeGraceEndsAt: base.downgradeGraceEndsAt,
+        entitlements: base.entitlements,
+      );
+    }
 
     return SubscriptionSnapshot(
-      plan: baseIsLocal || localEntitlement != null ? 'plus' : base.plan,
+      plan: 'plus',
       usage: localUsage,
-      status: baseIsLocal || localEntitlement != null ? 'active' : base.status,
+      status: baseIsActiveLocal ? base.status : 'active',
       currentPeriodEnd:
           localEntitlement?.endsAt ??
-          (baseIsLocal ? base.currentPeriodEnd : null),
-      cancelAtPeriodEnd: baseIsLocal ? base.cancelAtPeriodEnd : false,
+          (baseIsActiveLocal ? basePeriodEnd : null),
+      cancelAtPeriodEnd: baseIsActiveLocal ? base.cancelAtPeriodEnd : false,
       storagePlan: 'local',
       quotaMultiplier:
           localEntitlement?.multiplier ??
-          (baseIsLocal ? base.quotaMultiplier : 1),
+          (baseIsActiveLocal ? base.quotaMultiplier : 1),
       quarterlyPricePaidTwd:
           localEntitlement?.pricePaidTwd ??
-          (baseIsLocal ? base.quarterlyPricePaidTwd : null),
+          (baseIsActiveLocal ? base.quarterlyPricePaidTwd : null),
       pricingVersionName:
           localEntitlement?.versionName ??
-          (baseIsLocal ? base.pricingVersionName : null),
+          (baseIsActiveLocal ? base.pricingVersionName : null),
       pricingEffectiveAt:
           localEntitlement?.effectiveAt ??
-          (baseIsLocal ? base.pricingEffectiveAt : null),
+          (baseIsActiveLocal ? base.pricingEffectiveAt : null),
       lastDataActivityAt: base.lastDataActivityAt,
       downgradeGraceEndsAt: base.downgradeGraceEndsAt,
       entitlements: base.entitlements,

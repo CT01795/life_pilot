@@ -296,6 +296,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
           DropdownButtonFormField<String>(
             key: ValueKey(_storagePlan),
             initialValue: _storagePlan,
+            isExpanded: true,
             decoration: InputDecoration(
               labelText: loc.adminSubscriptionStoragePlan,
               prefixIcon: const Icon(Icons.storage_outlined),

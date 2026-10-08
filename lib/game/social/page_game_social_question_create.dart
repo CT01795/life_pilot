@@ -422,6 +422,7 @@ class _PageGameSocialQuestionCreateState
             DropdownButtonFormField<int>(
               key: ValueKey('$index-$isBest-${_optionScores[index]}'),
               initialValue: isBest ? 10 : _optionScores[index],
+              isExpanded: true,
               decoration: InputDecoration(
                 labelText: loc.gameScore,
                 border: const OutlineInputBorder(),

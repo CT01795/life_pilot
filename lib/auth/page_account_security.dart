@@ -397,6 +397,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                       Gaps.h12,
                       DropdownButtonFormField<String>(
                         initialValue: _adminAccountType,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           labelText: loc.adminAccountCreateAccountType,
                           prefixIcon: const Icon(Icons.badge_outlined),

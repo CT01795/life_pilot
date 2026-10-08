@@ -201,71 +201,74 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                 animation: controller, // ← 監聽 Controller
                 builder: (context, _) {
                   final counts = controller.getRemainingCount();
-                  return Row(
-                    children: counts.entries.map((e) {
-                      EnumMonominoTileDirection dir = e.key;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                        child: Draggable<Map<String, dynamic>>(
-                          data: {
-                            'fromRow': null,
-                            'fromCol': null,
-                            'direction': dir,
-                          },
-                          feedback: Material(
-                            color: Colors.transparent,
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: counts.entries.map((e) {
+                        EnumMonominoTileDirection dir = e.key;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                          child: Draggable<Map<String, dynamic>>(
+                            data: {
+                              'fromRow': null,
+                              'fromCol': null,
+                              'direction': dir,
+                            },
+                            feedback: Material(
+                              color: Colors.transparent,
+                              child: SizedBox(
+                                width: 85,
+                                height: 36,
+                                child: Chip(
+                                  padding: EdgeInsets.zero,
+                                  label: Icon(arrowIcons[dir], size: 16),
+                                  backgroundColor: Colors.orange[300],
+                                ),
+                              ),
+                            ),
+                            dragAnchorStrategy: centerDragAnchorStrategy,
+                            childWhenDragging: SizedBox(
+                              width: 85,
+                              child: Chip(
+                                padding: EdgeInsets.all(2),
+                                labelPadding: EdgeInsets.zero,
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(arrowIcons[dir], size: 18),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      "${counts[dir] ?? 0}",
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: Colors.grey[300],
+                              ),
+                            ),
                             child: SizedBox(
                               width: 85,
-                              height: 36,
                               child: Chip(
-                                padding: EdgeInsets.zero,
-                                label: Icon(arrowIcons[dir], size: 16),
-                                backgroundColor: Colors.orange[300],
+                                padding: EdgeInsets.all(2),
+                                labelPadding: EdgeInsets.zero,
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(arrowIcons[dir], size: 22),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      "${counts[dir] ?? 0}",
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: Colors.blue[200],
                               ),
                             ),
                           ),
-                          dragAnchorStrategy: centerDragAnchorStrategy,
-                          childWhenDragging: SizedBox(
-                            width: 85,
-                            child: Chip(
-                              padding: EdgeInsets.all(2),
-                              labelPadding: EdgeInsets.zero,
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(arrowIcons[dir], size: 18),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "${counts[dir] ?? 0}",
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: Colors.grey[300],
-                            ),
-                          ),
-                          child: SizedBox(
-                            width: 85,
-                            child: Chip(
-                              padding: EdgeInsets.all(2),
-                              labelPadding: EdgeInsets.zero,
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(arrowIcons[dir], size: 22),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "${counts[dir] ?? 0}",
-                                    style: TextStyle(fontSize: 18),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: Colors.blue[200],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   );
                 },
               ),

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -9,19 +10,25 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get localSubscriptionRequiredForChanges => '本機方案未啟用／僅可查看與刪除。尚未訂閱有效的本機方案，因此無法新增或修改資料。請先完成訂閱並由管理者開通。';
+  String get localSubscriptionRequiredForChanges =>
+      '本機方案未啟用，僅可查看或刪除資料。請先訂閱並由管理者開通。';
 
   @override
   String get quotaNotLimited => '不限制';
 
   @override
-  String get subscriptionLocalRequiresActiveSubscription => '需維持有效的本機方案訂閱，才能新增或修改本機資料';
+  String get subscriptionLocalRequiresActiveSubscription =>
+      '需維持有效的本機方案訂閱，才能新增或修改本機資料';
 
   @override
   String get subscriptionCurrentLocalInactive => '目前儲存位置：此裝置（未訂閱本機方案）';
 
   @override
   String get subscriptionCurrentLocalPromotion => '目前儲存位置：此裝置（活動期間開放）';
+
+  @override
+  String get dataStorageLocalPromotionNoSubscription =>
+      '活動期間可暫時使用；尚未訂閱本機方案，活動結束後僅可查詢或刪除。';
 
   @override
   String get accountNoLongerAvailable => '此帳號已被刪除或登入已失效，請重新登入。';
@@ -181,7 +188,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataClearLocalAction => '清除本機資料';
 
   @override
-  String get dataClearLocalConfirm => '這會永久清除這台裝置上的所有個人資料，且無法復原。清除後可再嘗試切換至雲端。確定繼續嗎？';
+  String get dataClearLocalConfirm =>
+      '這會永久清除這台裝置上的所有個人資料，且無法復原。清除後可再嘗試切換至雲端。確定繼續嗎？';
 
   @override
   String get dataClearLocalFailed => '無法清除本機資料，請稍後再試';
@@ -196,7 +204,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataMoveToLocal => '將雲端資料移到此裝置';
 
   @override
-  String get dataMoveToLocalConfirm => '系統會先複製並驗證資料，再從雲端刪除。完成後資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到；換裝置、換瀏覽器或清除網站資料時不會自動出現，且可能永久遺失。確定繼續嗎？';
+  String get dataMoveToLocalConfirm =>
+      '系統會先複製並驗證資料，再從雲端刪除。完成後資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到；換裝置、換瀏覽器或清除網站資料時不會自動出現，且可能永久遺失。確定繼續嗎？';
 
   @override
   String get dataMoveToLocalFailed => '部分資料無法搬移，雲端原始資料已保留。';
@@ -441,7 +450,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get publishedContentDeleteAdminOnly => '已公開資料僅限管理員刪除。您仍可編輯，儲存後會轉為待審核。';
 
   @override
-  String get previouslyPublishedContentDeleteAdminOnly => '此資料曾經公開，僅限管理員刪除。您仍可繼續編輯並重新送審。';
+  String get previouslyPublishedContentDeleteAdminOnly =>
+      '此資料曾經公開，僅限管理員刪除。您仍可繼續編輯並重新送審。';
 
   @override
   String get submissionPermissionDenied => '目前帳號尚未取得投稿寫入權限，請聯絡管理員更新投稿權限設定。';
@@ -668,7 +678,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPasswordHelpSubject => 'Life Pilot 密碼修改申請';
 
   @override
-  String get adminPasswordResetDescription => '輸入求助者的帳號信箱，由系統產生臨時密碼。請回覆使用者，提醒登入後立即改成自己的密碼。';
+  String get adminPasswordResetDescription =>
+      '輸入求助者的帳號信箱，由系統產生臨時密碼。請回覆使用者，提醒登入後立即改成自己的密碼。';
 
   @override
   String get adminPasswordResetFailed => '無法建立臨時密碼，請稍後再試。';
@@ -709,7 +720,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get registrationAdminApprovalTitle => '驗證信額度已滿';
 
   @override
-  String get registrationAdminApprovalDescription => '目前無法寄出驗證信。可將申請內容寄給管理員；管理員核准並建立帳號後，會回覆臨時密碼，請耐心等候。';
+  String get registrationAdminApprovalDescription =>
+      '目前無法寄出驗證信。可將申請內容寄給管理員；管理員核准並建立帳號後，會回覆臨時密碼，請耐心等候。';
 
   @override
   String get registrationAdminApprovalAction => '寄給管理員';
@@ -737,7 +749,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get adminTemporaryPasswordInstruction => '請複製後回覆給使用者，並提醒使用者登入後立即到「帳號安全」修改密碼。';
+  String get adminTemporaryPasswordInstruction =>
+      '請複製後回覆給使用者，並提醒使用者登入後立即到「帳號安全」修改密碼。';
 
   @override
   String get adminTemporaryPasswordLabel => '臨時密碼';
@@ -797,7 +810,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get moduleAuthorizationNoAccess => '目前未開放額外功能。';
 
   @override
-  String get moduleAuthorizationNotDeployed => '模組授權尚未部署，請先在 Supabase 執行授權 SQL。';
+  String get moduleAuthorizationNotDeployed =>
+      '模組授權尚未部署，請先在 Supabase 執行授權 SQL。';
 
   @override
   String get moduleAuthorizationSaved => '模組授權已更新。';
@@ -1092,7 +1106,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminSubscriptionFree => '免費版';
 
   @override
-  String get adminSubscriptionInactiveWarning => '連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。';
+  String get adminSubscriptionInactiveWarning =>
+      '連續 3 個月未新增或修改資料，帳號及雲端資料會自動清除。';
 
   @override
   String get adminSubscriptionInvalidExtensionDays => '請輸入 1 至 3650 的天數。';
@@ -1201,13 +1216,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataStorageLocalPlanRequired => '請先完成本機 Plus 付款，並由管理者開通後再切換。';
 
   @override
-  String get dataStorageLocalWarning => '本機資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到。換裝置、換瀏覽器或換瀏覽器設定檔時不會自動出現；解除安裝 App、清除網站或瀏覽器資料可能永久遺失。資料在方案額度內時可移回雲端。';
+  String get dataStorageLocalWarning =>
+      '本機資料只有這台裝置、這個瀏覽器及目前的瀏覽器使用者設定檔看得到。換裝置、換瀏覽器或換瀏覽器設定檔時不會自動出現；解除安裝 App、清除網站或瀏覽器資料可能永久遺失。資料在方案額度內時可移回雲端。';
 
   @override
   String get dataStorageTitle => '儲存位置';
 
   @override
-  String dataUploadQuotaExceeded(String resource, int used, int incoming, int quota) {
+  String dataUploadQuotaExceeded(
+    String resource,
+    int used,
+    int incoming,
+    int quota,
+  ) {
     return '已取消上傳：$resource 雲端目前已有 $used 筆，本次要上傳 $incoming 筆，但方案額度為 $quota 筆。';
   }
 
@@ -1218,7 +1239,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dataUploadToCloudAction => '將本機資料移到雲端';
 
   @override
-  String get dataUploadToCloudConfirm => '系統會先檢查全部本機資料是否符合目前方案額度。只有整批上傳並驗證成功後，才會刪除這台裝置的本機資料並切換為雲端模式；若超額或失敗則維持本機模式。確定繼續嗎？';
+  String get dataUploadToCloudConfirm =>
+      '系統會先檢查全部本機資料是否符合目前方案額度。只有整批上傳並驗證成功後，才會刪除這台裝置的本機資料並切換為雲端模式；若超額或失敗則維持本機模式。確定繼續嗎？';
 
   @override
   String get dataUploadToCloudFailed => '部分本機資料無法上傳，已保留在這台裝置。';
@@ -1287,7 +1309,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get quotaFreePeriodTitle => '不限額度活動';
 
   @override
-  String get quotaFreePeriodUserBanner => '活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。';
+  String get quotaFreePeriodUserBanner =>
+      '活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。';
 
   @override
   String get quotaFreePeriodUserBannerShort => '活動期間新增資料不限量。';
@@ -1340,7 +1363,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionCommonFeatures => '兩種方案皆可使用';
 
   @override
-  String get subscriptionCommonFeaturesDetail => '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與商業企劃書僅限管理者。';
+  String get subscriptionCommonFeaturesDetail =>
+      '行事曆、記帳、積分、推薦活動與景點，以及管理者遊戲題庫。本機資料不限量；股票與商業企劃書僅限管理者。';
 
   @override
   String get subscriptionCurrentAdmin => '目前權限：管理員（不限額度）';
@@ -1384,7 +1408,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionImageStorage => '圖片容量';
 
   @override
-  String get subscriptionInactiveAccountWarning => '免費帳戶沒有到期日；若連續 3 個月沒有新增或修改資料，帳戶及雲端資料將由系統自動清除。';
+  String get subscriptionInactiveAccountWarning =>
+      '免費帳戶沒有到期日；若連續 3 個月沒有新增或修改資料，帳戶及雲端資料將由系統自動清除。';
 
   @override
   String get subscriptionLatestLocalVersionTitle => '下次付款適用的本機 Plus 版本';
@@ -1393,7 +1418,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionLocalAnswerHistory => '本機答題紀錄不限制筆數';
 
   @override
-  String get subscriptionLocalPaidFeature => '有效訂閱期間，此裝置上的紀錄與圖片不限制數量；資料不會自動出現在其他裝置';
+  String get subscriptionLocalPaidFeature =>
+      '有效訂閱期間，此裝置上的紀錄與圖片不限制數量；資料不會自動出現在其他裝置';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => '公開投稿額度';
@@ -1436,7 +1462,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionNextVersionTitle => '下次付款適用的最新版本';
 
   @override
-  String subscriptionOverageItem(String resource, int used, int quota, int excess) {
+  String subscriptionOverageItem(
+    String resource,
+    int used,
+    int quota,
+    int excess,
+  ) {
     return '$resource：已用 $used／額度 $quota，超出 $excess';
   }
 
@@ -1459,7 +1490,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionPurchaseComingSoon => 'App 內訂閱即將開放';
 
   @override
-  String get subscriptionPurchaseExplanation => '目前尚不能購買 Plus。商店付款功能上線後，此頁會顯示正式價格、續訂條款，以及購買、恢復購買與管理訂閱功能。';
+  String get subscriptionPurchaseExplanation =>
+      '目前尚不能購買 Plus。商店付款功能上線後，此頁會顯示正式價格、續訂條款，以及購買、恢復購買與管理訂閱功能。';
 
   @override
   String get subscriptionQuarterlyPayment => '每季費用';
@@ -1476,7 +1508,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get subscriptionRenewalRequired => '付費期間已結束，雲端資料目前為唯讀。請續訂，或將全部雲端資料安全搬移到這台裝置。';
+  String get subscriptionRenewalRequired =>
+      '付費期間已結束，雲端資料目前為唯讀。請續訂，或將全部雲端資料安全搬移到這台裝置。';
 
   @override
   String subscriptionUsage(int used, int quota) {
@@ -1813,7 +1846,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get eventRefreshSucceeded => '推薦活動已更新。';
 
   @override
-  String eventRefreshSucceededSummary(int successful, int attempted, int failed) {
+  String eventRefreshSucceededSummary(
+    int successful,
+    int attempted,
+    int failed,
+  ) {
     return '更新完成：共 $attempted 個來源，成功 $successful 個、失敗 $failed 個。';
   }
 
@@ -2076,7 +2113,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vendorSubmissionDescription => '讓正在安排生活的使用者看見您的活動與景點；公開後仍由原作者管理。';
 
   @override
-  String get vendorSubmissionGuideDescription => '請填寫正確日期、地點、主辦單位與報名網址。審核後對所有人公開；後續修改會重新送審。';
+  String get vendorSubmissionGuideDescription =>
+      '請填寫正確日期、地點、主辦單位與報名網址。審核後對所有人公開；後續修改會重新送審。';
 
   @override
   String get vendorSubmissionGuideTitle => '讓更多人發現您的活動';
@@ -2201,7 +2239,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mapCoordinateBackfillFailed => '無法回填地圖座標，請稍後再試。';
 
   @override
-  String mapCoordinateBackfillResult(int saved, int remaining, String coverage) {
+  String mapCoordinateBackfillResult(
+    int saved,
+    int remaining,
+    String coverage,
+  ) {
     return '本次寫入 $saved 筆，剩餘 $remaining 筆，覆蓋率 $coverage%。';
   }
 
@@ -2536,7 +2578,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get grammarBaseWord => '單字原形（例如 head）';
 
   @override
-  String get grammarQuestionHelp => '一般文法題請輸入包含答案的完整句子，例如 We are young，系統會自動把 are 變成空格。plural 分類只需輸入 head 與 heads。';
+  String get grammarQuestionHelp =>
+      '一般文法題請輸入包含答案的完整句子，例如 We are young，系統會自動把 are 變成空格。plural 分類只需輸入 head 與 heads。';
 
   @override
   String get inactiveQuestion => '已停用';
@@ -2638,7 +2681,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sentenceOrWord => '完整單字或正確句子';
 
   @override
-  String get sentenceQuestionHelp => '只要輸入完整單字或正確句子，例如 mother 或 I love apples，系統會自動拆開並建立重新排列題目。';
+  String get sentenceQuestionHelp =>
+      '只要輸入完整單字或正確句子，例如 mother 或 I love apples，系統會自動拆開並建立重新排列題目。';
 
   @override
   String get socialTitle => '社交情境';
@@ -2650,7 +2694,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get threeQuestionsRequired => '目前題庫在這個關卡的可用題目合計至少需要 3 題。';
 
   @override
-  String get translationQuestionHelp => '題目填原文，正確答案填翻譯。同一分類至少建立 3 題，遊戲才能產生兩個錯誤選項。';
+  String get translationQuestionHelp =>
+      '題目填原文，正確答案填翻譯。同一分類至少建立 3 題，遊戲才能產生兩個錯誤選項。';
 
   @override
   String get translationTitle => '翻譯';
@@ -2809,7 +2854,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountDeletionCompleted => '刪除申請已送出，等待管理者處理。';
 
   @override
-  String get accountDeletionEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
+  String get accountDeletionEmailUnavailable =>
+      '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
 
   @override
   String accountDeletionFailed(Object message) {
@@ -2820,10 +2866,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountDeletionPending => '申請中';
 
   @override
-  String get accountDeletionPendingDescription => '刪除帳號申請正在等待管理者處理。若不再刪除帳號，可以提出取消申請。';
+  String get accountDeletionPendingDescription =>
+      '刪除帳號申請正在等待管理者處理。若不再刪除帳號，可以提出取消申請。';
 
   @override
-  String get accountDeletionRequestDescription => '申請會送給管理者審核。管理者確認後才會刪除帳號與相關資料。';
+  String get accountDeletionRequestDescription =>
+      '申請會送給管理者審核。管理者確認後才會刪除帳號與相關資料。';
 
   @override
   String get accountMenuAccountDeletion => '刪除帳號';
@@ -2852,7 +2900,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dataExportEmailUnavailable => '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
+  String get dataExportEmailUnavailable =>
+      '無法開啟電子郵件程式，請寄信至 minavi@alumni.nccu.edu.tw。';
 
   @override
   String dataExportFailed(Object message) {

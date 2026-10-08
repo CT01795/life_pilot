@@ -160,77 +160,79 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
             ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    event.message,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Gaps.h8,
-                  // Restart 按鈕
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade100, // 淡紅
-                      foregroundColor: Colors.red.shade700,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      event.message,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onPressed: () async {
-                      if (!mounted) return;
-                      Navigator.of(
-                        pageContext,
-                        rootNavigator: true,
-                      ).pop(); // 關 dialog
-                      await Future.delayed(
-                        Duration(milliseconds: 100),
-                      ); // 等 dialog 關閉完成
-                      game.resetGame(); // 重置遊戲
-                    },
-                    icon: Icon(Icons.refresh, size: 22),
-                    label: Text(
-                      AppLocalizations.of(pageContext)!.restart,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
-                  Gaps.h16,
-                  // Back 按鈕
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade200, // 淡灰
-                      foregroundColor: Colors.black87,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                    Gaps.h8,
+                    // Restart 按鈕
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade100, // 淡紅
+                        foregroundColor: Colors.red.shade700,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      onPressed: () async {
+                        if (!mounted) return;
+                        Navigator.of(
+                          pageContext,
+                          rootNavigator: true,
+                        ).pop(); // 關 dialog
+                        await Future.delayed(
+                          Duration(milliseconds: 100),
+                        ); // 等 dialog 關閉完成
+                        game.resetGame(); // 重置遊戲
+                      },
+                      icon: Icon(Icons.refresh, size: 22),
+                      label: Text(
+                        AppLocalizations.of(pageContext)!.restart,
+                        style: const TextStyle(fontSize: 18),
                       ),
                     ),
-                    onPressed: () {
-                      if (!mounted) return;
-                      Navigator.of(
-                        pageContext,
-                        rootNavigator: true,
-                      ).pop(); // 關 dialog
-                      Navigator.of(pageContext).pop(true); // 回上一頁
-                    },
-                    icon: Icon(Icons.arrow_back, size: 22),
-                    label: Text(
-                      AppLocalizations.of(pageContext)!.back,
-                      style: const TextStyle(fontSize: 18),
+                    Gaps.h16,
+                    // Back 按鈕
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade200, // 淡灰
+                        foregroundColor: Colors.black87,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        if (!mounted) return;
+                        Navigator.of(
+                          pageContext,
+                          rootNavigator: true,
+                        ).pop(); // 關 dialog
+                        Navigator.of(pageContext).pop(true); // 回上一頁
+                      },
+                      icon: Icon(Icons.arrow_back, size: 22),
+                      label: Text(
+                        AppLocalizations.of(pageContext)!.back,
+                        style: const TextStyle(fontSize: 18),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

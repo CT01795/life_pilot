@@ -1,5 +1,5 @@
 {
-  "localSubscriptionRequiredForChanges": "本機方案未啟用／僅可查看與刪除。尚未訂閱有效的本機方案，因此無法新增或修改資料。請先完成訂閱並由管理者開通。",
+  "localSubscriptionRequiredForChanges": "本機方案未啟用，僅可查看或刪除資料。請先訂閱並由管理者開通。",
   "@localSubscriptionRequiredForChanges": {"description": "本機方案未訂閱或已到期時的唯讀提示"},
   "quotaNotLimited": "不限制",
   "@quotaNotLimited": {"description": "本機方案額度不設上限的顯示文字"},
@@ -9,6 +9,8 @@
   "@subscriptionCurrentLocalInactive": {"description": "選擇本機儲存但沒有有效本機訂閱的狀態"},
   "subscriptionCurrentLocalPromotion": "目前儲存位置：此裝置（活動期間開放）",
   "@subscriptionCurrentLocalPromotion": {"description": "不限額度活動期間暫時開放本機儲存的狀態"},
+  "dataStorageLocalPromotionNoSubscription": "活動期間可暫時使用；尚未訂閱本機方案，活動結束後僅可查詢或刪除。",
+  "@dataStorageLocalPromotionNoSubscription": {"description": "活動期間使用本機儲存但沒有有效本機訂閱的提醒"},
   "accountNoLongerAvailable": "此帳號已被刪除或登入已失效，請重新登入。",
   "@accountNoLongerAvailable": {"description": "遠端帳號不存在或登入憑證失效時的提示"},
   "@@locale": "zh",

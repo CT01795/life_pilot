@@ -302,6 +302,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
               DropdownButtonFormField<String>(
                 key: ValueKey(_planCode),
                 initialValue: _planCode,
+                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: loc.adminSubscriptionPlan,
                 ),
@@ -399,6 +400,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
                         plans.any((plan) => plan.id == _selectedPricingId)
                         ? _selectedPricingId
                         : null,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: loc.adminSubscriptionPricingVersion,
                     ),

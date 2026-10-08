@@ -375,6 +375,7 @@ class _PageGameListState extends State<PageGameList> {
           barrierDismissible: !saving,
           builder: (dialogContext) => StatefulBuilder(
             builder: (context, setDialogState) => AlertDialog(
+              scrollable: true,
               title: Text('${loc.add} ${loc.gameLevel}'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -709,6 +710,7 @@ class _PageGameListState extends State<PageGameList> {
                 DropdownButtonFormField<String>(
                   key: ValueKey(selectedQuestionBank),
                   initialValue: selectedQuestionBank,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: loc.questionBank,
                     border: const OutlineInputBorder(),

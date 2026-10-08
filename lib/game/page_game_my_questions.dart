@@ -10,11 +10,12 @@ import 'package:provider/provider.dart';
 
 enum _QuestionStatusFilter { all, active, inactive }
 
-typedef GameQuestionCreatePageBuilder = Widget Function(
-  String initialQuestion,
-  String? initialGroup,
-  int initialLevel,
-);
+typedef GameQuestionCreatePageBuilder =
+    Widget Function(
+      String initialQuestion,
+      String? initialGroup,
+      int initialLevel,
+    );
 
 class PageGameMyQuestions extends StatefulWidget {
   const PageGameMyQuestions({
@@ -54,10 +55,10 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   bool get _hasMore => _questions.length < _totalCount;
 
   String get _statusValue => switch (_statusFilter) {
-        _QuestionStatusFilter.all => 'all',
-        _QuestionStatusFilter.active => 'active',
-        _QuestionStatusFilter.inactive => 'inactive',
-      };
+    _QuestionStatusFilter.all => 'all',
+    _QuestionStatusFilter.active => 'active',
+    _QuestionStatusFilter.inactive => 'inactive',
+  };
 
   @override
   void initState() {
@@ -112,8 +113,9 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
         if (!mounted || generation != _loadGeneration) return;
       }
       setState(() {
-        _questions =
-            append ? [..._questions, ...page.questions] : page.questions;
+        _questions = append
+            ? [..._questions, ...page.questions]
+            : page.questions;
         _totalCount = page.totalCount;
         _groups = groups;
         _hasLoaded = true;
@@ -147,7 +149,8 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
 
   Future<void> _delete(MyGameQuestion question) async {
     final loc = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             content: Text(loc.confirmDelete),
@@ -177,9 +180,9 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
       if (!mounted) return;
       await context.read<ControllerAuth>().refreshSubscriptionUsage();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.questionDeleted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.questionDeleted)));
     } catch (error, stackTrace) {
       logger.e(
         'Delete game question failed',
@@ -190,9 +193,9 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
         final message = error is GameQuestionHasAnswersException
             ? loc.questionHasAnswersDeleteBlocked
             : loc.deleteError;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _deletingIds.remove(question.id));
@@ -214,7 +217,8 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
   }
 
   Future<void> _add() async {
-    final createPage = widget.createPageBuilder?.call(
+    final createPage =
+        widget.createPageBuilder?.call(
           _appliedKeyword,
           _selectedGroup,
           widget.initialLevel,
@@ -227,9 +231,7 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
         );
     final added = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => createPage,
-      ),
+      MaterialPageRoute(builder: (_) => createPage),
     );
     if (added == true && mounted) await _load();
   }
@@ -266,9 +268,9 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
         stackTrace: stackTrace,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.questionStatusUpdateFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.questionStatusUpdateFailed)));
       }
     } finally {
       if (mounted) setState(() => _updatingIds.remove(question.id));
@@ -283,273 +285,270 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
       body: _isLoading && !_hasLoaded
           ? const Center(child: CircularProgressIndicator())
           : _hasError && !_hasLoaded
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(loc.unknownError),
-                      Gaps.h8,
-                      ElevatedButton(
-                        onPressed: _load,
-                        child: Text(loc.retry),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc.unknownError),
+                  Gaps.h8,
+                  ElevatedButton(onPressed: _load, child: Text(loc.retry)),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const SubscriptionUsageBanner(resource: 'game_questions'),
+                  if (_isLoading) ...[
+                    const LinearProgressIndicator(),
+                    Gaps.h16,
+                  ],
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: loc.search,
+                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _searchController,
+                        builder: (context, value, _) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (value.text.isNotEmpty)
+                              IconButton(
+                                tooltip: loc.clear,
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _appliedKeyword = '';
+                                        });
+                                        _load();
+                                      },
+                                icon: const Icon(Icons.clear),
+                              ),
+                            IconButton(
+                              tooltip: loc.search,
+                              onPressed: _isLoading ? null : _applySearch,
+                              icon: const Icon(Icons.search),
+                            ),
+                          ],
+                        ),
                       ),
+                      border: const OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) {
+                      if (!_isLoading) _applySearch();
+                    },
+                  ),
+                  Gaps.h16,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          key: ValueKey(_selectedGroup),
+                          initialValue: _selectedGroup,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: loc.questionGroup,
+                            border: const OutlineInputBorder(),
+                          ),
+                          items: _groups
+                              .map(
+                                (group) => DropdownMenuItem(
+                                  value: group,
+                                  child: Tooltip(
+                                    message: group,
+                                    child: Text(
+                                      group,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _isLoading
+                              ? null
+                              : (value) {
+                                  setState(() => _selectedGroup = value);
+                                  _load();
+                                },
+                        ),
+                      ),
+                      if (_selectedGroup != null) ...[
+                        Gaps.w8,
+                        IconButton(
+                          tooltip: loc.clear,
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  setState(() => _selectedGroup = null);
+                                  _load();
+                                },
+                          icon: const Icon(Icons.filter_alt_off),
+                        ),
+                      ],
                     ],
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      const SubscriptionUsageBanner(
-                        resource: 'game_questions',
+                  Gaps.h16,
+                  DropdownButtonFormField<_QuestionStatusFilter>(
+                    initialValue: _statusFilter,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: loc.questionStatus,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: _QuestionStatusFilter.all,
+                        child: Text(loc.allQuestionStatuses),
                       ),
-                      if (_isLoading) ...[
-                        const LinearProgressIndicator(),
-                        Gaps.h16,
-                      ],
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          labelText: loc.search,
-                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                            valueListenable: _searchController,
-                            builder: (context, value, _) => Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (value.text.isNotEmpty)
-                                  IconButton(
-                                    tooltip: loc.clear,
-                                    onPressed: _isLoading
-                                        ? null
-                                        : () {
-                                            _searchController.clear();
-                                            setState(() {
-                                              _appliedKeyword = '';
-                                            });
-                                            _load();
-                                          },
-                                    icon: const Icon(Icons.clear),
-                                  ),
-                                IconButton(
-                                  tooltip: loc.search,
-                                  onPressed: _isLoading ? null : _applySearch,
-                                  icon: const Icon(Icons.search),
-                                ),
-                              ],
-                            ),
-                          ),
-                          border: const OutlineInputBorder(),
-                        ),
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) {
-                          if (!_isLoading) _applySearch();
-                        },
+                      DropdownMenuItem(
+                        value: _QuestionStatusFilter.active,
+                        child: Text(loc.activeQuestion),
                       ),
-                      Gaps.h16,
-                      Row(
+                      DropdownMenuItem(
+                        value: _QuestionStatusFilter.inactive,
+                        child: Text(loc.inactiveQuestion),
+                      ),
+                    ],
+                    onChanged: _isLoading
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _statusFilter = value);
+                              _load();
+                            }
+                          },
+                  ),
+                  Gaps.h16,
+                  if (_questions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey(_selectedGroup),
-                              initialValue: _selectedGroup,
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                labelText: loc.questionGroup,
-                                border: const OutlineInputBorder(),
-                              ),
-                              items: _groups
-                                  .map(
-                                    (group) => DropdownMenuItem(
-                                      value: group,
-                                      child: Tooltip(
-                                        message: group,
-                                        child: Text(
-                                          group,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: _isLoading
-                                  ? null
-                                  : (value) {
-                                      setState(() => _selectedGroup = value);
-                                      _load();
-                                    },
-                            ),
-                          ),
-                          if (_selectedGroup != null) ...[
-                            Gaps.w8,
-                            IconButton(
-                              tooltip: loc.clear,
-                              onPressed: _isLoading
-                                  ? null
-                                  : () {
-                                      setState(() => _selectedGroup = null);
-                                      _load();
-                                    },
-                              icon: const Icon(Icons.filter_alt_off),
+                          Text(loc.noMyQuestions),
+                          if (_appliedKeyword.isNotEmpty) ...[
+                            Gaps.h16,
+                            FilledButton.icon(
+                              onPressed: _isLoading ? null : _add,
+                              icon: const Icon(Icons.add),
+                              label: Text(loc.addQuestion),
                             ),
                           ],
                         ],
                       ),
-                      Gaps.h16,
-                      DropdownButtonFormField<_QuestionStatusFilter>(
-                        initialValue: _statusFilter,
-                        decoration: InputDecoration(
-                          labelText: loc.questionStatus,
-                          border: const OutlineInputBorder(),
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: _QuestionStatusFilter.all,
-                            child: Text(loc.allQuestionStatuses),
-                          ),
-                          DropdownMenuItem(
-                            value: _QuestionStatusFilter.active,
-                            child: Text(loc.activeQuestion),
-                          ),
-                          DropdownMenuItem(
-                            value: _QuestionStatusFilter.inactive,
-                            child: Text(loc.inactiveQuestion),
-                          ),
-                        ],
-                        onChanged: _isLoading
-                            ? null
-                            : (value) {
-                                if (value != null) {
-                                  setState(() => _statusFilter = value);
-                                  _load();
-                                }
-                              },
-                      ),
-                      Gaps.h16,
-                      if (_questions.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Column(
-                            children: [
-                              Text(loc.noMyQuestions),
-                              if (_appliedKeyword.isNotEmpty) ...[
-                                Gaps.h16,
-                                FilledButton.icon(
-                                  onPressed: _isLoading ? null : _add,
-                                  icon: const Icon(Icons.add),
-                                  label: Text(loc.addQuestion),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ..._questions.map((question) {
-                        final isBusy = _deletingIds.contains(question.id) ||
-                            _updatingIds.contains(question.id);
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: RepaintBoundary(
-                            key: ValueKey(question.id),
-                            child: Card(
-                              child: ListTile(
-                                title: Text(
-                                  question.question,
+                    ),
+                  ..._questions.map((question) {
+                    final isBusy =
+                        _deletingIds.contains(question.id) ||
+                        _updatingIds.contains(question.id);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: RepaintBoundary(
+                        key: ValueKey(question.id),
+                        child: Card(
+                          child: ListTile(
+                            title: Text(
+                              question.question,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${loc.correctAnswer}: ${question.answer}',
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${loc.correctAnswer}: ${question.answer}',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      '${loc.questionGroup}: ${question.group}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text('${loc.gameLevel}: ${question.level}'),
-                                    Text(
-                                      '${loc.questionStatus}: '
-                                      '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
-                                    ),
-                                    if (question.options?.isNotEmpty == true)
-                                      Text(
-                                        '${loc.answerOptions}: ${question.options}',
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
+                                Text(
+                                  '${loc.questionGroup}: ${question.group}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                trailing: isBusy
-                                    ? const SizedBox.square(
-                                        dimension: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : PopupMenuButton<String>(
-                                        enabled: !_isLoading,
-                                        onSelected: (action) {
-                                          if (action == 'edit') {
-                                            _edit(question);
-                                          } else if (action == 'toggle') {
-                                            _setActive(
-                                              question,
-                                              !question.isActive,
-                                            );
-                                          } else if (action == 'delete') {
-                                            _delete(question);
-                                          }
-                                        },
-                                        itemBuilder: (_) => [
-                                          PopupMenuItem(
-                                            value: 'edit',
-                                            child: Text(loc.edit),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'toggle',
-                                            child: Text(
-                                              question.isActive
-                                                  ? loc.deactivateQuestion
-                                                  : loc.reactivateQuestion,
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Text(loc.delete),
-                                          ),
-                                        ],
-                                      ),
-                              ),
+                                Text('${loc.gameLevel}: ${question.level}'),
+                                Text(
+                                  '${loc.questionStatus}: '
+                                  '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
+                                ),
+                                if (question.options?.isNotEmpty == true)
+                                  Text(
+                                    '${loc.answerOptions}: ${question.options}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
                             ),
-                          ),
-                        );
-                      }),
-                      if (_hasMore) ...[
-                        Gaps.h8,
-                        Center(
-                          child: TextButton(
-                            onPressed: _isLoadingMore
-                                ? null
-                                : () => _load(append: true),
-                            child: _isLoadingMore
+                            trailing: isBusy
                                 ? const SizedBox.square(
-                                    dimension: 20,
+                                    dimension: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : Text(loc.clickHereToSeeMore),
+                                : PopupMenuButton<String>(
+                                    enabled: !_isLoading,
+                                    onSelected: (action) {
+                                      if (action == 'edit') {
+                                        _edit(question);
+                                      } else if (action == 'toggle') {
+                                        _setActive(
+                                          question,
+                                          !question.isActive,
+                                        );
+                                      } else if (action == 'delete') {
+                                        _delete(question);
+                                      }
+                                    },
+                                    itemBuilder: (_) => [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text(loc.edit),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'toggle',
+                                        child: Text(
+                                          question.isActive
+                                              ? loc.deactivateQuestion
+                                              : loc.reactivateQuestion,
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text(loc.delete),
+                                      ),
+                                    ],
+                                  ),
                           ),
                         ),
-                      ],
-                    ],
-                  ),
-                ),
+                      ),
+                    );
+                  }),
+                  if (_hasMore) ...[
+                    Gaps.h8,
+                    Center(
+                      child: TextButton(
+                        onPressed: _isLoadingMore
+                            ? null
+                            : () => _load(append: true),
+                        child: _isLoadingMore
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(loc.clickHereToSeeMore),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
     );
   }
 }

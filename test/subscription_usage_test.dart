@@ -1,5 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/l10n/app_localizations_zh.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/local_storage/widgets_data_storage_choice.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 
@@ -47,7 +51,30 @@ void main() {
       );
 
       expect(message, loc.localSubscriptionRequiredForChanges);
-      expect(message, contains('無法新增或修改'));
+      expect(message, contains('僅可查看或刪除'));
     });
+  });
+
+  testWidgets('promotion-only local access clearly explains its limitation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DataStorageChoice(
+            value: DataStorageLocation.local,
+            onChanged: null,
+            localSubscriptionActive: false,
+            localPromotionAccess: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('活動期間可暫時使用'), findsOneWidget);
+    expect(find.textContaining('活動結束後僅可查詢或刪除'), findsOneWidget);
   });
 }

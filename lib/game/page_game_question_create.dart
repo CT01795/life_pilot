@@ -707,6 +707,7 @@ class _PageGameQuestionCreateState extends State<PageGameQuestionCreate> {
                 if (!_allowsNumberedCustomGroup)
                   DropdownButtonFormField<int>(
                     initialValue: _level,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: loc.gameLevel,
                       border: const OutlineInputBorder(),

@@ -131,6 +131,7 @@ class _PageBusinessPlanState extends State<_PageBusinessPlanBody> {
                         ),
                         subtitle: DropdownButton<String>(
                           value: plan.status,
+                          isExpanded: true,
                           isDense: true,
                           items: [
                             DropdownMenuItem(

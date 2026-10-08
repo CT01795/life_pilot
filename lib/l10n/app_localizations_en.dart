@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get localSubscriptionRequiredForChanges => 'Device plan inactive — view and delete only. You cannot add or edit data until you subscribe and an administrator activates the plan.';
+  String get localSubscriptionRequiredForChanges => 'Device plan inactive. You can only view or delete data. Subscribe and ask an administrator to activate it.';
 
   @override
   String get quotaNotLimited => 'No limit';
@@ -22,6 +22,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionCurrentLocalPromotion => 'Current storage: This device (promotion access)';
+
+  @override
+  String get dataStorageLocalPromotionNoSubscription => 'Temporarily available during the promotion. Without an active Device plan, only viewing and deletion remain after it ends.';
 
   @override
   String get accountNoLongerAvailable => 'This account was deleted or the session has expired. Please sign in again.';

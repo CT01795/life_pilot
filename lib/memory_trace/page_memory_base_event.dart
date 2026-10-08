@@ -363,9 +363,10 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
         dense: true,
         leading: const Icon(Icons.cloud_off_outlined),
         title: Text(loc.dashboardLoadFailed),
-        trailing: TextButton(
+        trailing: IconButton(
+          tooltip: loc.retry,
           onPressed: () => _controller.loadEvents(isGetPublicEvents: false),
-          child: Text(loc.retry),
+          icon: const Icon(Icons.refresh),
         ),
       ),
     );

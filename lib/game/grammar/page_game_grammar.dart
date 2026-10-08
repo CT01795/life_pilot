@@ -134,7 +134,8 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
               ),
             ),
           ),
-          body: Column(
+          body: ListView(
+            padding: const EdgeInsets.only(bottom: 16),
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(

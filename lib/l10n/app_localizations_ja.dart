@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get localSubscriptionRequiredForChanges => 'ローカルプラン未有効／表示と削除のみ。有効な契約がないため、データの追加・変更はできません。契約後、管理者による有効化をお待ちください。';
+  String get localSubscriptionRequiredForChanges => 'ローカルプランは未有効です。閲覧と削除のみできます。契約後、管理者に有効化を依頼してください。';
 
   @override
   String get quotaNotLimited => '制限なし';
@@ -22,6 +22,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionCurrentLocalPromotion => '現在の保存先：この端末（キャンペーン期間中）';
+
+  @override
+  String get dataStorageLocalPromotionNoSubscription => 'キャンペーン期間中は一時的に利用できます。ローカルプラン未契約の場合、終了後は閲覧と削除のみ可能です。';
 
   @override
   String get accountNoLongerAvailable => 'このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。';

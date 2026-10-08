@@ -1,5 +1,5 @@
 {
-  "localSubscriptionRequiredForChanges": "ローカルプラン未有効／表示と削除のみ。有効な契約がないため、データの追加・変更はできません。契約後、管理者による有効化をお待ちください。",
+  "localSubscriptionRequiredForChanges": "ローカルプランは未有効です。閲覧と削除のみできます。契約後、管理者に有効化を依頼してください。",
   "@localSubscriptionRequiredForChanges": {"description": "ローカルプランが無効な場合の読み取り専用メッセージ"},
   "quotaNotLimited": "制限なし",
   "@quotaNotLimited": {"description": "ローカルプランの上限なし表示"},
@@ -9,6 +9,8 @@
   "@subscriptionCurrentLocalInactive": {"description": "ローカル保存を選択しているが有効な契約がない状態"},
   "subscriptionCurrentLocalPromotion": "現在の保存先：この端末（キャンペーン期間中）",
   "@subscriptionCurrentLocalPromotion": {"description": "キャンペーン期間中にローカル保存が一時的に利用できる状態"},
+  "dataStorageLocalPromotionNoSubscription": "キャンペーン期間中は一時的に利用できます。ローカルプラン未契約の場合、終了後は閲覧と削除のみ可能です。",
+  "@dataStorageLocalPromotionNoSubscription": {"description": "有効なローカルプランなしでキャンペーン中にローカル保存を利用する場合の案内"},
   "accountNoLongerAvailable": "このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。",
   "@accountNoLongerAvailable": {"description": "リモートアカウントが存在しない、またはセッションが無効な場合のメッセージ"},
   "@@locale": "ja",

@@ -102,7 +102,7 @@ abstract class AppLocalizations {
   /// Read-only notice when the Device plan is inactive
   ///
   /// In en, this message translates to:
-  /// **'Device plan inactive — view and delete only. You cannot add or edit data until you subscribe and an administrator activates the plan.'**
+  /// **'Device plan inactive. You can only view or delete data. Subscribe and ask an administrator to activate it.'**
   String get localSubscriptionRequiredForChanges;
 
   /// Label for an unlimited local-plan quota
@@ -120,7 +120,7 @@ abstract class AppLocalizations {
   /// Local storage is selected without an active Device plan
   ///
   /// In en, this message translates to:
-  /// **'Current storage: This device (no active Device plan)'**
+  /// **'Current storage: This device (no active Device plan; view or delete only)'**
   String get subscriptionCurrentLocalInactive;
 
   /// Local storage is temporarily available during a no-limit promotion
@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current storage: This device (promotion access)'**
   String get subscriptionCurrentLocalPromotion;
+
+  /// Notice shown when promotion access allows local storage without an active Device plan
+  ///
+  /// In en, this message translates to:
+  /// **'Temporarily available during the promotion. Without an active Device plan, only viewing and deletion remain after it ends.'**
+  String get dataStorageLocalPromotionNoSubscription;
 
   /// Shown when the remote account no longer exists or its session is invalid
   ///

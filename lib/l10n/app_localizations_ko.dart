@@ -9,7 +9,7 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get localSubscriptionRequiredForChanges => '기기 요금제 비활성／보기 및 삭제만 가능. 유효한 구독이 없어 데이터를 추가하거나 수정할 수 없습니다. 구독 후 관리자 활성화를 기다려 주세요.';
+  String get localSubscriptionRequiredForChanges => '기기 요금제가 비활성 상태입니다. 조회와 삭제만 가능합니다. 구독 후 관리자에게 활성화를 요청해 주세요.';
 
   @override
   String get quotaNotLimited => '제한 없음';
@@ -22,6 +22,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionCurrentLocalPromotion => '현재 저장 위치: 이 기기(프로모션 기간 이용)';
+
+  @override
+  String get dataStorageLocalPromotionNoSubscription => '프로모션 기간에는 임시로 사용할 수 있습니다. 기기 요금제 미구독 시 종료 후에는 조회와 삭제만 가능합니다.';
 
   @override
   String get accountNoLongerAvailable => '계정이 삭제되었거나 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.';

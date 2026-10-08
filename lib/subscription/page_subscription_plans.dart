@@ -33,6 +33,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   void initState() {
     super.initState();
     _reloadPricingVersions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ControllerAuth>().refreshSubscriptionUsage();
+      }
+    });
   }
 
   void _reloadPricingVersions() {
@@ -81,14 +86,18 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
     final localStorageSelected =
         auth.preferredStorage == DataStorageLocation.local;
     final currentPricingVersion = localStorageSelected
-        ? _availableVersions
-                  .where(
-                    (version) =>
-                        version.storagePlan == 'local' &&
-                        version.name == subscription.pricingVersionName,
-                  )
-                  .firstOrNull ??
-              _latestLocalVersion
+        ? auth.canUseLocalStorage &&
+                  subscription.isPlus &&
+                  subscription.storagePlan == 'local'
+              ? _availableVersions
+                        .where(
+                          (version) =>
+                              version.storagePlan == 'local' &&
+                              version.name == subscription.pricingVersionName,
+                        )
+                        .firstOrNull ??
+                    _latestLocalVersion
+              : null
         : subscription.isPlus
         ? _availableVersions
               .where(
