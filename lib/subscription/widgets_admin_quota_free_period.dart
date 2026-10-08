@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
@@ -16,6 +17,7 @@ class AdminQuotaFreePeriod extends StatefulWidget {
 class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
   final _service = ServiceSubscription();
   final _nameController = TextEditingController();
+  final _reminderDaysController = TextEditingController();
   List<QuotaFreePeriod> _periods = const [];
   String? _editingId;
   DateTime _startsAt = DateTime.now();
@@ -33,12 +35,14 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
   @override
   void dispose() {
     _nameController.dispose();
+    _reminderDaysController.dispose();
     super.dispose();
   }
 
   void _resetForm() {
     _editingId = null;
     _nameController.clear();
+    _reminderDaysController.clear();
     _startsAt = DateTime.now();
     _endsAt = DateTime.now().add(const Duration(days: 30));
     _enabled = true;
@@ -62,6 +66,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
     setState(() {
       _editingId = period.id;
       _nameController.text = period.name;
+      _reminderDaysController.text = period.reminderDays?.toString() ?? '';
       _startsAt = period.startsAt;
       _endsAt = period.endsAt;
       _enabled = period.enabled;
@@ -90,6 +95,13 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
       AppNavigator.showSnackBar(loc.quotaFreePeriodInvalidRange);
       return;
     }
+    final reminderText = _reminderDaysController.text.trim();
+    final reminderDays = int.tryParse(reminderText);
+    if (reminderText.isNotEmpty &&
+        (reminderDays == null || reminderDays < 1 || reminderDays > 365)) {
+      AppNavigator.showSnackBar(loc.quotaFreePeriodReminderDaysInvalid);
+      return;
+    }
     setState(() => _saving = true);
     try {
       await _service.saveQuotaFreePeriodAsAdmin(
@@ -98,6 +110,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
         startsAt: _startsAt,
         endsAt: _endsAt,
         enabled: _enabled,
+        reminderDays: reminderDays,
       );
       if (!mounted) return;
       _resetForm();
@@ -201,7 +214,8 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
                   subtitle: Text(
                     '${formatter.format(period.startsAt)} – '
                     '${formatter.format(period.endsAt)}\n'
-                    '${_statusLabel(loc, period)}',
+                    '${_statusLabel(loc, period)}'
+                    '${period.reminderDays == null ? '' : '\n${loc.quotaFreePeriodReminderSummary(period.reminderDays!)}'}',
                   ),
                   isThreeLine: true,
                   trailing: Wrap(
@@ -236,6 +250,17 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
               decoration: InputDecoration(
                 labelText: loc.quotaFreePeriodName,
                 prefixIcon: const Icon(Icons.campaign_outlined),
+              ),
+            ),
+            Gaps.h12,
+            TextField(
+              controller: _reminderDaysController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                labelText: loc.quotaFreePeriodReminderDays,
+                helperText: loc.quotaFreePeriodReminderDaysHint,
+                prefixIcon: const Icon(Icons.notifications_active_outlined),
               ),
             ),
             Gaps.h12,

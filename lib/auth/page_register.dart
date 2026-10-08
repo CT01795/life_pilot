@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/model_auth_view.dart';
+import 'package:life_pilot/auth/service_account_security.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/widgets/dialogs/legal_document_dialog.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -104,8 +105,56 @@ class _PageRegisterState extends State<PageRegister> {
     }
 
     if (mounted && error.isNotEmpty) {
+      if (error == ErrorFields.emailRateLimitExceededError) {
+        await _requestAdministratorApproval(loc, email);
+        return;
+      }
       AppNavigator.showErrorBar(
         _authView.showLoginError(message: error, loc: loc),
+      );
+    }
+  }
+
+  Future<void> _requestAdministratorApproval(
+    AppLocalizations loc,
+    String email,
+  ) async {
+    final accountType = _authView.registrationAccountType == 'vendor'
+        ? loc.vendorRegistrationTitle
+        : loc.personalAccountTitle;
+    final contact =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(loc.registrationAdminApprovalTitle),
+            content: Text(loc.registrationAdminApprovalDescription),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(loc.cancel),
+              ),
+              FilledButton.icon(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                icon: const Icon(Icons.forward_to_inbox_outlined),
+                label: Text(loc.registrationAdminApprovalAction),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!contact || !mounted) return;
+    final opened = await ServiceAccountSecurity().contactAdministrator(
+      subject: loc.registrationAdminApprovalSubject,
+      body: loc.registrationAdminApprovalBody(email, accountType),
+    );
+    if (!mounted) return;
+    if (opened) {
+      AppNavigator.showSnackBar(loc.registrationAdminApprovalOpened);
+    } else {
+      AppNavigator.showErrorBar(
+        loc.adminPasswordHelpEmailUnavailable(
+          ServiceAccountSecurity.administratorEmail,
+        ),
       );
     }
   }

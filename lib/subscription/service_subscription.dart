@@ -22,6 +22,7 @@ class ServiceSubscription {
     required DateTime startsAt,
     required DateTime endsAt,
     required bool enabled,
+    int? reminderDays,
   }) async {
     await supabase.rpc(
       'admin_set_quota_free_period',
@@ -31,6 +32,7 @@ class ServiceSubscription {
         'p_starts_at': startsAt.toUtc().toIso8601String(),
         'p_ends_at': endsAt.toUtc().toIso8601String(),
         'p_enabled': enabled,
+        'p_reminder_days': reminderDays,
       },
     );
   }
@@ -469,6 +471,7 @@ class QuotaFreePeriod {
     required this.endsAt,
     required this.enabled,
     required this.isActive,
+    this.reminderDays,
   });
 
   final String id;
@@ -477,6 +480,7 @@ class QuotaFreePeriod {
   final DateTime endsAt;
   final bool enabled;
   final bool isActive;
+  final int? reminderDays;
 
   factory QuotaFreePeriod.fromJson(Map<String, dynamic> json) =>
       QuotaFreePeriod(
@@ -486,6 +490,7 @@ class QuotaFreePeriod {
         endsAt: DateTime.parse(json['ends_at'].toString()).toLocal(),
         enabled: json['enabled'] == true,
         isActive: json['is_active'] == true,
+        reminderDays: (json['reminder_days'] as num?)?.toInt(),
       );
 }
 

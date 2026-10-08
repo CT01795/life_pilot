@@ -668,6 +668,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPasswordResetUserNotFound => '找不到這個使用者帳號。';
 
   @override
+  String get adminAccountCreateAccountType => '帳號類型';
+
+  @override
+  String get adminAccountCreateAction => '核准並建立帳號';
+
+  @override
+  String get adminAccountCreateAlreadyExists => '此信箱已有帳號，請改用重設密碼功能。';
+
+  @override
+  String get adminAccountCreateFailed => '無法建立帳號，請稍後再試。';
+
+  @override
+  String adminAccountCreateSuccessful(String email) {
+    return '已建立 $email，請將臨時密碼安全回覆給使用者。';
+  }
+
+  @override
+  String get personalAccountTitle => '一般使用者帳號';
+
+  @override
+  String get registrationAdminApprovalTitle => '驗證信額度已滿';
+
+  @override
+  String get registrationAdminApprovalDescription => '目前無法寄出驗證信。可將申請內容寄給管理員；管理員核准並建立帳號後，會回覆臨時密碼，請耐心等候。';
+
+  @override
+  String get registrationAdminApprovalAction => '寄給管理員';
+
+  @override
+  String get registrationAdminApprovalSubject => 'Life Pilot 帳號建立申請';
+
+  @override
+  String registrationAdminApprovalBody(String email, String accountType) {
+    return '申請信箱：$email\n帳號類型：$accountType\n\n因驗證信額度已滿，請管理員核准後協助建立帳號，並回覆臨時密碼。';
+  }
+
+  @override
+  String get registrationAdminApprovalOpened => '已開啟郵件草稿；送出後請等待管理員核准。';
+
+  @override
   String get adminTemporaryPasswordCopied => '已複製臨時密碼。';
 
   @override
@@ -1229,6 +1269,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get quotaFreePeriodTitle => '不限額度活動';
 
   @override
+  String get quotaFreePeriodUserBanner => '活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。';
+
+  @override
+  String get quotaFreePeriodEndingToday => '活動將於今天結束。';
+
+  @override
+  String quotaFreePeriodEndingInDays(int days) {
+    return '活動將於 $days 天後結束。';
+  }
+
+  @override
+  String get quotaFreePeriodReminderDays => '結束前提醒天數（選填）';
+
+  @override
+  String get quotaFreePeriodReminderDaysHint => '留空時只顯示一般活動說明直到結束當天。';
+
+  @override
+  String get quotaFreePeriodReminderDaysInvalid => '提醒天數請輸入 1～365，或留空。';
+
+  @override
+  String quotaFreePeriodReminderSummary(int days) {
+    return '結束前 $days 天提醒使用者';
+  }
+
+  @override
   String get quotaFreePeriodUnnamed => '未命名活動';
 
   @override
@@ -1300,6 +1365,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => '此裝置上的紀錄與圖片不限量；資料不會自動出現在其他裝置';
+
+  @override
+  String get subscriptionLocalPublicSubmissionTitle => '公開投稿額度';
+
+  @override
+  String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
+    return '推薦活動 $events 筆、推薦景點 $attractions 筆';
+  }
 
   @override
   String get subscriptionLocalPaidName => '本機 Plus';

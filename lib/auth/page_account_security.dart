@@ -31,6 +31,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   String? _temporaryPassword;
+  String _adminAccountType = 'personal';
 
   @override
   void dispose() {
@@ -146,6 +147,39 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
       );
     } catch (_) {
       if (mounted) AppNavigator.showErrorBar(loc.adminPasswordResetFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _createUserAccount() async {
+    final loc = AppLocalizations.of(context)!;
+    final auth = context.read<ControllerAuth>();
+    final email = _adminUserEmail.text.trim();
+    if (_busy || !auth.isSysAdmin) return;
+    if (email.isEmpty || !email.contains('@')) {
+      AppNavigator.showErrorBar(loc.invalidEmail);
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final password = await _service.createAccountForUser(
+        email: email,
+        accountType: _adminAccountType,
+      );
+      if (!mounted) return;
+      setState(() => _temporaryPassword = password);
+      AppNavigator.showSnackBar(loc.adminAccountCreateSuccessful(email));
+    } on ServiceApiException catch (error) {
+      if (!mounted) return;
+      AppNavigator.showErrorBar(
+        error.statusCode == 409
+            ? loc.adminAccountCreateAlreadyExists
+            : loc.adminAccountCreateFailed,
+      );
+    } catch (_) {
+      if (mounted) AppNavigator.showErrorBar(loc.adminAccountCreateFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -361,10 +395,48 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
                         },
                       ),
                       Gaps.h12,
-                      FilledButton.tonalIcon(
-                        onPressed: _busy ? null : _createTemporaryPassword,
-                        icon: const Icon(Icons.password_outlined),
-                        label: AdaptiveButtonLabel(loc.adminPasswordResetSend),
+                      DropdownButtonFormField<String>(
+                        initialValue: _adminAccountType,
+                        decoration: InputDecoration(
+                          labelText: loc.adminAccountCreateAccountType,
+                          prefixIcon: const Icon(Icons.badge_outlined),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'personal',
+                            child: Text(loc.personalAccountTitle),
+                          ),
+                          DropdownMenuItem(
+                            value: 'vendor',
+                            child: Text(loc.vendorRegistrationTitle),
+                          ),
+                        ],
+                        onChanged: _busy
+                            ? null
+                            : (value) => setState(
+                                () => _adminAccountType = value ?? 'personal',
+                              ),
+                      ),
+                      Gaps.h12,
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: [
+                          FilledButton.tonalIcon(
+                            onPressed: _busy ? null : _createUserAccount,
+                            icon: const Icon(Icons.person_add_alt_1_outlined),
+                            label: AdaptiveButtonLabel(
+                              loc.adminAccountCreateAction,
+                            ),
+                          ),
+                          FilledButton.tonalIcon(
+                            onPressed: _busy ? null : _createTemporaryPassword,
+                            icon: const Icon(Icons.password_outlined),
+                            label: AdaptiveButtonLabel(
+                              loc.adminPasswordResetSend,
+                            ),
+                          ),
+                        ],
                       ),
                       if (_temporaryPassword case final password?) ...[
                         Gaps.h16,

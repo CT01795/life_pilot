@@ -668,6 +668,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adminPasswordResetUserNotFound => '이 이메일의 사용자를 찾을 수 없습니다.';
 
   @override
+  String get adminAccountCreateAccountType => '계정 유형';
+
+  @override
+  String get adminAccountCreateAction => '승인 후 계정 만들기';
+
+  @override
+  String get adminAccountCreateAlreadyExists => '이 이메일로 만든 계정이 이미 있습니다. 비밀번호 재설정을 이용하세요.';
+
+  @override
+  String get adminAccountCreateFailed => '계정을 만들 수 없습니다. 잠시 후 다시 시도하세요.';
+
+  @override
+  String adminAccountCreateSuccessful(String email) {
+    return '$email 계정을 만들었습니다. 임시 비밀번호를 사용자에게 안전하게 전달하세요.';
+  }
+
+  @override
+  String get personalAccountTitle => '일반 사용자 계정';
+
+  @override
+  String get registrationAdminApprovalTitle => '인증 메일 한도 도달';
+
+  @override
+  String get registrationAdminApprovalDescription => '현재 인증 메일을 보낼 수 없습니다. 관리자에게 신청을 보내고 승인을 기다리세요. 계정이 생성되면 관리자가 임시 비밀번호를 회신합니다.';
+
+  @override
+  String get registrationAdminApprovalAction => '관리자에게 이메일';
+
+  @override
+  String get registrationAdminApprovalSubject => 'Life Pilot 계정 생성 신청';
+
+  @override
+  String registrationAdminApprovalBody(String email, String accountType) {
+    return '신청 이메일: $email\n계정 유형: $accountType\n\n인증 메일 한도에 도달했습니다. 승인 후 계정을 생성하고 임시 비밀번호를 회신해 주세요.';
+  }
+
+  @override
+  String get registrationAdminApprovalOpened => '메일 초안을 열었습니다. 전송 후 관리자 승인을 기다리세요.';
+
+  @override
   String get adminTemporaryPasswordCopied => '임시 비밀번호를 복사했습니다.';
 
   @override
@@ -1229,6 +1269,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get quotaFreePeriodTitle => '용량 무제한 프로모션';
 
   @override
+  String get quotaFreePeriodUserBanner => '프로모션 기간에는 새 데이터를 무제한으로 추가하고 클라우드와 이 기기 사이를 자유롭게 전환할 수 있습니다. 종료 후에는 기존 요금제 한도가 다시 적용됩니다.';
+
+  @override
+  String get quotaFreePeriodEndingToday => '프로모션이 오늘 종료됩니다.';
+
+  @override
+  String quotaFreePeriodEndingInDays(int days) {
+    return '프로모션이 $days일 후 종료됩니다.';
+  }
+
+  @override
+  String get quotaFreePeriodReminderDays => '종료 전 알림 일수(선택)';
+
+  @override
+  String get quotaFreePeriodReminderDaysHint => '비워 두면 마지막 날까지 기본 프로모션 안내만 표시합니다.';
+
+  @override
+  String get quotaFreePeriodReminderDaysInvalid => '알림 일수는 1~365로 입력하거나 비워 두세요.';
+
+  @override
+  String quotaFreePeriodReminderSummary(int days) {
+    return '종료 $days일 전부터 사용자에게 알림';
+  }
+
+  @override
   String get quotaFreePeriodUnnamed => '이름 없는 프로모션';
 
   @override
@@ -1300,6 +1365,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => '이 기기의 기록과 이미지는 무제한이며 다른 기기에 자동 표시되지 않습니다';
+
+  @override
+  String get subscriptionLocalPublicSubmissionTitle => '공개 게시 한도';
+
+  @override
+  String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
+    return '추천 활동 $events개, 추천 장소 $attractions개';
+  }
 
   @override
   String get subscriptionLocalPaidName => '기기 Plus';

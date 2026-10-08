@@ -668,6 +668,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPasswordResetUserNotFound => 'No user was found for this email.';
 
   @override
+  String get adminAccountCreateAccountType => 'Account type';
+
+  @override
+  String get adminAccountCreateAction => 'Approve and create';
+
+  @override
+  String get adminAccountCreateAlreadyExists => 'An account already exists for this email. Use password reset instead.';
+
+  @override
+  String get adminAccountCreateFailed => 'The account could not be created. Try again later.';
+
+  @override
+  String adminAccountCreateSuccessful(String email) {
+    return 'Created $email. Send the temporary password to the user securely.';
+  }
+
+  @override
+  String get personalAccountTitle => 'Personal account';
+
+  @override
+  String get registrationAdminApprovalTitle => 'Verification email limit reached';
+
+  @override
+  String get registrationAdminApprovalDescription => 'A verification email cannot be sent right now. Send the request to the administrator and wait for approval. After creating the account, the administrator will reply with a temporary password.';
+
+  @override
+  String get registrationAdminApprovalAction => 'Email administrator';
+
+  @override
+  String get registrationAdminApprovalSubject => 'Life Pilot account request';
+
+  @override
+  String registrationAdminApprovalBody(String email, String accountType) {
+    return 'Requested email: $email\nAccount type: $accountType\n\nThe verification email limit was reached. Please approve and create this account, then reply with a temporary password.';
+  }
+
+  @override
+  String get registrationAdminApprovalOpened => 'The email draft is open. Send it and wait for administrator approval.';
+
+  @override
   String get adminTemporaryPasswordCopied => 'Temporary password copied.';
 
   @override
@@ -1229,6 +1269,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quotaFreePeriodTitle => 'No-limit promotion';
 
   @override
+  String get quotaFreePeriodUserBanner => 'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.';
+
+  @override
+  String get quotaFreePeriodEndingToday => 'This promotion ends today.';
+
+  @override
+  String quotaFreePeriodEndingInDays(int days) {
+    return 'This promotion ends in $days days.';
+  }
+
+  @override
+  String get quotaFreePeriodReminderDays => 'Remind before ending (days, optional)';
+
+  @override
+  String get quotaFreePeriodReminderDaysHint => 'Leave blank to show only the standard promotion message through the final day.';
+
+  @override
+  String get quotaFreePeriodReminderDaysInvalid => 'Enter 1–365 reminder days, or leave it blank.';
+
+  @override
+  String quotaFreePeriodReminderSummary(int days) {
+    return 'Notify users $days days before ending';
+  }
+
+  @override
   String get quotaFreePeriodUnnamed => 'Unnamed promotion';
 
   @override
@@ -1300,6 +1365,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => 'Unlimited records and photos on this device; data does not automatically appear on other devices';
+
+  @override
+  String get subscriptionLocalPublicSubmissionTitle => 'Public submission limits';
+
+  @override
+  String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
+    return '$events recommended activities and $attractions recommended places';
+  }
 
   @override
   String get subscriptionLocalPaidName => 'Device Plus';

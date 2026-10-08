@@ -1377,6 +1377,78 @@ abstract class AppLocalizations {
   /// **'No user was found for this email.'**
   String get adminPasswordResetUserNotFound;
 
+  /// Account type for administrator-created users
+  ///
+  /// In en, this message translates to:
+  /// **'Account type'**
+  String get adminAccountCreateAccountType;
+
+  /// Create an approved user without verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Approve and create'**
+  String get adminAccountCreateAction;
+
+  /// Administrator account creation duplicate error
+  ///
+  /// In en, this message translates to:
+  /// **'An account already exists for this email. Use password reset instead.'**
+  String get adminAccountCreateAlreadyExists;
+
+  /// Administrator account creation failure
+  ///
+  /// In en, this message translates to:
+  /// **'The account could not be created. Try again later.'**
+  String get adminAccountCreateFailed;
+
+  /// No description provided for @adminAccountCreateSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {email}. Send the temporary password to the user securely.'**
+  String adminAccountCreateSuccessful(String email);
+
+  /// Personal account type
+  ///
+  /// In en, this message translates to:
+  /// **'Personal account'**
+  String get personalAccountTitle;
+
+  /// Registration email quota fallback title
+  ///
+  /// In en, this message translates to:
+  /// **'Verification email limit reached'**
+  String get registrationAdminApprovalTitle;
+
+  /// Registration email quota fallback instructions
+  ///
+  /// In en, this message translates to:
+  /// **'A verification email cannot be sent right now. Send the request to the administrator and wait for approval. After creating the account, the administrator will reply with a temporary password.'**
+  String get registrationAdminApprovalDescription;
+
+  /// Open an email draft for administrator approval
+  ///
+  /// In en, this message translates to:
+  /// **'Email administrator'**
+  String get registrationAdminApprovalAction;
+
+  /// Administrator account approval email subject
+  ///
+  /// In en, this message translates to:
+  /// **'Life Pilot account request'**
+  String get registrationAdminApprovalSubject;
+
+  /// No description provided for @registrationAdminApprovalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested email: {email}\nAccount type: {accountType}\n\nThe verification email limit was reached. Please approve and create this account, then reply with a temporary password.'**
+  String registrationAdminApprovalBody(String email, String accountType);
+
+  /// Administrator approval email draft opened
+  ///
+  /// In en, this message translates to:
+  /// **'The email draft is open. Send it and wait for administrator approval.'**
+  String get registrationAdminApprovalOpened;
+
   /// Label for admin temporary password copied
   ///
   /// In en, this message translates to:
@@ -2451,6 +2523,48 @@ abstract class AppLocalizations {
   /// **'No-limit promotion'**
   String get quotaFreePeriodTitle;
 
+  /// User-facing no-limit promotion banner
+  ///
+  /// In en, this message translates to:
+  /// **'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.'**
+  String get quotaFreePeriodUserBanner;
+
+  /// No-limit promotion ends today
+  ///
+  /// In en, this message translates to:
+  /// **'This promotion ends today.'**
+  String get quotaFreePeriodEndingToday;
+
+  /// No description provided for @quotaFreePeriodEndingInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'This promotion ends in {days} days.'**
+  String quotaFreePeriodEndingInDays(int days);
+
+  /// Optional promotion ending reminder days
+  ///
+  /// In en, this message translates to:
+  /// **'Remind before ending (days, optional)'**
+  String get quotaFreePeriodReminderDays;
+
+  /// Promotion reminder days hint
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to show only the standard promotion message through the final day.'**
+  String get quotaFreePeriodReminderDaysHint;
+
+  /// Invalid promotion reminder days
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 1–365 reminder days, or leave it blank.'**
+  String get quotaFreePeriodReminderDaysInvalid;
+
+  /// No description provided for @quotaFreePeriodReminderSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify users {days} days before ending'**
+  String quotaFreePeriodReminderSummary(int days);
+
   /// Label for quotaFreePeriodUnnamed
   ///
   /// In en, this message translates to:
@@ -2588,6 +2702,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlimited records and photos on this device; data does not automatically appear on other devices'**
   String get subscriptionLocalPaidFeature;
+
+  /// Public submission quotas while using local storage
+  ///
+  /// In en, this message translates to:
+  /// **'Public submission limits'**
+  String get subscriptionLocalPublicSubmissionTitle;
+
+  /// No description provided for @subscriptionLocalPublicSubmissionQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'{events} recommended activities and {attractions} recommended places'**
+  String subscriptionLocalPublicSubmissionQuota(int events, int attractions);
 
   /// Label for subscriptionLocalPaidName
   ///

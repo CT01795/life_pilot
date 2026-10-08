@@ -92,6 +92,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
     if (currentPricingVersion != null) {
       for (final entry in currentPricingVersion.quotas.entries) {
         if (entry.key == 'answer_history_days') continue;
+        if (currentPricingVersion.storagePlan == 'local' &&
+            (entry.key == 'recommended_events' ||
+                entry.key == 'recommended_attractions')) {
+          continue;
+        }
         final current = displayedUsage[entry.key];
         displayedUsage[entry.key] = SubscriptionUsage(
           resource: entry.key,
@@ -311,6 +316,13 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               final latestLocal = snapshot.data!
                   .where((version) => version.storagePlan == 'local')
                   .firstOrNull;
+              final latestFreeCloud = snapshot.data!
+                  .where(
+                    (version) =>
+                        version.storagePlan == 'cloud' &&
+                        version.quarterlyPriceTwd == 0,
+                  )
+                  .firstOrNull;
               final cloudCard = latestCloud == null
                   ? null
                   : Padding(
@@ -331,6 +343,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                         effectiveDate: formatDate(latestLocal.effectiveAt)!,
                         canUsePoints: canUsePoints,
                         canUseGame: canUseGame,
+                        publicSubmissionVersion: latestFreeCloud,
                       ),
                     );
               return Column(
@@ -385,6 +398,11 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       features: [
                         loc.subscriptionLocalPaidFeature,
                         if (canUseGame) loc.subscriptionLocalAnswerHistory,
+                        if (_latestFreeCloudVersion case final freeVersion?)
+                          loc.subscriptionLocalPublicSubmissionQuota(
+                            freeVersion.quotas['recommended_events'] ?? 0,
+                            freeVersion.quotas['recommended_attractions'] ?? 0,
+                          ),
                       ],
                       selected:
                           !auth.isSysAdmin &&
@@ -499,12 +517,14 @@ class _PricingVersionCard extends StatelessWidget {
     required this.effectiveDate,
     required this.canUsePoints,
     required this.canUseGame,
+    this.publicSubmissionVersion,
   });
 
   final SubscriptionPricingVersion version;
   final String effectiveDate;
   final bool canUsePoints;
   final bool canUseGame;
+  final SubscriptionPricingVersion? publicSubmissionVersion;
 
   @override
   Widget build(BuildContext context) {
@@ -542,6 +562,20 @@ class _PricingVersionCard extends StatelessWidget {
                   leading: const Icon(Icons.history_outlined),
                   title: Text(loc.subscriptionLocalAnswerHistory),
                 ),
+              if (publicSubmissionVersion case final freeVersion?) ...[
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.public_outlined),
+                  title: Text(loc.subscriptionLocalPublicSubmissionTitle),
+                  subtitle: Text(
+                    loc.subscriptionLocalPublicSubmissionQuota(
+                      freeVersion.quotas['recommended_events'] ?? 0,
+                      freeVersion.quotas['recommended_attractions'] ?? 0,
+                    ),
+                  ),
+                ),
+              ],
             ] else
               ...version.quotas.entries
                   .where(

@@ -668,6 +668,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminPasswordResetUserNotFound => 'このメールのユーザーが見つかりません。';
 
   @override
+  String get adminAccountCreateAccountType => 'アカウントの種類';
+
+  @override
+  String get adminAccountCreateAction => '承認して作成';
+
+  @override
+  String get adminAccountCreateAlreadyExists => 'このメールアドレスには既にアカウントがあります。パスワード再設定を使用してください。';
+
+  @override
+  String get adminAccountCreateFailed => 'アカウントを作成できませんでした。後でもう一度お試しください。';
+
+  @override
+  String adminAccountCreateSuccessful(String email) {
+    return '$email を作成しました。仮パスワードを安全な方法で利用者へ返信してください。';
+  }
+
+  @override
+  String get personalAccountTitle => '一般利用者アカウント';
+
+  @override
+  String get registrationAdminApprovalTitle => '確認メールの上限に達しました';
+
+  @override
+  String get registrationAdminApprovalDescription => '現在、確認メールを送信できません。管理者へ申請を送り、承認をお待ちください。アカウント作成後、管理者から仮パスワードが返信されます。';
+
+  @override
+  String get registrationAdminApprovalAction => '管理者へメール';
+
+  @override
+  String get registrationAdminApprovalSubject => 'Life Pilot アカウント作成申請';
+
+  @override
+  String registrationAdminApprovalBody(String email, String accountType) {
+    return '申請メール：$email\nアカウント種類：$accountType\n\n確認メール上限に達したため、承認後にアカウントを作成し、仮パスワードをご返信ください。';
+  }
+
+  @override
+  String get registrationAdminApprovalOpened => 'メール下書きを開きました。送信後、管理者の承認をお待ちください。';
+
+  @override
   String get adminTemporaryPasswordCopied => '一時パスワードをコピーしました。';
 
   @override
@@ -1229,6 +1269,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get quotaFreePeriodTitle => '容量無制限キャンペーン';
 
   @override
+  String get quotaFreePeriodUserBanner => 'キャンペーン期間中は新規データが無制限で、クラウドとこの端末を自由に切り替えられます。終了後は通常のプラン上限に戻ります。';
+
+  @override
+  String get quotaFreePeriodEndingToday => 'キャンペーンは本日終了します。';
+
+  @override
+  String quotaFreePeriodEndingInDays(int days) {
+    return 'キャンペーンは $days 日後に終了します。';
+  }
+
+  @override
+  String get quotaFreePeriodReminderDays => '終了前の通知日数（任意）';
+
+  @override
+  String get quotaFreePeriodReminderDaysHint => '空欄の場合、最終日まで通常のキャンペーン案内のみ表示します。';
+
+  @override
+  String get quotaFreePeriodReminderDaysInvalid => '通知日数は 1～365 を入力するか、空欄にしてください。';
+
+  @override
+  String quotaFreePeriodReminderSummary(int days) {
+    return '終了 $days 日前から利用者へ通知';
+  }
+
+  @override
   String get quotaFreePeriodUnnamed => '名称未設定キャンペーン';
 
   @override
@@ -1300,6 +1365,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get subscriptionLocalPaidFeature => 'このデバイスの記録と画像は無制限。他のデバイスには自動表示されません';
+
+  @override
+  String get subscriptionLocalPublicSubmissionTitle => '公開投稿の上限';
+
+  @override
+  String subscriptionLocalPublicSubmissionQuota(int events, int attractions) {
+    return 'おすすめイベント $events 件、おすすめスポット $attractions 件';
+  }
 
   @override
   String get subscriptionLocalPaidName => 'デバイス Plus';

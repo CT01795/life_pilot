@@ -22,6 +22,8 @@ class ModelAuthView extends SafeChangeNotifier {
   bool get isLoggedIn => _auth.isLoggedIn;
   String? get account => _auth.currentAccount;
   String get registrationAccountType => _auth.registrationAccountType;
+  bool get quotaFreePeriodActive => _auth.quotaFreePeriodActive;
+  int? get quotaFreePeriodEndingInDays => _auth.quotaFreePeriodEndingInDays;
   AuthPage get currentPage => _auth.currentPage;
 
   String? getRegisterEmail() => _auth.registerMap[AuthConstants.email];

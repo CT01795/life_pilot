@@ -95,6 +95,24 @@ class ServiceAccountSecurity {
     return password;
   }
 
+  Future<String> createAccountForUser({
+    required String email,
+    required String accountType,
+  }) async {
+    final response = await apiSupabase.post('/account/admin/create-user', {
+      'email': email.trim(),
+      'account_type': accountType == 'vendor' ? 'vendor' : 'personal',
+    });
+    if (response is! Map) {
+      throw const FormatException('Invalid administrator account response');
+    }
+    final password = response['temporary_password']?.toString() ?? '';
+    if (password.isEmpty) {
+      throw const FormatException('Temporary password is missing');
+    }
+    return password;
+  }
+
   Future<bool> contactAdministrator({
     required String subject,
     required String body,

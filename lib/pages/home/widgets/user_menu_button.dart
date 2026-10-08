@@ -177,7 +177,7 @@ class UserMenuButton extends StatelessWidget {
               ],
             ),
           ),
-        if (!isVendor)
+        if (!isVendor && (isSysAdmin || !auth.quotaFreePeriodActive))
           PopupMenuItem(
             value: "subscriptionPlans",
             child: Row(

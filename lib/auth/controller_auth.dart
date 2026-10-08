@@ -21,6 +21,7 @@ class ControllerAuth extends SafeChangeNotifier {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<String?>? _externalAuthAccountSubscription;
   StreamSubscription<void>? _passwordRecoveryLinkSubscription;
+  Timer? _quotaFreePeriodTimer;
   ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
   bool _initialized = false;
@@ -82,6 +83,8 @@ class ControllerAuth extends SafeChangeNotifier {
   String _accountType = 'personal';
   String _registrationAccountType = 'personal';
   SubscriptionSnapshot _subscription = SubscriptionSnapshot.free;
+  bool _quotaFreePeriodActive = false;
+  int? _quotaFreePeriodEndingInDays;
   DataStorageLocation _preferredStorage = DataStorageLocation.cloud;
   bool _hasStorageChoice = false;
   int _personalDataRevision = 0;
@@ -95,9 +98,11 @@ class ControllerAuth extends SafeChangeNotifier {
   String get registrationAccountType => _registrationAccountType;
   bool get isVendor => !isSysAdmin && _accountType == 'vendor';
   SubscriptionSnapshot get subscription => _subscription;
+  bool get quotaFreePeriodActive => _quotaFreePeriodActive;
+  int? get quotaFreePeriodEndingInDays => _quotaFreePeriodEndingInDays;
   bool get isPlus => isSysAdmin || _subscription.isPlus;
   bool get canUseLocalStorage {
-    if (isSysAdmin) return true;
+    if (isSysAdmin || _quotaFreePeriodActive) return true;
     final now = DateTime.now();
     final hasActiveLocalEntitlement = _subscription.entitlements.any(
       (entitlement) =>
@@ -116,7 +121,7 @@ class ControllerAuth extends SafeChangeNotifier {
     if (account == null) return;
     LocalDataStore.instance.setCreateAllowed(
       account,
-      isSysAdmin || canUseLocalStorage,
+      isSysAdmin || _quotaFreePeriodActive || canUseLocalStorage,
     );
   }
 
@@ -133,6 +138,7 @@ class ControllerAuth extends SafeChangeNotifier {
   Future<void> refreshSubscriptionUsage({bool notify = true}) async {
     if (!_isLoggedIn || _isAnonymous) return;
     try {
+      _quotaFreePeriodActive = await _loadQuotaFreePeriodActive();
       _subscription = await _loadSubscriptionUsage();
       _syncLocalCreatePermission();
       if (notify) notifyListeners();
@@ -152,7 +158,60 @@ class ControllerAuth extends SafeChangeNotifier {
         _preferredStorage != DataStorageLocation.local || account == null
         ? _withCloudPresentation(cloud)
         : await _withLocalUsage(cloud);
-    return isSysAdmin ? _withUnlimitedUsage(presented) : presented;
+    return isSysAdmin || _quotaFreePeriodActive
+        ? _withUnlimitedUsage(presented)
+        : presented;
+  }
+
+  Future<bool> _loadQuotaFreePeriodActive() async {
+    try {
+      final periods = await ServiceSubscription().fetchQuotaFreePeriods();
+      _scheduleQuotaFreePeriodRefresh(periods);
+      final activePeriod = periods
+          .where((period) => period.isActive)
+          .firstOrNull;
+      _quotaFreePeriodEndingInDays = null;
+      if (activePeriod?.reminderDays case final reminderDays?) {
+        final seconds = activePeriod!.endsAt
+            .difference(DateTime.now())
+            .inSeconds;
+        final remainingDays = (seconds / Duration.secondsPerDay).ceil();
+        if (remainingDays <= reminderDays) {
+          _quotaFreePeriodEndingInDays = remainingDays.clamp(0, reminderDays);
+        }
+      }
+      return activePeriod != null;
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to load no-limit promotion status',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _quotaFreePeriodEndingInDays = null;
+      return false;
+    }
+  }
+
+  void _scheduleQuotaFreePeriodRefresh(List<QuotaFreePeriod> periods) {
+    _quotaFreePeriodTimer?.cancel();
+    final now = DateTime.now();
+    final boundaries =
+        periods
+            .where((period) => period.enabled)
+            .expand((period) => [period.startsAt, period.endsAt])
+            .where((boundary) => boundary.isAfter(now))
+            .toList(growable: false)
+          ..sort();
+    if (boundaries.isEmpty) return;
+    final boundaryDelay =
+        boundaries.first.difference(now) + const Duration(seconds: 1);
+    final delay = boundaryDelay > const Duration(days: 1)
+        ? const Duration(days: 1)
+        : boundaryDelay;
+    _quotaFreePeriodTimer = Timer(
+      delay,
+      () => unawaited(refreshSubscriptionUsage()),
+    );
   }
 
   SubscriptionSnapshot _withUnlimitedUsage(SubscriptionSnapshot base) =>
@@ -237,6 +296,8 @@ class ControllerAuth extends SafeChangeNotifier {
       resources: resources,
     );
     int count(String resource) => counts[resource] ?? 0;
+    final recommendedEventUsage = base['recommended_events'];
+    final recommendedAttractionUsage = base['recommended_attractions'];
     final localUsage = <String, SubscriptionUsage>{
       'calendar_events': SubscriptionUsage(
         resource: 'calendar_events',
@@ -267,6 +328,8 @@ class ControllerAuth extends SafeChangeNotifier {
             count(TableNames.gameSocialScenarios),
         quota: -1,
       ),
+      'recommended_events': ?recommendedEventUsage,
+      'recommended_attractions': ?recommendedAttractionUsage,
     };
 
     final localEntitlements =
@@ -385,6 +448,8 @@ class ControllerAuth extends SafeChangeNotifier {
       _currentAccount = null;
       _accountType = 'personal';
       _subscription = SubscriptionSnapshot.free;
+      _quotaFreePeriodActive = false;
+      _quotaFreePeriodEndingInDays = null;
       _preferredStorage = DataStorageLocation.cloud;
       _hasStorageChoice = false;
       _currentPage = AuthPage.login;
@@ -473,6 +538,9 @@ class ControllerAuth extends SafeChangeNotifier {
 
   Future<void> _refreshSubscriptionAfterStartup() async {
     try {
+      final promotionActive = await _loadQuotaFreePeriodActive();
+      if (notifierDisposed || !_isLoggedIn || _isAnonymous) return;
+      _quotaFreePeriodActive = promotionActive;
       final loaded = await _loadSubscriptionUsage();
       if (notifierDisposed || !_isLoggedIn || _isAnonymous) return;
       _subscription = loaded;
@@ -538,6 +606,8 @@ class ControllerAuth extends SafeChangeNotifier {
       _currentAccount = null;
       _accountType = 'personal';
       _subscription = SubscriptionSnapshot.free;
+      _quotaFreePeriodActive = false;
+      _quotaFreePeriodEndingInDays = null;
       _preferredStorage = DataStorageLocation.cloud;
       _hasStorageChoice = false;
       _currentPage = AuthPage.login;
@@ -576,6 +646,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _authSubscription?.cancel();
     _externalAuthAccountSubscription?.cancel();
     _passwordRecoveryLinkSubscription?.cancel();
+    _quotaFreePeriodTimer?.cancel();
     super.dispose();
   }
 }

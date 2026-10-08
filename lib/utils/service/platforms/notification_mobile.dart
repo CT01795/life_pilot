@@ -16,6 +16,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 class NotificationServiceMobile implements ServiceNotificationPlatform {
   final _plugin = FlutterLocalNotificationsPlugin();
+  bool _canScheduleExactNotifications = false;
 
   @override
   FlutterLocalNotificationsPlugin? get plugin => _plugin;
@@ -28,15 +29,26 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
     const android = AndroidInitializationSettings(CalendarMisc.androidIcon);
     const ios = DarwinInitializationSettings();
     await _plugin.initialize(
-        settings: InitializationSettings(android: android, iOS: ios));
+      settings: InitializationSettings(android: android, iOS: ios),
+    );
     await _requestPermissions();
   }
 
-  static Future<void> _requestPermissions() async {
+  Future<void> _requestPermissions() async {
     if (Platform.isAndroid) {
       // ✅ Android 13+ 通知權限請求
       if (!await Permission.notification.isGranted) {
         await Permission.notification.request();
+      }
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      _canScheduleExactNotifications =
+          await android?.canScheduleExactNotifications() ?? false;
+      if (!_canScheduleExactNotifications) {
+        _canScheduleExactNotifications =
+            await android?.requestExactAlarmsPermission() ?? false;
       }
     }
 
@@ -44,28 +56,35 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
       // ✅ iOS 通知權限請求
       // 無法使用 _plugin，只能呼叫原生層或透過外部 plugin 處理
       final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-      final ios =
-          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
+      final ios = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
       await ios?.requestPermissions(alert: true, badge: true, sound: true);
     }
   }
 
   // ------------------ 排程事件提醒 ------------------
   @override
-  Future<NotificationResult> scheduleEventReminders(
-      {required EventItem event}) async {
+  Future<NotificationResult> scheduleEventReminders({
+    required EventItem event,
+  }) async {
     try {
       if (event.startDate == null || event.startTime == null) {
         return NotificationResult(success: false, message: '');
       }
 
-      DateTime targetDT =
-          DateTimeFormatter.getDateTime(event.startDate, event.startTime);
+      DateTime targetDT = DateTimeFormatter.getDateTime(
+        event.startDate,
+        event.startTime,
+      );
       final now = DateTime.now().subtract(Duration(hours: 1));
       for (final option in event.reminderOptions) {
         final reminderTime = ServiceReminder.getReminderTime(
-            reminderOption: option, event: event, targetTime: targetDT);
+          reminderOption: option,
+          event: event,
+          targetTime: targetDT,
+        );
 
         if (reminderTime.isBefore(now)) {
           // 避免過去的通知
@@ -73,7 +92,9 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
         }
 
         final id = ServiceReminder.generateNotificationId(
-            eventId: event.id, reminderOption: option);
+          eventId: event.id,
+          reminderOption: option,
+        );
         final title =
             '**: ${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime?.formatTimeString()} ${event.name}';
         final details = _buildNotificationDetails();
@@ -83,7 +104,9 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
           body: '',
           scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
           notificationDetails: details,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          androidScheduleMode: _canScheduleExactNotifications
+              ? AndroidScheduleMode.exactAllowWhileIdle
+              : AndroidScheduleMode.inexactAllowWhileIdle,
         );
       }
       return NotificationResult(success: true, message: '');
@@ -93,11 +116,15 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
   }
 
   // ------------------ 即時通知 ------------------
-  Future<EventNotification> _showImmediateNotification(
-      {required EventItem event, required DateTime now}) async {
+  Future<EventNotification> _showImmediateNotification({
+    required EventItem event,
+    required DateTime now,
+  }) async {
     // 通知ID，建議用事件ID或其它唯一數字
     final int notificationId = ServiceReminder.generateNotificationId(
-        eventId: event.id, reminderOption: CalendarReminderOption.fifteenMin);
+      eventId: event.id,
+      reminderOption: CalendarReminderOption.fifteenMin,
+    );
     // 通知標題
     final String title =
         '${!DateTimeCompare.isSameDayFutureTime(event.startDate, event.startTime, now) ? (!((event.endDate != null && DateTimeCompare.isSameDayFutureTime(event.endDate, event.endTime, now)) || (event.endDate == null && event.endTime != null && DateTimeCompare.isSameDayFutureTime(event.startDate, event.endTime, now))) ? now.formatDateString(passYear: true, formatShow: true) : '${event.endDate == null ? event.startDate!.formatDateString(passYear: true, formatShow: true) : event.endDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}') : '${event.startDate!.formatDateString(passYear: true, formatShow: true)} ${event.startTime!.formatTimeString()}'} ${event.name}';
@@ -113,14 +140,18 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
 
   // ------------------ 取消事件提醒 ------------------
   @override
-  Future<NotificationResult> cancelEventReminders(
-      {required String eventId,
-      required List<CalendarReminderOption> reminderOptions}) async {
+  Future<NotificationResult> cancelEventReminders({
+    required String eventId,
+    required List<CalendarReminderOption> reminderOptions,
+  }) async {
     try {
       for (final option in reminderOptions) {
         await _plugin.cancel(
-            id: ServiceReminder.generateNotificationId(
-                eventId: eventId, reminderOption: option));
+          id: ServiceReminder.generateNotificationId(
+            eventId: eventId,
+            reminderOption: option,
+          ),
+        );
       }
       return NotificationResult(success: true);
     } catch (e) {
@@ -139,9 +170,9 @@ class NotificationServiceMobile implements ServiceNotificationPlatform {
     final now = DateTime.now().subtract(const Duration(hours: 1));
 
     //改用 Future.wait() 平行執行多個通知生成。
-    return Future.wait(events.map(
-      (event) => _showImmediateNotification(event: event, now: now),
-    ));
+    return Future.wait(
+      events.map((event) => _showImmediateNotification(event: event, now: now)),
+    );
   }
 
   // ------------------ 共用通知設定 ------------------

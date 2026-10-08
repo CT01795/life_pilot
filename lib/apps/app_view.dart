@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/auth/service_auth.dart';
+import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/auth/page_auth_check.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
@@ -84,11 +86,101 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                   .clamp(1.5, 2.0)
                   .toDouble();
 
-              return MediaQuery(
-                data: mediaQuery.copyWith(
-                  textScaler: TextScaler.linear(scaleFactor),
+              return Selector<
+                ControllerAuth,
+                ({bool visible, bool loggedIn, int? endingInDays})
+              >(
+                selector: (_, auth) => (
+                  visible:
+                      auth.quotaFreePeriodActive &&
+                      !auth.isSysAdmin &&
+                      !auth.isVendor,
+                  loggedIn: auth.isLoggedIn && !auth.isAnonymous,
+                  endingInDays: auth.quotaFreePeriodEndingInDays,
                 ),
-                child: child ?? const SizedBox.shrink(),
+                builder: (context, state, _) {
+                  final showPromotion = state.visible && state.loggedIn;
+                  final scaledMediaQuery = mediaQuery.copyWith(
+                    textScaler: TextScaler.linear(scaleFactor),
+                  );
+                  if (!showPromotion) {
+                    return MediaQuery(
+                      data: scaledMediaQuery,
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  }
+                  final loc = AppLocalizations.of(context)!;
+                  return MediaQuery(
+                    data: scaledMediaQuery,
+                    child: Column(
+                      children: [
+                        SafeArea(
+                          bottom: false,
+                          child: Material(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.tertiaryContainer,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.celebration_outlined),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          loc.quotaFreePeriodTitle,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelLarge,
+                                        ),
+                                        Text(
+                                          loc.quotaFreePeriodUserBanner,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                        ),
+                                        if (state.endingInDays case final days?)
+                                          Text(
+                                            days == 0
+                                                ? loc.quotaFreePeriodEndingToday
+                                                : loc.quotaFreePeriodEndingInDays(
+                                                    days,
+                                                  ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: MediaQuery(
+                            data: scaledMediaQuery.removePadding(
+                              removeTop: true,
+                            ),
+                            child: child ?? const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
             debugShowCheckedModeBanner: false,
