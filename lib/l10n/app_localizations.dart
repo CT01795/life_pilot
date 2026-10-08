@@ -99,6 +99,12 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// Shown when the remote account no longer exists or its session is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'This account was deleted or the session has expired. Please sign in again.'**
+  String get accountNoLongerAvailable;
+
   /// Label for accessDenied
   ///
   /// In en, this message translates to:
@@ -2528,6 +2534,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.'**
   String get quotaFreePeriodUserBanner;
+
+  /// Compact no-limit promotion banner
+  ///
+  /// In en, this message translates to:
+  /// **'New records are unlimited during this promotion.'**
+  String get quotaFreePeriodUserBannerShort;
+
+  /// How to open promotion details
+  ///
+  /// In en, this message translates to:
+  /// **'View details'**
+  String get quotaFreePeriodDetailsHint;
+
+  /// No description provided for @quotaFreePeriodEndsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'The promotion ends on {date}.'**
+  String quotaFreePeriodEndsOn(String date);
 
   /// No-limit promotion ends today
   ///

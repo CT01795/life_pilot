@@ -1,4 +1,6 @@
 {
+  "accountNoLongerAvailable": "此帳號已被刪除或登入已失效，請重新登入。",
+  "@accountNoLongerAvailable": {"description": "遠端帳號不存在或登入憑證失效時的提示"},
   "@@locale": "zh",
 
   "accessDenied": "沒有使用權限",
@@ -814,6 +816,12 @@
   "@quotaFreePeriodTitle": {"description": "Label for quotaFreePeriodTitle"},
   "quotaFreePeriodUserBanner": "活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。",
   "@quotaFreePeriodUserBanner": {"description": "User-facing no-limit promotion banner"},
+  "quotaFreePeriodUserBannerShort": "活動期間新增資料不限量。",
+  "@quotaFreePeriodUserBannerShort": {"description": "Compact no-limit promotion banner"},
+  "quotaFreePeriodDetailsHint": "查看詳細內容",
+  "@quotaFreePeriodDetailsHint": {"description": "How to open promotion details"},
+  "quotaFreePeriodEndsOn": "活動將於 {date} 結束。",
+  "@quotaFreePeriodEndsOn": {"placeholders": {"date": {"type": "String"}}},
   "quotaFreePeriodEndingToday": "活動將於今天結束。",
   "@quotaFreePeriodEndingToday": {"description": "No-limit promotion ends today"},
   "quotaFreePeriodEndingInDays": "活動將於 {days} 天後結束。",

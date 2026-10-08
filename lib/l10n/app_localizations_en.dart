@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get accountNoLongerAvailable => 'This account was deleted or the session has expired. Please sign in again.';
+
+  @override
   String get accessDenied => 'Access denied';
 
   @override
@@ -1270,6 +1273,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quotaFreePeriodUserBanner => 'New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.';
+
+  @override
+  String get quotaFreePeriodUserBannerShort => 'New records are unlimited during this promotion.';
+
+  @override
+  String get quotaFreePeriodDetailsHint => 'View details';
+
+  @override
+  String quotaFreePeriodEndsOn(String date) {
+    return 'The promotion ends on $date.';
+  }
 
   @override
   String get quotaFreePeriodEndingToday => 'This promotion ends today.';

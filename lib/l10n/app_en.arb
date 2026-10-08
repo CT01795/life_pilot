@@ -1,4 +1,6 @@
 {
+  "accountNoLongerAvailable": "This account was deleted or the session has expired. Please sign in again.",
+  "@accountNoLongerAvailable": {"description": "Shown when the remote account no longer exists or its session is invalid"},
   "@@locale": "en",
 
   "accessDenied": "Access denied",
@@ -814,6 +816,12 @@
   "@quotaFreePeriodTitle": {"description": "Label for quotaFreePeriodTitle"},
   "quotaFreePeriodUserBanner": "New records are unlimited during this promotion, and you can switch freely between cloud and this device. Your regular plan limits return afterward.",
   "@quotaFreePeriodUserBanner": {"description": "User-facing no-limit promotion banner"},
+  "quotaFreePeriodUserBannerShort": "New records are unlimited during this promotion.",
+  "@quotaFreePeriodUserBannerShort": {"description": "Compact no-limit promotion banner"},
+  "quotaFreePeriodDetailsHint": "View details",
+  "@quotaFreePeriodDetailsHint": {"description": "How to open promotion details"},
+  "quotaFreePeriodEndsOn": "The promotion ends on {date}.",
+  "@quotaFreePeriodEndsOn": {"placeholders": {"date": {"type": "String"}}},
   "quotaFreePeriodEndingToday": "This promotion ends today.",
   "@quotaFreePeriodEndingToday": {"description": "No-limit promotion ends today"},
   "quotaFreePeriodEndingInDays": "This promotion ends in {days} days.",

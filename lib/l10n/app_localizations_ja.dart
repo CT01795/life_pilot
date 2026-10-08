@@ -9,6 +9,9 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get accountNoLongerAvailable => 'このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。';
+
+  @override
   String get accessDenied => 'アクセス権限がありません';
 
   @override
@@ -1270,6 +1273,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get quotaFreePeriodUserBanner => 'キャンペーン期間中は新規データが無制限で、クラウドとこの端末を自由に切り替えられます。終了後は通常のプラン上限に戻ります。';
+
+  @override
+  String get quotaFreePeriodUserBannerShort => 'キャンペーン期間中は新規データが無制限です。';
+
+  @override
+  String get quotaFreePeriodDetailsHint => '詳細を見る';
+
+  @override
+  String quotaFreePeriodEndsOn(String date) {
+    return 'キャンペーンは $date に終了します。';
+  }
 
   @override
   String get quotaFreePeriodEndingToday => 'キャンペーンは本日終了します。';

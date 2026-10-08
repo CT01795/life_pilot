@@ -43,8 +43,27 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed || kIsWeb || !mounted) return;
-    context.read<ControllerCalendar>().syncCompletedEventReminders();
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    unawaited(_validateCurrentAccount(force: true));
+    if (!kIsWeb) {
+      context.read<ControllerCalendar>().syncCompletedEventReminders();
+    }
+  }
+
+  Future<void> _validateCurrentAccount({
+    bool force = false,
+    BuildContext? messageContext,
+  }) async {
+    final localizationContext =
+        messageContext ?? app_navigator.navigatorKey.currentContext;
+    final message = localizationContext == null
+        ? null
+        : AppLocalizations.of(localizationContext)?.accountNoLongerAvailable;
+    final result = await context.read<ControllerAuth>().validateCurrentAccount(
+      force: force,
+    );
+    if (!mounted || result != AccountValidationResult.signedOut) return;
+    if (message != null) app_navigator.AppNavigator.showErrorBar(message);
   }
 
   Future<void> _initDeepLink() async {
@@ -86,107 +105,196 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
                   .clamp(1.5, 2.0)
                   .toDouble();
 
-              return Selector<
-                ControllerAuth,
-                ({bool visible, bool loggedIn, int? endingInDays})
-              >(
-                selector: (_, auth) => (
-                  visible:
-                      auth.quotaFreePeriodActive &&
-                      !auth.isSysAdmin &&
-                      !auth.isVendor,
-                  loggedIn: auth.isLoggedIn && !auth.isAnonymous,
-                  endingInDays: auth.quotaFreePeriodEndingInDays,
-                ),
-                builder: (context, state, _) {
-                  final showPromotion = state.visible && state.loggedIn;
-                  final scaledMediaQuery = mediaQuery.copyWith(
-                    textScaler: TextScaler.linear(scaleFactor),
-                  );
-                  if (!showPromotion) {
-                    return MediaQuery(
-                      data: scaledMediaQuery,
-                      child: child ?? const SizedBox.shrink(),
-                    );
-                  }
-                  final loc = AppLocalizations.of(context)!;
-                  return MediaQuery(
-                    data: scaledMediaQuery,
-                    child: Column(
-                      children: [
-                        SafeArea(
-                          bottom: false,
-                          child: Material(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.tertiaryContainer,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(Icons.celebration_outlined),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          loc.quotaFreePeriodTitle,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.labelLarge,
-                                        ),
-                                        Text(
-                                          loc.quotaFreePeriodUserBanner,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                        ),
-                                        if (state.endingInDays case final days?)
-                                          Text(
-                                            days == 0
-                                                ? loc.quotaFreePeriodEndingToday
-                                                : loc.quotaFreePeriodEndingInDays(
-                                                    days,
-                                                  ),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: MediaQuery(
-                            data: scaledMediaQuery.removePadding(
-                              removeTop: true,
-                            ),
-                            child: child ?? const SizedBox.shrink(),
-                          ),
-                        ),
-                      ],
+              final content =
+                  Selector<
+                    ControllerAuth,
+                    ({
+                      bool visible,
+                      bool loggedIn,
+                      int? endingInDays,
+                      DateTime? endsAt,
+                    })
+                  >(
+                    selector: (_, auth) => (
+                      visible:
+                          auth.quotaFreePeriodActive &&
+                          !auth.isSysAdmin &&
+                          !auth.isVendor,
+                      loggedIn: auth.isLoggedIn && !auth.isAnonymous,
+                      endingInDays: auth.quotaFreePeriodEndingInDays,
+                      endsAt: auth.quotaFreePeriodEndsAt,
                     ),
+                    builder: (context, state, _) {
+                      final showPromotion = state.visible && state.loggedIn;
+                      final scaledMediaQuery = mediaQuery.copyWith(
+                        textScaler: TextScaler.linear(scaleFactor),
+                      );
+                      if (!showPromotion) {
+                        return MediaQuery(
+                          data: scaledMediaQuery,
+                          child: child ?? const SizedBox.shrink(),
+                        );
+                      }
+                      final loc = AppLocalizations.of(context)!;
+                      final localEnd = state.endsAt?.toLocal();
+                      final endLabel = localEnd == null
+                          ? null
+                          : '${MaterialLocalizations.of(context).formatCompactDate(localEnd)} '
+                                '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(localEnd))}';
+                      return MediaQuery(
+                        data: scaledMediaQuery,
+                        child: Column(
+                          children: [
+                            SafeArea(
+                              bottom: false,
+                              child: Material(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.tertiaryContainer,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.celebration_outlined),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Wrap(
+                                          spacing: 8,
+                                          runSpacing: 2,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            Text(
+                                              loc.quotaFreePeriodUserBannerShort,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelLarge,
+                                            ),
+                                            _PromotionDetailsHint(
+                                              label: loc
+                                                  .quotaFreePeriodDetailsHint,
+                                              message:
+                                                  loc.quotaFreePeriodUserBanner,
+                                            ),
+                                            if (endLabel != null)
+                                              Text(
+                                                state.endingInDays == 0
+                                                    ? loc.quotaFreePeriodEndingToday
+                                                    : loc.quotaFreePeriodEndsOn(
+                                                        endLabel,
+                                                      ),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: MediaQuery(
+                                data: scaledMediaQuery.removePadding(
+                                  removeTop: true,
+                                ),
+                                child: child ?? const SizedBox.shrink(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   );
+              return Focus(
+                canRequestFocus: false,
+                onKeyEvent: (_, _) {
+                  unawaited(_validateCurrentAccount(messageContext: context));
+                  return KeyEventResult.ignored;
                 },
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: (_) => unawaited(
+                    _validateCurrentAccount(messageContext: context),
+                  ),
+                  child: content,
+                ),
               );
             },
             debugShowCheckedModeBanner: false,
             home: const _AppHome(),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PromotionDetailsHint extends StatefulWidget {
+  const _PromotionDetailsHint({required this.label, required this.message});
+
+  final String label;
+  final String message;
+
+  @override
+  State<_PromotionDetailsHint> createState() => _PromotionDetailsHintState();
+}
+
+class _PromotionDetailsHintState extends State<_PromotionDetailsHint> {
+  bool _detailsVisible = false;
+
+  void _setDetailsVisible(bool visible) {
+    if (_detailsVisible == visible) return;
+    setState(() => _detailsVisible = visible);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => _setDetailsVisible(true),
+      onExit: (_) => _setDetailsVisible(false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _setDetailsVisible(!_detailsVisible),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.info_outline, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  widget.label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+            if (_detailsVisible)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    widget.message,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

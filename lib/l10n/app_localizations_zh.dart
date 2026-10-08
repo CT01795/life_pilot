@@ -9,6 +9,9 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get accountNoLongerAvailable => '此帳號已被刪除或登入已失效，請重新登入。';
+
+  @override
   String get accessDenied => '沒有使用權限';
 
   @override
@@ -1270,6 +1273,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get quotaFreePeriodUserBanner => '活動期間新增資料不限量，且可自由切換雲端與此裝置；活動結束後恢復原方案額度。';
+
+  @override
+  String get quotaFreePeriodUserBannerShort => '活動期間新增資料不限量。';
+
+  @override
+  String get quotaFreePeriodDetailsHint => '查看詳細內容';
+
+  @override
+  String quotaFreePeriodEndsOn(String date) {
+    return '活動將於 $date 結束。';
+  }
 
   @override
   String get quotaFreePeriodEndingToday => '活動將於今天結束。';

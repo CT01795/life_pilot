@@ -15,6 +15,8 @@ import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 
+enum AccountValidationResult { valid, unavailable, signedOut }
+
 class ControllerAuth extends SafeChangeNotifier {
   ControllerCalendar? controllerCalendar;
   final ModelDashboard? modelDashboard;
@@ -22,6 +24,9 @@ class ControllerAuth extends SafeChangeNotifier {
   StreamSubscription<String?>? _externalAuthAccountSubscription;
   StreamSubscription<void>? _passwordRecoveryLinkSubscription;
   Timer? _quotaFreePeriodTimer;
+  Timer? _accountValidationTimer;
+  DateTime? _lastAccountValidationAt;
+  Future<AccountValidationResult>? _accountValidationInFlight;
   ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
   bool _initialized = false;
@@ -85,6 +90,7 @@ class ControllerAuth extends SafeChangeNotifier {
   SubscriptionSnapshot _subscription = SubscriptionSnapshot.free;
   bool _quotaFreePeriodActive = false;
   int? _quotaFreePeriodEndingInDays;
+  DateTime? _quotaFreePeriodEndsAt;
   DataStorageLocation _preferredStorage = DataStorageLocation.cloud;
   bool _hasStorageChoice = false;
   int _personalDataRevision = 0;
@@ -100,6 +106,7 @@ class ControllerAuth extends SafeChangeNotifier {
   SubscriptionSnapshot get subscription => _subscription;
   bool get quotaFreePeriodActive => _quotaFreePeriodActive;
   int? get quotaFreePeriodEndingInDays => _quotaFreePeriodEndingInDays;
+  DateTime? get quotaFreePeriodEndsAt => _quotaFreePeriodEndsAt;
   bool get isPlus => isSysAdmin || _subscription.isPlus;
   bool get canUseLocalStorage {
     if (isSysAdmin || _quotaFreePeriodActive) return true;
@@ -170,6 +177,7 @@ class ControllerAuth extends SafeChangeNotifier {
       final activePeriod = periods
           .where((period) => period.isActive)
           .firstOrNull;
+      _quotaFreePeriodEndsAt = activePeriod?.endsAt;
       _quotaFreePeriodEndingInDays = null;
       if (activePeriod?.reminderDays case final reminderDays?) {
         final seconds = activePeriod!.endsAt
@@ -188,6 +196,7 @@ class ControllerAuth extends SafeChangeNotifier {
         stackTrace: stackTrace,
       );
       _quotaFreePeriodEndingInDays = null;
+      _quotaFreePeriodEndsAt = null;
       return false;
     }
   }
@@ -450,18 +459,133 @@ class ControllerAuth extends SafeChangeNotifier {
       _subscription = SubscriptionSnapshot.free;
       _quotaFreePeriodActive = false;
       _quotaFreePeriodEndingInDays = null;
+      _quotaFreePeriodEndsAt = null;
       _preferredStorage = DataStorageLocation.cloud;
       _hasStorageChoice = false;
       _currentPage = AuthPage.login;
+      _lastAccountValidationAt = null;
     }, notify: false);
 
     modelDashboard?.switchAccount(null);
     controllerCalendar?.clearAll();
+    _accountValidationTimer?.cancel();
+    _accountValidationTimer = null;
     AppNavigator.returnToRoot();
     if (signedOutAccount != null) {
       LocalDataStore.instance.clearCreatePermission(signedOutAccount);
     }
     notifyListeners();
+  }
+
+  /// Verifies that the authenticated user still exists on the Auth server.
+  ///
+  /// Deleting a user in Supabase does not immediately remove the cached JWT
+  /// from another open device or browser tab. A remote `getUser` request is
+  /// therefore required before that stale screen can be dismissed. Temporary
+  /// network failures deliberately keep the current screen and session.
+  Future<AccountValidationResult> validateCurrentAccount({bool force = false}) {
+    if (!_isLoggedIn || _isAnonymous) {
+      return Future.value(AccountValidationResult.valid);
+    }
+
+    final inFlight = _accountValidationInFlight;
+    if (inFlight != null) return inFlight;
+
+    final now = DateTime.now();
+    final lastValidation = _lastAccountValidationAt;
+    if (!force &&
+        lastValidation != null &&
+        now.difference(lastValidation) < const Duration(seconds: 10)) {
+      _accountValidationTimer ??= Timer(
+        const Duration(seconds: 10) - now.difference(lastValidation),
+        () {
+          _accountValidationTimer = null;
+          unawaited(validateCurrentAccount(force: true));
+        },
+      );
+      return Future.value(AccountValidationResult.valid);
+    }
+
+    _accountValidationTimer?.cancel();
+    _accountValidationTimer = null;
+    final validation = _validateCurrentAccountRemotely();
+    _accountValidationInFlight = validation;
+    return validation.whenComplete(() {
+      if (identical(_accountValidationInFlight, validation)) {
+        _accountValidationInFlight = null;
+      }
+    });
+  }
+
+  Future<AccountValidationResult> _validateCurrentAccountRemotely() async {
+    _lastAccountValidationAt = DateTime.now();
+    final localUser = supabase.auth.currentUser;
+    if (localUser == null) {
+      _handleSignedOut();
+      return AccountValidationResult.signedOut;
+    }
+
+    try {
+      final response = await supabase.auth.getUser();
+      final remoteUser = response.user;
+      if (remoteUser == null || remoteUser.id != localUser.id) {
+        await _signOutInvalidAccount();
+        return AccountValidationResult.signedOut;
+      }
+      return AccountValidationResult.valid;
+    } on AuthException catch (error, stackTrace) {
+      if (_isInvalidRemoteAccount(error)) {
+        logger.w(
+          'The signed-in account no longer exists or its session is invalid.',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        await _signOutInvalidAccount();
+        return AccountValidationResult.signedOut;
+      }
+      logger.w(
+        'Unable to validate the signed-in account right now.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return AccountValidationResult.unavailable;
+    } catch (error, stackTrace) {
+      logger.w(
+        'Unable to validate the signed-in account right now.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return AccountValidationResult.unavailable;
+    }
+  }
+
+  bool _isInvalidRemoteAccount(AuthException error) {
+    final code = error.code?.toLowerCase();
+    final statusCode = error.statusCode;
+    final message = error.message.toLowerCase();
+    return code == 'user_not_found' ||
+        code == 'session_not_found' ||
+        code == 'invalid_jwt' ||
+        code == 'user_banned' ||
+        statusCode == '401' ||
+        message.contains('user from sub claim in jwt does not exist') ||
+        message.contains('user not found') ||
+        message.contains('session not found');
+  }
+
+  Future<void> _signOutInvalidAccount() async {
+    try {
+      await supabase.auth.signOut(scope: SignOutScope.local);
+    } catch (error, stackTrace) {
+      logger.w(
+        'Failed to clear the invalid Supabase session normally.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    if (_isLoggedIn || _currentAccount != null) {
+      _handleSignedOut();
+    }
   }
 
   // =========================================================
@@ -512,6 +636,7 @@ class ControllerAuth extends SafeChangeNotifier {
 
       if (_isLoggedIn && !_isAnonymous) {
         unawaited(_refreshSubscriptionAfterStartup());
+        unawaited(validateCurrentAccount(force: true));
       }
     } catch (error, stackTrace) {
       logger.e(
@@ -608,13 +733,17 @@ class ControllerAuth extends SafeChangeNotifier {
       _subscription = SubscriptionSnapshot.free;
       _quotaFreePeriodActive = false;
       _quotaFreePeriodEndingInDays = null;
+      _quotaFreePeriodEndsAt = null;
       _preferredStorage = DataStorageLocation.cloud;
       _hasStorageChoice = false;
       _currentPage = AuthPage.login;
+      _lastAccountValidationAt = null;
     }, notify: false);
 
     modelDashboard?.switchAccount(null);
     controllerCalendar?.clearAll(); // 🧹 登出也清除資料
+    _accountValidationTimer?.cancel();
+    _accountValidationTimer = null;
 
     _update(() => _isLoading = false);
     return null;
@@ -647,6 +776,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _externalAuthAccountSubscription?.cancel();
     _passwordRecoveryLinkSubscription?.cancel();
     _quotaFreePeriodTimer?.cancel();
+    _accountValidationTimer?.cancel();
     super.dispose();
   }
 }

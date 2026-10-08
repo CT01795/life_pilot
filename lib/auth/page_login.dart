@@ -156,6 +156,7 @@ class _PageLoginState extends State<PageLogin> {
     final choice = await showDialog<_PasswordHelpChoice>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(loc.passwordRecoveryChoiceTitle),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 460),

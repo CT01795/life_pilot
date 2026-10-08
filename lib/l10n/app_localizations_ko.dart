@@ -9,6 +9,9 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get accountNoLongerAvailable => '계정이 삭제되었거나 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.';
+
+  @override
   String get accessDenied => '접근 권한이 없습니다';
 
   @override
@@ -1270,6 +1273,17 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get quotaFreePeriodUserBanner => '프로모션 기간에는 새 데이터를 무제한으로 추가하고 클라우드와 이 기기 사이를 자유롭게 전환할 수 있습니다. 종료 후에는 기존 요금제 한도가 다시 적용됩니다.';
+
+  @override
+  String get quotaFreePeriodUserBannerShort => '프로모션 기간에는 새 데이터를 무제한으로 추가할 수 있습니다.';
+
+  @override
+  String get quotaFreePeriodDetailsHint => '상세 보기';
+
+  @override
+  String quotaFreePeriodEndsOn(String date) {
+    return '프로모션은 $date에 종료됩니다.';
+  }
 
   @override
   String get quotaFreePeriodEndingToday => '프로모션이 오늘 종료됩니다.';

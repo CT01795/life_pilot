@@ -1,4 +1,6 @@
 {
+  "accountNoLongerAvailable": "このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。",
+  "@accountNoLongerAvailable": {"description": "リモートアカウントが存在しない、またはセッションが無効な場合のメッセージ"},
   "@@locale": "ja",
 
   "accessDenied": "アクセス権限がありません",
@@ -814,6 +816,12 @@
   "@quotaFreePeriodTitle": {"description": "Label for quotaFreePeriodTitle"},
   "quotaFreePeriodUserBanner": "キャンペーン期間中は新規データが無制限で、クラウドとこの端末を自由に切り替えられます。終了後は通常のプラン上限に戻ります。",
   "@quotaFreePeriodUserBanner": {"description": "User-facing no-limit promotion banner"},
+  "quotaFreePeriodUserBannerShort": "キャンペーン期間中は新規データが無制限です。",
+  "@quotaFreePeriodUserBannerShort": {"description": "Compact no-limit promotion banner"},
+  "quotaFreePeriodDetailsHint": "詳細を見る",
+  "@quotaFreePeriodDetailsHint": {"description": "How to open promotion details"},
+  "quotaFreePeriodEndsOn": "キャンペーンは {date} に終了します。",
+  "@quotaFreePeriodEndsOn": {"placeholders": {"date": {"type": "String"}}},
   "quotaFreePeriodEndingToday": "キャンペーンは本日終了します。",
   "@quotaFreePeriodEndingToday": {"description": "No-limit promotion ends today"},
   "quotaFreePeriodEndingInDays": "キャンペーンは {days} 日後に終了します。",
