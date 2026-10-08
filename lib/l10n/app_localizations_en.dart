@@ -9,6 +9,21 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get localSubscriptionRequiredForChanges => 'Device plan inactive — view and delete only. You cannot add or edit data until you subscribe and an administrator activates the plan.';
+
+  @override
+  String get quotaNotLimited => 'No limit';
+
+  @override
+  String get subscriptionLocalRequiresActiveSubscription => 'An active Device plan subscription is required to add or edit device data';
+
+  @override
+  String get subscriptionCurrentLocalInactive => 'Current storage: This device (no active Device plan)';
+
+  @override
+  String get subscriptionCurrentLocalPromotion => 'Current storage: This device (promotion access)';
+
+  @override
   String get accountNoLongerAvailable => 'This account was deleted or the session has expired. Please sign in again.';
 
   @override
@@ -1375,10 +1390,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionLatestLocalVersionTitle => 'Local Plus version for the next payment';
 
   @override
-  String get subscriptionLocalAnswerHistory => 'Unlimited local answer history';
+  String get subscriptionLocalAnswerHistory => 'No limit on answer history stored on this device';
 
   @override
-  String get subscriptionLocalPaidFeature => 'Unlimited records and photos on this device; data does not automatically appear on other devices';
+  String get subscriptionLocalPaidFeature => 'While subscribed, records and photos on this device have no limit; data does not automatically appear on other devices';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => 'Public submission limits';
@@ -1396,7 +1411,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return 'Stored on this device: $used / Unlimited';
+    return 'Stored on this device: $used / No limit';
   }
 
   @override

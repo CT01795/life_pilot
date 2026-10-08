@@ -9,6 +9,21 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get localSubscriptionRequiredForChanges => '기기 요금제 비활성／보기 및 삭제만 가능. 유효한 구독이 없어 데이터를 추가하거나 수정할 수 없습니다. 구독 후 관리자 활성화를 기다려 주세요.';
+
+  @override
+  String get quotaNotLimited => '제한 없음';
+
+  @override
+  String get subscriptionLocalRequiresActiveSubscription => '기기 데이터를 추가하거나 수정하려면 활성 기기 요금제 구독이 필요합니다';
+
+  @override
+  String get subscriptionCurrentLocalInactive => '현재 저장 위치: 이 기기(기기 요금제 미구독)';
+
+  @override
+  String get subscriptionCurrentLocalPromotion => '현재 저장 위치: 이 기기(프로모션 기간 이용)';
+
+  @override
   String get accountNoLongerAvailable => '계정이 삭제되었거나 로그인 세션이 만료되었습니다. 다시 로그인해 주세요.';
 
   @override
@@ -1375,10 +1390,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionLatestLocalVersionTitle => '다음 결제에 적용되는 로컬 Plus 버전';
 
   @override
-  String get subscriptionLocalAnswerHistory => '기기 답변 기록 무제한';
+  String get subscriptionLocalAnswerHistory => '이 기기의 답변 기록 수 제한 없음';
 
   @override
-  String get subscriptionLocalPaidFeature => '이 기기의 기록과 이미지는 무제한이며 다른 기기에 자동 표시되지 않습니다';
+  String get subscriptionLocalPaidFeature => '구독 기간에는 이 기기의 기록과 이미지 수에 제한이 없으며 다른 기기에 자동 표시되지 않습니다';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => '공개 게시 한도';
@@ -1396,7 +1411,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return '이 기기: $used개／무제한';
+    return '이 기기: $used개／제한 없음';
   }
 
   @override

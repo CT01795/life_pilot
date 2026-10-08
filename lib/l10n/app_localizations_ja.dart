@@ -9,6 +9,21 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get localSubscriptionRequiredForChanges => 'ローカルプラン未有効／表示と削除のみ。有効な契約がないため、データの追加・変更はできません。契約後、管理者による有効化をお待ちください。';
+
+  @override
+  String get quotaNotLimited => '制限なし';
+
+  @override
+  String get subscriptionLocalRequiresActiveSubscription => '本機データを追加・変更するには、有効なローカルプランの契約が必要です';
+
+  @override
+  String get subscriptionCurrentLocalInactive => '現在の保存先：この端末（ローカルプラン未契約）';
+
+  @override
+  String get subscriptionCurrentLocalPromotion => '現在の保存先：この端末（キャンペーン期間中）';
+
+  @override
   String get accountNoLongerAvailable => 'このアカウントは削除されたか、ログインの有効期限が切れました。もう一度ログインしてください。';
 
   @override
@@ -1375,10 +1390,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subscriptionLatestLocalVersionTitle => '次回の支払いに適用されるローカル Plus 版';
 
   @override
-  String get subscriptionLocalAnswerHistory => '本体の解答履歴は無制限';
+  String get subscriptionLocalAnswerHistory => 'この端末の回答履歴は件数制限なし';
 
   @override
-  String get subscriptionLocalPaidFeature => 'このデバイスの記録と画像は無制限。他のデバイスには自動表示されません';
+  String get subscriptionLocalPaidFeature => '契約期間中、この端末の記録と画像は数量制限なし。他の端末には自動表示されません';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => '公開投稿の上限';
@@ -1396,7 +1411,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return 'このデバイス：$used 件／無制限';
+    return 'この端末：$used 件／制限なし';
   }
 
   @override

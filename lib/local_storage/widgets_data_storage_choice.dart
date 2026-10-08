@@ -4,15 +4,18 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/const.dart';
 
 class DataStorageChoice extends StatelessWidget {
-  const DataStorageChoice(
-      {required this.value,
-      required this.onChanged,
-      this.localEnabled = true,
-      super.key});
+  const DataStorageChoice({
+    required this.value,
+    required this.onChanged,
+    this.localEnabled = true,
+    this.localSubscriptionActive = true,
+    super.key,
+  });
 
   final DataStorageLocation value;
   final ValueChanged<DataStorageLocation>? onChanged;
   final bool localEnabled;
+  final bool localSubscriptionActive;
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +27,10 @@ class DataStorageChoice extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(loc.dataStorageTitle,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              loc.dataStorageTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             Gaps.h8,
             _StorageOption(
               icon: Icons.cloud_outlined,
@@ -38,7 +43,9 @@ class DataStorageChoice extends StatelessWidget {
             _StorageOption(
               icon: Icons.devices_outlined,
               label: loc.dataStorageLocal,
-              subtitle: localEnabled ? null : loc.dataStorageLocalPlanRequired,
+              subtitle: localSubscriptionActive
+                  ? null
+                  : loc.localSubscriptionRequiredForChanges,
               selected: value == DataStorageLocation.local,
               enabled: onChanged != null && localEnabled,
               onTap: () => onChanged?.call(DataStorageLocation.local),
@@ -47,8 +54,11 @@ class DataStorageChoice extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(isLocal ? Icons.info_outline : Icons.cloud_done_outlined,
-                    size: 18, color: Theme.of(context).colorScheme.secondary),
+                Icon(
+                  isLocal ? Icons.info_outline : Icons.cloud_done_outlined,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
                 Gaps.w8,
                 Expanded(
                   child: Text(
@@ -88,8 +98,9 @@ class _StorageOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Material(
-      color:
-          selected ? colors.secondaryContainer : colors.surfaceContainerLowest,
+      color: selected
+          ? colors.secondaryContainer
+          : colors.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(

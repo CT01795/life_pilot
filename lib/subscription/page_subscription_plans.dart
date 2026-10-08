@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
@@ -77,7 +78,18 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
         (resource != 'point_record_detail' || canUsePoints) &&
         (resource != 'game_questions' || canUseGame);
     final subscription = auth.subscription;
-    final currentPricingVersion = subscription.isPlus
+    final localStorageSelected =
+        auth.preferredStorage == DataStorageLocation.local;
+    final currentPricingVersion = localStorageSelected
+        ? _availableVersions
+                  .where(
+                    (version) =>
+                        version.storagePlan == 'local' &&
+                        version.name == subscription.pricingVersionName,
+                  )
+                  .firstOrNull ??
+              _latestLocalVersion
+        : subscription.isPlus
         ? _availableVersions
               .where(
                 (version) =>
@@ -101,7 +113,10 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
         displayedUsage[entry.key] = SubscriptionUsage(
           resource: entry.key,
           used: current?.used ?? 0,
-          quota: auth.isSysAdmin
+          quota:
+              auth.isSysAdmin ||
+                  (currentPricingVersion.storagePlan == 'local' &&
+                      entry.value == 0)
               ? -1
               : entry.value *
                     (subscription.isPlus ? subscription.quotaMultiplier : 1),
@@ -149,13 +164,26 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               title: Text(
                 auth.isSysAdmin
                     ? loc.subscriptionCurrentAdmin
+                    : localStorageSelected
+                    ? (auth.canUseLocalStorage &&
+                              subscription.isPlus &&
+                              subscription.storagePlan == 'local'
+                          ? loc.subscriptionCurrentLocalPlus
+                          : auth.quotaFreePeriodActive
+                          ? loc.subscriptionCurrentLocalPromotion
+                          : loc.subscriptionCurrentLocalInactive)
                     : subscription.isPlus
                     ? (subscription.storagePlan == 'local'
                           ? loc.subscriptionCurrentLocalPlus
                           : loc.subscriptionCurrentCloudPlus)
                     : loc.subscriptionCurrentFree,
               ),
-              subtitle: endLabel != null
+              subtitle:
+                  localStorageSelected &&
+                      !auth.canUseLocalStorage &&
+                      !auth.isSysAdmin
+                  ? Text(loc.localSubscriptionRequiredForChanges)
+                  : endLabel != null
                   ? Text(loc.subscriptionValidUntil(endLabel))
                   : subscription.isPlus
                   ? null
@@ -217,7 +245,9 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                             : null,
                         title: Text(label),
                         trailing: Text(
-                          usage.isUnlimited ? '$used / ∞' : '$used / $quota',
+                          usage.isUnlimited
+                              ? '$used / ${loc.quotaNotLimited}'
+                              : '$used / $quota',
                         ),
                       );
                     })
@@ -282,9 +312,13 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                             showResource(entry.key),
                       )
                       .map((entry) {
-                        final value = entry.key == 'image_bytes'
-                            ? '${entry.value ~/ 1024 ~/ 1024} MB'
-                            : entry.value.toString();
+                        final value = _quotaValue(
+                          loc,
+                          entry.key,
+                          entry.value,
+                          zeroMeansNotLimited:
+                              entitlement.storagePlan == 'local',
+                        );
                         return Row(
                           children: [
                             Expanded(
@@ -396,6 +430,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                       ),
                       price: 'NT\$${_latestLocalVersion!.quarterlyPriceTwd}',
                       features: [
+                        loc.subscriptionLocalRequiresActiveSubscription,
                         loc.subscriptionLocalPaidFeature,
                         if (canUseGame) loc.subscriptionLocalAnswerHistory,
                         if (_latestFreeCloudVersion case final freeVersion?)
@@ -496,6 +531,7 @@ List<String> _versionFeatures(
 }) {
   if (version.storagePlan == 'local') {
     return [
+      loc.subscriptionLocalRequiresActiveSubscription,
       loc.subscriptionLocalPaidFeature,
       if (canUseGame) loc.subscriptionLocalAnswerHistory,
     ];
@@ -553,6 +589,11 @@ class _PricingVersionCard extends StatelessWidget {
             if (version.storagePlan == 'local') ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.verified_user_outlined),
+                title: Text(loc.subscriptionLocalRequiresActiveSubscription),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.all_inclusive),
                 title: Text(loc.subscriptionLocalPaidFeature),
               ),
@@ -603,6 +644,18 @@ class _PricingVersionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _quotaValue(
+  AppLocalizations loc,
+  String resource,
+  int value, {
+  bool zeroMeansNotLimited = false,
+}) {
+  if (zeroMeansNotLimited && value == 0) return loc.quotaNotLimited;
+  return resource == 'image_bytes'
+      ? '${value ~/ 1024 ~/ 1024} MB'
+      : value.toString();
 }
 
 class _Fact extends StatelessWidget {

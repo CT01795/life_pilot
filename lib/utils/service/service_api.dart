@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:life_pilot/auth/auth_session_guard.dart';
 
 typedef AccessTokenProvider = String? Function();
 
@@ -59,18 +60,12 @@ class ServiceApi {
     };
   }
 
-  Future<dynamic> get(
-    String path, {
-    String? bearerToken,
-  }) async {
+  Future<dynamic> get(String path, {String? bearerToken}) async {
     late final http.Response res;
 
     try {
       res = await _client
-          .get(
-            buildUri(path),
-            headers: _headers(bearerToken),
-          )
+          .get(buildUri(path), headers: _headers(bearerToken))
           .timeout(timeout);
     } on TimeoutException {
       throw ServiceApiException(
@@ -116,7 +111,10 @@ class ServiceApi {
   }) async {
     if (maxAttempts < 1) {
       throw ArgumentError.value(
-          maxAttempts, 'maxAttempts', 'must be at least 1');
+        maxAttempts,
+        'maxAttempts',
+        'must be at least 1',
+      );
     }
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -125,7 +123,8 @@ class ServiceApi {
       } on http.ClientException {
         if (attempt == maxAttempts) rethrow;
       } on ServiceApiException catch (error) {
-        final isTransient = error.statusCode == null ||
+        final isTransient =
+            error.statusCode == null ||
             error.statusCode == 502 ||
             error.statusCode == 503 ||
             error.statusCode == 504;
@@ -140,6 +139,11 @@ class ServiceApi {
 
   dynamic _decodeResponse(String path, http.Response res) {
     if (res.statusCode != 200) {
+      AuthSessionGuard.reportHttpFailure(
+        source: buildUri(path).toString(),
+        statusCode: res.statusCode,
+        responseBody: res.body,
+      );
       throw ServiceApiException(
         path: path,
         statusCode: res.statusCode,

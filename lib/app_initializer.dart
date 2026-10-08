@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/utils/service/service_timezone.dart';
+import 'package:life_pilot/utils/service/session_aware_http_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppInitializer {
@@ -14,6 +15,7 @@ class AppInitializer {
     final supabaseFuture = Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
+      httpClient: SessionAwareHttpClient(),
       debug: kDebugMode,
     );
     final results = await Future.wait<Object?>([

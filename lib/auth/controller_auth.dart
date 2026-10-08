@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/auth/auth_session_guard.dart';
 
 enum AccountValidationResult { valid, unavailable, signedOut }
 
@@ -23,10 +24,12 @@ class ControllerAuth extends SafeChangeNotifier {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<String?>? _externalAuthAccountSubscription;
   StreamSubscription<void>? _passwordRecoveryLinkSubscription;
+  StreamSubscription<AuthSessionFailure>? _invalidSessionSubscription;
   Timer? _quotaFreePeriodTimer;
   Timer? _accountValidationTimer;
   DateTime? _lastAccountValidationAt;
   Future<AccountValidationResult>? _accountValidationInFlight;
+  Future<void>? _invalidAccountSignOutInFlight;
   ControllerAuth({this.controllerCalendar, this.modelDashboard});
 
   bool _initialized = false;
@@ -38,6 +41,14 @@ class ControllerAuth extends SafeChangeNotifier {
     _initialized = true;
     _listenAuthState();
     _listenExternalAuthAccount();
+    _invalidSessionSubscription = AuthSessionGuard.failures.listen((failure) {
+      if (!_isLoggedIn || _isAnonymous) return;
+      logger.w(
+        'Authentication failure reported by ${failure.source} '
+        '(HTTP ${failure.statusCode}, code ${failure.code}).',
+      );
+      unawaited(_signOutInvalidAccount());
+    });
     _passwordRecoveryLinkSubscription = ServiceAuth.passwordRecoveryLinks
         .listen((_) {
           ServiceAuth.consumePasswordRecoveryLink();
@@ -495,9 +506,9 @@ class ControllerAuth extends SafeChangeNotifier {
     final lastValidation = _lastAccountValidationAt;
     if (!force &&
         lastValidation != null &&
-        now.difference(lastValidation) < const Duration(seconds: 10)) {
+        now.difference(lastValidation) < const Duration(hours: 2)) {
       _accountValidationTimer ??= Timer(
-        const Duration(seconds: 10) - now.difference(lastValidation),
+        const Duration(hours: 2) - now.difference(lastValidation),
         () {
           _accountValidationTimer = null;
           unawaited(validateCurrentAccount(force: true));
@@ -573,7 +584,20 @@ class ControllerAuth extends SafeChangeNotifier {
         message.contains('session not found');
   }
 
-  Future<void> _signOutInvalidAccount() async {
+  Future<void> _signOutInvalidAccount() {
+    final inFlight = _invalidAccountSignOutInFlight;
+    if (inFlight != null) return inFlight;
+
+    final future = _performInvalidAccountSignOut();
+    _invalidAccountSignOutInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_invalidAccountSignOutInFlight, future)) {
+        _invalidAccountSignOutInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _performInvalidAccountSignOut() async {
     try {
       await supabase.auth.signOut(scope: SignOutScope.local);
     } catch (error, stackTrace) {
@@ -775,6 +799,7 @@ class ControllerAuth extends SafeChangeNotifier {
     _authSubscription?.cancel();
     _externalAuthAccountSubscription?.cancel();
     _passwordRecoveryLinkSubscription?.cancel();
+    _invalidSessionSubscription?.cancel();
     _quotaFreePeriodTimer?.cancel();
     _accountValidationTimer?.cancel();
     super.dispose();

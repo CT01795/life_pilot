@@ -99,6 +99,36 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
+  /// Read-only notice when the Device plan is inactive
+  ///
+  /// In en, this message translates to:
+  /// **'Device plan inactive — view and delete only. You cannot add or edit data until you subscribe and an administrator activates the plan.'**
+  String get localSubscriptionRequiredForChanges;
+
+  /// Label for an unlimited local-plan quota
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get quotaNotLimited;
+
+  /// Reminder that the Device plan requires an active subscription
+  ///
+  /// In en, this message translates to:
+  /// **'An active Device plan subscription is required to add or edit device data'**
+  String get subscriptionLocalRequiresActiveSubscription;
+
+  /// Local storage is selected without an active Device plan
+  ///
+  /// In en, this message translates to:
+  /// **'Current storage: This device (no active Device plan)'**
+  String get subscriptionCurrentLocalInactive;
+
+  /// Local storage is temporarily available during a no-limit promotion
+  ///
+  /// In en, this message translates to:
+  /// **'Current storage: This device (promotion access)'**
+  String get subscriptionCurrentLocalPromotion;
+
   /// Shown when the remote account no longer exists or its session is invalid
   ///
   /// In en, this message translates to:
@@ -2718,13 +2748,13 @@ abstract class AppLocalizations {
   /// Local answer history retention
   ///
   /// In en, this message translates to:
-  /// **'Unlimited local answer history'**
+  /// **'No limit on answer history stored on this device'**
   String get subscriptionLocalAnswerHistory;
 
   /// Label for subscriptionLocalPaidFeature
   ///
   /// In en, this message translates to:
-  /// **'Unlimited records and photos on this device; data does not automatically appear on other devices'**
+  /// **'While subscribed, records and photos on this device have no limit; data does not automatically appear on other devices'**
   String get subscriptionLocalPaidFeature;
 
   /// Public submission quotas while using local storage
@@ -2754,7 +2784,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionLocalUsage.
   ///
   /// In en, this message translates to:
-  /// **'Stored on this device: {used} / Unlimited'**
+  /// **'Stored on this device: {used} / No limit'**
   String subscriptionLocalUsage(int used);
 
   /// Local plan with pricing version

@@ -27,14 +27,18 @@ class _PageSettingsState extends State<PageSettings> {
     final account = auth.currentAccount;
     if (account == null) return;
     final loc = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(
-                upload ? loc.dataUploadToCloudAction : loc.dataMoveToLocal),
-            content: Text(upload
-                ? loc.dataUploadToCloudConfirm
-                : loc.dataMoveToLocalConfirm),
+              upload ? loc.dataUploadToCloudAction : loc.dataMoveToLocal,
+            ),
+            content: Text(
+              upload
+                  ? loc.dataUploadToCloudConfirm
+                  : loc.dataMoveToLocalConfirm,
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
@@ -78,7 +82,8 @@ class _PageSettingsState extends State<PageSettings> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-            upload ? loc.dataUploadToCloudFailed : loc.dataMoveToLocalFailed),
+          upload ? loc.dataUploadToCloudFailed : loc.dataMoveToLocalFailed,
+        ),
         content: SingleChildScrollView(
           child: SelectableText(
             rawReason == null || rawReason.isEmpty
@@ -123,17 +128,17 @@ class _PageSettingsState extends State<PageSettings> {
         Gaps.h16,
         DataStorageChoice(
           value: auth.preferredStorage,
-          localEnabled: auth.preferredStorage == DataStorageLocation.local ||
+          localEnabled:
+              auth.preferredStorage == DataStorageLocation.local ||
               auth.canUseLocalStorage,
+          localSubscriptionActive: auth.canUseLocalStorage,
           onChanged: auth.isAnonymous
               ? null
               : (value) {
                   if (value == auth.preferredStorage) return;
                   if (value == DataStorageLocation.local &&
                       !auth.canUseLocalStorage) {
-                    AppNavigator.showErrorBar(
-                      loc.dataStorageLocalPlanRequired,
-                    );
+                    AppNavigator.showErrorBar(loc.dataStorageLocalPlanRequired);
                     return;
                   }
                   _move(upload: value == DataStorageLocation.cloud);

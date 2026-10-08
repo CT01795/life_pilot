@@ -116,7 +116,7 @@ class LocalDataStore {
     await database.transaction((transaction) async {
       final record = _records.record(_recordKey(owner, resource, id));
       final existed = await record.exists(transaction);
-      if (!existed && _createAllowed[owner.toLowerCase()] == false) {
+      if (_createAllowed[owner.toLowerCase()] == false) {
         throw StateError('local_subscription_expired_read_only');
       }
       await record.put(transaction, {

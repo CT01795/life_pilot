@@ -9,6 +9,21 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get localSubscriptionRequiredForChanges => '本機方案未啟用／僅可查看與刪除。尚未訂閱有效的本機方案，因此無法新增或修改資料。請先完成訂閱並由管理者開通。';
+
+  @override
+  String get quotaNotLimited => '不限制';
+
+  @override
+  String get subscriptionLocalRequiresActiveSubscription => '需維持有效的本機方案訂閱，才能新增或修改本機資料';
+
+  @override
+  String get subscriptionCurrentLocalInactive => '目前儲存位置：此裝置（未訂閱本機方案）';
+
+  @override
+  String get subscriptionCurrentLocalPromotion => '目前儲存位置：此裝置（活動期間開放）';
+
+  @override
   String get accountNoLongerAvailable => '此帳號已被刪除或登入已失效，請重新登入。';
 
   @override
@@ -1375,10 +1390,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get subscriptionLatestLocalVersionTitle => '下次付款適用的本機 Plus 版本';
 
   @override
-  String get subscriptionLocalAnswerHistory => '本機答題紀錄不限量';
+  String get subscriptionLocalAnswerHistory => '本機答題紀錄不限制筆數';
 
   @override
-  String get subscriptionLocalPaidFeature => '此裝置上的紀錄與圖片不限量；資料不會自動出現在其他裝置';
+  String get subscriptionLocalPaidFeature => '有效訂閱期間，此裝置上的紀錄與圖片不限制數量；資料不會自動出現在其他裝置';
 
   @override
   String get subscriptionLocalPublicSubmissionTitle => '公開投稿額度';
@@ -1396,7 +1411,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String subscriptionLocalUsage(int used) {
-    return '此裝置已使用 $used 筆／不限量';
+    return '此裝置已使用 $used 筆／不限制';
   }
 
   @override

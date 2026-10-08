@@ -53,6 +53,9 @@ class SubscriptionUsageBanner extends StatelessWidget {
 
 String subscriptionErrorMessage(AppLocalizations loc, Object error) {
   final text = error.toString();
+  if (text.contains('local_subscription_expired_read_only')) {
+    return loc.localSubscriptionRequiredForChanges;
+  }
   if (text.contains('vendor_image_quota_reached')) {
     return loc.vendorImageQuotaReached;
   }
