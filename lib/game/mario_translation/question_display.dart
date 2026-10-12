@@ -45,7 +45,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
         textRenderer: TextPaint(
           style: TextStyle(
             fontSize: 32,
-            color: isEmphasized ? GameColors.primary : GameColors.textDark,
+            color: isEmphasized ? GameColors.ground : GameColors.textDark,
             fontWeight: FontWeight.bold,
           ),
         ),

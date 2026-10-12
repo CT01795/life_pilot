@@ -232,30 +232,27 @@ class _WordSearchGrid extends StatelessWidget {
             final col = index % gridSize;
             final cell = board.grid[row][col];
 
-            return Tooltip(
-              message: AppLocalizations.of(context)!.selectAnswer,
-              child: GestureDetector(
-                onTapDown: (_) => controller.onSelectCell(cell),
-                child: Container(
-                  width: cellSize,
-                  height: cellSize,
-                  decoration: BoxDecoration(
-                    color: cell.correct
-                        ? Colors.green
-                        : cell.selected
-                        ? Colors.blue
-                        : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        cell.letter.toLowerCase(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: cellSize * 0.6, // 字體大小約為格子大小 60%
-                        ),
+            return GestureDetector(
+              onTapDown: (_) => controller.onSelectCell(cell),
+              child: Container(
+                width: cellSize,
+                height: cellSize,
+                decoration: BoxDecoration(
+                  color: cell.correct
+                      ? Colors.green
+                      : cell.selected
+                      ? Colors.blue
+                      : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      cell.letter.toLowerCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: cellSize * 0.6, // 字體大小約為格子大小 60%
                       ),
                     ),
                   ),

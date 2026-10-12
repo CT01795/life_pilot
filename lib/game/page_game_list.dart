@@ -944,13 +944,9 @@ class _PageGameListState extends State<PageGameList> {
                                         top: 8,
                                         right: 8,
                                         child: SafeArea(
-                                          child: Material(
-                                            color: Colors.black54,
-                                            shape: const CircleBorder(),
-                                            child: GameHelpButton(
-                                              description: gameLoc
-                                                  .gameInstructionsMarioTranslation,
-                                            ),
+                                          child: GameHelpButton(
+                                            description: gameLoc
+                                                .gameInstructionsMarioTranslation,
                                           ),
                                         ),
                                       ),

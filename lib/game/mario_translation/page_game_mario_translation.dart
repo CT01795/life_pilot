@@ -113,12 +113,14 @@ class PageGameMarioTranslation extends FlameGame
     );
     add(player);
 
-    add(
+    /**
+     * add(
       RectangleComponent(
         size: Vector2(max(screenW, screenH), 90),
         paint: Paint()..color = GameColors.hud,
       ),
-    );
+    ); 
+    */
 
     // 分數 HUD
     scoreText = QuestionDisplay(

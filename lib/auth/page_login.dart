@@ -252,7 +252,12 @@ class _PageLoginState extends State<PageLogin> {
       appBar: AppBar(
         title: Text(loc.appTitle),
         actions: [
-          Tooltip(message: loc.language, child: LanguageToggleDropdown()),
+          Tooltip(
+            message: loc.language,
+            child: LanguageToggleDropdown(
+              compact: MediaQuery.sizeOf(context).width < 600,
+            ),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -450,19 +455,33 @@ class _PageLoginState extends State<PageLogin> {
     );
   }
 
-  Widget _vendorBenefit(IconData icon, String label) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16),
-        Gaps.w8,
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-      ],
-    ),
-  );
+  Widget _vendorBenefit(IconData icon, String label) {
+    final maxWidth = (MediaQuery.sizeOf(context).width - 80)
+        .clamp(160.0, 360.0)
+        .toDouble();
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16),
+            Gaps.w8,
+            Flexible(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium,
+                softWrap: true,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
