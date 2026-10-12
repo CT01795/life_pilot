@@ -74,15 +74,17 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
     showCorrectAnswer = false;
     notifyListeners();
 
-    currentQuestion = await service.fetchMarioTranslationQuestion(
-      userName,
-      gameLevel,
-      questionBank: questionBank,
-    );
-
-    isLoading = false;
-    notifyListeners();
-    speak(currentQuestion!.question);
+    try {
+      currentQuestion = await service.fetchMarioTranslationQuestion(
+        userName,
+        gameLevel,
+        questionBank: questionBank,
+      );
+      unawaited(speak(currentQuestion!.question));
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Map<String, Set<String>> synonyms = {};

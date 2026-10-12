@@ -50,10 +50,12 @@ class WidgetsRecordExplorer extends StatefulWidget {
 
 class _WidgetsRecordExplorerState extends State<WidgetsRecordExplorer> {
   final ScrollController _categoryScrollController = ScrollController();
+  final ScrollController _metricScrollController = ScrollController();
 
   @override
   void dispose() {
     _categoryScrollController.dispose();
+    _metricScrollController.dispose();
     super.dispose();
   }
 
@@ -97,11 +99,14 @@ class _WidgetsRecordExplorerState extends State<WidgetsRecordExplorer> {
               Scrollbar(
                 controller: _categoryScrollController,
                 thumbVisibility: true,
+                thickness: 4,
                 scrollbarOrientation: ScrollbarOrientation.bottom,
                 child: SingleChildScrollView(
                   controller: _categoryScrollController,
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(bottom: 10),
+                  // Reserve a dedicated lane below the chips so the visible
+                  // scrollbar never covers their labels.
+                  padding: const EdgeInsets.only(bottom: 28),
                   child: Row(
                     children: [
                       for (final category in widget.categories) ...[
@@ -120,6 +125,38 @@ class _WidgetsRecordExplorerState extends State<WidgetsRecordExplorer> {
               Gaps.h8,
               LayoutBuilder(
                 builder: (context, constraints) {
+                  if (constraints.maxWidth < 420) {
+                    return Scrollbar(
+                      controller: _metricScrollController,
+                      thumbVisibility: true,
+                      thickness: 4,
+                      scrollbarOrientation: ScrollbarOrientation.bottom,
+                      child: SingleChildScrollView(
+                        controller: _metricScrollController,
+                        scrollDirection: Axis.horizontal,
+                        // Keep the scrollbar below the metric text instead of
+                        // drawing it over the last line on narrow screens.
+                        padding: const EdgeInsets.only(bottom: 28),
+                        child: Row(
+                          children: [
+                            for (
+                              var index = 0;
+                              index < widget.metrics.length;
+                              index++
+                            ) ...[
+                              if (index > 0) Gaps.w8,
+                              SizedBox(
+                                width: 128,
+                                child: _RecordMetricTile(
+                                  metric: widget.metrics[index],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }
                   final width = (constraints.maxWidth - 16) / 3;
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

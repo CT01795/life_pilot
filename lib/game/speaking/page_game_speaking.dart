@@ -210,6 +210,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
           return Scaffold(
             appBar: AppBar(
               leading: IconButton(
+                tooltip: loc.back,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.maybePop(context),
               ),
@@ -245,6 +246,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                 appBar: AppBar(
                   backgroundColor: Color(0xFF4DB6AC),
                   leading: IconButton(
+                    tooltip: loc.back,
                     icon: Icon(Icons.arrow_back),
                     onPressed: () {
                       Navigator.maybePop(context);
@@ -253,7 +255,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                   title: Text(
                     loc.gameTitleScore(loc.speakingTitle, controller.score),
                   ),
-                  actions: const [GameHelpButton()],
+                  actions: [
+                    GameHelpButton(description: loc.gameInstructionsSpeaking),
+                  ],
                 ),
                 body: Column(
                   children: [
@@ -267,7 +271,7 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            tooltip: loc.speakingText,
+                            tooltip: loc.pressToPlayAudio,
                             style: IconButton.styleFrom(
                               minimumSize: const Size(64, 64),
                             ),

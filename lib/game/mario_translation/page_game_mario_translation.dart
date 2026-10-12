@@ -9,12 +9,9 @@ import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/question_display.dart';
 import 'package:life_pilot/game/mario_translation/word_item.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
 
 import 'player.dart';
 import 'enemy.dart';
-import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/mario_translation/controller_game_mario_translation.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -27,23 +24,29 @@ class PageGameMarioTranslation extends FlameGame
   late Player player;
   late RectangleComponent ground;
   late ControllerGameMarioTranslation controller;
-  final BuildContext context;
   final String gameId;
   final int gameLevel;
   final String questionBank;
+  final String userName;
+  final String scoreLabel;
+  final String questionLabel;
+  final VoidCallback onFinished;
   late QuestionDisplay questionTitle;
   late QuestionDisplay questionText;
   late QuestionDisplay scoreText;
-  late AppLocalizations loc;
+  bool _hasFinished = false;
 
   // 世界大小
   double screenW = 800;
   double screenH = 500;
 
   PageGameMarioTranslation({
-    required this.context,
     required this.gameId,
     required this.gameLevel,
+    required this.userName,
+    required this.scoreLabel,
+    required this.questionLabel,
+    required this.onFinished,
     this.questionBank = 'admin',
   });
 
@@ -78,17 +81,17 @@ class PageGameMarioTranslation extends FlameGame
 
   @override
   Future<void> onLoad() async {
-    loc = AppLocalizations.of(context)!;
-    screenW = camera.viewport.size.x;
-    screenH = camera.viewport.size.y;
+    await super.onLoad();
+    final viewportSize = camera.viewport.size;
+    screenW = max(viewportSize.x, 320);
+    screenH = max(viewportSize.y, 320);
     sizeX = 50;
     sizeY = 200;
-    final auth = context.read<ControllerAuth>();
     controller = ControllerGameMarioTranslation(
       gameId: gameId,
       gameLevel: gameLevel == -1 ? 1 : gameLevel,
       questionBank: questionBank,
-      userName: auth.currentAccount ?? AuthConstants.guest,
+      userName: userName,
       service: ServiceGame(),
       maxQuestions: gameLevel == -1 ? 10 : 999,
     );
@@ -119,7 +122,7 @@ class PageGameMarioTranslation extends FlameGame
 
     // 分數 HUD
     scoreText = QuestionDisplay(
-      text: "${loc.gameScore}: ${controller.score}",
+      text: '$scoreLabel: ${controller.score}',
       controller: controller,
       positionX: 40,
       positionY: 50,
@@ -131,13 +134,18 @@ class PageGameMarioTranslation extends FlameGame
     // ⭐ 設定為 HUD（固定在畫面上）
     add(scoreText);
 
+    final questionLabelWidth = (questionLabel.runes.length * 22 + 32)
+        .clamp(100, 220)
+        .toDouble();
+    final questionTextX = 40 + questionLabelWidth;
+
     // 題目 HUD
     questionTitle = QuestionDisplay(
-      text: "${loc.question}: ",
+      text: '$questionLabel: ',
       controller: controller,
       positionX: 40,
       positionY: 100,
-      sizeX: 100,
+      sizeX: questionLabelWidth,
       sizeY: sizeX,
     )..priority = 90;
 
@@ -148,9 +156,9 @@ class PageGameMarioTranslation extends FlameGame
     questionText = QuestionDisplay(
       text: controller.currentQuestion?.question ?? '',
       controller: controller,
-      positionX: 120,
+      positionX: questionTextX,
       positionY: 100,
-      sizeX: min(screenW, screenH) - 16,
+      sizeX: max(80, screenW - questionTextX - 16),
       sizeY: sizeX,
     )..priority = 100;
 
@@ -186,6 +194,12 @@ class PageGameMarioTranslation extends FlameGame
     player.shoot();
   }
 
+  void finishGame() {
+    if (_hasFinished) return;
+    _hasFinished = true;
+    Future.microtask(onFinished);
+  }
+
   void spawnOptions() {
     if (isAnswering) return;
     final q = controller.currentQuestion;
@@ -217,7 +231,7 @@ class PageGameMarioTranslation extends FlameGame
               option.removeFromParent();
             }
             optionItems.clear();
-            Future.microtask(() => Navigator.pop(context, true));
+            finishGame();
             return;
           }
 
@@ -239,10 +253,10 @@ class PageGameMarioTranslation extends FlameGame
               nextRound();
             }
             questionText.updateText(q.question);
-            scoreText.updateText("${loc.gameScore}: ${controller.score}");
+            scoreText.updateText('$scoreLabel: ${controller.score}');
           }
           if (controller.isFinished) {
-            Future.microtask(() => Navigator.pop(context, true));
+            finishGame();
           }
         },
       )..priority = 10;
@@ -256,7 +270,7 @@ class PageGameMarioTranslation extends FlameGame
     await controller.loadNextQuestion();
 
     questionText.updateText(controller.currentQuestion?.question ?? '');
-    scoreText.updateText("${loc.gameScore}: ${controller.score}");
+    scoreText.updateText('$scoreLabel: ${controller.score}');
 
     spawnEnemy();
   }
@@ -296,11 +310,18 @@ class PageGameMarioTranslation extends FlameGame
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
 
-    screenW = size.x;
-    screenH = size.y;
+    if (size.x <= 0 || size.y <= 0) return;
+    screenW = max(size.x, 320);
+    screenH = max(size.y, 320);
 
     if (isLoaded) {
       layoutByScreen(); // ⭐ 用新的 screenW / screenH
     }
+  }
+
+  @override
+  void onRemove() {
+    controller.dispose();
+    super.onRemove();
   }
 }

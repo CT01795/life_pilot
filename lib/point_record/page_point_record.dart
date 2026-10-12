@@ -124,6 +124,7 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        tooltip: loc.createPointsAccount,
         child: const Icon(Icons.add, size: 50),
         onPressed: () {
           _showAddDialog(context);
@@ -258,47 +259,54 @@ class _AccountCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ===== 圖片 =====
-                  GestureDetector(
-                    onTap: () async {
-                      final picker = ImagePicker();
-                      final pickedFile = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        maxWidth: 512,
-                        maxHeight: 512,
-                        imageQuality: 75,
-                      );
-                      if (pickedFile != null) {
-                        await context
-                            .read<ControllerPointRecordList>()
-                            .updateAccountImage(account.id, pickedFile);
-                      }
-                    },
-                    child: Container(
-                      width: MediaQuery.sizeOf(context).width < 400 ? 84 : 120,
-                      height: MediaQuery.sizeOf(context).width < 400 ? 84 : 120,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Stack(
-                          children: [
-                            // 先顯示文字或占位背景
-                            Container(
-                              color: Colors.grey[200],
-                              alignment: Alignment.center,
-                              child: Text(
-                                account.accountName[0],
-                                style: const TextStyle(fontSize: 32),
+                  Tooltip(
+                    message: loc.changeAccountImage,
+                    child: GestureDetector(
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final pickedFile = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          maxWidth: 512,
+                          maxHeight: 512,
+                          imageQuality: 75,
+                        );
+                        if (pickedFile != null) {
+                          await context
+                              .read<ControllerPointRecordList>()
+                              .updateAccountImage(account.id, pickedFile);
+                        }
+                      },
+                      child: Container(
+                        width: MediaQuery.sizeOf(context).width < 400
+                            ? 84
+                            : 120,
+                        height: MediaQuery.sizeOf(context).width < 400
+                            ? 84
+                            : 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            children: [
+                              // 先顯示文字或占位背景
+                              Container(
+                                color: Colors.grey[200],
+                                alignment: Alignment.center,
+                                child: Text(
+                                  account.accountName[0],
+                                  style: const TextStyle(fontSize: 32),
+                                ),
                               ),
-                            ),
-                            // 如果有圖片，慢慢載入
-                            AccountImage(
-                              imageBytes: account.masterGraphUrl,
-                              accountName: account.accountName,
-                            ),
-                          ],
+                              // 如果有圖片，慢慢載入
+                              AccountImage(
+                                imageBytes: account.masterGraphUrl,
+                                accountName: account.accountName,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -354,6 +362,7 @@ class _AccountCard extends StatelessWidget {
                       Gaps.h80,
                       // ===== 刪除 =====
                       IconButton(
+                        tooltip: loc.delete,
                         icon: const Icon(Icons.delete),
                         color: Colors.redAccent,
                         onPressed: () async {

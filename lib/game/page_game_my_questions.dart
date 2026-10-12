@@ -309,6 +309,8 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       labelText: loc.search,
+                      helperText: loc.questionSearchGuidance,
+                      helperMaxLines: 2,
                       suffixIcon: ValueListenableBuilder<TextEditingValue>(
                         valueListenable: _searchController,
                         builder: (context, value, _) => Row(

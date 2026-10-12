@@ -210,6 +210,7 @@ class _PagePointRecordDetailViewState
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: loc.back,
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context, true); // 返回上一頁並通知需要刷新

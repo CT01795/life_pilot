@@ -159,13 +159,14 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: loc.back,
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.maybePop(context);
           },
         ),
         title: Text(loc.monominoGameTitle),
-        actions: const [GameHelpButton()],
+        actions: [GameHelpButton(description: loc.gameInstructionsMonomino)],
       ),
       body: Column(
         children: [
@@ -182,16 +183,19 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                   ),
                 ),
                 if (controller.usedSteps > 20)
-                  ElevatedButton(
-                    onPressed: () async {
-                      controller.showHint();
-                      setState(() {});
-                      await Future.delayed(Duration(seconds: 2));
-                      if (!mounted) return;
-                      controller.clearHint();
-                      setState(() {});
-                    },
-                    child: AdaptiveButtonLabel('${loc.hint} 💡'),
+                  Tooltip(
+                    message: loc.hint,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        controller.showHint();
+                        setState(() {});
+                        await Future.delayed(Duration(seconds: 2));
+                        if (!mounted) return;
+                        controller.clearHint();
+                        setState(() {});
+                      },
+                      child: AdaptiveButtonLabel('${loc.hint} 💡'),
+                    ),
                   ),
               ],
             ),
@@ -251,23 +255,26 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                                 backgroundColor: Colors.grey[300],
                               ),
                             ),
-                            child: SizedBox(
-                              width: 85,
-                              child: Chip(
-                                padding: EdgeInsets.all(2),
-                                labelPadding: EdgeInsets.zero,
-                                label: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(arrowIcons[dir], size: 22),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      "${counts[dir] ?? 0}",
-                                      style: TextStyle(fontSize: 18),
-                                    ),
-                                  ],
+                            child: Tooltip(
+                              message: loc.dragItem,
+                              child: SizedBox(
+                                width: 85,
+                                child: Chip(
+                                  padding: EdgeInsets.all(2),
+                                  labelPadding: EdgeInsets.zero,
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(arrowIcons[dir], size: 22),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        "${counts[dir] ?? 0}",
+                                        style: TextStyle(fontSize: 18),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.blue[200],
                                 ),
-                                backgroundColor: Colors.blue[200],
                               ),
                             ),
                           ),

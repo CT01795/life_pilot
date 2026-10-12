@@ -557,10 +557,52 @@ class AppLocalizationsKo extends AppLocalizations {
   String get speakingText => '음성 재생';
 
   @override
+  String get pressToPlayAudio => '누르면 음성이 재생됩니다';
+
+  @override
   String get gameInstructions => '게임 설명';
 
   @override
   String get gameInstructionsGeneral => '화면 안내에 따라 문제를 완료하세요. 스피커로 음성을 재생할 수 있습니다. 마이크를 눌러 말하기를 시작하고 다시 눌러 완료하세요. 이동 가능한 블록은 목표 위치로 드래그한 뒤 답변 후 확인 또는 제출하세요.';
+
+  @override
+  String get gameInstructionsGrammar => '문제를 듣거나 읽고 올바른 문법 답을 선택하세요.';
+
+  @override
+  String get gameInstructionsSentence => '문제 음성을 재생하고 단어 블록을 올바른 순서로 드래그한 뒤 확인을 누르세요.';
+
+  @override
+  String get gameInstructionsSpeaking => '문제를 재생하고 마이크를 눌러 말하기를 시작한 뒤 다시 눌러 완료하고 제출하세요.';
+
+  @override
+  String get gameInstructionsTranslation => '문제와 선택지 음성을 재생하고 올바른 번역을 체크하세요.';
+
+  @override
+  String get gameInstructionsSocial => '상황과 선택지를 듣고 가장 알맞은 응답을 체크하세요. 글자를 누르면 음성만 재생됩니다.';
+
+  @override
+  String get gameInstructionsWordSearch => '문제를 듣거나 읽고 글자판에서 답을 순서대로 선택한 뒤 제출하세요.';
+
+  @override
+  String get gameInstructionsPuzzleMap => '난이도를 선택하고 힌트를 이용해 지도 퍼즐을 완성한 뒤 답을 제출하세요.';
+
+  @override
+  String get gameInstructionsMonomino => '위의 화살표를 격자로 드래그해 캐릭터가 목표에 도착하도록 경로를 만든 뒤 확인하세요.';
+
+  @override
+  String get gameInstructionsPolyomino => '왼쪽 블록을 격자로 드래그하세요. 블록을 누르면 회전하며, 경로를 연결한 뒤 제출하세요.';
+
+  @override
+  String get gameInstructionsScratch => '편집기에서 Blockly 명령을 배치하고 시작을 눌러 장애물을 피하고 보물을 얻으세요.';
+
+  @override
+  String get gameInstructionsScratchMaze => '편집기에서 Blockly 명령을 배치하고 시작을 눌러 미로를 통과해 목표에 도착하세요.';
+
+  @override
+  String get gameInstructionsMarioTranslation => 'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';
+
+  @override
+  String get checkOption => 'Check';
 
   @override
   String get startSpeaking => '눌러서 말하기 시작';
@@ -570,6 +612,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get answerBeforeCheck => '답변 후 확인';
+
+  @override
+  String get selectAnswer => '답 선택';
 
   @override
   String get dragItem => '드래그';
@@ -980,7 +1025,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get homeJourneyReviewHint => '일정을 완료하며 추억, 수입·지출, 포인트를 함께 기록할 수 있습니다';
+  String get homeJourneyReviewHint => '일정을 완료할 때 수입·지출과 포인트를 함께 정리하고 추억에도 추가할 수 있습니다';
 
   @override
   String get language => '언어';
@@ -1655,6 +1700,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get addToSchedule => '일정에 추가';
+
+  @override
+  String get addToCalendarHint => '캘린더에 추가';
+
+  @override
+  String get addToMemoryHint => '추억에 추가';
 
   @override
   String get addSchedule => '일정 추가';
@@ -2409,6 +2460,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountCreate => '만들기';
 
   @override
+  String get changeAccountImage => '계정 이미지 변경';
+
+  @override
+  String get createAccountingAccount => '가계부 계정 추가';
+
+  @override
+  String get createPointsAccount => '포인트 계정 추가';
+
+  @override
   String get accountDefault => '기본';
 
   @override
@@ -2694,7 +2754,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myQuestionBankEmpty => '이 레벨에서 사용할 수 있는 문제가 없습니다. 먼저 문제를 추가하세요.';
 
   @override
-  String get myQuestions => '내 문제';
+  String get myQuestions => '내 문제 보기';
+
+  @override
+  String get questionSearchGuidance => '먼저 검색하세요. 결과가 없으면 문제를 추가할 수 있습니다';
+
+  @override
+  String get jumpToScheduleSection => '예정 일정 영역으로 이동';
+
+  @override
+  String get jumpToAccountingSection => '가계부 영역으로 이동';
+
+  @override
+  String get jumpToPointsSection => '포인트 영역으로 이동';
 
   @override
   String get newQuestionGroup => '새 카테고리 이름';

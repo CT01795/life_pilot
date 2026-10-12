@@ -103,71 +103,83 @@ class TodayLifeOverviewCard extends StatelessWidget {
               ),
               if (nextEvent != null) ...[
                 Gaps.h12,
-                Material(
-                  color: colors.surface.withValues(alpha: 0.68),
-                  borderRadius: BorderRadius.circular(16),
-                  child: InkWell(
-                    onTap: onSchedulePressed,
+                Tooltip(
+                  message: loc.jumpToScheduleSection,
+                  child: Material(
+                    color: colors.surface.withValues(alpha: 0.68),
                     borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.next_plan_outlined, color: colors.primary),
-                          Gaps.w12,
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  scheduleOverview.nextEventNeedsReview
-                                      ? loc.scheduleAwaitingReview
-                                      : loc.upcomingSchedule,
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: colors.onSurfaceVariant,
-                                      ),
-                                ),
-                                Text(
-                                  nextEvent.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                if (_nextEventTiming(context, nextEvent)
-                                    case final timing?)
+                    child: InkWell(
+                      onTap: onSchedulePressed,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.next_plan_outlined,
+                              color: colors.primary,
+                            ),
+                            Gaps.w12,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    timing,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    scheduleOverview.nextEventNeedsReview
+                                        ? loc.scheduleAwaitingReview
+                                        : loc.upcomingSchedule,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .labelLarge
-                                        ?.copyWith(
-                                          color: colors.primary,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                  ),
-                                if (_nextEventDetails(context, nextEvent)
-                                    case final details?)
-                                  Text(
-                                    details,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall
+                                        .labelMedium
                                         ?.copyWith(
                                           color: colors.onSurfaceVariant,
                                         ),
                                   ),
-                              ],
+                                  Text(
+                                    nextEvent.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                  if (_nextEventTiming(context, nextEvent)
+                                      case final timing?)
+                                    Text(
+                                      timing,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: colors.primary,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                  if (_nextEventDetails(context, nextEvent)
+                                      case final details?)
+                                    Text(
+                                      details,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: colors.onSurfaceVariant,
+                                          ),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const Icon(Icons.chevron_right),
-                        ],
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -186,6 +198,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  tooltip: loc.jumpToScheduleSection,
                   onPressed: onSchedulePressed,
                 ),
               ],
@@ -195,6 +208,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                   message: loc.scheduleConflictToday(
                     scheduleOverview.todayConflictCount,
                   ),
+                  tooltip: loc.jumpToScheduleSection,
                   onPressed: onSchedulePressed,
                 ),
               ],
@@ -204,6 +218,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                   message: loc.scheduleConflictTomorrow(
                     scheduleOverview.tomorrowConflictCount,
                   ),
+                  tooltip: loc.jumpToScheduleSection,
                   onPressed: onSchedulePressed,
                 ),
               ],
@@ -213,6 +228,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                 label: Text(
                   loc.tomorrowScheduleCount(scheduleOverview.tomorrowCount),
                 ),
+                tooltip: loc.jumpToScheduleSection,
                 onPressed: onSchedulePressed,
               ),
               if (scheduleOverview.overdueCount > 0) ...[
@@ -226,6 +242,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                   label: Text(
                     loc.scheduleNeedsReviewCount(scheduleOverview.overdueCount),
                   ),
+                  tooltip: loc.jumpToScheduleSection,
                   onPressed: onSchedulePressed,
                 ),
               ],
@@ -268,6 +285,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                             : Icons.event_busy_outlined,
                         accentColor: colors.primary,
                         isLoading: scheduleLoading,
+                        tooltip: loc.jumpToScheduleSection,
                         onPressed: onSchedulePressed,
                       ),
                       _OverviewMetric(
@@ -290,6 +308,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                             ? colors.error
                             : colors.tertiary,
                         isLoading: accountingLoading,
+                        tooltip: loc.jumpToAccountingSection,
                         onPressed: onAccountingPressed,
                       ),
                       if (showPoints)
@@ -313,6 +332,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
                               ? colors.error
                               : colors.tertiary,
                           isLoading: pointsLoading,
+                          tooltip: loc.jumpToPointsSection,
                           onPressed: onPointsPressed,
                         ),
                     ],
@@ -603,38 +623,43 @@ class _ScheduleOverviewCache {
 class _ScheduleConflictBanner extends StatelessWidget {
   const _ScheduleConflictBanner({
     required this.message,
+    required this.tooltip,
     required this.onPressed,
   });
 
   final String message;
+  final String tooltip;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Material(
-      color: colors.errorContainer,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onPressed,
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: colors.errorContainer,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          child: Row(
-            children: [
-              Icon(Icons.event_busy_outlined, color: colors.onErrorContainer),
-              Gaps.w8,
-              Expanded(
-                child: Text(
-                  message,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colors.onErrorContainer,
-                    fontWeight: FontWeight.w800,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              children: [
+                Icon(Icons.event_busy_outlined, color: colors.onErrorContainer),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    message,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colors.onErrorContainer,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: colors.onErrorContainer),
-            ],
+                Icon(Icons.chevron_right, color: colors.onErrorContainer),
+              ],
+            ),
           ),
         ),
       ),
@@ -668,41 +693,46 @@ class _WrappingOverviewAction extends StatelessWidget {
   const _WrappingOverviewAction({
     required this.icon,
     required this.label,
+    required this.tooltip,
     required this.onPressed,
   });
 
   final IconData icon;
   final String label;
+  final String tooltip;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 420),
-      child: Material(
-        color: colors.secondaryContainer,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onPressed,
+    return Tooltip(
+      message: tooltip,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Material(
+          color: colors.secondaryContainer,
           borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 18, color: colors.onSecondaryContainer),
-                Gaps.w8,
-                Flexible(
-                  child: Text(
-                    label,
-                    softWrap: true,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: colors.onSecondaryContainer,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 18, color: colors.onSecondaryContainer),
+                  Gaps.w8,
+                  Flexible(
+                    child: Text(
+                      label,
+                      softWrap: true,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colors.onSecondaryContainer,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -720,6 +750,7 @@ class _OverviewMetric extends StatelessWidget {
     required this.statusIcon,
     required this.accentColor,
     required this.isLoading,
+    required this.tooltip,
     required this.onPressed,
   });
 
@@ -730,67 +761,71 @@ class _OverviewMetric extends StatelessWidget {
   final IconData statusIcon;
   final Color accentColor;
   final bool isLoading;
+  final String tooltip;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: width,
-      child: Material(
-        color: colors.surface.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onPressed,
+    return Tooltip(
+      message: tooltip,
+      child: SizedBox(
+        width: width,
+        child: Material(
+          color: colors.surface.withValues(alpha: 0.78),
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: accentColor),
-                Gaps.h4,
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-                Gaps.h4,
-                if (isLoading)
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  SizedBox(
-                    height: 24,
-                    width: double.infinity,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(statusIcon, size: 16, color: accentColor),
-                          Gaps.w8,
-                          Text(
-                            value,
-                            maxLines: 1,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: accentColor,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                        ],
-                      ),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: accentColor),
+                  Gaps.h4,
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
-              ],
+                  Gaps.h4,
+                  if (isLoading)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    SizedBox(
+                      height: 24,
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(statusIcon, size: 16, color: accentColor),
+                            Gaps.w8,
+                            Text(
+                              value,
+                              maxLines: 1,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: accentColor,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

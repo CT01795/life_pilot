@@ -147,7 +147,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
       currentEntitlements,
       fallbackQuotas: currentStoragePlan == 'cloud'
           ? _latestFreeCloudVersion?.quotas
-          : null,
+          : {for (final resource in displayedUsage.keys) resource: 0},
     ).take(2).toList(growable: false);
     final sortedExpiryDates =
         currentEntitlements.map((item) => item.endsAt).toList()..sort();
@@ -326,7 +326,9 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                           loc,
                           entry.key,
                           entry.value,
-                          zeroMeansNotLimited: currentStoragePlan == 'local',
+                          zeroMeansNotLimited:
+                              currentStoragePlan == 'local' &&
+                              stage.hasRemainingPaidSubscription,
                         );
                         return Row(
                           children: [
@@ -671,10 +673,12 @@ class _QuotaExpiryStage {
   const _QuotaExpiryStage({
     required this.expiresAt,
     required this.remainingQuotas,
+    required this.hasRemainingPaidSubscription,
   });
 
   final DateTime expiresAt;
   final Map<String, int> remainingQuotas;
+  final bool hasRemainingPaidSubscription;
 }
 
 List<_QuotaExpiryStage> _buildQuotaExpiryStages(
@@ -685,10 +689,16 @@ List<_QuotaExpiryStage> _buildQuotaExpiryStages(
     ..sort();
   return expiries
       .map((expiresAt) {
-        final remaining = <String, int>{...?fallbackQuotas};
-        for (final entitlement in entitlements.where(
-          (item) => item.endsAt.isAfter(expiresAt),
-        )) {
+        final remainingEntitlements = entitlements
+            .where((item) => item.endsAt.isAfter(expiresAt))
+            .toList(growable: false);
+
+        // 免費額度與付費額度不可疊加。只要到期後仍有付費訂閱，
+        // 就只加總仍有效的付費額度；全部付費訂閱到期後才套用免費額度。
+        final remaining = remainingEntitlements.isEmpty
+            ? <String, int>{...?fallbackQuotas}
+            : <String, int>{};
+        for (final entitlement in remainingEntitlements) {
           for (final entry in entitlement.quotas.entries) {
             remaining.update(
               entry.key,
@@ -700,6 +710,7 @@ List<_QuotaExpiryStage> _buildQuotaExpiryStages(
         return _QuotaExpiryStage(
           expiresAt: expiresAt,
           remainingQuotas: remaining,
+          hasRemainingPaidSubscription: remainingEntitlements.isNotEmpty,
         );
       })
       .toList(growable: false);

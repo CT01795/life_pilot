@@ -92,6 +92,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
           return Scaffold(
             appBar: AppBar(
               leading: IconButton(
+                tooltip: loc.back,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.maybePop(context),
               ),
@@ -123,6 +124,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
           appBar: AppBar(
             backgroundColor: Color(0xFF4DB6AC),
             leading: IconButton(
+              tooltip: loc.back,
               icon: Icon(Icons.arrow_back),
               onPressed: () {
                 Navigator.maybePop(context);
@@ -134,7 +136,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                 controller.model.player.hp,
               ),
             ),
-            actions: const [GameHelpButton()],
+            actions: [GameHelpButton(description: loc.gameInstructionsGrammar)],
           ),
           body: ListView(
             padding: const EdgeInsets.only(bottom: 16),
@@ -218,7 +220,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         IconButton(
-                          tooltip: loc.speakingText,
+                          tooltip: loc.pressToPlayAudio,
                           style: IconButton.styleFrom(
                             minimumSize: const Size(56, 56),
                           ),

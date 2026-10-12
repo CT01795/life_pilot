@@ -309,7 +309,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     }
 
     Widget infoRow(IconData icon, String text, {VoidCallback? onTap}) {
-      return InkWell(
+      final row = InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
@@ -332,6 +332,7 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
           ),
         ),
       );
+      return onTap == null ? row : Tooltip(message: loc.openMap, child: row);
     }
 
     Widget dateBanner(String text) {
@@ -369,40 +370,43 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
     }
 
     Widget placeLocation(String text) {
-      return InkWell(
-        onTap: widget.onOpenMap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          decoration: BoxDecoration(
-            color: colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.explore_rounded,
-                color: colorScheme.onSecondaryContainer,
-                size: 22,
-              ),
-              Gaps.w8,
-              Expanded(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w700,
+      return Tooltip(
+        message: loc.openMap,
+        child: InkWell(
+          onTap: widget.onOpenMap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            decoration: BoxDecoration(
+              color: colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.explore_rounded,
+                  color: colorScheme.onSecondaryContainer,
+                  size: 22,
+                ),
+                Gaps.w8,
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      color: colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-              Icon(
-                Icons.directions_rounded,
-                color: colorScheme.onSecondaryContainer,
-                size: 19,
-              ),
-            ],
+                Icon(
+                  Icons.directions_rounded,
+                  color: colorScheme.onSecondaryContainer,
+                  size: 19,
+                ),
+              ],
+            ),
           ),
         ),
       );

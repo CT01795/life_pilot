@@ -96,6 +96,9 @@ class TodayScheduleCard extends StatelessWidget {
                       isLoading: isLoading && events.isEmpty,
                     ),
                   IconButton(
+                    tooltip: isExpanded
+                        ? loc.collapseSection
+                        : loc.expandSection,
                     onPressed: () => onExpansionChanged(!isExpanded),
                     icon: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
@@ -130,10 +133,6 @@ class TodayScheduleCard extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          _JourneyStep(
-                            icon: Icons.task_alt,
-                            label: loc.completeAndReview,
-                          ),
                           _JourneyStep(
                             icon: Icons.auto_stories_outlined,
                             label: loc.eventMemory,
@@ -180,7 +179,7 @@ class TodayScheduleCard extends StatelessWidget {
                             horizontal: 4,
                           ),
                           leading: Tooltip(
-                            message: loc.completeAndReview,
+                            message: loc.completeEventTitle,
                             child: Transform.scale(
                               scale: 1.5, // 放大倍率
                               child: AsyncActionCheckbox(

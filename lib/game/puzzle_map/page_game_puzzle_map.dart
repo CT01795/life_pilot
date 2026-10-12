@@ -136,6 +136,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: loc.back,
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.maybePop(context);
@@ -143,7 +144,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
         ),
         title: Text(loc.puzzleMapTitle),
         actions: [
-          const GameHelpButton(),
+          GameHelpButton(description: loc.gameInstructionsPuzzleMap),
           IconButton(
             icon: Icon(Icons.lightbulb_outline, color: Colors.white),
             tooltip: loc.hint,
@@ -308,14 +309,17 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
 
             if (piece.currentIndex != piece.correctIndex) {
               // 只有沒完成的拼圖才可拖動
-              tileChild = GestureDetector(
-                onPanUpdate: (details) {
-                  ctrl.updateDrag(piece, details.delta);
-                },
-                onPanEnd: (details) {
-                  ctrl.endDrag(piece, tileWidth, tileHeight);
-                },
-                child: tileChild,
+              tileChild = Tooltip(
+                message: AppLocalizations.of(context)!.dragItem,
+                child: GestureDetector(
+                  onPanUpdate: (details) {
+                    ctrl.updateDrag(piece, details.delta);
+                  },
+                  onPanEnd: (details) {
+                    ctrl.endDrag(piece, tileWidth, tileHeight);
+                  },
+                  child: tileChild,
+                ),
               );
             }
 

@@ -557,10 +557,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get speakingText => 'Play audio';
 
   @override
+  String get pressToPlayAudio => 'Press to play audio';
+
+  @override
   String get gameInstructions => 'How to play';
 
   @override
   String get gameInstructionsGeneral => 'Follow the prompts to complete the question. Use the speaker to play audio. Tap the microphone to start speaking and tap again to finish. Drag movable blocks to their targets, then check or submit after answering.';
+
+  @override
+  String get gameInstructionsGrammar => 'Listen to or read the question, choose the correct grammar answer.';
+
+  @override
+  String get gameInstructionsSentence => 'Play the prompt, drag the word blocks into the correct order, then press Check.';
+
+  @override
+  String get gameInstructionsSpeaking => 'Play the prompt, tap the microphone to start speaking, then tap again to finish and submit.';
+
+  @override
+  String get gameInstructionsTranslation => 'Play the prompt and options, then check the correct translation.';
+
+  @override
+  String get gameInstructionsSocial => 'Listen to the situation and options, then check the best response. Pressing text only plays its audio.';
+
+  @override
+  String get gameInstructionsWordSearch => 'Listen to or read the prompt, select the answer letters in order, then submit.';
+
+  @override
+  String get gameInstructionsPuzzleMap => 'Choose a difficulty, complete the map puzzle using the hints, then submit your answer.';
+
+  @override
+  String get gameInstructionsMonomino => 'Drag the arrows from the top onto the grid to guide the character to the goal, then check the path.';
+
+  @override
+  String get gameInstructionsPolyomino => 'Drag blocks from the left onto the grid. Tap a block to rotate it, then submit after connecting the path.';
+
+  @override
+  String get gameInstructionsScratch => 'Arrange Blockly commands in the editor and press Start to avoid obstacles and reach the treasure.';
+
+  @override
+  String get gameInstructionsScratchMaze => 'Arrange Blockly commands in the editor and press Start to guide the character through the maze.';
+
+  @override
+  String get gameInstructionsMarioTranslation => 'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';
+
+  @override
+  String get checkOption => 'Check';
 
   @override
   String get startSpeaking => 'Tap to start speaking';
@@ -570,6 +612,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get answerBeforeCheck => 'Answer before checking';
+
+  @override
+  String get selectAnswer => 'Select answer';
 
   @override
   String get dragItem => 'Drag';
@@ -980,7 +1025,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get homeJourneyReviewHint => 'Complete a schedule and record memories, money, and points together';
+  String get homeJourneyReviewHint => 'When completing a schedule, record money and points together and add it to memories';
 
   @override
   String get language => 'Language';
@@ -1655,6 +1700,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToSchedule => 'Add to schedule';
+
+  @override
+  String get addToCalendarHint => 'Add to calendar';
+
+  @override
+  String get addToMemoryHint => 'Add to memories';
 
   @override
   String get addSchedule => 'Add schedule';
@@ -2409,6 +2460,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountCreate => 'Create';
 
   @override
+  String get changeAccountImage => 'Change account image';
+
+  @override
+  String get createAccountingAccount => 'Create accounting account';
+
+  @override
+  String get createPointsAccount => 'Create points account';
+
+  @override
   String get accountDefault => 'Default';
 
   @override
@@ -2694,7 +2754,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myQuestionBankEmpty => 'Your question bank has no questions available for this level. Add a question first.';
 
   @override
-  String get myQuestions => 'My questions';
+  String get myQuestions => 'View my questions';
+
+  @override
+  String get questionSearchGuidance => 'Search first; add a question when no result is found';
+
+  @override
+  String get jumpToScheduleSection => 'Open the upcoming schedules section';
+
+  @override
+  String get jumpToAccountingSection => 'Open the accounting section';
+
+  @override
+  String get jumpToPointsSection => 'Open the points section';
 
   @override
   String get newQuestionGroup => 'New category name';

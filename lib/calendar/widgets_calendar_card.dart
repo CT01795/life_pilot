@@ -277,13 +277,16 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
               typeList: eventViewModel.tags,
             ),
           if (eventViewModel.hasLocation)
-            InkWell(
-              onTap: onOpenMap,
-              child: Text(
-                eventViewModel.locationDisplay,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  decoration: TextDecoration.underline,
+            Tooltip(
+              message: loc.openMap,
+              child: InkWell(
+                onTap: onOpenMap,
+                child: Text(
+                  eventViewModel.locationDisplay,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ),

@@ -132,6 +132,9 @@ class RecommendPlaceCard extends StatelessWidget {
                           hasRequestedData && isLoading && places.isEmpty,
                     ),
                   IconButton(
+                    tooltip: isExpanded
+                        ? loc.collapseSection
+                        : loc.expandSection,
                     onPressed: () => onExpansionChanged(!isExpanded),
                     icon: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,

@@ -557,10 +557,52 @@ class AppLocalizationsJa extends AppLocalizations {
   String get speakingText => '音声を再生';
 
   @override
+  String get pressToPlayAudio => '押すと音声を再生します';
+
+  @override
   String get gameInstructions => '遊び方';
 
   @override
   String get gameInstructionsGeneral => '画面の案内に従って問題を完成してください。スピーカーで音声を再生できます。マイクをタップして話し始め、もう一度タップして終了します。動かせるブロックは目的の位置へドラッグし、回答後に確認または送信してください。';
+
+  @override
+  String get gameInstructionsGrammar => '問題を聞くか読んで正しい文法の答えを選びます。';
+
+  @override
+  String get gameInstructionsSentence => '問題の音声を再生し、単語ブロックを正しい順番にドラッグしてから確認を押します。';
+
+  @override
+  String get gameInstructionsSpeaking => '問題を再生し、マイクをタップして話し始め、もう一度タップして終了・送信します。';
+
+  @override
+  String get gameInstructionsTranslation => '問題と選択肢の音声を再生し、正しい翻訳にチェックします。';
+
+  @override
+  String get gameInstructionsSocial => '場面と選択肢を聞き、最適な返答にチェックします。文字を押すと音声のみ再生されます。';
+
+  @override
+  String get gameInstructionsWordSearch => '問題を聞くか読み、文字マスから答えを順番に選んで送信します。';
+
+  @override
+  String get gameInstructionsPuzzleMap => '難易度を選び、ヒントを使って地図パズルを完成させ、答えを送信します。';
+
+  @override
+  String get gameInstructionsMonomino => '上の矢印をマスへドラッグしてキャラクターをゴールまで導き、経路を確認します。';
+
+  @override
+  String get gameInstructionsPolyomino => '左のブロックをマスへドラッグします。タップで回転し、経路をつないだら送信します。';
+
+  @override
+  String get gameInstructionsScratch => 'エディターで Blockly 命令を並べて開始を押し、障害物を避けて宝物を取ります。';
+
+  @override
+  String get gameInstructionsScratchMaze => 'エディターで Blockly 命令を並べて開始を押し、迷路を通ってゴールへ導きます。';
+
+  @override
+  String get gameInstructionsMarioTranslation => '左右移動、ジャンプ、発射を使います。問題や単語を押すと音声が再生され、正しい単語を集めて翻訳を完成します。';
+
+  @override
+  String get checkOption => 'チェック';
 
   @override
   String get startSpeaking => 'タップして話す';
@@ -570,6 +612,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get answerBeforeCheck => '回答後に確認';
+
+  @override
+  String get selectAnswer => '回答を選択';
 
   @override
   String get dragItem => 'ドラッグ';
@@ -980,7 +1025,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get homeJourneyReviewHint => '予定の完了時に、思い出・収支・ポイントをまとめて記録できます';
+  String get homeJourneyReviewHint => '予定の完了時に収支とポイントをまとめ、思い出にも追加できます';
 
   @override
   String get language => '言語';
@@ -1655,6 +1700,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get addToSchedule => '旅程に追加する';
+
+  @override
+  String get addToCalendarHint => 'カレンダーに追加';
+
+  @override
+  String get addToMemoryHint => '思い出に追加';
 
   @override
   String get addSchedule => '予定を追加';
@@ -2409,6 +2460,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountCreate => '作成';
 
   @override
+  String get changeAccountImage => 'アカウント画像を変更';
+
+  @override
+  String get createAccountingAccount => '家計簿アカウントを追加';
+
+  @override
+  String get createPointsAccount => 'ポイントアカウントを追加';
+
+  @override
   String get accountDefault => 'デフォルト';
 
   @override
@@ -2694,7 +2754,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get myQuestionBankEmpty => 'このレベルで使用できる問題がありません。先に問題を追加してください。';
 
   @override
-  String get myQuestions => '自分の問題';
+  String get myQuestions => '自分の問題を見る';
+
+  @override
+  String get questionSearchGuidance => 'まず検索し、結果がない場合は問題を追加できます';
+
+  @override
+  String get jumpToScheduleSection => '今後の予定セクションへ移動';
+
+  @override
+  String get jumpToAccountingSection => '家計簿セクションへ移動';
+
+  @override
+  String get jumpToPointsSection => 'ポイントセクションへ移動';
 
   @override
   String get newQuestionGroup => '新しいカテゴリー名';

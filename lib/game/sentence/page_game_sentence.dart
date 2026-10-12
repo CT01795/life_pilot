@@ -76,9 +76,10 @@ class _PageGameSentenceState extends State<PageGameSentence> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        actions: const [GameHelpButton()],
+        actions: [GameHelpButton(description: loc.gameInstructionsSentence)],
         backgroundColor: Color(0xFF4DB6AC),
         leading: IconButton(
+          tooltip: loc.back,
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.maybePop(context);
@@ -136,7 +137,7 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      tooltip: loc.speakingText,
+                      tooltip: loc.pressToPlayAudio,
                       style: IconButton.styleFrom(
                         minimumSize: const Size(68, 68),
                       ),
@@ -283,10 +284,13 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                         height: minHeight,
                                         color: Color(0xFF80CBC4),
                                       ),
-                                      child: Text(
-                                        word.text,
-                                        style: TextStyle(fontSize: fontSize),
-                                        textAlign: TextAlign.center,
+                                      child: Tooltip(
+                                        message: loc.dragItem,
+                                        child: Text(
+                                          word.text,
+                                          style: TextStyle(fontSize: fontSize),
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
                                     ),
                             );
@@ -366,19 +370,22 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                                     style: TextStyle(fontSize: 24),
                                   ),
                                 ),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 3,
-                                    horizontal: 6,
-                                  ),
-                                  margin: EdgeInsets.symmetric(horizontal: 4),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFB2DFDB),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    word.text,
-                                    style: TextStyle(fontSize: 24),
+                                child: Tooltip(
+                                  message: loc.dragItem,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 3,
+                                      horizontal: 6,
+                                    ),
+                                    margin: EdgeInsets.symmetric(horizontal: 4),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFFB2DFDB),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      word.text,
+                                      style: TextStyle(fontSize: 24),
+                                    ),
                                   ),
                                 ),
                               );

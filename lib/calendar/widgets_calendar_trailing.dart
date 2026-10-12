@@ -23,7 +23,7 @@ Widget widgetsCalendarTrailing({
             selector: (_, controller) => controller.isEventSelected(event.id),
             builder: (_, isSelected, _) {
               return Tooltip(
-                message: loc.memoryAdd,
+                message: loc.addToMemoryHint,
                 child: Checkbox(
                   value: isSelected,
                   onChanged: (value) => onMemoryCheckboxChanged(

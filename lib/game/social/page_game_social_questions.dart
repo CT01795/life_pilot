@@ -255,6 +255,8 @@ class _PageState extends State<PageGameSocialQuestions> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       labelText: loc.searchKeywords,
+                      helperText: loc.questionSearchGuidance,
+                      helperMaxLines: 2,
                       border: const OutlineInputBorder(),
                       suffixIcon: ValueListenableBuilder<TextEditingValue>(
                         valueListenable: _searchController,

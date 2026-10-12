@@ -315,43 +315,43 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
-  /// No description provided for @maximizeWindow.
+  /// Label for maximizeWindow
   ///
   /// In en, this message translates to:
   /// **'Maximize window'**
   String get maximizeWindow;
 
-  /// No description provided for @restoreWindow.
+  /// Label for restoreWindow
   ///
   /// In en, this message translates to:
   /// **'Restore window'**
   String get restoreWindow;
 
-  /// No description provided for @resizeWindow.
+  /// Label for resizeWindow
   ///
   /// In en, this message translates to:
   /// **'Drag to resize the window'**
   String get resizeWindow;
 
-  /// No description provided for @expandSection.
+  /// Label for expandSection
   ///
   /// In en, this message translates to:
   /// **'Expand'**
   String get expandSection;
 
-  /// No description provided for @collapseSection.
+  /// Label for collapseSection
   ///
   /// In en, this message translates to:
   /// **'Collapse'**
   String get collapseSection;
 
-  /// No description provided for @addAccountingDetail.
+  /// Label for addAccountingDetail
   ///
   /// In en, this message translates to:
   /// **'Add accounting entry'**
   String get addAccountingDetail;
 
-  /// No description provided for @addPointDetail.
+  /// Label for addPointDetail
   ///
   /// In en, this message translates to:
   /// **'Add points entry'**
@@ -1167,73 +1167,163 @@ abstract class AppLocalizations {
   /// **'Play audio'**
   String get speakingText;
 
-  /// No description provided for @gameInstructions.
+  /// Tooltip for controls that play spoken audio when pressed
+  ///
+  /// In en, this message translates to:
+  /// **'Press to play audio'**
+  String get pressToPlayAudio;
+
+  /// Label for gameInstructions
   ///
   /// In en, this message translates to:
   /// **'How to play'**
   String get gameInstructions;
 
-  /// No description provided for @gameInstructionsGeneral.
+  /// Label for gameInstructionsGeneral
   ///
   /// In en, this message translates to:
   /// **'Follow the prompts to complete the question. Use the speaker to play audio. Tap the microphone to start speaking and tap again to finish. Drag movable blocks to their targets, then check or submit after answering.'**
   String get gameInstructionsGeneral;
 
-  /// No description provided for @startSpeaking.
+  /// Label for gameInstructionsGrammar
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to or read the question, choose the correct grammar answer.'**
+  String get gameInstructionsGrammar;
+
+  /// Label for gameInstructionsSentence
+  ///
+  /// In en, this message translates to:
+  /// **'Play the prompt, drag the word blocks into the correct order, then press Check.'**
+  String get gameInstructionsSentence;
+
+  /// Label for gameInstructionsSpeaking
+  ///
+  /// In en, this message translates to:
+  /// **'Play the prompt, tap the microphone to start speaking, then tap again to finish and submit.'**
+  String get gameInstructionsSpeaking;
+
+  /// Label for gameInstructionsTranslation
+  ///
+  /// In en, this message translates to:
+  /// **'Play the prompt and options, then check the correct translation.'**
+  String get gameInstructionsTranslation;
+
+  /// Label for gameInstructionsSocial
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to the situation and options, then check the best response. Pressing text only plays its audio.'**
+  String get gameInstructionsSocial;
+
+  /// Label for gameInstructionsWordSearch
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to or read the prompt, select the answer letters in order, then submit.'**
+  String get gameInstructionsWordSearch;
+
+  /// Label for gameInstructionsPuzzleMap
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a difficulty, complete the map puzzle using the hints, then submit your answer.'**
+  String get gameInstructionsPuzzleMap;
+
+  /// Label for gameInstructionsMonomino
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the arrows from the top onto the grid to guide the character to the goal, then check the path.'**
+  String get gameInstructionsMonomino;
+
+  /// Label for gameInstructionsPolyomino
+  ///
+  /// In en, this message translates to:
+  /// **'Drag blocks from the left onto the grid. Tap a block to rotate it, then submit after connecting the path.'**
+  String get gameInstructionsPolyomino;
+
+  /// Label for gameInstructionsScratch
+  ///
+  /// In en, this message translates to:
+  /// **'Arrange Blockly commands in the editor and press Start to avoid obstacles and reach the treasure.'**
+  String get gameInstructionsScratch;
+
+  /// Label for gameInstructionsScratchMaze
+  ///
+  /// In en, this message translates to:
+  /// **'Arrange Blockly commands in the editor and press Start to guide the character through the maze.'**
+  String get gameInstructionsScratchMaze;
+
+  /// Label for gameInstructionsMarioTranslation
+  ///
+  /// In en, this message translates to:
+  /// **'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.'**
+  String get gameInstructionsMarioTranslation;
+
+  /// Label for checkOption
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get checkOption;
+
+  /// Label for startSpeaking
   ///
   /// In en, this message translates to:
   /// **'Tap to start speaking'**
   String get startSpeaking;
 
-  /// No description provided for @finishSpeaking.
+  /// Label for finishSpeaking
   ///
   /// In en, this message translates to:
   /// **'Tap to finish'**
   String get finishSpeaking;
 
-  /// No description provided for @answerBeforeCheck.
+  /// Label for answerBeforeCheck
   ///
   /// In en, this message translates to:
   /// **'Answer before checking'**
   String get answerBeforeCheck;
 
-  /// No description provided for @dragItem.
+  /// Tooltip for selecting an answer
+  ///
+  /// In en, this message translates to:
+  /// **'Select answer'**
+  String get selectAnswer;
+
+  /// Label for dragItem
   ///
   /// In en, this message translates to:
   /// **'Drag'**
   String get dragItem;
 
-  /// No description provided for @submitAnswer.
+  /// Label for submitAnswer
   ///
   /// In en, this message translates to:
   /// **'Submit'**
   String get submitAnswer;
 
-  /// No description provided for @difficulty.
+  /// Label for difficulty
   ///
   /// In en, this message translates to:
   /// **'Difficulty'**
   String get difficulty;
 
-  /// No description provided for @moveLeft.
+  /// Label for moveLeft
   ///
   /// In en, this message translates to:
   /// **'Move left'**
   String get moveLeft;
 
-  /// No description provided for @moveRight.
+  /// Label for moveRight
   ///
   /// In en, this message translates to:
   /// **'Move right'**
   String get moveRight;
 
-  /// No description provided for @jump.
+  /// Label for jump
   ///
   /// In en, this message translates to:
   /// **'Jump'**
   String get jump;
 
-  /// No description provided for @shoot.
+  /// Label for shoot
   ///
   /// In en, this message translates to:
   /// **'Shoot'**
@@ -1980,7 +2070,7 @@ abstract class AppLocalizations {
   /// Compact hint for the integrated journey completion workflow
   ///
   /// In en, this message translates to:
-  /// **'Complete a schedule and record memories, money, and points together'**
+  /// **'When completing a schedule, record money and points together and add it to memories'**
   String get homeJourneyReviewHint;
 
   /// Label for language
@@ -2247,13 +2337,13 @@ abstract class AppLocalizations {
   /// **'User email'**
   String get adminSubscriptionEmail;
 
-  /// No description provided for @adminSubscriptionEmailOrAllHint.
+  /// Label for adminSubscriptionEmailOrAllHint
   ///
   /// In en, this message translates to:
   /// **'Enter an email for one user, or search while blank to list everyone.'**
   String get adminSubscriptionEmailOrAllHint;
 
-  /// No description provided for @adminSubscriptionAllUsers.
+  /// Label for adminSubscriptionAllUsers
   ///
   /// In en, this message translates to:
   /// **'All users: subscriptions and combined quotas'**
@@ -2283,25 +2373,25 @@ abstract class AppLocalizations {
   /// **'Benefit expiry'**
   String get adminSubscriptionExpiry;
 
-  /// No description provided for @adminSubscriptionExpiryMustBeFuture.
+  /// Admin subscription expiry must be in the future
   ///
   /// In en, this message translates to:
   /// **'The expiry must be later than now. For same-day expiry, choose tomorrow or later.'**
   String get adminSubscriptionExpiryMustBeFuture;
 
-  /// No description provided for @adminSubscriptionSimilarQuotaTitle.
+  /// Label for adminSubscriptionSimilarQuotaTitle
   ///
   /// In en, this message translates to:
   /// **'Similar quota already exists'**
   String get adminSubscriptionSimilarQuotaTitle;
 
-  /// No description provided for @adminSubscriptionSimilarQuotaMessage.
+  /// Label for adminSubscriptionSimilarQuotaMessage
   ///
   /// In en, this message translates to:
   /// **'This user already has the same plan, storage location, and multiplier. Add another entitlement anyway?'**
   String get adminSubscriptionSimilarQuotaMessage;
 
-  /// No description provided for @adminSubscriptionAddQuotaConfirm.
+  /// Label for adminSubscriptionAddQuotaConfirm
   ///
   /// In en, this message translates to:
   /// **'Add anyway'**
@@ -2721,19 +2811,19 @@ abstract class AppLocalizations {
   /// **'No-limit promotion'**
   String get quotaFreePeriodTitle;
 
-  /// No description provided for @quotaFreePeriodTargetAccounts.
+  /// Label for quotaFreePeriodTargetAccounts
   ///
   /// In en, this message translates to:
   /// **'Eligible accounts'**
   String get quotaFreePeriodTargetAccounts;
 
-  /// No description provided for @quotaFreePeriodTargetAccountsHint.
+  /// Label for quotaFreePeriodTargetAccountsHint
   ///
   /// In en, this message translates to:
   /// **'Enter multiple emails separated by commas or new lines. Leave blank for all regular users.'**
   String get quotaFreePeriodTargetAccountsHint;
 
-  /// No description provided for @quotaFreePeriodAllUsers.
+  /// Label for quotaFreePeriodAllUsers
   ///
   /// In en, this message translates to:
   /// **'Applies to all regular users'**
@@ -2889,19 +2979,19 @@ abstract class AppLocalizations {
   /// **'Subscription expires within {days} days'**
   String subscriptionExpiringSoon(int days);
 
-  /// No description provided for @subscriptionExpiringCloudImpact.
+  /// Label for subscriptionExpiringCloudImpact
   ///
   /// In en, this message translates to:
   /// **'Without renewal, adding and editing stops. Data above the cloud quota remaining after expiry enters the cleanup process.'**
   String get subscriptionExpiringCloudImpact;
 
-  /// No description provided for @subscriptionExpiringLocalImpact.
+  /// Label for subscriptionExpiringLocalImpact
   ///
   /// In en, this message translates to:
   /// **'Without renewal, local data becomes read/delete only; adding and editing stops.'**
   String get subscriptionExpiringLocalImpact;
 
-  /// No description provided for @subscriptionQuotaScheduleTitle.
+  /// Label for subscriptionQuotaScheduleTitle
   ///
   /// In en, this message translates to:
   /// **'Quota changes at expiry'**
@@ -3207,7 +3297,19 @@ abstract class AppLocalizations {
   /// **'Add to schedule'**
   String get addToSchedule;
 
-  /// No description provided for @addSchedule.
+  /// Tooltip for adding a recommendation to the calendar
+  ///
+  /// In en, this message translates to:
+  /// **'Add to calendar'**
+  String get addToCalendarHint;
+
+  /// Tooltip for adding a calendar event to memories
+  ///
+  /// In en, this message translates to:
+  /// **'Add to memories'**
+  String get addToMemoryHint;
+
+  /// Label for addSchedule
   ///
   /// In en, this message translates to:
   /// **'Add schedule'**
@@ -4533,13 +4635,13 @@ abstract class AppLocalizations {
   /// **'Add Memory'**
   String get memoryAdd;
 
-  /// No description provided for @addRecordToMemoryHint.
+  /// Label for addRecordToMemoryHint
   ///
   /// In en, this message translates to:
   /// **'Add this record to memories'**
   String get addRecordToMemoryHint;
 
-  /// No description provided for @expandToAddRecordHint.
+  /// Label for expandToAddRecordHint
   ///
   /// In en, this message translates to:
   /// **'Expand to add a record'**
@@ -4599,6 +4701,24 @@ abstract class AppLocalizations {
   /// **'Create'**
   String get accountCreate;
 
+  /// Tooltip for changing an account image
+  ///
+  /// In en, this message translates to:
+  /// **'Change account image'**
+  String get changeAccountImage;
+
+  /// Tooltip for creating an accounting account
+  ///
+  /// In en, this message translates to:
+  /// **'Create accounting account'**
+  String get createAccountingAccount;
+
+  /// Tooltip for creating a points account
+  ///
+  /// In en, this message translates to:
+  /// **'Create points account'**
+  String get createPointsAccount;
+
   /// Label for accountDefault
   ///
   /// In en, this message translates to:
@@ -4617,7 +4737,7 @@ abstract class AppLocalizations {
   /// **'For example: add/subtract an amount'**
   String get accountingSpeechHint;
 
-  /// No description provided for @accountingSpeechExample.
+  /// Label for accountingSpeechExample
   ///
   /// In en, this message translates to:
   /// **'Tap to speak, for example: lunch expense 120; salary income 30,000'**
@@ -4923,7 +5043,7 @@ abstract class AppLocalizations {
   /// **'For example: add/subtract points'**
   String get pointsSpeechHint;
 
-  /// No description provided for @pointsSpeechExample.
+  /// Label for pointsSpeechExample
   ///
   /// In en, this message translates to:
   /// **'Tap to speak, for example: exercise plus 10 points; late minus 2 points'**
@@ -5148,8 +5268,32 @@ abstract class AppLocalizations {
   /// Label for myQuestions
   ///
   /// In en, this message translates to:
-  /// **'My questions'**
+  /// **'View my questions'**
   String get myQuestions;
+
+  /// Guidance shown above personal question search
+  ///
+  /// In en, this message translates to:
+  /// **'Search first; add a question when no result is found'**
+  String get questionSearchGuidance;
+
+  /// Home dashboard schedule navigation tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Open the upcoming schedules section'**
+  String get jumpToScheduleSection;
+
+  /// Home dashboard accounting navigation tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Open the accounting section'**
+  String get jumpToAccountingSection;
+
+  /// Home dashboard points navigation tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Open the points section'**
+  String get jumpToPointsSection;
 
   /// Label for newQuestionGroup
   ///
@@ -5649,7 +5793,7 @@ abstract class AppLocalizations {
   /// **'Delete account'**
   String get accountMenuAccountDeletion;
 
-  /// No description provided for @accountDeletionAdminReviewHint.
+  /// Account deletion request hint for administrators
   ///
   /// In en, this message translates to:
   /// **'Submit an account and data deletion request for administrator review.'**

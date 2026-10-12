@@ -75,6 +75,7 @@ class _PageGameSocialState extends State<PageGameSocial> {
           return Scaffold(
             appBar: AppBar(
               leading: IconButton(
+                tooltip: loc.back,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.maybePop(context),
               ),
@@ -105,13 +106,14 @@ class _PageGameSocialState extends State<PageGameSocial> {
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
+              tooltip: loc.back,
               icon: Icon(Icons.arrow_back),
               onPressed: () {
                 Navigator.maybePop(context);
               },
             ),
             title: Text(loc.gameTitleScore(loc.socialTitle, controller.score)),
-            actions: const [GameHelpButton()],
+            actions: [GameHelpButton(description: loc.gameInstructionsSocial)],
           ),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -122,43 +124,44 @@ class _PageGameSocialState extends State<PageGameSocial> {
                     padding: Insets.all8,
                     child: SizedBox(
                       width: double.infinity, // 寬度等於螢幕寬度
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFECEFF1), // blue grey 50
-                          padding: EdgeInsets
-                              .zero, // 🔹 移除 ElevatedButton 內建 padding
-                        ),
-                        onPressed: () => controller.speak(q.scene),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            IconButton(
-                              tooltip: loc.speakingText,
-                              onPressed: () => controller.speak(q.scene),
-                              style: IconButton.styleFrom(
-                                minimumSize: const Size(56, 56),
-                              ),
-                              icon: const Icon(
-                                Icons.volume_up,
-                                color: Color(0xFF212121),
-                              ),
-                              iconSize: isCompact ? 40 : 48,
-                            ),
-                            Gaps.w8,
-                            Expanded(
-                              child: Text(
-                                q.scene,
-                                style: TextStyle(
-                                  fontSize: isCompact ? 24 : size,
-                                  color: const Color(0xFF212121),
+                      child: GameSpeechTooltip(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFECEFF1),
+                            padding: EdgeInsets.zero,
+                          ),
+                          onPressed: () => controller.speak(q.scene),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              IconButton(
+                                tooltip: loc.pressToPlayAudio,
+                                onPressed: () => controller.speak(q.scene),
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(56, 56),
                                 ),
-                                textAlign: TextAlign.start,
-                                softWrap: true, // 允許換行
-                                overflow: TextOverflow.visible,
+                                icon: const Icon(
+                                  Icons.volume_up,
+                                  color: Color(0xFF212121),
+                                ),
+                                iconSize: isCompact ? 40 : 48,
                               ),
-                            ),
-                          ],
+                              Gaps.w8,
+                              Expanded(
+                                child: Text(
+                                  q.scene,
+                                  style: TextStyle(
+                                    fontSize: isCompact ? 24 : size,
+                                    color: const Color(0xFF212121),
+                                  ),
+                                  textAlign: TextAlign.start,
+                                  softWrap: true, // 允許換行
+                                  overflow: TextOverflow.visible,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -177,58 +180,62 @@ class _PageGameSocialState extends State<PageGameSocial> {
                       padding: Insets.all8,
                       child: SizedBox(
                         width: double.infinity, // 寬度等於螢幕寬度
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: buttonColor,
-                          ),
-                          onPressed: () => controller.speak(
-                            opt,
-                          ), // 🔹 原本按鈕改成 TTS //=> controller.answer(opt),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              // ⭐ 改成自訂 CheckBox 風格的 Radio
-                              GestureDetector(
-                                onTap: controller.lastAnswer == null
-                                    ? () => onAnswer(opt)
-                                    : null,
-                                child: Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.rectangle,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: borderColor),
-                                  ),
-                                  child: Center(
-                                    child: opt == controller.lastAnswer
-                                        ? Icon(
-                                            Icons.check,
-                                            color: borderColor,
-                                            size: 48,
-                                          )
-                                        : SizedBox.shrink(),
+                        child: GameSpeechTooltip(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: buttonColor,
+                            ),
+                            onPressed: () => controller.speak(opt),
+                            child: Row(
+                              mainAxisSize:
+                                  MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                // ⭐ 改成自訂 CheckBox 風格的 Radio
+                                Tooltip(
+                                  message: loc.checkOption,
+                                  child: GestureDetector(
+                                    onTap: controller.lastAnswer == null
+                                        ? () => onAnswer(opt)
+                                        : null,
+                                    child: Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.rectangle,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: borderColor),
+                                      ),
+                                      child: Center(
+                                        child: opt == controller.lastAnswer
+                                            ? Icon(
+                                                Icons.check,
+                                                color: borderColor,
+                                                size: 48,
+                                              )
+                                            : SizedBox.shrink(),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Gaps.w24,
-                              Expanded(
-                                child: Text(
-                                  opt,
-                                  style: TextStyle(
-                                    fontSize: size,
-                                    color: Color(0xFF212121),
+                                Gaps.w24,
+                                Expanded(
+                                  child: Text(
+                                    opt,
+                                    style: TextStyle(
+                                      fontSize: size,
+                                      color: Color(0xFF212121),
+                                    ),
+                                    softWrap: true, // 允許自動換行
+                                    textAlign: TextAlign.start,
                                   ),
-                                  softWrap: true, // 允許自動換行
-                                  textAlign: TextAlign.start,
                                 ),
-                              ),
-                              Gaps.w8,
-                              // ⭐ 這裡必須安全顯示
-                              statusIcon ?? SizedBox.shrink(),
-                            ],
+                                Gaps.w8,
+                                // ⭐ 這裡必須安全顯示
+                                statusIcon ?? SizedBox.shrink(),
+                              ],
+                            ),
                           ),
                         ),
                       ),

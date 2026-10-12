@@ -25,7 +25,7 @@ Widget widgetsEventTrailing({
             selector: (_, c) => c.isEventSelected(event.id),
             builder: (_, isSelected, _) {
               return Tooltip(
-                message: loc.eventAdd1,
+                message: loc.addToCalendarHint,
                 child: Checkbox(
                   value: isSelected,
                   onChanged: (value) => onMemoryCheckboxChanged(

@@ -172,12 +172,17 @@ class ControllerAuth extends SafeChangeNotifier {
   }
 
   Future<SubscriptionSnapshot> _loadSubscriptionUsage() async {
-    final cloud = await ServiceSubscription().fetchMyUsage();
+    final selectedStoragePlan = _preferredStorage == DataStorageLocation.local
+        ? 'local'
+        : 'cloud';
+    final base = await ServiceSubscription().fetchMyUsage(
+      storagePlan: selectedStoragePlan,
+    );
     final account = _currentAccount;
     final presented =
         _preferredStorage != DataStorageLocation.local || account == null
-        ? _withCloudPresentation(cloud)
-        : await _withLocalUsage(cloud);
+        ? _withCloudPresentation(base)
+        : await _withLocalUsage(base);
     return isSysAdmin || _quotaFreePeriodActive
         ? _withUnlimitedUsage(presented)
         : presented;
@@ -381,7 +386,14 @@ class ControllerAuth extends SafeChangeNotifier {
     if (!baseIsActiveLocal && localEntitlement == null) {
       return SubscriptionSnapshot(
         plan: 'free',
-        usage: localUsage,
+        usage: {
+          for (final entry in localUsage.entries)
+            entry.key: SubscriptionUsage(
+              resource: entry.value.resource,
+              used: entry.value.used,
+              quota: 0,
+            ),
+        },
         status: 'inactive',
         storagePlan: 'local',
         lastDataActivityAt: base.lastDataActivityAt,

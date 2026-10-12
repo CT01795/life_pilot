@@ -13,6 +13,7 @@ class CitySearchDelegate extends SearchDelegate<String> {
 
     return [
       IconButton(
+        tooltip: AppLocalizations.of(context)!.clear,
         icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
@@ -24,6 +25,7 @@ class CitySearchDelegate extends SearchDelegate<String> {
   @override
   Widget? buildLeading(BuildContext context) {
     return IconButton(
+      tooltip: AppLocalizations.of(context)!.back,
       icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');

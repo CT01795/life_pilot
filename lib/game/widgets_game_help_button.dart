@@ -30,3 +30,20 @@ class GameHelpButton extends StatelessWidget {
     );
   }
 }
+
+/// Gives text/audio game controls one consistent hint. Hovering never starts
+/// playback; audio is played only after the user presses the control.
+class GameSpeechTooltip extends StatelessWidget {
+  const GameSpeechTooltip({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Tooltip(
+      message: loc.pressToPlayAudio,
+      child: MouseRegion(cursor: SystemMouseCursors.click, child: child),
+    );
+  }
+}

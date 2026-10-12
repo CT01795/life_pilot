@@ -71,6 +71,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
       selector: (_, c) => c.currentPlan,
       builder: (_, plan, _) {
         if (plan == null) return const CircularProgressIndicator();
+        final loc = AppLocalizations.of(context)!;
         return Scaffold(
           appBar: AppBar(
             title: EditablePlanTitle(
@@ -85,6 +86,7 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
             ),
             actions: [
               IconButton(
+                tooltip: editingTitle ? loc.save : loc.edit,
                 icon: Icon(
                   editingTitle ? Icons.check : Icons.edit,
                   color: Colors.white,

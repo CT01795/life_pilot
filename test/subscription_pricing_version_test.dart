@@ -27,17 +27,19 @@ void main() {
       expect(version.quotas['image_bytes'], 17 * 1024 * 1024);
     });
 
-    test('local plan does not display cloud recommendation quotas', () {
+    test('local plan preserves recommendation submission quotas', () {
       final version = SubscriptionPricingVersion.fromJson({
         'id': 'local-plan',
         'version_name': 'Local 2026-Q4',
         'storage_plan': 'local',
         'effective_at': '2026-10-01T00:00:00Z',
         'quarterly_price_twd': 129,
+        'recommended_event_quota': 5,
+        'recommended_attraction_quota': 2,
       });
 
-      expect(version.quotas.containsKey('recommended_events'), isFalse);
-      expect(version.quotas.containsKey('recommended_attractions'), isFalse);
+      expect(version.quotas['recommended_events'], 5);
+      expect(version.quotas['recommended_attractions'], 2);
     });
 
     test('free cloud plan reads recommendation quotas from its version', () {

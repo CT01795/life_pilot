@@ -72,6 +72,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: loc.back,
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.maybePop(context);
@@ -79,7 +80,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
         ),
         title: Text(loc.polyominoGameTitle),
         actions: [
-          const GameHelpButton(),
+          GameHelpButton(description: loc.gameInstructionsPolyomino),
           IconButton(
             icon: Icon(Icons.lightbulb_outline),
             tooltip: loc.hint,

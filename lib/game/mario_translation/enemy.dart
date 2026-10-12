@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/bullet.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 
 class Enemy extends SpriteComponent
     with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
@@ -60,12 +59,11 @@ class Enemy extends SpriteComponent
           gameRef.questionText.updateText(
             gameRef.controller.currentQuestion?.question ?? '',
           );
-          final loc = AppLocalizations.of(gameRef.context)!;
           gameRef.scoreText.updateText(
-            '${loc.gameScore}: ${gameRef.controller.score}',
+            '${gameRef.scoreLabel}: ${gameRef.controller.score}',
           );
           if (gameRef.controller.score < -20) {
-            Future.microtask(() => Navigator.pop(gameRef.context, true));
+            gameRef.finishGame();
           }
         }
       }

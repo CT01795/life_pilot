@@ -269,7 +269,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     }
 
     Widget infoRow(IconData icon, String text, {VoidCallback? onTap}) {
-      return InkWell(
+      final row = InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
@@ -292,6 +292,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
           ),
         ),
       );
+      return onTap == null ? row : Tooltip(message: loc.openMap, child: row);
     }
 
     final content = Padding(

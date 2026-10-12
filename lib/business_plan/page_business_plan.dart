@@ -250,6 +250,7 @@ class _InlineEditableTitleState extends State<InlineEditableTitle> {
             ),
           ),
           IconButton(
+            tooltip: AppLocalizations.of(context)!.edit,
             icon: const Icon(Icons.edit, color: Colors.grey),
             onPressed: () => _setEditing(true), // 點鉛筆進入編輯
           ),
@@ -268,6 +269,7 @@ class _InlineEditableTitleState extends State<InlineEditableTitle> {
           ),
         ),
         IconButton(
+          tooltip: AppLocalizations.of(context)!.save,
           icon: const Icon(Icons.check, color: Colors.green),
           onPressed: _save,
         ),

@@ -219,25 +219,26 @@ class UserMenuButton extends StatelessWidget {
               ],
             ),
           ),
-          PopupMenuItem(
-            value: "requestDataExport",
-            child: Row(
-              children: [
-                const Icon(Icons.file_download_outlined, color: Colors.white),
-                Gaps.w8,
-                Expanded(
-                  child: FittedBox(
-                    alignment: Alignment.centerLeft,
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      loc.accountMenuDataExport,
-                      style: const TextStyle(color: Colors.white),
+          if (isCloudStorage)
+            PopupMenuItem(
+              value: "requestDataExport",
+              child: Row(
+                children: [
+                  const Icon(Icons.file_download_outlined, color: Colors.white),
+                  Gaps.w8,
+                  Expanded(
+                    child: FittedBox(
+                      alignment: Alignment.centerLeft,
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        loc.accountMenuDataExport,
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
         PopupMenuItem(
           value: "feedback",

@@ -25,6 +25,7 @@ import 'package:life_pilot/game/speaking/page_game_speaking.dart';
 import 'package:life_pilot/game/steam_monomino/page_game_steam_monomino.dart';
 import 'package:life_pilot/game/steam_polyomino/page_game_steam_polyomino.dart';
 import 'package:life_pilot/game/word_search/page_game_word_search.dart';
+import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:life_pilot/game/steam_scratch/page_game_steam_scratch.dart';
 import 'package:life_pilot/game/translation/page_game_translation.dart';
 import 'package:life_pilot/game/steam_scratch_maze/page_game_steam_scratch_maze.dart';
@@ -872,13 +873,23 @@ class _PageGameListState extends State<PageGameList> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) {
+                            builder: (gameContext) {
+                              final gameLoc = AppLocalizations.of(gameContext)!;
+                              final auth = gameContext.read<ControllerAuth>();
                               // 先建立遊戲實例
                               final game1 = PageGameMarioTranslation(
-                                context: context,
                                 gameId: game.id,
                                 gameLevel: game.level,
                                 questionBank: _effectiveQuestionBank,
+                                userName:
+                                    auth.currentAccount ?? AuthConstants.guest,
+                                scoreLabel: gameLoc.gameScore,
+                                questionLabel: gameLoc.question,
+                                onFinished: () {
+                                  if (gameContext.mounted) {
+                                    Navigator.of(gameContext).pop(true);
+                                  }
+                                },
                               );
 
                               return GameExitGuard(
@@ -897,12 +908,12 @@ class _PageGameListState extends State<PageGameList> {
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  Text(loc.unknownError),
+                                                  Text(gameLoc.unknownError),
                                                   Gaps.h8,
                                                   ElevatedButton(
                                                     onPressed: () =>
                                                         Navigator.pop(context),
-                                                    child: Text(loc.back),
+                                                    child: Text(gameLoc.back),
                                                   ),
                                                 ],
                                               ),
@@ -916,14 +927,54 @@ class _PageGameListState extends State<PageGameList> {
                                             color: Colors.black54,
                                             shape: const CircleBorder(),
                                             child: IconButton(
-                                              tooltip: loc.back,
+                                              tooltip: gameLoc.back,
                                               icon: const Icon(
                                                 Icons.arrow_back,
                                                 color: Colors.white,
                                               ),
                                               onPressed: () =>
-                                                  Navigator.maybePop(context),
+                                                  Navigator.maybePop(
+                                                    gameContext,
+                                                  ),
                                             ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: SafeArea(
+                                          child: Material(
+                                            color: Colors.black54,
+                                            shape: const CircleBorder(),
+                                            child: GameHelpButton(
+                                              description: gameLoc
+                                                  .gameInstructionsMarioTranslation,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 88,
+                                        left: 96,
+                                        right: 16,
+                                        height: 64,
+                                        child: GameSpeechTooltip(
+                                          child: GestureDetector(
+                                            behavior:
+                                                HitTestBehavior.translucent,
+                                            onTap: () {
+                                              if (!game1.isLoaded) return;
+                                              final question = game1
+                                                  .controller
+                                                  .currentQuestion
+                                                  ?.question;
+                                              if (question == null ||
+                                                  question.isEmpty) {
+                                                return;
+                                              }
+                                              game1.controller.speak(question);
+                                            },
                                           ),
                                         ),
                                       ),
@@ -936,7 +987,7 @@ class _PageGameListState extends State<PageGameList> {
                                               MainAxisAlignment.center, // 水平置中
                                           children: [
                                             Tooltip(
-                                              message: loc.moveLeft,
+                                              message: gameLoc.moveLeft,
                                               child: GestureDetector(
                                                 onTapDown: (_) {
                                                   if (game1.isLoaded) {
@@ -974,7 +1025,7 @@ class _PageGameListState extends State<PageGameList> {
                                             ),
                                             Gaps.w16,
                                             Tooltip(
-                                              message: loc.moveRight,
+                                              message: gameLoc.moveRight,
                                               child: GestureDetector(
                                                 onTapDown: (_) {
                                                   if (game1.isLoaded) {
@@ -1014,7 +1065,7 @@ class _PageGameListState extends State<PageGameList> {
                                             ),
                                             Gaps.w16,
                                             Tooltip(
-                                              message: loc.jump,
+                                              message: gameLoc.jump,
                                               child: GestureDetector(
                                                 onTap: () {
                                                   if (game1.isLoaded) {
@@ -1045,7 +1096,7 @@ class _PageGameListState extends State<PageGameList> {
                                             ),
                                             Gaps.w16,
                                             Tooltip(
-                                              message: loc.shoot,
+                                              message: gameLoc.shoot,
                                               child: GestureDetector(
                                                 onTap: () async {
                                                   if (game1.isLoaded) {

@@ -73,6 +73,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
           return Scaffold(
             appBar: AppBar(
               leading: IconButton(
+                tooltip: loc.back,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.maybePop(context),
               ),
@@ -102,6 +103,7 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
+              tooltip: loc.back,
               icon: Icon(Icons.arrow_back),
               onPressed: () {
                 Navigator.maybePop(context);
@@ -110,7 +112,9 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
             title: Text(
               loc.gameTitleScore(loc.wordSearchTitle, controller.score),
             ),
-            actions: const [GameHelpButton()],
+            actions: [
+              GameHelpButton(description: loc.gameInstructionsWordSearch),
+            ],
           ),
           body: Column(
             children: [
@@ -119,46 +123,47 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                 padding: Insets.all8,
                 child: SizedBox(
                   width: double.infinity, // 寬度等於螢幕寬度
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFECEFF1), // blue grey 50
-                      padding:
-                          EdgeInsets.zero, // 🔹 移除 ElevatedButton 內建 padding
-                    ),
-                    onPressed: () =>
-                        controller.speak(controller.currentQuestion.question),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        IconButton(
-                          tooltip: loc.speakingText,
-                          onPressed: () => controller.speak(
-                            controller.currentQuestion.question,
-                          ),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(56, 56),
-                          ),
-                          icon: const Icon(
-                            Icons.volume_up,
-                            color: Color(0xFF212121),
-                          ),
-                          iconSize: isCompact ? 40 : 48,
-                        ),
-                        Gaps.w8,
-                        Expanded(
-                          child: Text(
-                            controller.currentQuestion.question,
-                            style: TextStyle(
-                              fontSize: isCompact ? 26 : 36,
-                              color: const Color(0xFF212121),
+                  child: GameSpeechTooltip(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFECEFF1),
+                        padding: EdgeInsets.zero,
+                      ),
+                      onPressed: () =>
+                          controller.speak(controller.currentQuestion.question),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          IconButton(
+                            tooltip: loc.pressToPlayAudio,
+                            onPressed: () => controller.speak(
+                              controller.currentQuestion.question,
                             ),
-                            textAlign: TextAlign.start,
-                            softWrap: true, // 允許換行
-                            overflow: TextOverflow.visible,
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(56, 56),
+                            ),
+                            icon: const Icon(
+                              Icons.volume_up,
+                              color: Color(0xFF212121),
+                            ),
+                            iconSize: isCompact ? 40 : 48,
                           ),
-                        ),
-                      ],
+                          Gaps.w8,
+                          Expanded(
+                            child: Text(
+                              controller.currentQuestion.question,
+                              style: TextStyle(
+                                fontSize: isCompact ? 26 : 36,
+                                color: const Color(0xFF212121),
+                              ),
+                              textAlign: TextAlign.start,
+                              softWrap: true, // 允許換行
+                              overflow: TextOverflow.visible,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -166,13 +171,18 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
               // ⭐ 提交按鈕（保險）
               Padding(
                 padding: Insets.all8,
-                child: ElevatedButton(
-                  onPressed: controller.board.currentSelection.isEmpty
-                      ? null
-                      : controller.submitSelection,
-                  child: Text(
-                    loc.recordSubmit,
-                    style: const TextStyle(fontSize: 24, color: Colors.white),
+                child: Tooltip(
+                  message: controller.board.currentSelection.isEmpty
+                      ? loc.answerBeforeCheck
+                      : loc.submitAnswer,
+                  child: ElevatedButton(
+                    onPressed: controller.board.currentSelection.isEmpty
+                        ? null
+                        : controller.submitSelection,
+                    child: Text(
+                      loc.recordSubmit,
+                      style: const TextStyle(fontSize: 24, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
@@ -222,27 +232,30 @@ class _WordSearchGrid extends StatelessWidget {
             final col = index % gridSize;
             final cell = board.grid[row][col];
 
-            return GestureDetector(
-              onTapDown: (_) => controller.onSelectCell(cell),
-              child: Container(
-                width: cellSize,
-                height: cellSize,
-                decoration: BoxDecoration(
-                  color: cell.correct
-                      ? Colors.green
-                      : cell.selected
-                      ? Colors.blue
-                      : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      cell.letter.toLowerCase(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: cellSize * 0.6, // 字體大小約為格子大小 60%
+            return Tooltip(
+              message: AppLocalizations.of(context)!.selectAnswer,
+              child: GestureDetector(
+                onTapDown: (_) => controller.onSelectCell(cell),
+                child: Container(
+                  width: cellSize,
+                  height: cellSize,
+                  decoration: BoxDecoration(
+                    color: cell.correct
+                        ? Colors.green
+                        : cell.selected
+                        ? Colors.blue
+                        : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        cell.letter.toLowerCase(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: cellSize * 0.6, // 字體大小約為格子大小 60%
+                        ),
                       ),
                     ),
                   ),

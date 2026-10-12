@@ -1715,14 +1715,16 @@ class ServiceGame {
       }
     }
     if (localMode) throw StateError('local_question_bank_empty');
-    final result = await supabase.rpc(
-      'get_translation_with_options',
-      params: {
-        'user_name': userName,
-        'p_level': level,
-        'p_question_bank': questionBank,
-      },
-    );
+    final result = await supabase
+        .rpc(
+          'get_translation_with_options',
+          params: {
+            'user_name': userName,
+            'p_level': level,
+            'p_question_bank': questionBank,
+          },
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (result == null || result.isEmpty) {
       throw Exception("No data returned");

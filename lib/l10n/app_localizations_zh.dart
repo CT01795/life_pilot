@@ -557,10 +557,52 @@ class AppLocalizationsZh extends AppLocalizations {
   String get speakingText => '播放語音';
 
   @override
+  String get pressToPlayAudio => '按下後播放語音';
+
+  @override
   String get gameInstructions => '遊戲說明';
 
   @override
   String get gameInstructionsGeneral => '依畫面提示完成題目。喇叭可播放語音；麥克風點一下開始說話，再點一下完成；可拖曳的方塊請拖到目標位置，答題後再按檢查或送出。';
+
+  @override
+  String get gameInstructionsGrammar => '聆聽或閱讀題目，選出正確的文法答案。';
+
+  @override
+  String get gameInstructionsSentence => '播放題目語音，將文字方塊拖曳成正確順序，再按檢查。';
+
+  @override
+  String get gameInstructionsSpeaking => '先播放題目，點一下麥克風開始說話，再點一下完成並送出答案。';
+
+  @override
+  String get gameInstructionsTranslation => '播放題目與選項語音，勾選正確翻譯。';
+
+  @override
+  String get gameInstructionsSocial => '聆聽情境與選項，勾選最適合的回應。按下文字只會播放語音。';
+
+  @override
+  String get gameInstructionsWordSearch => '聆聽或閱讀題目，在字母格中依序選出答案，再按送出。';
+
+  @override
+  String get gameInstructionsPuzzleMap => '選擇難易度，依提示完成地圖拼圖，確認後送出答案。';
+
+  @override
+  String get gameInstructionsMonomino => '將上方箭頭拖曳到格子，安排角色走到終點的路線，再按檢查路徑。';
+
+  @override
+  String get gameInstructionsPolyomino => '將左側積木拖到格子；點一下積木可旋轉。完成連接後按送出。';
+
+  @override
+  String get gameInstructionsScratch => '在編輯區排列 Blockly 指令並按開始，讓角色避開障礙並取得寶藏。';
+
+  @override
+  String get gameInstructionsScratchMaze => '在編輯區排列 Blockly 指令並按開始，引導角色通過迷宮抵達終點。';
+
+  @override
+  String get gameInstructionsMarioTranslation => '使用左右、跳躍與發射按鈕。按下題目或文字可播放語音，收集正確文字完成翻譯。';
+
+  @override
+  String get checkOption => '勾選';
 
   @override
   String get startSpeaking => '點一下開始說話';
@@ -570,6 +612,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get answerBeforeCheck => '答題後再檢查';
+
+  @override
+  String get selectAnswer => '勾選答案';
 
   @override
   String get dragItem => '拖曳';
@@ -980,7 +1025,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get homeJourneyReviewHint => '完成行程時，可一次整理回憶、收支與積分';
+  String get homeJourneyReviewHint => '完成行程時，可一次整理收支與積分，並加入至回憶';
 
   @override
   String get language => '語言';
@@ -1655,6 +1700,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addToSchedule => '加入行程';
+
+  @override
+  String get addToCalendarHint => '加入至行事曆';
+
+  @override
+  String get addToMemoryHint => '加入至回憶';
 
   @override
   String get addSchedule => '新增行程';
@@ -2409,6 +2460,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountCreate => '建立';
 
   @override
+  String get changeAccountImage => '變更帳戶圖片';
+
+  @override
+  String get createAccountingAccount => '新增記帳帳戶';
+
+  @override
+  String get createPointsAccount => '新增積分帳戶';
+
+  @override
   String get accountDefault => '預設';
 
   @override
@@ -2694,7 +2754,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get myQuestionBankEmpty => '你的題庫在這個等級尚無可用題目，請先新增題目。';
 
   @override
-  String get myQuestions => '我的題目';
+  String get myQuestions => '檢視我的題目';
+
+  @override
+  String get questionSearchGuidance => '先搜尋；沒有結果時可新增題目';
+
+  @override
+  String get jumpToScheduleSection => '點選會跳至近日行程區塊';
+
+  @override
+  String get jumpToAccountingSection => '點選會跳至記帳區塊';
+
+  @override
+  String get jumpToPointsSection => '點選會跳至積分區塊';
 
   @override
   String get newQuestionGroup => '新分類名稱';
