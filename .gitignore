@@ -78,3 +78,7 @@ venv/
 
 # Local Supabase SQL drafts and manual database scripts
 /tool/*.sql
+
+# Vendored plugin development fixtures are not required by Life Pilot.
+/third_party/flutter_keyboard_visibility/example/
+/third_party/flutter_keyboard_visibility/test/

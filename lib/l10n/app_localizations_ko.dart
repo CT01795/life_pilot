@@ -1191,10 +1191,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adminSubscriptionExpiryMustBeFuture => '만료일은 현재보다 이후여야 합니다. 같은 날 만료하려면 내일 이후를 선택하세요.';
 
   @override
-  String get adminSubscriptionSimilarQuotaTitle => '유사한 한도가 이미 있습니다';
+  String get adminSubscriptionSimilarQuotaTitle => '유효한 한도가 있습니다';
 
   @override
-  String get adminSubscriptionSimilarQuotaMessage => '동일한 요금제, 저장 위치, 배수의 권한이 이미 있습니다. 그래도 추가할까요?';
+  String get adminSubscriptionSimilarQuotaMessage => '이 사용자에게 유효한 한도가 있습니다. 그래도 하나 더 추가할까요?';
 
   @override
   String get adminSubscriptionAddQuotaConfirm => '그래도 추가';
@@ -1511,6 +1511,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String subscriptionExpiringSoon(int days) {
     return '구독이 $days일 이내에 만료됩니다';
   }
+
+  @override
+  String subscriptionPartialExpiringSoon(int days) {
+    return '일부 구독이 $days일 이내에 만료됩니다';
+  }
+
+  @override
+  String get subscriptionPartialExpiryImpact => '다른 구독은 계속 유효합니다. 만료 후 남는 누적 한도는 아래와 같습니다.';
 
   @override
   String get subscriptionExpiringCloudImpact => '갱신하지 않으면 추가와 수정이 중단됩니다. 만료 후 유효한 클라우드 한도를 초과한 데이터는 정리 절차에 들어갑니다.';

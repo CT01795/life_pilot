@@ -1191,10 +1191,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSubscriptionExpiryMustBeFuture => 'The expiry must be later than now. For same-day expiry, choose tomorrow or later.';
 
   @override
-  String get adminSubscriptionSimilarQuotaTitle => 'Similar quota already exists';
+  String get adminSubscriptionSimilarQuotaTitle => 'Active allowance already exists';
 
   @override
-  String get adminSubscriptionSimilarQuotaMessage => 'This user already has the same plan, storage location, and multiplier. Add another entitlement anyway?';
+  String get adminSubscriptionSimilarQuotaMessage => 'This user already has an active allowance. Add another entitlement anyway?';
 
   @override
   String get adminSubscriptionAddQuotaConfirm => 'Add anyway';
@@ -1511,6 +1511,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String subscriptionExpiringSoon(int days) {
     return 'Subscription expires within $days days';
   }
+
+  @override
+  String subscriptionPartialExpiringSoon(int days) {
+    return 'Some subscriptions expire within $days days';
+  }
+
+  @override
+  String get subscriptionPartialExpiryImpact => 'Other subscriptions remain active. Your cumulative quota after expiry is shown below.';
 
   @override
   String get subscriptionExpiringCloudImpact => 'Without renewal, adding and editing stops. Data above the cloud quota remaining after expiry enters the cleanup process.';

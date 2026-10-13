@@ -1191,10 +1191,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminSubscriptionExpiryMustBeFuture => '到期日必須晚於現在；同日到期請改選明日或之後。';
 
   @override
-  String get adminSubscriptionSimilarQuotaTitle => '已有類似額度';
+  String get adminSubscriptionSimilarQuotaTitle => '已有有效額度';
 
   @override
-  String get adminSubscriptionSimilarQuotaMessage => '這位使用者已有相同方案、儲存位置與倍率的額度，是否仍要增加一筆？';
+  String get adminSubscriptionSimilarQuotaMessage => '這位使用者目前已有有效額度，是否仍要增加一筆？';
 
   @override
   String get adminSubscriptionAddQuotaConfirm => '仍要增加';
@@ -1513,10 +1513,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get subscriptionExpiringCloudImpact => '未續訂後將無法新增或修改；超出到期後有效雲端額度的資料會進入清理流程。';
+  String subscriptionPartialExpiringSoon(int days) {
+    return '部分訂閱將於 $days 天內到期';
+  }
 
   @override
-  String get subscriptionExpiringLocalImpact => '未續訂後將無法新增或修改本機資料，但仍可查詢或刪除。';
+  String get subscriptionPartialExpiryImpact => '其他訂閱仍有效；到期後的剩餘累積額度如下。';
+
+  @override
+  String get subscriptionExpiringCloudImpact => '未續訂將無法新增或修改資料；超出有效雲端額度的資料會進入清理流程。';
+
+  @override
+  String get subscriptionExpiringLocalImpact => '未續訂將無法新增或修改本機資料，但仍可查詢或刪除。';
 
   @override
   String get subscriptionQuotaScheduleTitle => '額度到期變化';

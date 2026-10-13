@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 
@@ -15,9 +14,6 @@ class ServicePersonalData {
     required AppLocalizations loc,
   }) async {
     final cloudRows = await _fetchAllCloudRows();
-    final localRows = await LocalDataStore.instance.exportAllRecords(
-      owner: email,
-    );
     final workbook = Excel.createExcel();
     final meta = workbook[loc.dataExportSummarySheet];
     workbook.delete('Sheet1');
@@ -26,7 +22,7 @@ class ServicePersonalData {
       TextCellValue(loc.description),
       TextCellValue(loc.dataExportIncludedPages),
     ]);
-    _appendRowsByTable(workbook, [...cloudRows, ...localRows], loc);
+    _appendRowsByTable(workbook, cloudRows, loc);
     final bytes = Uint8List.fromList(workbook.encode()!);
     final stamp = DateTime.now().toLocal().toIso8601String().split('T').first;
     return exporter.exportFile('life_pilot_data_$stamp.xlsx', bytes);

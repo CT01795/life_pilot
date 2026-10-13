@@ -68,10 +68,10 @@ class LanguageToggleDropdown extends StatelessWidget {
         }).toList();
       },
       child: SizedBox(
-        width: compact ? 64 : null,
+        width: compact ? 48 : null,
         height: kToolbarHeight,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
+          padding: EdgeInsets.symmetric(horizontal: compact ? 0 : 6),
           child: Row(
             mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -85,8 +85,12 @@ class LanguageToggleDropdown extends StatelessWidget {
                   softWrap: false,
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
+                const Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ],
-              const Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
             ],
           ),
         ),

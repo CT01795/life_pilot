@@ -1,3 +1,5 @@
+import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
+
 class SubscriptionUsage {
   const SubscriptionUsage({
     required this.resource,
@@ -99,31 +101,22 @@ class SubscriptionEntitlement {
     final rawQuotas = Map<String, dynamic>.from(
       json['entitlement_snapshot'] as Map? ?? const {},
     );
+    final multiplier = (json['quota_multiplier'] as num?)?.toInt() ?? 1;
     return SubscriptionEntitlement(
       versionName: json['version_name']?.toString() ?? '',
       effectiveAt: DateTime.parse(json['effective_at'].toString()),
       storagePlan: json['storage_plan']?.toString() ?? 'cloud',
-      multiplier: (json['quota_multiplier'] as num?)?.toInt() ?? 1,
+      multiplier: multiplier,
       pricePaidTwd: (json['quarterly_price_paid_twd'] as num?)?.toInt() ?? 0,
       endsAt: DateTime.parse(json['ends_at'].toString()),
       quotas: {
-        for (final entry in rawQuotas.entries)
-          _resourceKey(entry.key): (entry.value as num?)?.toInt() ?? 0,
+        for (final resource in subscriptionQuotaResources)
+          resource: ?entitlementSnapshotQuota(
+            rawQuotas,
+            resource,
+            multiplier: multiplier,
+          ),
       },
     );
   }
-
-  static String _resourceKey(String key) => switch (key) {
-    'calendar_quota' => 'calendar_events',
-    'recommended_event_quota' => 'recommended_events',
-    'recommended_attraction_quota' => 'recommended_attractions',
-    'accounting_quota' => 'accounting_detail',
-    'point_quota' => 'point_record_detail',
-    'memory_quota' => 'memory_trace',
-    'game_question_quota' => 'game_questions',
-    'calendar_share_quota' => 'calendar_shares',
-    'image_megabytes' => 'image_bytes',
-    'answer_history_days' => 'answer_history_days',
-    _ => key,
-  };
 }

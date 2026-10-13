@@ -1,4 +1,5 @@
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
+import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -292,11 +293,19 @@ class ServiceSubscription {
         final multiplier =
             (row['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
         eventQuota +=
-            ((snapshot['recommended_event_quota'] as num?)?.toInt() ?? 0) *
-            multiplier;
+            entitlementSnapshotQuota(
+              snapshot,
+              'recommended_events',
+              multiplier: multiplier,
+            ) ??
+            0;
         attractionQuota +=
-            ((snapshot['recommended_attraction_quota'] as num?)?.toInt() ?? 0) *
-            multiplier;
+            entitlementSnapshotQuota(
+              snapshot,
+              'recommended_attractions',
+              multiplier: multiplier,
+            ) ??
+            0;
       }
       if (eventQuota == 0 && attractionQuota == 0) {
         final versions = await fetchPricingVersions();

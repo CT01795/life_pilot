@@ -102,7 +102,7 @@ class _AppViewState extends State<AppView> with WidgetsBindingObserver {
               final mediaQuery = MediaQuery.of(context);
               final scaleFactor = mediaQuery.textScaler
                   .scale(1)
-                  .clamp(1.5, 2.0)
+                  .clamp(1.0, 2.0)
                   .toDouble();
 
               final content =

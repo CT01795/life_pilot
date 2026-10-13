@@ -1,6 +1,6 @@
 # Life Pilot 開發者技術文件
 
-文件版本：2026-09-08
+文件版本：2026-10-13
 
 ## 1. 系統概觀
 
@@ -126,6 +126,11 @@ python -m unittest discover -s tests
 - 有效 local entitlement 回傳不限量；管理者亦不限量。
 - UI 的 `get_my_subscription_entitlements()` 顯示每筆權益；`get_my_subscription_usage()` 顯示合計使用量／限額。
 - 到期後 entitlement 不再納入加總。
+- 任何有效 entitlement 剩餘 15 天以內時，UI 顯示到期天數與儲存位置影響。
+- 部分付費權益到期時，只從累加額度移除該筆權益；目前儲存位置仍有其他有效權益時不可誤判為整體到期。
+- 目前儲存位置的全部付費權益到期後才禁止新增與修改；本機由 `LocalDataStore` 統一阻擋，雲端由資料庫寫入檢查統一阻擋，UI 僅負責顯示友善錯誤。
+- 雲端額度下降後，以仍有效 entitlement 的累加額度判斷超額；沒有有效雲端付費 entitlement 時才採用目前免費版本額度。
+- 清理介面必須同時支援預覽、清除超額與清除全部；排程清理只移除超額部分，不能把整個帳號資料視為超額一次刪除。
 - 管理者可建立價格版本、替換使用者方案或新增疊加權益。
 - 正式付款尚需串接 Google Play／Apple In-App Purchase、後端收據驗證、付款事件冪等及 webhook。
 
@@ -174,7 +179,18 @@ Render 執行 `python_ai_service`，健康檢查為 `/health`。部署後確認 
 
 正式簽章詳見根目錄 `RELEASE_SIGNING.md`。Android 使用本機 `android/key.properties` 指向 upload keystore；不得提交真實 keystore 或密碼。iOS 使用 Xcode Automatic Signing、Apple Developer Team 及 bundle ID `com.minavi.life_pilot`。
 
-## 11. 目前技術限制與後續工作
+## 11. 隱私、條款、匯出與資料保存
+
+- 對外法律頁面為 `web/privacy.html` 與 `web/terms.html`；功能、權限、保存期限或第三方服務異動時，必須同步檢查兩份頁面及三份產品文件。
+- Android Manifest、iOS Info.plist 與 Web 實際要求的通知、精確鬧鐘、麥克風、語音辨識及相片選擇權限，必須與隱私權政策一致。產品不應宣稱必要使用裝置即時定位。
+- `ServicePersonalData.export()` 是雲端 Excel 匯出，不是資料模式搬移。它只讀取雲端資料，不得把 `LocalDataStore` 合併進匯出檔。
+- Excel 匯出只包含行事曆、回憶走廊、記帳與積分的畫面資料；欄名、頁籤及分類值依目前語系產生。
+- 雲端／本機搬移由 `ServiceLocalDataTransfer` 負責，與 Excel 匯出分離；搬移成功後才刪除來源端資料。
+- 帳號刪除只能處理 Authentication 與雲端資料。IndexedDB／Sembast 位於使用者裝置，伺服器無法遠端刪除，UI 與條款必須明確提醒。
+- 排程清理至少包含 `cleanup_expired_subscription_overages`、`cleanup_expired_game_answer_history` 及 `cleanup_inactive_free_accounts`，並保留稽核資訊。
+- `subscription_expiry_schedule.dart` 的畫面預告與資料庫清理規則必須一致：部分權益到期只降低累加額度；全部權益到期才套用唯讀或免費回退。
+
+## 12. 目前技術限制與後續工作
 
 - 正式 App 內付款及收據驗證尚未完成。
 - 推薦活動、景點與回憶資料量持續增加後，需全面改為伺服器分頁及條件查詢。

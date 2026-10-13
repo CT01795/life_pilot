@@ -127,9 +127,11 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
       await _load();
       if (!mounted) return;
       AppNavigator.showSnackBar(loc.quotaFreePeriodSaved);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      AppNavigator.showSnackBar(loc.quotaFreePeriodSaveFailed);
+      AppNavigator.showSnackBar(
+        '${loc.quotaFreePeriodSaveFailed}\n${error.toString()}',
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -163,9 +165,11 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
       await _load();
       if (!mounted) return;
       AppNavigator.showSnackBar(loc.quotaFreePeriodCleared);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      AppNavigator.showSnackBar(loc.quotaFreePeriodSaveFailed);
+      AppNavigator.showSnackBar(
+        '${loc.quotaFreePeriodSaveFailed}\n${error.toString()}',
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }

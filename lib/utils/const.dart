@@ -24,7 +24,7 @@ final List<String> currencyList = [
   'NZD',
   'THB',
   'EUR',
-  'VND'
+  'VND',
 ];
 
 // -------------------- Auth --------------------
@@ -36,8 +36,8 @@ class AuthConstants {
   static const adminRole = 'admin';
   static const email = 'email';
   static const minimumPasswordLength = 8;
-  static const privacyPolicyVersion = '2026-10-08';
-  static const termsOfServiceVersion = '2026-10-08';
+  static const privacyPolicyVersion = '2026-10-13';
+  static const termsOfServiceVersion = '2026-10-13';
 }
 
 // -------------------- Source --------------------
@@ -231,10 +231,18 @@ class Insets {
   static const h12v8 = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
 
   static const directionalL20T6 = EdgeInsetsDirectional.only(start: 20, top: 6);
-  static const directionalL4R4T4B8 =
-      EdgeInsetsDirectional.only(start: 4, end: 4, top: 4, bottom: 8);
-  static const directionalL1R1B1 =
-      EdgeInsetsDirectional.only(start: 1, end: 1, top: 0, bottom: 1);
+  static const directionalL4R4T4B8 = EdgeInsetsDirectional.only(
+    start: 4,
+    end: 4,
+    top: 4,
+    bottom: 8,
+  );
+  static const directionalL1R1B1 = EdgeInsetsDirectional.only(
+    start: 1,
+    end: 1,
+    top: 0,
+    bottom: 1,
+  );
   static const directionalR3 = EdgeInsetsDirectional.only(end: 3);
   static const directionalT6 = EdgeInsets.only(top: 6);
   static const directionalB12 = EdgeInsets.only(bottom: 12);

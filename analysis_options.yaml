@@ -17,6 +17,11 @@ analyzer:
     - web/**
     - macos/**
     - linux/**
+    # Vendored packages are analyzed in their own package context. Their
+    # examples and tests may use dev dependencies that are intentionally not
+    # installed by the Life Pilot root package.
+    - third_party/**/example/**
+    - third_party/**/test/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

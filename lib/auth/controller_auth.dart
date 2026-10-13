@@ -498,6 +498,7 @@ class ControllerAuth extends SafeChangeNotifier {
   }
 
   void _handleSignedOut() {
+    if (!_isLoggedIn && _currentAccount == null && !_isLoading) return;
     final signedOutAccount = _currentAccount;
     if (_currentAccount != null && !_isAnonymous) {
       _registerMap[AuthConstants.email] = _currentAccount!;
@@ -787,31 +788,13 @@ class ControllerAuth extends SafeChangeNotifier {
       return error;
     }
 
-    if (_currentAccount != null && !_isAnonymous) {
-      _registerMap[AuthConstants.email] = _currentAccount!;
+    // Supabase normally emits signedOut before signOut() completes. Let that
+    // event perform the single shared teardown. If a platform omits the event,
+    // fall back to the same idempotent path here instead of clearing the
+    // Provider tree a second time.
+    if (_isLoggedIn || _currentAccount != null || _isLoading) {
+      _handleSignedOut();
     }
-
-    _update(() {
-      _isLoggedIn = false;
-      _isAnonymous = false;
-      _currentAccount = null;
-      _accountType = 'personal';
-      _subscription = SubscriptionSnapshot.free;
-      _quotaFreePeriodActive = false;
-      _quotaFreePeriodEndingInDays = null;
-      _quotaFreePeriodEndsAt = null;
-      _preferredStorage = DataStorageLocation.cloud;
-      _hasStorageChoice = false;
-      _currentPage = AuthPage.login;
-      _lastAccountValidationAt = null;
-    }, notify: false);
-
-    modelDashboard?.switchAccount(null);
-    controllerCalendar?.clearAll(); // 🧹 登出也清除資料
-    _accountValidationTimer?.cancel();
-    _accountValidationTimer = null;
-
-    _update(() => _isLoading = false);
     return null;
   }
 

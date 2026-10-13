@@ -5,9 +5,11 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/subscription/subscription_expiry_schedule.dart';
 import 'package:life_pilot/subscription/widgets_admin_pricing_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_subscription_editor.dart';
 import 'package:life_pilot/subscription/widgets_admin_quota_free_period.dart';
+import 'package:life_pilot/subscription/widgets_subscription_cleanup.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -143,16 +145,22 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
               item.endsAt.isAfter(DateTime.now()),
         )
         .toList(growable: false);
-    final quotaExpiryStages = _buildQuotaExpiryStages(
+    final fallbackQuotas = currentStoragePlan == 'cloud'
+        ? _latestFreeCloudVersion?.quotas ?? const <String, int>{}
+        : {for (final resource in displayedUsage.keys) resource: 0};
+    final quotaExpiryStages = buildSubscriptionQuotaExpiryStages(
       currentEntitlements,
-      fallbackQuotas: currentStoragePlan == 'cloud'
-          ? _latestFreeCloudVersion?.quotas
-          : {for (final resource in displayedUsage.keys) resource: 0},
+      fallbackQuotas: fallbackQuotas,
     ).take(2).toList(growable: false);
     final sortedExpiryDates =
         currentEntitlements.map((item) => item.endsAt).toList()..sort();
     final endDate =
-        sortedExpiryDates.firstOrNull ?? subscription.currentPeriodEnd;
+        sortedExpiryDates.lastOrNull ?? subscription.currentPeriodEnd;
+    final expiryReminder = buildSubscriptionExpiryReminder(
+      currentEntitlements,
+      now: DateTime.now(),
+      fallbackQuotas: fallbackQuotas,
+    );
     final dates = MaterialLocalizations.of(context);
     String? formatDate(DateTime? value) {
       if (value == null) return null;
@@ -164,7 +172,7 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
 
     final endLabel = formatDate(endDate);
     final graceLabel = formatDate(subscription.downgradeGraceEndsAt);
-    final expiryDays = endDate == null
+    final fallbackExpiryDays = endDate == null
         ? null
         : (endDate.toLocal().difference(DateTime.now()).inHours / 24).ceil();
     final overages = displayedUsage.values
@@ -216,19 +224,78 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
           ),
           if (!auth.isSysAdmin &&
               subscription.isPlus &&
-              expiryDays != null &&
-              expiryDays >= 0 &&
-              expiryDays <= 15) ...[
+              ((expiryReminder?.kind == SubscriptionExpiryReminderKind.all) ||
+                  (expiryReminder == null &&
+                      currentEntitlements.isEmpty &&
+                      fallbackExpiryDays != null &&
+                      fallbackExpiryDays >= 0 &&
+                      fallbackExpiryDays <= 15))) ...[
             Gaps.h12,
             Card(
               color: Theme.of(context).colorScheme.tertiaryContainer,
               child: ListTile(
                 leading: const Icon(Icons.notification_important_outlined),
-                title: Text(loc.subscriptionExpiringSoon(expiryDays)),
+                title: Text(
+                  loc.subscriptionExpiringSoon(
+                    expiryReminder?.days ?? fallbackExpiryDays!,
+                  ),
+                ),
                 subtitle: Text(
                   localStorageSelected
                       ? loc.subscriptionExpiringLocalImpact
                       : loc.subscriptionExpiringCloudImpact,
+                ),
+              ),
+            ),
+          ],
+          if (!auth.isSysAdmin &&
+              subscription.isPlus &&
+              expiryReminder?.kind ==
+                  SubscriptionExpiryReminderKind.partial) ...[
+            Gaps.h12,
+            Card(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.subscriptionPartialExpiringSoon(expiryReminder!.days),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Gaps.h4,
+                    Text(loc.subscriptionPartialExpiryImpact),
+                    Gaps.h8,
+                    for (final entry
+                        in expiryReminder.stage.remainingQuotas.entries.where(
+                          (entry) =>
+                              entry.key != 'answer_history_days' &&
+                              showResource(entry.key),
+                        ))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(_resourceLabel(loc, entry.key)),
+                            ),
+                            Text(
+                              _quotaValue(
+                                loc,
+                                entry.key,
+                                entry.value,
+                                zeroMeansNotLimited:
+                                    currentStoragePlan == 'local' &&
+                                    expiryReminder
+                                        .stage
+                                        .hasRemainingPaidSubscription,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -260,6 +327,8 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
                 ),
               ),
             ),
+            Gaps.h12,
+            const SubscriptionDataCleanup(),
           ],
           Gaps.h16,
           if (displayedUsage.isNotEmpty) ...[
@@ -667,53 +736,6 @@ String _quotaValue(
   return resource == 'image_bytes'
       ? '${value ~/ 1024 ~/ 1024} MB'
       : value.toString();
-}
-
-class _QuotaExpiryStage {
-  const _QuotaExpiryStage({
-    required this.expiresAt,
-    required this.remainingQuotas,
-    required this.hasRemainingPaidSubscription,
-  });
-
-  final DateTime expiresAt;
-  final Map<String, int> remainingQuotas;
-  final bool hasRemainingPaidSubscription;
-}
-
-List<_QuotaExpiryStage> _buildQuotaExpiryStages(
-  List<SubscriptionEntitlement> entitlements, {
-  Map<String, int>? fallbackQuotas,
-}) {
-  final expiries = entitlements.map((item) => item.endsAt).toSet().toList()
-    ..sort();
-  return expiries
-      .map((expiresAt) {
-        final remainingEntitlements = entitlements
-            .where((item) => item.endsAt.isAfter(expiresAt))
-            .toList(growable: false);
-
-        // 免費額度與付費額度不可疊加。只要到期後仍有付費訂閱，
-        // 就只加總仍有效的付費額度；全部付費訂閱到期後才套用免費額度。
-        final remaining = remainingEntitlements.isEmpty
-            ? <String, int>{...?fallbackQuotas}
-            : <String, int>{};
-        for (final entitlement in remainingEntitlements) {
-          for (final entry in entitlement.quotas.entries) {
-            remaining.update(
-              entry.key,
-              (value) => value + entry.value * entitlement.multiplier,
-              ifAbsent: () => entry.value * entitlement.multiplier,
-            );
-          }
-        }
-        return _QuotaExpiryStage(
-          expiresAt: expiresAt,
-          remainingQuotas: remaining,
-          hasRemainingPaidSubscription: remainingEntitlements.isNotEmpty,
-        );
-      })
-      .toList(growable: false);
 }
 
 class _PlanCard extends StatelessWidget {

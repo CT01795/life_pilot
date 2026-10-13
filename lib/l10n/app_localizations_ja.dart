@@ -1191,10 +1191,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adminSubscriptionExpiryMustBeFuture => '終了日は現在より後にしてください。同日終了の場合は明日以降を選択してください。';
 
   @override
-  String get adminSubscriptionSimilarQuotaTitle => '同様の容量があります';
+  String get adminSubscriptionSimilarQuotaTitle => '有効な上限があります';
 
   @override
-  String get adminSubscriptionSimilarQuotaMessage => '同じプラン、保存先、倍率の権利がすでにあります。それでも追加しますか？';
+  String get adminSubscriptionSimilarQuotaMessage => 'このユーザーには有効な上限があります。それでも追加しますか？';
 
   @override
   String get adminSubscriptionAddQuotaConfirm => '追加する';
@@ -1511,6 +1511,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String subscriptionExpiringSoon(int days) {
     return 'サブスクリプションは $days 日以内に終了します';
   }
+
+  @override
+  String subscriptionPartialExpiringSoon(int days) {
+    return '一部のサブスクリプションは $days 日以内に終了します';
+  }
+
+  @override
+  String get subscriptionPartialExpiryImpact => '他のサブスクリプションは引き続き有効です。終了後の合計利用枠は以下のとおりです。';
 
   @override
   String get subscriptionExpiringCloudImpact => '更新しない場合、追加・編集はできません。終了後の有効なクラウド枠を超えるデータは整理対象になります。';

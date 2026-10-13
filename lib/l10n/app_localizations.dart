@@ -2382,13 +2382,13 @@ abstract class AppLocalizations {
   /// Label for adminSubscriptionSimilarQuotaTitle
   ///
   /// In en, this message translates to:
-  /// **'Similar quota already exists'**
+  /// **'Active allowance already exists'**
   String get adminSubscriptionSimilarQuotaTitle;
 
   /// Label for adminSubscriptionSimilarQuotaMessage
   ///
   /// In en, this message translates to:
-  /// **'This user already has the same plan, storage location, and multiplier. Add another entitlement anyway?'**
+  /// **'This user already has an active allowance. Add another entitlement anyway?'**
   String get adminSubscriptionSimilarQuotaMessage;
 
   /// Label for adminSubscriptionAddQuotaConfirm
@@ -2978,6 +2978,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subscription expires within {days} days'**
   String subscriptionExpiringSoon(int days);
+
+  /// No description provided for @subscriptionPartialExpiringSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Some subscriptions expire within {days} days'**
+  String subscriptionPartialExpiringSoon(int days);
+
+  /// Remaining quota notice after a partial subscription expiry
+  ///
+  /// In en, this message translates to:
+  /// **'Other subscriptions remain active. Your cumulative quota after expiry is shown below.'**
+  String get subscriptionPartialExpiryImpact;
 
   /// Label for subscriptionExpiringCloudImpact
   ///

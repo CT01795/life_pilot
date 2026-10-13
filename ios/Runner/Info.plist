@@ -55,9 +55,9 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow microphone access for voice input.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow photo library access to choose an account image.</string>
+	<string>Allow photo library access to select images for records, events, places, memories, and feedback.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Allow speech recognition for speaking exercises.</string>
+	<string>Allow speech recognition for voice data entry and speaking exercises.</string>
 
 	<key>CFBundleURLTypes</key>
 	<array>

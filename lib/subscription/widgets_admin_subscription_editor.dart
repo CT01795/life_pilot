@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
@@ -69,14 +70,11 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _show(loc.adminSubscriptionExpiryMustBeFuture);
       return;
     }
+    var addAnotherEntitlement = _additive;
     if (_plan == 'plus' &&
         _editingEntitlementId == null &&
-        _lookedUpEntitlements.any(
-          (row) =>
-              row['storage_plan']?.toString() == _storagePlan &&
-              row['pricing_version_id']?.toString() == selectedVersion &&
-              (row['quota_multiplier'] as num?)?.toInt() == _multiplier,
-        )) {
+        _lookedUpEntitlements.isNotEmpty &&
+        !_additive) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -95,6 +93,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
         ),
       );
       if (confirmed != true || !mounted) return;
+      addAnotherEntitlement = true;
     }
     setState(() => _saving = true);
     try {
@@ -115,7 +114,8 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
           endsAt: _expiry!,
           note: _note.text,
         );
-      } else if ((_additive || addsAnotherStoragePlan) && _plan == 'plus') {
+      } else if ((addAnotherEntitlement || addsAnotherStoragePlan) &&
+          _plan == 'plus') {
         await service.addUserEntitlementAsAdmin(
           email: _email.text,
           storagePlan: _storagePlan,
@@ -319,6 +319,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                       ],
                     ),
                   ),
+                ..._buildCumulativeQuotaCards(context, loc, versions),
               ],
               if (_subscriptionExists) ...[
                 Gaps.h8,
@@ -833,6 +834,105 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     return MaterialLocalizations.of(context).formatMediumDate(parsed);
   }
 
+  List<Widget> _buildCumulativeQuotaCards(
+    BuildContext context,
+    AppLocalizations loc,
+    List<SubscriptionPricingVersion> versions,
+  ) {
+    final cards = <Widget>[];
+    for (final storagePlan in const ['cloud', 'local']) {
+      final quotas = _cumulativeQuotas(versions, storagePlan: storagePlan);
+      if (quotas.isEmpty) continue;
+      cards.addAll([
+        Gaps.h8,
+        Card(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${storagePlan == 'cloud' ? loc.adminSubscriptionCloud : loc.adminSubscriptionLocal} · ${loc.subscriptionActualQuotaTitle}',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Gaps.h8,
+                for (final entry in quotas.entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(_adminResourceLabel(loc, entry.key)),
+                        ),
+                        Text(
+                          _adminQuotaValue(
+                            loc,
+                            entry.key,
+                            entry.value,
+                            storagePlan: storagePlan,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ]);
+    }
+    return cards;
+  }
+
+  Map<String, int> _cumulativeQuotas(
+    List<SubscriptionPricingVersion> versions, {
+    required String storagePlan,
+  }) {
+    final versionsById = {for (final version in versions) version.id: version};
+    final totals = <String, int>{};
+    for (final entitlement in _lookedUpEntitlements) {
+      if (entitlement['storage_plan']?.toString() != storagePlan) continue;
+      final snapshot = Map<String, dynamic>.from(
+        entitlement['entitlement_snapshot'] as Map? ?? const {},
+      );
+      final multiplier =
+          (entitlement['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ??
+          1;
+      if (snapshot.isNotEmpty) {
+        for (final resource in _adminQuotaResources) {
+          final value = entitlementSnapshotQuota(
+            snapshot,
+            resource,
+            multiplier: multiplier,
+          );
+          if (value == null) continue;
+          totals.update(
+            resource,
+            (current) => current + value,
+            ifAbsent: () => value,
+          );
+        }
+        continue;
+      }
+      final version =
+          versionsById[entitlement['pricing_version_id']?.toString()];
+      if (version == null) continue;
+      for (final entry in version.quotas.entries) {
+        if (entry.key == 'answer_history_days') continue;
+        totals.update(
+          entry.key,
+          (current) => current + entry.value * multiplier,
+          ifAbsent: () => entry.value * multiplier,
+        );
+      }
+    }
+    return {
+      for (final resource in _adminQuotaResources)
+        if (totals.containsKey(resource)) resource: totals[resource]!,
+    };
+  }
+
   void _setPlan(String value) {
     setState(() {
       _plan = value;
@@ -894,4 +994,47 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     });
     _show(AppLocalizations.of(context)!.adminSubscriptionLoadedForEditing);
   }
+}
+
+const _adminQuotaResources = [
+  'calendar_events',
+  'recommended_events',
+  'recommended_attractions',
+  'accounting_detail',
+  'point_record_detail',
+  'memory_trace',
+  'game_questions',
+  'calendar_shares',
+  'image_bytes',
+];
+
+String _adminResourceLabel(AppLocalizations loc, String resource) =>
+    switch (resource) {
+      'calendar_events' => loc.personalEvent,
+      'recommended_events' => loc.recommendEvent,
+      'recommended_attractions' => loc.recommendPlaces,
+      'accounting_detail' => loc.accountRecords,
+      'point_record_detail' => loc.pointsRecord,
+      'memory_trace' => loc.memoryTrace,
+      'game_questions' => loc.game,
+      'calendar_shares' => loc.calendarSharing,
+      'image_bytes' => loc.subscriptionImageStorage,
+      _ => resource,
+    };
+
+String _adminQuotaValue(
+  AppLocalizations loc,
+  String resource,
+  int value, {
+  required String storagePlan,
+}) {
+  final localUnlimited =
+      storagePlan == 'local' &&
+      value == 0 &&
+      resource != 'recommended_events' &&
+      resource != 'recommended_attractions';
+  if (localUnlimited) return loc.quotaNotLimited;
+  return resource == 'image_bytes'
+      ? '${value ~/ 1024 ~/ 1024} MB'
+      : value.toString();
 }

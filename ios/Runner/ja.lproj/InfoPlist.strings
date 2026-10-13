@@ -1,3 +1,3 @@
 "NSMicrophoneUsageDescription" = "音声入力を使用するためにマイクへのアクセスを許可します。";
-"NSPhotoLibraryUsageDescription" = "アカウント画像を選択するために写真ライブラリへのアクセスを許可します。";
-"NSSpeechRecognitionUsageDescription" = "スピーキング練習のために音声認識の使用を許可します。";
+"NSPhotoLibraryUsageDescription" = "記録、イベント、スポット、思い出、フィードバック用の画像を選択するために写真ライブラリへのアクセスを許可します。";
+"NSSpeechRecognitionUsageDescription" = "音声入力とスピーキング練習のために音声認識の使用を許可します。";
