@@ -77,7 +77,7 @@ class ServiceLocalDataTransfer {
             await LocalDataStore.instance.delete(
               owner: account,
               resource: parseStringValue(item['table_name']),
-              id: parseStringValue(item['id']),
+              id: parseStringValue(item[Fields.id]),
             );
           }
           return LocalDataTransferResult(
@@ -119,7 +119,7 @@ class ServiceLocalDataTransfer {
         await LocalDataStore.instance.delete(
           owner: account,
           resource: parseStringValue(item['table_name']),
-          id: parseStringValue(item['id']),
+          id: parseStringValue(item[Fields.id]),
         );
       }
       if (dashboardSettingSaved) {

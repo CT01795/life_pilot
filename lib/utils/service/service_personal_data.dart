@@ -5,6 +5,7 @@ import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
@@ -92,12 +93,12 @@ class ServicePersonalData {
 
   String _sheetName(String tableName, AppLocalizations loc) {
     final title = switch (tableName) {
-      'calendar_events' => loc.personalEvent,
-      'memory_trace' => loc.memoryTrace,
-      'accounting_account' => loc.accountRecords,
-      'accounting_detail' => '${loc.accountRecords} ${loc.description}',
-      'point_record_account' => loc.pointsRecord,
-      'point_record_detail' => '${loc.pointsRecord} ${loc.description}',
+      TableNames.calendarEvents => loc.personalEvent,
+      TableNames.memoryTrace => loc.memoryTrace,
+      TableNames.accountingAccount => loc.accountRecords,
+      TableNames.accountingDetail => '${loc.accountRecords} ${loc.description}',
+      TableNames.pointRecordAccount => loc.pointsRecord,
+      TableNames.pointRecordDetail => '${loc.pointsRecord} ${loc.description}',
       _ => tableName,
     };
     return title.length > 31 ? title.substring(0, 31) : title;
@@ -131,8 +132,8 @@ class ServicePersonalData {
       'points': loc.pointsUnit,
     };
     final order = switch (tableName) {
-      'calendar_events' ||
-      'memory_trace' ||
+      TableNames.calendarEvents ||
+      TableNames.memoryTrace ||
       'recommended_events' ||
       'recommended_attractions' => [
         'name',
@@ -144,8 +145,12 @@ class ServicePersonalData {
         'end_time',
         'description',
       ],
-      'accounting_account' => ['account_name', 'primary_currency', 'amount'],
-      'accounting_detail' => [
+      TableNames.accountingAccount => [
+        'account_name',
+        'primary_currency',
+        'amount',
+      ],
+      TableNames.accountingDetail => [
         'account_name',
         'date',
         'time',
@@ -155,8 +160,8 @@ class ServicePersonalData {
         'value',
         'currency',
       ],
-      'point_record_account' => ['account_name', 'points'],
-      'point_record_detail' => [
+      TableNames.pointRecordAccount => ['account_name', 'points'],
+      TableNames.pointRecordDetail => [
         'account_name',
         'date',
         'time',
@@ -169,7 +174,8 @@ class ServicePersonalData {
     };
     final available = <String>{for (final record in records) ...record.keys};
     final alwaysIncludeCategory =
-        tableName == 'accounting_detail' || tableName == 'point_record_detail';
+        tableName == TableNames.accountingDetail ||
+        tableName == TableNames.pointRecordDetail;
     return order
         .where(
           (key) =>
@@ -209,38 +215,45 @@ class ServicePersonalData {
     AppLocalizations loc,
   ) {
     final accountNames = <String, String>{
-      for (final row in grouped['accounting_account'] ?? const [])
-        if (row['id'] != null)
-          parseStringValue(row['id']):
-              parseStringValue(row['name'] ?? row['account']),
+      for (final row in grouped[TableNames.accountingAccount] ?? const [])
+        if (row[Fields.id] != null)
+          parseStringValue(row[Fields.id]): parseStringValue(
+            row['name'] ?? row[Fields.account],
+          ),
     };
     final pointAccountNames = <String, String>{
-      for (final row in grouped['point_record_account'] ?? const [])
-        if (row['id'] != null)
-          parseStringValue(row['id']):
-              parseStringValue(row['name'] ?? row['account']),
+      for (final row in grouped[TableNames.pointRecordAccount] ?? const [])
+        if (row[Fields.id] != null)
+          parseStringValue(row[Fields.id]): parseStringValue(
+            row['name'] ?? row[Fields.account],
+          ),
     };
     final prepared = records.map((row) {
       final copy = Map<String, dynamic>.from(row);
-      if (tableName == 'accounting_account') {
-        copy['account_name'] = (copy['name'] ?? copy['account'] ?? '')
-            .toString();
-        copy['primary_currency'] =
-            copy['main_currency'] ?? copy['currency'] ?? '';
-        copy['amount'] = copy['balance'] ?? 0;
-      } else if (tableName == 'point_record_account') {
-        copy['account_name'] = (copy['name'] ?? copy['account'] ?? '')
-            .toString();
-      } else if (tableName == 'accounting_detail') {
+      if (tableName == TableNames.accountingAccount) {
+        copy['account_name'] = parseStringValue(
+          copy['name'] ?? copy[Fields.account],
+        );
+        copy['primary_currency'] = parseStringValue(
+          copy['main_currency'] ?? copy['currency'],
+        );
+        copy['amount'] = parseNumValue(copy['balance']);
+      } else if (tableName == TableNames.pointRecordAccount) {
+        copy['account_name'] = parseStringValue(
+          copy['name'] ?? copy[Fields.account],
+        );
+      } else if (tableName == TableNames.accountingDetail) {
         copy['account_name'] =
             accountNames[parseStringValue(copy['account_id'])] ?? '';
         copy['category'] = _localizedCategory(copy['primary_category'], loc);
         copy['secondary_category'] = _localizedCategory(
-          copy['group'] ?? copy['secondary_category'],
+          parseStringValue(copy['group'] ?? copy['secondary_category']),
           loc,
         );
-        copy['description'] = copy['description'] ?? copy['title'] ?? '';
-      } else if (tableName == 'point_record_detail') {
+        copy['description'] = parseStringValue(
+          copy['description'] ?? copy['title'],
+        );
+      } else if (tableName == TableNames.pointRecordDetail) {
         copy['account_name'] =
             pointAccountNames[parseStringValue(copy['account_id'])] ?? '';
         copy['category'] = _localizedCategory(copy['primary_category'], loc);
@@ -255,56 +268,57 @@ class ServicePersonalData {
     }).toList();
     final dateKey = tableName.contains('detail') ? 'date' : 'start_date';
     prepared.sort((a, b) {
-      if (tableName == 'accounting_account' ||
-          tableName == 'point_record_account') {
+      if (tableName == TableNames.accountingAccount ||
+          tableName == TableNames.pointRecordAccount) {
         return parseStringValue(a['account_name']).toLowerCase().compareTo(
           parseStringValue(b['account_name']).toLowerCase(),
         );
       }
       if (tableName.contains('detail')) {
-        final account = parseStringValue(a['account_name']).compareTo(
-          parseStringValue(b['account_name']),
-        );
+        final account = parseStringValue(
+          a['account_name'],
+        ).compareTo(parseStringValue(b['account_name']));
         if (account != 0) return account;
       }
-      final date = parseStringValue(a[dateKey]).compareTo(
-        parseStringValue(b[dateKey]),
-      );
+      final date = parseStringValue(
+        a[dateKey],
+      ).compareTo(parseStringValue(b[dateKey]));
       if (date != 0) return date;
-      final time = parseStringValue(a['start_time'] ?? a['time']).compareTo(
-        parseStringValue(b['start_time'] ?? b['time']),
-      );
+      final time = parseStringValue(
+        a['start_time'] ?? a['time'],
+      ).compareTo(parseStringValue(b['start_time'] ?? b['time']));
       if (time != 0) return time;
       if (!tableName.contains('detail')) {
-        final endDate = parseStringValue(
-          a['end_date'],
-          fallback: parseStringValue(a['start_date']),
-        ).compareTo(
-          parseStringValue(
-            b['end_date'],
-            fallback: parseStringValue(b['start_date']),
-          ),
-        );
+        final endDate =
+            parseStringValue(
+              a['end_date'],
+              fallback: parseStringValue(a['start_date']),
+            ).compareTo(
+              parseStringValue(
+                b['end_date'],
+                fallback: parseStringValue(b['start_date']),
+              ),
+            );
         if (endDate != 0) return endDate;
-        final endTime = parseStringValue(a['end_time']).compareTo(
-          parseStringValue(b['end_time']),
-        );
+        final endTime = parseStringValue(
+          a['end_time'],
+        ).compareTo(parseStringValue(b['end_time']));
         if (endTime != 0) return endTime;
-        final city = parseStringValue(a['city']).compareTo(
-          parseStringValue(b['city']),
-        );
+        final city = parseStringValue(
+          a['city'],
+        ).compareTo(parseStringValue(b['city']));
         if (city != 0) return city;
-        final location = parseStringValue(a['location']).compareTo(
-          parseStringValue(b['location']),
-        );
+        final location = parseStringValue(
+          a['location'],
+        ).compareTo(parseStringValue(b['location']));
         if (location != 0) return location;
-        return parseStringValue(a['name']).compareTo(
-          parseStringValue(b['name']),
-        );
+        return parseStringValue(
+          a['name'],
+        ).compareTo(parseStringValue(b['name']));
       }
-      return parseStringValue(a['description']).compareTo(
-        parseStringValue(b['description']),
-      );
+      return parseStringValue(
+        a['description'],
+      ).compareTo(parseStringValue(b['description']));
     });
     return prepared;
   }

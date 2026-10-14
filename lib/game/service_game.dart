@@ -147,7 +147,7 @@ class ServiceGame {
   }) async {
     final questionKey = _duplicateKey(question);
     final answerKey = _duplicateKey(answer);
-    final groupKey = group.trim().toLowerCase();
+    final groupKey = normalizeStringValue(group);
     return (await _localQuestions(tableName)).any(
       (row) =>
           parseOptionalStringValue(row[Fields.id]) != excludingId &&
@@ -546,7 +546,7 @@ class ServiceGame {
             (await _localQuestions(TableNames.gameSocialScenarios)).any(
               (row) =>
                   normalizeStringValue(row['category']) ==
-                      category.trim().toLowerCase() &&
+                      normalizeStringValue(category) &&
                   _duplicateKey(parseStringValue(row['scene'])) ==
                       _duplicateKey(scene),
             );
@@ -609,7 +609,7 @@ class ServiceGame {
           (item) =>
               parseOptionalStringValue(item[Fields.id]) != id &&
               normalizeStringValue(item['category']) ==
-                  category.trim().toLowerCase() &&
+                  normalizeStringValue(category) &&
               _duplicateKey(parseStringValue(item['scene'])) ==
                   _duplicateKey(scene),
         );
@@ -682,7 +682,7 @@ class ServiceGame {
         );
       }).toList()..sort((a, b) => b.score.compareTo(a.score));
       return MySocialQuestion(
-        id: parseStringValue(row['id']),
+        id: parseStringValue(row[Fields.id]),
         title: parseStringValue(row['title']),
         scene: parseStringValue(row['scene']),
         category: parseStringValue(row['category'], fallback: 'social'),
@@ -691,14 +691,12 @@ class ServiceGame {
       );
     }).toList();
     final localRows = await _localQuestions(TableNames.gameSocialScenarios);
-    final normalizedKeyword = keyword.trim().toLowerCase();
+    final normalizedKeyword = normalizeStringValue(keyword);
     final localQuestions = localRows
         .where((row) {
           final matchesKeyword =
               normalizedKeyword.isEmpty ||
-              normalizeStringValue(row['title']).contains(
-                normalizedKeyword,
-              ) ||
+              normalizeStringValue(row['title']).contains(normalizedKeyword) ||
               normalizeStringValue(row['scene']).contains(normalizedKeyword);
           final matchesCategory =
               category == null || row['category'] == category;
@@ -1023,7 +1021,7 @@ class ServiceGame {
         .cast<Map<String, dynamic>>()
         .map(
           (row) => MyGameQuestion(
-            id: parseStringValue(row['id']),
+            id: parseStringValue(row[Fields.id]),
             question: parseStringValue(row['question']),
             answer: parseStringValue(row['answer']),
             group: parseStringValue(row['question_group']),
@@ -1034,7 +1032,7 @@ class ServiceGame {
         )
         .toList();
     final localRows = await _localQuestions(tableName);
-    final normalizedKeyword = keyword.trim().toLowerCase();
+    final normalizedKeyword = normalizeStringValue(keyword);
     final matchingLocal = localRows
         .where((row) {
           final matchesGame = _groupMatchesGame(
@@ -1043,12 +1041,10 @@ class ServiceGame {
           );
           final matchesKeyword =
               normalizedKeyword.isEmpty ||
-              normalizeStringValue(row['question']).contains(
-                normalizedKeyword,
-              ) ||
-              normalizeStringValue(row['answer']).contains(
-                normalizedKeyword,
-              );
+              normalizeStringValue(
+                row['question'],
+              ).contains(normalizedKeyword) ||
+              normalizeStringValue(row['answer']).contains(normalizedKeyword);
           final matchesGroup = group == null || row['group'] == group;
           final active = row['is_active'] == true;
           final matchesStatus =
@@ -1060,9 +1056,9 @@ class ServiceGame {
         .map(
           (row) => MyGameQuestion(
             id: parseStringValue(row[Fields.id]),
-          question: parseStringValue(row['question']),
-          answer: parseStringValue(row['answer']),
-          group: parseStringValue(row['group']),
+            question: parseStringValue(row['question']),
+            answer: parseStringValue(row['answer']),
+            group: parseStringValue(row['group']),
             level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
             options: parseOptionalStringValue(row['options']),
@@ -1137,10 +1133,9 @@ class ServiceGame {
     final groups =
         rows
             .map(
-              (row) =>
-                  parseStringValue(
-                    (row as Map<String, dynamic>)['question_group'],
-                  ).trim(),
+              (row) => parseStringValue(
+                (row as Map<String, dynamic>)['question_group'],
+              ).trim(),
             )
             .where(
               (group) => group.isNotEmpty && _groupMatchesGame(gameName, group),
@@ -1212,7 +1207,7 @@ class ServiceGame {
       deletedRows = await supabase
           .from(_questionTableForGame(gameName))
           .delete()
-          .eq('id', questionId)
+          .eq(Fields.id, questionId)
           .eq('owner_id', userId)
           .select('id');
     } on PostgrestException catch (error) {
@@ -1237,7 +1232,9 @@ class ServiceGame {
     if (await _storesLocally) {
       final rows = await _localQuestions(tableName);
       final row = rows
-          .where((item) => parseOptionalStringValue(item[Fields.id]) == questionId)
+          .where(
+            (item) => parseOptionalStringValue(item[Fields.id]) == questionId,
+          )
           .firstOrNull;
       if (row == null) {
         throw StateError('Local question not found.');
@@ -1254,7 +1251,7 @@ class ServiceGame {
     final updatedRows = await supabase
         .from(_questionTableForGame(gameName))
         .update({'is_active': isActive})
-        .eq('id', questionId)
+        .eq(Fields.id, questionId)
         .eq('owner_id', userId)
         .select('id');
     if (updatedRows.isEmpty) {
@@ -1340,7 +1337,7 @@ class ServiceGame {
       if (await _storesLocally) {
         final rows = await _localQuestions(tableName);
         final row = rows
-          .where((item) => parseOptionalStringValue(item[Fields.id]) == id)
+            .where((item) => parseOptionalStringValue(item[Fields.id]) == id)
             .firstOrNull;
         if (row == null) {
           throw StateError('Local question not found.');
@@ -1379,7 +1376,7 @@ class ServiceGame {
             'level': level,
             ...extraValues,
           })
-          .eq('id', id)
+          .eq(Fields.id, id)
           .eq('owner_id', userId);
     } on PostgrestException catch (error) {
       if (error.code == '23505') {

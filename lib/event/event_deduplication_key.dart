@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/event_city_normalizer.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class EventDeduplicationKey {
   const EventDeduplicationKey._();
@@ -46,8 +47,7 @@ class EventDeduplicationKey {
   static String _formatTime(EventItem event) {
     final time = event.startTime;
     if (time == null) return '';
-    return '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}';
+    return '${padIntValue(time.hour)}:${padIntValue(time.minute)}';
   }
 
   static String _join(List<String> parts) => parts.join('\u001F');

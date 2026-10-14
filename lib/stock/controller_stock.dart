@@ -2,6 +2,7 @@ import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 enum StockUpdateStatus { idle, updating, succeeded, failed }
 
@@ -26,7 +27,7 @@ class ControllerStock extends SafeChangeNotifier {
   ControllerStock(this.service);
 
   List<ModelStock> get visibleStocks {
-    final query = searchQuery.trim().toLowerCase();
+    final query = normalizeStringValue(searchQuery);
     if (query.isEmpty) return stocks;
     return stocks
         .where(
@@ -45,7 +46,7 @@ class ControllerStock extends SafeChangeNotifier {
   List<ModelInstitutional> _filterInstitutionals(
     List<ModelInstitutional> items,
   ) {
-    final query = searchQuery.trim().toLowerCase();
+    final query = normalizeStringValue(searchQuery);
     if (query.isEmpty) return items;
     return items
         .where((item) {

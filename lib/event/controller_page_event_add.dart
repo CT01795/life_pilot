@@ -202,10 +202,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
       for (final entry in subFields.entries) {
         initController(
           key: '${entry.key}_sub_${sub.id}',
-          initialValue:
-              entry.value?.toString() == null || entry.value!.toString().isEmpty
-              ? ''
-              : entry.value!.toString(),
+          initialValue: parseStringValue(entry.value),
         );
       }
     }
@@ -304,7 +301,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             ageMax != null &&
             ageMin!.compareTo(ageMax!) > 0) {
           ageMax = ageMin;
-          controllerMap[EventFields.ageMax]?.text = ageMax.toString();
+          controllerMap[EventFields.ageMax]?.text = parseStringValue(ageMax);
         }
         break;
       case EventFields.ageMax:
@@ -314,7 +311,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             ageMax != null &&
             ageMin!.compareTo(ageMax!) > 0) {
           ageMin = ageMax;
-          controllerMap[EventFields.ageMin]?.text = ageMin.toString();
+          controllerMap[EventFields.ageMin]?.text = parseStringValue(ageMin);
         }
         break;
       case EventFields.isFree:
@@ -327,7 +324,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             priceMax != null &&
             priceMin!.compareTo(priceMax!) > 0) {
           priceMax = priceMin;
-          controllerMap[EventFields.priceMax]?.text = priceMax.toString();
+          controllerMap[EventFields.priceMax]?.text = parseStringValue(
+            priceMax,
+          );
         }
         break;
       case EventFields.priceMax:
@@ -337,7 +336,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
             priceMax != null &&
             priceMin!.compareTo(priceMax!) > 0) {
           priceMin = priceMax;
-          controllerMap[EventFields.priceMin]?.text = priceMin.toString();
+          controllerMap[EventFields.priceMin]?.text = parseStringValue(
+            priceMin,
+          );
         }
         break;
       case EventFields.isOutdoor:
@@ -400,8 +401,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
                 EventFields.ageMin,
                 EventFields.ageMax,
               )]
-              ?.text = sub.ageMax
-              .toString();
+              ?.text = parseStringValue(
+            sub.ageMax,
+          );
         }
         break;
       case EventFields.ageMax:
@@ -415,8 +417,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
                 EventFields.ageMax,
                 EventFields.ageMin,
               )]
-              ?.text = sub.ageMin
-              .toString();
+              ?.text = parseStringValue(
+            sub.ageMin,
+          );
         }
         break;
       case EventFields.isFree:
@@ -433,8 +436,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
                 EventFields.priceMin,
                 EventFields.priceMax,
               )]
-              ?.text = sub.priceMax
-              .toString();
+              ?.text = parseStringValue(
+            sub.priceMax,
+          );
         }
         break;
       case EventFields.priceMax:
@@ -448,8 +452,9 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
                 EventFields.priceMax,
                 EventFields.priceMin,
               )]
-              ?.text = sub.priceMin
-              .toString();
+              ?.text = parseStringValue(
+            sub.priceMin,
+          );
         }
         break;
       case EventFields.isOutdoor:

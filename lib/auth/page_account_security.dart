@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
 import 'package:life_pilot/utils/service/service_personal_data.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
@@ -206,7 +207,7 @@ class _PageAccountSecurityState extends State<PageAccountSecurity> {
       final existing = await ServicePersonalData()
           .fetchMyAccountDeletionRequest();
       if (!mounted) return;
-      final status = existing?['status']?.toString();
+      final status = parseOptionalStringValue(existing?['status']);
       if (status == 'pending') {
         await _showPendingDeletionRequest(loc);
         return;

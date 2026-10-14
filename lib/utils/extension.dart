@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
@@ -126,20 +125,19 @@ extension CalendarReminderOptionLabel on CalendarReminderOption {
 
 // -------------------- DateTime Extensions --------------------
 extension DateTimeExtension on DateTime {
-  String toMonthKey() =>
-      '$year-${month.toString().padLeft(2, CalendarMisc.zero)}';
+  String toMonthKey() => '$year-${padIntValue(month)}';
 
   String formatDateString({bool passYear = false, bool formatShow = false}) {
     if (passYear) {
-      return '${month.toString().padLeft(2, CalendarMisc.zero)}${formatShow ? '/' : '-'}${day.toString().padLeft(2, CalendarMisc.zero)}';
+      return '${padIntValue(month)}${formatShow ? '/' : '-'}${padIntValue(day)}';
     }
-    return '${year.toString()}${formatShow ? '/' : '-'}${month.toString().padLeft(2, CalendarMisc.zero)}${formatShow ? '/' : '-'}${day.toString().padLeft(2, CalendarMisc.zero)}';
+    return '$year${formatShow ? '/' : '-'}${padIntValue(month)}${formatShow ? '/' : '-'}${padIntValue(day)}';
   }
 }
 
 extension TimeOfDayExtension on TimeOfDay {
   String formatTimeString() {
-    return '${hour.toString().padLeft(2, CalendarMisc.zero)}:${minute.toString().padLeft(2, CalendarMisc.zero)}';
+    return '${padIntValue(hour)}:${padIntValue(minute)}';
   }
 }
 

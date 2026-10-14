@@ -13,12 +13,15 @@ String parseStringValue(Object? value, {String fallback = ''}) =>
     value?.toString() ?? fallback;
 
 /// Preserves null when an optional model field is absent.
-String? parseOptionalStringValue(Object? value) =>
-    value?.toString();
+String? parseOptionalStringValue(Object? value) => value?.toString();
 
 /// Normalizes loosely typed text for case-insensitive comparisons.
 String normalizeStringValue(Object? value) =>
     parseStringValue(value).trim().toLowerCase();
+
+/// Formats small integer date/time parts consistently across services and UI.
+String padIntValue(int value, {int width = 2}) =>
+    value.toString().padLeft(width, '0');
 
 num parseNumValue(Object? value, {num fallback = 0}) =>
     tryParseNumValue(value) ?? fallback;

@@ -73,7 +73,7 @@ class ServiceStock {
       return;
     }
     final dateStr =
-        "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
+        "${date.year}${padIntValue(date.month)}${padIntValue(date.day)}";
     final url =
         "https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=$dateStr&type=ALL";
 
@@ -157,7 +157,7 @@ class ServiceStock {
     }
     type = Source.twse;
     final dateStr =
-        "${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}";
+        "${date.year}${padIntValue(date.month)}${padIntValue(date.day)}";
     final url =
         "https://www.twse.com.tw/rwd/zh/fund/T86?date=$dateStr&selectType=ALL&response=json";
 
@@ -233,7 +233,7 @@ class ServiceStock {
     }
     type = Source.tpex;
     final dateStr =
-        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+        "${date.year}/${padIntValue(date.month)}/${padIntValue(date.day)}";
     final url = "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade";
 
     final body = {
@@ -312,7 +312,7 @@ class ServiceStock {
       return;
     }
     final dateStr =
-        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+        "${date.year}/${padIntValue(date.month)}/${padIntValue(date.day)}";
     final url =
         "https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=$dateStr&type=AL&id=&response=json";
 
@@ -351,8 +351,7 @@ class ServiceStock {
     };
     Map<String, int> enToIndex = {};
     for (int i = 0; i < fields.length; i++) {
-      final key =
-          chtToEn[parseStringValue(fields[i]).trim().split("<")[0]];
+      final key = chtToEn[parseStringValue(fields[i]).trim().split("<")[0]];
       if (key != null) enToIndex[key] = i;
     }
     List<dynamic> data = tables[0]["data"];
@@ -433,7 +432,7 @@ class ServiceStock {
       return;
     }
     final dateStr =
-        "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
+        "${date.year}/${padIntValue(date.month)}/${padIntValue(date.day)}";
 
     final url =
         "https://www.taifex.com.tw/cht/3/futContractsDateDown"
@@ -946,9 +945,7 @@ class StockParser {
       return ModelStock(
         date: date,
         securityCode: securityCode,
-        securityName: parseStringValue(
-          row[enToIndex["security_name"] ?? -1],
-        ),
+        securityName: parseStringValue(row[enToIndex["security_name"] ?? -1]),
         tradedNumber: tryParseDoubleValue(
           parseStringValue(
             row[enToIndex["traded_number"] ?? -1],
@@ -1032,7 +1029,7 @@ class StockParser {
       String get(String key) {
         final i = enToIndex[key];
         if (i == null) return "0";
-        return row[i].toString().replaceAll(",", "");
+        return parseStringValue(row[i]).replaceAll(",", "");
       }
 
       return {

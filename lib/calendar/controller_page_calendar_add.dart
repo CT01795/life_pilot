@@ -88,7 +88,10 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
     };
 
     for (final entry in fields.entries) {
-      initController(key: entry.key, initialValue: entry.value.toString());
+      initController(
+        key: entry.key,
+        initialValue: parseStringValue(entry.value),
+      );
     }
 
     // ✅ 初始化子事件控制器
@@ -107,9 +110,9 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
       for (final entry in subFields.entries) {
         initController(
           key: '${entry.key}_sub_${sub.id}',
-          initialValue: entry.value.toString().isEmpty
+          initialValue: parseStringValue(entry.value).isEmpty
               ? ''
-              : entry.value.toString(),
+              : parseStringValue(entry.value),
         );
       }
     }

@@ -39,9 +39,7 @@ class ModelFeedback {
       id: parseIntValue(map[Fields.id]),
       subject: parseStringValue(map['subject']),
       content: parseStringValue(map['content']),
-      cc: (map['cc'] as List<dynamic>?)
-          ?.map(parseStringValue)
-          .toList(),
+      cc: (map['cc'] as List<dynamic>?)?.map(parseStringValue).toList(),
       screenshot: (map['screenshot'] as List<dynamic>?)
           ?.map(parseStringValue)
           .toList(),
@@ -51,7 +49,7 @@ class ModelFeedback {
           ? map['is_ok']
           : parseStringValue(map['is_ok']).toLowerCase() == 'true',
       dealBy: parseStringValue(map['deal_by']),
-      dealAt: map['deal_at'] != null && map['deal_at'].toString().isNotEmpty
+      dealAt: parseStringValue(map['deal_at']).trim().isNotEmpty
           ? tryParseDateTimeValue(map['deal_at'])
           : null,
       status: parseStringValue(

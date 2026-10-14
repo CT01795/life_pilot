@@ -177,8 +177,11 @@ class ServiceSubscription {
     final plan = statusPlan.isNotEmpty
         ? statusPlan
         : (items.isEmpty
-            ? 'free'
-            : parseStringValue((rows.first as Map)['plan'], fallback: 'free'));
+              ? 'free'
+              : parseStringValue(
+                  (rows.first as Map)['plan'],
+                  fallback: 'free',
+                ));
     return SubscriptionSnapshot(
       plan: plan,
       usage: {for (final item in items) item.resource: item},
@@ -258,9 +261,9 @@ class ServiceSubscription {
       if (account == null || account.isEmpty) return const [];
       final now = DateTime.now();
       final today =
-          '${now.year.toString().padLeft(4, '0')}-'
-          '${now.month.toString().padLeft(2, '0')}-'
-          '${now.day.toString().padLeft(2, '0')}';
+          '${padIntValue(now.year, width: 4)}-'
+          '${padIntValue(now.month)}-'
+          '${padIntValue(now.day)}';
       final results = await Future.wait<List<Map<String, dynamic>>>([
         supabase
             .from(TableNames.recommendEvents)
@@ -311,7 +314,9 @@ class ServiceSubscription {
       }
       if (eventQuota == 0 && attractionQuota == 0) {
         final versions = await fetchPricingVersions();
-        final currentVersionName = parseStringValue(status['pricing_version_name']);
+        final currentVersionName = parseStringValue(
+          status['pricing_version_name'],
+        );
         final currentMultiplier = parseIntValue(
           status['quota_multiplier'],
           fallback: 1,
@@ -717,7 +722,7 @@ class SubscriptionPricingVersion {
 
   factory SubscriptionPricingVersion.fromJson(Map<String, dynamic> json) =>
       SubscriptionPricingVersion(
-        id: parseStringValue(json['id']),
+        id: parseStringValue(json[Fields.id]),
         name: parseStringValue(json['version_name']),
         storagePlan: parseStringValue(json['storage_plan'], fallback: 'cloud'),
         effectiveAt:

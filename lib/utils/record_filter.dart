@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/value_parser.dart';
+
 List<T> filterRecordItems<T>(
   Iterable<T> records, {
   required String query,
@@ -7,7 +9,7 @@ List<T> filterRecordItems<T>(
   required String? Function(T record) secondaryCategoryOf,
   required String Function(String category) categoryLabelOf,
 }) {
-  final normalizedQuery = query.trim().toLowerCase();
+  final normalizedQuery = normalizeStringValue(query);
   return records
       .where((record) {
         final primaryCategory = primaryCategoryOf(record);

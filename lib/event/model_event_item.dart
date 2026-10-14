@@ -419,7 +419,7 @@ class EventItem implements EventBase {
           ? (jsonDecode(jsonValue) as List<dynamic>)
           : (jsonValue is List ? jsonValue : []);
       return list
-          .map((e) => CalendarReminderMapper.fromKey(key: e.toString()))
+          .map((e) => CalendarReminderMapper.fromKey(key: parseStringValue(e)))
           .whereType<CalendarReminderOption>()
           .toList();
     } catch (_) {

@@ -1619,7 +1619,7 @@ class ServiceEventPublic {
     Map<String, int> colsToDetail = {};
     final uuid = const Uuid();
     for (int i = 0; i < headerRow.length; i++) {
-      final tmp = headerRow[i].toString();
+      final tmp = parseStringValue(headerRow[i]);
       if (tmp.contains("活動名稱")) {
         colsToDetail["name"] = i;
       } else if (tmp.contains("關鍵字詞")) {
@@ -1644,8 +1644,9 @@ class ServiceEventPublic {
     for (int i = 1; i < rows.length; i++) {
       final row = rows[i];
       if (row.isEmpty) continue;
-      String strS =
-          parseStringValue(row[colsToDetail["startDate"] ?? 99]).trim();
+      String strS = parseStringValue(
+        row[colsToDetail["startDate"] ?? 99],
+      ).trim();
       DateTime? startDate = strS.length >= 8
           ? DateFormat('yyyy-M-d').parse(strS)
           : null;
@@ -1658,8 +1659,12 @@ class ServiceEventPublic {
         continue;
       }
 
-      String? tmpUrl = parseOptionalStringValue(row[colsToDetail["masterUrl"] ?? 99]);
-      String? replaceUrl = parseOptionalStringValue(row[colsToDetail["masterUrl2"] ?? 99]);
+      String? tmpUrl = parseOptionalStringValue(
+        row[colsToDetail["masterUrl"] ?? 99],
+      );
+      String? replaceUrl = parseOptionalStringValue(
+        row[colsToDetail["masterUrl2"] ?? 99],
+      );
       if (replaceUrl != null && replaceUrl.startsWith("/events")) {
         replaceUrl = "https://strolltimes.com$replaceUrl";
       } else {
@@ -1690,7 +1695,9 @@ class ServiceEventPublic {
           description:
               "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}\n",
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
-          masterUrl: parseOptionalStringValue(row[colsToDetail["masterUrl"] ?? 99]),
+          masterUrl: parseOptionalStringValue(
+            row[colsToDetail["masterUrl"] ?? 99],
+          ),
           account: AuthConstants.systemEventOwnerEmail,
           source: source,
           subEvents: [],
@@ -1802,12 +1809,12 @@ class ServiceEventPublic {
       final show = showInfoList[i];
       final locationName = parseStringValue(show['locationName']);
       final location = parseStringValue(show['location']);
-      final subStartDateStr = (show['time'] ?? '').toString();
+      final subStartDateStr = parseStringValue(show['time']);
       final subStartDateStrSplit = subStartDateStr.split(" ");
       final subStartDate = EventDateTimeParser.parseDate(
         subStartDateStrSplit[0],
       );
-      final subEndDateStr = (show['endTime'] ?? '').toString();
+      final subEndDateStr = parseStringValue(show['endTime']);
       final subEndDateStrSplit = subEndDateStr.split(" ");
       final subEndDate = EventDateTimeParser.parseDate(subEndDateStrSplit[0]);
       subEvents.add(

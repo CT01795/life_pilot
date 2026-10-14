@@ -1,6 +1,7 @@
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/const.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/value_parser.dart';
@@ -24,9 +25,9 @@ class CalendarShareableEvent {
 
   factory CalendarShareableEvent.fromJson(Map<String, dynamic> json) {
     return CalendarShareableEvent(
-      id: parseStringValue(json['id']),
-      name: json['name']?.toString().trim().isNotEmpty == true
-          ? json['name'].toString()
+      id: parseStringValue(json[Fields.id]),
+      name: parseStringValue(json['name']).trim().isNotEmpty
+          ? parseStringValue(json['name'])
           : '-',
       startDate: tryParseDateTimeValue(json['start_date']),
     );
@@ -50,8 +51,8 @@ class SharedCalendarEvent {
     return SharedCalendarEvent(
       invitationId: parseStringValue(json['invitation_id']),
       eventId: parseStringValue(json['event_id']),
-      name: json['event_name']?.toString().trim().isNotEmpty == true
-          ? json['event_name'].toString()
+      name: parseStringValue(json['event_name']).trim().isNotEmpty
+          ? parseStringValue(json['event_name'])
           : '-',
       startDate: tryParseDateTimeValue(json['start_date']),
     );
@@ -76,7 +77,7 @@ class CalendarShareInvitation {
 
   factory CalendarShareInvitation.fromJson(Map<String, dynamic> json) {
     return CalendarShareInvitation(
-      id: parseStringValue(json['id']),
+      id: parseStringValue(json[Fields.id]),
       sharedBy: parseStringValue(json['shared_by']),
       invitedEmail: parseStringValue(json['invited_email']),
       status: parseStringValue(json['status'], fallback: 'pending'),

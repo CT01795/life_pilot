@@ -1,8 +1,9 @@
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 String vendorPlanName(AppLocalizations loc, String planCode) {
-  return switch (planCode.trim().toLowerCase()) {
+  return switch (normalizeStringValue(planCode)) {
     'free' => loc.vendorPlanFreeName,
     'partner' => loc.vendorPlanPartnerName,
     'growth' => loc.vendorPlanGrowthName,

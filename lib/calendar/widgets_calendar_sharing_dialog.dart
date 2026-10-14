@@ -9,6 +9,7 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
@@ -442,8 +443,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
       event.name,
       if (date != null) ...[
         MaterialLocalizations.of(context).formatShortDate(date),
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-'
-            '${date.day.toString().padLeft(2, '0')}',
+        '${date.year}-${padIntValue(date.month)}-${padIntValue(date.day)}',
         '${date.year}/${date.month}/${date.day}',
       ],
     ];
