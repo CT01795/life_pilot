@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/subscription/model_subscription_usage.dart';
+import 'package:life_pilot/subscription/subscription_quota_accumulator.dart';
 
 enum SubscriptionExpiryReminderKind { partial, all }
 
@@ -31,42 +32,33 @@ List<SubscriptionQuotaExpiryStage> buildSubscriptionQuotaExpiryStages(
   List<SubscriptionEntitlement> entitlements, {
   Map<String, int>? fallbackQuotas,
 }) {
-  final expiries =
-      entitlements
-          .map((item) => DateUtils.dateOnly(item.endsAt.toLocal()))
-          .toSet()
-          .toList()
-        ..sort();
-  return expiries
-      .map((expiresAt) {
-        final remainingEntitlements = entitlements
-            .where(
-              (item) =>
-                  DateUtils.dateOnly(item.endsAt.toLocal()).isAfter(expiresAt),
-            )
-            .toList(growable: false);
-
-        // Free and paid quotas are not additive. Use free quotas only after
-        // every paid entitlement for the selected storage location expires.
-        final remaining = remainingEntitlements.isEmpty
-            ? <String, int>{...?fallbackQuotas}
-            : <String, int>{};
-        for (final entitlement in remainingEntitlements) {
-          for (final entry in entitlement.quotas.entries) {
-            remaining.update(
-              entry.key,
-              (value) => value + entry.value,
-              ifAbsent: () => entry.value,
-            );
-          }
-        }
-        return SubscriptionQuotaExpiryStage(
-          expiresAt: expiresAt,
-          remainingQuotas: remaining,
-          hasRemainingPaidSubscription: remainingEntitlements.isNotEmpty,
-        );
-      })
-      .toList(growable: false);
+  final byExpiry = <DateTime, List<SubscriptionEntitlement>>{};
+  for (final entitlement in entitlements) {
+    final day = DateUtils.dateOnly(entitlement.endsAt.toLocal());
+    byExpiry.putIfAbsent(day, () => []).add(entitlement);
+  }
+  final expiries = byExpiry.keys.toList()..sort();
+  final remaining = <String, int>{};
+  final stages = <SubscriptionQuotaExpiryStage>[];
+  var hasRemainingPaidSubscription = false;
+  // Accumulate later groups only after capturing the current group's stage.
+  // All subscriptions ending on the same local day expire together.
+  for (final expiresAt in expiries.reversed) {
+    stages.add(
+      SubscriptionQuotaExpiryStage(
+        expiresAt: expiresAt,
+        remainingQuotas: hasRemainingPaidSubscription
+            ? Map<String, int>.from(remaining)
+            : <String, int>{...?fallbackQuotas},
+        hasRemainingPaidSubscription: hasRemainingPaidSubscription,
+      ),
+    );
+    for (final entitlement in byExpiry[expiresAt]!) {
+      addSubscriptionQuotas(remaining, entitlement.quotas);
+    }
+    hasRemainingPaidSubscription = true;
+  }
+  return stages.reversed.toList(growable: false);
 }
 
 SubscriptionExpiryReminder? buildSubscriptionExpiryReminder(

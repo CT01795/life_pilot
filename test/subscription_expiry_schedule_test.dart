@@ -46,6 +46,59 @@ void main() {
 
     expect(reminder, isNull);
   });
+
+  test('subscriptions ending on the same day expire as one group', () {
+    final stages = buildSubscriptionQuotaExpiryStages(
+      [
+        _entitlement(endsAt: DateTime(2026, 10, 20, 8), calendarQuota: 100),
+        _entitlement(endsAt: DateTime(2026, 10, 20, 23), calendarQuota: 300),
+      ],
+      fallbackQuotas: const {'calendar_events': 30},
+    );
+    expect(stages, hasLength(1));
+    expect(stages.single.remainingQuotas, {'calendar_events': 30});
+    expect(stages.single.hasRemainingPaidSubscription, isFalse);
+  });
+
+  test('unsorted subscriptions produce independent remaining quota stages', () {
+    final fallback = {'calendar_events': 30};
+    final stages = buildSubscriptionQuotaExpiryStages([
+      _entitlement(endsAt: DateTime(2026, 12, 20), calendarQuota: 500),
+      _entitlement(endsAt: DateTime(2026, 10, 20), calendarQuota: 100),
+      _entitlement(endsAt: DateTime(2026, 11, 20), calendarQuota: 300),
+    ], fallbackQuotas: fallback);
+    expect(stages.map((stage) => stage.remainingQuotas['calendar_events']), [
+      800,
+      500,
+      30,
+    ]);
+    expect(stages.map((stage) => stage.expiresAt.month), [10, 11, 12]);
+    stages.first.remainingQuotas['calendar_events'] = 0;
+    stages.last.remainingQuotas['calendar_events'] = 0;
+    expect(stages[1].remainingQuotas['calendar_events'], 500);
+    expect(fallback['calendar_events'], 30);
+  });
+
+  test('paid subscriptions with zero quota never receive free quotas', () {
+    final stages = buildSubscriptionQuotaExpiryStages(
+      [
+        _entitlement(endsAt: DateTime(2026, 10, 20), calendarQuota: 100),
+        _entitlement(endsAt: DateTime(2026, 11, 20), calendarQuota: 0),
+      ],
+      fallbackQuotas: const {'calendar_events': 30},
+    );
+    expect(stages.first.remainingQuotas['calendar_events'], 0);
+    expect(stages.first.hasRemainingPaidSubscription, isTrue);
+  });
+
+  test('local expiry can fall back to no writable quota', () {
+    final stages = buildSubscriptionQuotaExpiryStages(
+      [_entitlement(endsAt: DateTime(2026, 10, 20), calendarQuota: 100)],
+      fallbackQuotas: const {'calendar_events': 0},
+    );
+    expect(stages.single.remainingQuotas['calendar_events'], 0);
+    expect(buildSubscriptionQuotaExpiryStages([]), isEmpty);
+  });
 }
 
 SubscriptionEntitlement _entitlement({

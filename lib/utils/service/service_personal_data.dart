@@ -7,6 +7,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
+import 'package:life_pilot/utils/service/export/personal_export_comparator.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
 class ServicePersonalData {
@@ -266,60 +267,7 @@ class ServicePersonalData {
       }
       return copy;
     }).toList();
-    final dateKey = tableName.contains('detail') ? 'date' : 'start_date';
-    prepared.sort((a, b) {
-      if (tableName == TableNames.accountingAccount ||
-          tableName == TableNames.pointRecordAccount) {
-        return parseStringValue(a['account_name']).toLowerCase().compareTo(
-          parseStringValue(b['account_name']).toLowerCase(),
-        );
-      }
-      if (tableName.contains('detail')) {
-        final account = parseStringValue(
-          a['account_name'],
-        ).compareTo(parseStringValue(b['account_name']));
-        if (account != 0) return account;
-      }
-      final date = parseStringValue(
-        a[dateKey],
-      ).compareTo(parseStringValue(b[dateKey]));
-      if (date != 0) return date;
-      final time = parseStringValue(
-        a['start_time'] ?? a['time'],
-      ).compareTo(parseStringValue(b['start_time'] ?? b['time']));
-      if (time != 0) return time;
-      if (!tableName.contains('detail')) {
-        final endDate =
-            parseStringValue(
-              a['end_date'],
-              fallback: parseStringValue(a['start_date']),
-            ).compareTo(
-              parseStringValue(
-                b['end_date'],
-                fallback: parseStringValue(b['start_date']),
-              ),
-            );
-        if (endDate != 0) return endDate;
-        final endTime = parseStringValue(
-          a['end_time'],
-        ).compareTo(parseStringValue(b['end_time']));
-        if (endTime != 0) return endTime;
-        final city = parseStringValue(
-          a['city'],
-        ).compareTo(parseStringValue(b['city']));
-        if (city != 0) return city;
-        final location = parseStringValue(
-          a['location'],
-        ).compareTo(parseStringValue(b['location']));
-        if (location != 0) return location;
-        return parseStringValue(
-          a['name'],
-        ).compareTo(parseStringValue(b['name']));
-      }
-      return parseStringValue(
-        a['description'],
-      ).compareTo(parseStringValue(b['description']));
-    });
+    prepared.sort(personalExportComparator(tableName));
     return prepared;
   }
 

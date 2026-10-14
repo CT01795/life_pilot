@@ -1,6 +1,7 @@
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/subscription_constants.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
+import 'package:life_pilot/subscription/subscription_quota_accumulator.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 
 Map<String, int> cumulativeSubscriptionQuotas(
@@ -27,25 +28,18 @@ Map<String, int> cumulativeSubscriptionQuotas(
           multiplier: multiplier,
         );
         if (value == null) continue;
-        totals.update(
-          resource,
-          (current) => current + value,
-          ifAbsent: () => value,
-        );
+        addSubscriptionQuota(totals, resource, value);
       }
       continue;
     }
 
-    final version = versionsById[parseStringValue(entitlement['pricing_version_id'])];
+    final version =
+        versionsById[parseStringValue(entitlement['pricing_version_id'])];
     if (version == null) continue;
     for (final entry in version.quotas.entries) {
       if (entry.key == SubscriptionResource.answerHistoryDays) continue;
       final value = entry.value * multiplier;
-      totals.update(
-        entry.key,
-        (current) => current + value,
-        ifAbsent: () => value,
-      );
+      addSubscriptionQuota(totals, entry.key, value);
     }
   }
   return {
