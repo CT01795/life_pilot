@@ -1716,6 +1716,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addToMemoryHint => 'Add to memories';
 
   @override
+  String get copyContent => 'Copy content';
+
+  @override
+  String get copyContentHint => 'This creates an independent record and leaves the original unchanged.';
+
+  @override
+  String get copyToPage => 'Copy to';
+
+  @override
   String get addSchedule => 'Add schedule';
 
   @override

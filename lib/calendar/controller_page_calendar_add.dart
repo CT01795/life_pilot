@@ -17,6 +17,7 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
   final Uuid uuid = const Uuid();
 
   EventItem? existingEvent;
+  final EventItem? templateEvent;
   final DateTime? initialDate;
   DateTime? startDate;
   DateTime? endDate;
@@ -33,7 +34,7 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
   String? account = '';
   CalendarRepeatRule repeatOptions = CalendarRepeatRule.once;
   List<CalendarReminderOption> reminderOptions = const [
-    CalendarReminderOption.dayBefore8am
+    CalendarReminderOption.dayBefore8am,
   ];
   DateTime? reminderTime;
 
@@ -49,6 +50,7 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
     required this.auth,
     required this.tableName,
     this.existingEvent,
+    this.templateEvent,
     this.initialDate,
   }) {
     _init();
@@ -57,7 +59,7 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
   // 初始化欄位與控制器
   void _init() {
     final now = DateTime.now();
-    final e = existingEvent;
+    final e = existingEvent ?? templateEvent;
     masterUrl = e?.masterUrl;
     startDate = e?.startDate ?? initialDate ?? now;
     endDate = e?.endDate ?? startDate;
@@ -104,18 +106,23 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
       for (final entry in subFields.entries) {
         initController(
           key: '${entry.key}_sub_${sub.id}',
-          initialValue:
-              entry.value.toString().isEmpty ? '' : entry.value.toString(),
+          initialValue: entry.value.toString().isEmpty
+              ? ''
+              : entry.value.toString(),
         );
       }
     }
   }
 
   // 建立或取得控制器
-  TextEditingController initController(
-      {required String key, required String initialValue}) {
+  TextEditingController initController({
+    required String key,
+    required String initialValue,
+  }) {
     return controllerMap.putIfAbsent(
-        key, () => TextEditingController(text: initialValue));
+      key,
+      () => TextEditingController(text: initialValue),
+    );
   }
 
   TextEditingController getController({required String key}) {
@@ -130,8 +137,10 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
       if (parts.length == 2) {
         final field = parts[0];
         final nowId = parts[1];
-        final sub = subEvents.firstWhere((e) => e.id == nowId,
-            orElse: () => EventItem(id: nowId));
+        final sub = subEvents.firstWhere(
+          (e) => e.id == nowId,
+          orElse: () => EventItem(id: nowId),
+        );
         _updateSubEvent(key, sub, field, value, check);
         return;
       }
@@ -166,7 +175,12 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
   }
 
   void _updateSubEvent(
-      String mapKey, EventItem sub, String key, String value, bool check) {
+    String mapKey,
+    EventItem sub,
+    String key,
+    String value,
+    bool check,
+  ) {
     switch (key) {
       case EventFields.country:
         sub.country = value;
@@ -194,7 +208,8 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
 
   // 將目前表單內容轉換為 EventItem
   EventItem toEventItem() {
-    final addressUnchanged = existingEvent != null &&
+    final addressUnchanged =
+        existingEvent != null &&
         existingEvent!.country.trim() == country.trim() &&
         existingEvent!.city.trim() == city.trim() &&
         existingEvent!.location.trim() == location.trim();
@@ -212,31 +227,29 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
       final subCountry = EventCountry.normalize(getText(EventFields.country));
       final subCity = getText(EventFields.city);
       final subLocation = getText(EventFields.location);
-      final subAddressUnchanged = sub.country.trim() == subCountry &&
+      final subAddressUnchanged =
+          sub.country.trim() == subCountry &&
           sub.city.trim() == subCity.trim() &&
           sub.location.trim() == subLocation.trim();
       return sub.copyWith(
-        newSubEvents: [],
-        newMasterUrl: getText(EventFields.masterUrl),
-        newCountry: subCountry,
-        newCity: subCity,
-        newLocation: subLocation,
-        newName: getText(EventFields.name),
-        newType: getText(EventFields.type),
-        newDescription: getText(EventFields.description),
-        newAccount: auth.currentAccount,
-        newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
-        newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
-      )
+          newSubEvents: [],
+          newMasterUrl: getText(EventFields.masterUrl),
+          newCountry: subCountry,
+          newCity: subCity,
+          newLocation: subLocation,
+          newName: getText(EventFields.name),
+          newType: getText(EventFields.type),
+          newDescription: getText(EventFields.description),
+          newAccount: auth.currentAccount,
+          newRepeatOptions: existingEvent?.repeatOptions ?? repeatOptions,
+          newReminderOptions: existingEvent?.reminderOptions ?? reminderOptions,
+        )
         ..mapLat = subAddressUnchanged ? sub.mapLat : null
         ..mapLng = subAddressUnchanged ? sub.mapLng : null;
     }).toList();
 
     // ✅ 再組主事件
-    return EventItem(
-      id: existingEvent?.id ?? uuid.v4(),
-      subEvents: updatedSubs,
-    )
+    return EventItem(id: existingEvent?.id ?? uuid.v4(), subEvents: updatedSubs)
       ..masterUrl = masterUrl
       ..startDate = startDate
       ..endDate = endDate
@@ -256,8 +269,10 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
   }
 
   // --- 語音控制區 ---
-  Future<void> startListening(
-      {required ValueChanged<String> onResult, required String key}) async {
+  Future<void> startListening({
+    required ValueChanged<String> onResult,
+    required String key,
+  }) async {
     final available = await _serviceSpeech.startListening(
       onResult: (text) {
         onResult(text);

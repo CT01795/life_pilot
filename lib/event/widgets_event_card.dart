@@ -24,6 +24,7 @@ class WidgetsEventCard extends StatelessWidget {
   final Future<void> Function()? onLike;
   final Future<void> Function()? onDislike;
   final VoidCallback? onAccounting;
+  final VoidCallback? onCopy;
   final VoidCallback onOpenLink;
   final VoidCallback onOpenMap;
   final Widget? trailing;
@@ -40,6 +41,7 @@ class WidgetsEventCard extends StatelessWidget {
     this.onLike,
     this.onDislike,
     this.onAccounting,
+    this.onCopy,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -57,6 +59,7 @@ class WidgetsEventCard extends StatelessWidget {
       onLike: onLike,
       onDislike: onDislike,
       onAccounting: onAccounting,
+      onCopy: onCopy,
       onOpenMap: onOpenMap,
       onOpenLink: onOpenLink,
       trailing: trailing,
@@ -117,6 +120,7 @@ class _WidgetsEventCardBody extends StatefulWidget {
   final Future<void> Function()? onLike;
   final Future<void> Function()? onDislike;
   final VoidCallback? onAccounting;
+  final VoidCallback? onCopy;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -132,6 +136,7 @@ class _WidgetsEventCardBody extends StatefulWidget {
     this.onLike,
     this.onDislike,
     this.onAccounting,
+    this.onCopy,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -580,6 +585,12 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
             child: Wrap(
               spacing: eventCardActionSpacing,
               children: [
+                if (widget.onCopy != null)
+                  EventCardActionButton(
+                    icon: Icons.copy_all_outlined,
+                    tooltip: loc.copyContent,
+                    onPressed: widget.onCopy,
+                  ),
                 // 👍 Favor（登入即可）
                 if (widget.onLike != null)
                   PressButton(

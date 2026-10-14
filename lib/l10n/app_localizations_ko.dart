@@ -1716,6 +1716,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get addToMemoryHint => '추억에 추가';
 
   @override
+  String get copyContent => '내용 복사';
+
+  @override
+  String get copyContentHint => '원본은 변경하지 않고 독립된 새 기록을 만듭니다.';
+
+  @override
+  String get copyToPage => '복사 위치';
+
+  @override
   String get addSchedule => '일정 추가';
 
   @override

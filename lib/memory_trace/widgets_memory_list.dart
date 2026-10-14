@@ -7,6 +7,7 @@ import 'package:life_pilot/event/controller_event_ui.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/event_copy_flow.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_card.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_dialog.dart';
 import 'package:life_pilot/memory_trace/widgets_memory_trailing.dart';
@@ -237,6 +238,11 @@ class WidgetsMemoryList extends StatelessWidget {
                           context: context,
                           eventId: eventViewModel.id,
                         ),
+                    onCopy: () => copyEventToAnotherPage(
+                      context: context,
+                      event: eventViewModel.event,
+                      sourceTableName: controllerEvent.fromTableName,
+                    ),
                     onOpenLink: () =>
                         controllerEvent.onOpenLink(eventViewModel),
                     onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),

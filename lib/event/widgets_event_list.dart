@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/event/controller_event_ui.dart';
+import 'package:life_pilot/event/event_copy_flow.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/widgets_event_card.dart';
 import 'package:life_pilot/event/widgets_event_dialog.dart';
@@ -100,6 +101,11 @@ class WidgetsEventList extends StatelessWidget {
             await controllerEvent.dislikeEvent(eventViewModel.event);
           },
           onAccounting: null,
+          onCopy: () => copyEventToAnotherPage(
+            context: context,
+            event: eventViewModel.event,
+            sourceTableName: controllerEvent.fromTableName,
+          ),
           onOpenLink: () => controllerEvent.onOpenLink(eventViewModel),
           onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
           trailing: widgetsEventTrailing(

@@ -18,6 +18,7 @@ class WidgetsMemoryCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
   final VoidCallback? onPoints;
+  final VoidCallback? onCopy;
   final VoidCallback onOpenLink;
   final VoidCallback onOpenMap;
   final Widget? trailing;
@@ -34,6 +35,7 @@ class WidgetsMemoryCard extends StatelessWidget {
     this.onDelete,
     this.onAccounting,
     this.onPoints,
+    this.onCopy,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -53,6 +55,7 @@ class WidgetsMemoryCard extends StatelessWidget {
         onDelete: onDelete,
         onAccounting: onAccounting,
         onPoints: onPoints,
+        onCopy: onCopy,
         onOpenMap: onOpenMap,
         onOpenLink: onOpenLink,
         trailing: trailing,
@@ -114,6 +117,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
   final VoidCallback? onPoints;
+  final VoidCallback? onCopy;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -129,6 +133,7 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
     this.onDelete,
     this.onAccounting,
     this.onPoints,
+    this.onCopy,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -391,6 +396,12 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
             child: Wrap(
               spacing: eventCardActionSpacing,
               children: [
+                if (widget.onCopy != null)
+                  EventCardActionButton(
+                    icon: Icons.copy_all_outlined,
+                    tooltip: loc.copyContent,
+                    onPressed: widget.onCopy,
+                  ),
                 if (widget.onAccounting != null)
                   EventCardActionButton(
                     icon: Icons.currency_exchange,

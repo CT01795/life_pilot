@@ -19,6 +19,7 @@ class WidgetsCalendarCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
   final VoidCallback? onPoints;
+  final VoidCallback? onCopy;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -33,6 +34,7 @@ class WidgetsCalendarCard extends StatelessWidget {
     this.onDelete,
     this.onAccounting,
     this.onPoints,
+    this.onCopy,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -48,6 +50,7 @@ class WidgetsCalendarCard extends StatelessWidget {
       onDelete: onDelete,
       onAccounting: onAccounting,
       onPoints: onPoints,
+      onCopy: onCopy,
       onOpenMap: onOpenMap,
       onOpenLink: onOpenLink,
       trailing: trailing,
@@ -108,6 +111,7 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onAccounting;
   final VoidCallback? onPoints;
+  final VoidCallback? onCopy;
   final VoidCallback onOpenMap;
   final VoidCallback onOpenLink;
   final Widget? trailing;
@@ -121,6 +125,7 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
     this.onDelete,
     this.onAccounting,
     this.onPoints,
+    this.onCopy,
     required this.onOpenMap,
     required this.onOpenLink,
     this.trailing,
@@ -326,6 +331,12 @@ class _WidgetsCalendarCardBody extends StatelessWidget {
             child: Wrap(
               spacing: eventCardActionSpacing,
               children: [
+                if (onCopy != null)
+                  EventCardActionButton(
+                    icon: Icons.copy_all_outlined,
+                    tooltip: loc.copyContent,
+                    onPressed: onCopy,
+                  ),
                 if (onAccounting != null)
                   EventCardActionButton(
                     icon: Icons.currency_exchange,

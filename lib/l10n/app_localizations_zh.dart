@@ -1716,6 +1716,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addToMemoryHint => '加入至回憶';
 
   @override
+  String get copyContent => '複製內容';
+
+  @override
+  String get copyContentHint => '複製後會建立一筆獨立資料，原資料不會改變。';
+
+  @override
+  String get copyToPage => '複製到';
+
+  @override
   String get addSchedule => '新增行程';
 
   @override

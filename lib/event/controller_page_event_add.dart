@@ -19,6 +19,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
   final Uuid uuid = const Uuid();
 
   EventItem? existingEvent;
+  final EventItem? templateEvent;
   final DateTime? initialDate;
   DateTime? startDate;
   DateTime? endDate;
@@ -77,6 +78,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
     required this.auth,
     required this.tableName,
     this.existingEvent,
+    this.templateEvent,
     this.initialDate,
     this.ageMin,
     this.ageMax,
@@ -101,7 +103,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
   void _init() {
     final now = DateTime.now();
 
-    final e = existingEvent;
+    final e = existingEvent ?? templateEvent;
     masterGraphUrl = e?.masterGraphUrl;
     masterUrl = e?.masterUrl;
     startDate = e?.startDate ?? initialDate ?? now;

@@ -7,6 +7,7 @@ import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/controller_calendar_ui.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/event_copy_flow.dart';
 import 'package:life_pilot/calendar/widgets_calendar_card.dart';
 import 'package:life_pilot/calendar/widgets_calendar_trailing.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -160,6 +161,13 @@ class CalendarEventsDialog extends StatelessWidget {
                                       eventId: event.id,
                                     )
                               : null,
+                          onCopy: event.isHoliday
+                              ? null
+                              : () => copyEventToAnotherPage(
+                                  context: context,
+                                  event: event,
+                                  sourceTableName: tableName,
+                                ),
                           onOpenMap: () =>
                               controllerCalendar.onOpenMap(eventViewModel),
                           onOpenLink: () =>

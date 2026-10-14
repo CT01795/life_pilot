@@ -496,12 +496,14 @@ class ControllerCalendar extends SafeChangeNotifier {
   // ✅ 建立單筆事件控制器
   ControllerPageCalendarAdd createAddController({
     EventItem? existingEvent,
+    EventItem? templateEvent,
     DateTime? initialDate,
   }) {
     return ControllerPageCalendarAdd(
       auth: auth!,
       tableName: _tableName,
       existingEvent: existingEvent,
+      templateEvent: templateEvent,
       initialDate: initialDate,
     );
   }

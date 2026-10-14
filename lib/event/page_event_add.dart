@@ -25,12 +25,14 @@ import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 class PageEventAdd extends StatefulWidget {
   final ControllerEvent controllerEvent;
   final EventItem? existingEvent;
+  final EventItem? templateEvent;
   final DateTime? initialDate;
 
   const PageEventAdd({
     super.key,
     required this.controllerEvent,
     this.existingEvent,
+    this.templateEvent,
     this.initialDate,
   });
 
@@ -61,6 +63,7 @@ class _PageEventAddState extends State<PageEventAdd> {
     super.initState();
     controllerAdd = widget.controllerEvent.createAddController(
       existingEvent: widget.existingEvent,
+      templateEvent: widget.templateEvent,
       initialDate: widget.initialDate,
     );
     for (final controller in controllerAdd.controllerMap.values) {

@@ -1716,6 +1716,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addToMemoryHint => '思い出に追加';
 
   @override
+  String get copyContent => '内容をコピー';
+
+  @override
+  String get copyContentHint => '元のデータを変更せず、独立したデータとして作成します。';
+
+  @override
+  String get copyToPage => 'コピー先';
+
+  @override
   String get addSchedule => '予定を追加';
 
   @override

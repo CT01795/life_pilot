@@ -3321,6 +3321,24 @@ abstract class AppLocalizations {
   /// **'Add to memories'**
   String get addToMemoryHint;
 
+  /// Action for copying an event-like record to another page
+  ///
+  /// In en, this message translates to:
+  /// **'Copy content'**
+  String get copyContent;
+
+  /// Explanation shown before choosing a copy destination
+  ///
+  /// In en, this message translates to:
+  /// **'This creates an independent record and leaves the original unchanged.'**
+  String get copyContentHint;
+
+  /// Title for selecting a copy destination
+  ///
+  /// In en, this message translates to:
+  /// **'Copy to'**
+  String get copyToPage;
+
   /// Label for addSchedule
   ///
   /// In en, this message translates to:
