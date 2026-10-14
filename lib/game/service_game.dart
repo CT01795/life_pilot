@@ -1,5 +1,10 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:life_pilot/game/game_question_source_rules.dart';
+import 'package:life_pilot/game/game_question_row_rules.dart';
+import 'package:life_pilot/game/model_question_bank.dart';
+
+export 'package:life_pilot/game/model_question_bank.dart';
 
 import 'package:life_pilot/game/question_bank_availability.dart';
 
@@ -33,86 +38,11 @@ class GameQuestionHasAnswersException implements Exception {
   const GameQuestionHasAnswersException();
 }
 
-class GameQuestionHint {
-  const GameQuestionHint({required this.question, required this.answer});
-
-  final String question;
-  final String answer;
-}
-
-class MyGameQuestion {
-  const MyGameQuestion({
-    required this.id,
-    required this.question,
-    required this.answer,
-    required this.group,
-    required this.level,
-    required this.isActive,
-    this.options,
-  });
-
-  final String id;
-  final String question;
-  final String answer;
-  final String group;
-  final int level;
-  final bool isActive;
-  final String? options;
-}
-
-class MyGameQuestionPage {
-  const MyGameQuestionPage({required this.questions, required this.totalCount});
-
-  final List<MyGameQuestion> questions;
-  final int totalCount;
-}
-
-class MySocialChoice {
-  const MySocialChoice({
-    required this.text,
-    required this.score,
-    required this.feedback,
-    required this.isBest,
-  });
-
-  final String text;
-  final int score;
-  final String feedback;
-  final bool isBest;
-}
-
-class MySocialQuestion {
-  const MySocialQuestion({
-    required this.id,
-    required this.title,
-    required this.scene,
-    required this.category,
-    required this.isActive,
-    required this.choices,
-  });
-
-  final String id;
-  final String title;
-  final String scene;
-  final String category;
-  final bool isActive;
-  final List<MySocialChoice> choices;
-}
-
-class MySocialQuestionPage {
-  const MySocialQuestionPage({
-    required this.questions,
-    required this.totalCount,
-  });
-
-  final List<MySocialQuestion> questions;
-  final int totalCount;
-}
-
 class ServiceGame {
-  static const _grammarQuestionTable = 'game_grammar';
-  static const _sentenceQuestionTable = 'game_sentence';
-  static const _translationQuestionTable = 'game_translation';
+  static const _grammarQuestionTable = GameQuestionSourceRules.grammarTable;
+  static const _sentenceQuestionTable = GameQuestionSourceRules.sentenceTable;
+  static const _translationQuestionTable =
+      GameQuestionSourceRules.translationTable;
   static const localGameListCache = 'local_game_list_cache';
   final Map<String, Future<List<ModelGameUser>>> _localProgressRequests = {};
 
@@ -127,9 +57,6 @@ class ServiceGame {
   Future<List<Map<String, dynamic>>> _localQuestions(String tableName) =>
       LocalDataStore.instance.list(owner: _ownerEmail, resource: tableName);
 
-  String _duplicateKey(String value) =>
-      value.toLowerCase().replaceAll(RegExp(r'[\s_]+'), '');
-
   Future<bool> _hasLocalDuplicate({
     required String tableName,
     required String question,
@@ -137,15 +64,12 @@ class ServiceGame {
     required String group,
     String? excludingId,
   }) async {
-    final questionKey = _duplicateKey(question);
-    final answerKey = _duplicateKey(answer);
-    final groupKey = normalizeStringValue(group);
-    return (await _localQuestions(tableName)).any(
-      (row) =>
-          parseOptionalStringValue(row[Fields.id]) != excludingId &&
-          normalizeStringValue(row['group']) == groupKey &&
-          _duplicateKey(parseStringValue(row['question'])) == questionKey &&
-          _duplicateKey(parseStringValue(row['answer'])) == answerKey,
+    return GameQuestionRowRules.hasDuplicateQuestion(
+      await _localQuestions(tableName),
+      question: question,
+      answer: answer,
+      group: group,
+      excludingId: excludingId,
     );
   }
 
@@ -539,8 +463,8 @@ class ServiceGame {
               (row) =>
                   normalizeStringValue(row['category']) ==
                       normalizeStringValue(category) &&
-                  _duplicateKey(parseStringValue(row['scene'])) ==
-                      _duplicateKey(scene),
+                  GameQuestionRowRules.duplicateKey(row['scene']) ==
+                      GameQuestionRowRules.duplicateKey(scene),
             );
         if (duplicate) {
           throw const DuplicateGameQuestionException();
@@ -602,8 +526,8 @@ class ServiceGame {
               parseOptionalStringValue(item[Fields.id]) != id &&
               normalizeStringValue(item['category']) ==
                   normalizeStringValue(category) &&
-              _duplicateKey(parseStringValue(item['scene'])) ==
-                  _duplicateKey(scene),
+              GameQuestionRowRules.duplicateKey(item['scene']) ==
+                  GameQuestionRowRules.duplicateKey(scene),
         );
         if (duplicate) {
           throw const DuplicateGameQuestionException();
@@ -661,27 +585,10 @@ class ServiceGame {
                 },
               )
               as List<dynamic>;
-    final questions = rows.cast<Map<String, dynamic>>().map((row) {
-      final choices = (row['choices'] as List<dynamic>? ?? const []).map((
-        choice,
-      ) {
-        final data = choice as Map<String, dynamic>;
-        return MySocialChoice(
-          text: parseStringValue(data['option_text']),
-          score: tryParseIntValue(data['score']) ?? 0,
-          feedback: parseStringValue(data['feedback']),
-          isBest: data['is_best'] == true,
-        );
-      }).toList()..sort((a, b) => b.score.compareTo(a.score));
-      return MySocialQuestion(
-        id: parseStringValue(row[Fields.id]),
-        title: parseStringValue(row['title']),
-        scene: parseStringValue(row['scene']),
-        category: parseStringValue(row['category'], fallback: 'social'),
-        isActive: row['is_active'] == true,
-        choices: choices,
-      );
-    }).toList();
+    final questions = rows
+        .cast<Map<String, dynamic>>()
+        .map((row) => MySocialQuestion.fromJson(row, sortChoicesByScore: true))
+        .toList();
     final localRows = await _localQuestions(TableNames.gameSocialScenarios);
     final normalizedKeyword = normalizeStringValue(keyword);
     final localQuestions = localRows
@@ -692,32 +599,13 @@ class ServiceGame {
               normalizeStringValue(row['scene']).contains(normalizedKeyword);
           final matchesCategory =
               category == null || row['category'] == category;
-          final active = row['is_active'] == true;
-          final matchesStatus =
-              status == 'all' ||
-              (status == 'active' && active) ||
-              (status == 'inactive' && !active);
+          final matchesStatus = GameQuestionRowRules.matchesStatus(
+            row['is_active'],
+            status,
+          );
           return matchesKeyword && matchesCategory && matchesStatus;
         })
-        .map((row) {
-          final choices = (row['choices'] as List? ?? const []).map((raw) {
-            final choice = Map<String, dynamic>.from(raw as Map);
-            return MySocialChoice(
-              text: parseStringValue(choice['option_text']),
-              score: tryParseIntValue(choice['score']) ?? 0,
-              feedback: parseStringValue(choice['feedback']),
-              isBest: choice['is_best'] == true,
-            );
-          }).toList();
-          return MySocialQuestion(
-            id: parseStringValue(row[Fields.id]),
-            title: parseStringValue(row['title']),
-            scene: parseStringValue(row['scene']),
-            category: parseStringValue(row['category'], fallback: 'social'),
-            isActive: row['is_active'] == true,
-            choices: choices,
-          );
-        });
+        .map((row) => MySocialQuestion.fromJson(row));
     final localList = localQuestions.toList();
     if (localMode) questions.addAll(localList.skip(offset).take(20));
     return MySocialQuestionPage(
@@ -909,8 +797,7 @@ class ServiceGame {
               row,
             ) {
               final choices = row['choices'] as List?;
-              return row['is_active'] == true &&
-                  (tryParseIntValue(row['level']) ?? 1) <= level &&
+              return GameQuestionRowRules.isPlayableAtLevel(row, level) &&
                   (choices?.length ?? 0) >= 3;
             }).length;
       }
@@ -919,15 +806,7 @@ class ServiceGame {
         questionCount: completeQuestionCount,
       );
     }
-    late final String tableName;
-    if (normalizedName == 'english rpg adventure') {
-      tableName = _grammarQuestionTable;
-    } else if (normalizedName == 'speaking' ||
-        normalizedName == 'word and sentence builder') {
-      tableName = _sentenceQuestionTable;
-    } else {
-      tableName = _translationQuestionTable;
-    }
+    final tableName = GameQuestionSourceRules.tableForGame(gameName);
 
     final localMode = await _storesLocally;
     final rows = localMode
@@ -952,9 +831,11 @@ class ServiceGame {
             ? await _localQuestions(tableName)
             : const <Map<String, dynamic>>[]) {
       final localGroup = parseStringValue(row['group']);
-      if (row['is_active'] != true ||
-          (tryParseIntValue(row['level']) ?? 1) > level ||
-          !_groupMatchesGame(gameName, localGroup)) {
+      if (!GameQuestionRowRules.isPlayableAtLevel(
+        row,
+        level,
+        gameName: gameName,
+      )) {
         continue;
       }
       groupCounts[localGroup] = (groupCounts[localGroup] ?? 0) + 1;
@@ -1000,17 +881,7 @@ class ServiceGame {
               as List<dynamic>;
     final questions = rows
         .cast<Map<String, dynamic>>()
-        .map(
-          (row) => MyGameQuestion(
-            id: parseStringValue(row[Fields.id]),
-            question: parseStringValue(row['question']),
-            answer: parseStringValue(row['answer']),
-            group: parseStringValue(row['question_group']),
-            level: tryParseIntValue(row['level']) ?? 1,
-            isActive: row['is_active'] == true,
-            options: parseOptionalStringValue(row['options']),
-          ),
-        )
+        .map((row) => MyGameQuestion.fromJson(row))
         .toList();
     final localRows = await _localQuestions(tableName);
     final normalizedKeyword = normalizeStringValue(keyword);
@@ -1027,24 +898,13 @@ class ServiceGame {
               ).contains(normalizedKeyword) ||
               normalizeStringValue(row['answer']).contains(normalizedKeyword);
           final matchesGroup = group == null || row['group'] == group;
-          final active = row['is_active'] == true;
-          final matchesStatus =
-              status == 'all' ||
-              (status == 'active' && active) ||
-              (status == 'inactive' && !active);
+          final matchesStatus = GameQuestionRowRules.matchesStatus(
+            row['is_active'],
+            status,
+          );
           return matchesGame && matchesKeyword && matchesGroup && matchesStatus;
         })
-        .map(
-          (row) => MyGameQuestion(
-            id: parseStringValue(row[Fields.id]),
-            question: parseStringValue(row['question']),
-            answer: parseStringValue(row['answer']),
-            group: parseStringValue(row['group']),
-            level: tryParseIntValue(row['level']) ?? 1,
-            isActive: row['is_active'] == true,
-            options: parseOptionalStringValue(row['options']),
-          ),
-        )
+        .map((row) => MyGameQuestion.fromJson(row, groupField: 'group'))
         .toList();
     final totalCount = localMode ? matchingLocal.length : questions.length;
     if (localMode) {
@@ -1240,28 +1100,11 @@ class ServiceGame {
     }
   }
 
-  String _questionTableForGame(String gameName) {
-    final normalizedName = gameName.toLowerCase();
-    if (normalizedName == 'english rpg adventure') {
-      return _grammarQuestionTable;
-    }
-    if (normalizedName == 'speaking' ||
-        normalizedName == 'word and sentence builder') {
-      return _sentenceQuestionTable;
-    }
-    return _translationQuestionTable;
-  }
+  String _questionTableForGame(String gameName) =>
+      GameQuestionSourceRules.tableForGame(gameName);
 
-  bool _groupMatchesGame(String gameName, String group) {
-    final normalizedName = gameName.toLowerCase();
-    if (normalizedName == 'word searching') return group == '英翻中Word';
-    if (normalizedName == 'translation (ch-jp)') return group.contains('日');
-    if (normalizedName == 'translation (ch-kr)') return group.contains('韓');
-    if (normalizedName.contains('translation')) {
-      return !group.contains('日') && !group.contains('韓');
-    }
-    return true;
-  }
+  bool _groupMatchesGame(String gameName, String group) =>
+      GameQuestionSourceRules.groupMatchesGame(gameName, group);
 
   Future<void> _insertQuestion(
     String tableName,
@@ -1376,11 +1219,7 @@ class ServiceGame {
     final localMode = await _storesLocally;
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_grammarQuestionTable))
-          .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level,
-          )
+          .where((row) => GameQuestionRowRules.isPlayableAtLevel(row, level))
           .toList();
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
@@ -1443,11 +1282,7 @@ class ServiceGame {
     final localMode = await _storesLocally;
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_sentenceQuestionTable))
-          .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level,
-          )
+          .where((row) => GameQuestionRowRules.isPlayableAtLevel(row, level))
           .toList();
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
@@ -1510,11 +1345,7 @@ class ServiceGame {
     final localMode = await _storesLocally;
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_sentenceQuestionTable))
-          .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level,
-          )
+          .where((row) => GameQuestionRowRules.isPlayableAtLevel(row, level))
           .toList();
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
@@ -1575,11 +1406,7 @@ class ServiceGame {
     final localMode = await _storesLocally;
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(TableNames.gameSocialScenarios))
-          .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level,
-          )
+          .where((row) => GameQuestionRowRules.isPlayableAtLevel(row, level))
           .toList();
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
@@ -1670,11 +1497,7 @@ class ServiceGame {
     final localMode = await _storesLocally;
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_translationQuestionTable))
-          .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level,
-          )
+          .where((row) => GameQuestionRowRules.isPlayableAtLevel(row, level))
           .toList();
       if (local.length >= 3) {
         local.shuffle();
@@ -1730,10 +1553,11 @@ class ServiceGame {
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_translationQuestionTable))
           .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level &&
-                _groupMatchesGame(gameName, parseStringValue(row['group'])),
+            (row) => GameQuestionRowRules.isPlayableAtLevel(
+              row,
+              level,
+              gameName: gameName,
+            ),
           )
           .toList();
       if (local.length >= 3) {
@@ -1754,12 +1578,7 @@ class ServiceGame {
       }
     }
     if (localMode) throw StateError('local_question_bank_empty');
-    String functionName = 'get_translation_with_options';
-    if (gameName.toLowerCase() == 'translation (ch-jp)') {
-      functionName = 'get_translationjp_with_options';
-    } else if (gameName.toLowerCase() == 'translation (ch-kr)') {
-      functionName = 'get_translationkr_with_options';
-    }
+    final functionName = GameQuestionSourceRules.translationRpc(gameName);
 
     final result = await supabase.rpc(
       functionName,
@@ -1829,13 +1648,11 @@ class ServiceGame {
     if (questionBank == 'my' || localMode) {
       final local = (await _localQuestions(_translationQuestionTable))
           .where(
-            (row) =>
-                row['is_active'] == true &&
-                (tryParseIntValue(row['level']) ?? 1) <= level &&
-                _groupMatchesGame(
-                  'Word Searching',
-                  parseStringValue(row['group']),
-                ),
+            (row) => GameQuestionRowRules.isPlayableAtLevel(
+              row,
+              level,
+              gameName: 'Word Searching',
+            ),
           )
           .toList();
       if (local.isNotEmpty) {

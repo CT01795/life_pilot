@@ -1,13 +1,14 @@
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/game/game_question_source_rules.dart';
 
 class GameQuestionAuthoringRules {
   const GameQuestionAuthoringRules._();
 
   static bool isJapaneseTranslation(String gameName) =>
-      gameName.toLowerCase() == 'translation (ch-jp)';
+      GameQuestionSourceRules.isJapaneseTranslation(gameName);
 
   static bool isKoreanTranslation(String gameName) =>
-      gameName.toLowerCase() == 'translation (ch-kr)';
+      GameQuestionSourceRules.isKoreanTranslation(gameName);
 
   static bool isNumberedLanguageGame(String gameName) =>
       isJapaneseTranslation(gameName) || isKoreanTranslation(gameName);

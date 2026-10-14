@@ -1,3 +1,5 @@
+import 'package:life_pilot/game/game_question_source_rules.dart';
+
 /// Result shared by all question-bank sources, independent of data loading.
 class QuestionBankAvailability {
   const QuestionBankAvailability({
@@ -10,7 +12,7 @@ class QuestionBankAvailability {
     required String gameName,
     required int questionCount,
   }) {
-    final requiresThree = gameName.toLowerCase().contains('translation');
+    final requiresThree = GameQuestionSourceRules.isTranslation(gameName);
     return QuestionBankAvailability(
       questionCount: questionCount,
       canPlay: questionCount >= (requiresThree ? 3 : 1),
