@@ -233,8 +233,9 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                           row['account']?.toString() ??
                           row['email']?.toString() ??
                           '';
-                      final activeCount =
-                          (row['active_entitlements'] as num?)?.toInt() ?? 0;
+                      final activeCount = parseIntValue(
+                        row['active_entitlements'],
+                      );
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.person_outline),
@@ -736,7 +737,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _plan = plan;
       _storagePlan = storagePlan;
       _versionId = versionExists ? pricingVersionId : null;
-      _multiplier = (subscription['quota_multiplier'] as num?)?.toInt() ?? 1;
+      _multiplier = parseIntValue(
+        subscription['quota_multiplier'],
+        fallback: 1,
+      );
       _expiry = plan == 'free'
           ? null
           : (parsedExpiry?.toLocal() ??
@@ -955,7 +959,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _plan = 'plus';
       _storagePlan = storagePlan;
       _versionId = versionExists ? versionId : null;
-      _multiplier = (entitlement['quota_multiplier'] as num?)?.toInt() ?? 1;
+      _multiplier = parseIntValue(entitlement['quota_multiplier'], fallback: 1);
       _expiry = expiry;
       _note.text = entitlement['admin_note']?.toString() ?? '';
       _editingEntitlementId = entitlement['id']?.toString();

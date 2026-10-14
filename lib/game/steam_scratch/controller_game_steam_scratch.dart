@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/steam_scratch/model_game_steam_scratch_level.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 enum Direction { north, east, south, west }
 
@@ -325,7 +326,7 @@ class ControllerGameSteamScratch {
     try {
       await service.saveUserGameScore(
         newUserName: userName,
-        newScore: state.score.toDouble(),
+        newScore: parseDoubleValue(state.score),
         newGameId: gameId,
         newIsPass: isPass,
       );

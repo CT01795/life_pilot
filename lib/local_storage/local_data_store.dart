@@ -1,5 +1,6 @@
 import 'package:sembast/sembast.dart';
 import 'package:life_pilot/local_storage/local_database_factory.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 enum DataStorageLocation { cloud, local }
 
@@ -60,7 +61,7 @@ class LocalDataStore {
     final row = await _settings
         .record(_countKey(owner, resource))
         .get(database);
-    return (row?['value'] as num?)?.toInt();
+    return tryParseIntValue(row?['value']);
   }
 
   Future<void> _adjustCount(

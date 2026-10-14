@@ -293,10 +293,10 @@ class EventItem implements EventBase {
       likeCounts: json[EventFields.likeCounts],
       dislikeCounts: json[EventFields.dislikeCounts],
       source: json[EventFields.source],
-      lat: (json[EventFields.lat] as num?)?.toDouble(),
-      lng: (json[EventFields.lng] as num?)?.toDouble(),
-      mapLat: (json[EventFields.mapLat] as num?)?.toDouble(),
-      mapLng: (json[EventFields.mapLng] as num?)?.toDouble(),
+      lat: tryParseDoubleValue(json[EventFields.lat]),
+      lng: tryParseDoubleValue(json[EventFields.lng]),
+      mapLat: tryParseDoubleValue(json[EventFields.mapLat]),
+      mapLng: tryParseDoubleValue(json[EventFields.mapLng]),
       subEvents: subEventsJson
           .whereType<Map>()
           .map((e) => EventItem.fromJson(json: Map<String, dynamic>.from(e)))

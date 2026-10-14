@@ -1,6 +1,7 @@
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/subscription/subscription_constants.dart';
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 Map<String, int> cumulativeSubscriptionQuotas(
   Iterable<Map<String, dynamic>> entitlements,
@@ -14,8 +15,10 @@ Map<String, int> cumulativeSubscriptionQuotas(
     final snapshot = Map<String, dynamic>.from(
       entitlement['entitlement_snapshot'] as Map? ?? const {},
     );
-    final multiplier =
-        (entitlement['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
+    final multiplier = parseIntValue(
+      entitlement['quota_multiplier'],
+      fallback: 1,
+    ).clamp(1, 1000);
     if (snapshot.isNotEmpty) {
       for (final resource in SubscriptionResource.visibleQuotaResources) {
         final value = entitlementSnapshotQuota(

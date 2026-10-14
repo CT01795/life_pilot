@@ -34,13 +34,13 @@ class EventWeather {
       main: json['main'],
       description: json['description'],
       icon: json['icon'],
-      temp: (json['temp'] as num).toDouble(),
-      feelsLike: (json['feels_like'] as num).toDouble(),
-      tempMin: (json['temp_min'] as num).toDouble(),
-      tempMax: (json['temp_max'] as num).toDouble(),
-      pressure: (json['pressure'] as num).toDouble(),
-      seaLevel: (json['sea_level'] as num).toDouble(),
-      grndLevel: (json['grnd_level'] as num).toDouble(),
+      temp: parseDoubleValue(json['temp']),
+      feelsLike: parseDoubleValue(json['feels_like']),
+      tempMin: parseDoubleValue(json['temp_min']),
+      tempMax: parseDoubleValue(json['temp_max']),
+      pressure: parseDoubleValue(json['pressure']),
+      seaLevel: parseDoubleValue(json['sea_level']),
+      grndLevel: parseDoubleValue(json['grnd_level']),
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/logger.dart';
@@ -223,7 +224,7 @@ class ControllerGameSentence extends SafeChangeNotifier {
   Future<void> _saveScore(bool isPass) async {
     await service.saveUserGameScore(
       newUserName: userName,
-      newScore: (score + scoreMinus).toDouble(),
+      newScore: parseDoubleValue(score + scoreMinus),
       newGameId: gameId, // 使用傳入的 gameId
       newIsPass: isPass,
     );

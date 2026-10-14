@@ -1,18 +1,19 @@
 import 'dart:math';
 
 import 'package:life_pilot/game/steam_scratch/model_game_steam_scratch_level.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class GameSteamScratchLevelGenerator {
   ModelGameSteamScratchLevel generateLevel(int levelNumber) {
     final rand = Random();
-    final width = (levelNumber * 1.1).toInt() + 2;
+    final width = parseIntValue(levelNumber * 1.1) + 2;
     final height = width;
 
     final occupied = <String>{}; // 記錄已占位置
     final obstacles = <ModelGameSteamScratchObstacle>[];
     final fruits = <ModelGameSteamScratchFruit>[];
 
-    int numObstacles = (levelNumber * 1.4).toInt();
+    int numObstacles = parseIntValue(levelNumber * 1.4);
     int numFruits = numObstacles;
 
     // 玩家起點

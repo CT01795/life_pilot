@@ -12,10 +12,10 @@ import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:uuid/uuid.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 
 class DuplicateGameQuestionException implements Exception {
   const DuplicateGameQuestionException();
@@ -321,7 +321,7 @@ class ServiceGame {
         'get_user_game_highest_passed_level',
         params: {'p_game_type': gameType, 'p_game_name': gameName},
       );
-      return (result as num?)?.toInt() ?? 0;
+      return parseIntValue(result);
     } on PostgrestException catch (error) {
       // Keep older deployments usable until the accompanying migration is
       // installed. This fallback can be removed after every environment has

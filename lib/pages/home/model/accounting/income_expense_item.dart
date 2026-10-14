@@ -21,7 +21,7 @@ class IncomeExpenseItem {
   factory IncomeExpenseItem.fromJson(Map<String, dynamic> json) {
     return IncomeExpenseItem(
       description: json['description'] ?? '',
-      value: (json['value'] as num?) ?? 0,
+      value: parseNumValue(json['value']),
       currency: json['currency'],
       createdAt: json[Fields.createdAt] != null
           ? tryParseDateTimeValue(json[Fields.createdAt])

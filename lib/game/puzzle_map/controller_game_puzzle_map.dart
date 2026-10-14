@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:life_pilot/game/puzzle_map/model_game_puzzle_map.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ControllerGamePuzzleMap extends SafeChangeNotifier {
   final String userName;
@@ -70,7 +71,7 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
       try {
         await service.saveUserGameScore(
           newUserName: userName,
-          newScore: score.toDouble(),
+          newScore: parseDoubleValue(score),
           newGameId: gameId,
           newIsPass: true,
         );

@@ -345,12 +345,12 @@ class ServiceEventPublic {
         if (m2.group(1) != null) {
           y2 = parseIntValue(m2.group(1));
           if (y2 < 1911) y2 += 1911;
-          m2v = int.parse(m2.group(2)!);
-          d2 = int.parse(m2.group(3)!);
+          m2v = parseIntValue(m2.group(2));
+          d2 = parseIntValue(m2.group(3));
         } else {
           y2 = y;
-          m2v = int.parse(m2.group(4)!);
-          d2 = int.parse(m2.group(5)!);
+          m2v = parseIntValue(m2.group(4));
+          d2 = parseIntValue(m2.group(5));
         }
         endDate = DateTime(y2, m2v, d2);
       } else {
@@ -369,14 +369,14 @@ class ServiceEventPublic {
 
     if (timeMatches.isNotEmpty) {
       startTime = TimeOfDay(
-        hour: int.parse(timeMatches[0].group(1)!),
-        minute: int.parse(timeMatches[0].group(2)!),
+        hour: parseIntValue(timeMatches[0].group(1)),
+        minute: parseIntValue(timeMatches[0].group(2)),
       );
 
       if (timeMatches.length > 1) {
         endTime = TimeOfDay(
-          hour: int.parse(timeMatches[1].group(1)!),
-          minute: int.parse(timeMatches[1].group(2)!),
+          hour: parseIntValue(timeMatches[1].group(1)),
+          minute: parseIntValue(timeMatches[1].group(2)),
         );
       }
     }
@@ -1062,18 +1062,18 @@ class ServiceEventPublic {
         // 👉 第一個 = startDate
         final m1 = matches[0];
         startDate = DateTime(
-          int.parse(m1.group(1)!),
-          int.parse(m1.group(2)!),
-          int.parse(m1.group(3)!),
+          parseIntValue(m1.group(1)),
+          parseIntValue(m1.group(2)),
+          parseIntValue(m1.group(3)),
         );
 
         // 👉 第二個（如果有）= endDate
         if (matches.length > 1) {
           final m2 = matches[1];
           endDate = DateTime(
-            int.parse(m2.group(1)!),
-            int.parse(m2.group(2)!),
-            int.parse(m2.group(3)!),
+            parseIntValue(m2.group(1)),
+            parseIntValue(m2.group(2)),
+            parseIntValue(m2.group(3)),
           );
         } else {
           // 沒有結束日 → 視為單日活動
@@ -1172,21 +1172,21 @@ class ServiceEventPublic {
           r'(\d{4})/(\d{1,2})/(\d{1,2})\s*(\d{1,2}):(\d{2})',
         ).allMatches(dateText).toList();
         if (dateMatch.isNotEmpty) {
-          int y = int.parse(dateMatch[0].group(1)!);
-          int m = int.parse(dateMatch[0].group(2)!);
-          int d = int.parse(dateMatch[0].group(3)!);
-          int h1 = int.parse(dateMatch[0].group(4)!);
-          int min1 = int.parse(dateMatch[0].group(5)!);
+          int y = parseIntValue(dateMatch[0].group(1));
+          int m = parseIntValue(dateMatch[0].group(2));
+          int d = parseIntValue(dateMatch[0].group(3));
+          int h1 = parseIntValue(dateMatch[0].group(4));
+          int min1 = parseIntValue(dateMatch[0].group(5));
 
           startDate = DateTime(y, m, d);
           startTime = TimeOfDay(hour: h1, minute: min1);
 
           if (dateMatch.length > 1) {
-            int y2 = int.parse(dateMatch[1].group(1)!);
-            int m2 = int.parse(dateMatch[1].group(2)!);
-            int d2 = int.parse(dateMatch[1].group(3)!);
-            int h2 = int.parse(dateMatch[1].group(4)!);
-            int min2 = int.parse(dateMatch[1].group(5)!);
+            int y2 = parseIntValue(dateMatch[1].group(1));
+            int m2 = parseIntValue(dateMatch[1].group(2));
+            int d2 = parseIntValue(dateMatch[1].group(3));
+            int h2 = parseIntValue(dateMatch[1].group(4));
+            int min2 = parseIntValue(dateMatch[1].group(5));
             endDate = DateTime(y2, m2, d2);
             endTime = TimeOfDay(hour: h2, minute: min2);
           } else {
@@ -1277,24 +1277,24 @@ class ServiceEventPublic {
         r'(\d{4})/(\d{1,2})/(\d{1,2})',
       ).firstMatch(dateText);
       if (dateMatch0 != null) {
-        int year = int.parse(dateMatch0.group(1)!);
-        int month = int.parse(dateMatch0.group(2)!);
-        int day = int.parse(dateMatch0.group(3)!);
+        int year = parseIntValue(dateMatch0.group(1));
+        int month = parseIntValue(dateMatch0.group(2));
+        int day = parseIntValue(dateMatch0.group(3));
         startDate = DateTime(year, month, day);
       }
       final dateMatch1 = RegExp(r'(\d{1,2})/(\d{1,2})').firstMatch(dateText);
       if (startDate == null && dateMatch1 != null) {
-        int month = int.parse(dateMatch1.group(1)!);
-        int day = int.parse(dateMatch1.group(2)!);
+        int month = parseIntValue(dateMatch1.group(1));
+        int day = parseIntValue(dateMatch1.group(2));
         startDate = DateTime(today.year, month, day);
       }
       final dateMatch2 = RegExp(
         r'(\d{4})-(\d{1,2})-(\d{1,2})',
       ).firstMatch(dateText);
       if (startDate == null && dateMatch2 != null) {
-        int year = int.parse(dateMatch2.group(1)!);
-        int month = int.parse(dateMatch2.group(2)!);
-        int day = int.parse(dateMatch2.group(3)!);
+        int year = parseIntValue(dateMatch2.group(1));
+        int month = parseIntValue(dateMatch2.group(2));
+        int day = parseIntValue(dateMatch2.group(3));
         startDate = DateTime(year, month, day);
       } else {
         continue; // 無法解析時
@@ -1306,26 +1306,26 @@ class ServiceEventPublic {
           r'(\d{4})/(\d{1,2})/(\d{1,2})',
         ).firstMatch(leftDateText[1]);
         if (endDateMatch0 != null) {
-          int year = int.parse(endDateMatch0.group(1)!);
-          int month = int.parse(endDateMatch0.group(2)!);
-          int day = int.parse(endDateMatch0.group(3)!);
+          int year = parseIntValue(endDateMatch0.group(1));
+          int month = parseIntValue(endDateMatch0.group(2));
+          int day = parseIntValue(endDateMatch0.group(3));
           endDate = DateTime(year, month, day);
         }
         final endDateMatch1 = RegExp(
           r'(\d{1,2})/(\d{1,2})',
         ).firstMatch(leftDateText[1]);
         if (endDate == null && endDateMatch1 != null) {
-          int month = int.parse(endDateMatch1.group(1)!);
-          int day = int.parse(endDateMatch1.group(2)!);
+          int month = parseIntValue(endDateMatch1.group(1));
+          int day = parseIntValue(endDateMatch1.group(2));
           endDate = DateTime(today.year, month, day);
         }
         final endDateMatch2 = RegExp(
           r'(\d{4})-(\d{1,2})-(\d{1,2})',
         ).firstMatch(leftDateText[1]);
         if (endDate == null && endDateMatch2 != null) {
-          int year = int.parse(endDateMatch2.group(1)!);
-          int month = int.parse(endDateMatch2.group(2)!);
-          int day = int.parse(endDateMatch2.group(3)!);
+          int year = parseIntValue(endDateMatch2.group(1));
+          int month = parseIntValue(endDateMatch2.group(2));
+          int day = parseIntValue(endDateMatch2.group(3));
           endDate = DateTime(year, month, day);
         }
       }
@@ -1434,12 +1434,12 @@ class ServiceEventPublic {
 
         if (dateMatch == null) continue;
 
-        final year = int.parse(dateMatch.group(1)!);
-        final month = int.parse(dateMatch.group(2)!);
-        final day = int.parse(dateMatch.group(3)!);
+        final year = parseIntValue(dateMatch.group(1));
+        final month = parseIntValue(dateMatch.group(2));
+        final day = parseIntValue(dateMatch.group(3));
 
-        int hour = int.parse(dateMatch.group(4)!);
-        int minute = int.parse(dateMatch.group(5)!);
+        int hour = parseIntValue(dateMatch.group(4));
+        int minute = parseIntValue(dateMatch.group(5));
 
         final startDate = DateTime(year, month, day);
 

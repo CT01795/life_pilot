@@ -552,7 +552,7 @@ class ServiceStock {
         .map<ModelFuture>((e) {
           final key = "${e['product_name']}_${e['identity_type']}";
 
-          final todayQty = (e['oi_net_qty'] ?? 0) as num;
+          final todayQty = parseNumValue(e['oi_net_qty']);
           final yQty = (yesterdayMap[key] ?? todayQty);
 
           return ModelFuture.fromJson({
@@ -926,13 +926,13 @@ class StockParser {
   ) {
     try {
       final securityCode = row[enToIndex["security_code"] ?? -1].toString();
-      final closingPrice = double.tryParse(
+      final closingPrice = tryParseDoubleValue(
         row[enToIndex["closing_price"] ?? -1].toString().replaceAll(',', ''),
       );
 
       if (securityCode.length != 4 || closingPrice == null) return null;
       final priceDifference =
-          double.tryParse(
+          tryParseDoubleValue(
             row[enToIndex["price_difference"] ?? -1]
                 .toString()
                 .trim()
@@ -943,28 +943,28 @@ class StockParser {
         date: date,
         securityCode: securityCode,
         securityName: row[enToIndex["security_name"] ?? -1].toString(),
-        tradedNumber: double.tryParse(
+        tradedNumber: tryParseDoubleValue(
           row[enToIndex["traded_number"] ?? -1].toString().replaceAll(',', ''),
         ),
-        transactionsNumber: int.tryParse(
+        transactionsNumber: tryParseIntValue(
           row[enToIndex["transactions_number"] ?? -1].toString().replaceAll(
             ',',
             '',
           ),
         ),
-        transactionAmount: double.tryParse(
+        transactionAmount: tryParseDoubleValue(
           row[enToIndex["transaction_amount"] ?? -1].toString().replaceAll(
             ',',
             '',
           ),
         ),
-        openingPrice: double.tryParse(
+        openingPrice: tryParseDoubleValue(
           row[enToIndex["opening_price"] ?? -1].toString().replaceAll(',', ''),
         ),
-        highestPrice: double.tryParse(
+        highestPrice: tryParseDoubleValue(
           row[enToIndex["highest_price"] ?? -1].toString().replaceAll(',', ''),
         ),
-        lowestPrice: double.tryParse(
+        lowestPrice: tryParseDoubleValue(
           row[enToIndex["lowest_price"] ?? -1].toString().replaceAll(',', ''),
         ),
         closingPrice: closingPrice,
@@ -976,29 +976,29 @@ class StockParser {
         priceDifference: priceDifference > 0
             ? priceDifference
             : priceDifference * (-1),
-        finalRevealBuyingPrice: double.tryParse(
+        finalRevealBuyingPrice: tryParseDoubleValue(
           row[enToIndex["final_reveal_buying_price"] ?? -1]
               .toString()
               .replaceAll(',', ''),
         ),
-        finalRevealBuyingVolume: double.tryParse(
+        finalRevealBuyingVolume: tryParseDoubleValue(
           row[enToIndex["final_reveal_buying_volume"] ?? -1]
               .toString()
               .replaceAll(',', ''),
         ),
-        finalRevealSellingPrice: double.tryParse(
+        finalRevealSellingPrice: tryParseDoubleValue(
           row[enToIndex["final_reveal_selling_price"] ?? -1]
               .toString()
               .replaceAll(',', ''),
         ),
-        finalRevealSellingVolume: double.tryParse(
+        finalRevealSellingVolume: tryParseDoubleValue(
           row[enToIndex["final_reveal_selling_volume"] ?? -1]
               .toString()
               .replaceAll(',', ''),
         ),
         peRatio: isOTC
             ? null
-            : double.tryParse(
+            : tryParseDoubleValue(
                 row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', ''),
               ),
         source: source,

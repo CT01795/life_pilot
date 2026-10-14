@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 enum EnumMonominoTileDirection { up, down, left, right, empty }
 
@@ -171,7 +172,7 @@ class ModelGameMonominoLevel {
     // --- 放置固定箭頭，隨機顯示 path 上部分答案 ---
     double revealRate = 0.3;
     int showCnt = 0;
-    int maxNumber = max((levelNumber * 0.8).toInt(), 2);
+    int maxNumber = max(parseIntValue(levelNumber * 0.8), 2);
     for (int i = 5; i < solutionPath.length - 1; i++) {
       Point<int> p1 = solutionPath[i];
       if (board[p1.x][p1.y].isStartP) {

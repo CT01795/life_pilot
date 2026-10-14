@@ -336,10 +336,10 @@ class DashboardRepository {
       );
       return AccountingDashboardSummary(
         records: rows.take(5).map(IncomeExpenseItem.fromJson).toList(),
-        total: (account['balance'] as num?) ?? 0,
+        total: parseNumValue(account['balance']),
         todayTotal: rows.fold<num>(
           0,
-          (sum, row) => sum + ((row['value'] as num?) ?? 0),
+          (sum, row) => sum + parseNumValue(row['value']),
         ),
         currency: currency,
       );
@@ -375,10 +375,10 @@ class DashboardRepository {
         .toList();
     return AccountingDashboardSummary(
       records: records,
-      total: (accountResult['balance'] as num?) ?? 0,
+      total: parseNumValue(accountResult['balance']),
       todayTotal: rows.fold<num>(
         0,
-        (sum, row) => sum + ((row['value'] as num?) ?? 0),
+        (sum, row) => sum + parseNumValue(row['value']),
       ),
       currency: currency ?? 'TWD',
     );
@@ -407,10 +407,10 @@ class DashboardRepository {
       );
       return PointDashboardSummary(
         records: rows.take(5).map(PointRecordItem.fromJson).toList(),
-        total: (account['points'] as num?)?.toInt() ?? 0,
+        total: parseIntValue(account['points']),
         todayTotal: rows.fold<int>(
           0,
-          (sum, row) => sum + ((row['value'] as num?)?.toInt() ?? 0),
+          (sum, row) => sum + parseIntValue(row['value']),
         ),
       );
     }
@@ -443,10 +443,10 @@ class DashboardRepository {
         .toList();
     return PointDashboardSummary(
       records: records,
-      total: (accountResult['points'] ?? 0).toInt(),
+      total: parseIntValue(accountResult['points']),
       todayTotal: rows.fold<int>(
         0,
-        (sum, row) => sum + ((row['value'] ?? 0) as num).toInt(),
+        (sum, row) => sum + parseIntValue(row['value']),
       ),
     );
   }

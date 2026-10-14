@@ -112,7 +112,7 @@ class ServiceAccounting {
           accountName: response[Fields.account],
           category: response['category'],
           masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-          balance: (response['balance'] as num?) ?? 0,
+          balance: parseNumValue(response['balance']),
           currency: response['main_currency'],
           exchangeRate: response['exchange_rate'],
         );
@@ -160,7 +160,7 @@ class ServiceAccounting {
         accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
-        balance: (response['balance'] as num?) ?? 0,
+        balance: parseNumValue(response['balance']),
         currency: response['main_currency'],
         exchangeRate: response['exchange_rate'],
       );
@@ -281,7 +281,7 @@ class ServiceAccounting {
             accountName: e[Fields.account],
             category: e['category'],
             masterGraphUrl: bytes,
-            balance: (e['balance'] as num?) ?? 0,
+            balance: parseNumValue(e['balance']),
             currency: e['main_currency'],
             exchangeRate: e['exchange_rate'],
           );
@@ -391,7 +391,7 @@ class ServiceAccounting {
         accountName: result[Fields.account],
         category: result['category'],
         masterGraphUrl: bytes,
-        balance: (result['balance'] as num?) ?? 0,
+        balance: parseNumValue(result['balance']),
         currency: result['main_currency'],
         exchangeRate: result['exchange_rate'],
       );

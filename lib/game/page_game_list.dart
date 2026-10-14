@@ -176,9 +176,9 @@ class _PageGameListState extends State<PageGameList> {
           before: startDate,
         ),
       ]);
-      highestPassedLevel = results[0] as int;
+      highestPassedLevel = parseIntValue(results[0]);
       displayProgress = results[1] as List<ModelGameUser>;
-      var hasProgressBefore = results[2] as bool;
+      var hasProgressBefore = parseBoolValue(results[2]);
       final fallbackDates = displayProgress
           .map((item) => item.createdAt)
           .whereType<DateTime>()

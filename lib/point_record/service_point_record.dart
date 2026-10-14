@@ -112,7 +112,7 @@ class ServicePointRecord {
           accountName: response[Fields.account],
           category: response['category'],
           masterGraphUrl: parseMasterGraph(response['master_graph_url']),
-          points: (response['points'] as num?)?.toInt() ?? 0,
+          points: parseIntValue(response['points']),
         );
       }
       var response = await supabase
@@ -158,7 +158,7 @@ class ServicePointRecord {
         accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
-        points: (response['points'] ?? 0).toInt(),
+        points: parseIntValue(response['points']),
       );
     } on Exception catch (exception) {
       logger.e(exception);
@@ -272,7 +272,7 @@ class ServicePointRecord {
             accountName: e[Fields.account],
             category: e['category'],
             masterGraphUrl: bytes,
-            points: (e['points'] ?? 0).toInt(),
+            points: parseIntValue(e['points']),
           );
         }),
       );
@@ -372,7 +372,7 @@ class ServicePointRecord {
         accountName: response[Fields.account],
         category: response['category'],
         masterGraphUrl: bytes,
-        points: (response['points'] ?? 0).toInt(),
+        points: parseIntValue(response['points']),
       );
     } catch (e, st) {
       logger.e('createAccount failed $e,$st');

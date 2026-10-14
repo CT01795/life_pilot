@@ -163,7 +163,7 @@ class ServiceExportExcel {
               (row[colsToDetail["ageMin"] ?? 99]?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -171,7 +171,7 @@ class ServiceExportExcel {
               (row[colsToDetail["ageMax"] ?? 99]?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -185,7 +185,7 @@ class ServiceExportExcel {
               (row[colsToDetail["priceMin"] ?? 99]?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -193,7 +193,7 @@ class ServiceExportExcel {
               (row[colsToDetail["priceMax"] ?? 99]?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -293,7 +293,7 @@ class ServiceExportExcel {
               (row[colsToDetail["ageMin"] ?? 99]?.value?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -301,7 +301,7 @@ class ServiceExportExcel {
               (row[colsToDetail["ageMax"] ?? 99]?.value?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -317,7 +317,7 @@ class ServiceExportExcel {
               (row[colsToDetail["priceMin"] ?? 99]?.value?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim(),
                 )
               : null,
@@ -325,7 +325,7 @@ class ServiceExportExcel {
               (row[colsToDetail["priceMax"] ?? 99]?.value?.toString() ?? '')
                   .trim()
                   .isNotEmpty
-              ? num.parse(
+              ? parseNumValue(
                   row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim(),
                 )
               : null,

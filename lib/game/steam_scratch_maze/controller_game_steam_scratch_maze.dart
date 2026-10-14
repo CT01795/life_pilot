@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class GameState {
   int x = 0;
@@ -298,7 +299,7 @@ class ControllerGameSteamScratchMaze {
     try {
       await service.saveUserGameScore(
         newUserName: userName,
-        newScore: state.score.toDouble(),
+        newScore: parseDoubleValue(state.score),
         newGameId: gameId,
         newIsPass: isPass,
       );

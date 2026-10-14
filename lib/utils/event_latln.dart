@@ -4,17 +4,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ClusterItem {
   final String id;
   final LatLng position;
   final List<EventItem> events;
 
-  ClusterItem({
-    required this.id,
-    required this.position,
-    required this.events,
-  });
+  ClusterItem({required this.id, required this.position, required this.events});
 
   bool get isCluster => events.length > 1;
   EventItem get single => events.first;
@@ -25,15 +22,16 @@ class ClusterItem {
     /// ======================
     /// 🇹🇼 TAIWAN（22 縣市）
     /// ======================
-    if (RegExp(r'(台灣|臺灣|Taiwan|'
-            r'台北|臺北|Taipei|新北|New Taipei|基隆|Keelung|桃園|Taoyuan|新竹|Hsinchu|苗栗|Miaoli|'
-            r'台中|臺中|Taichung|彰化|Changhua|南投|Nantou|'
-            r'雲林|Yunlin|嘉義|Chiayi|'
-            r'台南|Tainan|臺南|高雄|Kaohsiung|'
-            r'屏東|Pingtung|'
-            r'宜蘭|Yilan|花蓮|Hualien|台東|臺東|Taitung|'
-            r'澎湖|Penghu|金門|Kinmen|連江|Lienchiang|馬祖|Matsu)')
-        .hasMatch(l)) {
+    if (RegExp(
+      r'(台灣|臺灣|Taiwan|'
+      r'台北|臺北|Taipei|新北|New Taipei|基隆|Keelung|桃園|Taoyuan|新竹|Hsinchu|苗栗|Miaoli|'
+      r'台中|臺中|Taichung|彰化|Changhua|南投|Nantou|'
+      r'雲林|Yunlin|嘉義|Chiayi|'
+      r'台南|Tainan|臺南|高雄|Kaohsiung|'
+      r'屏東|Pingtung|'
+      r'宜蘭|Yilan|花蓮|Hualien|台東|臺東|Taitung|'
+      r'澎湖|Penghu|金門|Kinmen|連江|Lienchiang|馬祖|Matsu)',
+    ).hasMatch(l)) {
       return ',TW'; //',Taiwan';
     }
 
@@ -41,34 +39,36 @@ class ClusterItem {
     /// 🇯🇵 JAPAN
     /// ======================
     // 日本熱門城市 / 縣市 / 景點
-    if (RegExp(r'(東京|大阪|京都|奈良|神戸|横浜|名古屋|札幌|函館|小樽|旭川|'
-            r'福岡|博多|九州|長崎|佐世保|大分|別府|由布院|'
-            r'沖縄|那覇|石垣|宮古島|'
-            r'広島|宮島|岡山|倉敷|下関|'
-            r'金沢|富山|高山|白川郷|'
-            r'松本|上高地|軽井沢|草津|'
-            r'箱根|熱海|伊豆|鎌倉|江ノ島|'
-            r'河口湖|富士|'
-            r'仙台|山形|福島|青森|弘前|'
-            r'秋田|盛岡|岩手|'
-            r'徳島|高松|松山|今治|'
-            r'高知|'
-            r'鳥取|米子|出雲|松江|'
-            r'熊本|阿蘇|鹿児島|指宿|'
-            r'宮崎)')
-        .hasMatch(l)) {
+    if (RegExp(
+      r'(東京|大阪|京都|奈良|神戸|横浜|名古屋|札幌|函館|小樽|旭川|'
+      r'福岡|博多|九州|長崎|佐世保|大分|別府|由布院|'
+      r'沖縄|那覇|石垣|宮古島|'
+      r'広島|宮島|岡山|倉敷|下関|'
+      r'金沢|富山|高山|白川郷|'
+      r'松本|上高地|軽井沢|草津|'
+      r'箱根|熱海|伊豆|鎌倉|江ノ島|'
+      r'河口湖|富士|'
+      r'仙台|山形|福島|青森|弘前|'
+      r'秋田|盛岡|岩手|'
+      r'徳島|高松|松山|今治|'
+      r'高知|'
+      r'鳥取|米子|出雲|松江|'
+      r'熊本|阿蘇|鹿児島|指宿|'
+      r'宮崎)',
+    ).hasMatch(l)) {
       return ',JP'; //',Japan';
     }
 
     /// ======================
     /// 🇨🇳 CHINA（常見城市）
     /// ======================
-    if (RegExp(r'(北京|上海|广州|深圳|'
-            r'杭州|苏州|南京|无锡|'
-            r'成都|重庆|西安|武汉|'
-            r'天津|青岛|厦门|福州|'
-            r'长沙|郑州|合肥|南昌)')
-        .hasMatch(l)) {
+    if (RegExp(
+      r'(北京|上海|广州|深圳|'
+      r'杭州|苏州|南京|无锡|'
+      r'成都|重庆|西安|武汉|'
+      r'天津|青岛|厦门|福州|'
+      r'长沙|郑州|合肥|南昌)',
+    ).hasMatch(l)) {
       return ',CN'; //',China';
     }
 
@@ -76,10 +76,11 @@ class ClusterItem {
     /// 🇰🇷 SOUTH KOREA
     /// ======================
     if (RegExp(r'[가-힣]').hasMatch(l) ||
-        RegExp(r'(서울|부산|인천|대구|대전|광주|울산|'
-                r'수원|성남|용인|'
-                r'제주|서귀포)')
-            .hasMatch(l)) {
+        RegExp(
+          r'(서울|부산|인천|대구|대전|광주|울산|'
+          r'수원|성남|용인|'
+          r'제주|서귀포)',
+        ).hasMatch(l)) {
       return ',KR'; //',South Korea';
     }
 
@@ -107,10 +108,11 @@ class ClusterItem {
     /// ======================
     /// 🇺🇸 USA（常見城市）
     /// ======================
-    if (RegExp(r'(New\s?York|Los\s?Angeles|San\s?Francisco|'
-            r'Seattle|Chicago|Boston|'
-            r'CA|NY|TX|WA|IL)')
-        .hasMatch(l)) {
+    if (RegExp(
+      r'(New\s?York|Los\s?Angeles|San\s?Francisco|'
+      r'Seattle|Chicago|Boston|'
+      r'CA|NY|TX|WA|IL)',
+    ).hasMatch(l)) {
       return ',US'; //',USA';
     }
 
@@ -130,8 +132,9 @@ class ClusterItem {
     }
 
     /// 🇮🇹 Italy
-    if (RegExp(r'(Rome|Roma|Milan|Milano|Venice|Venezia|Florence)')
-        .hasMatch(l)) {
+    if (RegExp(
+      r'(Rome|Roma|Milan|Milano|Venice|Venezia|Florence)',
+    ).hasMatch(l)) {
       return ',IT'; //',Italy';
     }
 
@@ -153,8 +156,9 @@ class ClusterItem {
     return ''; // 無法判斷時不附加國家代碼
   }
 
-  static Future<Map<String, double>> getLatLngFromAddressCommon(
-      {required String locationDisplay}) async {
+  static Future<Map<String, double>> getLatLngFromAddressCommon({
+    required String locationDisplay,
+  }) async {
     try {
       final tmpLocationDisplay = locationDisplay.split("．");
       // 優先使用資料庫中既有的經緯度
@@ -174,8 +178,8 @@ class ClusterItem {
         if (result is List && result.isNotEmpty) {
           final loc = result[0];
           return {
-            "lat": (loc['lat'] as num).toDouble(),
-            "lng": (loc['lng'] as num).toDouble(),
+            "lat": parseDoubleValue(loc['lat']),
+            "lng": parseDoubleValue(loc['lng']),
           };
         }
       } catch (e) {
@@ -193,17 +197,15 @@ class ClusterItem {
         return {};
       }
 
-      final response = await apiSupabase.post(
-        '/external/geocode',
-        {'query': '$address$currentCountry'},
-        bearerToken: accessToken,
-      );
+      final response = await apiSupabase.post('/external/geocode', {
+        'query': '$address$currentCountry',
+      }, bearerToken: accessToken);
       if (response is Map<String, dynamic> &&
           response['lat'] is num &&
           response['lng'] is num) {
         return {
-          "lat": (response['lat'] as num).toDouble(),
-          "lng": (response['lng'] as num).toDouble(),
+          "lat": parseDoubleValue(response['lat']),
+          "lng": parseDoubleValue(response['lng']),
         };
       }
       return {};
@@ -214,12 +216,14 @@ class ClusterItem {
   }
 
   static Future<EventViewModel> getLatLngFromAddressView(
-      EventViewModel event) async {
+    EventViewModel event,
+  ) async {
     if (event.lat != null && event.lng != null) {
       return event;
     }
     Map tmpMap = await ClusterItem.getLatLngFromAddressCommon(
-        locationDisplay: event.locationDisplay); //.split("．")[0]
+      locationDisplay: event.locationDisplay,
+    ); //.split("．")[0]
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;
@@ -230,17 +234,14 @@ class ClusterItem {
       return event;
     }
     Map tmpMap = await ClusterItem.getLatLngFromAddressCommon(
-        locationDisplay:
-            "${event.city}．${event.location}"); // ${event.location}
+      locationDisplay: "${event.city}．${event.location}",
+    ); // ${event.location}
     event.lat = tmpMap["lat"];
     event.lng = tmpMap["lng"];
     return event;
   }
 
-  static List<ClusterItem> buildClusters(
-    List<EventItem> events,
-    double zoom,
-  ) {
+  static List<ClusterItem> buildClusters(List<EventItem> events, double zoom) {
     // zoom 越大 grid 越細
     final double gridSize = (360 / (1 << zoom.toInt())).clamp(0.01, 5);
 
@@ -266,11 +267,7 @@ class ClusterItem {
           items.map((e) => e.lng!).reduce((a, b) => a + b) / items.length;
 
       clusters.add(
-        ClusterItem(
-          id: key,
-          position: LatLng(avgLat, avgLng),
-          events: items,
-        ),
+        ClusterItem(id: key, position: LatLng(avgLat, avgLng), events: items),
       );
     });
 

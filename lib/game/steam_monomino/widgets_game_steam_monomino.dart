@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/steam_monomino/model_game_steam_monomino.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class TileWidget extends StatelessWidget {
   final ModelGameMonominoTile tile;
@@ -65,8 +66,8 @@ class TileWidget extends StatelessWidget {
             return !tile.isObstacle && !tile.isGoalP && !tile.isFixedArrow;
           },*/
           onAcceptWithDetails: (details) {
-            final fromRow = details.data['fromRow'] as int?;
-            final fromCol = details.data['fromCol'] as int?;
+            final fromRow = tryParseIntValue(details.data['fromRow']);
+            final fromCol = tryParseIntValue(details.data['fromCol']);
             final direction =
                 details.data['direction'] as EnumMonominoTileDirection?;
 

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/tts/tts_stub.dart'
@@ -132,7 +133,7 @@ class ControllerGameMarioTranslation extends SafeChangeNotifier {
   Future<void> _saveScore(bool isPass) async {
     await service.saveUserGameScore(
       newUserName: userName,
-      newScore: (score + scoreMinus).toDouble(),
+      newScore: parseDoubleValue(score + scoreMinus),
       newGameId: gameId, // 使用傳入的 gameId
       newIsPass: isPass,
     );

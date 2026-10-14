@@ -22,7 +22,7 @@ class PointRecordItem {
     return PointRecordItem(
       description: json['description'] ?? '',
       type: json['type'] ?? '',
-      value: (json['value'] ?? 0) as int,
+      value: parseIntValue(json['value']),
       createdAt: json[Fields.createdAt] != null
           ? tryParseDateTimeValue(json[Fields.createdAt])
           : null,

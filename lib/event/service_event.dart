@@ -73,8 +73,8 @@ class ServiceEvent {
       'event_id': event.id,
     });
     if (response is Map<String, dynamic>) {
-      event.mapLat = (response['lat'] as num?)?.toDouble();
-      event.mapLng = (response['lng'] as num?)?.toDouble();
+      event.mapLat = tryParseDoubleValue(response['lat']);
+      event.mapLng = tryParseDoubleValue(response['lng']);
     }
     return event;
   }
@@ -567,10 +567,10 @@ class MapCoordinateBackfillResult {
 
   factory MapCoordinateBackfillResult.fromJson(Map<String, dynamic> json) {
     return MapCoordinateBackfillResult(
-      saved: (json['saved'] as num?)?.toInt() ?? 0,
-      remaining: (json['remaining'] as num?)?.toInt() ?? 0,
-      nextOffset: (json['next_offset'] as num?)?.toInt() ?? 0,
-      coveragePercent: (json['coverage_percent'] as num?)?.toDouble() ?? 0,
+      saved: parseIntValue(json['saved']),
+      remaining: parseIntValue(json['remaining']),
+      nextOffset: parseIntValue(json['next_offset']),
+      coveragePercent: parseDoubleValue(json['coverage_percent']),
     );
   }
 }

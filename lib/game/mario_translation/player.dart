@@ -1,5 +1,6 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:flutter/services.dart';
 import 'package:life_pilot/game/mario_translation/bullet.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
@@ -47,7 +48,7 @@ class Player extends SpriteComponent
   void shoot() {
     final bullet = Bullet(
       position: position + Vector2(size.x / 2, size.y / 2),
-      direction: Vector2(facing.toDouble(), 0), // ⭐ 左右
+      direction: Vector2(parseDoubleValue(facing), 0), // ⭐ 左右
     );
     game.add(bullet);
   }
