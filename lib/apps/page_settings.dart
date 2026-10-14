@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
@@ -118,9 +119,9 @@ class _PageSettingsState extends State<PageSettings> {
     if (match == null) return loc.dataUploadToCloudFailed;
     return loc.dataUploadQuotaExceeded(
       match.group(1)!,
-      int.parse(match.group(2)!),
-      int.parse(match.group(3)!),
-      int.parse(match.group(4)!),
+      parseIntValue(match.group(2)),
+      parseIntValue(match.group(3)),
+      parseIntValue(match.group(4)),
     );
   }
 

@@ -325,15 +325,15 @@ class ServiceEventPublic {
       int y, m1, d1;
       if (m.group(1) != null) {
         // yyyy.mm.dd
-        y = int.parse(m.group(1)!);
+        y = parseIntValue(m.group(1));
         if (y < 1911) y += 1911;
-        m1 = int.parse(m.group(2)!);
-        d1 = int.parse(m.group(3)!);
+        m1 = parseIntValue(m.group(2));
+        d1 = parseIntValue(m.group(3));
       } else {
         // mm.dd，年份 fallback 當前年份
         y = DateTime.now().year;
-        m1 = int.parse(m.group(4)!);
-        d1 = int.parse(m.group(5)!);
+        m1 = parseIntValue(m.group(4));
+        d1 = parseIntValue(m.group(5));
       }
 
       startDate = DateTime(y, m1, d1);
@@ -343,7 +343,7 @@ class ServiceEventPublic {
         final m2 = dateMatches[1];
         int y2, m2v, d2;
         if (m2.group(1) != null) {
-          y2 = int.parse(m2.group(1)!);
+          y2 = parseIntValue(m2.group(1));
           if (y2 < 1911) y2 += 1911;
           m2v = int.parse(m2.group(2)!);
           d2 = int.parse(m2.group(3)!);

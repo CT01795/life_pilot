@@ -5,8 +5,8 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/utils/record_categories.dart';
-import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 
 class EventCompletionChoice {
   const EventCompletionChoice({
@@ -435,7 +435,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
   }
 
   num? _parseAmount(TextEditingController controller) =>
-      num.tryParse(controller.text.trim().replaceAll(',', ''));
+      tryParseNumValue(controller.text.replaceAll(',', ''));
 
   bool _canSubmit({required num? accountingValue, required int? pointValue}) {
     return (!_addAccounting ||

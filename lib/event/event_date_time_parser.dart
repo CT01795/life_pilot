@@ -16,8 +16,8 @@ class EventDateTimeParser {
     if (match == null) return null;
 
     return TimeOfDay(
-      hour: int.parse(match.group(1)!),
-      minute: int.parse(match.group(2)!),
+      hour: parseIntValue(match.group(1)),
+      minute: parseIntValue(match.group(2)),
     );
   }
 }

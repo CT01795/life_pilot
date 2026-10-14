@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/value_parser.dart';
+
 class GameQuestionAuthoringRules {
   const GameQuestionAuthoringRules._();
 
@@ -20,7 +22,7 @@ class GameQuestionAuthoringRules {
 
   static int levelFromGroup(String group) {
     final match = RegExp(r'(\d+)$').firstMatch(group.trim());
-    return int.tryParse(match?.group(1) ?? '') ?? 1;
+    return tryParseIntValue(match?.group(1)) ?? 1;
   }
 
   static String numberedGroup({required String base, required String suffix}) {
