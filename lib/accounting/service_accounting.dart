@@ -685,8 +685,8 @@ class ServiceAccounting {
     dynamic balance,
   ) {
     return ModelAccountingDetail(
-      id: detail[Fields.id]?.toString() ?? '',
-      accountId: detail['account_id']?.toString() ?? '',
+      id: parseStringValue(detail[Fields.id]),
+      accountId: parseStringValue(detail['account_id']),
       createdAt:
           tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
       date:
@@ -696,10 +696,10 @@ class ServiceAccounting {
       primaryCategory:
           detail['primary_category']?.toString() ?? 'uncategorized',
       secondaryCategory: detail['group']?.toString(),
-      description: detail['description']?.toString() ?? '',
-      type: detail['type']?.toString() ?? '',
+      description: parseStringValue(detail['description']),
+      type: parseStringValue(detail['type']),
       value: parseNumValue(detail['value']),
-      currency: detail['currency']?.toString() ?? '',
+      currency: parseStringValue(detail['currency']),
       exchangeRate: detail['exchange_rate'],
       balance: parseNumValue(balance),
     );
@@ -720,7 +720,7 @@ class ServiceAccounting {
             'value': r.value,
             'currency': r.currency ?? currency,
             'primary_category': r.primaryCategory,
-            'group': r.secondaryCategory?.trim() ?? '',
+            'group': parseStringValue(r.secondaryCategory).trim(),
             'account_id': accountId,
             'event_id': r.eventId,
             'type': type,
@@ -794,7 +794,7 @@ class ServiceAccounting {
             'description': newDescription,
             'date': newDate.toUtc().toIso8601String(),
             'primary_category': newPrimaryCategory,
-            'group': newSecondaryCategory?.trim() ?? '',
+            'group': parseStringValue(newSecondaryCategory).trim(),
           },
           syncState: LocalSyncState.modifiedLocally,
         );
@@ -808,7 +808,7 @@ class ServiceAccounting {
             'description': newDescription,
             'date': newDate.toUtc().toIso8601String(),
             'primary_category': newPrimaryCategory,
-            'group': newSecondaryCategory?.trim() ?? '',
+            'group': parseStringValue(newSecondaryCategory).trim(),
           })
           .eq(Fields.id, detailId);
     } catch (e, st) {

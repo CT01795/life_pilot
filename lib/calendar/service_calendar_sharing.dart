@@ -24,7 +24,7 @@ class CalendarShareableEvent {
 
   factory CalendarShareableEvent.fromJson(Map<String, dynamic> json) {
     return CalendarShareableEvent(
-      id: json['id']?.toString() ?? '',
+      id: parseStringValue(json['id']),
       name: json['name']?.toString().trim().isNotEmpty == true
           ? json['name'].toString()
           : '-',
@@ -48,8 +48,8 @@ class SharedCalendarEvent {
 
   factory SharedCalendarEvent.fromJson(Map<String, dynamic> json) {
     return SharedCalendarEvent(
-      invitationId: json['invitation_id']?.toString() ?? '',
-      eventId: json['event_id']?.toString() ?? '',
+      invitationId: parseStringValue(json['invitation_id']),
+      eventId: parseStringValue(json['event_id']),
       name: json['event_name']?.toString().trim().isNotEmpty == true
           ? json['event_name'].toString()
           : '-',
@@ -76,9 +76,9 @@ class CalendarShareInvitation {
 
   factory CalendarShareInvitation.fromJson(Map<String, dynamic> json) {
     return CalendarShareInvitation(
-      id: json['id']?.toString() ?? '',
-      sharedBy: json['shared_by']?.toString() ?? '',
-      invitedEmail: json['invited_email']?.toString() ?? '',
+      id: parseStringValue(json['id']),
+      sharedBy: parseStringValue(json['shared_by']),
+      invitedEmail: parseStringValue(json['invited_email']),
       status: json['status']?.toString() ?? 'pending',
     );
   }

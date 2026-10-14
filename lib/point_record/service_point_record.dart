@@ -511,16 +511,16 @@ class ServicePointRecord {
       );
       return filtered.map((detail) {
         return ModelPointRecordDetail(
-          id: detail[Fields.id]?.toString() ?? '',
-          accountId: detail['account_id']?.toString() ?? '',
+          id: parseStringValue(detail[Fields.id]),
+          accountId: parseStringValue(detail['account_id']),
           createdAt:
               tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
           date: tryParseDateTimeValue(detail['date']) ?? DateTime.now(),
           primaryCategory:
               detail['primary_category']?.toString() ?? 'uncategorized',
           secondaryCategory: detail['group']?.toString(),
-          description: detail['description']?.toString() ?? '',
-          type: detail['type']?.toString() ?? '',
+          description: parseStringValue(detail['description']),
+          type: parseStringValue(detail['type']),
           value: parseIntValue(detail['value']),
           points: points,
         );
@@ -602,8 +602,8 @@ class ServicePointRecord {
     final unique = uniqueRecordRowsNewestFirst(result);
     return unique.map((detail) {
       return ModelPointRecordDetail(
-        id: detail[Fields.id]?.toString() ?? '',
-        accountId: detail['account_id']?.toString() ?? '',
+        id: parseStringValue(detail[Fields.id]),
+        accountId: parseStringValue(detail['account_id']),
         createdAt:
             tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
         date:
@@ -613,8 +613,8 @@ class ServicePointRecord {
         primaryCategory:
             detail['primary_category']?.toString() ?? 'uncategorized',
         secondaryCategory: detail['group']?.toString(),
-        description: detail['description']?.toString() ?? '',
-        type: detail['type']?.toString() ?? '',
+        description: parseStringValue(detail['description']),
+        type: parseStringValue(detail['type']),
         value: parseIntValue(detail['value']),
         points: points,
       );
@@ -709,7 +709,7 @@ class ServicePointRecord {
               'description': record.description,
               'value': record.value,
               'primary_category': record.primaryCategory,
-              'group': record.secondaryCategory?.trim() ?? '',
+            'group': parseStringValue(record.secondaryCategory).trim(),
               'event_id': record.eventId,
               'date': (record.date ?? now).toUtc().toIso8601String(),
               Fields.createdAt: now.toUtc().toIso8601String(),
@@ -729,7 +729,7 @@ class ServicePointRecord {
                   'description': r.description,
                   'value': r.value,
                   'primary_category': r.primaryCategory,
-                  'group': r.secondaryCategory?.trim() ?? '',
+                  'group': parseStringValue(r.secondaryCategory).trim(),
                   'event_id': r.eventId,
                   'date': (r.date ?? now).toUtc().toIso8601String(),
                 },
@@ -778,7 +778,7 @@ class ServicePointRecord {
             'description': newDescription,
             'date': newDate.toUtc().toIso8601String(),
             'primary_category': newPrimaryCategory,
-            'group': newSecondaryCategory?.trim() ?? '',
+            'group': parseStringValue(newSecondaryCategory).trim(),
           },
           syncState: LocalSyncState.modifiedLocally,
         );
@@ -791,7 +791,7 @@ class ServicePointRecord {
             'description': newDescription,
             'date': newDate.toUtc().toIso8601String(),
             'primary_category': newPrimaryCategory,
-            'group': newSecondaryCategory?.trim() ?? '',
+            'group': parseStringValue(newSecondaryCategory).trim(),
           })
           .eq(Fields.id, detailId);
     } catch (e, st) {

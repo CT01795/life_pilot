@@ -112,12 +112,12 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
     startTime = e?.startTime ?? TimeOfDay.fromDateTime(now);
     endTime = e?.endTime;
     country = EventCountry.normalize(e?.country);
-    city = e?.city ?? '';
-    location = e?.location ?? '';
-    name = e?.name ?? '';
-    type = e?.type ?? '';
-    description = e?.description ?? '';
-    unit = e?.unit ?? '';
+    city = parseStringValue(e?.city);
+    location = parseStringValue(e?.location);
+    name = parseStringValue(e?.name);
+    type = parseStringValue(e?.type);
+    description = parseStringValue(e?.description);
+    unit = parseStringValue(e?.unit);
     subEvents = e != null ? List.from(e.subEvents) : [];
     account = e?.account ?? auth.currentAccount;
     reminderOptions =

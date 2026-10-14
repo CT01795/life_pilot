@@ -218,7 +218,7 @@ class ServiceEvent {
       );
       return rows.any((row) {
         final date = tryParseDateTimeValue(
-          row[EventFields.startDate]?.toString() ?? '',
+          parseStringValue(row[EventFields.startDate]),
         );
         return date != null && date.isBefore(before);
       });
@@ -251,7 +251,7 @@ class ServiceEvent {
           rows
               .map(
                 (row) => tryParseDateTimeValue(
-                  row[EventFields.startDate]?.toString() ?? '',
+                  parseStringValue(row[EventFields.startDate]),
                 ),
               )
               .whereType<DateTime>()
@@ -272,7 +272,7 @@ class ServiceEvent {
         .limit(1);
     if (rows.isEmpty) return null;
     return tryParseDateTimeValue(
-      rows.first[EventFields.startDate]?.toString() ?? '',
+      parseStringValue(rows.first[EventFields.startDate]),
       toLocal: true,
     );
   }

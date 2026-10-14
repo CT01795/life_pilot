@@ -25,13 +25,13 @@ class ModelGameUser {
 
   factory ModelGameUser.fromMap(Map<String, dynamic> map) {
     return ModelGameUser(
-      id: map[Fields.id] ?? '',
-      userName: map['name'] ?? '',
-      gameId: map['game_id'] ?? '',
+      id: parseStringValue(map[Fields.id]),
+      userName: parseStringValue(map['name']),
+      gameId: parseStringValue(map['game_id']),
       score: parseDoubleValue(map['score']),
       createdAt: tryParseDateTimeValue(map[Fields.createdAt], toLocal: true),
-      gameType: map['game_type'] ?? '',
-      gameName: map['game_name'] ?? '',
+      gameType: parseStringValue(map['game_type']),
+      gameName: parseStringValue(map['game_name']),
       level: parseIntValue(map['level'], fallback: 1),
       isPass: parseBoolValue(map['is_pass']),
     );

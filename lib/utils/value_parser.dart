@@ -8,6 +8,10 @@ num? tryParseNumValue(Object? value) {
   return num.tryParse(value?.toString().trim() ?? '');
 }
 
+/// Converts nullable API/local values to text without repeated null handling.
+String parseStringValue(Object? value, {String fallback = ''}) =>
+    value?.toString() ?? fallback;
+
 num parseNumValue(Object? value, {num fallback = 0}) =>
     tryParseNumValue(value) ?? fallback;
 

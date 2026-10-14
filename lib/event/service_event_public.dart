@@ -1390,7 +1390,7 @@ class ServiceEventPublic {
           name: title,
           account: AuthConstants.systemEventOwnerEmail,
           description: description,
-          unit: organizer ?? '',
+          unit: parseStringValue(organizer),
           source: source,
         ),
       );
@@ -1752,7 +1752,7 @@ class ServiceEventPublic {
 
       // 2️⃣ 判斷是否「免費」
       final showInfoList = item['showInfo'] as List<dynamic>? ?? [];
-      final eventName = item['title'] ?? '';
+      final eventName = parseStringValue(item['title']);
       final category = typeMap.containsKey(item['category'] ?? "9999")
           ? typeMap[item['category'] ?? "9999"]
           : null;
@@ -1762,11 +1762,11 @@ class ServiceEventPublic {
       //3️⃣ 一個活動可能有多個場次
       if (showInfoList.isEmpty) continue;
       final show0 = showInfoList[0];
-      String locationName0 = show0['locationName'] ?? '';
+      String locationName0 = parseStringValue(show0['locationName']);
       if (!isFree) {
         continue;
       }
-      String location0 = show0['location'] ?? '';
+      String location0 = parseStringValue(show0['location']);
       if (!tmpSet.contains(eventName)) {
         List<EventItem> subEvents = getSubEvents(showInfoList, uuid, eventName);
         tmpList.add(
@@ -1777,7 +1777,7 @@ class ServiceEventPublic {
             startTime: subEvents[0].startTime,
             endDate: endDate,
             endTime: subEvents.length <= 1 ? subEvents[0].endTime : null,
-            type: category ?? '',
+            type: parseStringValue(category),
             city: safeCity(location0),
             location: "$locationName0(${safeAddress(location0)})",
             name: eventName,
@@ -1800,8 +1800,8 @@ class ServiceEventPublic {
     List<EventItem> subEvents = [];
     for (int i = 0; i < showInfoList.length; i++) {
       final show = showInfoList[i];
-      final locationName = show['locationName'] ?? '';
-      final location = show['location'] ?? '';
+      final locationName = parseStringValue(show['locationName']);
+      final location = parseStringValue(show['location']);
       final subStartDateStr = (show['time'] ?? '').toString();
       final subStartDateStrSplit = subStartDateStr.split(" ");
       final subStartDate = EventDateTimeParser.parseDate(
@@ -1882,8 +1882,8 @@ class ServiceEventPublic {
             if (endDate != null && !endDate.isBefore(today)) {
               final location = cells[3].text.trim();
               final aTag = cells[2].querySelector('a');
-              final eventName = aTag?.text.trim() ?? '';
-              String eventHref = aTag?.attributes['href'] ?? '';
+              final eventName = parseStringValue(aTag?.text).trim();
+              String eventHref = parseStringValue(aTag?.attributes['href']);
               if (eventHref.startsWith("/events/")) {
                 eventHref = inUrl.replaceAll("/weekend.json", '') + eventHref;
               }

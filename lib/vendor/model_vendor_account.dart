@@ -25,9 +25,12 @@ class VendorPricingPlan {
 
   factory VendorPricingPlan.fromJson(Map<String, dynamic> json) =>
       VendorPricingPlan(
-        id: json['id']?.toString() ?? json['plan_code']?.toString() ?? '',
-        code: json['plan_code']?.toString() ?? 'free',
-        versionName: json['version_name']?.toString() ?? '',
+        id: parseStringValue(
+          json['id'],
+          fallback: parseStringValue(json['plan_code']),
+        ),
+        code: parseStringValue(json['plan_code'], fallback: 'free'),
+        versionName: parseStringValue(json['version_name']),
         effectiveAt:
             tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
         quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),
@@ -61,7 +64,7 @@ class VendorSubscriptionStatus {
     );
     return VendorSubscriptionStatus(
       plan: VendorPricingPlan.fromJson(rawPlan),
-      status: json['status']?.toString() ?? 'active',
+      status: parseStringValue(json['status'], fallback: 'active'),
       eventUsed: parseIntValue(json['event_used']),
       attractionUsed: parseIntValue(json['attraction_used']),
       imageBytesUsed: parseIntValue(json['image_bytes_used']),

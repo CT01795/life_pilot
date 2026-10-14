@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerPageCalendarAdd extends SafeChangeNotifier {
@@ -66,11 +67,11 @@ class ControllerPageCalendarAdd extends SafeChangeNotifier {
     startTime = e?.startTime ?? TimeOfDay.fromDateTime(now);
     endTime = e?.endTime;
     country = EventCountry.normalize(e?.country);
-    city = e?.city ?? '';
-    location = e?.location ?? '';
-    name = e?.name ?? '';
-    type = e?.type ?? '';
-    description = e?.description ?? '';
+    city = parseStringValue(e?.city);
+    location = parseStringValue(e?.location);
+    name = parseStringValue(e?.name);
+    type = parseStringValue(e?.type);
+    description = parseStringValue(e?.description);
     subEvents = e != null ? List.from(e.subEvents) : [];
     account = e?.account ?? auth.currentAccount;
     reminderOptions =

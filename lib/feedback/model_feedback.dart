@@ -37,18 +37,18 @@ class ModelFeedback {
   factory ModelFeedback.fromMap(Map<String, dynamic> map) {
     return ModelFeedback(
       id: parseIntValue(map[Fields.id]),
-      subject: map['subject'] as String,
-      content: map['content'] as String,
+      subject: parseStringValue(map['subject']),
+      content: parseStringValue(map['content']),
       cc: (map['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       screenshot: (map['screenshot'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList(),
-      createdBy: map[Fields.createdBy] as String?,
+      createdBy: parseStringValue(map[Fields.createdBy]),
       createdAt: tryParseDateTimeValue(map[Fields.createdAt]) ?? DateTime.now(),
       isOk: map['is_ok'] is bool
           ? map['is_ok']
           : map['is_ok']?.toString() == 'true',
-      dealBy: map['deal_by'] as String?,
+      dealBy: parseStringValue(map['deal_by']),
       dealAt: map['deal_at'] != null && map['deal_at'].toString().isNotEmpty
           ? tryParseDateTimeValue(map['deal_at'])
           : null,

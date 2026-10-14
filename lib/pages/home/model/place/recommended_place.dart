@@ -3,6 +3,7 @@ import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class RecommendedPlace {
   final String id;
@@ -48,20 +49,22 @@ class RecommendedPlace {
 
   factory RecommendedPlace.fromJson(Map<String, dynamic> json) {
     return RecommendedPlace(
-      id: json[Fields.id] as String,
-      name: json['name'] ?? '',
+      id: parseStringValue(json[Fields.id]),
+      name: parseStringValue(json['name']),
       startDate: EventDateTimeParser.parseDate(json['start_date']),
       startTime: EventDateTimeParser.parseTime(json['start_time']),
       endDate: EventDateTimeParser.parseDate(json['end_date']),
       endTime: EventDateTimeParser.parseTime(json['end_time']),
-      country: EventCountry.normalize(json[EventFields.country]?.toString()),
-      city: json['city'],
-      location: json['location'],
-      type: json['type'],
+      country: EventCountry.normalize(
+        parseStringValue(json[EventFields.country]),
+      ),
+      city: parseStringValue(json['city']),
+      location: parseStringValue(json['location']),
+      type: parseStringValue(json['type']),
       isFree: json['is_free'] ?? false,
-      description: json['description'],
-      masterUrl: json['master_url'],
-      masterGraphUrl: json['master_graph_url'],
+      description: parseStringValue(json['description']),
+      masterUrl: parseStringValue(json['master_url']),
+      masterGraphUrl: parseStringValue(json['master_graph_url']),
       fee: json['fee'],
       lat: json['lat'],
       lng: json['lng'],

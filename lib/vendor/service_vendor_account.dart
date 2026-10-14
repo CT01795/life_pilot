@@ -53,7 +53,10 @@ class ServiceVendorAccount {
     final date = DateTime(today.year, today.month, today.day);
     bool active(Map<String, dynamic> row) {
       final end = tryParseDateTimeValue(
-        row['end_date']?.toString() ?? row['start_date']?.toString() ?? '',
+        parseStringValue(
+          row['end_date'],
+          fallback: parseStringValue(row['start_date']),
+        ),
         toLocal: true,
       );
       return end == null || !end.isBefore(date);
@@ -63,17 +66,17 @@ class ServiceVendorAccount {
       Map<String, dynamic> row, {
       required bool isActivity,
     }) => VendorRecentSubmission(
-      id: row['id']?.toString() ?? '',
-      name: row['name']?.toString() ?? '',
-      city: row['city']?.toString() ?? '',
+      id: parseStringValue(row['id']),
+      name: parseStringValue(row['name']),
+      city: parseStringValue(row['city']),
       isActivity: isActivity,
       isApproved: row['is_approved'] == true,
       startDate: tryParseDateTimeValue(
-        row['start_date']?.toString() ?? '',
+        parseStringValue(row['start_date']),
         toLocal: true,
       ),
       endDate: tryParseDateTimeValue(
-        row['end_date']?.toString() ?? '',
+        parseStringValue(row['end_date']),
         toLocal: true,
       ),
     );
