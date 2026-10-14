@@ -53,7 +53,10 @@ class ServiceAccounting {
     }
     if (row == null) return null;
     final value = parseNumValue(row['value']);
-    return (value > 0, parseStringValue(row['primary_category'], fallback: 'uncategorized'));
+    return (
+      value > 0,
+      parseStringValue(row['primary_category'], fallback: 'uncategorized'),
+    );
   }
 
   // ===== 帳戶 =====
@@ -192,7 +195,8 @@ class ServiceAccounting {
             .where(
               (row) =>
                   row[Fields.isValid] == true &&
-                  (category == null || parseStringValue(row['category']) == category),
+                  (category == null ||
+                      parseStringValue(row['category']) == category),
             )
             .toList();
         if (category == null && projectLimit != null) {
@@ -204,9 +208,9 @@ class ServiceAccounting {
                   .where((r) => r['category'] == AccountCategory.project.name)
                   .toList()
                 ..sort(
-                  (a, b) => parseStringValue(b[Fields.createdAt]).compareTo(
-                    parseStringValue(a[Fields.createdAt]),
-                  ),
+                  (a, b) => parseStringValue(
+                    b[Fields.createdAt],
+                  ).compareTo(parseStringValue(a[Fields.createdAt])),
                 );
           rows = [...personal, ...projects.take(projectLimit)];
         }
@@ -548,7 +552,7 @@ class ServiceAccounting {
         .ilike('type', type);
     if (includeReservedRecords) {
       query = query.or(
-        'and(date.gte.${dateFrom.toUtc().toIso8601String()},date.lt.${upperBound.toUtc().toIso8601String()}),primary_category.eq.reserved',
+        recordRangeOrReservedFilter(from: dateFrom, upperBound: upperBound),
       );
     } else {
       query = query
@@ -587,7 +591,7 @@ class ServiceAccounting {
           .select()
           .eq('account_id', accountId)
           .ilike('type', type)
-          .neq('primary_category', 'reserved')
+          .neq('primary_category', reservedRecordCategory)
           .order('date', ascending: false)
           .limit(1);
       result.addAll(List<Map<String, dynamic>>.from(fallback));
@@ -608,8 +612,8 @@ class ServiceAccounting {
       balance += allLocal
           .where(
             (row) =>
-            parseStringValue(row['account_id']) == accountId &&
-            parseStringValue(row['type']) == type,
+                parseStringValue(row['account_id']) == accountId &&
+                parseStringValue(row['type']) == type,
           )
           .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
     }
@@ -644,7 +648,7 @@ class ServiceAccounting {
         .eq('account_id', accountId)
         .ilike('type', type)
         .lt('date', before.toUtc().toIso8601String())
-        .neq('primary_category', 'reserved')
+        .neq('primary_category', reservedRecordCategory)
         .limit(1);
     return rows.isNotEmpty;
   }
@@ -676,7 +680,7 @@ class ServiceAccounting {
         .eq('account_id', accountId)
         .ilike('type', type)
         .lt('date', before.toUtc().toIso8601String())
-        .neq('primary_category', 'reserved')
+        .neq('primary_category', reservedRecordCategory)
         .order('date', ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
@@ -841,13 +845,16 @@ class ServiceAccounting {
                 )
                 .toList()
               ..sort(
-                (a, b) => parseStringValue(b[Fields.createdAt]).compareTo(
-                  parseStringValue(a[Fields.createdAt]),
-                ),
+                (a, b) => parseStringValue(
+                  b[Fields.createdAt],
+                ).compareTo(parseStringValue(a[Fields.createdAt])),
               );
         return matching.isEmpty
             ? 'TWD'
-            : parseStringValue(matching.first['main_currency'], fallback: 'TWD');
+            : parseStringValue(
+                matching.first['main_currency'],
+                fallback: 'TWD',
+              );
       }
       final response = await supabase
           .from(TableNames.accountingAccount)

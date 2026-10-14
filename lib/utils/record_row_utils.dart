@@ -8,6 +8,18 @@ const String reservedRecordCategory = 'reserved';
 DateTime recordDayUpperBound(DateTime date) =>
     DateTime(date.year, date.month, date.day + 1);
 
+/// PostgREST date range including records retained regardless of their date.
+String recordRangeOrReservedFilter({
+  required DateTime from,
+  required DateTime upperBound,
+}) =>
+    'and(date.gte.${from.toUtc().toIso8601String()},'
+    'date.lt.${upperBound.toUtc().toIso8601String()}),'
+    'primary_category.eq.$reservedRecordCategory';
+
+int compareRecordRowsNewestFirst(RecordRow a, RecordRow b) =>
+    parseStringValue(b['date']).compareTo(parseStringValue(a['date']));
+
 DateTime? recordRowDate(RecordRow row) => tryParseDateTimeValue(row['date']);
 
 bool isReservedRecordRow(RecordRow row) =>
@@ -25,9 +37,14 @@ RecordRow? latestRecordRowWhere(
   Iterable<RecordRow> rows,
   bool Function(RecordRow row) matches,
 ) {
-  final matching = rows.where(matches).toList();
-  sortRecordRowsNewestFirst(matching);
-  return matching.isEmpty ? null : matching.first;
+  RecordRow? latest;
+  for (final row in rows) {
+    if (!matches(row)) continue;
+    if (latest == null || compareRecordRowsNewestFirst(row, latest) < 0) {
+      latest = row;
+    }
+  }
+  return latest;
 }
 
 RecordRow? latestRecordRowForAccountAndType(
@@ -41,7 +58,10 @@ RecordRow? latestRecordRowForAccountAndType(
 );
 
 RecordRow? latestRecordRowForEvent(Iterable<RecordRow> rows, String eventId) =>
-    latestRecordRowWhere(rows, (row) => parseStringValue(row['event_id']) == eventId);
+    latestRecordRowWhere(
+      rows,
+      (row) => parseStringValue(row['event_id']) == eventId,
+    );
 
 bool recordRowIsInRange(
   RecordRow row, {
@@ -76,9 +96,11 @@ List<RecordRow> filterRecordRows(
 
   if (includeLatestFallback &&
       !filtered.any((row) => !isReservedRecordRow(row))) {
-    final fallback = source.where((row) => !isReservedRecordRow(row)).toList();
-    sortRecordRowsNewestFirst(fallback);
-    if (fallback.isNotEmpty) filtered.add(fallback.first);
+    final fallback = latestRecordRowWhere(
+      source,
+      (row) => !isReservedRecordRow(row),
+    );
+    if (fallback != null) filtered.add(fallback);
   }
 
   sortRecordRowsNewestFirst(filtered);
@@ -113,8 +135,5 @@ List<RecordRow> uniqueRecordRowsNewestFirst(Iterable<RecordRow> rows) {
 }
 
 void sortRecordRowsNewestFirst(List<RecordRow> rows) {
-  rows.sort(
-    (a, b) =>
-        parseStringValue(b['date']).compareTo(parseStringValue(a['date'])),
-  );
+  rows.sort(compareRecordRowsNewestFirst);
 }

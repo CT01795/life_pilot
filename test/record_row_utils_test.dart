@@ -104,4 +104,56 @@ void main() {
 
     expect(latest?['id'], 'newer');
   });
+
+  test('latest lookup scans once and does not reorder the source', () {
+    final source = <RecordRow>[
+      {'id': 'older', 'date': '2026-09-01'},
+      {'id': 'newer', 'date': '2026-10-01'},
+      {'id': 'middle', 'date': '2026-09-15'},
+    ];
+    var checked = 0;
+    final result = latestRecordRowWhere(source, (row) {
+      checked++;
+      return true;
+    });
+    expect(result?['id'], 'newer');
+    expect(checked, source.length);
+    expect(source.map((row) => row['id']), ['older', 'newer', 'middle']);
+  });
+
+  test('latest lookup returns null for empty or unmatched input', () {
+    expect(latestRecordRowWhere([], (_) => true), isNull);
+    expect(latestRecordRowWhere(rows, (_) => false), isNull);
+  });
+
+  test('same-date lookup keeps the first matching record', () {
+    expect(
+      latestRecordRowWhere([
+        {'id': 'first', 'date': '2026-10-01'},
+        {'id': 'second', 'date': '2026-10-01'},
+      ], (_) => true)?['id'],
+      'first',
+    );
+  });
+
+  test('reserved-only input does not create a regular fallback', () {
+    final result = filterRecordRows(
+      [rows.first],
+      from: DateTime(2026, 11, 1),
+      to: DateTime(2026, 11, 30),
+      includeLatestFallback: true,
+    );
+    expect(result.map((row) => row['id']), ['reserved']);
+  });
+
+  test('date range query converts boundaries to UTC and retains reserved', () {
+    final from = DateTime(2026, 10, 1);
+    final upperBound = recordDayUpperBound(DateTime(2026, 10, 31));
+    expect(
+      recordRangeOrReservedFilter(from: from, upperBound: upperBound),
+      'and(date.gte.${from.toUtc().toIso8601String()},'
+      'date.lt.${upperBound.toUtc().toIso8601String()}),primary_category.eq.reserved',
+    );
+    expect(upperBound, DateTime(2026, 11, 1));
+  });
 }

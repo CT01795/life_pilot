@@ -53,7 +53,10 @@ class ServicePointRecord {
     }
     if (row == null) return null;
     final value = parseNumValue(row['value']);
-    return (value >= 0, parseStringValue(row['primary_category'], fallback: 'uncategorized'));
+    return (
+      value >= 0,
+      parseStringValue(row['primary_category'], fallback: 'uncategorized'),
+    );
   }
 
   // ===== 帳戶 =====
@@ -189,7 +192,8 @@ class ServicePointRecord {
             .where(
               (row) =>
                   row[Fields.isValid] == true &&
-                  (category == null || parseStringValue(row['category']) == category),
+                  (category == null ||
+                      parseStringValue(row['category']) == category),
             )
             .toList();
         if (category == null && projectLimit != null) {
@@ -201,9 +205,9 @@ class ServicePointRecord {
                   .where((r) => r['category'] == AccountCategory.project.name)
                   .toList()
                 ..sort(
-                  (a, b) => parseStringValue(b[Fields.createdAt]).compareTo(
-                    parseStringValue(a[Fields.createdAt]),
-                  ),
+                  (a, b) => parseStringValue(
+                    b[Fields.createdAt],
+                  ).compareTo(parseStringValue(a[Fields.createdAt])),
                 );
           rows = [...personal, ...projects.take(projectLimit)];
         }
@@ -220,7 +224,7 @@ class ServicePointRecord {
                     .where(
                       (d) =>
                           parseStringValue(d['account_id']) ==
-                              parseStringValue(e[Fields.id]),
+                          parseStringValue(e[Fields.id]),
                     )
                     .fold<int>(0, (sum, d) => sum + parseIntValue(d['value'])),
               ),
@@ -407,7 +411,9 @@ class ServicePointRecord {
           resource: TableNames.dashboardSetting,
         );
         for (final setting in settings) {
-          if (parseStringValue(setting['point_account_id']) != accountId) continue;
+          if (parseStringValue(setting['point_account_id']) != accountId) {
+            continue;
+          }
           await LocalDataStore.instance.put(
             owner: _localOwner!,
             resource: TableNames.dashboardSetting,
@@ -519,10 +525,10 @@ class ServicePointRecord {
           createdAt:
               tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
           date: tryParseDateTimeValue(detail['date']) ?? DateTime.now(),
-            primaryCategory: parseStringValue(
-              detail['primary_category'],
-              fallback: 'uncategorized',
-            ),
+          primaryCategory: parseStringValue(
+            detail['primary_category'],
+            fallback: 'uncategorized',
+          ),
           secondaryCategory: parseStringValue(detail['group']),
           description: parseStringValue(detail['description']),
           type: parseStringValue(detail['type']),
@@ -539,7 +545,7 @@ class ServicePointRecord {
         .ilike('type', type);
     if (includeReservedRecords) {
       query = query.or(
-        'and(date.gte.${dateFrom.toUtc().toIso8601String()},date.lt.${upperBound.toUtc().toIso8601String()}),primary_category.eq.reserved',
+        recordRangeOrReservedFilter(from: dateFrom, upperBound: upperBound),
       );
     } else {
       query = query
@@ -578,7 +584,7 @@ class ServicePointRecord {
           .select()
           .eq('account_id', accountId)
           .ilike('type', type)
-          .neq('primary_category', 'reserved')
+          .neq('primary_category', reservedRecordCategory)
           .order('date', ascending: false)
           .limit(1);
       result.addAll(List<Map<String, dynamic>>.from(fallback));
@@ -615,10 +621,10 @@ class ServicePointRecord {
             tryParseDateTimeValue(detail['date']) ??
             tryParseDateTimeValue(detail[Fields.createdAt]) ??
             DateTime.now(),
-            primaryCategory: parseStringValue(
-              detail['primary_category'],
-              fallback: 'uncategorized',
-            ),
+        primaryCategory: parseStringValue(
+          detail['primary_category'],
+          fallback: 'uncategorized',
+        ),
         secondaryCategory: parseStringValue(detail['group']),
         description: parseStringValue(detail['description']),
         type: parseStringValue(detail['type']),
@@ -655,7 +661,7 @@ class ServicePointRecord {
         .eq('account_id', accountId)
         .ilike('type', type)
         .lt('date', before.toUtc().toIso8601String())
-        .neq('primary_category', 'reserved')
+        .neq('primary_category', reservedRecordCategory)
         .limit(1);
     return rows.isNotEmpty;
   }
@@ -687,7 +693,7 @@ class ServicePointRecord {
         .eq('account_id', accountId)
         .ilike('type', type)
         .lt('date', before.toUtc().toIso8601String())
-        .neq('primary_category', 'reserved')
+        .neq('primary_category', reservedRecordCategory)
         .order('date', ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
@@ -716,7 +722,7 @@ class ServicePointRecord {
               'description': record.description,
               'value': record.value,
               'primary_category': record.primaryCategory,
-            'group': parseStringValue(record.secondaryCategory).trim(),
+              'group': parseStringValue(record.secondaryCategory).trim(),
               'event_id': record.eventId,
               'date': (record.date ?? now).toUtc().toIso8601String(),
               Fields.createdAt: now.toUtc().toIso8601String(),
