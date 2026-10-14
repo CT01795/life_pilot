@@ -57,7 +57,23 @@ def set_cell_shading(cell, fill: str) -> None:
     shd = tc_pr.find(qn("w:shd"))
     if shd is None:
         shd = OxmlElement("w:shd")
-        tc_pr.append(shd)
+        # CT_TcPr is sequence-sensitive.  Word rejects a document when
+        # shading is appended after tcMar/vAlign even though XML parsers and
+        # python-docx can still read it.
+        tc_pr.insert_element_before(
+            shd,
+            "w:noWrap",
+            "w:tcMar",
+            "w:textDirection",
+            "w:tcFitText",
+            "w:vAlign",
+            "w:hideMark",
+            "w:headers",
+            "w:cellIns",
+            "w:cellDel",
+            "w:cellMerge",
+            "w:tcPrChange",
+        )
     shd.set(qn("w:fill"), fill)
 
 
@@ -66,8 +82,24 @@ def set_cell_border(cell, color: str = "D9D9D9", size: str = "6") -> None:
     borders = tc_pr.first_child_found_in("w:tcBorders")
     if borders is None:
         borders = OxmlElement("w:tcBorders")
-        tc_pr.append(borders)
-    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        tc_pr.insert_element_before(
+            borders,
+            "w:shd",
+            "w:noWrap",
+            "w:tcMar",
+            "w:textDirection",
+            "w:tcFitText",
+            "w:vAlign",
+            "w:hideMark",
+            "w:headers",
+            "w:cellIns",
+            "w:cellDel",
+            "w:cellMerge",
+            "w:tcPrChange",
+        )
+    # insideH/insideV belong to table borders, not an individual cell's
+    # tcBorders.  Keeping them here produces invalid WordprocessingML.
+    for edge in ("top", "left", "bottom", "right"):
         tag = f"w:{edge}"
         node = borders.find(qn(tag))
         if node is None:
@@ -83,8 +115,21 @@ def set_cell_margins(cell, top=90, start=100, bottom=90, end=100) -> None:
     tc_mar = tc_pr.first_child_found_in("w:tcMar")
     if tc_mar is None:
         tc_mar = OxmlElement("w:tcMar")
-        tc_pr.append(tc_mar)
-    for margin, value in (("top", top), ("start", start), ("bottom", bottom), ("end", end)):
+        tc_pr.insert_element_before(
+            tc_mar,
+            "w:textDirection",
+            "w:tcFitText",
+            "w:vAlign",
+            "w:hideMark",
+            "w:headers",
+            "w:cellIns",
+            "w:cellDel",
+            "w:cellMerge",
+            "w:tcPrChange",
+        )
+    # left/right are accepted by older desktop Word versions as well as
+    # current versions; start/end can make strict readers reject document.xml.
+    for margin, value in (("top", top), ("left", start), ("bottom", bottom), ("right", end)):
         node = tc_mar.find(qn(f"w:{margin}"))
         if node is None:
             node = OxmlElement(f"w:{margin}")
