@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class AdminQuotaFreePeriod extends StatefulWidget {
   const AdminQuotaFreePeriod({super.key});
@@ -101,7 +102,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
       return;
     }
     final reminderText = _reminderDaysController.text.trim();
-    final reminderDays = int.tryParse(reminderText);
+    final reminderDays = tryParseIntValue(reminderText);
     if (reminderText.isNotEmpty &&
         (reminderDays == null || reminderDays < 1 || reminderDays > 365)) {
       AppNavigator.showSnackBar(loc.quotaFreePeriodReminderDaysInvalid);

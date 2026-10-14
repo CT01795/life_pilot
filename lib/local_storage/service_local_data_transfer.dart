@@ -2,6 +2,7 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class LocalDataTransferResult {
   const LocalDataTransferResult({
@@ -109,7 +110,7 @@ class ServiceLocalDataTransfer {
         'delete_cloud_records_and_revoke_shares_after_local_copy',
         params: {'p_records': staged},
       );
-      if ((int.tryParse(deleted.toString()) ?? -1) != staged.length) {
+      if ((tryParseIntValue(deleted) ?? -1) != staged.length) {
         throw StateError('cloud_delete_incomplete');
       }
       return LocalDataTransferResult(moved: staged.length, failed: 0);
@@ -136,9 +137,7 @@ class ServiceLocalDataTransfer {
     }
   }
 
-  Future<LocalDataTransferResult> uploadLocalToCloud(
-    String account,
-  ) async {
+  Future<LocalDataTransferResult> uploadLocalToCloud(String account) async {
     final payload = <Map<String, Object?>>[];
     final dashboardSettings = await LocalDataStore.instance.list(
       owner: account,
@@ -171,11 +170,12 @@ class ServiceLocalDataTransfer {
         'restore_local_personal_records_with_setting',
         params: {
           'p_records': payload,
-          'p_dashboard_setting':
-              dashboardSettings.isEmpty ? null : dashboardSettings.first,
+          'p_dashboard_setting': dashboardSettings.isEmpty
+              ? null
+              : dashboardSettings.first,
         },
       );
-      final restoredCount = int.tryParse(restored.toString()) ?? 0;
+      final restoredCount = tryParseIntValue(restored) ?? 0;
       if (restoredCount != payload.length) {
         return const LocalDataTransferResult(
           moved: 0,

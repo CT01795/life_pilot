@@ -1,4 +1,5 @@
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 typedef RecordRow = Map<String, dynamic>;
 
@@ -7,8 +8,7 @@ const String reservedRecordCategory = 'reserved';
 DateTime recordDayUpperBound(DateTime date) =>
     DateTime(date.year, date.month, date.day + 1);
 
-DateTime? recordRowDate(RecordRow row) =>
-    DateTime.tryParse(row['date']?.toString() ?? '');
+DateTime? recordRowDate(RecordRow row) => tryParseDateTimeValue(row['date']);
 
 bool isReservedRecordRow(RecordRow row) =>
     row['primary_category'] == reservedRecordCategory;

@@ -3,6 +3,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class AdminPricingVersionEditor extends StatefulWidget {
   const AdminPricingVersionEditor({this.onSaved, super.key});
@@ -51,7 +52,7 @@ class _AdminPricingVersionEditorState extends State<AdminPricingVersionEditor> {
     super.dispose();
   }
 
-  int? _number(String key) => int.tryParse(_values[key]!.text.trim());
+  int? _number(String key) => tryParseIntValue(_values[key]!.text);
 
   void _changeStoragePlan(String value) {
     setState(() {

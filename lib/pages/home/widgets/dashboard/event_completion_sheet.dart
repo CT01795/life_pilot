@@ -6,6 +6,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/decimal_input_formatter.dart';
 import 'package:life_pilot/utils/record_categories.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class EventCompletionChoice {
   const EventCompletionChoice({
@@ -385,7 +386,7 @@ class _EventCompletionSheetState extends State<_EventCompletionSheet> {
                 ]),
                 builder: (context, _) {
                   final accountingValue = _parseAmount(_accountingController);
-                  final pointValue = int.tryParse(_pointController.text.trim());
+                  final pointValue = tryParseIntValue(_pointController.text);
                   final canSubmit = _canSubmit(
                     accountingValue: accountingValue,
                     pointValue: pointValue,

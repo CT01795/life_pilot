@@ -4,6 +4,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/vendor/service_vendor_account.dart';
 import 'package:life_pilot/vendor/vendor_plan_labels.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class AdminVendorPricing extends StatefulWidget {
   const AdminVendorPricing({super.key});
@@ -58,7 +59,7 @@ class _AdminVendorPricingState extends State<AdminVendorPricing> {
   }
 
   int? _int(TextEditingController controller) =>
-      int.tryParse(controller.text.trim());
+      tryParseIntValue(controller.text);
 
   Future<void> _savePricing() async {
     final loc = AppLocalizations.of(context)!;

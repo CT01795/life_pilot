@@ -7,6 +7,7 @@ import 'package:life_pilot/subscription/subscription_quota_summary.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class AdminSubscriptionEditor extends StatefulWidget {
   const AdminSubscriptionEditor({this.onSaved, super.key});
@@ -692,7 +693,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
 
   Future<void> _extendSubscription() async {
     final loc = AppLocalizations.of(context)!;
-    final days = int.tryParse(_extensionDays.text.trim());
+    final days = tryParseIntValue(_extensionDays.text);
     if (days == null || days < 1 || days > 3650) {
       _show(loc.adminSubscriptionInvalidExtensionDays);
       return;
@@ -722,7 +723,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
         subscription['storage_plan']?.toString() ??
         SubscriptionStoragePlan.cloud;
     final pricingVersionId = subscription['pricing_version_id']?.toString();
-    final parsedExpiry = DateTime.tryParse(
+    final parsedExpiry = tryParseDateTimeValue(
       subscription['current_period_end']?.toString() ??
           subscription['expires_at']?.toString() ??
           '',
@@ -834,7 +835,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   }
 
   String _formatEntitlementDate(Object? value) {
-    final parsed = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    final parsed = tryParseDateTimeValue(value, toLocal: true);
     if (parsed == null) return '-';
     return MaterialLocalizations.of(context).formatMediumDate(parsed);
   }
@@ -946,9 +947,10 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       (version) =>
           version.id == versionId && version.storagePlan == storagePlan,
     );
-    final expiry = DateTime.tryParse(
+    final expiry = tryParseDateTimeValue(
       entitlement['ends_at']?.toString() ?? '',
-    )?.toLocal();
+      toLocal: true,
+    );
     setState(() {
       _plan = 'plus';
       _storagePlan = storagePlan;

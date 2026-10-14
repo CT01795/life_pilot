@@ -9,6 +9,7 @@ import 'package:life_pilot/game/controller_game_list.dart';
 import 'package:life_pilot/game/game_question_bank_visibility.dart';
 import 'package:life_pilot/game/game_exit_guard.dart';
 import 'package:life_pilot/game/page_game_question_create.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/game/page_game_my_questions.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/social/page_game_social.dart';
@@ -412,7 +413,7 @@ class _PageGameListState extends State<PageGameList> {
                   onPressed: saving
                       ? null
                       : () async {
-                          final level = int.tryParse(controller.text);
+                          final level = tryParseIntValue(controller.text);
                           if (level == null ||
                               level <= currentMaxLevel ||
                               level > 999) {

@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/model_point_record_detail.dart';
 import 'package:life_pilot/point_record/model_point_record_preview.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/record_categories.dart';
@@ -805,7 +806,7 @@ class _PagePointRecordDetailViewState
             ),
             ElevatedButton(
               onPressed: () {
-                final value = int.tryParse(valueController.text);
+                final value = tryParseIntValue(valueController.text);
                 final description = descController.text.trim();
                 if (value == null || value <= 0 || description.isEmpty) return;
                 Navigator.pop(
