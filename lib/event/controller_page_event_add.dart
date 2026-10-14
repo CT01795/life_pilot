@@ -9,6 +9,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/service/service_speech.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerPageEventAdd extends SafeChangeNotifier {
@@ -297,7 +298,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         masterUrl = value;
         break;
       case EventFields.ageMin:
-        ageMin = value.isEmpty ? null : num.parse(value);
+        ageMin = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             ageMin != null &&
             ageMax != null &&
@@ -307,7 +308,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         }
         break;
       case EventFields.ageMax:
-        ageMax = value.isEmpty ? null : num.parse(value);
+        ageMax = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             ageMin != null &&
             ageMax != null &&
@@ -320,7 +321,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         isFree = value.isEmpty ? null : bool.parse(value);
         break;
       case EventFields.priceMin:
-        priceMin = value.isEmpty ? null : num.parse(value);
+        priceMin = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             priceMin != null &&
             priceMax != null &&
@@ -330,7 +331,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         }
         break;
       case EventFields.priceMax:
-        priceMax = value.isEmpty ? null : num.parse(value);
+        priceMax = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             priceMin != null &&
             priceMax != null &&
@@ -389,7 +390,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         sub.masterUrl = value;
         break;
       case EventFields.ageMin:
-        sub.ageMin = value.isEmpty ? null : num.parse(value);
+        sub.ageMin = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             sub.ageMin != null &&
             sub.ageMax != null &&
@@ -404,7 +405,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         }
         break;
       case EventFields.ageMax:
-        sub.ageMax = value.isEmpty ? null : num.parse(value);
+        sub.ageMax = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             sub.ageMin != null &&
             sub.ageMax != null &&
@@ -422,7 +423,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         sub.isFree = value.isEmpty ? null : bool.parse(value);
         break;
       case EventFields.priceMin:
-        sub.priceMin = value.isEmpty ? null : num.parse(value);
+        sub.priceMin = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             sub.priceMin != null &&
             sub.priceMax != null &&
@@ -437,7 +438,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
         }
         break;
       case EventFields.priceMax:
-        sub.priceMax = value.isEmpty ? null : num.parse(value);
+        sub.priceMax = value.isEmpty ? null : parseNumValue(value);
         if (check &&
             sub.priceMin != null &&
             sub.priceMax != null &&
@@ -503,19 +504,19 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
           newUnit: getText(EventFields.unit),
           newAgeMin: getText(EventFields.ageMin).isEmpty
               ? null
-              : num.parse(getText(EventFields.ageMin)),
+              : parseNumValue(getText(EventFields.ageMin)),
           newAgeMax: getText(EventFields.ageMax).isEmpty
               ? null
-              : num.parse(getText(EventFields.ageMax)),
+              : parseNumValue(getText(EventFields.ageMax)),
           newIsFree: getText(EventFields.isFree).isEmpty
               ? null
               : bool.parse(getText(EventFields.isFree)),
           newPriceMin: getText(EventFields.priceMin).isEmpty
               ? null
-              : num.parse(getText(EventFields.priceMin)),
+              : parseNumValue(getText(EventFields.priceMin)),
           newPriceMax: getText(EventFields.priceMax).isEmpty
               ? null
-              : num.parse(getText(EventFields.priceMax)),
+              : parseNumValue(getText(EventFields.priceMax)),
           newIsOutdoor: getText(EventFields.isOutdoor).isEmpty
               ? null
               : bool.parse(getText(EventFields.isOutdoor)),

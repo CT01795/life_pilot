@@ -1,4 +1,5 @@
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class IncomeExpenseItem {
   final String description;
@@ -17,23 +18,15 @@ class IncomeExpenseItem {
     this.group,
   });
 
-  factory IncomeExpenseItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory IncomeExpenseItem.fromJson(Map<String, dynamic> json) {
     return IncomeExpenseItem(
       description: json['description'] ?? '',
       value: (json['value'] as num?) ?? 0,
       currency: json['currency'],
       createdAt: json[Fields.createdAt] != null
-          ? DateTime.parse(
-              json[Fields.createdAt],
-            )
+          ? tryParseDateTimeValue(json[Fields.createdAt])
           : null,
-      date: json['date'] != null
-          ? DateTime.parse(
-              json['date'],
-            )
-          : null,
+      date: json['date'] != null ? tryParseDateTimeValue(json['date']) : null,
       group: json['group'] ?? '',
     );
   }
@@ -53,8 +46,8 @@ class AccountingDashboardSummary {
   });
 
   const AccountingDashboardSummary.empty()
-      : records = const [],
-        total = 0,
-        todayTotal = 0,
-        currency = 'TWD';
+    : records = const [],
+      total = 0,
+      todayTotal = 0,
+      currency = 'TWD';
 }

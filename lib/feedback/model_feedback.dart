@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ModelFeedback {
   final int id;
@@ -35,7 +36,7 @@ class ModelFeedback {
 
   factory ModelFeedback.fromMap(Map<String, dynamic> map) {
     return ModelFeedback(
-      id: int.parse(map[Fields.id].toString()),
+      id: parseIntValue(map[Fields.id]),
       subject: map['subject'] as String,
       content: map['content'] as String,
       cc: (map['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
@@ -43,26 +44,27 @@ class ModelFeedback {
           ?.map((e) => e.toString())
           .toList(),
       createdBy: map[Fields.createdBy] as String?,
-      createdAt: DateTime.parse(map[Fields.createdAt] as String),
+      createdAt: tryParseDateTimeValue(map[Fields.createdAt]) ?? DateTime.now(),
       isOk: map['is_ok'] is bool
           ? map['is_ok']
           : map['is_ok']?.toString() == 'true',
       dealBy: map['deal_by'] as String?,
       dealAt: map['deal_at'] != null && map['deal_at'].toString().isNotEmpty
-          ? DateTime.parse(map['deal_at'])
+          ? tryParseDateTimeValue(map['deal_at'])
           : null,
-      status: map['status']?.toString() ??
+      status:
+          map['status']?.toString() ??
           ((map['is_ok'] == true) ? 'completed' : 'pending'),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        Fields.id: id,
-        'is_ok': isOk ?? false,
-        'deal_by': dealBy,
-        'deal_at': dealAt?.toUtc().toIso8601String(),
-        'status': status,
-      };
+    Fields.id: id,
+    'is_ok': isOk ?? false,
+    'deal_by': dealBy,
+    'deal_at': dealAt?.toUtc().toIso8601String(),
+    'status': status,
+  };
 
   // 💡 懶加載 decode，第一次用時才 decode，之後 cache
   List<Uint8List>? get screenshotDecodeData {
@@ -83,22 +85,20 @@ class ModelFeedback {
     if (screenshots == null || index < 0 || index >= screenshots.length) {
       return Future.value();
     }
-    return _screenshotDecodeFutures.putIfAbsent(
-      index,
-      () async {
-        try {
-          return await compute(decodeBase64, screenshots[index]);
-        } catch (_) {
-          return null;
-        }
-      },
-    );
+    return _screenshotDecodeFutures.putIfAbsent(index, () async {
+      try {
+        return await compute(decodeBase64, screenshots[index]);
+      } catch (_) {
+        return null;
+      }
+    });
   }
 
   Future<List<Uint8List>> _decodeScreenshots() async {
     try {
-      final decoded =
-          await Future.wait(screenshot!.map((s) => compute(decodeBase64, s)));
+      final decoded = await Future.wait(
+        screenshot!.map((s) => compute(decodeBase64, s)),
+      );
       screenshotDecodeRawData = decoded;
       return decoded;
     } catch (_) {

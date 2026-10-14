@@ -676,7 +676,7 @@ class ServiceGame {
         final data = choice as Map<String, dynamic>;
         return MySocialChoice(
           text: data['option_text']?.toString() ?? '',
-          score: int.tryParse(data['score']?.toString() ?? '') ?? 0,
+          score: tryParseIntValue(data['score']) ?? 0,
           feedback: data['feedback']?.toString() ?? '',
           isBest: data['is_best'] == true,
         );
@@ -714,7 +714,7 @@ class ServiceGame {
             final choice = Map<String, dynamic>.from(raw as Map);
             return MySocialChoice(
               text: choice['option_text']?.toString() ?? '',
-              score: int.tryParse(choice['score']?.toString() ?? '0') ?? 0,
+              score: tryParseIntValue(choice['score']) ?? 0,
               feedback: choice['feedback']?.toString() ?? '',
               isBest: choice['is_best'] == true,
             );
@@ -920,8 +920,7 @@ class ServiceGame {
             ) {
               final choices = row['choices'] as List?;
               return row['is_active'] == true &&
-                  (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <=
-                      level &&
+                  (tryParseIntValue(row['level']) ?? 1) <= level &&
                   (choices?.length ?? 0) >= 3;
             }).length;
       }
@@ -957,7 +956,7 @@ class ServiceGame {
     for (final row in rows.cast<Map<String, dynamic>>()) {
       final group = row['question_group']?.toString() ?? '';
       if (!_groupMatchesGame(gameName, group)) continue;
-      groupCounts[group] = int.tryParse(row['question_count'].toString()) ?? 0;
+      groupCounts[group] = tryParseIntValue(row['question_count']) ?? 0;
     }
     for (final row
         in localMode
@@ -965,7 +964,7 @@ class ServiceGame {
             : const <Map<String, dynamic>>[]) {
       final localGroup = row['group']?.toString() ?? '';
       if (row['is_active'] != true ||
-          (int.tryParse(row['level']?.toString() ?? '1') ?? 1) > level ||
+          (tryParseIntValue(row['level']) ?? 1) > level ||
           !_groupMatchesGame(gameName, localGroup)) {
         continue;
       }
@@ -1028,7 +1027,7 @@ class ServiceGame {
             question: row['question']?.toString() ?? '',
             answer: row['answer']?.toString() ?? '',
             group: row['question_group']?.toString() ?? '',
-            level: int.tryParse(row['level']?.toString() ?? '') ?? 1,
+            level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
             options: row['options']?.toString(),
           ),
@@ -1064,7 +1063,7 @@ class ServiceGame {
             question: row['question']?.toString() ?? '',
             answer: row['answer']?.toString() ?? '',
             group: row['group']?.toString() ?? '',
-            level: int.tryParse(row['level']?.toString() ?? '') ?? 1,
+            level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
             options: row['options']?.toString(),
           ),
@@ -1403,7 +1402,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level,
+                (tryParseIntValue(row['level']) ?? 1) <= level,
           )
           .toList();
       if (local.isNotEmpty) {
@@ -1470,7 +1469,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level,
+                (tryParseIntValue(row['level']) ?? 1) <= level,
           )
           .toList();
       if (local.isNotEmpty) {
@@ -1537,7 +1536,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level,
+                (tryParseIntValue(row['level']) ?? 1) <= level,
           )
           .toList();
       if (local.isNotEmpty) {
@@ -1602,7 +1601,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level,
+                (tryParseIntValue(row['level']) ?? 1) <= level,
           )
           .toList();
       if (local.isNotEmpty) {
@@ -1612,8 +1611,8 @@ class ServiceGame {
                 .map((raw) => Map<String, dynamic>.from(raw as Map))
                 .toList()
               ..sort(
-                (a, b) => (int.tryParse(b['score'].toString()) ?? 0).compareTo(
-                  int.tryParse(a['score'].toString()) ?? 0,
+                (a, b) => (tryParseIntValue(b['score']) ?? 0).compareTo(
+                  tryParseIntValue(a['score']) ?? 0,
                 ),
               );
         if (choices.length >= 3) {
@@ -1626,7 +1625,7 @@ class ServiceGame {
                 .map((choice) => choice['option_text']?.toString() ?? '')
                 .toList(),
             scores: shuffled
-                .map((choice) => int.tryParse(choice['score'].toString()) ?? 0)
+                .map((choice) => tryParseIntValue(choice['score']) ?? 0)
                 .toList(),
           );
         }
@@ -1697,7 +1696,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level,
+                (tryParseIntValue(row['level']) ?? 1) <= level,
           )
           .toList();
       if (local.length >= 3) {
@@ -1756,7 +1755,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level &&
+                (tryParseIntValue(row['level']) ?? 1) <= level &&
                 _groupMatchesGame(gameName, row['group']?.toString() ?? ''),
           )
           .toList();
@@ -1855,7 +1854,7 @@ class ServiceGame {
           .where(
             (row) =>
                 row['is_active'] == true &&
-                (int.tryParse(row['level']?.toString() ?? '1') ?? 1) <= level &&
+                (tryParseIntValue(row['level']) ?? 1) <= level &&
                 _groupMatchesGame(
                   'Word Searching',
                   row['group']?.toString() ?? '',

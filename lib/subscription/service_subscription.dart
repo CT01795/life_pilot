@@ -653,8 +653,12 @@ class QuotaFreePeriod {
       QuotaFreePeriod(
         id: json['period_id']?.toString() ?? '',
         name: json['period_name']?.toString() ?? '',
-        startsAt: DateTime.parse(json['starts_at'].toString()).toLocal(),
-        endsAt: DateTime.parse(json['ends_at'].toString()).toLocal(),
+        startsAt:
+            tryParseDateTimeValue(json['starts_at'], toLocal: true) ??
+            DateTime.now(),
+        endsAt:
+            tryParseDateTimeValue(json['ends_at'], toLocal: true) ??
+            DateTime.now(),
         enabled: json['enabled'] == true,
         isActive: json['is_active'] == true,
         reminderDays: tryParseIntValue(json['reminder_days']),
@@ -715,7 +719,8 @@ class SubscriptionPricingVersion {
         id: json['id'].toString(),
         name: json['version_name']?.toString() ?? '',
         storagePlan: json['storage_plan']?.toString() ?? 'cloud',
-        effectiveAt: DateTime.parse(json['effective_at'].toString()),
+        effectiveAt:
+            tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
         quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),
         quotas: {
           'calendar_events': parseIntValue(json['calendar_quota']),
@@ -760,8 +765,8 @@ class SubscriptionLimitException implements Exception {
       final parts = value.split(':');
       return SubscriptionLimitException(
         parts.first,
-        used: parts.length > 1 ? int.tryParse(parts[1]) : null,
-        quota: parts.length > 2 ? int.tryParse(parts[2]) : null,
+        used: parts.length > 1 ? tryParseIntValue(parts[1]) : null,
+        quota: parts.length > 2 ? tryParseIntValue(parts[2]) : null,
       );
     }
     if (message.contains(plusMarker)) {

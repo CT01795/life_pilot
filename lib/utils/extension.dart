@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 // -------------------- PageType --------------------
 extension PageTypeExtension on PageType {
@@ -145,11 +146,11 @@ extension TimeOfDayExtension on TimeOfDay {
 extension StringTimeOfDay on String {
   TimeOfDay? parseToTimeOfDay() {
     final parts = split(':');
-    if (parts.length < 2 ||
-        int.tryParse(parts[0]) == null ||
-        int.tryParse(parts[1]) == null) {
+    final hour = tryParseIntValue(parts.first);
+    final minute = parts.length > 1 ? tryParseIntValue(parts[1]) : null;
+    if (hour == null || minute == null) {
       return null;
     }
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    return TimeOfDay(hour: hour, minute: minute);
   }
 }

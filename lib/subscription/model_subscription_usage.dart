@@ -105,11 +105,12 @@ class SubscriptionEntitlement {
     final multiplier = parseIntValue(json['quota_multiplier'], fallback: 1);
     return SubscriptionEntitlement(
       versionName: json['version_name']?.toString() ?? '',
-      effectiveAt: DateTime.parse(json['effective_at'].toString()),
+      effectiveAt:
+          tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
       storagePlan: json['storage_plan']?.toString() ?? 'cloud',
       multiplier: multiplier,
       pricePaidTwd: parseIntValue(json['quarterly_price_paid_twd']),
-      endsAt: DateTime.parse(json['ends_at'].toString()),
+      endsAt: tryParseDateTimeValue(json['ends_at']) ?? DateTime.now(),
       quotas: {
         for (final resource in subscriptionQuotaResources)
           resource: ?entitlementSnapshotQuota(

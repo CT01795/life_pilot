@@ -172,7 +172,8 @@ class ServiceBusinessPlan {
         return ModelBusinessPlan(
           id: e[Fields.id],
           title: e['title'],
-          createdAt: DateTime.parse(e[Fields.createdAt]),
+          createdAt:
+              tryParseDateTimeValue(e[Fields.createdAt]) ?? DateTime.now(),
           status: e['status']?.toString() ?? 'not_started',
           sections: [], // 只用來顯示 list，實際 editor 再拉 detail
         );
@@ -193,7 +194,8 @@ class ServiceBusinessPlan {
       return ModelBusinessPlan(
         id: data[Fields.id],
         title: data['title'],
-        createdAt: DateTime.parse(data[Fields.createdAt]),
+        createdAt:
+            tryParseDateTimeValue(data[Fields.createdAt]) ?? DateTime.now(),
         status: data['status']?.toString() ?? 'not_started',
         sections: (data['sections'] as List)
             .map(

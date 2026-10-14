@@ -8,6 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/controller_speech.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/decimal_input_formatter.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/model_accounting_preview.dart';
@@ -923,7 +924,7 @@ class _PageAccountingDetailViewState extends State<_PageAccountingDetailView> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    final v = num.tryParse(
+                    final v = tryParseNumValue(
                       valueController.text.replaceAll(',', ''),
                     );
                     if (v == null ||

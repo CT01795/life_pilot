@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/value_parser.dart';
+
 class NLP {
   static final regex = RegExp(
     r'([^，。,;；]*?)\s*(收入|支出|加分|扣分|增加|減少|加|減|\+|-)\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,4})?|\d+(?:\.\d{1,4})?|[一二三四五六七八九十兩]+)\s*(元|點|分)?',
@@ -15,7 +17,7 @@ class NLP {
 
       final rawNumber = match.group(3)!.replaceAll(',', '');
       final num? value =
-          num.tryParse(rawNumber) ?? ChineseNumber.parse(rawNumber);
+          tryParseNumValue(rawNumber) ?? ChineseNumber.parse(rawNumber);
       if (value == null) continue;
 
       final isAdd = const {'收入', '加分', '增加', '加', '+'}.contains(operation);

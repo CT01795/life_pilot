@@ -8,6 +8,7 @@ import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/model/point/point_record_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 
@@ -42,13 +43,15 @@ class DashboardRepository {
           rows
               .where((row) {
                 if (row['is_completed'] == true) return false;
-                final start = DateTime.tryParse(
+                final start = tryParseDateTimeValue(
                   row['start_date']?.toString() ?? '',
-                )?.toLocal();
+                  toLocal: true,
+                );
                 if (start == null) return false;
-                final end = DateTime.tryParse(
+                final end = tryParseDateTimeValue(
                   row['end_date']?.toString() ?? '',
-                )?.toLocal();
+                  toLocal: true,
+                );
                 final effectiveEnd = end ?? start;
                 return !effectiveEnd.isBefore(today) &&
                     start.isBefore(rangeEnd);
@@ -466,9 +469,10 @@ class DashboardRepository {
           if (currency != null && row['currency']?.toString() != currency) {
             return false;
           }
-          final date = DateTime.tryParse(
+          final date = tryParseDateTimeValue(
             row['date']?.toString() ?? '',
-          )?.toLocal();
+            toLocal: true,
+          );
           return date != null && !date.isBefore(start) && date.isBefore(end);
         }).toList()..sort(
           (a, b) => (b['date']?.toString() ?? '').compareTo(

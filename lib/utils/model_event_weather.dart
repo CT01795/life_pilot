@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/value_parser.dart';
+
 class EventWeather {
   final DateTime date;
   final String main; // 天氣主描述 e.g., Rain, Clear
@@ -27,7 +29,8 @@ class EventWeather {
 
   factory EventWeather.fromJson(Map<String, dynamic> json) {
     return EventWeather(
-      date: DateTime.parse(json['date']).toLocal(),
+      date:
+          tryParseDateTimeValue(json['date'], toLocal: true) ?? DateTime.now(),
       main: json['main'],
       description: json['description'],
       icon: json['icon'],
@@ -42,28 +45,25 @@ class EventWeather {
   }
 
   Map<String, dynamic> toJson() => {
-        'date': date.toUtc().toIso8601String(),
-        'main': main,
-        'description': description,
-        'icon': icon,
-        'temp': temp,
-        'feels_like': feelsLike,
-        'temp_min': tempMin,
-        'temp_max': tempMax,
-        'pressure': pressure,
-        'sea_level': seaLevel,
-        'grnd_level': grndLevel,
-      };
+    'date': date.toUtc().toIso8601String(),
+    'main': main,
+    'description': description,
+    'icon': icon,
+    'temp': temp,
+    'feels_like': feelsLike,
+    'temp_min': tempMin,
+    'temp_max': tempMax,
+    'pressure': pressure,
+    'sea_level': seaLevel,
+    'grnd_level': grndLevel,
+  };
 }
 
 class WeatherCache {
   final DateTime expiresAt;
   final List<EventWeather> data;
 
-  WeatherCache({
-    required this.expiresAt,
-    required this.data,
-  });
+  WeatherCache({required this.expiresAt, required this.data});
 
   bool get isValid => DateTime.now().isBefore(expiresAt);
 }

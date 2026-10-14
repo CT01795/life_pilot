@@ -1,5 +1,6 @@
 import 'package:life_pilot/game/steam_scratch_maze/controller_game_steam_scratch_maze.dart';
 import 'package:xml/xml.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 List<Command> parseBlocklyJson(Map<String, dynamic> data) {
   final xmlStr = data["xml"];
@@ -20,7 +21,7 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
       if (varName == 'y') return g.state.y;
     } else if (type == 'math_number') {
       // ignore: deprecated_member_use
-      return int.tryParse(shadow.getElement('field')?.text ?? '');
+      return tryParseIntValue(shadow.getElement('field')?.text);
     }
 
     return null;
@@ -72,7 +73,7 @@ List<Command> parseBlocklyJson(Map<String, dynamic> data) {
                 final field = shadow.getElement('field');
                 if (field != null && field.getAttribute('name') == 'NUM') {
                   // ignore: deprecated_member_use
-                  count = int.tryParse(field.text) ?? 1;
+                  count = tryParseIntValue(field.text) ?? 1;
                 }
               }
             }

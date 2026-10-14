@@ -590,7 +590,7 @@ class ServiceStock {
     if (result["date"] == null) {
       return null;
     }
-    return DateTime.parse(result["date"]);
+    return tryParseDateTimeValue(result["date"]);
   }
 
   Future<DateTime?> getLatestDate() async {

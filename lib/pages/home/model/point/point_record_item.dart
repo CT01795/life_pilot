@@ -1,4 +1,5 @@
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class PointRecordItem {
   final String description;
@@ -17,23 +18,15 @@ class PointRecordItem {
     this.group,
   });
 
-  factory PointRecordItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory PointRecordItem.fromJson(Map<String, dynamic> json) {
     return PointRecordItem(
       description: json['description'] ?? '',
       type: json['type'] ?? '',
       value: (json['value'] ?? 0) as int,
       createdAt: json[Fields.createdAt] != null
-          ? DateTime.parse(
-              json[Fields.createdAt],
-            )
+          ? tryParseDateTimeValue(json[Fields.createdAt])
           : null,
-      date: json['date'] != null
-          ? DateTime.parse(
-              json['date'],
-            )
-          : null,
+      date: json['date'] != null ? tryParseDateTimeValue(json['date']) : null,
       group: json['group'] ?? '',
     );
   }
@@ -51,7 +44,7 @@ class PointDashboardSummary {
   });
 
   const PointDashboardSummary.empty()
-      : records = const [],
-        total = 0,
-        todayTotal = 0;
+    : records = const [],
+      total = 0,
+      todayTotal = 0;
 }

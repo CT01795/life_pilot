@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 
 class CalendarService {
@@ -94,9 +95,10 @@ class CalendarService {
         resource: TableNames.calendarEvents,
       );
       return rows.any((row) {
-        final date = DateTime.tryParse(
+        final date = tryParseDateTimeValue(
           row['start_date']?.toString() ?? '',
-        )?.toLocal();
+          toLocal: true,
+        );
         return normalizedTextEquals(row['name'], place.name) &&
             normalizedTextEquals(row[EventFields.country], place.country) &&
             normalizedTextEquals(row['city'], place.city) &&
