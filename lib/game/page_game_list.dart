@@ -32,6 +32,7 @@ import 'package:life_pilot/game/steam_scratch_maze/page_game_steam_scratch_maze.
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/logger.dart';
@@ -74,9 +75,10 @@ class _PageGameListState extends State<PageGameList> {
     super.initState();
     final auth = context.read<ControllerAuth>();
     final currentAccount = auth.currentAccount ?? AuthConstants.guest;
-    _isQuestionBankAdmin =
-        currentAccount.trim().toLowerCase() ==
-        AuthConstants.systemEventOwnerEmail.toLowerCase();
+    _isQuestionBankAdmin = normalizedTextEquals(
+      currentAccount,
+      AuthConstants.systemEventOwnerEmail,
+    );
     controllerGameList = ControllerGameList(
       serviceGame: _serviceGame,
       userName: currentAccount,

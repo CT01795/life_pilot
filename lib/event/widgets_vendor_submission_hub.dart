@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class VendorSubmissionHub extends StatelessWidget {
   const VendorSubmissionHub({
@@ -94,6 +95,5 @@ bool shouldShowSubmission({
   required String? currentAccount,
 }) {
   if (!isVendor && !showOnlyMySubmissions) return true;
-  return submissionAccount?.trim().toLowerCase() ==
-      currentAccount?.trim().toLowerCase();
+  return normalizedTextEquals(submissionAccount, currentAccount);
 }

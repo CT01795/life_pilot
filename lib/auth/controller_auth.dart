@@ -15,6 +15,7 @@ import 'package:life_pilot/subscription/model_subscription_usage.dart';
 import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/auth/auth_session_guard.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 enum AccountValidationResult { valid, unavailable, signedOut }
 
@@ -192,13 +193,13 @@ class ControllerAuth extends SafeChangeNotifier {
     try {
       final periods = await ServiceSubscription().fetchQuotaFreePeriods();
       _scheduleQuotaFreePeriodRefresh(periods);
-      final account = _currentAccount?.trim().toLowerCase();
+      final account = normalizeText(_currentAccount);
       final activePeriod = periods
           .where(
             (period) =>
                 period.isActive &&
                 (period.targetAccounts.isEmpty ||
-                    (account != null &&
+                    (account.isNotEmpty &&
                         period.targetAccounts.contains(account))),
           )
           .firstOrNull;

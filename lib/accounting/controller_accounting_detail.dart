@@ -5,6 +5,7 @@ import 'package:life_pilot/accounting/model_accounting_preview.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/nlp.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerAccountingDetail extends SafeChangeNotifier {
   final ServiceAccounting _service;
@@ -22,7 +23,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
     this.loadAllRecords = false,
     this.currentExchangeRate,
   }) : _service = service,
-       _accountKey = auth?.currentAccount?.trim().toLowerCase();
+       _accountKey = normalizeText(auth?.currentAccount);
 
   final String currentType = 'balance';
 
@@ -36,7 +37,7 @@ class ControllerAccountingDetail extends SafeChangeNotifier {
   DateTime? _loadedStartDate;
 
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
-    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    final nextAccount = normalizeText(nextAuth.currentAccount);
     auth = nextAuth;
     if (_accountKey == nextAccount) return;
     _accountKey = nextAccount;

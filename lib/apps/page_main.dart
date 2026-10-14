@@ -18,6 +18,7 @@ import 'package:life_pilot/apps/page_settings.dart';
 import 'package:life_pilot/apps/page_module_authorization.dart';
 import 'package:life_pilot/vendor/page_vendor_dashboard.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class PageMain extends StatefulWidget {
   const PageMain({super.key});
@@ -73,8 +74,8 @@ class _PageMainState extends State<PageMain> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final account = context.select<ControllerAuth, String?>(
-      (auth) => auth.currentAccount?.trim().toLowerCase(),
+    final account = context.select<ControllerAuth, String>(
+      (auth) => normalizeText(auth.currentAccount),
     );
     final selectedPage = context.select<ControllerPageMain, PageType>(
       (controller) => controller.selectedPage,
@@ -86,7 +87,10 @@ class _PageMainState extends State<PageMain> with WidgetsBindingObserver {
     }
 
     return KeyedSubtree(
-      key: ValueKey('${account ?? 'signed-out'}:${selectedPage.name}'),
+      key: ValueKey(
+        '${account.isEmpty ? 'signed-out' : account}:'
+        '${selectedPage.name}',
+      ),
       child: _getPage(selectedPage),
     );
   }

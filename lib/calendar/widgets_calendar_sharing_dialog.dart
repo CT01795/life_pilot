@@ -8,6 +8,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:provider/provider.dart';
 
@@ -425,8 +426,8 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
   }
 
   bool _matchesKeyword(String value, String keyword) {
-    final normalized = keyword.trim().toLowerCase();
-    return normalized.isEmpty || value.toLowerCase().contains(normalized);
+    final normalized = normalizeText(keyword);
+    return normalized.isEmpty || normalizeText(value).contains(normalized);
   }
 
   bool _matchesEventKeyword(
@@ -434,7 +435,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
     CalendarShareableEvent event,
     String keyword,
   ) {
-    final normalized = keyword.trim().toLowerCase();
+    final normalized = normalizeText(keyword);
     if (normalized.isEmpty) return true;
     final date = event.startDate?.toLocal();
     final values = <String>[
@@ -446,7 +447,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
         '${date.year}/${date.month}/${date.day}',
       ],
     ];
-    return values.any((value) => value.toLowerCase().contains(normalized));
+    return values.any((value) => normalizeText(value).contains(normalized));
   }
 
   Widget _keywordField({
@@ -733,7 +734,7 @@ class _CalendarSharingDialogState extends State<CalendarSharingDialog> {
 
   Set<String> _splitEmails(String value) => value
       .split(RegExp(r'[,;\s]+'))
-      .map((email) => email.trim().toLowerCase())
+      .map(normalizeText)
       .where((email) => email.isNotEmpty)
       .toSet();
 

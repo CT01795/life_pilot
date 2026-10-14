@@ -11,6 +11,7 @@ import 'package:life_pilot/accounting/model_accounting_account.dart';
 import 'package:life_pilot/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerAccountingList extends SafeChangeNotifier {
   final ServiceAccounting _service;
@@ -25,7 +26,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
        _dataScopeKey = _scopeKey(auth);
 
   static String _scopeKey(ControllerAuth? auth) =>
-      '${auth?.currentAccount?.trim().toLowerCase() ?? ''}|'
+      '${normalizeText(auth?.currentAccount)}|'
       '${auth?.preferredStorage.name ?? ''}|'
       '${auth?.personalDataRevision ?? 0}';
 

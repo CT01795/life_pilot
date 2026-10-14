@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class CalendarService {
   Future<bool> _storesLocally(String account) async =>
@@ -96,10 +97,10 @@ class CalendarService {
         final date = DateTime.tryParse(
           row['start_date']?.toString() ?? '',
         )?.toLocal();
-        return _sameText(row['name'], place.name) &&
-            _sameText(row[EventFields.country], place.country) &&
-            _sameText(row['city'], place.city) &&
-            _sameText(row['location'], place.location) &&
+        return normalizedTextEquals(row['name'], place.name) &&
+            normalizedTextEquals(row[EventFields.country], place.country) &&
+            normalizedTextEquals(row['city'], place.city) &&
+            normalizedTextEquals(row['location'], place.location) &&
             date != null &&
             DateUtils.isSameDay(date, selectedDate);
       });
@@ -114,16 +115,12 @@ class CalendarService {
         .limit(20);
     return result.any(
       (row) =>
-          _sameText(row['name'], place.name) &&
-          _sameText(row[EventFields.country], place.country) &&
-          _sameText(row['city'], place.city) &&
-          _sameText(row['location'], place.location),
+          normalizedTextEquals(row['name'], place.name) &&
+          normalizedTextEquals(row[EventFields.country], place.country) &&
+          normalizedTextEquals(row['city'], place.city) &&
+          normalizedTextEquals(row['location'], place.location),
     );
   }
-
-  bool _sameText(Object? left, Object? right) =>
-      (left?.toString() ?? '').trim().toLowerCase() ==
-      (right?.toString() ?? '').trim().toLowerCase();
 
   /// 加入行事曆
   Future<CalendarEvent> addRecommendedPlaceToCal({

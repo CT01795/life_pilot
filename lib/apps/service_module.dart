@@ -1,6 +1,7 @@
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ServiceModule {
   ServiceModule();
@@ -8,7 +9,7 @@ class ServiceModule {
   Future<List<String>> loadModulesFromServer(String account) async {
     try {
       final now = DateTime.now().toUtc().toIso8601String();
-      final normalizedAccount = account.trim().toLowerCase();
+      final normalizedAccount = normalizeText(account);
 
       final response = await supabase
           .from(TableNames.userModule)
@@ -27,7 +28,7 @@ class ServiceModule {
   Future<List<String>> loadUserModulesAsAdmin(String account) async {
     final response = await supabase.rpc(
       'admin_get_user_modules',
-      params: {'p_email': account.trim().toLowerCase()},
+      params: {'p_email': normalizeText(account)},
     );
     return (response as List)
         .map((row) => (row as Map)['module_key']?.toString())
@@ -42,7 +43,7 @@ class ServiceModule {
     await supabase.rpc(
       'admin_set_user_modules',
       params: {
-        'p_email': account.trim().toLowerCase(),
+        'p_email': normalizeText(account),
         'p_module_keys': moduleKeys.toList(growable: false),
       },
     );

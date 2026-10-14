@@ -25,6 +25,7 @@ import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/utils/service/network_availability.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
@@ -134,7 +135,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   }
 
   String _currentDataScopeKey(ControllerAuth? value) =>
-      '${value?.currentAccount?.trim().toLowerCase() ?? ''}|'
+      '${normalizeText(value?.currentAccount)}|'
       '${value?.preferredStorage.name ?? ''}';
 
   Future<void> init() async {

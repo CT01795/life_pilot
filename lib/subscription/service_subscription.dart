@@ -3,6 +3,7 @@ import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
@@ -657,7 +658,7 @@ class QuotaFreePeriod {
         isActive: json['is_active'] == true,
         reminderDays: (json['reminder_days'] as num?)?.toInt(),
         targetAccounts: (json['target_accounts'] as List? ?? const [])
-            .map((value) => value.toString().trim().toLowerCase())
+            .map(normalizeText)
             .where((value) => value.isNotEmpty)
             .toList(growable: false),
       );

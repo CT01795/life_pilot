@@ -1,6 +1,7 @@
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceVendorAccount {
@@ -29,7 +30,7 @@ class ServiceVendorAccount {
   }
 
   Future<VendorContentMetrics> fetchMetrics(String account) async {
-    final normalized = account.trim().toLowerCase();
+    final normalized = normalizeText(account);
     final responses = await Future.wait([
       supabase
           .from(TableNames.recommendEvents)
@@ -188,7 +189,7 @@ class ServiceVendorAccount {
     await supabase.rpc(
       'admin_set_vendor_subscription',
       params: {
-        'p_email': email.trim().toLowerCase(),
+        'p_email': normalizeText(email),
         'p_pricing_version_id': pricingVersionId,
         'p_quota_multiplier': quotaMultiplier,
         'p_current_period_end': currentPeriodEnd.toUtc().toIso8601String(),

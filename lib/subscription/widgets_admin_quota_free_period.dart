@@ -6,6 +6,7 @@ import 'package:life_pilot/subscription/service_subscription.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class AdminQuotaFreePeriod extends StatefulWidget {
   const AdminQuotaFreePeriod({super.key});
@@ -117,7 +118,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
         reminderDays: reminderDays,
         targetAccounts: _targetAccountsController.text
             .split(RegExp(r'[,;\s]+'))
-            .map((value) => value.trim().toLowerCase())
+            .map(normalizeText)
             .where((value) => value.isNotEmpty)
             .toSet()
             .toList(growable: false),

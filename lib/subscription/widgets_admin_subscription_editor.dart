@@ -6,6 +6,7 @@ import 'package:life_pilot/subscription/subscription_quota_presentation.dart';
 import 'package:life_pilot/subscription/subscription_quota_summary.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class AdminSubscriptionEditor extends StatefulWidget {
   const AdminSubscriptionEditor({this.onSaved, super.key});
@@ -907,7 +908,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     });
   }
 
-  String get _normalizedEmail => _email.text.trim().toLowerCase();
+  String get _normalizedEmail => normalizeText(_email.text);
 
   bool get _lookupMatchesCurrentEmail =>
       _hasLookedUp && _lookedUpEmail == _normalizedEmail;

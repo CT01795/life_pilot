@@ -2,6 +2,7 @@ import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class CalendarSharingFailure implements Exception {
   const CalendarSharingFailure(this.code, [this.details]);
@@ -112,8 +113,8 @@ class CalendarSharingState {
 
 class ServiceCalendarSharing {
   Future<String> _requireCloudMode() async {
-    final email = supabase.auth.currentUser?.email?.trim().toLowerCase();
-    if (email == null || email.isEmpty) {
+    final email = normalizeText(supabase.auth.currentUser?.email);
+    if (email.isEmpty) {
       throw StateError('User must be signed in.');
     }
     final storage = await LocalDataStore.instance.preferredLocation(email);
@@ -139,7 +140,7 @@ class ServiceCalendarSharing {
     final activeSentInvitationIds = invitations
         .where(
           (item) =>
-              item.sharedBy.toLowerCase() == currentEmail &&
+              normalizedTextEquals(item.sharedBy, currentEmail) &&
               (item.isPending || item.isAccepted),
         )
         .map((item) => item.id)
@@ -156,7 +157,7 @@ class ServiceCalendarSharing {
         visibleEvents
             .where(
               (event) =>
-                  event.account?.trim().toLowerCase() == currentEmail &&
+                  normalizedTextEquals(event.account, currentEmail) &&
                   event.startDate != null,
             )
             .map(
@@ -178,14 +179,14 @@ class ServiceCalendarSharing {
       sent: invitations
           .where(
             (item) =>
-                item.sharedBy.toLowerCase() == currentEmail &&
+                normalizedTextEquals(item.sharedBy, currentEmail) &&
                 (item.isPending || item.isAccepted),
           )
           .toList(),
       received: invitations
           .where(
             (item) =>
-                item.invitedEmail.toLowerCase() == currentEmail &&
+                normalizedTextEquals(item.invitedEmail, currentEmail) &&
                 (item.isPending || item.isAccepted),
           )
           .toList(),

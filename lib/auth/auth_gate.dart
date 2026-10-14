@@ -7,39 +7,34 @@ import 'package:life_pilot/auth/page_reset_password.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProviderLocale>(builder: (context, localeProvider, _) {
-      return Selector<ModelAuthView, ({AuthPage page, String? account})>(
-        selector: (_, model) => (
-          page: model.currentPage,
-          account: model.account?.trim().toLowerCase(),
-        ),
-        builder: (_, session, _) {
-          switch (session.page) {
-            case AuthPage.login:
-              return PageLogin(
-                key: ValueKey(localeProvider.locale),
-              );
-            case AuthPage.register:
-              return PageRegister(
-                key: ValueKey(localeProvider.locale),
-              );
-            case AuthPage.resetPassword:
-              return PageResetPassword(
-                key: ValueKey(localeProvider.locale),
-              );
-            case AuthPage.pageMain:
-              return AppShell(
-                key: ValueKey('app-shell-${session.account ?? ''}'),
-              );
-          }
-        },
-      );
-    });
+    return Consumer<ProviderLocale>(
+      builder: (context, localeProvider, _) {
+        return Selector<ModelAuthView, ({AuthPage page, String? account})>(
+          selector: (_, model) =>
+              (page: model.currentPage, account: normalizeText(model.account)),
+          builder: (_, session, _) {
+            switch (session.page) {
+              case AuthPage.login:
+                return PageLogin(key: ValueKey(localeProvider.locale));
+              case AuthPage.register:
+                return PageRegister(key: ValueKey(localeProvider.locale));
+              case AuthPage.resetPassword:
+                return PageResetPassword(key: ValueKey(localeProvider.locale));
+              case AuthPage.pageMain:
+                return AppShell(
+                  key: ValueKey('app-shell-${session.account ?? ''}'),
+                );
+            }
+          },
+        );
+      },
+    );
   }
 }

@@ -3,6 +3,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/service_event.dart';
 import 'package:uuid/uuid.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ServiceEventTransfer {
   final String currentAccount;
@@ -44,19 +45,16 @@ class ServiceEventTransfer {
     );
     return eventsOnSelectedDate?.any(
           (existing) =>
-              _sameText(existing.account, currentAccount) &&
-              _sameText(existing.name, event.name) &&
-              _sameText(existing.country, event.country) &&
-              _sameText(existing.city, event.city) &&
-              _sameText(existing.location, event.location) &&
+              normalizedTextEquals(existing.account, currentAccount) &&
+              normalizedTextEquals(existing.name, event.name) &&
+              normalizedTextEquals(existing.country, event.country) &&
+              normalizedTextEquals(existing.city, event.city) &&
+              normalizedTextEquals(existing.location, event.location) &&
               existing.startDate != null &&
               DateUtils.isSameDay(existing.startDate!, selectedDate),
         ) ??
         false;
   }
-
-  bool _sameText(String? left, String? right) =>
-      (left ?? '').trim().toLowerCase() == (right ?? '').trim().toLowerCase();
 
   Future<EventItem?> toggleEventTransfer({
     required EventItem event,

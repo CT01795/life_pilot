@@ -11,6 +11,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/memory_trace/page_memory_add.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -82,8 +83,7 @@ Future<EventItem?> copyEventToAnotherPage({
     sourceTableName: sourceTableName,
     isOwnCalendarEvent:
         sourceTableName == TableNames.calendarEvents &&
-        event.account?.trim().toLowerCase() ==
-            currentAccount.trim().toLowerCase(),
+        normalizedTextEquals(event.account, currentAccount),
   );
   final destination = await showModalBottomSheet<EventCopyDestination>(
     context: context,

@@ -11,6 +11,7 @@ import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerPointRecordList extends SafeChangeNotifier {
   final ServicePointRecord service;
@@ -33,7 +34,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     : _dataScopeKey = _scopeKey(auth);
 
   static String _scopeKey(ControllerAuth? auth) =>
-      '${auth?.currentAccount?.trim().toLowerCase() ?? ''}|'
+      '${normalizeText(auth?.currentAccount)}|'
       '${auth?.preferredStorage.name ?? ''}|'
       '${auth?.personalDataRevision ?? 0}';
 

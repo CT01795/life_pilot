@@ -7,6 +7,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ControllerPageMain extends SafeChangeNotifier {
@@ -19,7 +20,7 @@ class ControllerPageMain extends SafeChangeNotifier {
        _loc = loc,
        _locale = initialLocale,
        _serviceModule = serviceModule ?? ServiceModule(),
-       _accountKey = auth.currentAccount?.trim().toLowerCase(),
+       _accountKey = normalizeText(auth.currentAccount),
        _wasAdmin = auth.isSysAdmin,
        _wasVendor = auth.isVendor,
        _selectedPage = auth.isVendor
@@ -139,7 +140,7 @@ class ControllerPageMain extends SafeChangeNotifier {
     var changed = false;
     var sessionChanged = false;
     if (auth != null) {
-      final nextAccount = auth.currentAccount?.trim().toLowerCase();
+      final nextAccount = normalizeText(auth.currentAccount);
       final nextIsAdmin = auth.isSysAdmin;
       final nextIsVendor = auth.isVendor;
       sessionChanged =

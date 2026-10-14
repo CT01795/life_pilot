@@ -7,6 +7,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,7 +34,7 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
 
   Future<void> _search() async {
     final loc = AppLocalizations.of(context)!;
-    final email = _emailController.text.trim().toLowerCase();
+    final email = normalizeText(_emailController.text);
     if (email.isEmpty) {
       _message(loc.moduleAuthorizationSearchFirst);
       return;

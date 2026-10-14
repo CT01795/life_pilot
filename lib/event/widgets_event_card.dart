@@ -15,6 +15,7 @@ import 'package:life_pilot/utils/weather_localization.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class WidgetsEventCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -181,8 +182,8 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         : null;
 
     final loc = AppLocalizations.of(context)!;
-    final currentAccount = context.select<ControllerAuth, String?>(
-      (auth) => auth.currentAccount?.trim().toLowerCase(),
+    final currentAccount = context.select<ControllerAuth, String>(
+      (auth) => normalizeText(auth.currentAccount),
     );
     final isAdmin = context.select<ControllerAuth, bool>(
       (auth) => auth.isSysAdmin,
@@ -198,9 +199,11 @@ class _WidgetsEventCardBodyState extends State<_WidgetsEventCardBody> {
         widget.tableName == TableNames.recommendEvents ||
         widget.tableName == TableNames.recommendPlaces;
     final isOwnSubmission =
-        currentAccount != null &&
-        currentAccount ==
-            widget.eventViewModel.event.account?.trim().toLowerCase();
+        currentAccount.isNotEmpty &&
+        normalizedTextEquals(
+          currentAccount,
+          widget.eventViewModel.event.account,
+        );
     final showPublicationStatus =
         isRecommendedSubmission &&
         (isOwnSubmission || (isAdmin && !isApproved));

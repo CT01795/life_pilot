@@ -5,6 +5,7 @@ import 'package:life_pilot/point_record/model_point_record_preview.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/nlp.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerPointRecordDetail extends SafeChangeNotifier {
   final ServicePointRecord service;
@@ -17,7 +18,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     required this.service,
     required this.auth,
     required this.accountId,
-  }) : _accountKey = auth?.currentAccount?.trim().toLowerCase();
+  }) : _accountKey = normalizeText(auth?.currentAccount);
 
   final String currentType = 'points';
 
@@ -30,7 +31,7 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
   DateTime? _loadedStartDate;
 
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
-    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    final nextAccount = normalizeText(nextAuth.currentAccount);
     auth = nextAuth;
     if (_accountKey == nextAccount) return;
     _accountKey = nextAccount;
@@ -160,8 +161,9 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
     total = todayRecords.isEmpty ? 0 : todayRecords.first.points;
   }
 
-  Future<ModelPointRecordAccount?> findAccountByEventId(
-      {required String eventId}) async {
+  Future<ModelPointRecordAccount?> findAccountByEventId({
+    required String eventId,
+  }) async {
     return await service.findAccountByEventId(
       eventId: eventId,
       user: auth?.currentAccount ?? '',
@@ -182,8 +184,10 @@ class ControllerPointRecordDetail extends SafeChangeNotifier {
         .toList();
   }
 
-  Future<void> commitRecords(List<PointRecordPreview> previews,
-      {String? inputAccountId}) async {
+  Future<void> commitRecords(
+    List<PointRecordPreview> previews, {
+    String? inputAccountId,
+  }) async {
     await service.insertRecordsBatch(
       accountId: inputAccountId ?? accountId,
       type: currentType,

@@ -13,6 +13,7 @@ import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ServiceEvent {
   ServiceEvent();
@@ -26,7 +27,7 @@ class ServiceEvent {
   Future<List<String>> getCompletedCalendarEventIds({
     required String account,
   }) async {
-    final normalizedAccount = account.trim().toLowerCase();
+    final normalizedAccount = normalizeText(account);
     if (normalizedAccount.isEmpty) return const [];
 
     final response = await supabase

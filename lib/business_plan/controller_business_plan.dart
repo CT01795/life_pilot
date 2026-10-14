@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/business_plan/service_business_plan.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:uuid/uuid.dart';
+import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerBusinessPlan extends SafeChangeNotifier {
   final ServiceBusinessPlan _service;
@@ -20,8 +21,8 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   ControllerBusinessPlan({
     required ServiceBusinessPlan service,
     required this.auth,
-  })  : _service = service,
-        _accountKey = auth?.currentAccount?.trim().toLowerCase();
+  }) : _service = service,
+       _accountKey = normalizeText(auth?.currentAccount);
 
   String? currentPlanId;
   ModelBusinessPlan? currentPlan;
@@ -45,7 +46,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   // Public Methods
   // -------------------------
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
-    final nextAccount = nextAuth.currentAccount?.trim().toLowerCase();
+    final nextAccount = normalizeText(nextAuth.currentAccount);
     auth = nextAuth;
     if (_accountKey == nextAccount) return;
     _accountKey = nextAccount;
@@ -75,7 +76,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   ValueNotifier<String> answerNotifier(int section, int question) {
     final key = '$section-$question';
     return _answerNotifiers.putIfAbsent(
-        key, () => ValueNotifier(planAnswerAt(section, question)));
+      key,
+      () => ValueNotifier(planAnswerAt(section, question)),
+    );
   }
 
   void _syncAnswerNotifier(int section, int question, String value) {
@@ -86,17 +89,17 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   // 取得指定 question 的 answer
   String planAnswerAt(int sectionIndex, int questionIndex) {
     return currentPlan
-            ?.sections[sectionIndex].questions[questionIndex].answer ??
+            ?.sections[sectionIndex]
+            .questions[questionIndex]
+            .answer ??
         '';
   }
 
   ModelPlanQuestion get currentQuestion =>
       currentPlan!.sections[sectionIndex].questions[questionIndex];
 
-  int get totalQuestions => currentPlan!.sections.fold(
-        0,
-        (sum, s) => sum + s.questions.length,
-      );
+  int get totalQuestions =>
+      currentPlan!.sections.fold(0, (sum, s) => sum + s.questions.length);
 
   int get currentQuestionNumber {
     int count = 0;
@@ -147,10 +150,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     return false;
   }
 
-  void jumpToQuestion({
-    required int sectionIndex,
-    required int questionIndex,
-  }) {
+  void jumpToQuestion({required int sectionIndex, required int questionIndex}) {
     this.sectionIndex = sectionIndex;
     this.questionIndex = questionIndex;
     safeNotify();
@@ -184,8 +184,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       if (generation != _accountGeneration) return;
       plans = loadedPlans;
       _sortAndDeduplicatePlans();
-      final loadedHasMore =
-          await _service.hasPlansBefore(user: user, before: _plansStartDate!);
+      final loadedHasMore = await _service.hasPlansBefore(
+        user: user,
+        before: _plansStartDate!,
+      );
       if (generation != _accountGeneration) return;
       hasMorePlans = loadedHasMore;
     } finally {
@@ -237,8 +239,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       plans.addAll(loadedPlans);
       _plansStartDate = dateFrom;
       _sortAndDeduplicatePlans();
-      final loadedHasMore =
-          await _service.hasPlansBefore(user: user, before: dateFrom);
+      final loadedHasMore = await _service.hasPlansBefore(
+        user: user,
+        before: dateFrom,
+      );
       if (generation != _accountGeneration) return;
       hasMorePlans = loadedHasMore;
     } finally {
@@ -272,10 +276,10 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       for (final plan in plans) plan.id: plan,
     };
     int rank(String status) => switch (status) {
-          'in_progress' => 0,
-          'not_started' => 1,
-          _ => 2,
-        };
+      'in_progress' => 0,
+      'not_started' => 1,
+      _ => 2,
+    };
     plans = unique.values.toList()
       ..sort((a, b) {
         final statusOrder = rank(a.status).compareTo(rank(b.status));
@@ -347,11 +351,14 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> updateCurrentPlanTitle(
-      ModelBusinessPlan oldPlan, String newTitle) async {
-    currentPlan = (_planCache.containsKey(oldPlan.id)
-            ? _planCache[oldPlan.id] as ModelBusinessPlan
-            : oldPlan)
-        .copyWith(title: newTitle);
+    ModelBusinessPlan oldPlan,
+    String newTitle,
+  ) async {
+    currentPlan =
+        (_planCache.containsKey(oldPlan.id)
+                ? _planCache[oldPlan.id] as ModelBusinessPlan
+                : oldPlan)
+            .copyWith(title: newTitle);
     final index = plans.indexWhere((p) => p.id == oldPlan.id);
     if (index != -1) {
       plans[index] = plans[index].copyWith(title: newTitle);
@@ -364,10 +371,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
 
     // 2️⃣ 再存 DB
     try {
-      await _service.updatePlanTitle(
-        planId: oldPlan.id,
-        title: newTitle,
-      );
+      await _service.updatePlanTitle(planId: oldPlan.id, title: newTitle);
     } catch (e) {
       // ❌ 失敗就回滾
       currentPlan = currentPlan!.copyWith(title: oldPlan.title);
@@ -388,15 +392,14 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
 
     final questions = [...section.questions];
 
-    questions[questionIndex] =
-        questions[questionIndex].copyWith(answer: answer);
+    questions[questionIndex] = questions[questionIndex].copyWith(
+      answer: answer,
+    );
 
     final newSections = [...currentPlan!.sections];
     newSections[sectionIndex] = section.copyWith(questions: questions);
 
-    currentPlan = currentPlan!.copyWith(
-      sections: newSections,
-    );
+    currentPlan = currentPlan!.copyWith(sections: newSections);
     _planCache[currentPlan!.id] = currentPlan!;
 
     try {
@@ -408,8 +411,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
       );
     } catch (e) {
       // 回滾到舊資料
-      questions[questionIndex] =
-          questions[questionIndex].copyWith(answer: question.answer);
+      questions[questionIndex] = questions[questionIndex].copyWith(
+        answer: question.answer,
+      );
       newSections[sectionIndex] = section.copyWith(questions: questions);
       currentPlan = currentPlan!.copyWith(sections: newSections);
       notifier.value = question.answer;
