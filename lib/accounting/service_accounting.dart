@@ -53,7 +53,7 @@ class ServiceAccounting {
     }
     if (row == null) return null;
     final value = parseNumValue(row['value']);
-    return (value > 0, row['primary_category']?.toString() ?? 'uncategorized');
+    return (value > 0, parseStringValue(row['primary_category'], fallback: 'uncategorized'));
   }
 
   // ===== 帳戶 =====
@@ -84,7 +84,7 @@ class ServiceAccounting {
         String? accountId = accounts
             .where(
               (row) =>
-                  row[Fields.id]?.toString() == eventId &&
+                  parseStringValue(row[Fields.id]) == eventId &&
                   row[Fields.isValid] == true,
             )
             .firstOrNull?[Fields.id]
@@ -102,7 +102,7 @@ class ServiceAccounting {
         final response = accounts
             .where(
               (row) =>
-                  row[Fields.id]?.toString() == accountId &&
+                  parseStringValue(row[Fields.id]) == accountId &&
                   row[Fields.isValid] == true,
             )
             .firstOrNull;
@@ -189,7 +189,7 @@ class ServiceAccounting {
             .where(
               (row) =>
                   row[Fields.isValid] == true &&
-                  (category == null || row['category']?.toString() == category),
+                  (category == null || parseStringValue(row['category']) == category),
             )
             .toList();
         if (category == null && projectLimit != null) {
@@ -201,8 +201,8 @@ class ServiceAccounting {
                   .where((r) => r['category'] == AccountCategory.project.name)
                   .toList()
                 ..sort(
-                  (a, b) => (b[Fields.createdAt]?.toString() ?? '').compareTo(
-                    a[Fields.createdAt]?.toString() ?? '',
+                  (a, b) => parseStringValue(b[Fields.createdAt]).compareTo(
+                    parseStringValue(a[Fields.createdAt]),
                   ),
                 );
           rows = [...personal, ...projects.take(projectLimit)];
@@ -219,10 +219,10 @@ class ServiceAccounting {
                 balance: details
                     .where(
                       (d) =>
-                          d['account_id']?.toString() ==
-                              e[Fields.id]?.toString() &&
-                          d['currency']?.toString() ==
-                              e['main_currency']?.toString(),
+                          parseStringValue(d['account_id']) ==
+                              parseStringValue(e[Fields.id]) &&
+                          parseStringValue(d['currency']) ==
+                              parseStringValue(e['main_currency']),
                     )
                     .fold<num>(0, (sum, d) => sum + parseNumValue(d['value'])),
                 currency: e['main_currency'],
@@ -321,7 +321,7 @@ class ServiceAccounting {
               resource: TableNames.accountingAccount,
             )).any(
               (r) =>
-                  r[Fields.account]?.toString().toLowerCase() ==
+                  parseStringValue(r[Fields.account]).toLowerCase() ==
                       name.toLowerCase() &&
                   r['category'] == category &&
                   r[Fields.isValid] == true,
@@ -409,7 +409,7 @@ class ServiceAccounting {
           resource: TableNames.accountingAccount,
         );
         final matches = rows.where(
-          (row) => row[Fields.id]?.toString() == accountId,
+          (row) => parseStringValue(row[Fields.id]) == accountId,
         );
         if (matches.isNotEmpty) {
           await LocalDataStore.instance.put(
@@ -425,7 +425,7 @@ class ServiceAccounting {
           resource: TableNames.dashboardSetting,
         );
         for (final setting in settings) {
-          if (setting['accounting_account_id']?.toString() != accountId) {
+          if (parseStringValue(setting['accounting_account_id']) != accountId) {
             continue;
           }
           await LocalDataStore.instance.put(
@@ -473,7 +473,7 @@ class ServiceAccounting {
           resource: TableNames.accountingAccount,
         );
         final matches = rows.where(
-          (row) => row[Fields.id]?.toString() == accountId,
+          (row) => parseStringValue(row[Fields.id]) == accountId,
         );
         if (matches.isEmpty) {
           throw StateError('accounting_account_not_found');
@@ -521,8 +521,8 @@ class ServiceAccounting {
       );
       final accountRows = rows.where(
         (row) =>
-            row['account_id']?.toString() == accountId &&
-            row['type']?.toString().toLowerCase() == type.toLowerCase(),
+            parseStringValue(row['account_id']) == accountId &&
+            parseStringValue(row['type']).toLowerCase() == type.toLowerCase(),
       );
       final balance = accountRows.fold<num>(
         0,
@@ -605,8 +605,8 @@ class ServiceAccounting {
       balance += allLocal
           .where(
             (row) =>
-                row['account_id']?.toString() == accountId &&
-                row['type']?.toString() == type,
+            parseStringValue(row['account_id']) == accountId &&
+            parseStringValue(row['type']) == type,
           )
           .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
     }
@@ -693,9 +693,11 @@ class ServiceAccounting {
           tryParseDateTimeValue(detail['date']) ??
           tryParseDateTimeValue(detail[Fields.createdAt]) ??
           DateTime.now(),
-      primaryCategory:
-          detail['primary_category']?.toString() ?? 'uncategorized',
-      secondaryCategory: detail['group']?.toString(),
+      primaryCategory: parseStringValue(
+        detail['primary_category'],
+        fallback: 'uncategorized',
+      ),
+      secondaryCategory: parseStringValue(detail['group']),
       description: parseStringValue(detail['description']),
       type: parseStringValue(detail['type']),
       value: parseNumValue(detail['value']),
@@ -777,7 +779,7 @@ class ServiceAccounting {
           resource: TableNames.accountingDetail,
         );
         final matches = rows.where(
-          (item) => item[Fields.id]?.toString() == detailId,
+          (item) => parseStringValue(item[Fields.id]) == detailId,
         );
         if (matches.isEmpty) {
           throw StateError('accounting_detail_not_found');
@@ -832,17 +834,17 @@ class ServiceAccounting {
                 .where(
                   (row) =>
                       row[Fields.isValid] == true &&
-                      row['category']?.toString() == category,
+                      parseStringValue(row['category']) == category,
                 )
                 .toList()
               ..sort(
-                (a, b) => (b[Fields.createdAt]?.toString() ?? '').compareTo(
-                  a[Fields.createdAt]?.toString() ?? '',
+                (a, b) => parseStringValue(b[Fields.createdAt]).compareTo(
+                  parseStringValue(a[Fields.createdAt]),
                 ),
               );
         return matching.isEmpty
             ? 'TWD'
-            : matching.first['main_currency']?.toString() ?? 'TWD';
+            : parseStringValue(matching.first['main_currency'], fallback: 'TWD');
       }
       final response = await supabase
           .from(TableNames.accountingAccount)
@@ -873,7 +875,7 @@ class ServiceAccounting {
           resource: TableNames.accountingAccount,
         );
         final account = rows
-            .where((row) => row[Fields.id]?.toString() == accountId)
+            .where((row) => parseStringValue(row[Fields.id]) == accountId)
             .firstOrNull;
         if (account == null) {
           throw StateError('Local accounting account not found.');
@@ -885,8 +887,8 @@ class ServiceAccounting {
         final balance = details
             .where(
               (row) =>
-                  row['account_id']?.toString() == accountId &&
-                  row['currency']?.toString() == currency,
+                  parseStringValue(row['account_id']) == accountId &&
+                  parseStringValue(row['currency']) == currency,
             )
             .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
         await LocalDataStore.instance.put(

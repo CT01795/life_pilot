@@ -53,7 +53,7 @@ class ServicePointRecord {
     }
     if (row == null) return null;
     final value = parseNumValue(row['value']);
-    return (value >= 0, row['primary_category']?.toString() ?? 'uncategorized');
+    return (value >= 0, parseStringValue(row['primary_category'], fallback: 'uncategorized'));
   }
 
   // ===== 帳戶 =====
@@ -84,7 +84,7 @@ class ServicePointRecord {
         String? accountId = rows
             .where(
               (row) =>
-                  row[Fields.id]?.toString() == eventId &&
+                  parseStringValue(row[Fields.id]) == eventId &&
                   row[Fields.isValid] == true,
             )
             .firstOrNull?[Fields.id]
@@ -102,7 +102,7 @@ class ServicePointRecord {
         final response = rows
             .where(
               (row) =>
-                  row[Fields.id]?.toString() == accountId &&
+                  parseStringValue(row[Fields.id]) == accountId &&
                   row[Fields.isValid] == true,
             )
             .firstOrNull;
@@ -186,7 +186,7 @@ class ServicePointRecord {
             .where(
               (row) =>
                   row[Fields.isValid] == true &&
-                  (category == null || row['category']?.toString() == category),
+                  (category == null || parseStringValue(row['category']) == category),
             )
             .toList();
         if (category == null && projectLimit != null) {
@@ -198,8 +198,8 @@ class ServicePointRecord {
                   .where((r) => r['category'] == AccountCategory.project.name)
                   .toList()
                 ..sort(
-                  (a, b) => (b[Fields.createdAt]?.toString() ?? '').compareTo(
-                    a[Fields.createdAt]?.toString() ?? '',
+                  (a, b) => parseStringValue(b[Fields.createdAt]).compareTo(
+                    parseStringValue(a[Fields.createdAt]),
                   ),
                 );
           rows = [...personal, ...projects.take(projectLimit)];
@@ -216,8 +216,8 @@ class ServicePointRecord {
                 points: details
                     .where(
                       (d) =>
-                          d['account_id']?.toString() ==
-                          e[Fields.id]?.toString(),
+                          parseStringValue(d['account_id']) ==
+                              parseStringValue(e[Fields.id]),
                     )
                     .fold<int>(0, (sum, d) => sum + parseIntValue(d['value'])),
               ),
@@ -299,7 +299,7 @@ class ServicePointRecord {
               resource: TableNames.pointRecordAccount,
             )).any(
               (r) =>
-                  r[Fields.account]?.toString().toLowerCase() ==
+                  parseStringValue(r[Fields.account]).toLowerCase() ==
                       name.toLowerCase() &&
                   r['category'] == category &&
                   r[Fields.isValid] == true,
@@ -388,7 +388,7 @@ class ServicePointRecord {
           resource: TableNames.pointRecordAccount,
         );
         final matches = rows.where(
-          (row) => row[Fields.id]?.toString() == accountId,
+          (row) => parseStringValue(row[Fields.id]) == accountId,
         );
         if (matches.isNotEmpty) {
           await LocalDataStore.instance.put(
@@ -404,7 +404,7 @@ class ServicePointRecord {
           resource: TableNames.dashboardSetting,
         );
         for (final setting in settings) {
-          if (setting['point_account_id']?.toString() != accountId) continue;
+          if (parseStringValue(setting['point_account_id']) != accountId) continue;
           await LocalDataStore.instance.put(
             owner: _localOwner!,
             resource: TableNames.dashboardSetting,
@@ -445,7 +445,7 @@ class ServicePointRecord {
           resource: TableNames.pointRecordAccount,
         );
         final matches = rows.where(
-          (row) => row[Fields.id]?.toString() == accountId,
+          (row) => parseStringValue(row[Fields.id]) == accountId,
         );
         if (matches.isEmpty) {
           throw StateError('point_account_not_found');
@@ -495,8 +495,8 @@ class ServicePointRecord {
       );
       final accountRows = rows.where(
         (row) =>
-            row['account_id']?.toString() == accountId &&
-            row['type']?.toString().toLowerCase() == type.toLowerCase(),
+            parseStringValue(row['account_id']) == accountId &&
+            parseStringValue(row['type']).toLowerCase() == type.toLowerCase(),
       );
       final points = accountRows.fold<int>(
         0,
@@ -516,9 +516,11 @@ class ServicePointRecord {
           createdAt:
               tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
           date: tryParseDateTimeValue(detail['date']) ?? DateTime.now(),
-          primaryCategory:
-              detail['primary_category']?.toString() ?? 'uncategorized',
-          secondaryCategory: detail['group']?.toString(),
+            primaryCategory: parseStringValue(
+              detail['primary_category'],
+              fallback: 'uncategorized',
+            ),
+          secondaryCategory: parseStringValue(detail['group']),
           description: parseStringValue(detail['description']),
           type: parseStringValue(detail['type']),
           value: parseIntValue(detail['value']),
@@ -594,8 +596,8 @@ class ServicePointRecord {
       points += allLocal
           .where(
             (row) =>
-                row['account_id']?.toString() == accountId &&
-                row['type']?.toString() == type,
+                parseStringValue(row['account_id']) == accountId &&
+                parseStringValue(row['type']) == type,
           )
           .fold<int>(0, (sum, row) => sum + parseIntValue(row['value']));
     }
@@ -610,9 +612,11 @@ class ServicePointRecord {
             tryParseDateTimeValue(detail['date']) ??
             tryParseDateTimeValue(detail[Fields.createdAt]) ??
             DateTime.now(),
-        primaryCategory:
-            detail['primary_category']?.toString() ?? 'uncategorized',
-        secondaryCategory: detail['group']?.toString(),
+            primaryCategory: parseStringValue(
+              detail['primary_category'],
+              fallback: 'uncategorized',
+            ),
+        secondaryCategory: parseStringValue(detail['group']),
         description: parseStringValue(detail['description']),
         type: parseStringValue(detail['type']),
         value: parseIntValue(detail['value']),
@@ -762,7 +766,7 @@ class ServicePointRecord {
           resource: TableNames.pointRecordDetail,
         );
         final matches = rows.where(
-          (item) => item[Fields.id]?.toString() == detailId,
+          (item) => parseStringValue(item[Fields.id]) == detailId,
         );
         if (matches.isEmpty) {
           throw StateError('point_detail_not_found');

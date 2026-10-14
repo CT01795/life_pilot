@@ -5,6 +5,7 @@ import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class CalendarEvent {
   final String id;
@@ -46,8 +47,8 @@ class CalendarEvent {
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) {
     return CalendarEvent(
-      id: json[Fields.id]?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
+      id: parseStringValue(json[Fields.id]),
+      name: parseStringValue(json['name']),
       startDate: EventDateTimeParser.parseDate(json['start_date']),
       startTime: EventDateTimeParser.parseTime(json['start_time']),
       endDate: EventDateTimeParser.parseDate(json['end_date']),

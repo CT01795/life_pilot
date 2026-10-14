@@ -17,7 +17,7 @@ class SubscriptionUsage {
 
   factory SubscriptionUsage.fromJson(Map<String, dynamic> json) {
     return SubscriptionUsage(
-      resource: json['resource']?.toString() ?? '',
+      resource: parseStringValue(json['resource']),
       used: parseIntValue(json['used']),
       quota: parseIntValue(json['quota']),
     );
@@ -104,10 +104,10 @@ class SubscriptionEntitlement {
     );
     final multiplier = parseIntValue(json['quota_multiplier'], fallback: 1);
     return SubscriptionEntitlement(
-      versionName: json['version_name']?.toString() ?? '',
+      versionName: parseStringValue(json['version_name']),
       effectiveAt:
           tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
-      storagePlan: json['storage_plan']?.toString() ?? 'cloud',
+      storagePlan: parseStringValue(json['storage_plan'], fallback: 'cloud'),
       multiplier: multiplier,
       pricePaidTwd: parseIntValue(json['quarterly_price_paid_twd']),
       endsAt: tryParseDateTimeValue(json['ends_at']) ?? DateTime.now(),

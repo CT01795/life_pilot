@@ -7,6 +7,7 @@ import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/feedback/controller_feedback_admin.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/utils/enum.dart';
@@ -267,7 +268,7 @@ class PageFeedbackAdmin extends StatelessWidget {
                                           Text(
                                             loc.feedbackProcessedBy(
                                               feedback.dealBy ?? '',
-                                              feedback.dealAt?.toString() ?? '',
+                                              parseStringValue(feedback.dealAt),
                                             ),
                                           ),
                                       ],

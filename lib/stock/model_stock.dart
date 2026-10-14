@@ -211,8 +211,8 @@ class ModelInstitutional {
 
   factory ModelInstitutional.fromJson(Map<String, dynamic> json) {
     return ModelInstitutional(
-      stockNo: json['stock_no']?.toString() ?? '',
-      stockName: json['stock_name']?.toString() ?? '',
+      stockNo: parseStringValue(json['stock_no']),
+      stockName: parseStringValue(json['stock_name']),
       foreignDiff: parseIntValue(json['foreign_diff']),
       totalDiff: parseIntValue(json['total_diff']),
     );

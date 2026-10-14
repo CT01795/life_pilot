@@ -115,6 +115,6 @@ List<RecordRow> uniqueRecordRowsNewestFirst(Iterable<RecordRow> rows) {
 void sortRecordRowsNewestFirst(List<RecordRow> rows) {
   rows.sort(
     (a, b) =>
-        (b['date']?.toString() ?? '').compareTo(a['date']?.toString() ?? ''),
+        parseStringValue(b['date']).compareTo(parseStringValue(a['date'])),
   );
 }

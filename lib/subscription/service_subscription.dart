@@ -173,23 +173,24 @@ class ServiceSubscription {
       return aIndex.compareTo(bIndex);
     });
 
-    final plan =
-        status['plan']?.toString() ??
-        (items.isEmpty
+    final statusPlan = parseStringValue(status['plan']);
+    final plan = statusPlan.isNotEmpty
+        ? statusPlan
+        : (items.isEmpty
             ? 'free'
-            : (rows.first as Map)['plan']?.toString() ?? 'free');
+            : parseStringValue((rows.first as Map)['plan'], fallback: 'free'));
     return SubscriptionSnapshot(
       plan: plan,
       usage: {for (final item in items) item.resource: item},
-      status: status['status']?.toString() ?? 'inactive',
+      status: parseStringValue(status['status'], fallback: 'inactive'),
       currentPeriodEnd: tryParseDateTimeValue(status['current_period_end']),
       cancelAtPeriodEnd: status['cancel_at_period_end'] == true,
-      storagePlan: status['storage_plan']?.toString() ?? 'cloud',
+      storagePlan: parseStringValue(status['storage_plan'], fallback: 'cloud'),
       quotaMultiplier: parseIntValue(status['quota_multiplier'], fallback: 1),
       quarterlyPricePaidTwd: tryParseIntValue(
         status['quarterly_price_paid_twd'],
       ),
-      pricingVersionName: status['pricing_version_name']?.toString(),
+      pricingVersionName: parseStringValue(status['pricing_version_name']),
       pricingEffectiveAt: tryParseDateTimeValue(status['pricing_effective_at']),
       lastDataActivityAt: tryParseDateTimeValue(
         status['last_data_activity_at'],
@@ -279,7 +280,7 @@ class ServiceSubscription {
           .where((raw) {
             final row = Map<String, dynamic>.from(raw as Map);
             final endsAt = tryParseDateTimeValue(row['ends_at']);
-            return row['storage_plan']?.toString() == storagePlan &&
+            return parseStringValue(row['storage_plan']) == storagePlan &&
                 endsAt != null &&
                 endsAt.isAfter(now);
           })
@@ -310,7 +311,7 @@ class ServiceSubscription {
       }
       if (eventQuota == 0 && attractionQuota == 0) {
         final versions = await fetchPricingVersions();
-        final currentVersionName = status['pricing_version_name']?.toString();
+        final currentVersionName = parseStringValue(status['pricing_version_name']);
         final currentMultiplier = parseIntValue(
           status['quota_multiplier'],
           fallback: 1,
@@ -319,8 +320,8 @@ class ServiceSubscription {
           status['current_period_end'],
         );
         final hasActiveStatusPlan =
-            status['plan']?.toString() == 'plus' &&
-            status['storage_plan']?.toString() == storagePlan &&
+            parseStringValue(status['plan']) == 'plus' &&
+            parseStringValue(status['storage_plan']) == storagePlan &&
             (statusPeriodEnd == null || statusPeriodEnd.isAfter(now));
         final hasActivePaidPlan =
             activeEntitlements.isNotEmpty || hasActiveStatusPlan;
@@ -651,8 +652,8 @@ class QuotaFreePeriod {
 
   factory QuotaFreePeriod.fromJson(Map<String, dynamic> json) =>
       QuotaFreePeriod(
-        id: json['period_id']?.toString() ?? '',
-        name: json['period_name']?.toString() ?? '',
+        id: parseStringValue(json['period_id']),
+        name: parseStringValue(json['period_name']),
         startsAt:
             tryParseDateTimeValue(json['starts_at'], toLocal: true) ??
             DateTime.now(),
@@ -688,8 +689,8 @@ class SubscriptionCleanupPreview {
 
   factory SubscriptionCleanupPreview.fromJson(Map<String, dynamic> json) =>
       SubscriptionCleanupPreview(
-        email: json['target_email']?.toString() ?? '',
-        resource: json['resource']?.toString() ?? '',
+        email: parseStringValue(json['target_email']),
+        resource: parseStringValue(json['resource']),
         used: parseIntValue(json['used']),
         quota: parseIntValue(json['quota']),
         excess: parseIntValue(json['excess']),
@@ -717,8 +718,8 @@ class SubscriptionPricingVersion {
   factory SubscriptionPricingVersion.fromJson(Map<String, dynamic> json) =>
       SubscriptionPricingVersion(
         id: json['id'].toString(),
-        name: json['version_name']?.toString() ?? '',
-        storagePlan: json['storage_plan']?.toString() ?? 'cloud',
+        name: parseStringValue(json['version_name']),
+        storagePlan: parseStringValue(json['storage_plan'], fallback: 'cloud'),
         effectiveAt:
             tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
         quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),

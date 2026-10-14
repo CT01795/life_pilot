@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/service/service_personal_data.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class AdminAccountDeletionRequests extends StatefulWidget {
   const AdminAccountDeletionRequests({super.key});
@@ -114,9 +115,9 @@ class _AdminAccountDeletionRequestsState
               }
               return Column(
                 children: requests.map((request) {
-                  final id = request['id']?.toString() ?? '';
-                  final email = request['email']?.toString() ?? '';
-                  final status = request['status']?.toString() ?? 'pending';
+                  final id = parseStringValue(request['id']);
+                  final email = parseStringValue(request['email']);
+                  final status = parseStringValue(request['status'], fallback: 'pending');
                   final isCancellation = status == 'cancel_pending';
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -129,7 +130,7 @@ class _AdminAccountDeletionRequestsState
                           subtitle: Text(
                             isCancellation
                                 ? loc.adminAccountDeletionCancellationRequested
-                                : request['requested_at']?.toString() ?? '',
+                                : parseStringValue(request['requested_at']),
                           ),
                         ),
                         Align(

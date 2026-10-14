@@ -71,7 +71,7 @@ class _AdminQuotaFreePeriodState extends State<AdminQuotaFreePeriod> {
     setState(() {
       _editingId = period.id;
       _nameController.text = period.name;
-      _reminderDaysController.text = period.reminderDays?.toString() ?? '';
+      _reminderDaysController.text = parseStringValue(period.reminderDays);
       _targetAccountsController.text = period.targetAccounts.join('\n');
       _startsAt = period.startsAt;
       _endsAt = period.endsAt;

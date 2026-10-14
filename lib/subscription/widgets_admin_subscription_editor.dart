@@ -230,9 +230,9 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
                     itemBuilder: (context, index) {
                       final row = _allUserSubscriptions[index];
                       final email =
-                          row['account']?.toString() ??
-                          row['email']?.toString() ??
-                          '';
+                          parseStringValue(row['account']).isNotEmpty
+                              ? parseStringValue(row['account'])
+                              : parseStringValue(row['email']);
                       final activeCount = parseIntValue(
                         row['active_entitlements'],
                       );
@@ -719,15 +719,16 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   void _loadSubscriptionIntoForm(List<SubscriptionPricingVersion> versions) {
     if (!_subscriptionExists) return;
     final subscription = _lookedUpSubscription!;
-    final plan = subscription['plan']?.toString() ?? 'free';
+    final plan = parseStringValue(subscription['plan'], fallback: 'free');
     final storagePlan =
-        subscription['storage_plan']?.toString() ??
+        parseStringValue(subscription['storage_plan'], fallback: 'cloud');
         SubscriptionStoragePlan.cloud;
-    final pricingVersionId = subscription['pricing_version_id']?.toString();
+    final pricingVersionId = parseStringValue(subscription['pricing_version_id']);
     final parsedExpiry = tryParseDateTimeValue(
-      subscription['current_period_end']?.toString() ??
-          subscription['expires_at']?.toString() ??
-          '',
+      parseStringValue(
+        subscription['current_period_end'],
+        fallback: parseStringValue(subscription['expires_at']),
+      ),
     );
     final versionExists = versions.any(
       (version) =>
@@ -745,7 +746,7 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
           ? null
           : (parsedExpiry?.toLocal() ??
                 DateTime.now().add(const Duration(days: 90)));
-      _note.text = subscription['admin_note']?.toString() ?? '';
+      _note.text = parseStringValue(subscription['admin_note']);
       _additive = false;
     });
     _show(AppLocalizations.of(context)!.adminSubscriptionLoadedForEditing);
@@ -796,8 +797,8 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
   Future<void> _deleteEntitlement(Map<String, dynamic> entitlement) async {
     if (_saving) return;
     final loc = AppLocalizations.of(context)!;
-    final id = entitlement['id']?.toString() ?? '';
-    final version = entitlement['version_name']?.toString() ?? '-';
+    final id = parseStringValue(entitlement['id']);
+    final version = parseStringValue(entitlement['version_name'], fallback: '-');
     if (id.isEmpty) return;
     final confirmed =
         await showDialog<bool>(
@@ -944,15 +945,15 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
     List<SubscriptionPricingVersion> versions,
   ) {
     final storagePlan =
-        entitlement['storage_plan']?.toString() ??
+        parseStringValue(entitlement['storage_plan'], fallback: 'cloud');
         SubscriptionStoragePlan.cloud;
-    final versionId = entitlement['pricing_version_id']?.toString();
+    final versionId = parseStringValue(entitlement['pricing_version_id']);
     final versionExists = versions.any(
       (version) =>
           version.id == versionId && version.storagePlan == storagePlan,
     );
     final expiry = tryParseDateTimeValue(
-      entitlement['ends_at']?.toString() ?? '',
+      parseStringValue(entitlement['ends_at']),
       toLocal: true,
     );
     setState(() {
@@ -961,8 +962,8 @@ class _AdminSubscriptionEditorState extends State<AdminSubscriptionEditor> {
       _versionId = versionExists ? versionId : null;
       _multiplier = parseIntValue(entitlement['quota_multiplier'], fallback: 1);
       _expiry = expiry;
-      _note.text = entitlement['admin_note']?.toString() ?? '';
-      _editingEntitlementId = entitlement['id']?.toString();
+      _note.text = parseStringValue(entitlement['admin_note']);
+      _editingEntitlementId = parseStringValue(entitlement['id']);
       _additive = false;
     });
     _show(AppLocalizations.of(context)!.adminSubscriptionLoadedForEditing);

@@ -685,7 +685,7 @@ class ServiceGame {
         id: row['id'].toString(),
         title: parseStringValue(row['title']),
         scene: parseStringValue(row['scene']),
-        category: row['category']?.toString() ?? 'social',
+        category: parseStringValue(row['category'], fallback: 'social'),
         isActive: row['is_active'] == true,
         choices: choices,
       );
@@ -723,7 +723,7 @@ class ServiceGame {
             id: row[Fields.id].toString(),
             title: parseStringValue(row['title']),
             scene: parseStringValue(row['scene']),
-            category: row['category']?.toString() ?? 'social',
+            category: parseStringValue(row['category'], fallback: 'social'),
             isActive: row['is_active'] == true,
             choices: choices,
           );

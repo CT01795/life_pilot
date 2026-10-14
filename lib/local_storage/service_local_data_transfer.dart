@@ -54,7 +54,7 @@ class ServiceLocalDataTransfer {
           await supabase.rpc('export_my_cloud_data_for_local') as List<dynamic>;
       for (final rawItem in exported) {
         final exportItem = Map<String, dynamic>.from(rawItem as Map);
-        final resource = exportItem['table_name']?.toString() ?? '';
+        final resource = parseStringValue(exportItem['table_name']);
         if (!_resources.contains(resource)) {
           return LocalDataTransferResult(
             moved: 0,

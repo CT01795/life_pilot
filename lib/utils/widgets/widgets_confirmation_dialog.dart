@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/calendar/controller_calendar.dart';
 import 'package:life_pilot/calendar/widgets_schedule_datetime_dialog.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
@@ -77,7 +78,7 @@ Future<ScheduleDateTimeChoice?> confirmEventTransfer({
   );
   return showScheduleDateTimeDialog(
     context,
-    title: event.name?.toString() ?? '',
+    title: parseStringValue(event.name),
     initialDate: initialDate,
     initialTime: initialTime,
     description: isAlreadyAdded ? loc.scheduleDuplicateConfirmation : null,

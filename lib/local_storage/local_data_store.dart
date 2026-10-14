@@ -253,7 +253,7 @@ class LocalDataStore {
     return snapshots
         .map(
           (snapshot) => <String, dynamic>{
-            'table_name': snapshot.value['resource']?.toString() ?? '',
+            'table_name': parseStringValue(snapshot.value['resource']),
             'record': Map<String, dynamic>.from(
               (snapshot.value['data'] as Map?)?.cast<String, dynamic>() ??
                   const <String, dynamic>{},

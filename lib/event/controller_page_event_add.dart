@@ -166,7 +166,7 @@ class ControllerPageEventAdd extends SafeChangeNotifier {
     for (final entry in fields.entries) {
       initController(
         key: entry.key,
-        initialValue: entry.value?.toString() ?? '',
+        initialValue: parseStringValue(entry.value),
       );
     }
 

@@ -96,7 +96,7 @@ class CalendarService {
       );
       return rows.any((row) {
         final date = tryParseDateTimeValue(
-          row['start_date']?.toString() ?? '',
+          parseStringValue(row['start_date']),
           toLocal: true,
         );
         return normalizedTextEquals(row['name'], place.name) &&

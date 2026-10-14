@@ -1680,10 +1680,10 @@ class ServiceEventPublic {
       events.add(
         EventItem(
           id: uuid.v4(),
-          name: row[colsToDetail["name"] ?? 99]?.toString() ?? '',
-          type: row[colsToDetail["type"] ?? 99]?.toString() ?? '',
-          city: row[colsToDetail["city"] ?? 99]?.toString() ?? '',
-          location: row[colsToDetail["location"] ?? 99]?.toString() ?? '',
+          name: parseStringValue(row[colsToDetail["name"] ?? 99]),
+          type: parseStringValue(row[colsToDetail["type"] ?? 99]),
+          city: parseStringValue(row[colsToDetail["city"] ?? 99]),
+          location: parseStringValue(row[colsToDetail["location"] ?? 99]),
           //fee: row[?]?.toString(),
           startDate: startDate,
           endDate: endDate,

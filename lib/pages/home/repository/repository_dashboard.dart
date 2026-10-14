@@ -44,12 +44,12 @@ class DashboardRepository {
               .where((row) {
                 if (row['is_completed'] == true) return false;
                 final start = tryParseDateTimeValue(
-                  row['start_date']?.toString() ?? '',
+                  parseStringValue(row['start_date']),
                   toLocal: true,
                 );
                 if (start == null) return false;
                 final end = tryParseDateTimeValue(
-                  row['end_date']?.toString() ?? '',
+                  parseStringValue(row['end_date']),
                   toLocal: true,
                 );
                 final effectiveEnd = end ?? start;
@@ -108,13 +108,13 @@ class DashboardRepository {
         resource: TableNames.calendarEvents,
       );
       final filtered =
-          rows.where((row) => row[Fields.id]?.toString() == eventId).toList()
+          rows.where((row) => parseStringValue(row[Fields.id]) == eventId).toList()
             ..sort((a, b) {
-              final dateComparison = (a['start_date']?.toString() ?? '')
-                  .compareTo(b['start_date']?.toString() ?? '');
+              final dateComparison = parseStringValue(a['start_date'])
+                  .compareTo(parseStringValue(b['start_date']));
               if (dateComparison != 0) return dateComparison;
-              return (a['start_time']?.toString() ?? '').compareTo(
-                b['start_time']?.toString() ?? '',
+              return parseStringValue(a['start_time']).compareTo(
+                parseStringValue(b['start_time']),
               );
             });
       return filtered.map(CalendarEvent.fromJson).toList();
@@ -140,7 +140,7 @@ class DashboardRepository {
         owner: account,
         resource: TableNames.calendarEvents,
       );
-      final matches = rows.where((row) => row[Fields.id]?.toString() == id);
+      final matches = rows.where((row) => parseStringValue(row[Fields.id]) == id);
       if (matches.isEmpty) return;
       final updated = Map<String, Object?>.from(matches.first)
         ..['is_completed'] = true;
@@ -225,10 +225,18 @@ class DashboardRepository {
       recommendEventCity: '台北',
       recommendPlaceCity: '台北',
       language: 'zh',
-      accountingAccountId: accounting?[Fields.id]?.toString(),
-      accountingAccountName: accounting?[Fields.account]?.toString(),
-      pointAccountId: points?[Fields.id]?.toString(),
-      pointAccountName: points?[Fields.account]?.toString(),
+      accountingAccountId: accounting?[Fields.id] == null
+          ? null
+          : parseStringValue(accounting?[Fields.id]),
+      accountingAccountName: accounting?[Fields.account] == null
+          ? null
+          : parseStringValue(accounting?[Fields.account]),
+      pointAccountId: points?[Fields.id] == null
+          ? null
+          : parseStringValue(points?[Fields.id]),
+      pointAccountName: points?[Fields.account] == null
+          ? null
+          : parseStringValue(points?[Fields.account]),
     );
     await LocalDataStore.instance.put(
       owner: account,
@@ -323,12 +331,12 @@ class DashboardRepository {
       final account = accounts
           .where(
             (row) =>
-                row[Fields.id]?.toString() == accountId &&
+                parseStringValue(row[Fields.id]) == accountId &&
                 row[Fields.isValid] == true,
           )
           .firstOrNull;
       if (account == null) return const AccountingDashboardSummary.empty();
-      final currency = account['main_currency']?.toString() ?? 'TWD';
+      final currency = parseStringValue(account['main_currency'], fallback: 'TWD');
       final rows = await _todayLocalDetails(
         resource: TableNames.accountingDetail,
         accountId: accountId,
@@ -396,7 +404,7 @@ class DashboardRepository {
       final account = accounts
           .where(
             (row) =>
-                row[Fields.id]?.toString() == accountId &&
+                parseStringValue(row[Fields.id]) == accountId &&
                 row[Fields.isValid] == true,
           )
           .firstOrNull;
@@ -465,18 +473,18 @@ class DashboardRepository {
     );
     final result =
         rows.where((row) {
-          if (row['account_id']?.toString() != accountId) return false;
-          if (currency != null && row['currency']?.toString() != currency) {
+          if (parseStringValue(row['account_id']) != accountId) return false;
+          if (currency != null && parseStringValue(row['currency']) != currency) {
             return false;
           }
           final date = tryParseDateTimeValue(
-            row['date']?.toString() ?? '',
+            parseStringValue(row['date']),
             toLocal: true,
           );
           return date != null && !date.isBefore(start) && date.isBefore(end);
         }).toList()..sort(
-          (a, b) => (b['date']?.toString() ?? '').compareTo(
-            a['date']?.toString() ?? '',
+          (a, b) => parseStringValue(b['date']).compareTo(
+            parseStringValue(a['date']),
           ),
         );
     return result;

@@ -1,6 +1,7 @@
 import 'package:life_pilot/utils/api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 enum AccountPasswordFailure {
   noSignedInUser,
@@ -88,7 +89,7 @@ class ServiceAccountSecurity {
     if (response is! Map) {
       throw const FormatException('Invalid administrator reset response');
     }
-    final password = response['temporary_password']?.toString() ?? '';
+    final password = parseStringValue(response['temporary_password']);
     if (password.isEmpty) {
       throw const FormatException('Temporary password is missing');
     }
@@ -106,7 +107,7 @@ class ServiceAccountSecurity {
     if (response is! Map) {
       throw const FormatException('Invalid administrator account response');
     }
-    final password = response['temporary_password']?.toString() ?? '';
+    final password = parseStringValue(response['temporary_password']);
     if (password.isEmpty) {
       throw const FormatException('Temporary password is missing');
     }
