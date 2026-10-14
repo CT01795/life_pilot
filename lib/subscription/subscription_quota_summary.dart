@@ -1,0 +1,52 @@
+import 'package:life_pilot/subscription/service_subscription.dart';
+import 'package:life_pilot/subscription/subscription_constants.dart';
+import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
+
+Map<String, int> cumulativeSubscriptionQuotas(
+  Iterable<Map<String, dynamic>> entitlements,
+  Iterable<SubscriptionPricingVersion> versions, {
+  required String storagePlan,
+}) {
+  final versionsById = {for (final version in versions) version.id: version};
+  final totals = <String, int>{};
+  for (final entitlement in entitlements) {
+    if (entitlement['storage_plan']?.toString() != storagePlan) continue;
+    final snapshot = Map<String, dynamic>.from(
+      entitlement['entitlement_snapshot'] as Map? ?? const {},
+    );
+    final multiplier =
+        (entitlement['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
+    if (snapshot.isNotEmpty) {
+      for (final resource in SubscriptionResource.visibleQuotaResources) {
+        final value = entitlementSnapshotQuota(
+          snapshot,
+          resource,
+          multiplier: multiplier,
+        );
+        if (value == null) continue;
+        totals.update(
+          resource,
+          (current) => current + value,
+          ifAbsent: () => value,
+        );
+      }
+      continue;
+    }
+
+    final version = versionsById[entitlement['pricing_version_id']?.toString()];
+    if (version == null) continue;
+    for (final entry in version.quotas.entries) {
+      if (entry.key == SubscriptionResource.answerHistoryDays) continue;
+      final value = entry.value * multiplier;
+      totals.update(
+        entry.key,
+        (current) => current + value,
+        ifAbsent: () => value,
+      );
+    }
+  }
+  return {
+    for (final resource in SubscriptionResource.visibleQuotaResources)
+      if (totals.containsKey(resource)) resource: totals[resource]!,
+  };
+}

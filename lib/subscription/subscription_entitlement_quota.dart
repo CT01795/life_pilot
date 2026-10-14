@@ -1,15 +1,6 @@
-const subscriptionQuotaResources = <String>[
-  'calendar_events',
-  'recommended_events',
-  'recommended_attractions',
-  'accounting_detail',
-  'point_record_detail',
-  'memory_trace',
-  'game_questions',
-  'calendar_shares',
-  'image_bytes',
-  'answer_history_days',
-];
+import 'package:life_pilot/subscription/subscription_constants.dart';
+
+const subscriptionQuotaResources = SubscriptionResource.quotaResources;
 
 /// Reads one immutable entitlement snapshot without applying a multiplier
 /// twice. New snapshots use canonical resource keys and already contain the
@@ -24,24 +15,25 @@ int? entitlementSnapshotQuota(
   if (canonical != null) return canonical;
 
   final legacyKey = switch (resource) {
-    'calendar_events' => 'calendar_quota',
-    'recommended_events' => 'recommended_event_quota',
-    'recommended_attractions' => 'recommended_attraction_quota',
-    'accounting_detail' => 'accounting_quota',
-    'point_record_detail' => 'point_quota',
-    'memory_trace' => 'memory_quota',
-    'game_questions' => 'game_question_quota',
-    'calendar_shares' => 'calendar_share_quota',
-    'image_bytes' => 'image_megabytes',
-    'answer_history_days' => 'answer_history_days',
+    SubscriptionResource.calendarEvents => 'calendar_quota',
+    SubscriptionResource.recommendedEvents => 'recommended_event_quota',
+    SubscriptionResource.recommendedAttractions =>
+      'recommended_attraction_quota',
+    SubscriptionResource.accountingDetail => 'accounting_quota',
+    SubscriptionResource.pointRecordDetail => 'point_quota',
+    SubscriptionResource.memoryTrace => 'memory_quota',
+    SubscriptionResource.gameQuestions => 'game_question_quota',
+    SubscriptionResource.calendarShares => 'calendar_share_quota',
+    SubscriptionResource.imageBytes => 'image_megabytes',
+    SubscriptionResource.answerHistoryDays => 'answer_history_days',
     _ => null,
   };
   if (legacyKey == null) return null;
   final legacy = _asInt(snapshot[legacyKey]);
   if (legacy == null) return null;
   final normalizedMultiplier = multiplier.clamp(1, 1000);
-  if (resource == 'answer_history_days') return legacy;
-  return resource == 'image_bytes'
+  if (resource == SubscriptionResource.answerHistoryDays) return legacy;
+  return resource == SubscriptionResource.imageBytes
       ? legacy * normalizedMultiplier * 1024 * 1024
       : legacy * normalizedMultiplier;
 }
