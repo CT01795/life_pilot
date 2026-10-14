@@ -35,6 +35,7 @@ class _PageState extends State<PageGameSocialQuestions> {
   List<String> _categories = const [];
   final Set<String> _busyIds = {};
   int _totalCount = 0;
+  bool? _pageHasMore;
   int _generation = 0;
   bool _loading = true;
   bool _loadingMore = false;
@@ -43,7 +44,7 @@ class _PageState extends State<PageGameSocialQuestions> {
   String? _selectedCategory;
   _StatusFilter _status = _StatusFilter.all;
 
-  bool get _hasMore => _questions.length < _totalCount;
+  bool get _hasMore => _pageHasMore ?? _questions.length < _totalCount;
   String get _statusValue => switch (_status) {
     _StatusFilter.all => 'all',
     _StatusFilter.active => 'active',
@@ -88,6 +89,7 @@ class _PageState extends State<PageGameSocialQuestions> {
             ? [..._questions, ...page.questions]
             : page.questions;
         _totalCount = page.totalCount;
+        _pageHasMore = page.hasMore;
         _categories = categories;
         _loaded = true;
       });

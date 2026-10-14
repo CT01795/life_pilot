@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_plan_template.dart';
 import 'package:life_pilot/business_plan/page_plan_editor.dart';
@@ -26,31 +27,50 @@ class _PagePlanSelectTemplateState extends State<PagePlanSelectTemplate> {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(loc.selectTemplate)),
-      body: Selector<ControllerBusinessPlan, bool>(
-        selector: (_, c) => c.isTemplateLoading,
-        builder: (_, loading, _) {
-          if (loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return Selector<ControllerBusinessPlan, List<ModelPlanTemplate>>(
-            selector: (_, c) => c.templates,
-            builder: (_, templates, _) {
-              return ListView.builder(
-                itemCount: templates.length,
-                itemBuilder: (_, i) {
-                  final t = templates[i];
-                  return ListTile(
-                    title: Text(t.title),
-                    subtitle: Text(t.description),
-                    onTap: () => _createPlan(context, t),
-                  );
-                },
-              );
-            },
-          );
-        },
+      body: Consumer<ControllerBusinessPlan>(
+        builder: (_, controller, _) => Column(
+          children: [
+            if (controller.templateLoadError != null)
+              WidgetsLoadError(onRetry: controller.loadTemplates),
+            Expanded(child: _buildTemplates()),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildTemplates() {
+    return Selector<ControllerBusinessPlan, bool>(
+      selector: (_, c) => c.isTemplateLoading,
+      builder: (_, loading, _) {
+        if (loading &&
+            context.read<ControllerBusinessPlan>().templates.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Selector<ControllerBusinessPlan, List<ModelPlanTemplate>>(
+          selector: (_, c) => c.templates,
+          builder: (_, templates, _) {
+            if (templates.isEmpty) {
+              return context.read<ControllerBusinessPlan>().templateLoadError !=
+                      null
+                  ? const SizedBox.shrink()
+                  : Center(child: Text(AppLocalizations.of(context)!.noData));
+            }
+            return ListView.builder(
+              itemCount: templates.length,
+              itemBuilder: (_, i) {
+                final t = templates[i];
+                return ListTile(
+                  title: Text(t.title),
+                  subtitle: Text(t.description),
+                  onTap: () => _createPlan(context, t),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 

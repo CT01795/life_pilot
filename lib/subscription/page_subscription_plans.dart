@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -48,32 +49,38 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
   void _reloadPricingVersions() {
     final future = ServiceSubscription().fetchPricingVersions();
     _pricingVersions = future;
-    future.then((versions) {
-      if (!mounted) return;
-      setState(() {
-        _availableVersions = versions;
-        _latestFreeCloudVersion = versions
-            .where(
-              (version) =>
-                  version.storagePlan == SubscriptionStoragePlan.cloud &&
-                  version.quarterlyPriceTwd == 0,
-            )
-            .firstOrNull;
-        _latestCloudVersion = versions
-            .where(
-              (version) =>
-                  version.storagePlan == SubscriptionStoragePlan.cloud &&
-                  version.quarterlyPriceTwd > 0,
-            )
-            .firstOrNull;
-        _latestLocalVersion = versions
-            .where(
-              (version) => version.storagePlan == SubscriptionStoragePlan.local,
-            )
-            .firstOrNull;
-        _adminSubscriptionEditorRevision++;
-      });
-    });
+    future.then<void>(
+      (versions) {
+        if (!mounted) return;
+        setState(() {
+          _availableVersions = versions;
+          _latestFreeCloudVersion = versions
+              .where(
+                (version) =>
+                    version.storagePlan == SubscriptionStoragePlan.cloud &&
+                    version.quarterlyPriceTwd == 0,
+              )
+              .firstOrNull;
+          _latestCloudVersion = versions
+              .where(
+                (version) =>
+                    version.storagePlan == SubscriptionStoragePlan.cloud &&
+                    version.quarterlyPriceTwd > 0,
+              )
+              .firstOrNull;
+          _latestLocalVersion = versions
+              .where(
+                (version) =>
+                    version.storagePlan == SubscriptionStoragePlan.local,
+              )
+              .firstOrNull;
+          _adminSubscriptionEditorRevision++;
+        });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        // The FutureBuilder displays the failure and offers retry.
+      },
+    );
   }
 
   @override
@@ -428,8 +435,16 @@ class _PageSubscriptionPlansState extends State<PageSubscriptionPlans> {
           FutureBuilder<List<SubscriptionPricingVersion>>(
             future: _pricingVersions,
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return WidgetsLoadError(
+                  onRetry: () => setState(_reloadPricingVersions),
+                );
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const SizedBox.shrink();
+                return Center(child: Text(loc.noData));
               }
               final latestCloud = snapshot.data!
                   .where(

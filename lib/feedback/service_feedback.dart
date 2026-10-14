@@ -43,7 +43,7 @@ class ServiceFeedback {
       return response;
     } catch (e, st) {
       logger.e('loadFeedback failed $e', stackTrace: st);
-      return [];
+      rethrow;
     }
   }
 

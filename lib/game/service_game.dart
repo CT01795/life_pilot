@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:life_pilot/game/question_page_reader.dart';
 import 'package:life_pilot/game/game_question_source_rules.dart';
 import 'package:life_pilot/game/game_question_row_rules.dart';
 import 'package:life_pilot/game/model_question_bank.dart';
@@ -570,25 +571,36 @@ class ServiceGame {
     String? category,
     String status = 'all',
     int offset = 0,
+    int limit = 20,
   }) async {
     final localMode = await _storesLocally;
-    final rows = localMode
-        ? <dynamic>[]
-        : await supabase.rpc(
-                'get_my_social_questions_page',
-                params: {
-                  'p_keyword': keyword.trim(),
-                  'p_category': category,
-                  'p_status': status,
-                  'p_offset': offset,
-                  'p_limit': 20,
-                },
-              )
-              as List<dynamic>;
-    final questions = rows
-        .cast<Map<String, dynamic>>()
-        .map((row) => MySocialQuestion.fromJson(row, sortChoicesByScore: true))
-        .toList();
+    if (!localMode) {
+      final page = await readQuestionPage(
+        offset: offset,
+        limit: limit,
+        fetch: (pageOffset, pageLimit) async =>
+            await supabase.rpc(
+                  'get_my_social_questions_page',
+                  params: {
+                    'p_keyword': keyword.trim(),
+                    'p_category': category,
+                    'p_status': status,
+                    'p_offset': pageOffset,
+                    'p_limit': pageLimit,
+                  },
+                )
+                as List<dynamic>,
+      );
+      return MySocialQuestionPage(
+        questions: page.rows
+            .map(
+              (row) => MySocialQuestion.fromJson(row, sortChoicesByScore: true),
+            )
+            .toList(),
+        totalCount: page.totalCount,
+        hasMore: page.hasMore,
+      );
+    }
     final localRows = await _localQuestions(TableNames.gameSocialScenarios);
     final normalizedKeyword = normalizeStringValue(keyword);
     final localQuestions = localRows
@@ -607,10 +619,10 @@ class ServiceGame {
         })
         .map((row) => MySocialQuestion.fromJson(row));
     final localList = localQuestions.toList();
-    if (localMode) questions.addAll(localList.skip(offset).take(20));
     return MySocialQuestionPage(
-      questions: questions,
-      totalCount: localMode ? localList.length : questions.length,
+      questions: localList.skip(offset).take(limit).toList(),
+      totalCount: localList.length,
+      hasMore: offset + limit < localList.length,
     );
   }
 
@@ -864,25 +876,33 @@ class ServiceGame {
     }
     final tableName = _questionTableForGame(gameName);
     final localMode = await _storesLocally;
-    final rows = localMode
-        ? <dynamic>[]
-        : await supabase.rpc(
-                'get_my_questions_page',
-                params: {
-                  'p_table_name': tableName,
-                  'p_game_name': gameName,
-                  'p_keyword': keyword.trim(),
-                  'p_group': group,
-                  'p_status': status,
-                  'p_offset': offset,
-                  'p_limit': limit,
-                },
-              )
-              as List<dynamic>;
-    final questions = rows
-        .cast<Map<String, dynamic>>()
-        .map((row) => MyGameQuestion.fromJson(row))
-        .toList();
+    if (!localMode) {
+      final page = await readQuestionPage(
+        offset: offset,
+        limit: limit,
+        fetch: (pageOffset, pageLimit) async =>
+            await supabase.rpc(
+                  'get_my_questions_page',
+                  params: {
+                    'p_table_name': tableName,
+                    'p_game_name': gameName,
+                    'p_keyword': keyword.trim(),
+                    'p_group': group,
+                    'p_status': status,
+                    'p_offset': pageOffset,
+                    'p_limit': pageLimit,
+                  },
+                )
+                as List<dynamic>,
+      );
+      return MyGameQuestionPage(
+        questions: page.rows
+            .map((row) => MyGameQuestion.fromJson(row))
+            .toList(),
+        totalCount: page.totalCount,
+        hasMore: page.hasMore,
+      );
+    }
     final localRows = await _localQuestions(tableName);
     final normalizedKeyword = normalizeStringValue(keyword);
     final matchingLocal = localRows
@@ -906,11 +926,11 @@ class ServiceGame {
         })
         .map((row) => MyGameQuestion.fromJson(row, groupField: 'group'))
         .toList();
-    final totalCount = localMode ? matchingLocal.length : questions.length;
-    if (localMode) {
-      questions.addAll(matchingLocal.skip(offset).take(limit));
-    }
-    return MyGameQuestionPage(questions: questions, totalCount: totalCount);
+    return MyGameQuestionPage(
+      questions: matchingLocal.skip(offset).take(limit).toList(),
+      totalCount: matchingLocal.length,
+      hasMore: offset + limit < matchingLocal.length,
+    );
   }
 
   Future<List<String>> fetchMyQuestionGroupsForManagement({

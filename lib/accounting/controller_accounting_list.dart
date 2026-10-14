@@ -31,12 +31,14 @@ class ControllerAccountingList extends SafeChangeNotifier {
       '${auth?.personalDataRevision ?? 0}';
 
   bool isLoading = false;
+  Object? loadError;
   List<ModelAccountingAccount> accounts = [];
 
   Future<void> loadAccounts({String? inputCategory}) async {
     if (isLoading) return;
     final generation = _accountGeneration;
     isLoading = true;
+    loadError = null;
     notifyListeners();
     try {
       final loaded = await _service.fetchAccounts(
@@ -45,6 +47,8 @@ class ControllerAccountingList extends SafeChangeNotifier {
       );
       if (generation != _accountGeneration) return;
       accounts = loaded;
+    } catch (error) {
+      if (generation == _accountGeneration) loadError = error;
     } finally {
       if (generation == _accountGeneration) {
         isLoading = false;
@@ -61,6 +65,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
     _accountGeneration++;
     isLoading = false;
     accounts = [];
+    loadError = null;
     mainCurrency = null;
     _currentCategory = null;
     if (notify) notifyListeners();

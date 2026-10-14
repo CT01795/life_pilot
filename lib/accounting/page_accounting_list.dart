@@ -13,6 +13,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 
 class PageAccountingList extends StatefulWidget {
   const PageAccountingList({super.key});
@@ -102,10 +103,23 @@ class _PageAccountingListState extends State<PageAccountingList>
   }
 
   Widget _buildBody() {
+    return Consumer<ControllerAccountingList>(
+      builder: (context, controller, _) => Column(
+        children: [
+          if (controller.loadError != null)
+            WidgetsLoadError(onRetry: () => controller.loadAccounts()),
+          Expanded(child: _buildAccountList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountList() {
     return Selector<ControllerAccountingList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
-        if (isLoading) {
+        if (isLoading &&
+            context.read<ControllerAccountingList>().accounts.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -113,6 +127,9 @@ class _PageAccountingListState extends State<PageAccountingList>
           selector: (_, c) => c.accounts,
           builder: (context, accounts, _) {
             if (accounts.isEmpty) {
+              if (context.read<ControllerAccountingList>().loadError != null) {
+                return const SizedBox.shrink();
+              }
               return Center(
                 child: Text(AppLocalizations.of(context)!.accountListEmpty),
               );

@@ -62,6 +62,7 @@ class ControllerPageMain extends SafeChangeNotifier {
   bool _wasVendor;
   Set<String> _moduleKeys = const {};
   bool _modulesLoading = false;
+  Object? modulesError;
   int _moduleRequest = 0;
   PageType _selectedPage;
   final Map<PageType, String?> _pendingCities = {};
@@ -110,19 +111,30 @@ class ControllerPageMain extends SafeChangeNotifier {
     final request = ++_moduleRequest;
     if (account == null || account.isEmpty || auth.isSysAdmin) {
       _moduleKeys = const {};
+      modulesError = null;
       _modulesLoading = false;
       _validateSelectedPage();
       _notifyDebounced();
       return;
     }
     _modulesLoading = true;
+    modulesError = null;
     if (force) _notifyDebounced();
-    final keys = await _serviceModule.loadModulesFromServer(account);
-    if (request != _moduleRequest || account != _accountKey) return;
-    _moduleKeys = keys.toSet();
-    _modulesLoading = false;
-    _validateSelectedPage();
-    _notifyDebounced();
+    try {
+      final keys = await _serviceModule.loadModulesFromServer(account);
+      if (request != _moduleRequest || account != _accountKey) return;
+      _moduleKeys = keys.toSet();
+      _validateSelectedPage();
+    } catch (error) {
+      if (request == _moduleRequest && account == _accountKey) {
+        modulesError = error;
+      }
+    } finally {
+      if (request == _moduleRequest && account == _accountKey) {
+        _modulesLoading = false;
+        _notifyDebounced();
+      }
+    }
   }
 
   Future<void> _openAI() async {
@@ -153,6 +165,7 @@ class ControllerPageMain extends SafeChangeNotifier {
         _wasAdmin = nextIsAdmin;
         _wasVendor = nextIsVendor;
         _moduleKeys = const {};
+        modulesError = null;
         _selectedPage = nextIsVendor ? PageType.vendorDashboard : PageType.home;
         changed = true;
       }

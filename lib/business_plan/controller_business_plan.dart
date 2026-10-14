@@ -34,6 +34,7 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
 
   bool isPlansLoading = false; // 列表用
   bool isTemplateLoading = false;
+  Object? templateLoadError;
   bool isLoadingMorePlans = false;
   bool hasMorePlans = false;
   DateTime? _plansStartDate;
@@ -55,6 +56,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     currentPlanId = null;
     currentPlan = null;
     plans = [];
+    templates = [];
+    templateLoadError = null;
+    isTemplateLoading = false;
     _planCache.clear();
     _answerNotifiers.clear();
     sectionIndex = 0;
@@ -160,11 +164,22 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   // Load Data
   // -------------------------
   Future<void> loadTemplates() async {
+    if (isTemplateLoading) return;
+    final generation = _accountGeneration;
     isTemplateLoading = true;
+    templateLoadError = null;
     safeNotify();
-    templates = await _service.fetchTemplates();
-    isTemplateLoading = false;
-    safeNotify();
+    try {
+      final loadedTemplates = await _service.fetchTemplates();
+      if (generation == _accountGeneration) templates = loadedTemplates;
+    } catch (error) {
+      if (generation == _accountGeneration) templateLoadError = error;
+    } finally {
+      if (generation == _accountGeneration) {
+        isTemplateLoading = false;
+        safeNotify();
+      }
+    }
   }
 
   Future<void> loadPlans() async {

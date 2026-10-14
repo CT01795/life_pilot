@@ -285,7 +285,7 @@ class ServicePointRecord {
       );
     } on Exception catch (exception) {
       logger.e(exception);
-      return [];
+      rethrow;
     }
   }
 

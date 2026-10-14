@@ -9,7 +9,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final ControllerAuth auth;
 
   ControllerFeedbackAdmin(ServiceFeedback service, this.auth)
-      : _service = service;
+    : _service = service;
   List<ModelFeedback> feedbackList = [];
   bool isLoading = false;
   Object? loadError;
@@ -19,23 +19,28 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final Set<String> selectedStatuses = {'pending', 'in_progress'};
 
   Future<void> loadFeedback() async {
+    if (isLoading) return;
     isLoading = true;
     loadError = null;
     notifyListeners();
     try {
       final now = DateTime.now();
       final dateTo = DateTime(now.year, now.month, now.day + 1);
-      _loadedStartDate = dateTo.subtract(const Duration(days: 30));
+      final loadedStartDate = dateTo.subtract(const Duration(days: 30));
       final res = await _service.loadFeedback(
-        dateFrom: _loadedStartDate!,
+        dateFrom: loadedStartDate,
         dateTo: dateTo,
       );
-      feedbackList = (res as List<dynamic>?)?.map((e) {
+      final loadedFeedback =
+          (res as List<dynamic>?)?.map((e) {
             return ModelFeedback.fromMap(e as Map<String, dynamic>);
           }).toList() ??
           [];
+      final loadedHasMore = await _service.hasFeedbackBefore(loadedStartDate);
+      feedbackList = loadedFeedback;
+      _loadedStartDate = loadedStartDate;
+      hasMore = loadedHasMore;
       _sortAndDeduplicate();
-      hasMore = await _service.hasFeedbackBefore(_loadedStartDate!);
     } catch (error) {
       loadError = error;
     } finally {
@@ -58,10 +63,12 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   Future<void> loadMore() async {
     if (isLoadingMore || !hasMore || _loadedStartDate == null) return;
     isLoadingMore = true;
+    loadError = null;
     notifyListeners();
     try {
-      final latestOlder =
-          await _service.latestFeedbackDateBefore(_loadedStartDate!);
+      final latestOlder = await _service.latestFeedbackDateBefore(
+        _loadedStartDate!,
+      );
       if (latestOlder == null) {
         hasMore = false;
         return;
@@ -76,12 +83,15 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
-      feedbackList.addAll(rows.map(
-        (row) => ModelFeedback.fromMap(row as Map<String, dynamic>),
-      ));
+      final loadedHasMore = await _service.hasFeedbackBefore(dateFrom);
+      feedbackList.addAll(
+        rows.map((row) => ModelFeedback.fromMap(row as Map<String, dynamic>)),
+      );
       _loadedStartDate = dateFrom;
       _sortAndDeduplicate();
-      hasMore = await _service.hasFeedbackBefore(dateFrom);
+      hasMore = loadedHasMore;
+    } catch (error) {
+      loadError = error;
     } finally {
       isLoadingMore = false;
       notifyListeners();
@@ -89,7 +99,10 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   }
 
   Future<void> updateStatus(
-      ModelFeedback feedback, String status, String adminAccount) async {
+    ModelFeedback feedback,
+    String status,
+    String adminAccount,
+  ) async {
     feedback.status = status;
     feedback.isOk = status == 'completed';
     feedback.dealBy = status == 'pending' ? null : adminAccount;
@@ -104,10 +117,10 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       for (final feedback in feedbackList) feedback.id: feedback,
     };
     int rank(String status) => switch (status) {
-          'in_progress' => 0,
-          'pending' => 1,
-          _ => 2,
-        };
+      'in_progress' => 0,
+      'pending' => 1,
+      _ => 2,
+    };
     feedbackList = unique.values.toList()
       ..sort((a, b) {
         final statusOrder = rank(a.status).compareTo(rank(b.status));

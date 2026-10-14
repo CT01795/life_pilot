@@ -40,11 +40,13 @@ class ControllerPointRecordList extends SafeChangeNotifier {
 
   List<ModelPointRecordAccount> accounts = [];
   bool isLoading = false;
+  Object? loadError;
 
   Future<void> loadAccounts({String? inputCategory}) async {
     if (isLoading) return;
     final generation = _accountGeneration;
     isLoading = true;
+    loadError = null;
     notifyListeners();
     try {
       final loaded = await service.fetchAccounts(
@@ -53,6 +55,8 @@ class ControllerPointRecordList extends SafeChangeNotifier {
       );
       if (generation != _accountGeneration) return;
       accounts = loaded;
+    } catch (error) {
+      if (generation == _accountGeneration) loadError = error;
     } finally {
       if (generation == _accountGeneration) {
         isLoading = false;
@@ -69,6 +73,7 @@ class ControllerPointRecordList extends SafeChangeNotifier {
     _accountGeneration++;
     isLoading = false;
     accounts = [];
+    loadError = null;
     _currentCategory = null;
     if (notify) notifyListeners();
   }

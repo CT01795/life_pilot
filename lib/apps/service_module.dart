@@ -24,7 +24,7 @@ class ServiceModule {
           .toList();
     } catch (e, st) {
       logger.e('loadModulesFromServer failed $e\n$st');
-      return [];
+      rethrow;
     }
   }
 

@@ -1330,7 +1330,9 @@ class _PageGameListState extends State<PageGameList> {
                       key: ValueKey('loading'),
                       child: CircularProgressIndicator(),
                     )
-                  : userProgress.isEmpty
+                  : userProgress.isEmpty &&
+                        !_hasMoreProgress &&
+                        !_isLoadingMoreProgress
                   ? Center(
                       key: const ValueKey('empty'),
                       child: Text(loc.gameNoRecords),

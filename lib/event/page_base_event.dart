@@ -315,98 +315,105 @@ class _GenericEventPageState extends State<GenericEventPage> {
                 ),
                 Expanded(
                   // ✅ 讓 ListView 可以使用剩餘高度
-                  child: Selector<ControllerEvent, List<EventItem>>(
-                    selector: (_, c) => c.getFilteredEvents(loc), // 只監聽事件列表
-                    builder: (_, filteredEvents, _) {
-                      final pageEvents = widget.eventPredicate == null
-                          ? filteredEvents
-                          : filteredEvents
-                                .where(widget.eventPredicate!)
-                                .toList(growable: false);
-                      final regionData = _regionsFor(pageEvents);
-                      final cityCounts = regionData.counts;
-                      final cities = regionData.sortedRegions;
-                      final effectiveCity =
-                          _selectedCity != null &&
-                              cities.contains(_selectedCity)
-                          ? _selectedCity
-                          : null;
-                      final displayedCities = [...cities];
-                      if (effectiveCity != null) {
-                        displayedCities
-                          ..remove(effectiveCity)
-                          ..insert(0, effectiveCity);
-                      }
-                      if (_selectedCity != effectiveCity) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            setState(() => _selectedCity = effectiveCity);
+                  child:
+                      Selector<
+                        ControllerEvent,
+                        (List<EventItem>, bool, bool, bool, bool)
+                      >(
+                        selector: (_, c) => (
+                          c.getFilteredEvents(loc),
+                          c.hasMoreMemory,
+                          c.hasMoreEvents,
+                          c.isLoadingMoreMemory,
+                          c.isLoadingMoreEvents,
+                        ),
+                        builder: (_, state, _) {
+                          final filteredEvents = state.$1;
+                          final pageEvents = widget.eventPredicate == null
+                              ? filteredEvents
+                              : filteredEvents
+                                    .where(widget.eventPredicate!)
+                                    .toList(growable: false);
+                          final regionData = _regionsFor(pageEvents);
+                          final cityCounts = regionData.counts;
+                          final cities = regionData.sortedRegions;
+                          // A city may exist on a page that has not been fetched yet.
+                          final effectiveCity = _selectedCity;
+                          final displayedCities = [...cities];
+                          if (effectiveCity != null) {
+                            displayedCities
+                              ..remove(effectiveCity)
+                              ..insert(0, effectiveCity);
                           }
-                        });
-                      }
-                      final visibleEvents = effectiveCity == null
-                          ? pageEvents
-                          : regionData.eventsFor(effectiveCity);
-                      return Column(
-                        children: [
-                          if (widget.enableCityFilter && cities.isNotEmpty)
-                            SizedBox(
-                              height: kIsWeb ? 58 : 54,
-                              child: _buildCityScroller(
-                                children: [
-                                  _cityChip(
-                                    label:
-                                        '${loc.allCities} (${pageEvents.length})',
-                                    selected: effectiveCity == null,
-                                    onSelected: () => _showCityList(null),
+                          final visibleEvents = effectiveCity == null
+                              ? pageEvents
+                              : regionData.eventsFor(effectiveCity);
+                          return Column(
+                            children: [
+                              if (widget.enableCityFilter &&
+                                  displayedCities.isNotEmpty)
+                                SizedBox(
+                                  height: kIsWeb ? 58 : 54,
+                                  child: _buildCityScroller(
+                                    children: [
+                                      _cityChip(
+                                        label:
+                                            '${loc.allCities} (${pageEvents.length})',
+                                        selected: effectiveCity == null,
+                                        onSelected: () => _showCityList(null),
+                                      ),
+                                      ...displayedCities.map(
+                                        (city) => _cityChip(
+                                          label:
+                                              '$city (${cityCounts[city] ?? 0})',
+                                          selected: effectiveCity == city,
+                                          onSelected: () => _showCityList(city),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  ...displayedCities.map(
-                                    (city) => _cityChip(
-                                      label: '$city (${cityCounts[city]})',
-                                      selected: effectiveCity == city,
-                                      onSelected: () => _showCityList(city),
-                                    ),
-                                  ),
-                                ],
+                                ),
+                              Expanded(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 180),
+                                  switchInCurve: Curves.easeOut,
+                                  switchOutCurve: Curves.easeOut,
+                                  child: visibleEvents.isEmpty
+                                      ? KeyedSubtree(
+                                          key: const ValueKey('empty'),
+                                          child: _buildEmptyState(
+                                            loc,
+                                            canLoadMore:
+                                                _controller.fromTableName ==
+                                                    TableNames.memoryTrace
+                                                ? _controller.hasMoreMemory
+                                                : _controller
+                                                          .usesCloudPagination &&
+                                                      _controller.hasMoreEvents,
+                                          ),
+                                        )
+                                      : _showMap
+                                      ? KeyedSubtree(
+                                          key: const ValueKey('map'),
+                                          child: WidgetsEventMap(
+                                            regionData: regionData,
+                                            onCitySelected: _showCityList,
+                                          ),
+                                        )
+                                      : KeyedSubtree(
+                                          key: const ValueKey('list'),
+                                          child: widget.listBuilder(
+                                            filteredEvents: visibleEvents,
+                                            scrollController:
+                                                _controller.scrollController,
+                                          ),
+                                        ),
+                                ),
                               ),
-                            ),
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 180),
-                              switchInCurve: Curves.easeOut,
-                              switchOutCurve: Curves.easeOut,
-                              child: visibleEvents.isEmpty
-                                  ? KeyedSubtree(
-                                      key: const ValueKey('empty'),
-                                      child: _buildEmptyState(
-                                        loc,
-                                        canLoadMore:
-                                            _controller.usesCloudPagination &&
-                                            _controller.hasMoreEvents,
-                                      ),
-                                    )
-                                  : _showMap
-                                  ? KeyedSubtree(
-                                      key: const ValueKey('map'),
-                                      child: WidgetsEventMap(
-                                        regionData: regionData,
-                                        onCitySelected: _showCityList,
-                                      ),
-                                    )
-                                  : KeyedSubtree(
-                                      key: const ValueKey('list'),
-                                      child: widget.listBuilder(
-                                        filteredEvents: visibleEvents,
-                                        scrollController:
-                                            _controller.scrollController,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                            ],
+                          );
+                        },
+                      ),
                 ),
               ],
             ),
@@ -482,17 +489,26 @@ class _GenericEventPageState extends State<GenericEventPage> {
             if (canLoadMore) ...[
               Gaps.h16,
               OutlinedButton.icon(
-                onPressed: _controller.isLoadingMoreEvents
+                onPressed:
+                    (_controller.isLoadingMoreEvents ||
+                        _controller.isLoadingMoreMemory)
                     ? null
                     : () async {
                         try {
-                          await _controller.loadMoreRecommendedEvents();
+                          if (_controller.fromTableName ==
+                              TableNames.memoryTrace) {
+                            await _controller.loadMoreMemoryEvents();
+                          } else {
+                            await _controller.loadMoreRecommendedEvents();
+                          }
                         } catch (_) {
                           if (!mounted) return;
                           AppNavigator.showSnackBar(loc.dashboardLoadFailed);
                         }
                       },
-                icon: _controller.isLoadingMoreEvents
+                icon:
+                    (_controller.isLoadingMoreEvents ||
+                        _controller.isLoadingMoreMemory)
                     ? const SizedBox.square(
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),

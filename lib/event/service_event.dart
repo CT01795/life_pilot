@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:life_pilot/utils/paged_row_reader.dart';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
@@ -37,7 +38,11 @@ class ServiceEvent {
         .eq('is_completed', true);
 
     return (response as List)
-        .map((row) => parseOptionalStringValue((row as Map<String, dynamic>)[Fields.id]))
+        .map(
+          (row) => parseOptionalStringValue(
+            (row as Map<String, dynamic>)[Fields.id],
+          ),
+        )
         .whereType<String>()
         .where((id) => id.isNotEmpty)
         .toList(growable: false);
@@ -181,10 +186,26 @@ class ServiceEvent {
         payload['inputlimit'] = limit;
         payload['inputoffset'] = offset;
       }
-      final response = await supabase.rpc(
-        'get_filtered_$tableName',
-        params: {'payload': payload},
-      );
+      Future<List<dynamic>> fetchRows(int pageOffset, int pageLimit) async {
+        final response = await supabase.rpc(
+          'get_filtered_$tableName',
+          params: {
+            'payload': {
+              ...payload,
+              'inputlimit': pageLimit,
+              'inputoffset': pageOffset,
+            },
+          },
+        );
+        return response as List<dynamic>;
+      }
+
+      final response = limit == null
+          ? await supabase.rpc(
+              'get_filtered_$tableName',
+              params: {'payload': payload},
+            )
+          : await readPagedRows(fetch: fetchRows, offset: offset, limit: limit);
 
       final events = (response as List)
           .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))

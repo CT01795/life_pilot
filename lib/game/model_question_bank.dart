@@ -42,10 +42,15 @@ class MyGameQuestion {
 }
 
 class MyGameQuestionPage {
-  const MyGameQuestionPage({required this.questions, required this.totalCount});
+  const MyGameQuestionPage({
+    required this.questions,
+    required this.totalCount,
+    this.hasMore,
+  });
 
   final List<MyGameQuestion> questions;
   final int totalCount;
+  final bool? hasMore;
 }
 
 class MySocialChoice {
@@ -114,8 +119,10 @@ class MySocialQuestionPage {
   const MySocialQuestionPage({
     required this.questions,
     required this.totalCount,
+    this.hasMore,
   });
 
   final List<MySocialQuestion> questions;
   final int totalCount;
+  final bool? hasMore;
 }

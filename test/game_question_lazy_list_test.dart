@@ -107,7 +107,9 @@ class _PagedQuestions extends ServiceGame {
           isActive: true,
         ),
       ),
-      totalCount: 40,
+      // Emulates a cloud RPC that does not provide an exact total count.
+      totalCount: 20,
+      hasMore: offset + limit < 40,
     );
   }
 

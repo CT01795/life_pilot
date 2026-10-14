@@ -19,6 +19,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
   List<MyGameQuestion> _questions = const [];
   List<String> _groups = const [];
   int _totalCount = 0;
+  bool? _pageHasMore;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasLoaded = false;
@@ -39,7 +40,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
   bool get isLoadingMore => _isLoadingMore;
   bool get hasLoaded => _hasLoaded;
   bool get hasError => _hasError;
-  bool get hasMore => _questions.length < _totalCount;
+  bool get hasMore => _pageHasMore ?? _questions.length < _totalCount;
   String get appliedKeyword => _appliedKeyword;
   String? get selectedGroup => _selectedGroup;
   QuestionStatusFilter get statusFilter => _statusFilter;
@@ -110,6 +111,7 @@ class ControllerGameMyQuestions extends SafeChangeNotifier {
       }
       _questions = append ? [..._questions, ...page.questions] : page.questions;
       _totalCount = page.totalCount;
+      _pageHasMore = page.hasMore;
       _groups = groups;
       if (fetchGroups) {
         _hasGroupCache = true;

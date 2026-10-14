@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
@@ -33,9 +34,10 @@ class PageFeedbackAdmin extends StatelessWidget {
         builder: (context, controller, _) {
           final visibleFeedback = controller.visibleFeedback;
           return Scaffold(
-            body: controller.isLoading
+            body: controller.isLoading && controller.feedbackList.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : controller.loadError != null
+                : controller.loadError != null &&
+                      controller.feedbackList.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -64,21 +66,29 @@ class PageFeedbackAdmin extends StatelessWidget {
                       if (index == 0) {
                         return Padding(
                           padding: const EdgeInsets.all(8),
-                          child: Wrap(
-                            spacing: 8,
+                          child: Column(
                             children: [
-                              for (final entry in {
-                                'in_progress': loc.statusInProgress,
-                                'pending': loc.statusPending,
-                                'completed': loc.statusCompleted,
-                              }.entries)
-                                FilterChip(
-                                  label: Text(entry.value),
-                                  selected: controller.selectedStatuses
-                                      .contains(entry.key),
-                                  onSelected: (_) =>
-                                      controller.toggleStatus(entry.key),
+                              if (controller.loadError != null)
+                                WidgetsLoadError(
+                                  onRetry: controller.loadFeedback,
                                 ),
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  for (final entry in {
+                                    'in_progress': loc.statusInProgress,
+                                    'pending': loc.statusPending,
+                                    'completed': loc.statusCompleted,
+                                  }.entries)
+                                    FilterChip(
+                                      label: Text(entry.value),
+                                      selected: controller.selectedStatuses
+                                          .contains(entry.key),
+                                      onSelected: (_) =>
+                                          controller.toggleStatus(entry.key),
+                                    ),
+                                ],
+                              ),
                             ],
                           ),
                         );

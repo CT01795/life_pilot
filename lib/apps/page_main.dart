@@ -19,6 +19,7 @@ import 'package:life_pilot/apps/page_module_authorization.dart';
 import 'package:life_pilot/vendor/page_vendor_dashboard.dart';
 import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 
 class PageMain extends StatefulWidget {
   const PageMain({super.key});
@@ -86,12 +87,25 @@ class _PageMainState extends State<PageMain> with WidgetsBindingObserver {
       _pageMap.clear();
     }
 
-    return KeyedSubtree(
-      key: ValueKey(
-        '${account.isEmpty ? 'signed-out' : account}:'
-        '${selectedPage.name}',
-      ),
-      child: _getPage(selectedPage),
+    final modulesFailed = context.select<ControllerPageMain, bool>(
+      (controller) => controller.modulesError != null,
+    );
+    return Column(
+      children: [
+        if (modulesFailed)
+          WidgetsLoadError(
+            onRetry: () => context.read<ControllerPageMain>().refreshModules(),
+          ),
+        Expanded(
+          child: KeyedSubtree(
+            key: ValueKey(
+              '${account.isEmpty ? 'signed-out' : account}:'
+              '${selectedPage.name}',
+            ),
+            child: _getPage(selectedPage),
+          ),
+        ),
+      ],
     );
   }
 }

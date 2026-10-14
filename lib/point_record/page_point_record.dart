@@ -14,6 +14,7 @@ import 'package:life_pilot/point_record/model_point_record_account.dart';
 import 'package:life_pilot/point_record/page_point_record_detail.dart';
 import 'package:life_pilot/point_record/service_point_record.dart';
 import 'package:provider/provider.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 
 class PagePointRecord extends StatelessWidget {
   const PagePointRecord({super.key});
@@ -134,10 +135,23 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
   }
 
   Widget _buildBody() {
+    return Consumer<ControllerPointRecordList>(
+      builder: (context, controller, _) => Column(
+        children: [
+          if (controller.loadError != null)
+            WidgetsLoadError(onRetry: () => controller.loadAccounts()),
+          Expanded(child: _buildAccountList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountList() {
     return Selector<ControllerPointRecordList, bool>(
       selector: (_, c) => c.isLoading,
       builder: (context, isLoading, _) {
-        if (isLoading) {
+        if (isLoading &&
+            context.read<ControllerPointRecordList>().accounts.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -148,6 +162,9 @@ class _PagePointRecordState extends State<_PagePointRecordBody>
           selector: (_, c) => c.accounts,
           builder: (context, accounts, _) {
             if (accounts.isEmpty) {
+              if (context.read<ControllerPointRecordList>().loadError != null) {
+                return const SizedBox.shrink();
+              }
               return Center(
                 child: Text(AppLocalizations.of(context)!.accountListEmpty),
               );
