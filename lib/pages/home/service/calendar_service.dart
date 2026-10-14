@@ -71,7 +71,7 @@ class CalendarService {
       await LocalDataStore.instance.put(
         owner: account,
         resource: TableNames.calendarEvents,
-        id: data[Fields.id]!.toString(),
+        id: parseStringValue(data[Fields.id]),
         data: data,
       );
       return CalendarEvent.fromJson(data);
@@ -156,7 +156,7 @@ class CalendarService {
       await LocalDataStore.instance.put(
         owner: account,
         resource: TableNames.calendarEvents,
-        id: data[Fields.id]!.toString(),
+        id: parseStringValue(data[Fields.id]),
         data: data,
       );
       return CalendarEvent.fromJson(data);
@@ -215,7 +215,7 @@ class CalendarService {
       await LocalDataStore.instance.put(
         owner: account,
         resource: TableNames.memoryTrace,
-        id: data[Fields.id]!.toString(),
+        id: parseStringValue(data[Fields.id]),
         data: data,
       );
       return;

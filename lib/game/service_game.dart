@@ -150,8 +150,8 @@ class ServiceGame {
     final groupKey = group.trim().toLowerCase();
     return (await _localQuestions(tableName)).any(
       (row) =>
-          row[Fields.id]?.toString() != excludingId &&
-          row['group']?.toString().trim().toLowerCase() == groupKey &&
+          parseOptionalStringValue(row[Fields.id]) != excludingId &&
+          normalizeStringValue(row['group']) == groupKey &&
           _duplicateKey(parseStringValue(row['question'])) == questionKey &&
           _duplicateKey(parseStringValue(row['answer'])) == answerKey,
     );
@@ -464,9 +464,9 @@ class ServiceGame {
     final rows = await _localQuestions(TableNames.gameUser);
     final result = <ModelGameUser>[];
     for (final row in rows) {
-      final game = games[row['game_id']?.toString()];
+      final game = games[parseOptionalStringValue(row['game_id'])];
       if (game == null ||
-          row['name']?.toString().toLowerCase() != userName.toLowerCase() ||
+          normalizeStringValue(row['name']) != normalizeStringValue(userName) ||
           game.gameType != gameType ||
           game.gameName != gameName) {
         continue;
@@ -545,7 +545,7 @@ class ServiceGame {
         final duplicate =
             (await _localQuestions(TableNames.gameSocialScenarios)).any(
               (row) =>
-                  row['category']?.toString().trim().toLowerCase() ==
+                  normalizeStringValue(row['category']) ==
                       category.trim().toLowerCase() &&
                   _duplicateKey(parseStringValue(row['scene'])) ==
                       _duplicateKey(scene),
@@ -600,15 +600,15 @@ class ServiceGame {
       if (await _storesLocally) {
         final rows = await _localQuestions(TableNames.gameSocialScenarios);
         final row = rows
-            .where((item) => item[Fields.id]?.toString() == id)
+            .where((item) => parseOptionalStringValue(item[Fields.id]) == id)
             .firstOrNull;
         if (row == null) {
           throw StateError('Local social question not found.');
         }
         final duplicate = rows.any(
           (item) =>
-              item[Fields.id]?.toString() != id &&
-              item['category']?.toString().trim().toLowerCase() ==
+              parseOptionalStringValue(item[Fields.id]) != id &&
+              normalizeStringValue(item['category']) ==
                   category.trim().toLowerCase() &&
               _duplicateKey(parseStringValue(item['scene'])) ==
                   _duplicateKey(scene),
@@ -682,7 +682,7 @@ class ServiceGame {
         );
       }).toList()..sort((a, b) => b.score.compareTo(a.score));
       return MySocialQuestion(
-        id: row['id'].toString(),
+        id: parseStringValue(row['id']),
         title: parseStringValue(row['title']),
         scene: parseStringValue(row['scene']),
         category: parseStringValue(row['category'], fallback: 'social'),
@@ -696,10 +696,10 @@ class ServiceGame {
         .where((row) {
           final matchesKeyword =
               normalizedKeyword.isEmpty ||
-              row['title'].toString().toLowerCase().contains(
+              normalizeStringValue(row['title']).contains(
                 normalizedKeyword,
               ) ||
-              row['scene'].toString().toLowerCase().contains(normalizedKeyword);
+              normalizeStringValue(row['scene']).contains(normalizedKeyword);
           final matchesCategory =
               category == null || row['category'] == category;
           final active = row['is_active'] == true;
@@ -720,7 +720,7 @@ class ServiceGame {
             );
           }).toList();
           return MySocialQuestion(
-            id: row[Fields.id].toString(),
+            id: parseStringValue(row[Fields.id]),
             title: parseStringValue(row['title']),
             scene: parseStringValue(row['scene']),
             category: parseStringValue(row['category'], fallback: 'social'),
@@ -783,7 +783,7 @@ class ServiceGame {
     if (await _storesLocally) {
       final rows = await _localQuestions(TableNames.gameSocialScenarios);
       final row = rows
-          .where((item) => item[Fields.id]?.toString() == id)
+          .where((item) => parseOptionalStringValue(item[Fields.id]) == id)
           .firstOrNull;
       if (row == null) {
         throw StateError('Local social question not found.');
@@ -1023,13 +1023,13 @@ class ServiceGame {
         .cast<Map<String, dynamic>>()
         .map(
           (row) => MyGameQuestion(
-            id: row['id'].toString(),
+            id: parseStringValue(row['id']),
             question: parseStringValue(row['question']),
             answer: parseStringValue(row['answer']),
             group: parseStringValue(row['question_group']),
             level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
-            options: row['options']?.toString(),
+            options: parseOptionalStringValue(row['options']),
           ),
         )
         .toList();
@@ -1043,10 +1043,10 @@ class ServiceGame {
           );
           final matchesKeyword =
               normalizedKeyword.isEmpty ||
-              row['question'].toString().toLowerCase().contains(
+              normalizeStringValue(row['question']).contains(
                 normalizedKeyword,
               ) ||
-              row['answer'].toString().toLowerCase().contains(
+              normalizeStringValue(row['answer']).contains(
                 normalizedKeyword,
               );
           final matchesGroup = group == null || row['group'] == group;
@@ -1059,13 +1059,13 @@ class ServiceGame {
         })
         .map(
           (row) => MyGameQuestion(
-            id: row[Fields.id].toString(),
+            id: parseStringValue(row[Fields.id]),
           question: parseStringValue(row['question']),
           answer: parseStringValue(row['answer']),
           group: parseStringValue(row['group']),
             level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
-            options: row['options']?.toString(),
+            options: parseOptionalStringValue(row['options']),
           ),
         )
         .toList();
@@ -1118,7 +1118,7 @@ class ServiceGame {
     if (await _storesLocally) {
       final groups =
           (await _localQuestions(_questionTableForGame(gameName)))
-              .map((row) => row['group']?.toString().trim() ?? '')
+              .map((row) => parseStringValue(row['group']).trim())
               .where(
                 (group) =>
                     group.isNotEmpty && _groupMatchesGame(gameName, group),
@@ -1138,10 +1138,9 @@ class ServiceGame {
         rows
             .map(
               (row) =>
-                  (row as Map<String, dynamic>)['question_group']
-                      ?.toString()
-                      .trim() ??
-                  '',
+                  parseStringValue(
+                    (row as Map<String, dynamic>)['question_group'],
+                  ).trim(),
             )
             .where(
               (group) => group.isNotEmpty && _groupMatchesGame(gameName, group),
@@ -1238,7 +1237,7 @@ class ServiceGame {
     if (await _storesLocally) {
       final rows = await _localQuestions(tableName);
       final row = rows
-          .where((item) => item[Fields.id]?.toString() == questionId)
+          .where((item) => parseOptionalStringValue(item[Fields.id]) == questionId)
           .firstOrNull;
       if (row == null) {
         throw StateError('Local question not found.');
@@ -1341,7 +1340,7 @@ class ServiceGame {
       if (await _storesLocally) {
         final rows = await _localQuestions(tableName);
         final row = rows
-            .where((item) => item[Fields.id]?.toString() == id)
+          .where((item) => parseOptionalStringValue(item[Fields.id]) == id)
             .firstOrNull;
         if (row == null) {
           throw StateError('Local question not found.');
@@ -1408,7 +1407,7 @@ class ServiceGame {
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
         return ModelGameGrammarQuestion(
-          questionId: data[Fields.id].toString(),
+          questionId: parseStringValue(data[Fields.id]),
           question: parseStringValue(data['question']),
           correctAnswer: parseStringValue(data['answer']),
           type: parseStringValue(data['group']),
@@ -1476,7 +1475,7 @@ class ServiceGame {
         final data = local[Random.secure().nextInt(local.length)];
         final question = parseStringValue(data['question']);
         return ModelGameSentence(
-          questionId: data[Fields.id].toString(),
+          questionId: parseStringValue(data[Fields.id]),
           question: question,
           correctAnswer: parseStringValue(data['answer']),
           type: parseStringValue(data['group']),
@@ -1542,7 +1541,7 @@ class ServiceGame {
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
         return ModelGameSpeaking(
-          questionId: data[Fields.id].toString(),
+          questionId: parseStringValue(data[Fields.id]),
           question: parseStringValue(data['question']),
           correctAnswer: parseStringValue(data['answer']),
           type: parseStringValue(data['group']),
@@ -1618,7 +1617,7 @@ class ServiceGame {
         if (choices.length >= 3) {
           final shuffled = choices.take(3).toList()..shuffle();
           return ModelGameSocial(
-            id: data[Fields.id].toString(),
+            id: parseStringValue(data[Fields.id]),
             scene: parseStringValue(data['scene']),
             correctAnswer: parseStringValue(choices.first['option_text']),
             options: shuffled

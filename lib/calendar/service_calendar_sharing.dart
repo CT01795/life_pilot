@@ -79,7 +79,7 @@ class CalendarShareInvitation {
       id: parseStringValue(json['id']),
       sharedBy: parseStringValue(json['shared_by']),
       invitedEmail: parseStringValue(json['invited_email']),
-      status: json['status']?.toString() ?? 'pending',
+      status: parseStringValue(json['status'], fallback: 'pending'),
     );
   }
 }
@@ -212,8 +212,8 @@ class ServiceCalendarSharing {
         );
         if (result is Map && result['ok'] != true) {
           throw CalendarSharingFailure(
-            result['error']?.toString() ?? 'unknown',
-            result['details']?.toString(),
+            parseStringValue(result['error'], fallback: 'unknown'),
+            parseOptionalStringValue(result['details']),
           );
         }
       } on PostgrestException catch (error) {

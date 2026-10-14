@@ -39,22 +39,25 @@ class ModelFeedback {
       id: parseIntValue(map[Fields.id]),
       subject: parseStringValue(map['subject']),
       content: parseStringValue(map['content']),
-      cc: (map['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      cc: (map['cc'] as List<dynamic>?)
+          ?.map(parseStringValue)
+          .toList(),
       screenshot: (map['screenshot'] as List<dynamic>?)
-          ?.map((e) => e.toString())
+          ?.map(parseStringValue)
           .toList(),
       createdBy: parseStringValue(map[Fields.createdBy]),
       createdAt: tryParseDateTimeValue(map[Fields.createdAt]) ?? DateTime.now(),
       isOk: map['is_ok'] is bool
           ? map['is_ok']
-          : map['is_ok']?.toString() == 'true',
+          : parseStringValue(map['is_ok']).toLowerCase() == 'true',
       dealBy: parseStringValue(map['deal_by']),
       dealAt: map['deal_at'] != null && map['deal_at'].toString().isNotEmpty
           ? tryParseDateTimeValue(map['deal_at'])
           : null,
-      status:
-          map['status']?.toString() ??
-          ((map['is_ok'] == true) ? 'completed' : 'pending'),
+      status: parseStringValue(
+        map['status'],
+        fallback: map['is_ok'] == true ? 'completed' : 'pending',
+      ),
     );
   }
 

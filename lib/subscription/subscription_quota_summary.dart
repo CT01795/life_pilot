@@ -11,7 +11,7 @@ Map<String, int> cumulativeSubscriptionQuotas(
   final versionsById = {for (final version in versions) version.id: version};
   final totals = <String, int>{};
   for (final entitlement in entitlements) {
-    if (entitlement['storage_plan']?.toString() != storagePlan) continue;
+    if (parseStringValue(entitlement['storage_plan']) != storagePlan) continue;
     final snapshot = Map<String, dynamic>.from(
       entitlement['entitlement_snapshot'] as Map? ?? const {},
     );
@@ -36,7 +36,7 @@ Map<String, int> cumulativeSubscriptionQuotas(
       continue;
     }
 
-    final version = versionsById[entitlement['pricing_version_id']?.toString()];
+    final version = versionsById[parseStringValue(entitlement['pricing_version_id'])];
     if (version == null) continue;
     for (final entry in version.quotas.entries) {
       if (entry.key == SubscriptionResource.answerHistoryDays) continue;

@@ -18,8 +18,8 @@ bool recordRowMatchesAccountAndType(
   required String accountId,
   required String type,
 }) =>
-    row['account_id']?.toString() == accountId &&
-    row['type']?.toString().toLowerCase() == type.toLowerCase();
+    parseStringValue(row['account_id']) == accountId &&
+    normalizeStringValue(row['type']) == type.toLowerCase();
 
 RecordRow? latestRecordRowWhere(
   Iterable<RecordRow> rows,
@@ -41,7 +41,7 @@ RecordRow? latestRecordRowForAccountAndType(
 );
 
 RecordRow? latestRecordRowForEvent(Iterable<RecordRow> rows, String eventId) =>
-    latestRecordRowWhere(rows, (row) => row['event_id']?.toString() == eventId);
+    latestRecordRowWhere(rows, (row) => parseStringValue(row['event_id']) == eventId);
 
 bool recordRowIsInRange(
   RecordRow row, {
@@ -105,7 +105,7 @@ DateTime? latestRecordRowDateBefore(Iterable<RecordRow> rows, DateTime before) {
 List<RecordRow> uniqueRecordRowsNewestFirst(Iterable<RecordRow> rows) {
   final unique = <String, RecordRow>{};
   for (final row in rows) {
-    unique[row[Fields.id].toString()] = row;
+    unique[parseStringValue(row[Fields.id])] = row;
   }
   final result = unique.values.toList();
   sortRecordRowsNewestFirst(result);

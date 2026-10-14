@@ -1,4 +1,5 @@
 import 'package:life_pilot/utils/api.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
@@ -18,7 +19,9 @@ class ServiceModule {
           .eq('enabled', true)
           .or('stop_at.is.null,stop_at.gt.$now');
 
-      return (response as List).map((e) => e['module_key'].toString()).toList();
+      return (response as List)
+          .map((e) => parseStringValue(e['module_key']))
+          .toList();
     } catch (e, st) {
       logger.e('loadModulesFromServer failed $e\n$st');
       return [];
@@ -31,7 +34,7 @@ class ServiceModule {
       params: {'p_email': normalizeText(account)},
     );
     return (response as List)
-        .map((row) => (row as Map)['module_key']?.toString())
+        .map((row) => parseOptionalStringValue((row as Map)['module_key']))
         .whereType<String>()
         .toList(growable: false);
   }

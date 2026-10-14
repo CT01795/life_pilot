@@ -81,23 +81,24 @@ class ServiceAccounting {
           owner: _localOwner!,
           resource: TableNames.accountingAccount,
         );
-        String? accountId = accounts
+        final matchingAccount = accounts
             .where(
               (row) =>
                   parseStringValue(row[Fields.id]) == eventId &&
                   row[Fields.isValid] == true,
             )
-            .firstOrNull?[Fields.id]
-            ?.toString();
+            .firstOrNull;
+        String? accountId = parseOptionalStringValue(
+          matchingAccount?[Fields.id],
+        );
         if (accountId == null) {
           final details = await LocalDataStore.instance.list(
             owner: _localOwner!,
             resource: TableNames.accountingDetail,
           );
-          accountId = latestRecordRowForEvent(
-            details,
-            eventId,
-          )?['account_id']?.toString();
+          accountId = parseOptionalStringValue(
+            latestRecordRowForEvent(details, eventId)?['account_id'],
+          );
         }
         final response = accounts
             .where(
@@ -133,7 +134,9 @@ class ServiceAccounting {
             .order('date', ascending: false)
             .limit(1)
             .maybeSingle();
-        final linkedAccountId = linkedDetail?['account_id']?.toString();
+        final linkedAccountId = parseOptionalStringValue(
+          linkedDetail?['account_id'],
+        );
         if (linkedAccountId != null) {
           response = await supabase
               .from(TableNames.accountingAccount)
@@ -739,7 +742,7 @@ class ServiceAccounting {
           await LocalDataStore.instance.put(
             owner: owner,
             resource: TableNames.accountingDetail,
-            id: row[Fields.id]!.toString(),
+            id: parseStringValue(row[Fields.id]),
             data: row,
           );
         }

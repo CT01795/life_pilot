@@ -174,7 +174,7 @@ class ServiceBusinessPlan {
           title: e['title'],
           createdAt:
               tryParseDateTimeValue(e[Fields.createdAt]) ?? DateTime.now(),
-          status: e['status']?.toString() ?? 'not_started',
+          status: parseStringValue(e['status'], fallback: 'not_started'),
           sections: [], // 只用來顯示 list，實際 editor 再拉 detail
         );
       }).toList();
@@ -196,7 +196,7 @@ class ServiceBusinessPlan {
         title: data['title'],
         createdAt:
             tryParseDateTimeValue(data[Fields.createdAt]) ?? DateTime.now(),
-        status: data['status']?.toString() ?? 'not_started',
+        status: parseStringValue(data['status'], fallback: 'not_started'),
         sections: (data['sections'] as List)
             .map(
               (s) => ModelPlanSection(

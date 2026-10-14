@@ -37,7 +37,7 @@ class ServiceEvent {
         .eq('is_completed', true);
 
     return (response as List)
-        .map((row) => (row as Map<String, dynamic>)[Fields.id]?.toString())
+        .map((row) => parseOptionalStringValue((row as Map<String, dynamic>)[Fields.id]))
         .whereType<String>()
         .where((id) => id.isNotEmpty)
         .toList(growable: false);

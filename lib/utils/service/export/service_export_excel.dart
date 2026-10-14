@@ -95,7 +95,7 @@ class ServiceExportExcel {
     final headerRow = rows[0];
     Map<String, int> colsToDetail = {};
     for (int i = 0; i < headerRow.length; i++) {
-      final tmp = headerRow[i].toString();
+      final tmp = parseStringValue(headerRow[i]);
       if (tmp.contains(loc.activityName)) {
         colsToDetail["name"] = i;
       } else if (tmp.contains(loc.keywords)) {
@@ -164,7 +164,9 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["ageMin"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           ageMax:
@@ -172,21 +174,27 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["ageMax"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           isFree:
               parseStringValue(row[colsToDetail["isFree"] ?? 99])
                   .trim()
                   .isNotEmpty
-              ? row[colsToDetail["isFree"] ?? 99]?.toString().contains(loc.free)
+              ? parseStringValue(
+                  row[colsToDetail["isFree"] ?? 99],
+                ).contains(loc.free)
               : null,
           priceMin:
               parseStringValue(row[colsToDetail["priceMin"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["priceMin"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           priceMax:
@@ -194,19 +202,25 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["priceMax"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           isOutdoor:
               parseStringValue(row[colsToDetail["isOutdoor"] ?? 99])
                   .trim()
                   .isNotEmpty
-              ? row[colsToDetail["isOutdoor"] ?? 99]?.toString().contains(
+              ? parseStringValue(
+                  row[colsToDetail["isOutdoor"] ?? 99],
+                ).contains(
                   loc.outdoor,
                 )
               : null,
-          id: row[colsToDetail["id"] ?? 99]?.toString(),
-          masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
+          id: parseOptionalStringValue(row[colsToDetail["id"] ?? 99]),
+          masterUrl: parseOptionalStringValue(
+            row[colsToDetail["masterUrl"] ?? 99],
+          ),
           subEvents: [],
         ),
       );
@@ -221,7 +235,7 @@ class ServiceExportExcel {
     final headerRow = sheet.rows[0];
     Map<String, int> colsToDetail = {};
     for (int i = 0; i < headerRow.length; i++) {
-      final tmp = headerRow[i]?.value?.toString();
+      final tmp = parseOptionalStringValue(headerRow[i]?.value);
       if (tmp == null) {
         continue;
       } else if (tmp.contains(loc.activityName)) {
@@ -294,7 +308,9 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["ageMin"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["ageMin"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           ageMax:
@@ -302,14 +318,18 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["ageMax"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["ageMax"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           isFree:
               parseStringValue(row[colsToDetail["isFree"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
-              ? row[colsToDetail["isFree"] ?? 99]?.value?.toString().contains(
+              ? parseStringValue(
+                  row[colsToDetail["isFree"] ?? 99]?.value,
+                ).contains(
                   loc.free,
                 )
               : null,
@@ -318,7 +338,9 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["priceMin"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["priceMin"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           priceMax:
@@ -326,7 +348,9 @@ class ServiceExportExcel {
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
-                  row[colsToDetail["priceMax"] ?? 99]!.value!.toString().trim(),
+                  parseStringValue(
+                    row[colsToDetail["priceMax"] ?? 99]!.value,
+                  ).trim(),
                 )
               : null,
           isOutdoor:
@@ -337,8 +361,12 @@ class ServiceExportExcel {
                     ?.toString()
                     .contains(loc.outdoor)
               : null,
-          id: row[colsToDetail["id"] ?? 99]?.value?.toString(),
-          masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.value?.toString(),
+          id: parseOptionalStringValue(
+            row[colsToDetail["id"] ?? 99]?.value,
+          ),
+          masterUrl: parseOptionalStringValue(
+            row[colsToDetail["masterUrl"] ?? 99]?.value,
+          ),
           subEvents: [],
         ),
       );

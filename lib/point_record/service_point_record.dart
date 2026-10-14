@@ -81,23 +81,24 @@ class ServicePointRecord {
           owner: _localOwner!,
           resource: TableNames.pointRecordAccount,
         );
-        String? accountId = rows
+        final matchingAccount = rows
             .where(
               (row) =>
                   parseStringValue(row[Fields.id]) == eventId &&
                   row[Fields.isValid] == true,
             )
-            .firstOrNull?[Fields.id]
-            ?.toString();
+            .firstOrNull;
+        String? accountId = parseOptionalStringValue(
+          matchingAccount?[Fields.id],
+        );
         if (accountId == null) {
           final details = await LocalDataStore.instance.list(
             owner: _localOwner!,
             resource: TableNames.pointRecordDetail,
           );
-          accountId = latestRecordRowForEvent(
-            details,
-            eventId,
-          )?['account_id']?.toString();
+          accountId = parseOptionalStringValue(
+            latestRecordRowForEvent(details, eventId)?['account_id'],
+          );
         }
         final response = rows
             .where(
@@ -131,7 +132,9 @@ class ServicePointRecord {
             .order('date', ascending: false)
             .limit(1)
             .maybeSingle();
-        final linkedAccountId = linkedDetail?['account_id']?.toString();
+        final linkedAccountId = parseOptionalStringValue(
+          linkedDetail?['account_id'],
+        );
         if (linkedAccountId != null) {
           response = await supabase
               .from(currentTable)

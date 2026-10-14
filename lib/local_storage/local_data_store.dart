@@ -88,7 +88,7 @@ class LocalDataStore {
     final value = await _settings
         .record('${owner.toLowerCase()}::preferred_location')
         .get(await _db);
-    final name = value?['value']?.toString();
+    final name = parseOptionalStringValue(value?['value']);
     for (final location in DataStorageLocation.values) {
       if (location.name == name) return location;
     }

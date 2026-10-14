@@ -12,6 +12,14 @@ num? tryParseNumValue(Object? value) {
 String parseStringValue(Object? value, {String fallback = ''}) =>
     value?.toString() ?? fallback;
 
+/// Preserves null when an optional model field is absent.
+String? parseOptionalStringValue(Object? value) =>
+    value?.toString();
+
+/// Normalizes loosely typed text for case-insensitive comparisons.
+String normalizeStringValue(Object? value) =>
+    parseStringValue(value).trim().toLowerCase();
+
 num parseNumValue(Object? value, {num fallback = 0}) =>
     tryParseNumValue(value) ?? fallback;
 

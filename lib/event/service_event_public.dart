@@ -91,7 +91,7 @@ class ServiceEventPublic {
             : PublicEventRefreshExecution.running,
       );
     }
-    final token = response['token']?.toString();
+    final token = parseOptionalStringValue(response['token']);
     return (
       token == null || token.isEmpty ? null : token,
       PublicEventRefreshExecution.performed,
@@ -1645,12 +1645,12 @@ class ServiceEventPublic {
       final row = rows[i];
       if (row.isEmpty) continue;
       String strS =
-          row[colsToDetail["startDate"] ?? 99]?.toString().trim() ?? '';
+          parseStringValue(row[colsToDetail["startDate"] ?? 99]).trim();
       DateTime? startDate = strS.length >= 8
           ? DateFormat('yyyy-M-d').parse(strS)
           : null;
 
-      String strE = row[colsToDetail["endDate"] ?? 99]?.toString().trim() ?? '';
+      String strE = parseStringValue(row[colsToDetail["endDate"] ?? 99]).trim();
       DateTime? endDate = strE.length >= 8
           ? DateFormat('yyyy-M-d').parse(strE)
           : null;
@@ -1658,8 +1658,8 @@ class ServiceEventPublic {
         continue;
       }
 
-      String? tmpUrl = row[colsToDetail["masterUrl"] ?? 99]?.toString();
-      String? replaceUrl = row[colsToDetail["masterUrl2"] ?? 99]?.toString();
+      String? tmpUrl = parseOptionalStringValue(row[colsToDetail["masterUrl"] ?? 99]);
+      String? replaceUrl = parseOptionalStringValue(row[colsToDetail["masterUrl2"] ?? 99]);
       if (replaceUrl != null && replaceUrl.startsWith("/events")) {
         replaceUrl = "https://strolltimes.com$replaceUrl";
       } else {
@@ -1690,7 +1690,7 @@ class ServiceEventPublic {
           description:
               "${replaceUrl.isNotEmpty ? "$replaceUrl\n" : ""}${otherUrl.isNotEmpty ? otherUrl : ""}${row[colsToDetail["description"] ?? 99] ?? ''}\n",
           //unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
-          masterUrl: row[colsToDetail["masterUrl"] ?? 99]?.toString(),
+          masterUrl: parseOptionalStringValue(row[colsToDetail["masterUrl"] ?? 99]),
           account: AuthConstants.systemEventOwnerEmail,
           source: source,
           subEvents: [],

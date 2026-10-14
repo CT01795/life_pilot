@@ -187,7 +187,7 @@ class ServicePersonalData {
     if (value == null) return '';
     if (value is num) return NumberFormat('#,##0.####').format(value);
     if (value is Map || value is List) return jsonEncode(value);
-    return value.toString();
+    return parseStringValue(value);
   }
 
   String _fieldValue(Map<String, dynamic> record, String key) {
@@ -197,7 +197,7 @@ class ServicePersonalData {
       return separator < 0 ? '' : raw.substring(separator + 1).split('.').first;
     }
     if (key == 'date' && record['date'] != null) {
-      return record['date'].toString().split('T').first;
+      return parseStringValue(record['date']).split('T').first;
     }
     return _formatValue(record[key]);
   }
@@ -310,7 +310,7 @@ class ServicePersonalData {
   }
 
   String _localizedCategory(Object? value, AppLocalizations loc) {
-    final category = value?.toString().trim() ?? '';
+    final category = parseStringValue(value).trim();
     return switch (category.toLowerCase()) {
       'uncategorized' ||
       '未分類' ||

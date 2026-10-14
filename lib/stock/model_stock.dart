@@ -137,7 +137,7 @@ class ModelStock {
       highestPrice: tryParseDoubleValue(json['highest_price']),
       lowestPrice: tryParseDoubleValue(json['lowest_price']),
       closingPrice: parseDoubleValue(json['closing_price']),
-      change: json['change']?.toString(),
+      change: parseOptionalStringValue(json['change']),
       priceDifference: tryParseDoubleValue(json['price_difference']),
       finalRevealBuyingPrice: tryParseDoubleValue(
         json['final_reveal_buying_price'],
@@ -152,7 +152,7 @@ class ModelStock {
         json['final_reveal_selling_volume'],
       ),
       peRatio: tryParseDoubleValue(json['pe_ratio']),
-      source: json['source']?.toString(),
+      source: parseOptionalStringValue(json['source']),
       ma5: tryParseDoubleValue(json['ma5']),
       ma20: tryParseDoubleValue(json['ma20']),
       high20: tryParseDoubleValue(json['high20']),

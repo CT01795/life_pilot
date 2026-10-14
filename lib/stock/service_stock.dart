@@ -90,7 +90,7 @@ class ServiceStock {
       return;
     }
     for (Map table in tables) {
-      if (!(table["title"] ?? '').toString().contains("每日收盤行情")) {
+      if (!parseStringValue(table["title"]).contains("每日收盤行情")) {
         continue;
       }
       List<dynamic> fields = table["fields"];
@@ -167,7 +167,7 @@ class ServiceStock {
     });
     if (response['status'] != 'ok') return;
     Map dataSource = jsonDecode(response["data"]);
-    if (dataSource["stat"]?.toString().toLowerCase() != 'ok') return;
+    if (normalizeStringValue(dataSource["stat"]) != 'ok') return;
     List<dynamic> fields = dataSource["fields"];
 
     Map<String, String> chtToEn = {
@@ -351,7 +351,8 @@ class ServiceStock {
     };
     Map<String, int> enToIndex = {};
     for (int i = 0; i < fields.length; i++) {
-      final key = chtToEn[fields[i].toString().trim().split("<")[0]];
+      final key =
+          chtToEn[parseStringValue(fields[i]).trim().split("<")[0]];
       if (key != null) enToIndex[key] = i;
     }
     List<dynamic> data = tables[0]["data"];
@@ -835,7 +836,7 @@ class ServiceStock {
 
     while (DateTime.now().isBefore(deadline)) {
       final response = await api.get('stock/model_training_status');
-      final status = response['status']?.toString();
+      final status = parseOptionalStringValue(response['status']);
 
       if (status == 'succeeded') return;
       if (status == 'failed') {
@@ -925,81 +926,94 @@ class StockParser {
     String source,
   ) {
     try {
-      final securityCode = row[enToIndex["security_code"] ?? -1].toString();
+      final securityCode = parseStringValue(
+        row[enToIndex["security_code"] ?? -1],
+      );
       final closingPrice = tryParseDoubleValue(
-        row[enToIndex["closing_price"] ?? -1].toString().replaceAll(',', ''),
+        parseStringValue(
+          row[enToIndex["closing_price"] ?? -1],
+        ).replaceAll(',', ''),
       );
 
       if (securityCode.length != 4 || closingPrice == null) return null;
       final priceDifference =
           tryParseDoubleValue(
-            row[enToIndex["price_difference"] ?? -1]
-                .toString()
-                .trim()
-                .replaceAll(',', ''),
+            parseStringValue(
+              row[enToIndex["price_difference"] ?? -1],
+            ).trim().replaceAll(',', ''),
           ) ??
           0;
       return ModelStock(
         date: date,
         securityCode: securityCode,
-        securityName: row[enToIndex["security_name"] ?? -1].toString(),
+        securityName: parseStringValue(
+          row[enToIndex["security_name"] ?? -1],
+        ),
         tradedNumber: tryParseDoubleValue(
-          row[enToIndex["traded_number"] ?? -1].toString().replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["traded_number"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         transactionsNumber: tryParseIntValue(
-          row[enToIndex["transactions_number"] ?? -1].toString().replaceAll(
-            ',',
-            '',
-          ),
+          parseStringValue(
+            row[enToIndex["transactions_number"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         transactionAmount: tryParseDoubleValue(
-          row[enToIndex["transaction_amount"] ?? -1].toString().replaceAll(
-            ',',
-            '',
-          ),
+          parseStringValue(
+            row[enToIndex["transaction_amount"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         openingPrice: tryParseDoubleValue(
-          row[enToIndex["opening_price"] ?? -1].toString().replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["opening_price"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         highestPrice: tryParseDoubleValue(
-          row[enToIndex["highest_price"] ?? -1].toString().replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["highest_price"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         lowestPrice: tryParseDoubleValue(
-          row[enToIndex["lowest_price"] ?? -1].toString().replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["lowest_price"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         closingPrice: closingPrice,
         change: isOTC
             ? (priceDifference > 0 ? "+" : "-")
-            : (row[enToIndex["change"] ?? -1].toString().contains("+")
+            : (parseStringValue(row[enToIndex["change"] ?? -1]).contains("+")
                   ? "+"
                   : "-"),
         priceDifference: priceDifference > 0
             ? priceDifference
             : priceDifference * (-1),
         finalRevealBuyingPrice: tryParseDoubleValue(
-          row[enToIndex["final_reveal_buying_price"] ?? -1]
-              .toString()
-              .replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["final_reveal_buying_price"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         finalRevealBuyingVolume: tryParseDoubleValue(
-          row[enToIndex["final_reveal_buying_volume"] ?? -1]
-              .toString()
-              .replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["final_reveal_buying_volume"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         finalRevealSellingPrice: tryParseDoubleValue(
-          row[enToIndex["final_reveal_selling_price"] ?? -1]
-              .toString()
-              .replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["final_reveal_selling_price"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         finalRevealSellingVolume: tryParseDoubleValue(
-          row[enToIndex["final_reveal_selling_volume"] ?? -1]
-              .toString()
-              .replaceAll(',', ''),
+          parseStringValue(
+            row[enToIndex["final_reveal_selling_volume"] ?? -1],
+          ).replaceAll(',', ''),
         ),
         peRatio: isOTC
             ? null
             : tryParseDoubleValue(
-                row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', ''),
+                parseStringValue(
+                  row[enToIndex["pe_ratio"] ?? -1],
+                ).replaceAll(',', ''),
               ),
         source: source,
       );

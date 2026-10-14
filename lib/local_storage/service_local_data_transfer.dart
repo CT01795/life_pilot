@@ -64,7 +64,7 @@ class ServiceLocalDataTransfer {
         }
         final rawRow = exportItem['record'];
         final row = Map<String, Object?>.from(rawRow as Map);
-        final id = row[Fields.id]?.toString();
+        final id = parseOptionalStringValue(row[Fields.id]);
         if (id == null || id.isEmpty) {
           return const LocalDataTransferResult(moved: 0, failed: 1);
         }
@@ -76,8 +76,8 @@ class ServiceLocalDataTransfer {
           for (final item in staged) {
             await LocalDataStore.instance.delete(
               owner: account,
-              resource: item['table_name']!.toString(),
-              id: item['id']!.toString(),
+              resource: parseStringValue(item['table_name']),
+              id: parseStringValue(item['id']),
             );
           }
           return LocalDataTransferResult(
@@ -118,8 +118,8 @@ class ServiceLocalDataTransfer {
       for (final item in staged) {
         await LocalDataStore.instance.delete(
           owner: account,
-          resource: item['table_name']!.toString(),
-          id: item['id']!.toString(),
+          resource: parseStringValue(item['table_name']),
+          id: parseStringValue(item['id']),
         );
       }
       if (dashboardSettingSaved) {
@@ -150,7 +150,7 @@ class ServiceLocalDataTransfer {
       );
       for (final row in rows) {
         final normalizedRow = _normalizeForCloud(resource, row);
-        final id = normalizedRow[Fields.id]?.toString();
+        final id = parseOptionalStringValue(normalizedRow[Fields.id]);
         if (id == null || id.isEmpty) {
           return const LocalDataTransferResult(
             moved: 0,
@@ -201,7 +201,7 @@ class ServiceLocalDataTransfer {
     final normalized = Map<String, dynamic>.from(row);
     if (resource == TableNames.calendarEvents ||
         resource == TableNames.memoryTrace) {
-      final country = normalized['country']?.toString().trim() ?? '';
+      final country = parseStringValue(normalized['country']).trim();
       normalized['country'] = country.isEmpty ? 'TW' : country.toUpperCase();
     }
     return normalized;

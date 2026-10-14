@@ -220,7 +220,7 @@ class ServiceSubscription {
       return {
         for (final raw in rows as List<dynamic>)
           if (raw case final Map row)
-            row['resource'].toString(): parseIntValue(row['quota']),
+            parseStringValue(row['resource']): parseIntValue(row['quota']),
       };
     } on PostgrestException catch (error) {
       // Older databases continue using get_my_subscription_usage until the
@@ -717,7 +717,7 @@ class SubscriptionPricingVersion {
 
   factory SubscriptionPricingVersion.fromJson(Map<String, dynamic> json) =>
       SubscriptionPricingVersion(
-        id: json['id'].toString(),
+        id: parseStringValue(json['id']),
         name: parseStringValue(json['version_name']),
         storagePlan: parseStringValue(json['storage_plan'], fallback: 'cloud'),
         effectiveAt:
