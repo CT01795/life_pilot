@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/mapper.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 final _uuid = Uuid();
 
@@ -194,8 +195,8 @@ class EventItem implements EventBase {
     this.mapLat,
     this.mapLng,
     List<EventItem>? subEvents,
-  })  : id = id ?? _uuid.v4(),
-        _subEvents = List<EventItem>.from(subEvents ?? []);
+  }) : id = id ?? _uuid.v4(),
+       _subEvents = List<EventItem>.from(subEvents ?? []);
 
   // -------------------- JSON --------------------
   @override
@@ -267,10 +268,12 @@ class EventItem implements EventBase {
       description: json[EventFields.description] ?? '',
       unit: json[EventFields.unit] ?? '',
       account: json[Fields.account],
-      repeatOptions:
-          CalendarRepeatRuleExtension.fromKey(json[EventFields.repeatOptions]),
+      repeatOptions: CalendarRepeatRuleExtension.fromKey(
+        json[EventFields.repeatOptions],
+      ),
       reminderOptions: EventItem.parseReminderOptions(
-          jsonValue: json[EventFields.reminderOptions]),
+        jsonValue: json[EventFields.reminderOptions],
+      ),
       isCompleted: json['is_completed'] == true,
       isHoliday: json[EventFields.isHoliday] == true,
       isTaiwanHoliday: json[EventFields.isTaiwanHoliday] == true,
@@ -403,8 +406,9 @@ class EventItem implements EventBase {
     );
   }
 
-  static List<CalendarReminderOption> parseReminderOptions(
-      {dynamic jsonValue}) {
+  static List<CalendarReminderOption> parseReminderOptions({
+    dynamic jsonValue,
+  }) {
     const defaultOption = [CalendarReminderOption.dayBefore8am];
     if (jsonValue == null) return defaultOption;
 
@@ -423,8 +427,7 @@ class EventItem implements EventBase {
 
   static DateTime? fromStringOrNull(String? date) {
     if (date == null || date.isEmpty) return null;
-    final d = DateTime.tryParse(date);
-    return d?.toLocal();
+    return tryParseDateTimeValue(date, toLocal: true);
   }
 
   static TimeOfDay? parseTimeOfDay(String? time) => time?.parseToTimeOfDay();
@@ -473,46 +476,47 @@ class EventViewModel {
   double? lat;
   double? lng;
 
-  EventViewModel(
-      {required this.event,
-      required this.id,
-      required this.name,
-      this.masterGraphUrl,
-      required this.showDate,
-      required this.startDate,
-      required this.endDate,
-      required this.dateRange,
-      required this.tags,
-      required this.hasLocation,
-      required this.locationDisplay,
-      this.masterUrl,
-      this.description = '',
-      this.businessHours = '',
-      this.subEvents = const [],
-      this.canDelete = false,
-      this.showSubEvents = true,
-      this.ageMin,
-      this.ageMax,
-      this.isFree,
-      this.priceMin,
-      this.priceMax,
-      this.isOutdoor,
-      this.isLike,
-      this.isDislike,
-      this.pageViews,
-      this.cardClicks,
-      this.saves,
-      this.registrationClicks,
-      this.likeCounts,
-      this.dislikeCounts,
-      this.source,
-      this.lat,
-      this.lng});
+  EventViewModel({
+    required this.event,
+    required this.id,
+    required this.name,
+    this.masterGraphUrl,
+    required this.showDate,
+    required this.startDate,
+    required this.endDate,
+    required this.dateRange,
+    required this.tags,
+    required this.hasLocation,
+    required this.locationDisplay,
+    this.masterUrl,
+    this.description = '',
+    this.businessHours = '',
+    this.subEvents = const [],
+    this.canDelete = false,
+    this.showSubEvents = true,
+    this.ageMin,
+    this.ageMax,
+    this.isFree,
+    this.priceMin,
+    this.priceMax,
+    this.isOutdoor,
+    this.isLike,
+    this.isDislike,
+    this.pageViews,
+    this.cardClicks,
+    this.saves,
+    this.registrationClicks,
+    this.likeCounts,
+    this.dislikeCounts,
+    this.source,
+    this.lat,
+    this.lng,
+  });
 
   DateTime get firstEventDate {
     final now = DateTimeFormatter.dateOnly(DateTime.now());
     final tmpDate = DateTimeFormatter.formatDateRange(now, dateRange);
-    return DateTime.tryParse(tmpDate ?? '') ?? now.add(const Duration(days: 1));
+    return tryParseDateTimeValue(tmpDate) ?? now.add(const Duration(days: 1));
   }
 
   // ---------------------------------------------------------------------------
@@ -530,8 +534,9 @@ class EventViewModel {
         ? '${event.city}．${event.location}'
         : '';
 
-    String isFree =
-        event.isFree == null ? '' : (event.isFree! ? loc.free : loc.pay);
+    String isFree = event.isFree == null
+        ? ''
+        : (event.isFree! ? loc.free : loc.pay);
     String isOutdoor = event.isOutdoor == null
         ? ''
         : (event.isOutdoor! ? loc.outdoor : loc.indoor);
@@ -547,7 +552,7 @@ class EventViewModel {
       isOutdoor,
       ageRange,
       priceRange,
-      event.type
+      event.type,
     ].where((t) => t.isNotEmpty).toList();
 
     final tags = tagsRawData
@@ -575,7 +580,7 @@ class EventViewModel {
       endDate: event.endDate,
       dateRange: tableName != TableNames.recommendPlaces
           ? '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.startToS)}'
-              '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.endToE)}'
+                '${DateTimeFormatter.formatEventDateTime(event, CalendarMisc.endToE)}'
           : '',
       tags: tags,
       hasLocation:
@@ -586,14 +591,17 @@ class EventViewModel {
       businessHours: businessHours,
       subEvents: showSubEvents
           ? event.subEvents
-              .map((sub) => buildEventViewModel(
-                  event: sub,
-                  parentLocation: locationDisplay,
-                  canDelete: canDelete,
-                  showSubEvents: showSubEvents,
-                  loc: loc,
-                  tableName: tableName))
-              .toList()
+                .map(
+                  (sub) => buildEventViewModel(
+                    event: sub,
+                    parentLocation: locationDisplay,
+                    canDelete: canDelete,
+                    showSubEvents: showSubEvents,
+                    loc: loc,
+                    tableName: tableName,
+                  ),
+                )
+                .toList()
           : const [],
       canDelete: canDelete,
       showSubEvents: showSubEvents,

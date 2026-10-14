@@ -6,6 +6,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/extension.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ServiceExportExcel {
   ServiceExportExcel();
@@ -144,13 +145,13 @@ class ServiceExportExcel {
           city: row[colsToDetail["city"] ?? 99]?.toString() ?? '',
           location: row[colsToDetail["location"] ?? 99]?.toString() ?? '',
           //fee: row[?]?.toString(),
-          startDate: DateTime.tryParse(
+          startDate: tryParseDateTimeValue(
             row[colsToDetail["startDate"] ?? 99]?.toString() ?? '',
           ),
           startTime: EventDateTimeParser.parseTime(
             row[colsToDetail["startTime"] ?? 99]?.toString() ?? '',
           ),
-          endDate: DateTime.tryParse(
+          endDate: tryParseDateTimeValue(
             row[colsToDetail["endDate"] ?? 99]?.toString() ?? '',
           ),
           endTime: EventDateTimeParser.parseTime(
@@ -273,13 +274,13 @@ class ServiceExportExcel {
           location:
               row[colsToDetail["location"] ?? 99]?.value?.toString() ?? '',
           //fee: row[?]?.value?.toString(),
-          startDate: DateTime.tryParse(
+          startDate: tryParseDateTimeValue(
             row[colsToDetail["startDate"] ?? 99]?.value?.toString() ?? '',
           ),
           startTime: EventDateTimeParser.parseTime(
             row[colsToDetail["startTime"] ?? 99]?.value?.toString() ?? '',
           ),
-          endDate: DateTime.tryParse(
+          endDate: tryParseDateTimeValue(
             row[colsToDetail["endDate"] ?? 99]?.value?.toString() ?? '',
           ),
           endTime: EventDateTimeParser.parseTime(

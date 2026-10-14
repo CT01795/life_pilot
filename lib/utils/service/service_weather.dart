@@ -8,6 +8,7 @@ import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/weather_cache_store.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class _WeatherResult {
   final List<EventWeather> data;
@@ -58,10 +59,7 @@ class ServiceWeather {
       return _getValidCache(event.locationDisplay)?.data;
     }
     if (tableName != TableNames.recommendPlaces &&
-        !_isWithinForecastWindow(
-          startDate: startDate,
-          endDate: endDate,
-        )) {
+        !_isWithinForecastWindow(startDate: startDate, endDate: endDate)) {
       return null;
     }
 
@@ -101,24 +99,21 @@ class ServiceWeather {
         return null;
       }
 
-      final response = await apiSupabase.post(
-        '/external/weather',
-        {
-          'lat': event.lat,
-          'lng': event.lng,
-        },
-        bearerToken: accessToken,
-      );
+      final response = await apiSupabase.post('/external/weather', {
+        'lat': event.lat,
+        'lng': event.lng,
+      }, bearerToken: accessToken);
       final items =
           response is Map<String, dynamic> && response['items'] is List
-              ? response['items'] as List
-              : const [];
-      final rawExpiresAt =
-          response is Map<String, dynamic> ? response['expires_at'] : null;
+          ? response['items'] as List
+          : const [];
+      final rawExpiresAt = response is Map<String, dynamic>
+          ? response['expires_at']
+          : null;
       if (rawExpiresAt is! String) {
         throw const FormatException('Missing weather cache expiry');
       }
-      final expiresAt = DateTime.tryParse(rawExpiresAt);
+      final expiresAt = tryParseDateTimeValue(rawExpiresAt);
       if (expiresAt == null || !expiresAt.isAfter(DateTime.now())) {
         throw const FormatException('Invalid weather cache expiry');
       }

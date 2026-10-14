@@ -2,6 +2,7 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/vendor/model_vendor_account.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceVendorAccount {
@@ -51,10 +52,11 @@ class ServiceVendorAccount {
     final today = DateTime.now();
     final date = DateTime(today.year, today.month, today.day);
     bool active(Map<String, dynamic> row) {
-      final end = DateTime.tryParse(
+      final end = tryParseDateTimeValue(
         row['end_date']?.toString() ?? row['start_date']?.toString() ?? '',
+        toLocal: true,
       );
-      return end == null || !end.toLocal().isBefore(date);
+      return end == null || !end.isBefore(date);
     }
 
     VendorRecentSubmission submission(
@@ -66,10 +68,14 @@ class ServiceVendorAccount {
       city: row['city']?.toString() ?? '',
       isActivity: isActivity,
       isApproved: row['is_approved'] == true,
-      startDate: DateTime.tryParse(
+      startDate: tryParseDateTimeValue(
         row['start_date']?.toString() ?? '',
-      )?.toLocal(),
-      endDate: DateTime.tryParse(row['end_date']?.toString() ?? '')?.toLocal(),
+        toLocal: true,
+      ),
+      endDate: tryParseDateTimeValue(
+        row['end_date']?.toString() ?? '',
+        toLocal: true,
+      ),
     );
 
     final recentSubmissions =

@@ -14,6 +14,7 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ServiceEvent {
   ServiceEvent();
@@ -216,7 +217,7 @@ class ServiceEvent {
         resource: tableName,
       );
       return rows.any((row) {
-        final date = DateTime.tryParse(
+        final date = tryParseDateTimeValue(
           row[EventFields.startDate]?.toString() ?? '',
         );
         return date != null && date.isBefore(before);
@@ -249,7 +250,7 @@ class ServiceEvent {
       final dates =
           rows
               .map(
-                (row) => DateTime.tryParse(
+                (row) => tryParseDateTimeValue(
                   row[EventFields.startDate]?.toString() ?? '',
                 ),
               )
@@ -270,9 +271,10 @@ class ServiceEvent {
         .order(EventFields.startDate, ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
-    return DateTime.tryParse(
+    return tryParseDateTimeValue(
       rows.first[EventFields.startDate]?.toString() ?? '',
-    )?.toLocal();
+      toLocal: true,
+    );
   }
 
   // 💾 儲存（新增或更新）事件 + 排程通知

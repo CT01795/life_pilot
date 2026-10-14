@@ -21,6 +21,7 @@ import 'package:life_pilot/utils/duplicate_tolerant_batch_writer.dart';
 import 'package:life_pilot/utils/event_latln.dart';
 import 'package:life_pilot/utils/event_city_normalizer.dart';
 import 'package:life_pilot/utils/logger.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -957,8 +958,8 @@ class ServiceEventPublic {
         continue;
       }
 
-      DateTime? startDate = DateTime.tryParse(e["StartDate"] ?? "");
-      DateTime? endDate = DateTime.tryParse(e["EndDate"] ?? "") ?? startDate;
+      DateTime? startDate = tryParseDateTimeValue(e["StartDate"]);
+      DateTime? endDate = tryParseDateTimeValue(e["EndDate"]) ?? startDate;
 
       if (startDate == null) continue;
       // 👉 過濾過期活動

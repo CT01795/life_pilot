@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class EventDateTimeParser {
   const EventDateTimeParser._();
 
   static DateTime? parseDate(String? value) {
     if (value == null || value.isEmpty) return null;
-    return DateTime.tryParse(value.replaceAll('/', '-'))?.toLocal();
+    return tryParseDateTimeValue(value.replaceAll('/', '-'), toLocal: true);
   }
 
   static TimeOfDay? parseTime(String? value) {

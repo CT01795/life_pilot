@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/service/service_api.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ServiceStock {
   static const _stockDailyPriceBatchSize = 200;
@@ -19,7 +20,7 @@ class ServiceStock {
   final ServiceApi _supabaseApi;
 
   ServiceStock({ServiceApi? supabaseApi})
-      : _supabaseApi = supabaseApi ?? apiSupabase;
+    : _supabaseApi = supabaseApi ?? apiSupabase;
 
   List<ModelStock> stocks = [];
   int? stocksLength;
@@ -42,7 +43,8 @@ class ServiceStock {
     for (int i = checkDates; i >= minDayValue; i--) {
       DateTime targetDate = today.subtract(Duration(days: i));
       logger.i(
-          "Loading stock data for date: ${DateFormat('yyyy-MM-dd').format(targetDate)}");
+        "Loading stock data for date: ${DateFormat('yyyy-MM-dd').format(targetDate)}",
+      );
       await loadRawDataTWSE(targetDate);
       await loadRawDataOTC(targetDate);
       await loadStockInstitutionalTWSE(targetDate);
@@ -50,8 +52,10 @@ class ServiceStock {
       try {
         await insertStockInstitutionalToSupabase(targetDate);
       } catch (e) {
-        logger.e("Error occurred while inserting stock institutional data",
-            error: e);
+        logger.e(
+          "Error occurred while inserting stock institutional data",
+          error: e,
+        );
       }
       await loadFuturesInstitutional(targetDate);
       try {
@@ -106,7 +110,7 @@ class ServiceStock {
         "最後揭示買量": "final_reveal_buying_volume",
         "最後揭示賣價": "final_reveal_selling_price",
         "最後揭示賣量": "final_reveal_selling_volume",
-        "本益比": "pe_ratio"
+        "本益比": "pe_ratio",
       };
       Map<String, int> enToIndex = {};
       for (int i = 0; i < fields.length; i++) {
@@ -140,10 +144,7 @@ class ServiceStock {
       await api.post('stock/insert_stock_date_batch', {
         'table_name': TableNames.stockDate,
         'stocks': [
-          {
-            'date': date.toUtc().toIso8601String(),
-            'type': type,
-          }
+          {'date': date.toUtc().toIso8601String(), 'type': type},
         ],
       });
     }
@@ -198,8 +199,12 @@ class ServiceStock {
     List<dynamic> data = dataSource["data"];
     List<Map<String, dynamic>> batch = [];
     for (int j = 0; j < data.length; j++) {
-      final stockInstitutional =
-          StockParser.parseT86(data[j], enToIndex, date, type);
+      final stockInstitutional = StockParser.parseT86(
+        data[j],
+        enToIndex,
+        date,
+        type,
+      );
       if (stockInstitutional == null) {
         continue;
       }
@@ -236,11 +241,14 @@ class ServiceStock {
       "sect": "AL",
       "date": dateStr,
       "id": "",
-      "response": "json"
+      "response": "json",
     };
 
-    final response = await api.post(
-        'event/get_url_data', {'url': url, 'method': 'POST', 'body': body});
+    final response = await api.post('event/get_url_data', {
+      'url': url,
+      'method': 'POST',
+      'body': body,
+    });
     if (response['status'] != 'ok') return;
     Map dataSource = jsonDecode(response["data"]);
 
@@ -271,8 +279,12 @@ class ServiceStock {
     List<dynamic> data = tables[0]["data"];
     List<Map<String, dynamic>> batch = [];
     for (int j = 0; j < data.length; j++) {
-      final stockInstitutional =
-          StockParser.parseT86(data[j], enToIndex, date, type);
+      final stockInstitutional = StockParser.parseT86(
+        data[j],
+        enToIndex,
+        date,
+        type,
+      );
       if (stockInstitutional == null) {
         continue;
       }
@@ -368,10 +380,7 @@ class ServiceStock {
     await api.post('stock/insert_stock_date_batch', {
       'table_name': TableNames.stockDate,
       'stocks': [
-        {
-          'date': date.toUtc().toIso8601String(),
-          'type': type,
-        }
+        {'date': date.toUtc().toIso8601String(), 'type': type},
       ],
     });
   }
@@ -400,24 +409,19 @@ class ServiceStock {
   }
 
   Future<List<ModelInstitutional>> selectStockInstitutional(
-      DateTime date) async {
+    DateTime date,
+  ) async {
     try {
-      final result =
-          await supabase.from(TableNames.stockInstitutional).select().eq(
-                'date',
-                DateFormat('yyyy-MM-dd').format(date),
-              );
+      final result = await supabase
+          .from(TableNames.stockInstitutional)
+          .select()
+          .eq('date', DateFormat('yyyy-MM-dd').format(date));
 
       return (result as List)
-          .map<ModelInstitutional>(
-            (e) => ModelInstitutional.fromJson(e),
-          )
+          .map<ModelInstitutional>((e) => ModelInstitutional.fromJson(e))
           .toList();
     } catch (e, st) {
-      logger.e(
-        'selectStockInstitutional failed: $e',
-        stackTrace: st,
-      );
+      logger.e('selectStockInstitutional failed: $e', stackTrace: st);
       return [];
     }
   }
@@ -430,7 +434,8 @@ class ServiceStock {
     final dateStr =
         "${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}";
 
-    final url = "https://www.taifex.com.tw/cht/3/futContractsDateDown"
+    final url =
+        "https://www.taifex.com.tw/cht/3/futContractsDateDown"
         "?queryStartDate=$dateStr"
         "&queryEndDate=$dateStr";
 
@@ -496,21 +501,23 @@ class ServiceStock {
   }
 
   Future<List<ModelFuture>> selectFutures(DateTime date) async {
-    final result =
-        await _supabaseApi.post('stock/select_futures_institutional', {
-      'date': DateFormat('yyyy-MM-dd').format(date),
-    });
+    final result = await _supabaseApi.post(
+      'stock/select_futures_institutional',
+      {'date': DateFormat('yyyy-MM-dd').format(date)},
+    );
     DateTime tmpDate = date;
     List result2 = [];
     try {
-      for (int daysBack = 1;
-          daysBack <= _maxFuturesLookbackDays && result2.isEmpty;
-          daysBack++) {
+      for (
+        int daysBack = 1;
+        daysBack <= _maxFuturesLookbackDays && result2.isEmpty;
+        daysBack++
+      ) {
         tmpDate = tmpDate.subtract(Duration(days: 1));
-        result2 =
-            await _supabaseApi.post('stock/select_futures_institutional', {
-          'date': DateFormat('yyyy-MM-dd').format(tmpDate),
-        });
+        result2 = await _supabaseApi.post(
+          'stock/select_futures_institutional',
+          {'date': DateFormat('yyyy-MM-dd').format(tmpDate)},
+        );
       }
     } catch (ex) {
       logger.e(ex);
@@ -521,36 +528,39 @@ class ServiceStock {
         "${e['product_name']}_${e['identity_type']}": e['oi_net_qty'] ?? 0,
     };
 
-    return result.where((e) {
-      if (![
-        '臺股期貨',
-        '小型臺指期貨',
-        '微型臺指期貨',
-        '金融期貨',
-        '小型金融期貨',
-        '電子期貨',
-        '小型電子期貨',
-        '非金電期貨'
-      ].contains(e['product_name'])) {
-        return false;
-      }
-      final key = "${e['product_name']}_${e['identity_type']}";
+    return result
+        .where((e) {
+          if (![
+            '臺股期貨',
+            '小型臺指期貨',
+            '微型臺指期貨',
+            '金融期貨',
+            '小型金融期貨',
+            '電子期貨',
+            '小型電子期貨',
+            '非金電期貨',
+          ].contains(e['product_name'])) {
+            return false;
+          }
+          final key = "${e['product_name']}_${e['identity_type']}";
 
-      final todayQty = e['oi_net_qty'] ?? 0;
-      final yQty = yesterdayMap[key] ?? todayQty;
-      final diff = todayQty - yQty;
-      return !(todayQty.abs() < 200 && diff.abs() < 200);
-    }).map<ModelFuture>((e) {
-      final key = "${e['product_name']}_${e['identity_type']}";
+          final todayQty = e['oi_net_qty'] ?? 0;
+          final yQty = yesterdayMap[key] ?? todayQty;
+          final diff = todayQty - yQty;
+          return !(todayQty.abs() < 200 && diff.abs() < 200);
+        })
+        .map<ModelFuture>((e) {
+          final key = "${e['product_name']}_${e['identity_type']}";
 
-      final todayQty = (e['oi_net_qty'] ?? 0) as num;
-      final yQty = (yesterdayMap[key] ?? todayQty);
+          final todayQty = (e['oi_net_qty'] ?? 0) as num;
+          final yQty = (yesterdayMap[key] ?? todayQty);
 
-      return ModelFuture.fromJson({
-        ...e,
-        "oi_net_qty_diff": todayQty - yQty,
-      });
-    }).toList();
+          return ModelFuture.fromJson({
+            ...e,
+            "oi_net_qty_diff": todayQty - yQty,
+          });
+        })
+        .toList();
   }
 
   Future<bool> isDataExist(DateTime date, String type) async {
@@ -575,7 +585,7 @@ class ServiceStock {
   Future<DateTime?> getLatestDateMac() async {
     final result = await api.post('stock/select_latest_stock_date', {
       'table_name': TableNames.stockDate,
-      'type': Source.updateStockTechnicalForDate
+      'type': Source.updateStockTechnicalForDate,
     });
     if (result["date"] == null) {
       return null;
@@ -590,7 +600,7 @@ class ServiceStock {
         .order('date', ascending: false)
         .limit(1);
     if (result.isEmpty) return null;
-    return DateTime.tryParse(result.first['date']?.toString() ?? '');
+    return tryParseDateTimeValue(result.first['date']);
   }
 
   Future<List<ModelStock>> getSimpleStrategy(String level) async {
@@ -677,7 +687,7 @@ class ServiceStock {
     // 檢查同一天是否已經有資料
     final existing = await api.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
-      'date': date.toUtc().toIso8601String()
+      'date': date.toUtc().toIso8601String(),
     });
     dynamic tmp;
     if (existing["data"] == null) {
@@ -687,7 +697,8 @@ class ServiceStock {
     tmp = existing["data"];
     return (tmp as List)
         .map<ModelStock>(
-            (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)))
+          (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)),
+        )
         .toList();
   }
 
@@ -704,7 +715,8 @@ class ServiceStock {
     if (rows.isEmpty || rows.first['data'] is! List) return [];
     return (rows.first['data'] as List)
         .map<ModelStock>(
-            (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)))
+          (json) => ModelStock.fromJson(Map<String, dynamic>.from(json)),
+        )
         .toList();
   }
 
@@ -728,7 +740,8 @@ class ServiceStock {
       final ma20 = s.ma20 ?? 0;
       final rsi = s.rsi ?? 0;
 
-      final isRising = close >= high20 && // 1️⃣ 突破20日高點
+      final isRising =
+          close >= high20 && // 1️⃣ 突破20日高點
           volume >= vol5 * 1.5 && // 2️⃣ 成交量放大
           pct >= 2 && // 3️⃣ 漲幅 > 2%
           ma5 >= ma20 && // 4️⃣ 均線多頭
@@ -743,8 +756,7 @@ class ServiceStock {
         s.isRising = true; // 👈 標記
       }
       return isRising;
-    }).toList()
-      ..sort((a, b) => (b.pctChange ?? 0).compareTo(a.pctChange ?? 0));
+    }).toList()..sort((a, b) => (b.pctChange ?? 0).compareTo(a.pctChange ?? 0));
   }
 
   Future<void> quantitativeCalculation(int batch, DateTime date) async {
@@ -755,7 +767,7 @@ class ServiceStock {
       vol5        → 最近5日平均成交量*/
     final result = await api.post('stock/select_stock_quantitative_count', {
       'table_name': TableNames.stockDailyPrice,
-      'date': date.toUtc().toIso8601String()
+      'date': date.toUtc().toIso8601String(),
     });
     if (result["count"] == 0) {
       try {
@@ -765,7 +777,7 @@ class ServiceStock {
             {
               'date': date.toUtc().toIso8601String(),
               'type': Source.updateStockTechnicalForDate,
-            }
+            },
           ],
         });
       } catch (ex) {
@@ -788,7 +800,7 @@ class ServiceStock {
         {
           'date': date.toUtc().toIso8601String(),
           'type': Source.updateStockTechnicalForDate,
-        }
+        },
       ],
     });
     try {
@@ -804,7 +816,7 @@ class ServiceStock {
         {
           'date': date.toUtc().toIso8601String(),
           'type': Source.updateStockTechnicalForDate,
-        }
+        },
       ],
     });
 
@@ -846,7 +858,7 @@ class ServiceStock {
     // 檢查同一天是否已經有資料
     final existing = await apiSupabase.post('stock/select_stock_predicted', {
       'table_name': TableNames.stockPredicted,
-      'date': date.toUtc().toIso8601String()
+      'date': date.toUtc().toIso8601String(),
     });
     if (existing["data"] != null) {
       return;
@@ -905,57 +917,103 @@ class SimpleStrategy {
 }
 
 class StockParser {
-  static ModelStock? parse(List row, Map<String, int> enToIndex, DateTime date,
-      bool isOTC, String source) {
+  static ModelStock? parse(
+    List row,
+    Map<String, int> enToIndex,
+    DateTime date,
+    bool isOTC,
+    String source,
+  ) {
     try {
       final securityCode = row[enToIndex["security_code"] ?? -1].toString();
       final closingPrice = double.tryParse(
-          row[enToIndex["closing_price"] ?? -1].toString().replaceAll(',', ''));
+        row[enToIndex["closing_price"] ?? -1].toString().replaceAll(',', ''),
+      );
 
       if (securityCode.length != 4 || closingPrice == null) return null;
-      final priceDifference = double.tryParse(
-              row[enToIndex["price_difference"] ?? -1]
-                  .toString()
-                  .trim()
-                  .replaceAll(',', '')) ??
+      final priceDifference =
+          double.tryParse(
+            row[enToIndex["price_difference"] ?? -1]
+                .toString()
+                .trim()
+                .replaceAll(',', ''),
+          ) ??
           0;
       return ModelStock(
-          date: date,
-          securityCode: securityCode,
-          securityName: row[enToIndex["security_name"] ?? -1].toString(),
-          tradedNumber: double.tryParse(row[enToIndex["traded_number"] ?? -1]
+        date: date,
+        securityCode: securityCode,
+        securityName: row[enToIndex["security_name"] ?? -1].toString(),
+        tradedNumber: double.tryParse(
+          row[enToIndex["traded_number"] ?? -1].toString().replaceAll(',', ''),
+        ),
+        transactionsNumber: int.tryParse(
+          row[enToIndex["transactions_number"] ?? -1].toString().replaceAll(
+            ',',
+            '',
+          ),
+        ),
+        transactionAmount: double.tryParse(
+          row[enToIndex["transaction_amount"] ?? -1].toString().replaceAll(
+            ',',
+            '',
+          ),
+        ),
+        openingPrice: double.tryParse(
+          row[enToIndex["opening_price"] ?? -1].toString().replaceAll(',', ''),
+        ),
+        highestPrice: double.tryParse(
+          row[enToIndex["highest_price"] ?? -1].toString().replaceAll(',', ''),
+        ),
+        lowestPrice: double.tryParse(
+          row[enToIndex["lowest_price"] ?? -1].toString().replaceAll(',', ''),
+        ),
+        closingPrice: closingPrice,
+        change: isOTC
+            ? (priceDifference > 0 ? "+" : "-")
+            : (row[enToIndex["change"] ?? -1].toString().contains("+")
+                  ? "+"
+                  : "-"),
+        priceDifference: priceDifference > 0
+            ? priceDifference
+            : priceDifference * (-1),
+        finalRevealBuyingPrice: double.tryParse(
+          row[enToIndex["final_reveal_buying_price"] ?? -1]
               .toString()
-              .replaceAll(',', '')),
-          transactionsNumber: int.tryParse(
-              row[enToIndex["transactions_number"] ?? -1]
-                  .toString()
-                  .replaceAll(',', '')),
-          transactionAmount: double.tryParse(
-              row[enToIndex["transaction_amount"] ?? -1]
-                  .toString()
-                  .replaceAll(',', '')),
-          openingPrice: double.tryParse(row[enToIndex["opening_price"] ?? -1]
+              .replaceAll(',', ''),
+        ),
+        finalRevealBuyingVolume: double.tryParse(
+          row[enToIndex["final_reveal_buying_volume"] ?? -1]
               .toString()
-              .replaceAll(',', '')),
-          highestPrice: double.tryParse(
-              row[enToIndex["highest_price"] ?? -1].toString().replaceAll(',', '')),
-          lowestPrice: double.tryParse(row[enToIndex["lowest_price"] ?? -1].toString().replaceAll(',', '')),
-          closingPrice: closingPrice,
-          change: isOTC ? (priceDifference > 0 ? "+" : "-") : (row[enToIndex["change"] ?? -1].toString().contains("+") ? "+" : "-"),
-          priceDifference: priceDifference > 0 ? priceDifference : priceDifference * (-1),
-          finalRevealBuyingPrice: double.tryParse(row[enToIndex["final_reveal_buying_price"] ?? -1].toString().replaceAll(',', '')),
-          finalRevealBuyingVolume: double.tryParse(row[enToIndex["final_reveal_buying_volume"] ?? -1].toString().replaceAll(',', '')),
-          finalRevealSellingPrice: double.tryParse(row[enToIndex["final_reveal_selling_price"] ?? -1].toString().replaceAll(',', '')),
-          finalRevealSellingVolume: double.tryParse(row[enToIndex["final_reveal_selling_volume"] ?? -1].toString().replaceAll(',', '')),
-          peRatio: isOTC ? null : double.tryParse(row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', '')),
-          source: source);
+              .replaceAll(',', ''),
+        ),
+        finalRevealSellingPrice: double.tryParse(
+          row[enToIndex["final_reveal_selling_price"] ?? -1]
+              .toString()
+              .replaceAll(',', ''),
+        ),
+        finalRevealSellingVolume: double.tryParse(
+          row[enToIndex["final_reveal_selling_volume"] ?? -1]
+              .toString()
+              .replaceAll(',', ''),
+        ),
+        peRatio: isOTC
+            ? null
+            : double.tryParse(
+                row[enToIndex["pe_ratio"] ?? -1].toString().replaceAll(',', ''),
+              ),
+        source: source,
+      );
     } catch (e) {
       return null;
     }
   }
 
   static Map<String, dynamic>? parseT86(
-      List row, Map<String, int> enToIndex, DateTime date, String source) {
+    List row,
+    Map<String, int> enToIndex,
+    DateTime date,
+    String source,
+  ) {
     try {
       String get(String key) {
         final i = enToIndex[key];

@@ -15,6 +15,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:uuid/uuid.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class DuplicateGameQuestionException implements Exception {
   const DuplicateGameQuestionException();
@@ -429,9 +430,10 @@ class ServiceGame {
         .order(Fields.createdAt, ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
-    return DateTime.tryParse(
+    return tryParseDateTimeValue(
       rows.first[Fields.createdAt]?.toString() ?? '',
-    )?.toLocal();
+      toLocal: true,
+    );
   }
 
   ModelGameUser _mapProgressWithGame(Map<String, dynamic> row) {

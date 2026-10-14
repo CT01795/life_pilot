@@ -4,6 +4,7 @@ import 'package:life_pilot/apps/config_app.dart';
 import 'package:life_pilot/event/model_event_item.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/holidays.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 
 import '../utils/logger.dart';
@@ -22,7 +23,10 @@ class ServiceCalendar {
   static DateTime? _cacheUtcDate;
 
   static Future<List<EventItem>> fetchHolidays(
-      DateTime start, DateTime end, Locale locale) async {
+    DateTime start,
+    DateTime end,
+    Locale locale,
+  ) async {
     final List<EventItem> holidays = [];
     final accessToken = supabase.auth.currentSession?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
@@ -45,11 +49,13 @@ class ServiceCalendar {
       final lastIncludedDate = endDate.subtract(const Duration(days: 1));
       final records = <_HolidayRecord>[];
       for (int year = startDate.year; year <= lastIncludedDate.year; year++) {
-        records.addAll(await _getHolidayYear(
-          year: year,
-          languageCode: languageCode,
-          accessToken: accessToken,
-        ));
+        records.addAll(
+          await _getHolidayYear(
+            year: year,
+            languageCode: languageCode,
+            accessToken: accessToken,
+          ),
+        );
       }
       records.sort((a, b) => a.date.compareTo(b.date));
 
@@ -61,7 +67,11 @@ class ServiceCalendar {
         }
 
         lastMergedHoliday = _processHolidayItem(
-            record.date, record.summary, lastMergedHoliday, holidays);
+          record.date,
+          record.summary,
+          lastMergedHoliday,
+          holidays,
+        );
       }
       return holidays;
     } catch (e, stack) {
@@ -111,15 +121,11 @@ class ServiceCalendar {
   }) async {
     final yearStart = DateTime.utc(year, 1, 1);
     final yearEnd = DateTime.utc(year + 1, 1, 1);
-    final data = await apiSupabase.post(
-      '/external/holidays',
-      {
-        'start': yearStart.toIso8601String(),
-        'end': yearEnd.toIso8601String(),
-        'language_code': languageCode,
-      },
-      bearerToken: accessToken,
-    );
+    final data = await apiSupabase.post('/external/holidays', {
+      'start': yearStart.toIso8601String(),
+      'end': yearEnd.toIso8601String(),
+      'language_code': languageCode,
+    }, bearerToken: accessToken);
     final items = data is Map<String, dynamic> && data['items'] is List
         ? data['items'] as List
         : const [];
@@ -131,27 +137,34 @@ class ServiceCalendar {
       final rawSummary = item['summary'];
       if (rawDate is! String || rawSummary is! String) continue;
 
-      final parsedDate = DateTime.tryParse(rawDate);
+      final parsedDate = tryParseDateTimeValue(rawDate);
       if (parsedDate == null) continue;
-      records.add(_HolidayRecord(
-        date: DateTime(parsedDate.year, parsedDate.month, parsedDate.day),
-        summary: rawSummary,
-      ));
+      records.add(
+        _HolidayRecord(
+          date: DateTime(parsedDate.year, parsedDate.month, parsedDate.day),
+          summary: rawSummary,
+        ),
+      );
     }
 
     return records;
   }
 
   // 處理單筆假日，若需合併連假則更新 lastMergedHoliday
-  static EventItem? _processHolidayItem(DateTime date, String summary,
-      EventItem? lastMerged, List<EventItem> output) {
+  static EventItem? _processHolidayItem(
+    DateTime date,
+    String summary,
+    EventItem? lastMerged,
+    List<EventItem> output,
+  ) {
     final mappedSummary = CalendarConfig.taiwanHolidays.firstWhere(
       (holidayName) => summary.contains(holidayName) && !summary.contains("補假"),
       orElse: () => summary,
     );
 
-    final bool isTaiwanHoliday = CalendarConfig.taiwanHolidays
-        .any((name) => mappedSummary.contains(name));
+    final bool isTaiwanHoliday = CalendarConfig.taiwanHolidays.any(
+      (name) => mappedSummary.contains(name),
+    );
 
     // 若需要合併連假，且 lastMerged 同名，延長結束日期
     if (lastMerged != null &&
