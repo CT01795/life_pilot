@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import '../utils/logger.dart';
 
 class ServiceFeedback {
@@ -13,8 +14,9 @@ class ServiceFeedback {
     List<String>? cc, // ← 改成 List<String>
     List<Uint8List>? screenshots, // ← 支援多張
   }) async {
-    final screenshotBase64 =
-        screenshots?.map((bytes) => base64Encode(bytes)).toList();
+    final screenshotBase64 = screenshots
+        ?.map((bytes) => base64Encode(bytes))
+        .toList();
     await supabase.from(TableNames.feedback).insert({
       'subject': subject,
       'content': content,
@@ -62,19 +64,19 @@ class ServiceFeedback {
         .order(Fields.createdAt, ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
-    return DateTime.tryParse(rows.first[Fields.createdAt]?.toString() ?? '')
-        ?.toLocal();
+    return tryParseDateTimeValue(rows.first[Fields.createdAt], toLocal: true);
   }
 
-  Future<void> updateFeedback({
-    required ModelFeedback feedback,
-  }) async {
+  Future<void> updateFeedback({required ModelFeedback feedback}) async {
     final data = feedback.toMap();
-    await supabase.from(TableNames.feedback).update({
-      'is_ok': data['is_ok'],
-      'deal_by': data['deal_by'],
-      'deal_at': data['deal_at'],
-      'status': data['status'],
-    }).eq(Fields.id, data[Fields.id]);
+    await supabase
+        .from(TableNames.feedback)
+        .update({
+          'is_ok': data['is_ok'],
+          'deal_by': data['deal_by'],
+          'deal_at': data['deal_at'],
+          'status': data['status'],
+        })
+        .eq(Fields.id, data[Fields.id]);
   }
 }

@@ -3,6 +3,7 @@ import 'package:life_pilot/local_storage/local_data_store.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class CalendarSharingFailure implements Exception {
   const CalendarSharingFailure(this.code, [this.details]);
@@ -27,7 +28,7 @@ class CalendarShareableEvent {
       name: json['name']?.toString().trim().isNotEmpty == true
           ? json['name'].toString()
           : '-',
-      startDate: DateTime.tryParse(json['start_date']?.toString() ?? ''),
+      startDate: tryParseDateTimeValue(json['start_date']),
     );
   }
 }
@@ -52,7 +53,7 @@ class SharedCalendarEvent {
       name: json['event_name']?.toString().trim().isNotEmpty == true
           ? json['event_name'].toString()
           : '-',
-      startDate: DateTime.tryParse(json['start_date']?.toString() ?? ''),
+      startDate: tryParseDateTimeValue(json['start_date']),
     );
   }
 }

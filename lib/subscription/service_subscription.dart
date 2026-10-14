@@ -4,6 +4,7 @@ import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceSubscription {
@@ -181,23 +182,20 @@ class ServiceSubscription {
       plan: plan,
       usage: {for (final item in items) item.resource: item},
       status: status['status']?.toString() ?? 'inactive',
-      currentPeriodEnd: DateTime.tryParse(
-        status['current_period_end']?.toString() ?? '',
-      ),
+      currentPeriodEnd: tryParseDateTimeValue(status['current_period_end']),
       cancelAtPeriodEnd: status['cancel_at_period_end'] == true,
       storagePlan: status['storage_plan']?.toString() ?? 'cloud',
-      quotaMultiplier: (status['quota_multiplier'] as num?)?.toInt() ?? 1,
-      quarterlyPricePaidTwd: (status['quarterly_price_paid_twd'] as num?)
-          ?.toInt(),
+      quotaMultiplier: parseIntValue(status['quota_multiplier'], fallback: 1),
+      quarterlyPricePaidTwd: tryParseIntValue(
+        status['quarterly_price_paid_twd'],
+      ),
       pricingVersionName: status['pricing_version_name']?.toString(),
-      pricingEffectiveAt: DateTime.tryParse(
-        status['pricing_effective_at']?.toString() ?? '',
+      pricingEffectiveAt: tryParseDateTimeValue(status['pricing_effective_at']),
+      lastDataActivityAt: tryParseDateTimeValue(
+        status['last_data_activity_at'],
       ),
-      lastDataActivityAt: DateTime.tryParse(
-        status['last_data_activity_at']?.toString() ?? '',
-      ),
-      downgradeGraceEndsAt: DateTime.tryParse(
-        status['downgrade_grace_ends_at']?.toString() ?? '',
+      downgradeGraceEndsAt: tryParseDateTimeValue(
+        status['downgrade_grace_ends_at'],
       ),
       entitlements: entitlementRows
           .map(
@@ -221,7 +219,7 @@ class ServiceSubscription {
       return {
         for (final raw in rows as List<dynamic>)
           if (raw case final Map row)
-            row['resource'].toString(): (row['quota'] as num?)?.toInt() ?? 0,
+            row['resource'].toString(): parseIntValue(row['quota']),
       };
     } on PostgrestException catch (error) {
       // Older databases continue using get_my_subscription_usage until the
@@ -280,7 +278,7 @@ class ServiceSubscription {
       final activeEntitlements = entitlementRows
           .where((raw) {
             final row = Map<String, dynamic>.from(raw as Map);
-            final endsAt = DateTime.tryParse(row['ends_at']?.toString() ?? '');
+            final endsAt = tryParseDateTimeValue(row['ends_at']);
             return row['storage_plan']?.toString() == storagePlan &&
                 endsAt != null &&
                 endsAt.isAfter(now);
@@ -291,8 +289,10 @@ class ServiceSubscription {
         final snapshot = Map<String, dynamic>.from(
           row['entitlement_snapshot'] as Map? ?? const {},
         );
-        final multiplier =
-            (row['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
+        final multiplier = parseIntValue(
+          row['quota_multiplier'],
+          fallback: 1,
+        ).clamp(1, 1000).toInt();
         eventQuota +=
             entitlementSnapshotQuota(
               snapshot,
@@ -311,10 +311,12 @@ class ServiceSubscription {
       if (eventQuota == 0 && attractionQuota == 0) {
         final versions = await fetchPricingVersions();
         final currentVersionName = status['pricing_version_name']?.toString();
-        final currentMultiplier =
-            (status['quota_multiplier'] as num?)?.toInt().clamp(1, 1000) ?? 1;
-        final statusPeriodEnd = DateTime.tryParse(
-          status['current_period_end']?.toString() ?? '',
+        final currentMultiplier = parseIntValue(
+          status['quota_multiplier'],
+          fallback: 1,
+        ).clamp(1, 1000).toInt();
+        final statusPeriodEnd = tryParseDateTimeValue(
+          status['current_period_end'],
         );
         final hasActiveStatusPlan =
             status['plan']?.toString() == 'plus' &&
@@ -360,13 +362,12 @@ class ServiceSubscription {
                     0,
                     (total, raw) =>
                         total +
-                        ((Map<String, dynamic>.from(
-                                      raw as Map,
-                                    )['quota_multiplier']
-                                    as num?)
-                                ?.toInt()
-                                .clamp(1, 1000) ??
-                            1),
+                        parseIntValue(
+                          Map<String, dynamic>.from(
+                            raw as Map,
+                          )['quota_multiplier'],
+                          fallback: 1,
+                        ).clamp(1, 1000).toInt(),
                   );
             eventQuota =
                 (publicVersions.first.quotas['recommended_events'] ?? 0) *
@@ -656,7 +657,7 @@ class QuotaFreePeriod {
         endsAt: DateTime.parse(json['ends_at'].toString()).toLocal(),
         enabled: json['enabled'] == true,
         isActive: json['is_active'] == true,
-        reminderDays: (json['reminder_days'] as num?)?.toInt(),
+        reminderDays: tryParseIntValue(json['reminder_days']),
         targetAccounts: (json['target_accounts'] as List? ?? const [])
             .map(normalizeText)
             .where((value) => value.isNotEmpty)
@@ -685,10 +686,10 @@ class SubscriptionCleanupPreview {
       SubscriptionCleanupPreview(
         email: json['target_email']?.toString() ?? '',
         resource: json['resource']?.toString() ?? '',
-        used: (json['used'] as num?)?.toInt() ?? 0,
-        quota: (json['quota'] as num?)?.toInt() ?? 0,
-        excess: (json['excess'] as num?)?.toInt() ?? 0,
-        graceEndsAt: DateTime.tryParse(json['grace_ends_at']?.toString() ?? ''),
+        used: parseIntValue(json['used']),
+        quota: parseIntValue(json['quota']),
+        excess: parseIntValue(json['excess']),
+        graceEndsAt: tryParseDateTimeValue(json['grace_ends_at']),
       );
 }
 
@@ -715,23 +716,20 @@ class SubscriptionPricingVersion {
         name: json['version_name']?.toString() ?? '',
         storagePlan: json['storage_plan']?.toString() ?? 'cloud',
         effectiveAt: DateTime.parse(json['effective_at'].toString()),
-        quarterlyPriceTwd: (json['quarterly_price_twd'] as num?)?.toInt() ?? 0,
+        quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),
         quotas: {
-          'calendar_events': (json['calendar_quota'] as num?)?.toInt() ?? 0,
-          'recommended_events':
-              (json['recommended_event_quota'] as num?)?.toInt() ?? 0,
-          'recommended_attractions':
-              (json['recommended_attraction_quota'] as num?)?.toInt() ?? 0,
-          'accounting_detail': (json['accounting_quota'] as num?)?.toInt() ?? 0,
-          'point_record_detail': (json['point_quota'] as num?)?.toInt() ?? 0,
-          'memory_trace': (json['memory_quota'] as num?)?.toInt() ?? 0,
-          'game_questions': (json['game_question_quota'] as num?)?.toInt() ?? 0,
-          'calendar_shares':
-              (json['calendar_share_quota'] as num?)?.toInt() ?? 0,
-          'image_bytes':
-              ((json['image_megabytes'] as num?)?.toInt() ?? 0) * 1024 * 1024,
-          'answer_history_days':
-              (json['answer_history_days'] as num?)?.toInt() ?? 0,
+          'calendar_events': parseIntValue(json['calendar_quota']),
+          'recommended_events': parseIntValue(json['recommended_event_quota']),
+          'recommended_attractions': parseIntValue(
+            json['recommended_attraction_quota'],
+          ),
+          'accounting_detail': parseIntValue(json['accounting_quota']),
+          'point_record_detail': parseIntValue(json['point_quota']),
+          'memory_trace': parseIntValue(json['memory_quota']),
+          'game_questions': parseIntValue(json['game_question_quota']),
+          'calendar_shares': parseIntValue(json['calendar_share_quota']),
+          'image_bytes': parseIntValue(json['image_megabytes']) * 1024 * 1024,
+          'answer_history_days': parseIntValue(json['answer_history_days']),
         },
       );
 }

@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 
@@ -51,7 +52,7 @@ class ServicePointRecord {
       if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
     }
     if (row == null) return null;
-    final value = num.tryParse(row['value']?.toString() ?? '') ?? 0;
+    final value = parseNumValue(row['value']);
     return (value >= 0, row['primary_category']?.toString() ?? 'uncategorized');
   }
 
@@ -218,12 +219,7 @@ class ServicePointRecord {
                           d['account_id']?.toString() ==
                           e[Fields.id]?.toString(),
                     )
-                    .fold<int>(
-                      0,
-                      (sum, d) =>
-                          sum +
-                          (int.tryParse(d['value']?.toString() ?? '0') ?? 0),
-                    ),
+                    .fold<int>(0, (sum, d) => sum + parseIntValue(d['value'])),
               ),
             )
             .toList();
@@ -504,8 +500,7 @@ class ServicePointRecord {
       );
       final points = accountRows.fold<int>(
         0,
-        (sum, row) =>
-            sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
+        (sum, row) => sum + parseIntValue(row['value']),
       );
       final filtered = filterRecordRows(
         accountRows,
@@ -519,17 +514,14 @@ class ServicePointRecord {
           id: detail[Fields.id]?.toString() ?? '',
           accountId: detail['account_id']?.toString() ?? '',
           createdAt:
-              DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
-              DateTime.now(),
-          date:
-              DateTime.tryParse(detail['date']?.toString() ?? '') ??
-              DateTime.now(),
+              tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
+          date: tryParseDateTimeValue(detail['date']) ?? DateTime.now(),
           primaryCategory:
               detail['primary_category']?.toString() ?? 'uncategorized',
           secondaryCategory: detail['group']?.toString(),
           description: detail['description']?.toString() ?? '',
           type: detail['type']?.toString() ?? '',
-          value: int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+          value: parseIntValue(detail['value']),
           points: points,
         );
       }).toList();
@@ -593,7 +585,7 @@ class ServicePointRecord {
         .limit(1);
     var points = totalRows.isEmpty
         ? 0
-        : int.tryParse(totalRows.first['points']?.toString() ?? '0') ?? 0;
+        : parseIntValue(totalRows.first['points']);
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,
@@ -605,11 +597,7 @@ class ServicePointRecord {
                 row['account_id']?.toString() == accountId &&
                 row['type']?.toString() == type,
           )
-          .fold<int>(
-            0,
-            (sum, row) =>
-                sum + (int.tryParse(row['value']?.toString() ?? '0') ?? 0),
-          );
+          .fold<int>(0, (sum, row) => sum + parseIntValue(row['value']));
     }
     final unique = uniqueRecordRowsNewestFirst(result);
     return unique.map((detail) {
@@ -617,20 +605,17 @@ class ServicePointRecord {
         id: detail[Fields.id]?.toString() ?? '',
         accountId: detail['account_id']?.toString() ?? '',
         createdAt:
-            DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
-            DateTime.now(),
+            tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
         date:
-            DateTime.tryParse(detail['date']?.toString() ?? '') ??
-            DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
+            tryParseDateTimeValue(detail['date']) ??
+            tryParseDateTimeValue(detail[Fields.createdAt]) ??
             DateTime.now(),
         primaryCategory:
             detail['primary_category']?.toString() ?? 'uncategorized',
         secondaryCategory: detail['group']?.toString(),
         description: detail['description']?.toString() ?? '',
         type: detail['type']?.toString() ?? '',
-        value: detail['value'] is int
-            ? detail['value'] as int
-            : int.tryParse(detail['value']?.toString() ?? '0') ?? 0,
+        value: parseIntValue(detail['value']),
         points: points,
       );
     }).toList();
@@ -699,7 +684,7 @@ class ServicePointRecord {
         .order('date', ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
-    return DateTime.tryParse(rows.first['date']?.toString() ?? '')?.toLocal();
+    return tryParseDateTimeValue(rows.first['date'], toLocal: true);
   }
 
   Future<void> insertRecordsBatch({

@@ -1,3 +1,5 @@
+import 'package:life_pilot/utils/value_parser.dart';
+
 class VendorPricingPlan {
   const VendorPricingPlan({
     required this.id,
@@ -27,13 +29,12 @@ class VendorPricingPlan {
         code: json['plan_code']?.toString() ?? 'free',
         versionName: json['version_name']?.toString() ?? '',
         effectiveAt:
-            DateTime.tryParse(json['effective_at']?.toString() ?? '') ??
-            DateTime.now(),
-        quarterlyPriceTwd: (json['quarterly_price_twd'] as num?)?.toInt() ?? 0,
-        eventQuota: (json['event_quota'] as num?)?.toInt() ?? 0,
-        attractionQuota: (json['attraction_quota'] as num?)?.toInt() ?? 0,
-        imageMegabytes: (json['image_megabytes'] as num?)?.toInt() ?? 0,
-        analyticsDays: (json['analytics_days'] as num?)?.toInt() ?? 0,
+            tryParseDateTimeValue(json['effective_at']) ?? DateTime.now(),
+        quarterlyPriceTwd: parseIntValue(json['quarterly_price_twd']),
+        eventQuota: parseIntValue(json['event_quota']),
+        attractionQuota: parseIntValue(json['attraction_quota']),
+        imageMegabytes: parseIntValue(json['image_megabytes']),
+        analyticsDays: parseIntValue(json['analytics_days']),
       );
 }
 
@@ -61,12 +62,10 @@ class VendorSubscriptionStatus {
     return VendorSubscriptionStatus(
       plan: VendorPricingPlan.fromJson(rawPlan),
       status: json['status']?.toString() ?? 'active',
-      eventUsed: (json['event_used'] as num?)?.toInt() ?? 0,
-      attractionUsed: (json['attraction_used'] as num?)?.toInt() ?? 0,
-      imageBytesUsed: (json['image_bytes_used'] as num?)?.toInt() ?? 0,
-      currentPeriodEnd: DateTime.tryParse(
-        json['current_period_end']?.toString() ?? '',
-      ),
+      eventUsed: parseIntValue(json['event_used']),
+      attractionUsed: parseIntValue(json['attraction_used']),
+      imageBytesUsed: parseIntValue(json['image_bytes_used']),
+      currentPeriodEnd: tryParseDateTimeValue(json['current_period_end']),
     );
   }
 }
@@ -135,7 +134,7 @@ class VendorEngagementMetrics {
   final int dislikes;
 
   factory VendorEngagementMetrics.fromJson(Map<String, dynamic> json) {
-    int value(String key) => (json[key] as num?)?.toInt() ?? 0;
+    int value(String key) => parseIntValue(json[key]);
     return VendorEngagementMetrics(
       analyticsDays: value('analytics_days'),
       pageViews: value('page_views'),

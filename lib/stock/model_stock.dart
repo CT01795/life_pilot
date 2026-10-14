@@ -1,4 +1,6 @@
 // lib/models/stock.dart
+import 'package:life_pilot/utils/value_parser.dart';
+
 class ModelStock {
   DateTime date;
   String securityCode;
@@ -30,36 +32,37 @@ class ModelStock {
   String? signalText;
   String? level;
 
-  ModelStock(
-      {required this.date,
-      required this.securityCode,
-      required this.securityName,
-      this.tradedNumber,
-      this.transactionsNumber,
-      this.transactionAmount,
-      this.openingPrice,
-      this.highestPrice,
-      this.lowestPrice,
-      required this.closingPrice,
-      this.change,
-      this.priceDifference,
-      this.finalRevealBuyingPrice,
-      this.finalRevealBuyingVolume,
-      this.finalRevealSellingPrice,
-      this.finalRevealSellingVolume,
-      this.peRatio,
-      this.source,
-      this.ma5,
-      this.ma20,
-      this.high20,
-      this.pctChange,
-      this.vol5,
-      this.rsi,
-      this.isRising,
-      this.predPct,
-      this.signal,
-      this.signalText,
-      this.level});
+  ModelStock({
+    required this.date,
+    required this.securityCode,
+    required this.securityName,
+    this.tradedNumber,
+    this.transactionsNumber,
+    this.transactionAmount,
+    this.openingPrice,
+    this.highestPrice,
+    this.lowestPrice,
+    required this.closingPrice,
+    this.change,
+    this.priceDifference,
+    this.finalRevealBuyingPrice,
+    this.finalRevealBuyingVolume,
+    this.finalRevealSellingPrice,
+    this.finalRevealSellingVolume,
+    this.peRatio,
+    this.source,
+    this.ma5,
+    this.ma20,
+    this.high20,
+    this.pctChange,
+    this.vol5,
+    this.rsi,
+    this.isRising,
+    this.predPct,
+    this.signal,
+    this.signalText,
+    this.level,
+  });
 
   Map<String, dynamic> toJson() {
     return {
@@ -86,7 +89,7 @@ class ModelStock {
       'high20': high20,
       'pct_change': pctChange,
       'vol5': vol5,
-      'rsi': rsi
+      'rsi': rsi,
     };
   }
 
@@ -118,7 +121,7 @@ class ModelStock {
       'rsi': rsi,
       'pred_pct': predPct,
       'signal': signal,
-      'signal_text': signalText
+      'signal_text': signalText,
     };
   }
 
@@ -127,33 +130,37 @@ class ModelStock {
       date: DateTime.parse(json['date'].toString()),
       securityCode: json['security_code'],
       securityName: json['security_name'],
-      tradedNumber: (json['traded_number'] as num?)?.toDouble(),
-      transactionsNumber: json['transactions_number'] as int?,
-      transactionAmount: (json['transaction_amount'] as num?)?.toDouble(),
-      openingPrice: (json['opening_price'] as num?)?.toDouble(),
-      highestPrice: (json['highest_price'] as num?)?.toDouble(),
-      lowestPrice: (json['lowest_price'] as num?)?.toDouble(),
-      closingPrice: (json['closing_price'] as num?)?.toDouble() ?? 0,
+      tradedNumber: tryParseDoubleValue(json['traded_number']),
+      transactionsNumber: tryParseIntValue(json['transactions_number']),
+      transactionAmount: tryParseDoubleValue(json['transaction_amount']),
+      openingPrice: tryParseDoubleValue(json['opening_price']),
+      highestPrice: tryParseDoubleValue(json['highest_price']),
+      lowestPrice: tryParseDoubleValue(json['lowest_price']),
+      closingPrice: parseDoubleValue(json['closing_price']),
       change: json['change']?.toString(),
-      priceDifference: (json['price_difference'] as num?)?.toDouble(),
-      finalRevealBuyingPrice:
-          (json['final_reveal_buying_price'] as num?)?.toDouble(),
-      finalRevealBuyingVolume:
-          (json['final_reveal_buying_volume'] as num?)?.toDouble(),
-      finalRevealSellingPrice:
-          (json['final_reveal_selling_price'] as num?)?.toDouble(),
-      finalRevealSellingVolume:
-          (json['final_reveal_selling_volume'] as num?)?.toDouble(),
-      peRatio: (json['pe_ratio'] as num?)?.toDouble(),
+      priceDifference: tryParseDoubleValue(json['price_difference']),
+      finalRevealBuyingPrice: tryParseDoubleValue(
+        json['final_reveal_buying_price'],
+      ),
+      finalRevealBuyingVolume: tryParseDoubleValue(
+        json['final_reveal_buying_volume'],
+      ),
+      finalRevealSellingPrice: tryParseDoubleValue(
+        json['final_reveal_selling_price'],
+      ),
+      finalRevealSellingVolume: tryParseDoubleValue(
+        json['final_reveal_selling_volume'],
+      ),
+      peRatio: tryParseDoubleValue(json['pe_ratio']),
       source: json['source']?.toString(),
-      ma5: (json['ma5'] as num?)?.toDouble(),
-      ma20: (json['ma20'] as num?)?.toDouble(),
-      high20: (json['high20'] as num?)?.toDouble(),
-      pctChange: (json['pct_change'] as num?)?.toDouble(),
-      vol5: (json['vol5'] as num?)?.toDouble(),
-      rsi: (json['rsi'] as num?)?.toDouble(),
-      predPct: (json['pred_pct'] as num?)?.toDouble(),
-      signal: json['signal'],
+      ma5: tryParseDoubleValue(json['ma5']),
+      ma20: tryParseDoubleValue(json['ma20']),
+      high20: tryParseDoubleValue(json['high20']),
+      pctChange: tryParseDoubleValue(json['pct_change']),
+      vol5: tryParseDoubleValue(json['vol5']),
+      rsi: tryParseDoubleValue(json['rsi']),
+      predPct: tryParseDoubleValue(json['pred_pct']),
+      signal: tryParseIntValue(json['signal']),
       signalText: json['signal_text'],
     );
   }
@@ -181,10 +188,10 @@ class ModelFuture {
     return ModelFuture(
       productName: json['product_name'],
       identityType: json['identity_type'],
-      oiLongQty: int.tryParse("${json['oi_long_qty']}"),
-      oiShortQty: int.tryParse("${json['oi_short_qty']}"),
-      oiNetQty: int.tryParse("${json['oi_net_qty']}"),
-      oiNetQtyDiff: int.tryParse("${json['oi_net_qty_diff']}"),
+      oiLongQty: tryParseIntValue(json['oi_long_qty']),
+      oiShortQty: tryParseIntValue(json['oi_short_qty']),
+      oiNetQty: tryParseIntValue(json['oi_net_qty']),
+      oiNetQtyDiff: tryParseIntValue(json['oi_net_qty_diff']),
     );
   }
 }
@@ -202,12 +209,12 @@ class ModelInstitutional {
     required this.totalDiff,
   });
 
-  factory ModelInstitutional.fromJson(Map<String,dynamic> json){
+  factory ModelInstitutional.fromJson(Map<String, dynamic> json) {
     return ModelInstitutional(
-      stockNo: json["stock_no"],
-      stockName: json["stock_name"],
-      foreignDiff: json["foreign_diff"] ?? 0,
-      totalDiff: json["total_diff"] ?? 0,
+      stockNo: json['stock_no']?.toString() ?? '',
+      stockName: json['stock_name']?.toString() ?? '',
+      foreignDiff: parseIntValue(json['foreign_diff']),
+      totalDiff: parseIntValue(json['total_diff']),
     );
   }
 }

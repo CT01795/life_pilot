@@ -1,4 +1,5 @@
 import 'package:life_pilot/subscription/subscription_constants.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 const subscriptionQuotaResources = SubscriptionResource.quotaResources;
 
@@ -11,7 +12,7 @@ int? entitlementSnapshotQuota(
   String resource, {
   required int multiplier,
 }) {
-  final canonical = _asInt(snapshot[resource]);
+  final canonical = tryParseIntValue(snapshot[resource]);
   if (canonical != null) return canonical;
 
   final legacyKey = switch (resource) {
@@ -29,16 +30,11 @@ int? entitlementSnapshotQuota(
     _ => null,
   };
   if (legacyKey == null) return null;
-  final legacy = _asInt(snapshot[legacyKey]);
+  final legacy = tryParseIntValue(snapshot[legacyKey]);
   if (legacy == null) return null;
   final normalizedMultiplier = multiplier.clamp(1, 1000);
   if (resource == SubscriptionResource.answerHistoryDays) return legacy;
   return resource == SubscriptionResource.imageBytes
       ? legacy * normalizedMultiplier * 1024 * 1024
       : legacy * normalizedMultiplier;
-}
-
-int? _asInt(Object? value) {
-  if (value is num) return value.toInt();
-  return int.tryParse(value?.toString() ?? '');
 }

@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/graph.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/record_row_utils.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
 
@@ -51,7 +52,7 @@ class ServiceAccounting {
       if (rows.isNotEmpty) row = Map<String, dynamic>.from(rows.first);
     }
     if (row == null) return null;
-    final value = num.tryParse(row['value']?.toString() ?? '') ?? 0;
+    final value = parseNumValue(row['value']);
     return (value > 0, row['primary_category']?.toString() ?? 'uncategorized');
   }
 
@@ -223,12 +224,7 @@ class ServiceAccounting {
                           d['currency']?.toString() ==
                               e['main_currency']?.toString(),
                     )
-                    .fold<num>(
-                      0,
-                      (sum, d) =>
-                          sum +
-                          (num.tryParse(d['value']?.toString() ?? '0') ?? 0),
-                    ),
+                    .fold<num>(0, (sum, d) => sum + parseNumValue(d['value'])),
                 currency: e['main_currency'],
                 exchangeRate: e['exchange_rate'],
               ),
@@ -530,8 +526,7 @@ class ServiceAccounting {
       );
       final balance = accountRows.fold<num>(
         0,
-        (sum, row) =>
-            sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
+        (sum, row) => sum + parseNumValue(row['value']),
       );
       final filtered = filterRecordRows(
         accountRows,
@@ -601,7 +596,7 @@ class ServiceAccounting {
         .limit(1);
     var balance = totalRows.isEmpty
         ? 0
-        : num.tryParse(totalRows.first['balance']?.toString() ?? '0') ?? 0;
+        : parseNumValue(totalRows.first['balance']);
     if (owner != null && await _storesLocally) {
       final allLocal = await LocalDataStore.instance.list(
         owner: owner,
@@ -613,11 +608,7 @@ class ServiceAccounting {
                 row['account_id']?.toString() == accountId &&
                 row['type']?.toString() == type,
           )
-          .fold<num>(
-            0,
-            (sum, row) =>
-                sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
-          );
+          .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
     }
     final unique = uniqueRecordRowsNewestFirst(result);
     return unique.map((detail) => _mapDetail(detail, balance)).toList();
@@ -686,7 +677,7 @@ class ServiceAccounting {
         .order('date', ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
-    return DateTime.tryParse(rows.first['date']?.toString() ?? '')?.toLocal();
+    return tryParseDateTimeValue(rows.first['date'], toLocal: true);
   }
 
   ModelAccountingDetail _mapDetail(
@@ -697,25 +688,20 @@ class ServiceAccounting {
       id: detail[Fields.id]?.toString() ?? '',
       accountId: detail['account_id']?.toString() ?? '',
       createdAt:
-          DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
-          DateTime.now(),
+          tryParseDateTimeValue(detail[Fields.createdAt]) ?? DateTime.now(),
       date:
-          DateTime.tryParse(detail['date']?.toString() ?? '') ??
-          DateTime.tryParse(detail[Fields.createdAt]?.toString() ?? '') ??
+          tryParseDateTimeValue(detail['date']) ??
+          tryParseDateTimeValue(detail[Fields.createdAt]) ??
           DateTime.now(),
       primaryCategory:
           detail['primary_category']?.toString() ?? 'uncategorized',
       secondaryCategory: detail['group']?.toString(),
       description: detail['description']?.toString() ?? '',
       type: detail['type']?.toString() ?? '',
-      value:
-          (detail['value'] as num?) ??
-          num.tryParse(detail['value']?.toString() ?? '0') ??
-          0,
+      value: parseNumValue(detail['value']),
       currency: detail['currency']?.toString() ?? '',
       exchangeRate: detail['exchange_rate'],
-      balance:
-          (balance as num?) ?? num.tryParse(balance?.toString() ?? '0') ?? 0,
+      balance: parseNumValue(balance),
     );
   }
 
@@ -902,11 +888,7 @@ class ServiceAccounting {
                   row['account_id']?.toString() == accountId &&
                   row['currency']?.toString() == currency,
             )
-            .fold<num>(
-              0,
-              (sum, row) =>
-                  sum + (num.tryParse(row['value']?.toString() ?? '0') ?? 0),
-            );
+            .fold<num>(0, (sum, row) => sum + parseNumValue(row['value']));
         await LocalDataStore.instance.put(
           owner: owner,
           resource: TableNames.accountingAccount,

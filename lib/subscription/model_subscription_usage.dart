@@ -1,4 +1,5 @@
 import 'package:life_pilot/subscription/subscription_entitlement_quota.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class SubscriptionUsage {
   const SubscriptionUsage({
@@ -17,8 +18,8 @@ class SubscriptionUsage {
   factory SubscriptionUsage.fromJson(Map<String, dynamic> json) {
     return SubscriptionUsage(
       resource: json['resource']?.toString() ?? '',
-      used: (json['used'] as num?)?.toInt() ?? 0,
-      quota: (json['quota'] as num?)?.toInt() ?? 0,
+      used: parseIntValue(json['used']),
+      quota: parseIntValue(json['quota']),
     );
   }
 }
@@ -101,13 +102,13 @@ class SubscriptionEntitlement {
     final rawQuotas = Map<String, dynamic>.from(
       json['entitlement_snapshot'] as Map? ?? const {},
     );
-    final multiplier = (json['quota_multiplier'] as num?)?.toInt() ?? 1;
+    final multiplier = parseIntValue(json['quota_multiplier'], fallback: 1);
     return SubscriptionEntitlement(
       versionName: json['version_name']?.toString() ?? '',
       effectiveAt: DateTime.parse(json['effective_at'].toString()),
       storagePlan: json['storage_plan']?.toString() ?? 'cloud',
       multiplier: multiplier,
-      pricePaidTwd: (json['quarterly_price_paid_twd'] as num?)?.toInt() ?? 0,
+      pricePaidTwd: parseIntValue(json['quarterly_price_paid_twd']),
       endsAt: DateTime.parse(json['ends_at'].toString()),
       quotas: {
         for (final resource in subscriptionQuotaResources)
