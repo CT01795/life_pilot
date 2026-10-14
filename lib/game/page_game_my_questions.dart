@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/controller_game_my_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/page_game_question_create.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -7,8 +8,6 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:provider/provider.dart';
-
-enum _QuestionStatusFilter { all, active, inactive }
 
 typedef GameQuestionCreatePageBuilder =
     Widget Function(
@@ -36,114 +35,51 @@ class PageGameMyQuestions extends StatefulWidget {
 }
 
 class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
-  late final ServiceGame _service;
-  List<MyGameQuestion> _questions = const [];
-  List<String> _groups = const [];
-  int _totalCount = 0;
-  bool _isLoading = true;
-  bool _isLoadingMore = false;
-  bool _hasLoaded = false;
-  bool _hasError = false;
-  int _loadGeneration = 0;
-  final Set<String> _deletingIds = {};
-  final Set<String> _updatingIds = {};
+  late final ControllerGameMyQuestions _controller;
   final TextEditingController _searchController = TextEditingController();
-  String _appliedKeyword = '';
-  String? _selectedGroup;
-  _QuestionStatusFilter _statusFilter = _QuestionStatusFilter.all;
 
-  bool get _hasMore => _questions.length < _totalCount;
+  List<MyGameQuestion> get _questions => _controller.questions;
+  List<String> get _groups => _controller.groups;
+  bool get _isLoading => _controller.isLoading;
+  bool get _isLoadingMore => _controller.isLoadingMore;
+  bool get _hasLoaded => _controller.hasLoaded;
+  bool get _hasError => _controller.hasError;
+  bool get _hasMore => _controller.hasMore;
+  String get _appliedKeyword => _controller.appliedKeyword;
+  String? get _selectedGroup => _controller.selectedGroup;
+  QuestionStatusFilter get _statusFilter => _controller.statusFilter;
 
-  String get _statusValue => switch (_statusFilter) {
-    _QuestionStatusFilter.all => 'all',
-    _QuestionStatusFilter.active => 'active',
-    _QuestionStatusFilter.inactive => 'inactive',
-  };
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
-    _service = widget.service ?? ServiceGame();
+    _controller = ControllerGameMyQuestions(
+      service: widget.service ?? ServiceGame(),
+      gameName: widget.gameName,
+    )..addListener(_onControllerChanged);
     _load();
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _load({bool append = false}) async {
-    if (!append && _isLoading && _hasLoaded) return;
-    if (append && (_isLoadingMore || !_hasMore)) return;
-    final generation = append ? _loadGeneration : ++_loadGeneration;
-    setState(() {
-      if (append) {
-        _isLoadingMore = true;
-      } else {
-        _isLoading = true;
-        _hasError = false;
-      }
-    });
-    try {
-      final pageFuture = _service.fetchMyQuestions(
-        gameName: widget.gameName,
-        keyword: _appliedKeyword,
-        group: _selectedGroup,
-        status: _statusValue,
-        offset: append ? _questions.length : 0,
+  Future<void> _load({bool append = false, bool refreshGroups = true}) async {
+    final succeeded = await _controller.load(
+      append: append,
+      refreshGroups: refreshGroups,
+    );
+    if (succeeded == false && mounted && (append || _hasLoaded)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
       );
-      final groupsFuture = append
-          ? Future.value(_groups)
-          : _service.fetchMyQuestionGroupsForManagement(
-              gameName: widget.gameName,
-            );
-      var page = await pageFuture;
-      final groups = await groupsFuture;
-      if (!mounted || generation != _loadGeneration) return;
-      if (!append &&
-          _selectedGroup != null &&
-          !groups.contains(_selectedGroup)) {
-        _selectedGroup = null;
-        page = await _service.fetchMyQuestions(
-          gameName: widget.gameName,
-          keyword: _appliedKeyword,
-          status: _statusValue,
-        );
-        if (!mounted || generation != _loadGeneration) return;
-      }
-      setState(() {
-        _questions = append
-            ? [..._questions, ...page.questions]
-            : page.questions;
-        _totalCount = page.totalCount;
-        _groups = groups;
-        _hasLoaded = true;
-      });
-    } catch (error, stackTrace) {
-      logger.e(
-        append
-            ? 'Load more game questions failed'
-            : 'Load game questions failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted && generation == _loadGeneration) {
-        if (append || _hasLoaded) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
-          );
-        } else {
-          setState(() => _hasError = true);
-        }
-      }
-    } finally {
-      if (mounted && generation == _loadGeneration) {
-        setState(() {
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      }
     }
   }
 
@@ -169,12 +105,8 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
         false;
     if (!confirmed || !mounted) return;
 
-    setState(() => _deletingIds.add(question.id));
     try {
-      await _service.deleteMyQuestion(
-        gameName: widget.gameName,
-        questionId: question.id,
-      );
+      await _controller.deleteQuestion(question.id);
       if (!mounted) return;
       await _load();
       if (!mounted) return;
@@ -197,8 +129,6 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
       }
-    } finally {
-      if (mounted) setState(() => _deletingIds.remove(question.id));
     }
   }
 
@@ -238,19 +168,14 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
 
   void _applySearch() {
     FocusScope.of(context).unfocus();
-    setState(() => _appliedKeyword = _searchController.text.trim());
-    _load();
+    _controller.applySearch(_searchController.text);
+    _load(refreshGroups: false);
   }
 
   Future<void> _setActive(MyGameQuestion question, bool isActive) async {
     final loc = AppLocalizations.of(context)!;
-    setState(() => _updatingIds.add(question.id));
     try {
-      await _service.setMyQuestionActive(
-        gameName: widget.gameName,
-        questionId: question.id,
-        isActive: isActive,
-      );
+      await _controller.setQuestionActive(question.id, isActive);
       if (!mounted) return;
       await _load();
       if (!mounted) return;
@@ -272,14 +197,250 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
           context,
         ).showSnackBar(SnackBar(content: Text(loc.questionStatusUpdateFailed)));
       }
-    } finally {
-      if (mounted) setState(() => _updatingIds.remove(question.id));
     }
   }
+
+  Widget _buildFilters(AppLocalizations loc) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const SubscriptionUsageBanner(resource: 'game_questions'),
+      if (_isLoading) ...[const LinearProgressIndicator(), Gaps.h16],
+      TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          labelText: loc.search,
+          helperText: loc.questionSearchGuidance,
+          helperMaxLines: 2,
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchController,
+            builder: (context, value, _) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (value.text.isNotEmpty)
+                  IconButton(
+                    tooltip: loc.clear,
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            _searchController.clear();
+                            _controller.applySearch('');
+                            _load(refreshGroups: false);
+                          },
+                    icon: const Icon(Icons.clear),
+                  ),
+                IconButton(
+                  tooltip: loc.search,
+                  onPressed: _isLoading ? null : _applySearch,
+                  icon: const Icon(Icons.search),
+                ),
+              ],
+            ),
+          ),
+          border: const OutlineInputBorder(),
+        ),
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) {
+          if (!_isLoading) _applySearch();
+        },
+      ),
+      Gaps.h16,
+      Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              key: ValueKey(_selectedGroup),
+              initialValue: _selectedGroup,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: loc.questionGroup,
+                border: const OutlineInputBorder(),
+              ),
+              items: _groups
+                  .map(
+                    (group) => DropdownMenuItem(
+                      value: group,
+                      child: Tooltip(
+                        message: group,
+                        child: Text(
+                          group,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: _isLoading
+                  ? null
+                  : (value) {
+                      _controller.selectGroup(value);
+                      _load(refreshGroups: false);
+                    },
+            ),
+          ),
+          if (_selectedGroup != null) ...[
+            Gaps.w8,
+            IconButton(
+              tooltip: loc.clear,
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _controller.selectGroup(null);
+                      _load(refreshGroups: false);
+                    },
+              icon: const Icon(Icons.filter_alt_off),
+            ),
+          ],
+        ],
+      ),
+      Gaps.h16,
+      DropdownButtonFormField<QuestionStatusFilter>(
+        initialValue: _statusFilter,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: loc.questionStatus,
+          border: const OutlineInputBorder(),
+        ),
+        items: [
+          DropdownMenuItem(
+            value: QuestionStatusFilter.all,
+            child: Text(loc.allQuestionStatuses),
+          ),
+          DropdownMenuItem(
+            value: QuestionStatusFilter.active,
+            child: Text(loc.activeQuestion),
+          ),
+          DropdownMenuItem(
+            value: QuestionStatusFilter.inactive,
+            child: Text(loc.inactiveQuestion),
+          ),
+        ],
+        onChanged: _isLoading
+            ? null
+            : (value) {
+                if (value != null) {
+                  _controller.selectStatus(value);
+                  _load(refreshGroups: false);
+                }
+              },
+      ),
+      Gaps.h16,
+      if (_questions.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            children: [
+              Text(loc.noMyQuestions),
+              if (_appliedKeyword.isNotEmpty) ...[
+                Gaps.h16,
+                FilledButton.icon(
+                  onPressed: _isLoading ? null : _add,
+                  icon: const Icon(Icons.add),
+                  label: Text(loc.addQuestion),
+                ),
+              ],
+            ],
+          ),
+        ),
+    ],
+  );
+
+  Widget _buildQuestionCard(MyGameQuestion question, AppLocalizations loc) {
+    final isBusy = _controller.isBusy(question.id);
+    return Padding(
+      key: ValueKey(question.id),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RepaintBoundary(
+        key: ValueKey(question.id),
+        child: Card(
+          child: ListTile(
+            title: Text(
+              question.question,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${loc.correctAnswer}: ${question.answer}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${loc.questionGroup}: ${question.group}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text('${loc.gameLevel}: ${question.level}'),
+                Text(
+                  '${loc.questionStatus}: '
+                  '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
+                ),
+                if (question.options?.isNotEmpty == true)
+                  Text(
+                    '${loc.answerOptions}: ${question.options}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+            trailing: isBusy
+                ? const SizedBox.square(
+                    dimension: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : PopupMenuButton<String>(
+                    enabled: !_isLoading,
+                    onSelected: (action) {
+                      if (action == 'edit') {
+                        _edit(question);
+                      } else if (action == 'toggle') {
+                        _setActive(question, !question.isActive);
+                      } else if (action == 'delete') {
+                        _delete(question);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 'edit', child: Text(loc.edit)),
+                      PopupMenuItem(
+                        value: 'toggle',
+                        child: Text(
+                          question.isActive
+                              ? loc.deactivateQuestion
+                              : loc.reactivateQuestion,
+                        ),
+                      ),
+                      PopupMenuItem(value: 'delete', child: Text(loc.delete)),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMore(AppLocalizations loc) => Column(
+    children: [
+      Gaps.h8,
+      Center(
+        child: TextButton(
+          onPressed: _isLoadingMore ? null : () => _load(append: true),
+          child: _isLoadingMore
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(loc.clickHereToSeeMore),
+        ),
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final questions = _questions;
     return Scaffold(
       appBar: AppBar(title: Text(loc.myQuestions)),
       body: _isLoading && !_hasLoaded
@@ -297,258 +458,14 @@ class _PageGameMyQuestionsState extends State<PageGameMyQuestions> {
             )
           : RefreshIndicator(
               onRefresh: _load,
-              child: ListView(
+              child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  const SubscriptionUsageBanner(resource: 'game_questions'),
-                  if (_isLoading) ...[
-                    const LinearProgressIndicator(),
-                    Gaps.h16,
-                  ],
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText: loc.search,
-                      helperText: loc.questionSearchGuidance,
-                      helperMaxLines: 2,
-                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _searchController,
-                        builder: (context, value, _) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (value.text.isNotEmpty)
-                              IconButton(
-                                tooltip: loc.clear,
-                                onPressed: _isLoading
-                                    ? null
-                                    : () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _appliedKeyword = '';
-                                        });
-                                        _load();
-                                      },
-                                icon: const Icon(Icons.clear),
-                              ),
-                            IconButton(
-                              tooltip: loc.search,
-                              onPressed: _isLoading ? null : _applySearch,
-                              icon: const Icon(Icons.search),
-                            ),
-                          ],
-                        ),
-                      ),
-                      border: const OutlineInputBorder(),
-                    ),
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) {
-                      if (!_isLoading) _applySearch();
-                    },
-                  ),
-                  Gaps.h16,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          key: ValueKey(_selectedGroup),
-                          initialValue: _selectedGroup,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            labelText: loc.questionGroup,
-                            border: const OutlineInputBorder(),
-                          ),
-                          items: _groups
-                              .map(
-                                (group) => DropdownMenuItem(
-                                  value: group,
-                                  child: Tooltip(
-                                    message: group,
-                                    child: Text(
-                                      group,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: _isLoading
-                              ? null
-                              : (value) {
-                                  setState(() => _selectedGroup = value);
-                                  _load();
-                                },
-                        ),
-                      ),
-                      if (_selectedGroup != null) ...[
-                        Gaps.w8,
-                        IconButton(
-                          tooltip: loc.clear,
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                                  setState(() => _selectedGroup = null);
-                                  _load();
-                                },
-                          icon: const Icon(Icons.filter_alt_off),
-                        ),
-                      ],
-                    ],
-                  ),
-                  Gaps.h16,
-                  DropdownButtonFormField<_QuestionStatusFilter>(
-                    initialValue: _statusFilter,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: loc.questionStatus,
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: _QuestionStatusFilter.all,
-                        child: Text(loc.allQuestionStatuses),
-                      ),
-                      DropdownMenuItem(
-                        value: _QuestionStatusFilter.active,
-                        child: Text(loc.activeQuestion),
-                      ),
-                      DropdownMenuItem(
-                        value: _QuestionStatusFilter.inactive,
-                        child: Text(loc.inactiveQuestion),
-                      ),
-                    ],
-                    onChanged: _isLoading
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() => _statusFilter = value);
-                              _load();
-                            }
-                          },
-                  ),
-                  Gaps.h16,
-                  if (_questions.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Column(
-                        children: [
-                          Text(loc.noMyQuestions),
-                          if (_appliedKeyword.isNotEmpty) ...[
-                            Gaps.h16,
-                            FilledButton.icon(
-                              onPressed: _isLoading ? null : _add,
-                              icon: const Icon(Icons.add),
-                              label: Text(loc.addQuestion),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ..._questions.map((question) {
-                    final isBusy =
-                        _deletingIds.contains(question.id) ||
-                        _updatingIds.contains(question.id);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: RepaintBoundary(
-                        key: ValueKey(question.id),
-                        child: Card(
-                          child: ListTile(
-                            title: Text(
-                              question.question,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${loc.correctAnswer}: ${question.answer}',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  '${loc.questionGroup}: ${question.group}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text('${loc.gameLevel}: ${question.level}'),
-                                Text(
-                                  '${loc.questionStatus}: '
-                                  '${question.isActive ? loc.activeQuestion : loc.inactiveQuestion}',
-                                ),
-                                if (question.options?.isNotEmpty == true)
-                                  Text(
-                                    '${loc.answerOptions}: ${question.options}',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
-                            trailing: isBusy
-                                ? const SizedBox.square(
-                                    dimension: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : PopupMenuButton<String>(
-                                    enabled: !_isLoading,
-                                    onSelected: (action) {
-                                      if (action == 'edit') {
-                                        _edit(question);
-                                      } else if (action == 'toggle') {
-                                        _setActive(
-                                          question,
-                                          !question.isActive,
-                                        );
-                                      } else if (action == 'delete') {
-                                        _delete(question);
-                                      }
-                                    },
-                                    itemBuilder: (_) => [
-                                      PopupMenuItem(
-                                        value: 'edit',
-                                        child: Text(loc.edit),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'toggle',
-                                        child: Text(
-                                          question.isActive
-                                              ? loc.deactivateQuestion
-                                              : loc.reactivateQuestion,
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text(loc.delete),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                  if (_hasMore) ...[
-                    Gaps.h8,
-                    Center(
-                      child: TextButton(
-                        onPressed: _isLoadingMore
-                            ? null
-                            : () => _load(append: true),
-                        child: _isLoadingMore
-                            ? const SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(loc.clickHereToSeeMore),
-                      ),
-                    ),
-                  ],
-                ],
+                itemCount: questions.length + 1 + (_hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == 0) return _buildFilters(loc);
+                  if (index > questions.length) return _buildLoadMore(loc);
+                  return _buildQuestionCard(questions[index - 1], loc);
+                },
               ),
             ),
     );
