@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:life_pilot/utils/enum.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 // -------------------- Calendar --------------------
 class CalendarReminderMapper {
+  static const defaultOptions = [CalendarReminderOption.dayBefore8am];
+
   static const Map<CalendarReminderOption, String> _keyMap = {
     CalendarReminderOption.fifteenMin: '15_min',
     CalendarReminderOption.thirtyMin: '30_min',
@@ -31,12 +36,28 @@ class CalendarReminderMapper {
       _keyMap[reminderOption]!;
 
   // 根據 key 還原
-  static CalendarReminderOption fromKey({required String key}) => _keyMap.entries
-      .firstWhere((e) => e.value == key,
-          orElse: () => const MapEntry(CalendarReminderOption.fifteenMin, '15_min'))
-      .key;
+  static final Map<String, CalendarReminderOption> _optionsByKey = {
+    for (final entry in _keyMap.entries) entry.value: entry.key,
+  };
+
+  static CalendarReminderOption fromKey({required String key}) =>
+      _optionsByKey[key] ?? CalendarReminderOption.fifteenMin;
+
+  /// Preserves explicit empty selections; missing or malformed JSON defaults.
+  static List<CalendarReminderOption> parseOptions(Object? value) {
+    if (value == null) return defaultOptions;
+    try {
+      final list = value is String
+          ? jsonDecode(value) as List<dynamic>
+          : (value is List ? value : const []);
+      return list.map((item) => fromKey(key: parseStringValue(item))).toList();
+    } catch (_) {
+      return defaultOptions;
+    }
+  }
 
   // 取得對應 Duration
-  static Duration getDuration({required CalendarReminderOption reminderOption}) =>
-      _durationMap[reminderOption]!;
+  static Duration getDuration({
+    required CalendarReminderOption reminderOption,
+  }) => _durationMap[reminderOption]!;
 }

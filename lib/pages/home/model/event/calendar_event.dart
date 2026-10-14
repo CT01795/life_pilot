@@ -1,11 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:life_pilot/event/event_date_time_parser.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/event_country.dart';
 import 'package:life_pilot/event/event_schedule_data.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/json_object_list_parser.dart';
 
 class CalendarEvent {
   final String id;
@@ -63,7 +62,7 @@ class CalendarEvent {
       isFree: json['is_free'] == true,
       description: parseOptionalStringValue(json['description']),
       masterUrl: parseOptionalStringValue(json['master_url']),
-      subEvents: _parseSubEvents(json[EventFields.subEvents]),
+      subEvents: parseJsonObjectList(json[EventFields.subEvents]),
       isCompleted: json['is_completed'] == true,
     );
   }
@@ -103,22 +102,6 @@ class CalendarEvent {
           return !selectedDate.isBefore(startDate) &&
               !selectedDate.isAfter(endDate);
         })
-        .toList(growable: false);
-  }
-
-  static List<Map<String, dynamic>> _parseSubEvents(dynamic value) {
-    dynamic parsed = value;
-    if (value is String && value.trim().isNotEmpty) {
-      try {
-        parsed = jsonDecode(value);
-      } on FormatException {
-        return const [];
-      }
-    }
-    if (parsed is! List) return const [];
-    return parsed
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
         .toList(growable: false);
   }
 }

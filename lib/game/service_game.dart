@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:life_pilot/game/question_bank_availability.dart';
+
+export 'package:life_pilot/game/question_bank_availability.dart';
+
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/mario_translation/model_game_mario_translation.dart';
 import 'package:life_pilot/game/model_game_item.dart';
@@ -34,18 +38,6 @@ class GameQuestionHint {
 
   final String question;
   final String answer;
-}
-
-class QuestionBankAvailability {
-  const QuestionBankAvailability({
-    required this.questionCount,
-    required this.canPlay,
-    required this.requiresThreeInGroup,
-  });
-
-  final int questionCount;
-  final bool canPlay;
-  final bool requiresThreeInGroup;
 }
 
 class MyGameQuestion {
@@ -922,10 +914,9 @@ class ServiceGame {
                   (choices?.length ?? 0) >= 3;
             }).length;
       }
-      return QuestionBankAvailability(
+      return QuestionBankAvailability.forGame(
+        gameName: gameName,
         questionCount: completeQuestionCount,
-        canPlay: completeQuestionCount > 0,
-        requiresThreeInGroup: false,
       );
     }
     late final String tableName;
@@ -973,19 +964,9 @@ class ServiceGame {
       (total, count) => total + count,
     );
 
-    final requiresThree = normalizedName.contains('translation');
-    if (!requiresThree) {
-      return QuestionBankAvailability(
-        questionCount: questionCount,
-        canPlay: questionCount > 0,
-        requiresThreeInGroup: false,
-      );
-    }
-
-    return QuestionBankAvailability(
+    return QuestionBankAvailability.forGame(
+      gameName: gameName,
       questionCount: questionCount,
-      canPlay: questionCount >= 3,
-      requiresThreeInGroup: true,
     );
   }
 

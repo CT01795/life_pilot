@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -9,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/value_parser.dart';
+import 'package:life_pilot/utils/json_object_list_parser.dart';
 
 final _uuid = Uuid();
 
@@ -250,7 +250,7 @@ class EventItem implements EventBase {
   }
 
   factory EventItem.fromJson({required Map<String, dynamic> json}) {
-    final subEventsJson = _parseSubEvents(json[EventFields.subEvents]);
+    final subEventsJson = parseJsonObjectList(json[EventFields.subEvents]);
 
     return EventItem(
       id: json[Fields.id] ?? _uuid.v4(),
@@ -299,22 +299,8 @@ class EventItem implements EventBase {
       lng: tryParseDoubleValue(json[EventFields.lng]),
       mapLat: tryParseDoubleValue(json[EventFields.mapLat]),
       mapLng: tryParseDoubleValue(json[EventFields.mapLng]),
-      subEvents: subEventsJson
-          .whereType<Map>()
-          .map((e) => EventItem.fromJson(json: Map<String, dynamic>.from(e)))
-          .toList(),
+      subEvents: subEventsJson.map((e) => EventItem.fromJson(json: e)).toList(),
     );
-  }
-
-  static List<dynamic> _parseSubEvents(dynamic value) {
-    if (value is List) return value;
-    if (value is! String || value.trim().isEmpty) return const [];
-    try {
-      final decoded = jsonDecode(value);
-      return decoded is List ? decoded : const [];
-    } on FormatException {
-      return const [];
-    }
   }
 
   // -------------------- copyWith --------------------
@@ -410,22 +396,7 @@ class EventItem implements EventBase {
 
   static List<CalendarReminderOption> parseReminderOptions({
     dynamic jsonValue,
-  }) {
-    const defaultOption = [CalendarReminderOption.dayBefore8am];
-    if (jsonValue == null) return defaultOption;
-
-    try {
-      final list = (jsonValue is String)
-          ? (jsonDecode(jsonValue) as List<dynamic>)
-          : (jsonValue is List ? jsonValue : []);
-      return list
-          .map((e) => CalendarReminderMapper.fromKey(key: parseStringValue(e)))
-          .whereType<CalendarReminderOption>()
-          .toList();
-    } catch (_) {
-      return defaultOption;
-    }
-  }
+  }) => CalendarReminderMapper.parseOptions(jsonValue);
 
   static DateTime? fromStringOrNull(String? date) {
     if (date == null || date.isEmpty) return null;
