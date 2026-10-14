@@ -67,13 +67,13 @@ class ServiceExportExcel {
       _textCell(event.endTime?.formatTimeString() ?? ''),
       _textCell(event.description),
       _textCell(event.unit),
-      _textCell(event.ageMin?.toString() ?? ''),
-      _textCell(event.ageMax?.toString() ?? ''),
+      _textCell(parseStringValue(event.ageMin)),
+      _textCell(parseStringValue(event.ageMax)),
       _textCell(
         event.isFree == null ? '' : (event.isFree! ? loc.free : loc.pay),
       ),
-      _textCell(event.priceMin?.toString() ?? ''),
-      _textCell(event.priceMax?.toString() ?? ''),
+      _textCell(parseStringValue(event.priceMin)),
+      _textCell(parseStringValue(event.priceMax)),
       _textCell(
         event.isOutdoor == null
             ? ''
@@ -140,27 +140,27 @@ class ServiceExportExcel {
       if (row.isEmpty || row.length <= 17) continue;
       events.add(
         EventItem(
-          name: row[colsToDetail["name"] ?? 99]?.toString() ?? '',
-          type: row[colsToDetail["type"] ?? 99]?.toString() ?? '',
-          city: row[colsToDetail["city"] ?? 99]?.toString() ?? '',
-          location: row[colsToDetail["location"] ?? 99]?.toString() ?? '',
+          name: parseStringValue(row[colsToDetail["name"] ?? 99]),
+          type: parseStringValue(row[colsToDetail["type"] ?? 99]),
+          city: parseStringValue(row[colsToDetail["city"] ?? 99]),
+          location: parseStringValue(row[colsToDetail["location"] ?? 99]),
           //fee: row[?]?.toString(),
           startDate: tryParseDateTimeValue(
-            row[colsToDetail["startDate"] ?? 99]?.toString() ?? '',
+            parseStringValue(row[colsToDetail["startDate"] ?? 99]),
           ),
           startTime: EventDateTimeParser.parseTime(
-            row[colsToDetail["startTime"] ?? 99]?.toString() ?? '',
+            parseStringValue(row[colsToDetail["startTime"] ?? 99]),
           ),
           endDate: tryParseDateTimeValue(
-            row[colsToDetail["endDate"] ?? 99]?.toString() ?? '',
+            parseStringValue(row[colsToDetail["endDate"] ?? 99]),
           ),
           endTime: EventDateTimeParser.parseTime(
-            row[colsToDetail["endTime"] ?? 99]?.toString() ?? '',
+            parseStringValue(row[colsToDetail["endTime"] ?? 99]),
           ),
-          description: row[colsToDetail["description"] ?? 99]?.toString() ?? '',
-          unit: row[colsToDetail["unit"] ?? 99]?.toString() ?? '',
+          description: parseStringValue(row[colsToDetail["description"] ?? 99]),
+          unit: parseStringValue(row[colsToDetail["unit"] ?? 99]),
           ageMin:
-              (row[colsToDetail["ageMin"] ?? 99]?.toString() ?? '')
+              parseStringValue(row[colsToDetail["ageMin"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -168,7 +168,7 @@ class ServiceExportExcel {
                 )
               : null,
           ageMax:
-              (row[colsToDetail["ageMax"] ?? 99]?.toString() ?? '')
+              parseStringValue(row[colsToDetail["ageMax"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -176,13 +176,13 @@ class ServiceExportExcel {
                 )
               : null,
           isFree:
-              (row[colsToDetail["isFree"] ?? 99]?.toString() ?? '')
+              parseStringValue(row[colsToDetail["isFree"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? row[colsToDetail["isFree"] ?? 99]?.toString().contains(loc.free)
               : null,
           priceMin:
-              (row[colsToDetail["priceMin"] ?? 99]?.toString() ?? '')
+              parseStringValue(row[colsToDetail["priceMin"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -190,7 +190,7 @@ class ServiceExportExcel {
                 )
               : null,
           priceMax:
-              (row[colsToDetail["priceMax"] ?? 99]?.toString() ?? '')
+              parseStringValue(row[colsToDetail["priceMax"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -198,7 +198,7 @@ class ServiceExportExcel {
                 )
               : null,
           isOutdoor:
-              (row[colsToDetail["isOutdoor"] ?? 99]?.toString() ?? '')
+              parseStringValue(row[colsToDetail["isOutdoor"] ?? 99])
                   .trim()
                   .isNotEmpty
               ? row[colsToDetail["isOutdoor"] ?? 99]?.toString().contains(
@@ -268,29 +268,29 @@ class ServiceExportExcel {
       if (row.isEmpty || row.length <= 17) continue;
       events.add(
         EventItem(
-          name: row[colsToDetail["name"] ?? 99]?.value?.toString() ?? '',
-          type: row[colsToDetail["type"] ?? 99]?.value?.toString() ?? '',
-          city: row[colsToDetail["city"] ?? 99]?.value?.toString() ?? '',
+          name: parseStringValue(row[colsToDetail["name"] ?? 99]?.value),
+          type: parseStringValue(row[colsToDetail["type"] ?? 99]?.value),
+          city: parseStringValue(row[colsToDetail["city"] ?? 99]?.value),
           location:
-              row[colsToDetail["location"] ?? 99]?.value?.toString() ?? '',
+              parseStringValue(row[colsToDetail["location"] ?? 99]?.value),
           //fee: row[?]?.value?.toString(),
           startDate: tryParseDateTimeValue(
-            row[colsToDetail["startDate"] ?? 99]?.value?.toString() ?? '',
+            parseStringValue(row[colsToDetail["startDate"] ?? 99]?.value),
           ),
           startTime: EventDateTimeParser.parseTime(
-            row[colsToDetail["startTime"] ?? 99]?.value?.toString() ?? '',
+            parseStringValue(row[colsToDetail["startTime"] ?? 99]?.value),
           ),
           endDate: tryParseDateTimeValue(
-            row[colsToDetail["endDate"] ?? 99]?.value?.toString() ?? '',
+            parseStringValue(row[colsToDetail["endDate"] ?? 99]?.value),
           ),
           endTime: EventDateTimeParser.parseTime(
-            row[colsToDetail["endTime"] ?? 99]?.value?.toString() ?? '',
+            parseStringValue(row[colsToDetail["endTime"] ?? 99]?.value),
           ),
           description:
-              row[colsToDetail["description"] ?? 99]?.value?.toString() ?? '',
-          unit: row[colsToDetail["unit"] ?? 99]?.value?.toString() ?? '',
+              parseStringValue(row[colsToDetail["description"] ?? 99]?.value),
+          unit: parseStringValue(row[colsToDetail["unit"] ?? 99]?.value),
           ageMin:
-              (row[colsToDetail["ageMin"] ?? 99]?.value?.toString() ?? '')
+              parseStringValue(row[colsToDetail["ageMin"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -298,7 +298,7 @@ class ServiceExportExcel {
                 )
               : null,
           ageMax:
-              (row[colsToDetail["ageMax"] ?? 99]?.value?.toString() ?? '')
+              parseStringValue(row[colsToDetail["ageMax"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -306,7 +306,7 @@ class ServiceExportExcel {
                 )
               : null,
           isFree:
-              (row[colsToDetail["isFree"] ?? 99]?.value?.toString() ?? '')
+              parseStringValue(row[colsToDetail["isFree"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
               ? row[colsToDetail["isFree"] ?? 99]?.value?.toString().contains(
@@ -314,7 +314,7 @@ class ServiceExportExcel {
                 )
               : null,
           priceMin:
-              (row[colsToDetail["priceMin"] ?? 99]?.value?.toString() ?? '')
+              parseStringValue(row[colsToDetail["priceMin"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -322,7 +322,7 @@ class ServiceExportExcel {
                 )
               : null,
           priceMax:
-              (row[colsToDetail["priceMax"] ?? 99]?.value?.toString() ?? '')
+              parseStringValue(row[colsToDetail["priceMax"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
               ? parseNumValue(
@@ -330,7 +330,7 @@ class ServiceExportExcel {
                 )
               : null,
           isOutdoor:
-              (row[colsToDetail["isOutdoor"] ?? 99]?.value?.toString() ?? '')
+              parseStringValue(row[colsToDetail["isOutdoor"] ?? 99]?.value)
                   .trim()
                   .isNotEmpty
               ? row[colsToDetail["isOutdoor"] ?? 99]?.value

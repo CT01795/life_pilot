@@ -152,8 +152,8 @@ class ServiceGame {
       (row) =>
           row[Fields.id]?.toString() != excludingId &&
           row['group']?.toString().trim().toLowerCase() == groupKey &&
-          _duplicateKey(row['question']?.toString() ?? '') == questionKey &&
-          _duplicateKey(row['answer']?.toString() ?? '') == answerKey,
+          _duplicateKey(parseStringValue(row['question'])) == questionKey &&
+          _duplicateKey(parseStringValue(row['answer'])) == answerKey,
     );
   }
 
@@ -249,7 +249,7 @@ class ServiceGame {
   Future<void> cacheGameList(Iterable<Map<String, dynamic>> rows) async {
     await Future.wait(
       rows.map((row) {
-        final id = row[Fields.id]?.toString() ?? '';
+        final id = parseStringValue(row[Fields.id]);
         if (id.isEmpty) return Future<void>.value();
         return LocalDataStore.instance.put(
           owner: _ownerEmail,
@@ -431,7 +431,7 @@ class ServiceGame {
         .limit(1);
     if (rows.isEmpty) return null;
     return tryParseDateTimeValue(
-      rows.first[Fields.createdAt]?.toString() ?? '',
+      parseStringValue(rows.first[Fields.createdAt]),
       toLocal: true,
     );
   }
@@ -547,7 +547,7 @@ class ServiceGame {
               (row) =>
                   row['category']?.toString().trim().toLowerCase() ==
                       category.trim().toLowerCase() &&
-                  _duplicateKey(row['scene']?.toString() ?? '') ==
+                  _duplicateKey(parseStringValue(row['scene'])) ==
                       _duplicateKey(scene),
             );
         if (duplicate) {
@@ -610,7 +610,7 @@ class ServiceGame {
               item[Fields.id]?.toString() != id &&
               item['category']?.toString().trim().toLowerCase() ==
                   category.trim().toLowerCase() &&
-              _duplicateKey(item['scene']?.toString() ?? '') ==
+              _duplicateKey(parseStringValue(item['scene'])) ==
                   _duplicateKey(scene),
         );
         if (duplicate) {
@@ -675,16 +675,16 @@ class ServiceGame {
       ) {
         final data = choice as Map<String, dynamic>;
         return MySocialChoice(
-          text: data['option_text']?.toString() ?? '',
+          text: parseStringValue(data['option_text']),
           score: tryParseIntValue(data['score']) ?? 0,
-          feedback: data['feedback']?.toString() ?? '',
+          feedback: parseStringValue(data['feedback']),
           isBest: data['is_best'] == true,
         );
       }).toList()..sort((a, b) => b.score.compareTo(a.score));
       return MySocialQuestion(
         id: row['id'].toString(),
-        title: row['title']?.toString() ?? '',
-        scene: row['scene']?.toString() ?? '',
+        title: parseStringValue(row['title']),
+        scene: parseStringValue(row['scene']),
         category: row['category']?.toString() ?? 'social',
         isActive: row['is_active'] == true,
         choices: choices,
@@ -713,16 +713,16 @@ class ServiceGame {
           final choices = (row['choices'] as List? ?? const []).map((raw) {
             final choice = Map<String, dynamic>.from(raw as Map);
             return MySocialChoice(
-              text: choice['option_text']?.toString() ?? '',
+              text: parseStringValue(choice['option_text']),
               score: tryParseIntValue(choice['score']) ?? 0,
-              feedback: choice['feedback']?.toString() ?? '',
+              feedback: parseStringValue(choice['feedback']),
               isBest: choice['is_best'] == true,
             );
           }).toList();
           return MySocialQuestion(
             id: row[Fields.id].toString(),
-            title: row['title']?.toString() ?? '',
-            scene: row['scene']?.toString() ?? '',
+            title: parseStringValue(row['title']),
+            scene: parseStringValue(row['scene']),
             category: row['category']?.toString() ?? 'social',
             isActive: row['is_active'] == true,
             choices: choices,
@@ -744,13 +744,13 @@ class ServiceGame {
               as List<dynamic>;
     final categories = rows
         .map(
-          (row) => (row as Map<String, dynamic>)['category']?.toString() ?? '',
+          (row) => parseStringValue((row as Map<String, dynamic>)['category']),
         )
         .where((category) => category.isNotEmpty)
         .toSet();
     categories.addAll(
       (await _localQuestions(TableNames.gameSocialScenarios))
-          .map((row) => row['category']?.toString() ?? '')
+          .map((row) => parseStringValue(row['category']))
           .where((value) => value.isNotEmpty),
     );
     return categories.toList()..sort();
@@ -954,7 +954,7 @@ class ServiceGame {
               as List<dynamic>;
     final groupCounts = <String, int>{};
     for (final row in rows.cast<Map<String, dynamic>>()) {
-      final group = row['question_group']?.toString() ?? '';
+      final group = parseStringValue(row['question_group']);
       if (!_groupMatchesGame(gameName, group)) continue;
       groupCounts[group] = tryParseIntValue(row['question_count']) ?? 0;
     }
@@ -962,7 +962,7 @@ class ServiceGame {
         in localMode
             ? await _localQuestions(tableName)
             : const <Map<String, dynamic>>[]) {
-      final localGroup = row['group']?.toString() ?? '';
+      final localGroup = parseStringValue(row['group']);
       if (row['is_active'] != true ||
           (tryParseIntValue(row['level']) ?? 1) > level ||
           !_groupMatchesGame(gameName, localGroup)) {
@@ -1024,9 +1024,9 @@ class ServiceGame {
         .map(
           (row) => MyGameQuestion(
             id: row['id'].toString(),
-            question: row['question']?.toString() ?? '',
-            answer: row['answer']?.toString() ?? '',
-            group: row['question_group']?.toString() ?? '',
+            question: parseStringValue(row['question']),
+            answer: parseStringValue(row['answer']),
+            group: parseStringValue(row['question_group']),
             level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
             options: row['options']?.toString(),
@@ -1039,7 +1039,7 @@ class ServiceGame {
         .where((row) {
           final matchesGame = _groupMatchesGame(
             gameName,
-            row['group']?.toString() ?? '',
+            parseStringValue(row['group']),
           );
           final matchesKeyword =
               normalizedKeyword.isEmpty ||
@@ -1060,9 +1060,9 @@ class ServiceGame {
         .map(
           (row) => MyGameQuestion(
             id: row[Fields.id].toString(),
-            question: row['question']?.toString() ?? '',
-            answer: row['answer']?.toString() ?? '',
-            group: row['group']?.toString() ?? '',
+          question: parseStringValue(row['question']),
+          answer: parseStringValue(row['answer']),
+          group: parseStringValue(row['group']),
             level: tryParseIntValue(row['level']) ?? 1,
             isActive: row['is_active'] == true,
             options: row['options']?.toString(),
@@ -1093,7 +1093,7 @@ class ServiceGame {
     final groups = rows
         .map(
           (row) =>
-              (row as Map<String, dynamic>)['question_group']?.toString() ?? '',
+              parseStringValue((row as Map<String, dynamic>)['question_group']),
         )
         .where(
           (group) => group.isNotEmpty && _groupMatchesGame(gameName, group),
@@ -1102,7 +1102,7 @@ class ServiceGame {
     if (localMode) {
       groups.addAll(
         (await _localQuestions(_questionTableForGame(gameName)))
-            .map((row) => row['group']?.toString() ?? '')
+            .map((row) => parseStringValue(row['group']))
             .where(
               (group) => group.isNotEmpty && _groupMatchesGame(gameName, group),
             ),
@@ -1180,8 +1180,8 @@ class ServiceGame {
     if (rows.isEmpty) return null;
     final row = rows.first;
     return GameQuestionHint(
-      question: row['question']?.toString() ?? '',
-      answer: row['answer']?.toString() ?? '',
+      question: parseStringValue(row['question']),
+      answer: parseStringValue(row['answer']),
     );
   }
 
@@ -1294,9 +1294,9 @@ class ServiceGame {
       if (await _storesLocally) {
         if (await _hasLocalDuplicate(
           tableName: tableName,
-          question: values['question']?.toString() ?? '',
-          answer: values['answer']?.toString() ?? '',
-          group: values['group']?.toString() ?? '',
+          question: parseStringValue(values['question']),
+          answer: parseStringValue(values['answer']),
+          group: parseStringValue(values['group']),
         )) {
           throw const DuplicateGameQuestionException();
         }
@@ -1409,10 +1409,10 @@ class ServiceGame {
         final data = local[Random.secure().nextInt(local.length)];
         return ModelGameGrammarQuestion(
           questionId: data[Fields.id].toString(),
-          question: data['question']?.toString() ?? '',
-          correctAnswer: data['answer']?.toString() ?? '',
-          type: data['group']?.toString() ?? '',
-          options: (data['options']?.toString() ?? '').split('_'),
+          question: parseStringValue(data['question']),
+          correctAnswer: parseStringValue(data['answer']),
+          type: parseStringValue(data['group']),
+          options: parseStringValue(data['options']).split('_'),
         );
       }
     }
@@ -1474,12 +1474,12 @@ class ServiceGame {
           .toList();
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
-        final question = data['question']?.toString() ?? '';
+        final question = parseStringValue(data['question']);
         return ModelGameSentence(
           questionId: data[Fields.id].toString(),
           question: question,
-          correctAnswer: data['answer']?.toString() ?? '',
-          type: data['group']?.toString() ?? '',
+          correctAnswer: parseStringValue(data['answer']),
+          type: parseStringValue(data['group']),
           options: question.split('_'),
         );
       }
@@ -1543,9 +1543,9 @@ class ServiceGame {
         final data = local[Random.secure().nextInt(local.length)];
         return ModelGameSpeaking(
           questionId: data[Fields.id].toString(),
-          question: data['question']?.toString() ?? '',
-          correctAnswer: data['answer']?.toString() ?? '',
-          type: data['group']?.toString() ?? '',
+          question: parseStringValue(data['question']),
+          correctAnswer: parseStringValue(data['answer']),
+          type: parseStringValue(data['group']),
         );
       }
     }
@@ -1619,10 +1619,10 @@ class ServiceGame {
           final shuffled = choices.take(3).toList()..shuffle();
           return ModelGameSocial(
             id: data[Fields.id].toString(),
-            scene: data['scene']?.toString() ?? '',
-            correctAnswer: choices.first['option_text']?.toString() ?? '',
+            scene: parseStringValue(data['scene']),
+            correctAnswer: parseStringValue(choices.first['option_text']),
             options: shuffled
-                .map((choice) => choice['option_text']?.toString() ?? '')
+                .map((choice) => parseStringValue(choice['option_text']))
                 .toList(),
             scores: shuffled
                 .map((choice) => tryParseIntValue(choice['score']) ?? 0)
@@ -1703,13 +1703,13 @@ class ServiceGame {
         local.shuffle();
         final data = local.first;
         return ModelGameMarioTranslation(
-          questionId: data[Fields.id].toString(),
-          question: data['question']?.toString() ?? '',
-          correctAnswer: data['answer']?.toString() ?? '',
+          questionId: parseStringValue(data[Fields.id]),
+          question: parseStringValue(data['question']),
+          correctAnswer: parseStringValue(data['answer']),
           options:
               local
                   .take(3)
-                  .map((row) => row['answer']?.toString() ?? '')
+                  .map((row) => parseStringValue(row['answer']))
                   .toList()
                 ..shuffle(),
         );
@@ -1756,21 +1756,21 @@ class ServiceGame {
             (row) =>
                 row['is_active'] == true &&
                 (tryParseIntValue(row['level']) ?? 1) <= level &&
-                _groupMatchesGame(gameName, row['group']?.toString() ?? ''),
+                _groupMatchesGame(gameName, parseStringValue(row['group'])),
           )
           .toList();
       if (local.length >= 3) {
         local.shuffle();
         final data = local.first;
         return ModelGameTranslation(
-          questionId: data[Fields.id].toString(),
-          question: data['question']?.toString() ?? '',
-          group: data['group']?.toString() ?? '',
-          correctAnswer: data['answer']?.toString() ?? '',
+          questionId: parseStringValue(data[Fields.id]),
+          question: parseStringValue(data['question']),
+          group: parseStringValue(data['group']),
+          correctAnswer: parseStringValue(data['answer']),
           options:
               local
                   .take(3)
-                  .map((row) => row['answer']?.toString() ?? '')
+                  .map((row) => parseStringValue(row['answer']))
                   .toList()
                 ..shuffle(),
         );
@@ -1820,7 +1820,7 @@ class ServiceGame {
         .eq('question', question.toLowerCase());
 
     return response
-        .map((row) => row['answer']?.toString().toLowerCase() ?? '')
+        .map((row) => parseStringValue(row['answer']).toLowerCase())
         .where((answer) => answer.isNotEmpty)
         .toSet();
   }
@@ -1857,15 +1857,15 @@ class ServiceGame {
                 (tryParseIntValue(row['level']) ?? 1) <= level &&
                 _groupMatchesGame(
                   'Word Searching',
-                  row['group']?.toString() ?? '',
+                  parseStringValue(row['group']),
                 ),
           )
           .toList();
       if (local.isNotEmpty) {
         final data = local[Random.secure().nextInt(local.length)];
         return ModelGameWordSearch(
-          questionId: data[Fields.id].toString(),
-          question: data['question']?.toString() ?? '',
+          questionId: parseStringValue(data[Fields.id]),
+          question: parseStringValue(data['question']),
           found: false,
         );
       }

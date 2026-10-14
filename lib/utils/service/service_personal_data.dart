@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/service/export/service_export_platform.dart';
+import 'package:life_pilot/utils/value_parser.dart';
 
 class ServicePersonalData {
   Future<String> export({
@@ -53,7 +54,7 @@ class ServicePersonalData {
     for (final item in rows) {
       if (item is! Map) continue;
       final wrapper = Map<String, dynamic>.from(item);
-      final tableName = wrapper['table_name']?.toString() ?? '';
+      final tableName = parseStringValue(wrapper['table_name']);
       final value = wrapper.containsKey('record') ? wrapper['record'] : wrapper;
       if (tableName.isEmpty) continue;
       if (value is Map) {
@@ -191,7 +192,7 @@ class ServicePersonalData {
 
   String _fieldValue(Map<String, dynamic> record, String key) {
     if (key == 'time' && record['time'] == null && record['date'] != null) {
-      final raw = record['date']?.toString() ?? '';
+      final raw = parseStringValue(record['date']);
       final separator = raw.indexOf('T');
       return separator < 0 ? '' : raw.substring(separator + 1).split('.').first;
     }
@@ -210,14 +211,14 @@ class ServicePersonalData {
     final accountNames = <String, String>{
       for (final row in grouped['accounting_account'] ?? const [])
         if (row['id'] != null)
-          row['id'].toString(): (row['name'] ?? row['account'] ?? '')
-              .toString(),
+          parseStringValue(row['id']):
+              parseStringValue(row['name'] ?? row['account']),
     };
     final pointAccountNames = <String, String>{
       for (final row in grouped['point_record_account'] ?? const [])
         if (row['id'] != null)
-          row['id'].toString(): (row['name'] ?? row['account'] ?? '')
-              .toString(),
+          parseStringValue(row['id']):
+              parseStringValue(row['name'] ?? row['account']),
     };
     final prepared = records.map((row) {
       final copy = Map<String, dynamic>.from(row);
@@ -232,7 +233,7 @@ class ServicePersonalData {
             .toString();
       } else if (tableName == 'accounting_detail') {
         copy['account_name'] =
-            accountNames[copy['account_id']?.toString() ?? ''] ?? '';
+            accountNames[parseStringValue(copy['account_id'])] ?? '';
         copy['category'] = _localizedCategory(copy['primary_category'], loc);
         copy['secondary_category'] = _localizedCategory(
           copy['group'] ?? copy['secondary_category'],
@@ -241,7 +242,7 @@ class ServicePersonalData {
         copy['description'] = copy['description'] ?? copy['title'] ?? '';
       } else if (tableName == 'point_record_detail') {
         copy['account_name'] =
-            pointAccountNames[copy['account_id']?.toString() ?? ''] ?? '';
+            pointAccountNames[parseStringValue(copy['account_id'])] ?? '';
         copy['category'] = _localizedCategory(copy['primary_category'], loc);
         copy['secondary_category'] = _localizedCategory(
           copy['group'] ?? copy['secondary_category'],
@@ -256,51 +257,53 @@ class ServicePersonalData {
     prepared.sort((a, b) {
       if (tableName == 'accounting_account' ||
           tableName == 'point_record_account') {
-        return (a['account_name']?.toString().toLowerCase() ?? '').compareTo(
-          b['account_name']?.toString().toLowerCase() ?? '',
+        return parseStringValue(a['account_name']).toLowerCase().compareTo(
+          parseStringValue(b['account_name']).toLowerCase(),
         );
       }
       if (tableName.contains('detail')) {
-        final account = (a['account_name']?.toString() ?? '').compareTo(
-          b['account_name']?.toString() ?? '',
+        final account = parseStringValue(a['account_name']).compareTo(
+          parseStringValue(b['account_name']),
         );
         if (account != 0) return account;
       }
-      final date = (a[dateKey]?.toString() ?? '').compareTo(
-        b[dateKey]?.toString() ?? '',
+      final date = parseStringValue(a[dateKey]).compareTo(
+        parseStringValue(b[dateKey]),
       );
       if (date != 0) return date;
-      final time = (a['start_time'] ?? a['time'] ?? '').toString().compareTo(
-        (b['start_time'] ?? b['time'] ?? '').toString(),
+      final time = parseStringValue(a['start_time'] ?? a['time']).compareTo(
+        parseStringValue(b['start_time'] ?? b['time']),
       );
       if (time != 0) return time;
       if (!tableName.contains('detail')) {
-        final endDate =
-            (a['end_date']?.toString() ?? a['start_date']?.toString() ?? '')
-                .compareTo(
-                  (b['end_date']?.toString() ??
-                      b['start_date']?.toString() ??
-                      ''),
-                );
+        final endDate = parseStringValue(
+          a['end_date'],
+          fallback: parseStringValue(a['start_date']),
+        ).compareTo(
+          parseStringValue(
+            b['end_date'],
+            fallback: parseStringValue(b['start_date']),
+          ),
+        );
         if (endDate != 0) return endDate;
-        final endTime = (a['end_time']?.toString() ?? '').compareTo(
-          b['end_time']?.toString() ?? '',
+        final endTime = parseStringValue(a['end_time']).compareTo(
+          parseStringValue(b['end_time']),
         );
         if (endTime != 0) return endTime;
-        final city = (a['city']?.toString() ?? '').compareTo(
-          b['city']?.toString() ?? '',
+        final city = parseStringValue(a['city']).compareTo(
+          parseStringValue(b['city']),
         );
         if (city != 0) return city;
-        final location = (a['location']?.toString() ?? '').compareTo(
-          b['location']?.toString() ?? '',
+        final location = parseStringValue(a['location']).compareTo(
+          parseStringValue(b['location']),
         );
         if (location != 0) return location;
-        return (a['name']?.toString() ?? '').compareTo(
-          b['name']?.toString() ?? '',
+        return parseStringValue(a['name']).compareTo(
+          parseStringValue(b['name']),
         );
       }
-      return (a['description']?.toString() ?? '').compareTo(
-        b['description']?.toString() ?? '',
+      return parseStringValue(a['description']).compareTo(
+        parseStringValue(b['description']),
       );
     });
     return prepared;
