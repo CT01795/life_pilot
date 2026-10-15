@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/social/controller_game_social.dart';
+import 'package:life_pilot/game/social/widgets_social_option.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/service_game.dart';
@@ -167,80 +168,16 @@ class _PageGameSocialState extends State<PageGameSocial> {
                     ),
                   ),
                   Gaps.h8,
-                  // 三個答案按鈕
-                  ...q.options.map((opt) {
-                    Color buttonColor = controller.getButtonColor(opt); // 淺藍
-                    Color borderColor = controller.getBorderColor(
-                      opt,
-                    ); // Material Blue 700
-                    Icon? statusIcon = controller.getStatusIcon(
-                      opt,
-                    ); // 用於顯示勾勾或叉叉
-                    return Padding(
-                      padding: Insets.all8,
-                      child: SizedBox(
-                        width: double.infinity, // 寬度等於螢幕寬度
-                        child: GameSpeechTooltip(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: buttonColor,
-                            ),
-                            onPressed: () => controller.speak(opt),
-                            child: Row(
-                              mainAxisSize:
-                                  MainAxisSize.max, // 🔹 改成 max，佔滿整個按鈕
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                // ⭐ 改成自訂 CheckBox 風格的 Radio
-                                Tooltip(
-                                  message: loc.checkOption,
-                                  child: GestureDetector(
-                                    onTap: controller.lastAnswer == null
-                                        ? () => onAnswer(opt)
-                                        : null,
-                                    child: Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.rectangle,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: borderColor),
-                                      ),
-                                      child: Center(
-                                        child: opt == controller.lastAnswer
-                                            ? Icon(
-                                                Icons.check,
-                                                color: borderColor,
-                                                size: 48,
-                                              )
-                                            : SizedBox.shrink(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Gaps.w24,
-                                Expanded(
-                                  child: Text(
-                                    opt,
-                                    style: TextStyle(
-                                      fontSize: size,
-                                      color: Color(0xFF212121),
-                                    ),
-                                    softWrap: true, // 允許自動換行
-                                    textAlign: TextAlign.start,
-                                  ),
-                                ),
-                                Gaps.w8,
-                                // ⭐ 這裡必須安全顯示
-                                statusIcon ?? SizedBox.shrink(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
+                  for (final option in q.options)
+                    WidgetsSocialOption(
+                      option: option,
+                      feedback: controller.feedbackFor(option),
+                      selected: option == controller.lastAnswer,
+                      canAnswer: controller.canAnswer,
+                      onAnswer: () => onAnswer(option),
+                      onSpeak: () => controller.speak(option),
+                      fontSize: size,
+                    ),
                 ],
               ),
             ),

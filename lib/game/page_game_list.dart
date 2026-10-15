@@ -40,7 +40,9 @@ import 'package:provider/provider.dart';
 import '../utils/logger.dart';
 
 class PageGameList extends StatefulWidget {
-  const PageGameList({super.key});
+  const PageGameList({super.key, this.service});
+
+  final ServiceGame? service;
 
   @override
   State<PageGameList> createState() => _PageGameListState();
@@ -51,13 +53,12 @@ class _PageGameListState extends State<PageGameList> {
   int get unlockedMaxLevel => _progressController.unlockedMaxLevel;
   // 範例遊戲類別與遊戲名稱
   late final ControllerGameList controllerGameList;
-  final ServiceGame _serviceGame = ServiceGame();
+  late final ServiceGame _serviceGame;
   String? selectedCategory;
   String? selectedGameName;
   int? selectedLevel;
   String selectedQuestionBank = 'admin';
   List<ModelGameUser> get userProgress => _progressController.records;
-  bool _hasLoadError = false;
   bool _isOpeningGame = false;
   bool get _isLoadingProgress => _progressController.isLoading;
   bool get _isLoadingMoreProgress => _progressController.isLoadingMore;
@@ -74,20 +75,19 @@ class _PageGameListState extends State<PageGameList> {
   @override
   void initState() {
     super.initState();
+    _serviceGame = widget.service ?? ServiceGame();
     final auth = context.read<ControllerAuth>();
     final currentAccount = auth.currentAccount ?? AuthConstants.guest;
     _isQuestionBankAdmin = normalizedTextEquals(
       currentAccount,
       AuthConstants.systemEventOwnerEmail,
     );
-    controllerGameList = ControllerGameList(
-      serviceGame: _serviceGame,
-      userName: currentAccount,
-    );
+    controllerGameList = ControllerGameList(serviceGame: _serviceGame)
+      ..addListener(_onDataChanged);
     _progressController = ControllerGameProgress(
       service: _serviceGame,
       userName: currentAccount,
-    )..addListener(_onProgressChanged);
+    )..addListener(_onDataChanged);
 
     _loadData();
   }
@@ -102,31 +102,15 @@ class _PageGameListState extends State<PageGameList> {
   }
 
   Future<void> _loadData() async {
-    if (mounted) setState(() => _hasLoadError = false);
     try {
       await controllerGameList.loadGames();
       if (!mounted) return;
-      final playableCategories = controllerGameList.gamesByCategory.entries
-          .where(
-            (category) =>
-                category.value.values.any((levels) => levels.isNotEmpty),
-          )
-          .toList(growable: false);
-      if (playableCategories.isNotEmpty) {
-        final firstCategory = playableCategories.first;
-        MapEntry<String, List<ModelGameItem>>? firstGame;
-        for (final game in firstCategory.value.entries) {
-          if (game.value.isNotEmpty) {
-            firstGame = game;
-            break;
-          }
-        }
-        if (firstGame == null) return;
-        final selectedGame = firstGame;
+      final firstGame = controllerGameList.firstGame;
+      if (firstGame != null) {
         setState(() {
-          selectedCategory = firstCategory.key;
-          selectedGameName = selectedGame.key;
-          selectedLevel = selectedGame.value.first.level;
+          selectedCategory = firstGame.gameType;
+          selectedGameName = firstGame.gameName;
+          selectedLevel = firstGame.level;
         });
         await _loadUserProgress();
       } else {
@@ -134,11 +118,10 @@ class _PageGameListState extends State<PageGameList> {
       }
     } catch (error, stackTrace) {
       logger.e('Load games failed', error: error, stackTrace: stackTrace);
-      if (mounted) setState(() => _hasLoadError = true);
     }
   }
 
-  void _onProgressChanged() {
+  void _onDataChanged() {
     if (mounted) setState(() {});
   }
 
@@ -173,27 +156,18 @@ class _PageGameListState extends State<PageGameList> {
 
   @override
   void dispose() {
-    _progressController.removeListener(_onProgressChanged);
+    _progressController.removeListener(_onDataChanged);
     _progressController.dispose();
+    controllerGameList.removeListener(_onDataChanged);
     controllerGameList.dispose();
     super.dispose();
   }
 
-  ModelGameItem? get selectedGameItem {
-    if (selectedCategory == null ||
-        selectedGameName == null ||
-        selectedLevel == null) {
-      return null;
-    }
-    final gameMap = controllerGameList.gamesByCategory[selectedCategory!];
-    if (gameMap == null) return null;
-    final levelList = gameMap[selectedGameName!];
-    if (levelList == null || levelList.isEmpty) return null;
-    return levelList.firstWhere(
-      (g) => g.level == selectedLevel,
-      orElse: () => levelList.first,
-    );
-  }
+  ModelGameItem? get selectedGameItem => controllerGameList.findGame(
+    gameType: selectedCategory,
+    gameName: selectedGameName,
+    level: selectedLevel,
+  );
 
   bool get _supportsQuestionBank {
     final gameName = selectedGameName?.toLowerCase() ?? '';
@@ -417,7 +391,7 @@ class _PageGameListState extends State<PageGameList> {
     if (controllerGameList.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_hasLoadError) {
+    if (controllerGameList.loadError != null) {
       return Scaffold(
         body: Center(
           child: Column(
@@ -432,12 +406,14 @@ class _PageGameListState extends State<PageGameList> {
       );
     }
 
+    if (controllerGameList.firstGame == null) {
+      return Scaffold(body: Center(child: Text(loc.noData)));
+    }
+
     final gameMap = selectedCategory != null
         ? controllerGameList.gamesByCategory[selectedCategory!]
         : null;
-    final levelList = selectedGameName != null
-        ? gameMap![selectedGameName!]
-        : null;
+    final levelList = gameMap?[selectedGameName];
     final recentStats = _progressController.summary;
 
     return Scaffold(
@@ -680,10 +656,6 @@ class _PageGameListState extends State<PageGameList> {
                   ? () async {
                       setState(() => _isOpeningGame = true);
                       final game = selectedGameItem!;
-                      controllerGameList.invalidateUserProgress(
-                        game.gameType,
-                        game.gameName,
-                      );
                       if (_supportsQuestionBank) {
                         try {
                           final availability = await _serviceGame

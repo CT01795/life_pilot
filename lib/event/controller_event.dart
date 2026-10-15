@@ -13,13 +13,12 @@ import 'package:life_pilot/event/service_event_public.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/event/event_refresh_policy.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
+import 'package:life_pilot/event/service_event_tracking.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/model_event_weather.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ControllerEvent extends SafeChangeNotifier {
   final TextEditingController _searchController = TextEditingController();
@@ -33,7 +32,7 @@ class ControllerEvent extends SafeChangeNotifier {
   final ServiceEventTransfer _serviceEventTransfer;
   final ServiceEventPublic _serviceEventPublic;
   final bool _ownsServiceEventPublic;
-  final tracking = EventTrackingService();
+  final EventTrackingService tracking;
   final Future<void> Function()? onCalendarReload;
   bool _isLoadingEvents = false;
   bool _hasLoadedEventsSuccessfully = false;
@@ -66,7 +65,9 @@ class ControllerEvent extends SafeChangeNotifier {
     String? toTableName,
     ServiceEventPublic? serviceEventPublic,
     this.onCalendarReload,
-  }) : _tableName = tableName,
+    EventTrackingService? eventTracking,
+  }) : tracking = eventTracking ?? EventTrackingService(),
+       _tableName = tableName,
        _toTableName = toTableName,
        _modelEvent = modelEvent,
        _serviceEvent = serviceEvent,
@@ -819,50 +820,22 @@ class ControllerEvent extends SafeChangeNotifier {
   }
 
   Future<void> onOpenLink(EventViewModel event) async {
-    if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
-
-    await _launchUrl(Uri.parse(event.masterUrl!), event, column: 'page_views');
+    if (notifierDisposed) return;
+    await tracking.openEventLink(
+      eventId: event.id,
+      eventName: event.name,
+      url: event.masterUrl,
+    );
   }
 
   Future<void> onOpenMap(EventViewModel event) async {
-    if (event.locationDisplay.isEmpty) return;
-
-    final query = Uri.encodeComponent(event.locationDisplay);
-
-    // Google Maps 網頁導航 URL
-    final googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$query',
+    if (notifierDisposed) return;
+    await tracking.openEventMap(
+      eventId: event.id,
+      eventName: event.name,
+      city: event.event.city,
+      location: event.event.location,
     );
-
-    await _launchUrl(googleMapsUrl, event, column: 'card_clicks');
-  }
-
-  // ------------------ Private ------------------
-  /// 統一處理 URL 開啟與事件計數
-  Future<void> _launchUrl(
-    Uri uri,
-    EventViewModel event, {
-    required String column,
-  }) async {
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      await _incrementCounter(event, column);
-    } catch (e) {
-      logger.e('Failed to launch URL for ${event.id}: $e');
-    }
-  }
-
-  /// 統一事件計數
-  Future<void> _incrementCounter(EventViewModel event, String column) async {
-    try {
-      await tracking.incrementEventCounter(
-        eventId: event.id,
-        eventName: event.name,
-        column: column,
-      );
-    } catch (e) {
-      logger.e('Failed to increment counter for ${event.id} ($column): $e');
-    }
   }
 
   bool _isRefreshingPublicEvents = false;

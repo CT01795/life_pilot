@@ -2,16 +2,12 @@
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
-import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/game/social/model_game_social.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameSocial extends SafeChangeNotifier {
   final String userName;
@@ -26,7 +22,6 @@ class ControllerGameSocial extends SafeChangeNotifier {
   bool isFinished = false;
   bool isLoading = false;
   Object? loadError;
-  bool _isDisposed = false;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
@@ -40,26 +35,25 @@ class ControllerGameSocial extends SafeChangeNotifier {
     required this.gameLevel,
     this.questionBank = 'admin',
     required this.maxQuestions,
-  });
+    ServiceGameSpeech? speech,
+  }) : _speech = speech ?? ServiceGameSpeech();
 
-  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
+  final ServiceGameSpeech _speech;
+
   Future<void> speak(String text) async {
-    if (text.isEmpty) return;
-
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
-    }
-
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    await _ttsAudio.speak(
-      text: text,
-      languageCode: containsChinese ? 'zh' : 'en-US',
-    );
+    if (notifierDisposed) return;
+    await _speech.speak(text);
   }
 
+  bool get canAnswer =>
+      !notifierDisposed &&
+      !isLoading &&
+      !isFinished &&
+      currentQuestion != null &&
+      lastAnswer == null;
+
   Future<void> loadNextQuestion() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isFinished) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     if (score >= 100) {
       await _completeGame();
@@ -72,8 +66,9 @@ class ControllerGameSocial extends SafeChangeNotifier {
     showCorrectAnswer = false;
     _notifyIfActive();
 
-    currentQuestion = await _fetchQuestionSafely();
-    if (_isDisposed) return;
+    final question = await _fetchQuestionSafely();
+    if (notifierDisposed) return;
+    currentQuestion = question;
 
     isLoading = false;
     _notifyIfActive();
@@ -95,7 +90,7 @@ class ControllerGameSocial extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
       return null;
     }
   }
@@ -110,7 +105,7 @@ class ControllerGameSocial extends SafeChangeNotifier {
 
   Map<String, Set<String>> synonyms = {};
   Future<void> answer(String answer) async {
-    if (currentQuestion == null || lastAnswer != null) return;
+    if (!canAnswer) return;
 
     int inputScore = getScore(answer);
 
@@ -171,14 +166,14 @@ class ControllerGameSocial extends SafeChangeNotifier {
   }
 
   Future<void> _completeGame() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isFinished) return;
     _nextQuestionTimer?.cancel();
     isLoading = true;
     loadError = null;
     _notifyIfActive();
     try {
       await _saveScore(score >= 100);
-      if (_isDisposed) return;
+      if (notifierDisposed) return;
       isFinished = true;
     } catch (error, stackTrace) {
       logger.e(
@@ -186,9 +181,9 @@ class ControllerGameSocial extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
     } finally {
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isLoading = false;
         _notifyIfActive();
       }
@@ -209,58 +204,28 @@ class ControllerGameSocial extends SafeChangeNotifier {
   }
 
   void _notifyIfActive() {
-    if (!_isDisposed) notifyListeners();
+    if (!notifierDisposed) notifyListeners();
   }
 
-  Color getButtonColor(String option) {
-    if (lastAnswer == null) return Color(0xFFE3F2FD);
-    int inputScore = getScore(option);
+  int getScore(String option) => currentQuestion?.scoreFor(option) ?? -1;
+
+  SocialOptionFeedback feedbackFor(String option) {
+    if (lastAnswer == null) return SocialOptionFeedback.neutral;
+    final correct = getScore(option) >= 0;
     if (option == lastAnswer) {
-      return inputScore >= 0 ? Color(0xFFC8E6C9) : Color(0xFFFFCDD2);
-    } else if (inputScore >= 0 && showCorrectAnswer) {
-      return Color(0xFFC8E6C9);
+      return correct
+          ? SocialOptionFeedback.correct
+          : SocialOptionFeedback.incorrect;
     }
-    return Color(0xFFE3F2FD);
-  }
-
-  int getScore(String option) {
-    for (int i = 0; i < currentQuestion!.options.length; i++) {
-      if (currentQuestion!.options[i] == option) {
-        return currentQuestion!.scores[i];
-      }
-    }
-    return -1;
-  }
-
-  Color getBorderColor(String option) {
-    if (lastAnswer == null) return Color(0xFF1976D2);
-    int inputScore = getScore(option);
-    if (option == lastAnswer) {
-      return inputScore >= 0 ? Color(0xFF388E3C) : Color(0xFFD32F2F);
-    } else if (inputScore >= 0 && showCorrectAnswer) {
-      return Color(0xFF388E3C);
-    }
-    return Color(0xFF1976D2);
-  }
-
-  Icon? getStatusIcon(String option) {
-    if (lastAnswer == null) return null;
-    int inputScore = getScore(option);
-    if (option == lastAnswer) {
-      return inputScore >= 0
-          ? Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32)
-          : Icon(Icons.clear_rounded, color: Color(0xFFD32F2F), size: 32);
-    } else if (inputScore >= 0 && showCorrectAnswer) {
-      return Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32);
-    }
-    return null;
+    return correct && showCorrectAnswer
+        ? SocialOptionFeedback.correct
+        : SocialOptionFeedback.neutral;
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _nextQuestionTimer?.cancel();
-    _ttsAudio.dispose();
+    unawaited(_speech.dispose());
     super.dispose();
   }
 }

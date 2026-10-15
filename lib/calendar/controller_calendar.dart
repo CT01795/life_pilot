@@ -13,7 +13,7 @@ import 'package:life_pilot/event/service_event.dart';
 import 'package:life_pilot/event/service_event_transfer.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/local_storage/local_data_store.dart';
-import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
+import 'package:life_pilot/event/service_event_tracking.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -26,11 +26,10 @@ import 'package:life_pilot/utils/service/network_availability.dart';
 import 'package:life_pilot/utils/service/service_notification/notification_overlay.dart';
 import 'package:life_pilot/utils/service/service_weather.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerCalendar extends SafeChangeNotifier {
-  final tracting = EventTrackingService();
+  final EventTrackingService _tracking;
   late ModelCalendar _modelCalendar;
   late ServiceEvent _serviceEvent;
   late ControllerNotification _controllerNotification;
@@ -93,7 +92,8 @@ class ControllerCalendar extends SafeChangeNotifier {
     required String tableName,
     required String toTableName,
     required this.closeText,
-  }) {
+    EventTrackingService? eventTracking,
+  }) : _tracking = eventTracking ?? EventTrackingService() {
     _modelCalendar = modelCalendar;
     _serviceEvent = serviceEvent;
     _controllerNotification = controllerNotification;
@@ -840,48 +840,21 @@ class ControllerCalendar extends SafeChangeNotifier {
 
   // 開啟活動連結
   Future<void> onOpenLink(EventViewModel event) async {
-    if (event.masterUrl == null || event.masterUrl!.isEmpty) return;
-    await _launchUrl(Uri.parse(event.masterUrl!), event, column: 'page_views');
-  }
-
-  // 開啟地圖導航
-  Future<void> onOpenMap(EventViewModel event) async {
-    if (event.locationDisplay.isEmpty) return;
-    final query = Uri.encodeComponent(event.locationDisplay);
-
-    // Google Maps 網頁導航 URL
-    final googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$query',
+    if (notifierDisposed) return;
+    await _tracking.openEventLink(
+      eventId: event.id,
+      eventName: event.name,
+      url: event.masterUrl,
     );
-    await _launchUrl(googleMapsUrl, event, column: 'card_clicks');
   }
 
-  // ------------------ Private ------------------
-
-  /// 統一處理 URL 開啟與事件計數
-  Future<void> _launchUrl(
-    Uri uri,
-    EventViewModel event, {
-    required String column,
-  }) async {
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      await _incrementCounter(event, column);
-    } catch (e) {
-      logger.e('Failed to launch URL for ${event.id}: $e');
-    }
-  }
-
-  /// 統一事件計數
-  Future<void> _incrementCounter(EventViewModel event, String column) async {
-    try {
-      await tracting.incrementEventCounter(
-        eventId: event.id,
-        eventName: event.name,
-        column: column,
-      );
-    } catch (e) {
-      logger.e('Failed to increment counter for ${event.id} ($column): $e');
-    }
+  Future<void> onOpenMap(EventViewModel event) async {
+    if (notifierDisposed) return;
+    await _tracking.openEventMap(
+      eventId: event.id,
+      eventName: event.name,
+      city: event.event.city,
+      location: event.event.location,
+    );
   }
 }

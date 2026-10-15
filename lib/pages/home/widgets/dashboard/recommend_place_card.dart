@@ -5,7 +5,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
 import 'package:life_pilot/pages/home/model/place/recommended_place.dart';
 import 'package:life_pilot/pages/home/service/calendar_service.dart';
-import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
+import 'package:life_pilot/event/service_event_tracking.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/async_action_checkbox.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_card_header.dart';
 import 'package:life_pilot/pages/home/widgets/dashboard/dashboard_header_summary.dart';
@@ -195,13 +195,10 @@ class RecommendPlaceCard extends StatelessWidget {
                                   (e.masterUrl == null || e.masterUrl!.isEmpty)
                                   ? null
                                   : () async {
-                                      await tracking.incrementEventCounter(
-                                        eventId: e.id,
-                                        eventName: e.name,
-                                        column: 'page_views',
-                                      );
-                                      if (!await tracking.launchUrlLink(
-                                            e.masterUrl,
+                                      if (!await tracking.openEventLink(
+                                            eventId: e.id,
+                                            eventName: e.name,
+                                            url: e.masterUrl,
                                           ) &&
                                           context.mounted) {
                                         ScaffoldMessenger.of(
@@ -251,14 +248,11 @@ class RecommendPlaceCard extends StatelessWidget {
                                           (e.location != null &&
                                               e.location!.isNotEmpty))
                                       ? () async {
-                                          await tracking.incrementEventCounter(
-                                            eventId: e.id,
-                                            eventName: e.name,
-                                            column: 'card_clicks',
-                                          );
-                                          if (!await tracking.onOpenMap(
-                                                e.city,
-                                                e.location,
+                                          if (!await tracking.openEventMap(
+                                                eventId: e.id,
+                                                eventName: e.name,
+                                                city: e.city,
+                                                location: e.location,
                                               ) &&
                                               context.mounted) {
                                             ScaffoldMessenger.of(

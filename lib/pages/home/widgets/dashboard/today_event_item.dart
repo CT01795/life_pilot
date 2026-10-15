@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
-import 'package:life_pilot/pages/home/service/event_tracking_service.dart';
+import 'package:life_pilot/event/service_event_tracking.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:provider/provider.dart';
@@ -40,12 +40,11 @@ class TodayEventItem extends StatelessWidget {
                   onTap: (event.masterUrl == null || event.masterUrl!.isEmpty)
                       ? null
                       : () async {
-                          await tracking.incrementEventCounter(
-                            eventId: event.id,
-                            eventName: event.name,
-                            column: 'page_views',
-                          );
-                          if (!await tracking.launchUrlLink(event.masterUrl) &&
+                          if (!await tracking.openEventLink(
+                                eventId: event.id,
+                                eventName: event.name,
+                                url: event.masterUrl,
+                              ) &&
                               context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -74,12 +73,12 @@ class TodayEventItem extends StatelessWidget {
                     : '',
                 child: InkWell(
                   onTap: () async {
-                    await tracking.incrementEventCounter(
-                      eventId: event.id,
-                      eventName: event.name,
-                      column: 'card_clicks',
-                    );
-                    if (!await tracking.onOpenMap(event.city, event.location) &&
+                    if (!await tracking.openEventMap(
+                          eventId: event.id,
+                          eventName: event.name,
+                          city: event.city,
+                          location: event.location,
+                        ) &&
                         context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(loc.externalLinkOpenFailed)),
