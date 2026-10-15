@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/controller_game_list.dart';
+import 'package:life_pilot/game/controller_game_progress.dart';
 import 'package:life_pilot/game/game_question_bank_visibility.dart';
 import 'package:life_pilot/game/game_exit_guard.dart';
 import 'package:life_pilot/game/page_game_question_create.dart';
@@ -46,7 +47,8 @@ class PageGameList extends StatefulWidget {
 }
 
 class _PageGameListState extends State<PageGameList> {
-  int unlockedMaxLevel = 1; // 預設第 1 關
+  late final ControllerGameProgress _progressController;
+  int get unlockedMaxLevel => _progressController.unlockedMaxLevel;
   // 範例遊戲類別與遊戲名稱
   late final ControllerGameList controllerGameList;
   final ServiceGame _serviceGame = ServiceGame();
@@ -54,14 +56,12 @@ class _PageGameListState extends State<PageGameList> {
   String? selectedGameName;
   int? selectedLevel;
   String selectedQuestionBank = 'admin';
-  List<ModelGameUser> userProgress = [];
-  int _progressRequestId = 0;
+  List<ModelGameUser> get userProgress => _progressController.records;
   bool _hasLoadError = false;
   bool _isOpeningGame = false;
-  bool _isLoadingProgress = false;
-  bool _isLoadingMoreProgress = false;
-  bool _hasMoreProgress = false;
-  DateTime? _progressStartDate;
+  bool get _isLoadingProgress => _progressController.isLoading;
+  bool get _isLoadingMoreProgress => _progressController.isLoadingMore;
+  bool get _hasMoreProgress => _progressController.hasMore;
   late final bool _isQuestionBankAdmin;
   bool _isLocalStorage = false;
 
@@ -84,6 +84,10 @@ class _PageGameListState extends State<PageGameList> {
       serviceGame: _serviceGame,
       userName: currentAccount,
     );
+    _progressController = ControllerGameProgress(
+      service: _serviceGame,
+      userName: currentAccount,
+    )..addListener(_onProgressChanged);
 
     _loadData();
   }
@@ -134,185 +138,43 @@ class _PageGameListState extends State<PageGameList> {
     }
   }
 
-  Future<void> _loadUserProgress() async {
-    if (selectedCategory == null || selectedGameName == null) return;
-    _serviceGame.invalidateLocalProgress();
-    final requestId = ++_progressRequestId;
-    final requestedCategory = selectedCategory!;
-    final requestedGameName = selectedGameName!;
-    if (mounted) {
-      setState(() {
-        _isLoadingProgress = true;
-        _isLoadingMoreProgress = false;
-      });
-    }
-    // 取得該遊戲所有關卡紀錄
-    late final int highestPassedLevel;
-    late final List<ModelGameUser> displayProgress;
-    late DateTime startDate;
-    late final bool hasMore;
-    try {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      startDate = today.subtract(const Duration(days: 29));
-      final results = await Future.wait<Object>([
-        _serviceGame.fetchHighestPassedLevel(
-          userName: controllerGameList.userName,
-          gameType: requestedCategory,
-          gameName: requestedGameName,
-        ),
-        _serviceGame.fetchUserProgressPage(
-          userName: controllerGameList.userName,
-          gameType: requestedCategory,
-          gameName: requestedGameName,
-          dateFrom: startDate,
-          dateTo: today,
-          includeLatestFallback: true,
-        ),
-        _serviceGame.hasUserProgressBefore(
-          userName: controllerGameList.userName,
-          gameType: requestedCategory,
-          gameName: requestedGameName,
-          before: startDate,
-        ),
-      ]);
-      highestPassedLevel = parseIntValue(results[0]);
-      displayProgress = results[1] as List<ModelGameUser>;
-      var hasProgressBefore = parseBoolValue(results[2]);
-      final fallbackDates = displayProgress
-          .map((item) => item.createdAt)
-          .whereType<DateTime>()
-          .where((date) => date.isBefore(startDate))
-          .toList();
-      if (displayProgress.isNotEmpty &&
-          fallbackDates.length == displayProgress.length) {
-        startDate = fallbackDates.reduce((a, b) => a.isAfter(b) ? a : b);
-        hasProgressBefore = await _serviceGame.hasUserProgressBefore(
-          userName: controllerGameList.userName,
-          gameType: requestedCategory,
-          gameName: requestedGameName,
-          before: startDate,
-        );
-      }
-      hasMore = hasProgressBefore;
-    } catch (error, stackTrace) {
-      logger.e(
-        'Load game progress failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted && requestId == _progressRequestId) {
-        setState(() => _isLoadingProgress = false);
-        AppNavigator.showErrorBar(AppLocalizations.of(context)!.unknownError);
-      }
-      return;
-    }
-    if (!mounted || requestId != _progressRequestId) return;
-    if (selectedCategory != requestedCategory ||
-        selectedGameName != requestedGameName) {
-      return;
-    }
-    setState(() {
-      _isLoadingProgress = false;
-      _progressStartDate = startDate;
-      _hasMoreProgress = hasMore;
-      userProgress = displayProgress;
+  void _onProgressChanged() {
+    if (mounted) setState(() {});
+  }
 
-      // 取得最高通關 level
-      unlockedMaxLevel = highestPassedLevel + 1;
-      // 將選單預設值設為最大可進入關卡
-      selectedLevel = unlockedMaxLevel;
-      // 如果 unlockedMaxLevel 超過關卡列表最大值，則選最後一關
-      final levelList = controllerGameList
-          .gamesByCategory[selectedCategory!]![selectedGameName!]!;
-      if (selectedLevel! > levelList.last.level) {
-        selectedLevel = levelList.last.level;
-      }
+  Future<void> _loadUserProgress() async {
+    final category = selectedCategory;
+    final gameName = selectedGameName;
+    if (category == null || gameName == null) return;
+    final result = await _progressController.load(
+      gameType: category,
+      gameName: gameName,
+    );
+    if (!mounted || result == null) return;
+    if (result == false) {
+      AppNavigator.showErrorBar(AppLocalizations.of(context)!.unknownError);
+      return;
+    }
+    final levels = controllerGameList.gamesByCategory[category]?[gameName];
+    if (levels == null || levels.isEmpty) return;
+    setState(() {
+      selectedLevel = unlockedMaxLevel > levels.last.level
+          ? levels.last.level
+          : unlockedMaxLevel;
     });
   }
 
   Future<void> _loadMoreProgress() async {
-    if (_isLoadingMoreProgress ||
-        !_hasMoreProgress ||
-        _progressStartDate == null ||
-        selectedCategory == null ||
-        selectedGameName == null) {
-      return;
-    }
-    final requestId = _progressRequestId;
-    final requestedCategory = selectedCategory!;
-    final requestedGameName = selectedGameName!;
-    final requestedStartDate = _progressStartDate!;
-    setState(() => _isLoadingMoreProgress = true);
-    try {
-      final latestOlder = await _serviceGame.latestUserProgressDateBefore(
-        userName: controllerGameList.userName,
-        gameType: requestedCategory,
-        gameName: requestedGameName,
-        before: requestedStartDate,
-      );
-      if (!mounted || requestId != _progressRequestId) return;
-      if (latestOlder == null) {
-        setState(() => _hasMoreProgress = false);
-        return;
-      }
-      final dateTo = DateTime(
-        latestOlder.year,
-        latestOlder.month,
-        latestOlder.day,
-      );
-      final dateFrom = dateTo.subtract(const Duration(days: 29));
-      final results = await Future.wait<Object>([
-        _serviceGame.fetchUserProgressPage(
-          userName: controllerGameList.userName,
-          gameType: requestedCategory,
-          gameName: requestedGameName,
-          dateFrom: dateFrom,
-          dateTo: dateTo,
-        ),
-        _serviceGame.hasUserProgressBefore(
-          userName: controllerGameList.userName,
-          gameType: requestedCategory,
-          gameName: requestedGameName,
-          before: dateFrom,
-        ),
-      ]);
-      if (!mounted || requestId != _progressRequestId) return;
-      final older = results[0] as List<ModelGameUser>;
-      final hasMore = results[1] as bool;
-      final unique = <String, ModelGameUser>{};
-      for (final item in [...userProgress, ...older]) {
-        unique[item.id ?? ''] = item;
-      }
-      setState(() {
-        _progressStartDate = dateFrom;
-        _hasMoreProgress = hasMore;
-        userProgress = unique.values.toList()
-          ..sort(
-            (a, b) => (b.createdAt ?? DateTime(0)).compareTo(
-              a.createdAt ?? DateTime(0),
-            ),
-          );
-      });
-    } catch (error, stackTrace) {
-      logger.e(
-        'Load more game progress failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted && requestId == _progressRequestId) {
-        AppNavigator.showErrorBar(AppLocalizations.of(context)!.unknownError);
-      }
-    } finally {
-      if (mounted && requestId == _progressRequestId) {
-        setState(() => _isLoadingMoreProgress = false);
-      }
+    final result = await _progressController.loadMore();
+    if (mounted && result == false) {
+      AppNavigator.showErrorBar(AppLocalizations.of(context)!.unknownError);
     }
   }
 
   @override
   void dispose() {
-    _progressRequestId++;
+    _progressController.removeListener(_onProgressChanged);
+    _progressController.dispose();
     controllerGameList.dispose();
     super.dispose();
   }
@@ -576,7 +438,7 @@ class _PageGameListState extends State<PageGameList> {
     final levelList = selectedGameName != null
         ? gameMap![selectedGameName!]
         : null;
-    final recentStats = _GameRecentStats.from(userProgress);
+    final recentStats = _progressController.summary;
 
     return Scaffold(
       body: Padding(
@@ -1505,33 +1367,4 @@ class _GameProgressOverview extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GameRecentStats {
-  const _GameRecentStats({
-    required this.attempts,
-    required this.passed,
-    required this.bestScore,
-  });
-
-  factory _GameRecentStats.from(List<ModelGameUser> records) {
-    var passed = 0;
-    num? bestScore;
-    for (final record in records) {
-      if (record.isPass == true) passed++;
-      final score = record.score;
-      if (score != null && (bestScore == null || score > bestScore)) {
-        bestScore = score;
-      }
-    }
-    return _GameRecentStats(
-      attempts: records.length,
-      passed: passed,
-      bestScore: bestScore,
-    );
-  }
-
-  final int attempts;
-  final int passed;
-  final num? bestScore;
 }

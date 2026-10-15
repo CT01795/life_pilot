@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_pilot/game/social/controller_game_social_questions.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/social/page_game_social_question_create.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -7,8 +8,6 @@ import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/subscription/widgets_subscription_usage.dart';
 import 'package:provider/provider.dart';
-
-enum _StatusFilter { all, active, inactive }
 
 typedef SocialQuestionCreatePageBuilder =
     Widget Function(String initialTitle, String? initialCategory);
@@ -28,93 +27,53 @@ class PageGameSocialQuestions extends StatefulWidget {
 }
 
 class _PageState extends State<PageGameSocialQuestions> {
-  late final ServiceGame _service;
+  late final ControllerGameSocialQuestions _controller;
   final _searchController = TextEditingController();
-  String _appliedKeyword = '';
-  List<MySocialQuestion> _questions = const [];
-  List<String> _categories = const [];
-  final Set<String> _busyIds = {};
-  int _totalCount = 0;
-  bool? _pageHasMore;
-  int _generation = 0;
-  bool _loading = true;
-  bool _loadingMore = false;
-  bool _loaded = false;
-  bool _loadError = false;
-  String? _selectedCategory;
-  _StatusFilter _status = _StatusFilter.all;
+  String get _appliedKeyword => _controller.appliedKeyword;
+  List<MySocialQuestion> get _questions => _controller.questions;
+  List<String> get _categories => _controller.categories;
+  int get _totalCount => _controller.totalCount;
+  bool get _loading => _controller.isLoading;
+  bool get _loadingMore => _controller.isLoadingMore;
+  bool get _loaded => _controller.hasLoaded;
+  bool get _loadError => _controller.hasError;
+  String? get _selectedCategory => _controller.selectedCategory;
+  SocialQuestionStatusFilter get _status => _controller.status;
+  bool get _hasMore => _controller.hasMore;
 
-  bool get _hasMore => _pageHasMore ?? _questions.length < _totalCount;
-  String get _statusValue => switch (_status) {
-    _StatusFilter.all => 'all',
-    _StatusFilter.active => 'active',
-    _StatusFilter.inactive => 'inactive',
-  };
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
-    _service = widget.service ?? ServiceGame();
+    _controller = ControllerGameSocialQuestions(
+      service: widget.service ?? ServiceGame(),
+    )..addListener(_onControllerChanged);
     _load();
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _load({bool append = false}) async {
-    if (append && (_loadingMore || !_hasMore)) return;
-    final generation = append ? _generation : ++_generation;
-    setState(() {
-      append ? _loadingMore = true : _loading = true;
-      if (!append) _loadError = false;
-    });
-    try {
-      final pageFuture = _service.fetchMySocialQuestions(
-        keyword: _appliedKeyword,
-        category: _selectedCategory,
-        status: _statusValue,
-        offset: append ? _questions.length : 0,
+  Future<void> _load({
+    bool append = false,
+    bool refreshCategories = false,
+  }) async {
+    final result = await _controller.load(
+      append: append,
+      refreshCategories: refreshCategories,
+    );
+    if (result == false && mounted && (append || _loaded)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
       );
-      final categoriesFuture = append
-          ? Future.value(_categories)
-          : _service.fetchMySocialQuestionCategories();
-      final page = await pageFuture;
-      final categories = await categoriesFuture;
-      if (!mounted || generation != _generation) return;
-      setState(() {
-        _questions = append
-            ? [..._questions, ...page.questions]
-            : page.questions;
-        _totalCount = page.totalCount;
-        _pageHasMore = page.hasMore;
-        _categories = categories;
-        _loaded = true;
-      });
-    } catch (error, stackTrace) {
-      logger.e(
-        'Load Social questions failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted && generation == _generation) {
-        if (append || _loaded) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
-          );
-        } else {
-          setState(() => _loadError = true);
-        }
-      }
-    } finally {
-      if (mounted && generation == _generation) {
-        setState(() {
-          _loading = false;
-          _loadingMore = false;
-        });
-      }
     }
   }
 
@@ -126,7 +85,10 @@ class _PageState extends State<PageGameSocialQuestions> {
             PageGameSocialQuestionCreate(existingQuestion: question),
       ),
     );
-    if (mounted && changed == true) await _load();
+    if (mounted && changed == true) {
+      _controller.invalidateCategories();
+      await _load();
+    }
   }
 
   Future<void> _add() async {
@@ -140,24 +102,23 @@ class _PageState extends State<PageGameSocialQuestions> {
       context,
       MaterialPageRoute(builder: (_) => createPage),
     );
-    if (added == true && mounted) await _load();
+    if (added == true && mounted) {
+      _controller.invalidateCategories();
+      await _load();
+    }
   }
 
   void _applySearch() {
     FocusScope.of(context).unfocus();
-    setState(() => _appliedKeyword = _searchController.text.trim());
+    _controller.applySearch(_searchController.text);
     _load();
   }
 
   Future<void> _toggle(MySocialQuestion question) async {
     final loc = AppLocalizations.of(context)!;
     final nextValue = !question.isActive;
-    setState(() => _busyIds.add(question.id));
     try {
-      await _service.setMySocialQuestionActive(
-        id: question.id,
-        isActive: nextValue,
-      );
+      if (!await _controller.setQuestionActive(question.id, nextValue)) return;
       if (!mounted) return;
       await _load();
       if (!mounted) return;
@@ -179,8 +140,6 @@ class _PageState extends State<PageGameSocialQuestions> {
           context,
         ).showSnackBar(SnackBar(content: Text(loc.questionStatusUpdateFailed)));
       }
-    } finally {
-      if (mounted) setState(() => _busyIds.remove(question.id));
     }
   }
 
@@ -205,9 +164,8 @@ class _PageState extends State<PageGameSocialQuestions> {
         ) ??
         false;
     if (!confirmed || !mounted) return;
-    setState(() => _busyIds.add(question.id));
     try {
-      await _service.deleteMySocialQuestion(question.id);
+      if (!await _controller.deleteQuestion(question.id)) return;
       if (!mounted) return;
       await _load();
       if (!mounted) return;
@@ -230,8 +188,6 @@ class _PageState extends State<PageGameSocialQuestions> {
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
       }
-    } finally {
-      if (mounted) setState(() => _busyIds.remove(question.id));
     }
   }
 
@@ -247,165 +203,187 @@ class _PageState extends State<PageGameSocialQuestions> {
               child: ElevatedButton(onPressed: _load, child: Text(loc.retry)),
             )
           : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const SubscriptionUsageBanner(resource: 'game_questions'),
-                  if (_loading) ...[const LinearProgressIndicator(), Gaps.h16],
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText: loc.searchKeywords,
-                      helperText: loc.questionSearchGuidance,
-                      helperMaxLines: 2,
-                      border: const OutlineInputBorder(),
-                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _searchController,
-                        builder: (context, value, _) => Row(
-                          mainAxisSize: MainAxisSize.min,
+              onRefresh: () => _load(refreshCategories: true),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverList.list(
+                      children: [
+                        const SubscriptionUsageBanner(
+                          resource: 'game_questions',
+                        ),
+                        if (_loading) ...[
+                          const LinearProgressIndicator(),
+                          Gaps.h16,
+                        ],
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            labelText: loc.searchKeywords,
+                            helperText: loc.questionSearchGuidance,
+                            helperMaxLines: 2,
+                            border: const OutlineInputBorder(),
+                            suffixIcon:
+                                ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _searchController,
+                                  builder: (context, value, _) => Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (value.text.isNotEmpty)
+                                        IconButton(
+                                          tooltip: loc.clear,
+                                          onPressed: _loading
+                                              ? null
+                                              : () {
+                                                  _searchController.clear();
+                                                  _controller.applySearch('');
+                                                  _load();
+                                                },
+                                          icon: const Icon(Icons.clear),
+                                        ),
+                                      IconButton(
+                                        tooltip: loc.search,
+                                        onPressed: _loading
+                                            ? null
+                                            : _applySearch,
+                                        icon: const Icon(Icons.search),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                          ),
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) {
+                            if (!_loading) _applySearch();
+                          },
+                        ),
+                        Gaps.h16,
+                        Row(
                           children: [
-                            if (value.text.isNotEmpty)
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                key: ValueKey(_selectedCategory),
+                                initialValue: _selectedCategory,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: loc.questionGroup,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: _categories
+                                    .map(
+                                      (category) => DropdownMenuItem(
+                                        value: category,
+                                        child: Text(
+                                          category,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: _loading
+                                    ? null
+                                    : (value) {
+                                        _controller.selectCategory(value);
+                                        _load();
+                                      },
+                              ),
+                            ),
+                            if (_selectedCategory != null) ...[
+                              Gaps.w8,
                               IconButton(
                                 tooltip: loc.clear,
                                 onPressed: _loading
                                     ? null
                                     : () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _appliedKeyword = '';
-                                        });
+                                        _controller.selectCategory(null);
                                         _load();
                                       },
-                                icon: const Icon(Icons.clear),
+                                icon: const Icon(Icons.filter_alt_off),
                               ),
-                            IconButton(
-                              tooltip: loc.search,
-                              onPressed: _loading ? null : _applySearch,
-                              icon: const Icon(Icons.search),
-                            ),
+                            ],
                           ],
                         ),
-                      ),
-                    ),
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) {
-                      if (!_loading) _applySearch();
-                    },
-                  ),
-                  Gaps.h16,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          key: ValueKey(_selectedCategory),
-                          initialValue: _selectedCategory,
+                        Gaps.h16,
+                        DropdownButtonFormField<SocialQuestionStatusFilter>(
+                          initialValue: _status,
                           isExpanded: true,
                           decoration: InputDecoration(
-                            labelText: loc.questionGroup,
+                            labelText: loc.questionStatus,
                             border: const OutlineInputBorder(),
                           ),
-                          items: _categories
-                              .map(
-                                (category) => DropdownMenuItem(
-                                  value: category,
-                                  child: Text(
-                                    category,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                          items: [
+                            DropdownMenuItem(
+                              value: SocialQuestionStatusFilter.all,
+                              child: Text(loc.allQuestionStatuses),
+                            ),
+                            DropdownMenuItem(
+                              value: SocialQuestionStatusFilter.active,
+                              child: Text(loc.activeQuestion),
+                            ),
+                            DropdownMenuItem(
+                              value: SocialQuestionStatusFilter.inactive,
+                              child: Text(loc.inactiveQuestion),
+                            ),
+                          ],
                           onChanged: _loading
                               ? null
                               : (value) {
-                                  setState(() => _selectedCategory = value);
-                                  _load();
+                                  if (value != null) {
+                                    _controller.selectStatus(value);
+                                    _load();
+                                  }
                                 },
                         ),
-                      ),
-                      if (_selectedCategory != null) ...[
-                        Gaps.w8,
-                        IconButton(
-                          tooltip: loc.clear,
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  setState(() => _selectedCategory = null);
-                                  _load();
-                                },
-                          icon: const Icon(Icons.filter_alt_off),
-                        ),
-                      ],
-                    ],
-                  ),
-                  Gaps.h16,
-                  DropdownButtonFormField<_StatusFilter>(
-                    initialValue: _status,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: loc.questionStatus,
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: _StatusFilter.all,
-                        child: Text(loc.allQuestionStatuses),
-                      ),
-                      DropdownMenuItem(
-                        value: _StatusFilter.active,
-                        child: Text(loc.activeQuestion),
-                      ),
-                      DropdownMenuItem(
-                        value: _StatusFilter.inactive,
-                        child: Text(loc.inactiveQuestion),
-                      ),
-                    ],
-                    onChanged: _loading
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() => _status = value);
-                              _load();
-                            }
-                          },
-                  ),
-                  Gaps.h16,
-                  Text('${_questions.length} / $_totalCount'),
-                  Gaps.h8,
-                  if (_questions.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Column(
-                        children: [
-                          Text(loc.noMyQuestions),
-                          if (_appliedKeyword.isNotEmpty) ...[
-                            Gaps.h16,
-                            FilledButton.icon(
-                              onPressed: _loading ? null : _add,
-                              icon: const Icon(Icons.add),
-                              label: Text(loc.addQuestion),
+                        Gaps.h16,
+                        Text('${_questions.length} / $_totalCount'),
+                        Gaps.h8,
+                        if (_questions.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Column(
+                              children: [
+                                Text(loc.noMyQuestions),
+                                if (_appliedKeyword.isNotEmpty) ...[
+                                  Gaps.h16,
+                                  FilledButton.icon(
+                                    onPressed: _loading ? null : _add,
+                                    icon: const Icon(Icons.add),
+                                    label: Text(loc.addQuestion),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ],
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
-                  ..._questions.map((question) => _card(question, loc)),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList.builder(
+                      itemCount: _questions.length,
+                      addAutomaticKeepAlives: false,
+                      itemBuilder: (_, index) => _card(_questions[index], loc),
+                    ),
+                  ),
                   if (_hasMore)
-                    Center(
-                      child: TextButton(
-                        onPressed: _loadingMore
-                            ? null
-                            : () => _load(append: true),
-                        child: _loadingMore
-                            ? const SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(loc.clickHereToSeeMore),
+                    SliverToBoxAdapter(
+                      child: Center(
+                        child: TextButton(
+                          onPressed: _loadingMore
+                              ? null
+                              : () => _load(append: true),
+                          child: _loadingMore
+                              ? const SizedBox.square(
+                                  dimension: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(loc.clickHereToSeeMore),
+                        ),
                       ),
                     ),
                 ],
@@ -415,7 +393,7 @@ class _PageState extends State<PageGameSocialQuestions> {
   }
 
   Widget _card(MySocialQuestion question, AppLocalizations loc) {
-    final busy = _busyIds.contains(question.id);
+    final busy = _controller.isBusy(question.id);
     return RepaintBoundary(
       key: ValueKey(question.id),
       child: Card(

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/apps/controller_page_main.dart';
+import 'package:life_pilot/apps/controller_module_authorization.dart';
 import 'package:life_pilot/apps/service_module.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/extension.dart';
-import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/text_normalization.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PageModuleAuthorization extends StatefulWidget {
-  const PageModuleAuthorization({super.key});
+  const PageModuleAuthorization({super.key, this.service});
+
+  final ServiceModule? service;
 
   @override
   State<PageModuleAuthorization> createState() =>
@@ -21,118 +21,65 @@ class PageModuleAuthorization extends StatefulWidget {
 
 class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
   final _emailController = TextEditingController();
-  final _service = ServiceModule();
-  final _selectedKeys = <String>{};
-  bool _loading = false;
-  bool _searched = false;
+  late final ControllerModuleAuthorization _controller;
+  bool get _loading => _controller.isLoading;
+  bool get _searched => _controller.hasSearched;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ControllerModuleAuthorization(
+      service: widget.service ?? ServiceModule(),
+    )..addListener(_onControllerChanged);
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     _emailController.dispose();
     super.dispose();
   }
 
   Future<void> _search() async {
-    final loc = AppLocalizations.of(context)!;
-    final email = normalizeText(_emailController.text);
-    if (email.isEmpty) {
-      _message(loc.moduleAuthorizationSearchFirst);
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _searched = false;
-      _selectedKeys.clear();
-    });
-    try {
-      final keys = await _service.loadUserModulesAsAdmin(email);
-      if (!mounted) return;
-      setState(() {
-        _selectedKeys
-          ..clear()
-          ..addAll(keys);
-        _searched = true;
-      });
-    } catch (error, stackTrace) {
-      logger.e(
-        'Failed to load module authorization',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted) {
-        setState(() {
-          _searched = false;
-          _selectedKeys.clear();
-        });
-        _message(_errorMessage(loc, error));
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    final result = await _controller.search(_emailController.text);
+    if (mounted) _showResult(result);
   }
 
   Future<void> _save() async {
-    final loc = AppLocalizations.of(context)!;
-    if (!_searched) {
-      _message(loc.moduleAuthorizationSearchFirst);
-      return;
-    }
-    setState(() => _loading = true);
-    try {
-      await _service.saveUserModulesAsAdmin(
-        account: _emailController.text,
-        moduleKeys: _selectedKeys,
-      );
-      final savedKeys = await _service.loadUserModulesAsAdmin(
-        _emailController.text,
-      );
-      if (!mounted) return;
-      final savedSet = savedKeys.toSet();
-      if (savedSet.length != _selectedKeys.length ||
-          !savedSet.containsAll(_selectedKeys)) {
-        _message(loc.moduleAuthorizationSaveFailed);
-        return;
-      }
-      setState(() {
-        _selectedKeys
-          ..clear()
-          ..addAll(savedSet);
-      });
-      _message(loc.moduleAuthorizationSaved);
-    } catch (error, stackTrace) {
-      logger.e(
-        'Failed to save module authorization',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (mounted) _message(_errorMessage(loc, error));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    final result = await _controller.save();
+    if (mounted) _showResult(result);
   }
 
-  void _message(String text) {
+  void _showResult(ModuleAuthorizationResult? result) {
+    final loc = AppLocalizations.of(context)!;
+    final message = switch (result) {
+      null || ModuleAuthorizationResult.loaded => null,
+      ModuleAuthorizationResult.saved => loc.moduleAuthorizationSaved,
+      ModuleAuthorizationResult.searchFirst =>
+        loc.moduleAuthorizationSearchFirst,
+      ModuleAuthorizationResult.userNotFound =>
+        loc.moduleAuthorizationUserNotFound,
+      ModuleAuthorizationResult.notDeployed =>
+        loc.moduleAuthorizationNotDeployed,
+      ModuleAuthorizationResult.loadFailed => loc.moduleAuthorizationLoadFailed,
+      ModuleAuthorizationResult.saveFailed => loc.moduleAuthorizationSaveFailed,
+    };
+    if (message == null) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  String _errorMessage(AppLocalizations loc, Object error) {
-    if (error case PostgrestException(
-      :final code,
-    ) when code == 'PGRST202' || code == '42883') {
-      return loc.moduleAuthorizationNotDeployed;
-    }
-    if (error case PostgrestException(:final code) when code == 'P0002') {
-      return loc.moduleAuthorizationUserNotFound;
-    }
-    return loc.moduleAuthorizationLoadFailed;
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final auth = context.watch<ControllerAuth>();
+    final selectedKeys = _controller.selectedKeys;
     if (!auth.isSysAdmin) {
       return Scaffold(
         appBar: AppBar(title: Text(loc.moduleAuthorization)),
@@ -158,6 +105,8 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
                       Gaps.h16,
                       TextField(
                         controller: _emailController,
+                        enabled: !_loading,
+                        onChanged: _controller.setEmail,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.search,
                         decoration: InputDecoration(
@@ -180,18 +129,15 @@ class _PageModuleAuthorizationState extends State<PageModuleAuthorization> {
                         for (final entry
                             in ControllerPageMain.grantablePageKeys.entries)
                           CheckboxListTile(
-                            value: _selectedKeys.contains(entry.value),
+                            value: selectedKeys.contains(entry.value),
                             title: Text(entry.key.title(loc: loc)),
                             secondary: Icon(_iconFor(entry.key)),
-                            onChanged: (selected) => setState(() {
-                              if (selected ?? false) {
-                                _selectedKeys.add(entry.value);
-                              } else {
-                                _selectedKeys.remove(entry.value);
-                              }
-                            }),
+                            onChanged: (selected) => _controller.setSelected(
+                              entry.value,
+                              selected ?? false,
+                            ),
                           ),
-                        if (_selectedKeys.isEmpty)
+                        if (selectedKeys.isEmpty)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Text(loc.moduleAuthorizationNoAccess),
