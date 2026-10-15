@@ -1,16 +1,11 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:image_picker/image_picker.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/utils/enum.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/accounting/model_accounting_account.dart';
-import 'package:life_pilot/accounting/page_accounting_detail.dart';
 import 'package:life_pilot/accounting/service_accounting.dart';
-import 'package:provider/provider.dart';
 import 'package:life_pilot/utils/text_normalization.dart';
 
 class ControllerAccountingList extends SafeChangeNotifier {
@@ -18,12 +13,28 @@ class ControllerAccountingList extends SafeChangeNotifier {
   ControllerAuth? auth;
   String? _dataScopeKey;
   int _accountGeneration = 0;
+  int _listRequest = 0;
+  String? _loadingCategory;
+  Future<void>? _loadFuture;
 
   ControllerAccountingList({
     required ServiceAccounting service,
     required this.auth,
   }) : _service = service,
-       _dataScopeKey = _scopeKey(auth);
+       _dataScopeKey = _scopeKey(auth) {
+    auth?.addListener(_onAuthChanged);
+  }
+
+  void _onAuthChanged() {
+    final currentAuth = auth;
+    if (currentAuth != null) updateAuth(currentAuth);
+  }
+
+  @override
+  void dispose() {
+    auth?.removeListener(_onAuthChanged);
+    super.dispose();
+  }
 
   static String _scopeKey(ControllerAuth? auth) =>
       '${normalizeText(auth?.currentAccount)}|'
@@ -34,24 +45,48 @@ class ControllerAccountingList extends SafeChangeNotifier {
   Object? loadError;
   List<ModelAccountingAccount> accounts = [];
 
-  Future<void> loadAccounts({String? inputCategory}) async {
-    if (isLoading) return;
+  bool _isCurrent(int generation) =>
+      !notifierDisposed &&
+      generation == _accountGeneration &&
+      _dataScopeKey == _scopeKey(auth);
+
+  Future<void> loadAccounts({String? inputCategory}) {
+    if (notifierDisposed) return Future.value();
+    final requestedCategory = inputCategory ?? category;
+    if (isLoading && _loadingCategory == requestedCategory) {
+      return _loadFuture ?? Future.value();
+    }
+    final request = ++_listRequest;
     final generation = _accountGeneration;
+    final user = auth?.currentAccount ?? '';
+    _loadingCategory = requestedCategory;
     isLoading = true;
     loadError = null;
+    _loadFuture = _loadAccounts(user, requestedCategory, generation, request);
     notifyListeners();
+    return _loadFuture!;
+  }
+
+  Future<void> _loadAccounts(
+    String user,
+    String requestedCategory,
+    int generation,
+    int request,
+  ) async {
     try {
       final loaded = await _service.fetchAccounts(
-        user: auth?.currentAccount ?? '',
-        category: inputCategory ?? category,
+        user: user,
+        category: requestedCategory,
       );
-      if (generation != _accountGeneration) return;
+      if (!_isCurrent(generation) || request != _listRequest) return;
       accounts = loaded;
     } catch (error) {
-      if (generation == _accountGeneration) loadError = error;
+      if (_isCurrent(generation) && request == _listRequest) loadError = error;
     } finally {
-      if (generation == _accountGeneration) {
+      if (_isCurrent(generation) && request == _listRequest) {
         isLoading = false;
+        _loadingCategory = null;
+        _loadFuture = null;
         notifyListeners();
       }
     }
@@ -59,10 +94,17 @@ class ControllerAccountingList extends SafeChangeNotifier {
 
   void updateAuth(ControllerAuth nextAuth, {bool notify = true}) {
     final nextScope = _scopeKey(nextAuth);
+    if (!identical(auth, nextAuth)) {
+      auth?.removeListener(_onAuthChanged);
+      nextAuth.addListener(_onAuthChanged);
+    }
     auth = nextAuth;
     if (_dataScopeKey == nextScope) return;
     _dataScopeKey = nextScope;
     _accountGeneration++;
+    _listRequest++;
+    _loadFuture = null;
+    _loadingCategory = null;
     isLoading = false;
     accounts = [];
     loadError = null;
@@ -79,84 +121,74 @@ class ControllerAccountingList extends SafeChangeNotifier {
       : _currentCategory!;
 
   Future<void> setCategory(String category) async {
-    if (_currentCategory == category) return;
+    if (notifierDisposed || _currentCategory == category) return;
     _currentCategory = category;
+    accounts = [];
+    mainCurrency = null;
+
     await loadAccounts();
   }
 
-  Future<void> askMainCurrency({required BuildContext context}) async {
-    final loc = AppLocalizations.of(context)!;
-    if (accounts.isNotEmpty) {
-      mainCurrency = accounts[0].currency;
-      return;
-    }
-    if (accounts.isEmpty || mainCurrency == null || mainCurrency!.isEmpty) {
-      mainCurrency = await _service.fetchLatestAccount(
-        user: auth?.currentAccount ?? '',
-        category: category,
-      );
-      notifyListeners();
-      return;
-    }
-
-    final textController = TextEditingController(text: mainCurrency);
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(loc.accountSetMainCurrency),
-        content: TextField(controller: textController),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: Text(loc.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, textController.text),
-            child: Text(loc.confirm),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null && result.isNotEmpty) {
-      mainCurrency = result.toUpperCase();
-      notifyListeners();
-    } else {
-      mainCurrency ??= 'TWD'; // ✅ 如果使用者沒輸入，給預設
-      notifyListeners();
-    }
+  /// Resolves the currency without owning dialogs or a BuildContext.
+  Future<void> loadMainCurrency() async {
+    if (notifierDisposed) return;
+    final generation = _accountGeneration;
+    final selectedCategory = category;
+    final user = auth?.currentAccount ?? '';
+    final currency = accounts.isNotEmpty
+        ? accounts.first.currency
+        : await _service.fetchLatestAccount(
+            user: user,
+            category: selectedCategory,
+          );
+    if (!_isCurrent(generation) || category != selectedCategory) return;
+    mainCurrency = currency;
+    notifyListeners();
   }
 
   Future<ModelAccountingAccount> createAccount({
     required String name,
     String? eventId,
   }) async {
-    if (mainCurrency == null || mainCurrency!.isEmpty) {
-      mainCurrency = await _service.fetchLatestAccount(
-        user: auth?.currentAccount ?? '',
-        category: category,
+    if (notifierDisposed) throw StateError('Controller disposed');
+    final generation = _accountGeneration;
+    final user = auth?.currentAccount ?? '';
+    final selectedCategory = category;
+    var currency = mainCurrency;
+    if (currency == null || currency.isEmpty) {
+      currency = await _service.fetchLatestAccount(
+        user: user,
+        category: selectedCategory,
       );
     }
+    if (!_isCurrent(generation) || category != selectedCategory) {
+      throw StateError('Account scope changed');
+    }
+    mainCurrency = currency;
     final modelAccountingAccount = await _service.createAccount(
       name: name,
-      user: auth?.currentAccount ?? '',
-      currency: mainCurrency,
-      category: category,
+      user: user,
+      currency: currency,
+      category: selectedCategory,
       eventId: eventId,
     );
     // ⭐ 統一來源：重新拉一次
-    await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts();
     return modelAccountingAccount;
   }
 
   Future<void> deleteAccount({required String accountId}) async {
+    if (notifierDisposed) return;
+    final generation = _accountGeneration;
     await _service.deleteAccount(accountId: accountId);
-    await loadAccounts();
+    if (_isCurrent(generation)) await loadAccounts();
   }
 
   Future<void> updateAccountImage(String accountId, XFile pickedFile) async {
+    if (notifierDisposed) return;
+    final generation = _accountGeneration;
     Uint8List bytes = await pickedFile.readAsBytes(); // Web / 手機都可以
+    if (!_isCurrent(generation)) return;
 
     // 上傳圖片給後端，後端返回可訪問 URL
     final newImage = await _service.uploadAccountImageBytesDirect(
@@ -164,6 +196,7 @@ class ControllerAccountingList extends SafeChangeNotifier {
       bytes,
     );
 
+    if (!_isCurrent(generation)) return;
     final index = accounts.indexWhere((a) => a.id == accountId);
     if (index == -1) return;
 
@@ -212,221 +245,9 @@ class ControllerAccountingList extends SafeChangeNotifier {
     required String accountId,
     required String currency,
   }) async {
+    if (notifierDisposed) return;
+    final generation = _accountGeneration;
     await _service.switchMainCurrency(accountId: accountId, currency: currency);
-    await loadAccounts();
-  }
-
-  // 共用方法：點 Accounting
-  Future<void> handleAccounting({
-    required BuildContext context,
-    required String eventId,
-  }) async {
-    // 1️⃣ 嘗試找對應 eventId 的帳戶
-    ModelAccountingAccount? existingAccount = await findAccountByEventId(
-      eventId: eventId,
-    );
-
-    // 2️⃣ 如果存在帳戶 → 直接跳 Accounting 頁
-    if (existingAccount != null) {
-      await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PageAccountingDetail(
-            service: context.read<ServiceAccounting>(),
-            account: existingAccount,
-            linkedEventId: eventId,
-          ),
-        ),
-      );
-      return;
-    }
-
-    // 3️⃣ 如果不存在 → 顯示帳戶選擇 Dialog
-    final selectedAccount = await _showAccountPickerDialog(context, eventId);
-    if (selectedAccount == null) return;
-
-    await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PageAccountingDetail(
-          service: context.read<ServiceAccounting>(),
-          account: selectedAccount,
-          linkedEventId: eventId,
-        ),
-      ),
-    );
-  }
-
-  // 復用原本 Dialog
-  Future<ModelAccountingAccount?> _showAccountPickerDialog(
-    BuildContext context,
-    String eventId,
-  ) {
-    final loc = AppLocalizations.of(context)!;
-    return showDialog<ModelAccountingAccount>(
-      context: context,
-      builder: (dialogContext) {
-        final screenSize = MediaQuery.sizeOf(dialogContext);
-        return DefaultTabController(
-          length: 2,
-          child: Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 24,
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 640,
-                maxHeight: screenSize.height * 0.8,
-              ),
-              child: SizedBox(
-                width: double.maxFinite,
-                height: screenSize.height * 0.75,
-                child: Column(
-                  children: [
-                    TabBar(
-                      tabs: [
-                        Tab(text: loc.accountPersonal),
-                        Tab(text: loc.accountProject),
-                        //Tab(text: loc.accountMaster),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _AccountListView(
-                            category: AccountCategory.personal.name,
-                            eventId: eventId,
-                          ),
-                          _AccountListView(
-                            category: AccountCategory.project.name,
-                            eventId: eventId,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _AccountListView extends StatefulWidget {
-  final String category;
-  final String eventId;
-
-  const _AccountListView({required this.category, required this.eventId});
-
-  @override
-  State<_AccountListView> createState() => _AccountListViewState();
-}
-
-class _AccountListViewState extends State<_AccountListView> {
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final controller = context.read<ControllerAccountingList>();
-      await controller.setCategory(widget.category);
-      await controller.askMainCurrency(context: context);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ControllerAccountingList>(
-      builder: (_, controller, _) {
-        final accounts = controller.accounts;
-        final loc = AppLocalizations.of(context)!;
-
-        if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                scrollCacheExtent: const ScrollCacheExtent.pixels(240),
-                addAutomaticKeepAlives: false,
-                itemCount: accounts.length,
-                itemBuilder: (_, index) {
-                  final account = accounts[index];
-                  return ListTile(
-                    title: Text(account.accountName),
-                    onTap: () {
-                      Navigator.pop(context, account);
-                    },
-                  );
-                },
-              ),
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.add),
-              label: Text(loc.accountNew),
-              onPressed: () async {
-                final textController = TextEditingController();
-
-                final created = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    content: TextField(
-                      controller: textController,
-                      decoration: InputDecoration(hintText: loc.accountName),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text(loc.cancel),
-                      ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          final modelAccountingAccount = await controller
-                              .createAccount(
-                                name: textController.text,
-                                eventId: widget.eventId,
-                              );
-                          Navigator.pop(context, true);
-                          // 如果新增的帳戶 category 與目前 Tab 不符
-                          if (modelAccountingAccount.category !=
-                              widget.category) {
-                            // 切換到正確 Tab
-                            final parentTabController = DefaultTabController.of(
-                              context,
-                            );
-                            int tabIndex =
-                                modelAccountingAccount.category ==
-                                    AccountCategory.personal.name
-                                ? 0
-                                : 1;
-                            parentTabController.animateTo(tabIndex);
-
-                            // 同時更新帳戶列表
-                            await controller.setCategory(
-                              modelAccountingAccount.category,
-                            );
-                          }
-                        },
-                        child: Text(loc.accountCreate),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (created == true) {
-                  controller.setCategory(widget.category);
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
+    if (_isCurrent(generation)) await loadAccounts();
   }
 }

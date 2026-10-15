@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/feedback/model_feedback.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
@@ -9,17 +8,58 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
   final ControllerAuth auth;
 
   ControllerFeedbackAdmin(ServiceFeedback service, this.auth)
-    : _service = service;
-  List<ModelFeedback> feedbackList = [];
+    : _service = service {
+    _account = auth.currentAccount;
+    auth.addListener(_onAccountChanged);
+  }
+  String? _account;
+  int _revision = 0;
+  final Set<int> _updating = {};
+  List<ModelFeedback>? _visibleCache;
+
+  bool _active(int revision) =>
+      !notifierDisposed &&
+      revision == _revision &&
+      _account == auth.currentAccount;
+
+  void _onAccountChanged() {
+    if (_account == auth.currentAccount) return;
+    _account = auth.currentAccount;
+    _revision++;
+    _feedbackList = const [];
+    _visibleCache = null;
+    _loadedStartDate = null;
+    _updating.clear();
+    isLoading = false;
+    isLoadingMore = false;
+    hasMore = false;
+    loadError = null;
+    _selectedStatuses
+      ..clear()
+      ..addAll({'pending', 'in_progress'});
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    auth.removeListener(_onAccountChanged);
+    super.dispose();
+  }
+
+  List<ModelFeedback> _feedbackList = const [];
+  List<ModelFeedback> get feedbackList => _feedbackList;
   bool isLoading = false;
   Object? loadError;
   bool isLoadingMore = false;
   bool hasMore = false;
   DateTime? _loadedStartDate;
-  final Set<String> selectedStatuses = {'pending', 'in_progress'};
+  final Set<String> _selectedStatuses = {'pending', 'in_progress'};
+  Set<String> get selectedStatuses => Set.unmodifiable(_selectedStatuses);
 
   Future<void> loadFeedback() async {
-    if (isLoading) return;
+    if (notifierDisposed || isLoading || _updating.isNotEmpty) return;
+    final revision = ++_revision;
+    isLoadingMore = false;
     isLoading = true;
     loadError = null;
     notifyListeners();
@@ -31,37 +71,52 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
         dateFrom: loadedStartDate,
         dateTo: dateTo,
       );
-      final loadedFeedback =
-          (res as List<dynamic>?)?.map((e) {
-            return ModelFeedback.fromMap(e as Map<String, dynamic>);
-          }).toList() ??
-          [];
+      if (!_active(revision)) return;
+      final loadedFeedback = res
+          .map((e) => ModelFeedback.fromMap(e as Map<String, dynamic>))
+          .toList();
       final loadedHasMore = await _service.hasFeedbackBefore(loadedStartDate);
-      feedbackList = loadedFeedback;
+      if (!_active(revision)) return;
+      _feedbackList = loadedFeedback;
       _loadedStartDate = loadedStartDate;
       hasMore = loadedHasMore;
       _sortAndDeduplicate();
     } catch (error) {
-      loadError = error;
+      if (_active(revision)) loadError = error;
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (_active(revision)) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
-  List<ModelFeedback> get visibleFeedback => feedbackList
-      .where((feedback) => selectedStatuses.contains(feedback.status))
-      .toList();
+  List<ModelFeedback> get visibleFeedback =>
+      _visibleCache ??= List.unmodifiable(
+        feedbackList.where(
+          (feedback) => _selectedStatuses.contains(feedback.status),
+        ),
+      );
 
   void toggleStatus(String status) {
-    selectedStatuses.contains(status)
-        ? selectedStatuses.remove(status)
-        : selectedStatuses.add(status);
+    if (notifierDisposed) return;
+    _selectedStatuses.contains(status)
+        ? _selectedStatuses.remove(status)
+        : _selectedStatuses.add(status);
+    _visibleCache = null;
     notifyListeners();
   }
 
   Future<void> loadMore() async {
-    if (isLoadingMore || !hasMore || _loadedStartDate == null) return;
+    if (notifierDisposed ||
+        isLoading ||
+        isLoadingMore ||
+        _updating.isNotEmpty ||
+        !hasMore ||
+        _loadedStartDate == null) {
+      return;
+    }
+    final revision = _revision;
     isLoadingMore = true;
     loadError = null;
     notifyListeners();
@@ -69,6 +124,7 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       final latestOlder = await _service.latestFeedbackDateBefore(
         _loadedStartDate!,
       );
+      if (!_active(revision)) return;
       if (latestOlder == null) {
         hasMore = false;
         return;
@@ -83,36 +139,68 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
+      if (!_active(revision)) return;
       final loadedHasMore = await _service.hasFeedbackBefore(dateFrom);
-      feedbackList.addAll(
-        rows.map((row) => ModelFeedback.fromMap(row as Map<String, dynamic>)),
-      );
+      if (!_active(revision)) return;
+      _feedbackList = [
+        ...feedbackList,
+        ...rows.map(
+          (row) => ModelFeedback.fromMap(row as Map<String, dynamic>),
+        ),
+      ];
       _loadedStartDate = dateFrom;
       _sortAndDeduplicate();
       hasMore = loadedHasMore;
     } catch (error) {
-      loadError = error;
+      if (_active(revision)) loadError = error;
     } finally {
-      isLoadingMore = false;
-      notifyListeners();
+      if (_active(revision)) {
+        isLoadingMore = false;
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> updateStatus(
+  bool isUpdating(int id) => _updating.contains(id);
+
+  /// Null means ignored/stale; false means persistence failed.
+  Future<bool?> updateStatus(
     ModelFeedback feedback,
     String status,
     String adminAccount,
   ) async {
-    feedback.status = status;
-    feedback.isOk = status == 'completed';
-    feedback.dealBy = status == 'pending' ? null : adminAccount;
-    feedback.dealAt = status == 'completed' ? DateTime.now().toUtc() : null;
-    await _service.updateFeedback(feedback: feedback);
-    _sortAndDeduplicate();
+    if (notifierDisposed ||
+        isLoading ||
+        isLoadingMore ||
+        _updating.contains(feedback.id)) {
+      return null;
+    }
+    final revision = _revision;
+    _updating.add(feedback.id);
     notifyListeners();
+    try {
+      final update = feedback.withStatus(status, adminAccount, DateTime.now());
+      await _service.updateFeedback(feedback: update);
+      if (!_active(revision)) return null;
+      // Preserve screenshot decode caches on the displayed model.
+      feedback.status = update.status;
+      feedback.isOk = update.isOk;
+      feedback.dealBy = update.dealBy;
+      feedback.dealAt = update.dealAt;
+      _sortAndDeduplicate();
+      return true;
+    } catch (_) {
+      return _active(revision) ? false : null;
+    } finally {
+      if (_active(revision)) {
+        _updating.remove(feedback.id);
+        notifyListeners();
+      }
+    }
   }
 
   void _sortAndDeduplicate() {
+    _visibleCache = null;
     final unique = <int, ModelFeedback>{
       for (final feedback in feedbackList) feedback.id: feedback,
     };
@@ -121,23 +209,17 @@ class ControllerFeedbackAdmin extends SafeChangeNotifier {
       'pending' => 1,
       _ => 2,
     };
-    feedbackList = unique.values.toList()
+    final sorted = unique.values.toList()
       ..sort((a, b) {
         final statusOrder = rank(a.status).compareTo(rank(b.status));
         return statusOrder != 0
             ? statusOrder
             : b.createdAt.compareTo(a.createdAt);
       });
+    _feedbackList = List.unmodifiable(sorted);
   }
 
   Future<void> markAsDone(ModelFeedback feedback, String adminAccount) async {
-    final now = DateTime.now().toUtc();
-    // 更新本地資料
-    feedback.isOk = true;
-    feedback.status = 'completed';
-    feedback.dealBy = adminAccount;
-    feedback.dealAt = now;
-    await _service.updateFeedback(feedback: feedback);
-    notifyListeners();
+    await updateStatus(feedback, 'completed', adminAccount);
   }
 }

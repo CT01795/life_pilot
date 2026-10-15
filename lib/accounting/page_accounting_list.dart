@@ -67,7 +67,7 @@ class _PageAccountingListState extends State<PageAccountingList>
       if (!mounted) return;
       await controller.setCategory(AccountCategory.personal.name);
       if (!mounted) return;
-      await controller.askMainCurrency(context: context);
+      await controller.loadMainCurrency();
     });
   }
 

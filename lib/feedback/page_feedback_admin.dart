@@ -108,9 +108,14 @@ class PageFeedbackAdmin extends StatelessWidget {
                         );
                       }
                       final feedback = visibleFeedback[index];
-                      return Selector<ControllerFeedbackAdmin, bool>(
-                        selector: (_, c) => feedback.isOk ?? false,
-                        builder: (context, isOk, child) {
+                      return Selector<ControllerFeedbackAdmin, (String, bool)>(
+                        selector: (_, c) => (
+                          feedback.status,
+                          c.isUpdating(feedback.id) ||
+                              c.isLoading ||
+                              c.isLoadingMore,
+                        ),
+                        builder: (context, state, child) {
                           final statusDropdown = DropdownButton<String>(
                             isExpanded: true,
                             value: feedback.status,
@@ -128,15 +133,28 @@ class PageFeedbackAdmin extends StatelessWidget {
                                 child: Text(loc.statusCompleted),
                               ),
                             ],
-                            onChanged: (status) {
-                              if (status != null) {
-                                controller.updateStatus(
-                                  feedback,
-                                  status,
-                                  auth.currentAccount ?? AuthConstants.guest,
-                                );
-                              }
-                            },
+                            onChanged: state.$2
+                                ? null
+                                : (status) async {
+                                    if (status != null) {
+                                      final result = await controller
+                                          .updateStatus(
+                                            feedback,
+                                            status,
+                                            auth.currentAccount ??
+                                                AuthConstants.guest,
+                                          );
+                                      if (context.mounted && result == false) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(loc.unknownError),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                           );
                           final compact =
                               MediaQuery.sizeOf(context).width < 520;

@@ -67,6 +67,22 @@ class ModelFeedback {
     'status': status,
   };
 
+  /// Proposed status for persistence; the displayed record is unchanged.
+  ModelFeedback withStatus(String nextStatus, String admin, DateTime now) =>
+      ModelFeedback(
+        id: id,
+        subject: subject,
+        content: content,
+        cc: cc,
+        screenshot: screenshot,
+        createdBy: createdBy,
+        createdAt: createdAt,
+        status: nextStatus,
+        isOk: nextStatus == 'completed',
+        dealBy: nextStatus == 'pending' ? null : admin,
+        dealAt: nextStatus == 'completed' ? now.toUtc() : null,
+      );
+
   // 💡 懶加載 decode，第一次用時才 decode，之後 cache
   List<Uint8List>? get screenshotDecodeData {
     if (screenshotDecodeRawData != null) return screenshotDecodeRawData;
