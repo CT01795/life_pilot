@@ -1,15 +1,16 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/speaking/controller_game_speaking.dart';
+import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -19,11 +20,15 @@ class PageGameSpeaking extends StatefulWidget {
   final String gameId;
   int gameLevel;
   final String questionBank;
+  final ServiceGame? service;
+  final ServiceGameSpeech? speech;
   PageGameSpeaking({
     super.key,
     required this.gameId,
     required this.gameLevel,
     this.questionBank = 'admin',
+    this.service,
+    this.speech,
   });
 
   @override
@@ -34,8 +39,8 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   late final ControllerGameSpeaking controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   double size = 32.0;
-  int answeredCount = 0; // 紀錄答了幾題
-  late int maxQ;
+  int _answerRevision = 0;
+  ModelGameSpeaking? _displayedQuestion;
   bool isRecording = false;
   TextEditingController answerController =
       TextEditingController(); // 顯示答案的 TextField
@@ -46,89 +51,75 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     super.initState();
     _speech = stt.SpeechToText();
 
-    _speech.initialize(
-      onStatus: (status) {
-        // debug 用
-        logger.d('Speech status: $status');
-      },
-      onError: (error) {
-        logger.e('Speech error: $error');
-        if (!mounted) return;
-        setState(() {
-          isRecording = false;
-        });
-      },
-    );
-
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameSpeaking(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       questionBank: widget.questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGame(),
+      service: widget.service ?? ServiceGame(),
+      speech: widget.speech,
+      maxQuestions: widget.gameLevel == -1 ? 10 : 999,
     );
 
+    controller.addListener(_onQuestionChanged);
     controller.loadNextQuestion();
+  }
+
+  void _onQuestionChanged() {
+    final question = controller.currentQuestion;
+    if (identical(question, _displayedQuestion)) return;
+    _displayedQuestion = question;
+    _answerRevision++;
+    answerController.clear();
   }
 
   @override
   void dispose() {
+    _answerRevision++;
     unawaited(_speech.cancel());
+    controller.removeListener(_onQuestionChanged);
     controller.dispose();
     answerController.dispose();
     super.dispose();
   }
 
-  // 呼叫這個方法答題並判斷是否完成題數
   Future<void> onAnswer() async {
-    final userAnswer = answerController.text;
-    controller.answer(userAnswer);
-    // 逐字顯示正確答案
-    showCorrectAnswer(controller.currentQuestion!.correctAnswer);
-    await Future.delayed(
-      Duration(milliseconds: min(controller.repeatCounts * 1000 + 1000, 1500)),
-    );
-    if (!mounted) return;
+    final question = controller.currentQuestion;
+    if (question == null || !controller.answer(answerController.text)) return;
+    final revision = ++_answerRevision;
+    unawaited(showCorrectAnswer(question.correctAnswer, revision));
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    if (!mounted ||
+        revision != _answerRevision ||
+        !identical(question, controller.currentQuestion)) {
+      return;
+    }
+    _answerRevision++;
     answerController.clear();
-
-    if (controller.isRightAnswer == true || controller.repeatCounts == 2) {
-      answeredCount++;
-    }
-    if (answeredCount >= maxQ && !_hasPopped) {
-      controller.finishPractice();
-      _hasPopped = true;
-      // 延遲一下讓 UI 更新後再跳回
-      Future.microtask(() {
-        if (mounted) Navigator.pop(context, true);
-      });
-    }
   }
 
-  // 逐字顯示文字
-  void showCorrectAnswer(String text) async {
-    //if (answerController.text.isNotEmpty) {
-    //  return;
-    //}
+  Future<void> showCorrectAnswer(String text, int revision) async {
+    final question = controller.currentQuestion;
     answerController.clear();
-    List<String> tmp = text.split(" ");
-    for (int i = 0; i < tmp.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
-
-      final newValue = TextEditingValue(
-        text: "${answerController.text}${tmp[i]} ",
-        selection: TextSelection.collapsed(
-          offset: answerController.text.length + 1,
-        ),
+    final words = text.split(' ');
+    for (final word in words) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      if (!mounted ||
+          revision != _answerRevision ||
+          !identical(question, controller.currentQuestion)) {
+        return;
+      }
+      final updated = '${answerController.text}$word ';
+      answerController.value = TextEditingValue(
+        text: updated,
+        selection: TextSelection.collapsed(offset: updated.length),
       );
-      answerController.value = newValue;
     }
   }
 
   void onSpeechResult(String recognizedText) {
-    if (!mounted || !isRecording) return;
+    if (!mounted || !isRecording || !controller.canAnswer) return;
 
     answerController.value = TextEditingValue(
       text: recognizedText,
@@ -139,6 +130,9 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
   Future<void> startSpeechRecognition({
     required void Function(String text) onResult,
   }) async {
+    if (!controller.canAnswer) return;
+    final revision = ++_answerRevision;
+    final question = controller.currentQuestion;
     if (_speech.isListening) {
       await _speech.stop();
       if (!mounted) return;
@@ -159,7 +153,13 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
       },
     );
 
-    if (!mounted) return;
+    if (!mounted ||
+        !isRecording ||
+        !controller.canAnswer ||
+        revision != _answerRevision ||
+        !identical(question, controller.currentQuestion)) {
+      return;
+    }
     if (!available) {
       setState(() => isRecording = false);
       return;
@@ -170,7 +170,12 @@ class _PageGameSpeakingState extends State<PageGameSpeaking> {
     await _speech.listen(
       localeId: 'en_US',
       onResult: (result) {
-        if (!mounted || !isRecording) return;
+        if (!mounted ||
+            !isRecording ||
+            revision != _answerRevision ||
+            !identical(question, controller.currentQuestion)) {
+          return;
+        }
         onResult(result.recognizedWords);
       },
       listenOptions: stt.SpeechListenOptions(

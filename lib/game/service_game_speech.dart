@@ -11,6 +11,15 @@ class ServiceGameSpeech {
   static final _chinese = RegExp(r'[\u4e00-\u9fff]');
 
   Future<void> speak(String text) async {
+    await _speak(text);
+  }
+
+  /// Grammar exercises use English on native devices, regardless of UI locale.
+  Future<void> speakEnglish(String text) async {
+    await _speak(text, nativeLanguage: 'en-US');
+  }
+
+  Future<void> _speak(String text, {String? nativeLanguage}) async {
     if (_disposed || text.isEmpty) return;
     try {
       if (kIsWeb) {
@@ -19,7 +28,8 @@ class ServiceGameSpeech {
         final audio = _audio ??= GoogleTtsAudio();
         await audio.speak(
           text: text,
-          languageCode: _chinese.hasMatch(text) ? 'zh' : 'en-US',
+          languageCode:
+              nativeLanguage ?? (_chinese.hasMatch(text) ? 'zh' : 'en-US'),
         );
       }
     } catch (error, stackTrace) {

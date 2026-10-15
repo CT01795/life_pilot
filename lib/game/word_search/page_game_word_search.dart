@@ -176,9 +176,9 @@ class _PageGameWordSearchState extends State<PageGameWordSearch> {
                       ? loc.answerBeforeCheck
                       : loc.submitAnswer,
                   child: ElevatedButton(
-                    onPressed: controller.board.currentSelection.isEmpty
-                        ? null
-                        : controller.submitSelection,
+                    onPressed: controller.canSubmit
+                        ? controller.submitSelection
+                        : null,
                     child: Text(
                       loc.recordSubmit,
                       style: const TextStyle(fontSize: 24, color: Colors.white),

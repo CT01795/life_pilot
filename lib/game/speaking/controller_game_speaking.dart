@@ -1,13 +1,10 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:life_pilot/game/google_tts_audio.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/speaking/model_game_speaking.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameSpeaking extends SafeChangeNotifier {
   final String userName;
@@ -15,18 +12,29 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
   final String gameId;
   final int gameLevel;
   final String questionBank;
-  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
-  ModelGameSpeaking? currentQuestion;
-  int score = 0; // +1 / -1
-  int scoreMinus = 0; // +1 / -1
+  final ServiceGameSpeech _speech;
+  final int maxQuestions;
+  ModelSpeakingRound? _round;
+  ModelGameSpeaking? get currentQuestion => _round?.question;
+  int score = 0;
+  int scoreMinus = 0;
   bool isFinished = false;
   bool isLoading = false;
   Object? loadError;
-  bool _isDisposed = false;
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
 
-  int repeatCounts = 0;
-  bool? isRightAnswer;
+  int get repeatCounts => _round?.attempts ?? 0;
+  bool? get isRightAnswer => _round?.isCorrect;
+  int _answeredCount = 0;
+  int get answeredCount => _answeredCount;
+  bool get canAnswer =>
+      !notifierDisposed &&
+      !isLoading &&
+      !isBusy &&
+      !isFinished &&
+      loadError == null &&
+      _round != null &&
+      !_round!.isComplete;
   bool isBusy = false;
 
   ControllerGameSpeaking({
@@ -35,10 +43,12 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
     required this.gameId, // 初始化
     required this.gameLevel,
     this.questionBank = 'admin',
-  });
+    this.maxQuestions = 999,
+    ServiceGameSpeech? speech,
+  }) : _speech = speech ?? ServiceGameSpeech();
 
   Future<void> loadNextQuestion() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isBusy || isFinished) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     loadError = null;
     isLoading = true;
@@ -46,7 +56,7 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
     if (score >= 100) {
       try {
         await _saveScore(true);
-        if (_isDisposed) return;
+        if (notifierDisposed) return;
         isFinished = true;
       } catch (error, stackTrace) {
         logger.e(
@@ -54,23 +64,23 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
           error: error,
           stackTrace: stackTrace,
         );
-        if (!_isDisposed) loadError = error;
+        if (!notifierDisposed) loadError = error;
       }
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isLoading = false;
         _notifyIfActive();
       }
       return;
     }
 
+    _round = null;
     final question = await _fetchQuestionSafely();
-    if (_isDisposed) return;
+    if (notifierDisposed) return;
 
+    _round = question == null ? null : ModelSpeakingRound(question);
     isLoading = false;
     _notifyIfActive();
-    if (question == null) return;
-    currentQuestion = question;
-    unawaited(_speakSafely(question.correctAnswer));
+    if (question != null) unawaited(speak(question.correctAnswer));
   }
 
   Future<ModelGameSpeaking?> _fetchQuestionSafely() async {
@@ -86,79 +96,48 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
       return null;
     }
   }
 
-  Future<void> _speakSafely(String text) async {
-    try {
-      await speak(text);
-    } catch (error, stackTrace) {
-      logger.e('Speaking audio failed', error: error, stackTrace: stackTrace);
-    }
-  }
-
   Future<void> speak(String text) async {
-    if (text.isEmpty) return;
-
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
-    }
-
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    await _ttsAudio.speak(
-      text: text,
-      languageCode: containsChinese ? 'zh' : 'en-US',
-    );
+    if (!notifierDisposed) await _speech.speak(text);
   }
 
-  void answer(String answer) {
-    if (currentQuestion == null) return;
-    if (answer.isEmpty) {
-      return;
+  /// True only when this input was accepted for the current question.
+  bool answer(String answer) {
+    if (!canAnswer) return false;
+    final question = currentQuestion!;
+    final result = _round!.answer(answer);
+    if (result == null) return false;
+    score += result.points;
+    if (result.completesQuestion) {
+      _answeredCount++;
+      isBusy = true;
+      _nextQuestionTimer?.cancel();
+      _nextQuestionTimer = Timer(
+        Duration(seconds: result.isCorrect ? 1 : 2),
+        () {
+          if (notifierDisposed) return;
+          isBusy = false;
+          if (answeredCount >= maxQuestions) {
+            isFinished = true;
+            _notifyIfActive();
+          } else {
+            unawaited(loadNextQuestion());
+          }
+        },
+      );
+      unawaited(
+        _submitAnswerSafely(
+          questionId: question.questionId,
+          answer: question.correctAnswer,
+        ),
+      );
     }
-    repeatCounts++;
-
-    String right = currentQuestion!.correctAnswer.toLowerCase();
-    String my = answer.toLowerCase();
-    isRightAnswer =
-        right == my ||
-        right.replaceAll(" ", '').replaceAll(".", '') ==
-            my.replaceAll(" ", '').replaceAll(".", '');
-    int seconds = 1;
-    if (isRightAnswer == true) {
-      score += 4;
-      seconds = 1;
-    } else {
-      seconds = 2;
-    }
-
-    if (isRightAnswer != true && repeatCounts < 2) {
-      _notifyIfActive();
-      return;
-    } else if (isRightAnswer != true && repeatCounts == 2) {
-      score += 4;
-    }
-
-    isBusy = true;
     _notifyIfActive();
-
-    // 用 Timer 2 秒後跳下一題
-    _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
-      repeatCounts = 0;
-      isBusy = false;
-      unawaited(loadNextQuestion());
-    });
-
-    unawaited(
-      _submitAnswerSafely(
-        questionId: currentQuestion!.questionId,
-        answer: currentQuestion!.correctAnswer,
-      ),
-    );
-    _notifyIfActive();
+    return true;
   }
 
   Future<void> _submitAnswerSafely({
@@ -190,20 +169,14 @@ class ControllerGameSpeaking extends SafeChangeNotifier {
     );
   }
 
-  void finishPractice() {
-    _nextQuestionTimer?.cancel();
-    isBusy = false;
-  }
-
   void _notifyIfActive() {
-    if (!_isDisposed) notifyListeners();
+    if (!notifierDisposed) notifyListeners();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _nextQuestionTimer?.cancel();
-    _ttsAudio.dispose();
+    unawaited(_speech.dispose());
     super.dispose();
   }
 }

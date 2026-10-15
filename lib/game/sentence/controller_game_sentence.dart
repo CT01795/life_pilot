@@ -1,14 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:life_pilot/game/google_tts_audio.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
+import 'package:life_pilot/game/sentence/model_sentence_arrangement.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 import 'package:uuid/uuid.dart';
 
 class ControllerGameSentence extends SafeChangeNotifier {
@@ -17,16 +15,19 @@ class ControllerGameSentence extends SafeChangeNotifier {
   final String gameId;
   final int gameLevel;
   final String questionBank;
-  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
+  final ServiceGameSpeech _speech;
+  final _arrangement = ModelSentenceArrangement();
+  final int maxQuestions;
+  int _answeredCount = 0;
+  int get answeredCount => _answeredCount;
   ModelGameSentence? currentQuestion;
   bool isFinished = false;
   bool isLoading = false;
   Object? loadError;
-  bool _isDisposed = false;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
-  List<WordItem> options = []; // 底部文字方塊
-  List<WordItem?> answerSlots = []; // 上方拖曳區
+  List<WordItem> get options => _arrangement.options;
+  List<WordItem?> get answerSlots => _arrangement.slots;
   bool? isRightAnswer;
 
   int score = 0; // +1 / -1
@@ -39,10 +40,12 @@ class ControllerGameSentence extends SafeChangeNotifier {
     required this.gameId, // 初始化
     required this.gameLevel,
     this.questionBank = 'admin',
-  });
+    this.maxQuestions = 999,
+    ServiceGameSpeech? speech,
+  }) : _speech = speech ?? ServiceGameSpeech();
 
   Future<void> loadNextQuestion() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isFinished) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     loadError = null;
     isLoading = true;
@@ -50,7 +53,7 @@ class ControllerGameSentence extends SafeChangeNotifier {
     if (score >= 100) {
       try {
         await _saveScore(true);
-        if (_isDisposed) return;
+        if (notifierDisposed) return;
         isFinished = true;
       } catch (error, stackTrace) {
         logger.e(
@@ -58,9 +61,9 @@ class ControllerGameSentence extends SafeChangeNotifier {
           error: error,
           stackTrace: stackTrace,
         );
-        if (!_isDisposed) loadError = error;
+        if (!notifierDisposed) loadError = error;
       }
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isLoading = false;
         _notifyIfActive();
       }
@@ -70,15 +73,18 @@ class ControllerGameSentence extends SafeChangeNotifier {
     lastAnswer = null;
     isRightAnswer = null;
     showCorrectAnswer = false;
-    currentQuestion = await _fetchQuestionSafely();
-    if (_isDisposed) return;
+    final question = await _fetchQuestionSafely();
+    if (notifierDisposed) return;
+    currentQuestion = question;
     // 🔹 初始化答案槽 & 選項
     if (currentQuestion != null) {
-      answerSlots = List.filled(currentQuestion!.options.length, null);
-      options = List.generate(
+      final words = List.generate(
         currentQuestion!.options.length,
         (i) => WordItem(id: Uuid().v4(), text: currentQuestion!.options[i]),
       )..shuffle();
+      _arrangement.reset(words);
+    } else {
+      _arrangement.reset(const []);
     }
 
     isLoading = false;
@@ -101,7 +107,7 @@ class ControllerGameSentence extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
       return null;
     }
   }
@@ -115,55 +121,38 @@ class ControllerGameSentence extends SafeChangeNotifier {
   }
 
   Future<void> speak(String text) async {
-    if (text.isEmpty) return;
-
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
-    }
-
-    final containsChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    await _ttsAudio.speak(
-      text: text,
-      languageCode: containsChinese ? 'zh' : 'en-US',
-    );
+    if (notifierDisposed) return;
+    await _speech.speak(text);
   }
 
-  // 🔹 將單字移動到答案槽
-  void moveWordToSlot(int slotIndex, WordItem word) {
-    final indexInUpper = answerSlots.indexWhere((e) => e?.id == word.id);
-    if (indexInUpper != -1) {
-      // 上方交換
-      final temp = answerSlots[slotIndex];
-      answerSlots[slotIndex] = word;
-      answerSlots[indexInUpper] = temp;
-    } else {
-      // 下方 → 上方
-      if (answerSlots[slotIndex] != null) {
-        options.add(answerSlots[slotIndex]!);
-      }
-      answerSlots[slotIndex] = word;
-      final index = options.indexWhere((e) => e.id == word.id);
-      if (index != -1) options.removeAt(index);
-    }
-    _notifyIfActive();
-  }
-
-  void removeWordFromSlot(int slotIndex) {
-    final word = answerSlots[slotIndex];
-    if (word != null) {
-      options.add(word);
-      answerSlots[slotIndex] = null;
-      _notifyIfActive();
-    }
-  }
-
-  // 🔹 答題判斷
-  bool get canCheckAnswer =>
+  bool get canArrange =>
+      !notifierDisposed &&
+      !isLoading &&
+      !isFinished &&
       currentQuestion != null &&
-      lastAnswer == null &&
-      answerSlots.isNotEmpty &&
-      answerSlots.every((word) => word != null);
+      lastAnswer == null;
+
+  bool canMoveWordToSlot(int index, WordItem word) =>
+      canArrange && _arrangement.canMoveTo(index, word);
+
+  bool canReturnWord(WordItem word) =>
+      canArrange && _arrangement.slotOf(word) != null;
+
+  void moveWordToSlot(int index, WordItem word) {
+    if (canArrange && _arrangement.moveTo(index, word)) _notifyIfActive();
+  }
+
+  void removeWordFromSlot(int index) {
+    if (canArrange && _arrangement.removeAt(index)) _notifyIfActive();
+  }
+
+  void returnWordToBank(WordItem word) {
+    if (!canArrange) return;
+    final index = _arrangement.slotOf(word);
+    if (index != null) removeWordFromSlot(index);
+  }
+
+  bool get canCheckAnswer => canArrange && _arrangement.isComplete;
 
   bool checkAnswer() {
     if (!canCheckAnswer) return false;
@@ -171,6 +160,7 @@ class ControllerGameSentence extends SafeChangeNotifier {
     final userAnswer = currentQuestion!.buildUserAnswer(answerSlots);
 
     lastAnswer = userAnswer;
+    _answeredCount++;
     isRightAnswer = userAnswer == currentQuestion!.correctAnswer;
     int seconds = 1;
     if (isRightAnswer == true) {
@@ -182,12 +172,15 @@ class ControllerGameSentence extends SafeChangeNotifier {
       seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
+    if (_answeredCount >= maxQuestions) {
+      isFinished = true;
+      _nextQuestionTimer?.cancel();
+    } else {
+      _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
+        unawaited(loadNextQuestion());
+      });
+    }
     _notifyIfActive();
-
-    // 用 Timer 2 秒後跳下一題
-    _nextQuestionTimer = Timer(Duration(seconds: seconds), () {
-      unawaited(loadNextQuestion());
-    });
 
     unawaited(
       _submitAnswerSafely(
@@ -231,14 +224,13 @@ class ControllerGameSentence extends SafeChangeNotifier {
   }
 
   void _notifyIfActive() {
-    if (!_isDisposed) notifyListeners();
+    if (!notifierDisposed) notifyListeners();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _nextQuestionTimer?.cancel();
-    _ttsAudio.dispose();
+    unawaited(_speech.dispose());
     super.dispose();
   }
 }

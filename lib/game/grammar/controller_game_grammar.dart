@@ -1,13 +1,10 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:life_pilot/game/google_tts_audio.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameGrammar extends SafeChangeNotifier {
   final String userName;
@@ -16,15 +13,16 @@ class ControllerGameGrammar extends SafeChangeNotifier {
   final int gameLevel;
   final String questionBank;
   final ModelGameGrammar model;
-  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
-  bool? isRightAnswer;
-  int answeredCount = 0; // 紀錄答了幾題
-
-  ModelGameGrammarQuestion? currentQuestion;
+  final ServiceGameSpeech _speech;
+  final int maxQuestions;
+  bool? get isRightAnswer => model.isRightAnswer;
+  int get answeredCount => model.answeredCount;
+  ModelGameGrammarQuestion? get currentQuestion => model.currentQuestion;
+  bool get canAnswer =>
+      !notifierDisposed && !isLoading && !isFinished && model.canAnswer;
   bool isFinished = false;
   bool isLoading = false;
   Object? loadError;
-  bool _isDisposed = false;
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
 
@@ -35,26 +33,31 @@ class ControllerGameGrammar extends SafeChangeNotifier {
     required this.gameLevel,
     this.questionBank = 'admin',
     required this.model,
-  });
+    this.maxQuestions = 999,
+    ServiceGameSpeech? speech,
+  }) : _speech = speech ?? ServiceGameSpeech();
 
   Future<void> startBattle(int level) async {
-    answeredCount = 0;
-    model.monster = ModelGameGrammarMonster('Monster', 50 + level * 10, 10);
+    if (notifierDisposed || isLoading) return;
+    _nextQuestionTimer?.cancel();
+    isFinished = false;
+    model.startBattle(level);
     await loadNextQuestion();
   }
 
   Future<void> loadNextQuestion() async {
-    if (_isDisposed || isLoading) return;
-    isRightAnswer = null;
+    if (notifierDisposed || isLoading || isFinished || model.monster == null) {
+      return;
+    }
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
-    if (model.monster!.hp <= 0 || model.player.hp <= 0) {
+    if (model.isBattleOver) {
       //isBattleOver
       isLoading = true;
       loadError = null;
       _notifyIfActive();
       try {
         await _saveScore(model.player.hp >= 100);
-        if (_isDisposed) return;
+        if (notifierDisposed) return;
         isFinished = true;
       } catch (error, stackTrace) {
         logger.e(
@@ -62,9 +65,9 @@ class ControllerGameGrammar extends SafeChangeNotifier {
           error: error,
           stackTrace: stackTrace,
         );
-        if (!_isDisposed) loadError = error;
+        if (!notifierDisposed) loadError = error;
       }
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isLoading = false;
         _notifyIfActive();
       }
@@ -74,23 +77,26 @@ class ControllerGameGrammar extends SafeChangeNotifier {
     isLoading = true;
     loadError = null;
     showCorrectAnswer = false;
+    model.prepareQuestion();
     _notifyIfActive();
 
-    currentQuestion = await _fetchQuestionSafely();
-    if (_isDisposed) return;
-    currentQuestion?.options.shuffle();
-    model.currentQuestion = currentQuestion;
+    final question = await _fetchQuestionSafely();
+    if (notifierDisposed) return;
+    if (question != null) {
+      model.currentQuestion = ModelGameGrammarQuestion(
+        questionId: question.questionId,
+        question: question.question,
+        options: [...question.options]..shuffle(),
+        correctAnswer: question.correctAnswer,
+        type: question.type,
+        isRight: question.isRight,
+      );
+    }
 
     isLoading = false;
     _notifyIfActive();
     if (currentQuestion != null) {
-      unawaited(
-        _speakSafely(
-          currentQuestion!.question
-              .replaceAll("______", currentQuestion!.correctAnswer)
-              .replaceAll("<-->", ","),
-        ),
-      );
+      unawaited(speak(currentQuestion!.spokenQuestion));
     }
   }
 
@@ -107,52 +113,35 @@ class ControllerGameGrammar extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
       return null;
     }
   }
 
-  Future<void> _speakSafely(String text) async {
-    try {
-      await speak(text);
-    } catch (error, stackTrace) {
-      logger.e('Grammar audio failed', error: error, stackTrace: stackTrace);
-    }
-  }
-
   Future<void> speak(String text) async {
-    if (text.isEmpty) return;
-
-    if (kIsWeb) {
-      await speakWeb(text);
-      return;
-    }
-
-    await _ttsAudio.speak(text: text, languageCode: 'en-US');
+    if (!notifierDisposed) await _speech.speakEnglish(text);
   }
 
   Future<void> answer(String answer) async {
-    if (currentQuestion == null || isRightAnswer != null) return;
-    answeredCount++;
-    isRightAnswer = answer == currentQuestion!.correctAnswer;
-    if (isRightAnswer ?? false) {
-      model.monster!.hp -= model.player.attack;
-    } else {
-      model.player.hp -= model.monster!.attack;
-      showCorrectAnswer = true; // 顯示正確答案
-    }
+    if (!canAnswer) return;
+    final question = currentQuestion!;
+    final correct = model.answer(answer);
+    if (correct == null) return;
+    showCorrectAnswer = !correct;
+    if (answeredCount >= maxQuestions) isFinished = true;
     _notifyIfActive();
 
     // async submitAnswer 不阻塞 UI
     unawaited(
       _submitAnswerSafely(
-        questionId: currentQuestion!.questionId,
+        questionId: question.questionId,
         answer: answer,
-        isRightAnswer: isRightAnswer ?? false,
+        isRightAnswer: correct,
       ),
     );
 
-    final delay = (isRightAnswer ?? false) ? 1 : 2;
+    if (isFinished || notifierDisposed) return;
+    final delay = correct ? 1 : 2;
     _nextQuestionTimer = Timer(Duration(seconds: delay), () {
       unawaited(loadNextQuestion());
     });
@@ -189,14 +178,13 @@ class ControllerGameGrammar extends SafeChangeNotifier {
   }
 
   void _notifyIfActive() {
-    if (!_isDisposed) notifyListeners();
+    if (!notifierDisposed) notifyListeners();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _nextQuestionTimer?.cancel();
-    _ttsAudio.dispose();
+    unawaited(_speech.dispose());
     super.dispose();
   }
 }

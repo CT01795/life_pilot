@@ -32,6 +32,7 @@ class PageGameSteamMonomino extends StatefulWidget {
 
 class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
   late ControllerGameSteamMonomino controller;
+  bool _checking = false;
 
   @override
   void initState() {
@@ -51,13 +52,29 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
     super.dispose();
   }
 
-  void _checkPath() async {
-    bool ok = await controller.checkPath();
-    if (!mounted) return;
+  Future<void> _checkPath() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    try {
+      await _showCheckResult();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
+      );
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  Future<void> _showCheckResult() async {
+    final revision = controller.boardRevision;
+    final ok = await controller.checkPath();
+    if (!mounted || revision != controller.boardRevision) return;
     setState(() {}); // 更新分數
 
     // 顯示結果
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(
@@ -178,7 +195,7 @@ class _PageGameSteamMonominoState extends State<PageGameSteamMonomino> {
                 Tooltip(
                   message: loc.submitAnswer,
                   child: ElevatedButton(
-                    onPressed: _checkPath,
+                    onPressed: _checking ? null : _checkPath,
                     child: AdaptiveButtonLabel(loc.checkPath),
                   ),
                 ),

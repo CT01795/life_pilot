@@ -6,6 +6,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/grammar/model_game_grammar.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 
@@ -14,11 +15,15 @@ class PageGameGrammar extends StatefulWidget {
   final String gameId;
   int gameLevel;
   final String questionBank;
+  final ServiceGame? service;
+  final ServiceGameSpeech? speech;
   PageGameGrammar({
     super.key,
     required this.gameId,
     required this.gameLevel,
     this.questionBank = 'admin',
+    this.service,
+    this.speech,
   });
 
   @override
@@ -27,7 +32,6 @@ class PageGameGrammar extends StatefulWidget {
 
 class _PageGameGrammarState extends State<PageGameGrammar> {
   late final ControllerGameGrammar controller;
-  late int maxQ;
   late int playerMaxHp;
   late int monsterMaxHp;
   bool _hasPopped = false; // 旗標，避免重複 pop
@@ -37,13 +41,14 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     super.initState();
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameGrammar(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       questionBank: widget.questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGame(),
+      service: widget.service ?? ServiceGame(),
+      speech: widget.speech,
+      maxQuestions: widget.gameLevel == -1 ? 10 : 999,
       model: ModelGameGrammar(),
     );
 
@@ -52,18 +57,9 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
     monsterMaxHp = controller.model.monster!.hp;
   }
 
-  // 呼叫這個方法答題並判斷是否完成題數
+  // 題數限制與結束判斷由 Controller 統一管理。
   Future<void> onAnswer(String userAnswer) async {
     await controller.answer(userAnswer);
-    if (!mounted) return;
-
-    if (controller.answeredCount >= maxQ && !_hasPopped) {
-      _hasPopped = true;
-      // 延遲一下讓 UI 更新後再跳回
-      Future.microtask(() {
-        if (mounted) Navigator.pop(context, true);
-      });
-    }
   }
 
   @override
@@ -230,12 +226,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                             color: Color(0xFF26A69A),
                           ),
                           onPressed: () => controller.speak(
-                            controller.currentQuestion!.question
-                                .replaceAll(
-                                  "______",
-                                  controller.currentQuestion!.correctAnswer,
-                                )
-                                .replaceAll("<-->", ","),
+                            controller.currentQuestion!.spokenQuestion,
                           ),
                         ),
                         Gaps.w8, // 🔥 小間距就好
@@ -311,7 +302,7 @@ class _PageGameGrammarState extends State<PageGameGrammar> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: controller.isRightAnswer == null
+                      onPressed: controller.canAnswer
                           ? () => onAnswer(opt)
                           : null,
                       child: Text(

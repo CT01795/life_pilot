@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/puzzle_map/controller_game_puzzle_map.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
@@ -32,6 +31,7 @@ class PageGamePuzzleMap extends StatefulWidget {
 
 class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   bool showHint = false;
+  bool _checking = false;
   late ModelGamePuzzleMap map;
   late int gameSize;
   ui.Image? puzzleImage;
@@ -113,15 +113,23 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
   @override
   void dispose() {
     controller?.dispose();
+    puzzleImage?.dispose();
     super.dispose();
   }
 
   Future<ui.Image> _loadImage(String path) async {
     final data = await DefaultAssetBundle.of(context).load(path);
-    final list = Uint8List.view(data.buffer);
+    final list = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
+    );
     final codec = await ui.instantiateImageCodec(list);
-    final frame = await codec.getNextFrame();
-    return frame.image;
+    try {
+      final frame = await codec.getNextFrame();
+      return frame.image;
+    } finally {
+      codec.dispose();
+    }
   }
 
   @override
@@ -155,6 +163,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             },
           ),
           PopupMenuButton<int>(
+            enabled: !_checking,
             tooltip: loc.difficulty,
             onSelected: (size) {
               setState(() {
@@ -176,7 +185,7 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
             icon: const Icon(Icons.check),
             color: Colors.white,
             tooltip: loc.submitAnswer,
-            onPressed: _check,
+            onPressed: _checking ? null : _check,
           ),
         ],
       ),
@@ -419,11 +428,28 @@ class _PageGamePuzzleMapState extends State<PageGamePuzzleMap> {
     return Rect.fromLTWH(dx, dy, drawWidth, drawHeight);
   }
 
-  void _check() async {
-    final ok = await controller!.checkResult();
-    if (!mounted) return;
+  Future<void> _check() async {
+    if (_checking || controller == null) return;
+    setState(() => _checking = true);
+    try {
+      await _showCheckResult();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
+      );
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  Future<void> _showCheckResult() async {
+    final ctrl = controller!;
+    final revision = ctrl.boardRevision;
+    final ok = await ctrl.checkResult();
+    if (!mounted || revision != ctrl.boardRevision) return;
     // 顯示結果
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(
@@ -518,7 +544,8 @@ class _PuzzleTilePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _PuzzleTilePainter oldDelegate) =>
+      oldDelegate.uiImage != uiImage || oldDelegate.sourceRect != sourceRect;
 }
 
 class _GroupBorderPainter extends CustomPainter {
@@ -555,5 +582,6 @@ class _GroupBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _GroupBorderPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.isDashed != isDashed;
 }

@@ -8,6 +8,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/game/sentence/model_game_sentence.dart';
 import 'package:life_pilot/game/service_game.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/game/widgets_game_help_button.dart';
 import 'package:provider/provider.dart';
 
@@ -16,11 +17,15 @@ class PageGameSentence extends StatefulWidget {
   final String gameId;
   int gameLevel;
   final String questionBank;
+  final ServiceGame? service;
+  final ServiceGameSpeech? speech;
   PageGameSentence({
     super.key,
     required this.gameId,
     required this.gameLevel,
     this.questionBank = 'admin',
+    this.service,
+    this.speech,
   });
 
   @override
@@ -31,37 +36,27 @@ class _PageGameSentenceState extends State<PageGameSentence> {
   late final ControllerGameSentence controller;
   bool _hasPopped = false; // 旗標，避免重複 pop
   double size = 32.0;
-  int answeredCount = 0; // 紀錄答了幾題
-  late int maxQ;
 
   @override
   void initState() {
     super.initState();
 
     final auth = context.read<ControllerAuth>();
-    maxQ = widget.gameLevel == -1 ? 10 : 999;
     controller = ControllerGameSentence(
       gameId: widget.gameId,
       gameLevel: widget.gameLevel == -1 ? 1 : widget.gameLevel,
       questionBank: widget.questionBank,
       userName: auth.currentAccount ?? AuthConstants.guest,
-      service: ServiceGame(),
+      service: widget.service ?? ServiceGame(),
+      speech: widget.speech,
+      maxQuestions: widget.gameLevel == -1 ? 10 : 999,
     );
     controller.loadNextQuestion();
   }
 
   // 呼叫這個方法答題並判斷是否完成題數
   void onAnswer() {
-    if (!controller.checkAnswer()) return;
-    answeredCount++;
-
-    if (answeredCount >= maxQ && !_hasPopped) {
-      _hasPopped = true;
-      // 延遲一下讓 UI 更新後再跳回
-      Future.microtask(() {
-        if (mounted) Navigator.pop(context, true);
-      });
-    }
+    controller.checkAnswer();
   }
 
   @override
@@ -241,7 +236,8 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                             : max(80.0, word.text.length * 40.0);
 
                         return DragTarget<WordItem>(
-                          onWillAcceptWithDetails: (_) => true,
+                          onWillAcceptWithDetails: (detail) =>
+                              controller.canMoveWordToSlot(index, detail.data),
                           onAcceptWithDetails: (detail) {
                             controller.moveWordToSlot(index, detail.data);
                           },
@@ -263,6 +259,8 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                               child: word == null
                                   ? SizedBox(height: minHeight)
                                   : Draggable<WordItem>(
+                                      maxSimultaneousDrags:
+                                          controller.canArrange ? 1 : 0,
                                       data: word,
                                       feedback: Material(
                                         child: Container(
@@ -306,15 +304,9 @@ class _PageGameSentenceState extends State<PageGameSentence> {
               Expanded(
                 child: DragTarget<WordItem>(
                   onWillAcceptWithDetails: (detail) =>
-                      controller.answerSlots.contains(detail.data),
+                      controller.canReturnWord(detail.data),
                   onAcceptWithDetails: (detail) {
-                    final dragged = detail.data;
-                    final indexInUpper = controller.answerSlots.indexWhere(
-                      (e) => e?.id == dragged.id,
-                    );
-                    if (indexInUpper != -1) {
-                      controller.removeWordFromSlot(indexInUpper);
-                    }
+                    controller.returnWordToBank(detail.data);
                   },
                   builder: (context, candidateData, rejectedData) {
                     return Container(
@@ -344,6 +336,9 @@ class _PageGameSentenceState extends State<PageGameSentence> {
                             alignment: WrapAlignment.center,
                             children: controller.options.map((word) {
                               return Draggable<WordItem>(
+                                maxSimultaneousDrags: controller.canArrange
+                                    ? 1
+                                    : 0,
                                 data: word,
                                 feedback: Material(
                                   child: Container(

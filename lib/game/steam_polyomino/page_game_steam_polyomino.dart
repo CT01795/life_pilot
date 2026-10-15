@@ -32,6 +32,7 @@ class PageGameSteamPolyomino extends StatefulWidget {
 
 class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
   late ControllerGameSteamPolyomino ctrl;
+  bool _checking = false;
   late List<ModelGamePolyominoPipeBlock> waiting;
 
   // --- 統一縮放比例 ---
@@ -120,77 +121,96 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: loc.submitAnswer,
+        onPressed: _checking ? null : _checkResult,
         child: const Icon(Icons.check),
-        onPressed: () async {
-          final ok = await ctrl.isLevelComplete();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(ok ? "🎉 Completed!" : "❌ Not Completed"),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-
-          if (ok) {
-            // 強制跳轉到遊戲頁（不能跳過）
-            int value = widget.gameLevel % 5;
-            value == 0
-                ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameGrammar(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                      ),
-                    ),
-                  )
-                : value == 4
-                ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameSpeaking(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                      ),
-                    ),
-                  )
-                : value == 3
-                ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameTranslation(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                        gameName: "",
-                      ),
-                    ),
-                  )
-                : value == 2
-                ? await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameSentence(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                      ),
-                    ),
-                  )
-                : await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PageGameWordSearch(
-                        gameId: widget.gameId,
-                        gameLevel: -1, //widget.gameLevel,
-                      ),
-                    ),
-                  );
-            if (mounted) {
-              Navigator.pop(context, true); // 過關 -> 返回上一頁
-            }
-          }
-        },
       ),
     );
+  }
+
+  Future<void> _checkResult() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    try {
+      await _showCheckResult();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.unknownError)),
+      );
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  Future<void> _showCheckResult() async {
+    final loc = AppLocalizations.of(context)!;
+    final revision = ctrl.boardRevision;
+    final ok = await ctrl.isLevelComplete();
+    if (!mounted || revision != ctrl.boardRevision) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '🎉 ${loc.gamePassed}' : '❌ ${loc.gameFailed}'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+
+    if (ok) {
+      // 強制跳轉到遊戲頁（不能跳過）
+      int value = widget.gameLevel % 5;
+      value == 0
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameGrammar(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            )
+          : value == 4
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameSpeaking(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            )
+          : value == 3
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameTranslation(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                  gameName: "",
+                ),
+              ),
+            )
+          : value == 2
+          ? await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameSentence(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            )
+          : await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PageGameWordSearch(
+                  gameId: widget.gameId,
+                  gameLevel: -1, //widget.gameLevel,
+                ),
+              ),
+            );
+      if (mounted) {
+        Navigator.pop(context, true); // 過關 -> 返回上一頁
+      }
+    }
   }
 
   Widget _buildWaitingArea(BoxConstraints cons) {
@@ -315,9 +335,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
                 final tile = ctrl.grid[r][c];
                 final block = tile.blockId == null
                     ? null
-                    : ctrl.placedBlocks
-                          .where((block) => block.id == tile.blockId)
-                          .firstOrNull;
+                    : ctrl.blockById(tile.blockId!);
 
                 return DragTarget<ModelGamePolyominoDragBlockData>(
                   onWillAcceptWithDetails: (_) => true,

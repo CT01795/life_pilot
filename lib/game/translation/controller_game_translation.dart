@@ -1,16 +1,10 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:life_pilot/game/google_tts_audio.dart';
+import 'package:life_pilot/game/translation/service_translation_speech.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameTranslation extends SafeChangeNotifier {
   final String userName;
@@ -21,18 +15,19 @@ class ControllerGameTranslation extends SafeChangeNotifier {
   final String questionBank;
 
   ModelGameTranslation? currentQuestion;
-  int score = 0; // +1 / -1
-  int scoreMinus = 0; // +1 / -1
+  int score = 0;
+  int scoreMinus = 0;
   bool isFinished = false;
   bool isLoading = false;
   bool isAnswering = false;
   Object? loadError;
-  bool _isDisposed = false;
+  final ServiceTranslationSpeech _speech;
+  bool? _lastAnswerCorrect;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
   int answeredCount = 0;
-  int maxQuestions = 10;
+  final int maxQuestions;
 
   ControllerGameTranslation({
     required this.userName,
@@ -42,50 +37,23 @@ class ControllerGameTranslation extends SafeChangeNotifier {
     required this.gameName,
     this.questionBank = 'admin',
     required this.maxQuestions,
-  });
-
-  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
-  Future<void> _speak(String text, String group, bool isQuestion) async {
-    if (text.isEmpty) return;
-
-    if (kIsWeb) {
-      await speakWeb(text, group: group, isQuestion: isQuestion);
-      return;
-    }
-
-    var languageCode = 'en-US';
-    if ((group.contains('中翻英') && isQuestion) ||
-        (group.contains('英翻中') && !isQuestion) ||
-        (group.contains('日翻中') && !isQuestion) ||
-        (group.contains('中翻日') && isQuestion) ||
-        (group.contains('韓翻中') && !isQuestion) ||
-        (group.contains('中翻韓') && isQuestion)) {
-      languageCode = 'zh';
-    } else if ((group.contains('中翻日') && !isQuestion) ||
-        (group.contains('日翻中') && isQuestion)) {
-      languageCode = 'ja';
-    } else if ((group.contains('中翻韓') && !isQuestion) ||
-        (group.contains('韓翻中') && isQuestion)) {
-      languageCode = 'ko';
-    }
-
-    await _ttsAudio.speak(text: text, languageCode: languageCode);
-  }
+    ServiceTranslationSpeech? speech,
+  }) : _speech = speech ?? ServiceTranslationSpeech();
 
   Future<void> speak(String text, String group, bool isQuestion) async {
-    try {
-      await _speak(text, group, isQuestion);
-    } catch (error, stackTrace) {
-      logger.e(
-        'Translation audio failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    if (!notifierDisposed) await _speech.speak(text, group, isQuestion);
   }
 
+  bool get canAnswer =>
+      !notifierDisposed &&
+      !isLoading &&
+      !isAnswering &&
+      !isFinished &&
+      currentQuestion != null &&
+      lastAnswer == null;
+
   Future<void> loadNextQuestion() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isAnswering || isFinished) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     if (score >= 100) {
       await _completeGame();
@@ -95,16 +63,18 @@ class ControllerGameTranslation extends SafeChangeNotifier {
     isLoading = true;
     loadError = null;
     lastAnswer = null;
+    _lastAnswerCorrect = null;
     showCorrectAnswer = false;
     _notifyIfActive();
 
-    currentQuestion = await _fetchQuestionSafely();
-    if (_isDisposed) return;
+    final question = await _fetchQuestionSafely();
+    if (notifierDisposed) return;
+    currentQuestion = question;
 
     isLoading = false;
     _notifyIfActive();
     if (currentQuestion == null) return;
-    speak(currentQuestion!.question, currentQuestion!.group, true); // 自動播放題目
+    unawaited(speak(currentQuestion!.question, currentQuestion!.group, true));
   }
 
   Future<ModelGameTranslation?> _fetchQuestionSafely() async {
@@ -121,30 +91,35 @@ class ControllerGameTranslation extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
       return null;
     }
   }
 
-  Map<String, Set<String>> synonyms = {};
+  final Map<String, Set<String>> _synonyms = {};
   Future<void> answer(String answer) async {
-    if (currentQuestion == null || lastAnswer != null || isAnswering) return;
+    if (!canAnswer) return;
+    final question = currentQuestion!;
     isAnswering = true;
     _notifyIfActive();
 
     try {
-      final q = currentQuestion!.question.toLowerCase();
-      if (!synonyms.containsKey(q)) {
-        synonyms[q] = await service.getSynonyms(q);
-        if (_isDisposed) return;
-      }
-
-      lastAnswer = answer;
-      answeredCount++;
+      final key = question.question.toLowerCase();
       final normalized = answer.toLowerCase();
-      final isRightAnswer =
-          normalized == currentQuestion!.correctAnswer.toLowerCase() ||
-          synonyms[q]?.contains(normalized) == true;
+      var isRightAnswer = normalized == question.correctAnswer.toLowerCase();
+      if (!isRightAnswer) {
+        var alternatives = _synonyms[key];
+        if (alternatives == null) {
+          alternatives = await service.getSynonyms(key);
+          if (notifierDisposed || !identical(currentQuestion, question)) return;
+          _synonyms[key] = Set.unmodifiable(alternatives);
+        }
+        isRightAnswer = alternatives.contains(normalized);
+      }
+      if (notifierDisposed || !identical(currentQuestion, question)) return;
+      lastAnswer = answer;
+      _lastAnswerCorrect = isRightAnswer;
+      answeredCount++;
 
       int seconds = 1;
       if (isRightAnswer) {
@@ -158,7 +133,7 @@ class ControllerGameTranslation extends SafeChangeNotifier {
       }
       _notifyIfActive();
 
-      // 用 Timer 2 秒後跳下一題
+      // 答對停留一秒，答錯停留兩秒以查看正確答案。
       if (answeredCount >= maxQuestions) {
         _nextQuestionTimer?.cancel();
         isFinished = true;
@@ -169,7 +144,7 @@ class ControllerGameTranslation extends SafeChangeNotifier {
       }
       unawaited(
         _submitAnswerSafely(
-          questionId: currentQuestion!.questionId,
+          questionId: question.questionId,
           answer: answer,
           isRightAnswer: isRightAnswer,
         ),
@@ -180,9 +155,9 @@ class ControllerGameTranslation extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
     } finally {
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isAnswering = false;
         _notifyIfActive();
       }
@@ -220,14 +195,14 @@ class ControllerGameTranslation extends SafeChangeNotifier {
   }
 
   Future<void> _completeGame() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isAnswering || isFinished) return;
     _nextQuestionTimer?.cancel();
     isLoading = true;
     loadError = null;
     _notifyIfActive();
     try {
       await _saveScore(true);
-      if (_isDisposed) return;
+      if (notifierDisposed) return;
       isFinished = true;
     } catch (error, stackTrace) {
       logger.e(
@@ -235,9 +210,9 @@ class ControllerGameTranslation extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
     } finally {
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isLoading = false;
         _notifyIfActive();
       }
@@ -249,50 +224,26 @@ class ControllerGameTranslation extends SafeChangeNotifier {
   }
 
   void _notifyIfActive() {
-    if (!_isDisposed) notifyListeners();
+    if (!notifierDisposed) notifyListeners();
   }
 
-  Color getButtonColor(String option) {
-    if (lastAnswer == null) return Color(0xFFE3F2FD);
+  TranslationOptionFeedback feedbackFor(String option) {
+    if (lastAnswer == null) return TranslationOptionFeedback.neutral;
     if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Color(0xFFC8E6C9)
-          : Color(0xFFFFCDD2);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
-      return Color(0xFFC8E6C9);
+      return _lastAnswerCorrect == true
+          ? TranslationOptionFeedback.correct
+          : TranslationOptionFeedback.incorrect;
     }
-    return Color(0xFFE3F2FD);
-  }
-
-  Color getBorderColor(String option) {
-    if (lastAnswer == null) return Color(0xFF1976D2);
-    if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Color(0xFF388E3C)
-          : Color(0xFFD32F2F);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
-      return Color(0xFF388E3C);
+    if (showCorrectAnswer && option == currentQuestion?.correctAnswer) {
+      return TranslationOptionFeedback.correct;
     }
-    return Color(0xFF1976D2);
-  }
-
-  Icon? getStatusIcon(String option) {
-    if (lastAnswer == null) return null;
-    if (option == lastAnswer) {
-      return option == currentQuestion!.correctAnswer
-          ? Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32)
-          : Icon(Icons.clear_rounded, color: Color(0xFFD32F2F), size: 32);
-    } else if (option == currentQuestion!.correctAnswer && showCorrectAnswer) {
-      return Icon(Icons.check_rounded, color: Color(0xFF2E7D32), size: 32);
-    }
-    return null;
+    return TranslationOptionFeedback.neutral;
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _nextQuestionTimer?.cancel();
-    _ttsAudio.dispose();
+    unawaited(_speech.dispose());
     super.dispose();
   }
 }

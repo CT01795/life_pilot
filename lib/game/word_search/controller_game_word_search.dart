@@ -1,16 +1,10 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:async';
-import 'dart:math';
-import 'package:flutter/foundation.dart';
-import 'package:life_pilot/game/google_tts_audio.dart';
+import 'package:life_pilot/game/service_game_speech.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/word_search/model_game_word_search.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/logger.dart';
-import 'package:life_pilot/utils/tts/tts_stub.dart'
-    if (dart.library.html) 'package:life_pilot/utils/tts/tts_web.dart';
 
 class ControllerGameWordSearch extends SafeChangeNotifier {
   final String userName;
@@ -22,26 +16,27 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
   final WordSearchBoard board;
   ModelGameWordSearch currentQuestion;
 
-  int score = 0; // +1 / -1
-  int scoreMinus = 0; // +1 / -1
+  int score = 0;
+  int scoreMinus = 0;
   bool isFinished = false;
   bool isLoading = false;
   Object? loadError;
-  bool _isDisposed = false;
+  bool _hasQuestion = false;
+  final ServiceGameSpeech _speech;
   String? lastAnswer; // 使用者選的答案
   bool showCorrectAnswer = false; // 是否要顯示正確答案
   Timer? _nextQuestionTimer; // Timer 控制自動下一題
   int answeredCount = 0;
-  int maxQuestions = 10;
+  final int maxQuestions;
 
-  List<List<int>> directions = [
-    [0, 1], // →
-    [1, 0], // ↓
-    [1, 1], // ↘
-    [-1, 1], // ↗
-  ];
-
-  List<int>? _currentDirection;
+  bool get canAnswer =>
+      !notifierDisposed &&
+      !isLoading &&
+      !isFinished &&
+      _hasQuestion &&
+      loadError == null &&
+      lastAnswer == null;
+  bool get canSubmit => canAnswer && board.currentSelection.isNotEmpty;
 
   ControllerGameWordSearch({
     required this.userName,
@@ -52,30 +47,15 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
     required this.maxQuestions,
     required this.board,
     required this.currentQuestion,
-  });
+    ServiceGameSpeech? speech,
+  }) : _speech = speech ?? ServiceGameSpeech();
 
-  final GoogleTtsAudio _ttsAudio = GoogleTtsAudio();
   Future<void> speak(String text) async {
-    try {
-      if (text.isEmpty) return;
-
-      if (kIsWeb) {
-        await speakWeb(text);
-        return;
-      }
-
-      await _ttsAudio.speak(text: text, languageCode: 'en-US');
-    } catch (error, stackTrace) {
-      logger.e(
-        'Word search audio failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    if (!notifierDisposed) await _speech.speakEnglish(text);
   }
 
   Future<void> loadNextQuestion() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isFinished) return;
     _nextQuestionTimer?.cancel(); // 先取消之前的 Timer
     if (score >= 100) {
       await _completeGame();
@@ -83,20 +63,23 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
     }
 
     isLoading = true;
+    _hasQuestion = false;
+    board.clearSelection();
     loadError = null;
     lastAnswer = null;
     showCorrectAnswer = false;
     notifyListeners();
 
     final question = await _fetchQuestionSafely();
-    if (_isDisposed) return;
+    if (notifierDisposed) return;
     isLoading = false;
     if (question == null) {
       _notifyIfActive();
       return;
     }
     currentQuestion = question;
-    _generateBoardFromQuestion();
+    board.generate(question.question);
+    _hasQuestion = true;
 
     notifyListeners();
     unawaited(speak(currentQuestion.question));
@@ -115,156 +98,31 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
       return null;
     }
   }
 
-  void _generateBoardFromQuestion() {
-    board.clearSelection();
-    _currentDirection = null;
-    lastAnswer = null;
-
-    final word = currentQuestion.question.replaceAll(' ', '');
-    final wordLength = word.length;
-
-    // ⭐ 動態計算格子大小
-    final newSize = max(wordLength + 3, 8);
-    if (board.size != newSize) {
-      board.size = newSize;
-      // 重新生成 grid
-      board.grid = List.generate(
-        board.size,
-        (r) => List.generate(
-          board.size,
-          (c) => LetterCell(row: r, col: c, letter: ''),
-        ),
-      );
-    } else {
-      // 清空格子
-      for (var r = 0; r < board.size; r++) {
-        for (var c = 0; c < board.size; c++) {
-          board.grid[r][c] = LetterCell(row: r, col: c, letter: '');
-        }
-      }
-    }
-
-    final random = Random();
-
-    // 隨機方向
-    final dir = directions[random.nextInt(directions.length)];
-    final dr = dir[0];
-    final dc = dir[1];
-
-    // 找合法起點
-    final start = chooseWordPlacementStart(
-      random: random,
-      boardSize: board.size,
-      wordLength: word.length,
-      rowDirection: dr,
-      columnDirection: dc,
-    );
-    final startRow = start.row;
-    final startCol = start.col;
-
-    // 放字
-    for (int i = 0; i < word.length; i++) {
-      final r = startRow + dr * i;
-      final c = startCol + dc * i;
-      board.grid[r][c] = LetterCell(row: r, col: c, letter: word[i]);
-    }
-
-    // 補亂數字母
-    _fillRandomLetters(random);
-
-    notifyListeners();
-  }
-
-  void _fillRandomLetters(Random random) {
-    const letters = 'abcdefghijklmnopqrstuvwxyz';
-    for (var r = 0; r < board.size; r++) {
-      for (var c = 0; c < board.size; c++) {
-        if (board.grid[r][c].letter.isEmpty) {
-          board.grid[r][c] = LetterCell(
-            row: r,
-            col: c,
-            letter: letters[random.nextInt(26)],
-          );
-        }
-      }
-    }
-  }
-
   void onSelectCell(LetterCell cell) {
-    if (lastAnswer != null) return;
-
-    if (board.currentSelection.isEmpty) {
-      cell.selected = true;
-      board.currentSelection.add(cell);
-      _currentDirection = null; // 重置方向
-      notifyListeners();
-      return;
-    }
-
-    final last = board.currentSelection.last;
-    final dr = cell.row - last.row;
-    final dc = cell.col - last.col;
-
-    final dir = [dr.sign, dc.sign];
-
-    // 🔹 如果不是合法方向，就清空舊選擇，從這個格子重新開始
-    if (!directions.any((d) => d[0] == dir[0] && d[1] == dir[1]) ||
-        dr.abs() > 1 ||
-        dc.abs() > 1) {
-      board.clearSelection();
-      cell.selected = true;
-      board.currentSelection.add(cell);
-      _currentDirection = null;
-      notifyListeners();
-      return;
-    }
-
-    // 🔹 設定方向（如果還沒設定）
-    if (_currentDirection == null) {
-      _currentDirection = dir;
-    } else {
-      // 🔹 如果方向不一致，也重置選擇
-      if (dir[0] != _currentDirection![0] || dir[1] != _currentDirection![1]) {
-        board.clearSelection();
-        cell.selected = true;
-        board.currentSelection.add(cell);
-        _currentDirection = null;
-        notifyListeners();
-        return;
-      }
-    }
-
-    // 🔹 合法格子，加入 selection
-    cell.selected = true;
-    board.currentSelection.add(cell);
-    notifyListeners();
+    if (canAnswer && board.select(cell)) notifyListeners();
   }
 
   void submitSelection() {
-    final selectedWord = board.currentSelection.map((c) => c.letter).join();
-
+    if (!canSubmit) return;
+    final selectedWord = board.selectedWord;
+    board.completeSelection(
+      correct: selectedWord == currentQuestion.searchWord,
+    );
     answer(selectedWord);
-
-    for (final c in board.currentSelection) {
-      c.correct = true;
-    }
-
-    board.clearSelection();
-    _currentDirection = null;
   }
 
   void answer(String answer) {
-    if (lastAnswer != null) return;
+    if (!canAnswer) return;
+    final question = currentQuestion;
 
     lastAnswer = answer;
     answeredCount++;
-    final isRightAnswer =
-        answer == currentQuestion.question.replaceAll(' ', '');
+    final isRightAnswer = answer == question.searchWord;
     int seconds = 1;
     if (isRightAnswer) {
       score += 4;
@@ -275,9 +133,7 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
       seconds = 2;
       showCorrectAnswer = true; // 顯示正確答案
     }
-    notifyListeners();
-
-    // 用 Timer 2 秒後跳下一題
+    // 先完成所有狀態變更，再通知畫面，避免收到尚未完成的狀態。
     if (answeredCount >= maxQuestions) {
       _nextQuestionTimer?.cancel();
       isFinished = true;
@@ -286,15 +142,19 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
         unawaited(loadNextQuestion());
       });
     }
-    unawaited(_submitAnswerSafely(isRightAnswer));
+    unawaited(_submitAnswerSafely(question, isRightAnswer));
+    notifyListeners();
   }
 
-  Future<void> _submitAnswerSafely(bool isRightAnswer) async {
+  Future<void> _submitAnswerSafely(
+    ModelGameWordSearch question,
+    bool isRightAnswer,
+  ) async {
     try {
       await service.submitWordSearchAnswer(
         userName: userName,
-        questionId: currentQuestion.questionId,
-        answer: currentQuestion.question,
+        questionId: question.questionId,
+        answer: question.question,
         isRightAnswer: isRightAnswer,
       );
     } catch (error, stackTrace) {
@@ -316,14 +176,14 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
   }
 
   Future<void> _completeGame() async {
-    if (_isDisposed || isLoading) return;
+    if (notifierDisposed || isLoading || isFinished) return;
     _nextQuestionTimer?.cancel();
     isLoading = true;
     loadError = null;
     _notifyIfActive();
     try {
       await _saveScore(true);
-      if (_isDisposed) return;
+      if (notifierDisposed) return;
       isFinished = true;
     } catch (error, stackTrace) {
       logger.e(
@@ -331,9 +191,9 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!_isDisposed) loadError = error;
+      if (!notifierDisposed) loadError = error;
     } finally {
-      if (!_isDisposed) {
+      if (!notifierDisposed) {
         isLoading = false;
         _notifyIfActive();
       }
@@ -345,14 +205,13 @@ class ControllerGameWordSearch extends SafeChangeNotifier {
   }
 
   void _notifyIfActive() {
-    if (!_isDisposed) notifyListeners();
+    if (!notifierDisposed) notifyListeners();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _nextQuestionTimer?.cancel();
-    _ttsAudio.dispose();
+    unawaited(_speech.dispose());
     super.dispose();
   }
 }

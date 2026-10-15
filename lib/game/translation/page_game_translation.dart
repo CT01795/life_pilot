@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/translation/controller_game_translation.dart';
+import 'package:life_pilot/game/translation/model_game_translation.dart';
 import 'package:life_pilot/game/game_question_authoring_rules.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -187,13 +188,36 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                   Gaps.h8,
                   // 三個答案按鈕
                   ...q.options.map((opt) {
-                    Color buttonColor = controller.getButtonColor(opt); // 淺藍
-                    Color borderColor = controller.getBorderColor(
-                      opt,
-                    ); // Material Blue 700
-                    Icon? statusIcon = controller.getStatusIcon(
-                      opt,
-                    ); // 用於顯示勾勾或叉叉
+                    final feedback = controller.feedbackFor(opt);
+                    final (
+                      buttonColor,
+                      borderColor,
+                      statusIcon,
+                    ) = switch (feedback) {
+                      TranslationOptionFeedback.neutral => (
+                        const Color(0xFFE3F2FD),
+                        const Color(0xFF1976D2),
+                        null,
+                      ),
+                      TranslationOptionFeedback.correct => (
+                        const Color(0xFFC8E6C9),
+                        const Color(0xFF388E3C),
+                        const Icon(
+                          Icons.check_rounded,
+                          color: Color(0xFF2E7D32),
+                          size: 32,
+                        ),
+                      ),
+                      TranslationOptionFeedback.incorrect => (
+                        const Color(0xFFFFCDD2),
+                        const Color(0xFFD32F2F),
+                        const Icon(
+                          Icons.clear_rounded,
+                          color: Color(0xFFD32F2F),
+                          size: 32,
+                        ),
+                      ),
+                    };
                     return Padding(
                       padding: Insets.all8,
                       child: SizedBox(
@@ -214,9 +238,7 @@ class _PageGameTranslationState extends State<PageGameTranslation> {
                                 Tooltip(
                                   message: loc.checkOption,
                                   child: GestureDetector(
-                                    onTap:
-                                        controller.lastAnswer == null &&
-                                            !controller.isAnswering
+                                    onTap: controller.canAnswer
                                         ? () => onAnswer(opt)
                                         : null,
                                     child: Container(

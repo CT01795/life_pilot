@@ -1,3 +1,5 @@
+import 'dart:collection';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:life_pilot/game/puzzle_map/model_game_puzzle_map.dart';
@@ -10,90 +12,83 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
-  late int rows;
-  late int cols;
+  final Random? _random;
+  final DateTime Function() _now;
+  ModelPuzzleBoard? _board;
   int score = 0;
-  late List<ModelGamePuzzlePiece> pieces;
-  final Map<int, Offset> dragOffsets = {};
+  int _boardRevision = 0;
+  int get boardRevision => _boardRevision;
+  int get rowsCount => _board?.rows ?? 0;
+  int get colsCount => _board?.cols ?? 0;
+  List<ModelGamePuzzlePiece> get pieces => _board?.pieces ?? const [];
+  final Map<int, Offset> _dragOffsets = {};
+  late final Map<int, Offset> dragOffsets = UnmodifiableMapView(_dragOffsets);
   bool _scoreSaved = false;
-  DateTime _lastNotify = DateTime.now();
+  DateTime? _lastNotify;
 
   ControllerGamePuzzleMap({
     required this.userName,
     required this.service,
-    required this.gameId, // 初始化
+    required this.gameId,
     required this.gameLevel,
-  });
-
-  int get rowsCount => rows;
-  int get colsCount => cols;
+    Random? random,
+    DateTime Function()? now,
+  }) : _random = random,
+       _now = now ?? DateTime.now;
 
   void setGridSize(int imgWidth, int imgHeight, int shortSideCount) {
+    if (notifierDisposed) return;
+    final board = ModelPuzzleBoard.fromImage(
+      imgWidth,
+      imgHeight,
+      shortSideCount,
+      random: _random,
+    );
+    _board = board;
+    _boardRevision++;
     _scoreSaved = false;
     score = 0;
-    double tileSize;
-    if (imgWidth > imgHeight) {
-      // 高是短邊
-      tileSize = imgHeight / shortSideCount;
-      rows = shortSideCount; // 垂直
-      cols = (imgWidth / tileSize).round(); // 水平
-    } else {
-      // 寬是短邊
-      tileSize = imgWidth / shortSideCount;
-      cols = shortSideCount; // 水平
-      rows = (imgHeight / tileSize).round(); // 垂直
-    }
-
-    if (rows * cols < 10) {
-      cols = cols + 1;
-      rows = rows + 1;
-    }
-
-    pieces = List.generate(
-      rows * cols,
-      (i) => ModelGamePuzzlePiece(correctIndex: i, currentIndex: i),
-    );
-
-    pieces.shuffle();
-    for (int i = 0; i < pieces.length; i++) {
-      pieces[i].currentIndex = i;
-    }
-
-    dragOffsets.clear(); // 清掉舊的拖動偏移
+    _lastNotify = null;
+    _dragOffsets.clear();
     notifyListeners();
   }
 
   Future<bool> checkResult() async {
-    final ok = pieces.every((p) => p.correctIndex == p.currentIndex);
-    if (ok && !_scoreSaved) {
-      _calculateScore();
-      _scoreSaved = true;
-      try {
-        await service.saveUserGameScore(
-          newUserName: userName,
-          newScore: parseDoubleValue(score),
-          newGameId: gameId,
-          newIsPass: true,
-        );
-      } catch (_) {
-        _scoreSaved = false;
-        rethrow;
-      }
+    if (notifierDisposed) return false;
+    final board = _board;
+    if (board == null || !board.isSolved) return false;
+    if (_scoreSaved) return true;
+    final revision = _boardRevision;
+    score = board.completionScore;
+    _scoreSaved = true;
+    try {
+      await service.saveUserGameScore(
+        newUserName: userName,
+        newScore: parseDoubleValue(score),
+        newGameId: gameId,
+        newIsPass: true,
+      );
+    } catch (_) {
+      if (notifierDisposed || revision != _boardRevision) return false;
+      _scoreSaved = false;
+      rethrow;
     }
-    return ok;
-  }
-
-  void _calculateScore() {
-    score = rows * cols * 10;
+    return !notifierDisposed && revision == _boardRevision;
   }
 
   void updateDrag(ModelGamePuzzlePiece piece, Offset delta) {
-    if (piece.currentIndex == piece.correctIndex) return;
-    dragOffsets[piece.currentIndex] =
-        (dragOffsets[piece.currentIndex] ?? Offset.zero) + delta;
-    if (DateTime.now().difference(_lastNotify).inMilliseconds > 16) {
-      //notifyListeners 節流
-      _lastNotify = DateTime.now();
+    if (notifierDisposed ||
+        _board?.canMove(piece) != true ||
+        !delta.dx.isFinite ||
+        !delta.dy.isFinite) {
+      return;
+    }
+    _dragOffsets[piece.currentIndex] =
+        (_dragOffsets[piece.currentIndex] ?? Offset.zero) + delta;
+    final now = _now();
+    if (_lastNotify == null ||
+        now.difference(_lastNotify!).inMilliseconds > 16) {
+      _lastNotify = now;
       notifyListeners();
     }
   }
@@ -103,85 +98,18 @@ class ControllerGamePuzzleMap extends SafeChangeNotifier {
     double tileWidth,
     double tileHeight,
   ) {
-    if (piece.currentIndex == piece.correctIndex) return;
-    final totalOffset = dragOffsets[piece.currentIndex] ?? Offset.zero;
-    _moveGroup([piece], totalOffset, tileWidth, tileHeight);
+    if (notifierDisposed || _board?.canMove(piece) != true) return;
+    final oldIndex = piece.currentIndex;
+    final offset = _dragOffsets.remove(oldIndex);
+    if (offset == null) return;
+    _board!.moveBy(
+      piece,
+      dx: offset.dx,
+      dy: offset.dy,
+      tileWidth: tileWidth,
+      tileHeight: tileHeight,
+    );
+    _dragOffsets.remove(piece.currentIndex);
     notifyListeners();
-  }
-
-  void _moveGroup(
-    List<ModelGamePuzzlePiece> group,
-    Offset totalOffset,
-    double tileWidth,
-    double tileHeight,
-  ) {
-    if (group.isEmpty) return;
-
-    final newIndices = <ModelGamePuzzlePiece, int>{};
-
-    for (var p in group) {
-      final col = p.currentIndex % cols;
-      final row = p.currentIndex ~/ cols;
-
-      final newCol =
-          ((col * tileWidth + totalOffset.dx + tileWidth * 0.15) /
-                  tileWidth) //給手指 15% 的安全邊距
-              .floor()
-              .clamp(0, cols - 1);
-      final newRow = ((row * tileHeight + totalOffset.dy) / tileHeight)
-          .floor()
-          .clamp(0, rows - 1);
-
-      newIndices[p] = newRow * cols + newCol;
-    }
-
-    // 群組內 newIndex 不可重複
-    final indexSet = <int>{};
-    for (final index in newIndices.values) {
-      if (!indexSet.add(index)) {
-        _resetDragOffsets(group);
-        return;
-      }
-    }
-
-    final positionMap = {for (var p in pieces) p.currentIndex: p};
-
-    // 撞到正確拼圖 → 整組取消
-    for (var entry in newIndices.entries) {
-      final target = positionMap[entry.value];
-      if (target != null &&
-          !group.contains(target) &&
-          target.currentIndex == target.correctIndex &&
-          entry.value != entry.key.currentIndex) {
-        //✔ 真的要移到別人的格子 → 擋 ✔ 只是貼邊、沒換 index → 放行
-        _resetDragOffsets(group);
-        return;
-      }
-    }
-
-    final finalIndices = <ModelGamePuzzlePiece, int>{};
-
-    for (var entry in newIndices.entries) {
-      final p = entry.key;
-      final newIndex = entry.value;
-      final target = positionMap[newIndex];
-
-      if (target != null && !group.contains(target)) {
-        finalIndices[target] = p.currentIndex;
-      }
-
-      finalIndices[p] = newIndex;
-    }
-
-    finalIndices.forEach((piece, index) {
-      piece.currentIndex = index;
-      dragOffsets[index] = Offset.zero;
-    });
-  }
-
-  void _resetDragOffsets(List<ModelGamePuzzlePiece> group) {
-    for (var p in group) {
-      dragOffsets[p.currentIndex] = Offset.zero;
-    }
   }
 }

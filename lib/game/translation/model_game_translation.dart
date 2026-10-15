@@ -1,3 +1,5 @@
+enum TranslationOptionFeedback { neutral, correct, incorrect }
+
 class ModelGameTranslation {
   final String questionId;
   final String question;

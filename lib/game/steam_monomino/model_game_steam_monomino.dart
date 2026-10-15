@@ -10,6 +10,7 @@ class ModelGameMonominoTile extends SafeChangeNotifier {
   EnumMonominoTileDirection _direction = EnumMonominoTileDirection.empty;
   EnumMonominoTileDirection get direction => _direction;
   set direction(EnumMonominoTileDirection dir) {
+    if (_direction == dir) return;
     _direction = dir;
     notifyListeners();
   }
@@ -41,6 +42,7 @@ class ModelGameMonominoLevel {
   final int levelNumber;
   final int rows;
   final int cols;
+  final Random _random;
   late List<List<ModelGameMonominoTile>> board;
   late List<EnumMonominoTileDirection> tilesToPlace;
   late Point<int> start;
@@ -53,7 +55,8 @@ class ModelGameMonominoLevel {
     required this.levelNumber,
     required this.rows,
     required this.cols,
-  }) {
+    Random? random,
+  }) : _random = random ?? Random() {
     remainingFixed = [];
     _generateLevel();
   }
@@ -73,7 +76,7 @@ class ModelGameMonominoLevel {
     board[start.x][start.y].isStartP = true;
     board[goal.x][goal.y].isGoalP = true;
 
-    Random rnd = Random();
+    final rnd = _random;
 
     // --- DFS 生成迷宮，避免直線通道 ---
     List<Point<int>> directions = [
@@ -128,23 +131,23 @@ class ModelGameMonominoLevel {
 
       // ⭐⭐⭐ 強制轉彎條件：連續直走 >= n
       if (straightCount >= 4 && turnChoices.isNotEmpty) {
-        idx = turnChoices[Random().nextInt(turnChoices.length)];
+        idx = turnChoices[rnd.nextInt(turnChoices.length)];
       }
       // 其他安全保底
       else if (turnChoices.isEmpty && straightChoices.isEmpty) {
         idx = 0;
       } else if (straightChoices.isEmpty) {
-        idx = turnChoices[Random().nextInt(turnChoices.length)];
+        idx = turnChoices[rnd.nextInt(turnChoices.length)];
       } else if (turnChoices.isEmpty) {
-        idx = straightChoices[Random().nextInt(straightChoices.length)];
+        idx = straightChoices[rnd.nextInt(straightChoices.length)];
       }
       // 正常情況 → 70% 直走 + 10% 轉彎
       else {
-        double r = Random().nextDouble();
+        double r = rnd.nextDouble();
         if (r < 0.7) {
-          idx = straightChoices[Random().nextInt(straightChoices.length)];
+          idx = straightChoices[rnd.nextInt(straightChoices.length)];
         } else {
-          idx = turnChoices[Random().nextInt(turnChoices.length)];
+          idx = turnChoices[rnd.nextInt(turnChoices.length)];
         }
       }
 
@@ -208,9 +211,10 @@ class ModelGameMonominoLevel {
       }
     }
 
-    tilesToPlace.shuffle();
+    tilesToPlace.shuffle(rnd);
 
     // --- 隨機增加迷惑障礙（死路） ---
+    final solutionCells = solutionPath.toSet();
     int extraObstacles = (rows * cols * 20 ~/ 100);
     int attempts = 0;
     int placed = 0;
@@ -226,7 +230,7 @@ class ModelGameMonominoLevel {
           !tile.isStartP &&
           !tile.isGoalP &&
           !tile.isObstacle &&
-          !solutionPath.contains(p)) {
+          !solutionCells.contains(p)) {
         tile.isObstacle = true;
         placed++;
       }
@@ -404,5 +408,93 @@ class ModelGameMonominoLevel {
         tile.isHighlighted = false;
       }
     }
+  }
+}
+
+/// Owns placement rules, inventory and steps; no service or widget dependencies.
+class ModelMonominoSession {
+  final ModelGameMonominoLevel level;
+  final List<EnumMonominoTileDirection> _remaining = [];
+  final Map<EnumMonominoTileDirection, int> _counts = {};
+  late final List<EnumMonominoTileDirection> remainingTiles =
+      UnmodifiableListView(_remaining);
+  late final Map<EnumMonominoTileDirection, int> remainingCounts =
+      UnmodifiableMapView(_counts);
+  int _usedSteps = 0;
+  int get usedSteps => _usedSteps;
+  int get completionScore =>
+      ((level.tilesToPlace.length - _remaining.length) * 10 - _usedSteps * 5)
+          .clamp(1, 9999);
+
+  ModelMonominoSession(this.level) {
+    reset();
+  }
+
+  void reset() {
+    level.resetBoard();
+    level.clearHighlight();
+    _usedSteps = 0;
+    _remaining
+      ..clear()
+      ..addAll(level.tilesToPlace);
+    _counts.clear();
+    for (final direction in _remaining) {
+      _counts[direction] = (_counts[direction] ?? 0) + 1;
+    }
+  }
+
+  bool _inside(int row, int col) =>
+      row >= 0 && row < level.rows && col >= 0 && col < level.cols;
+
+  void _returnTile(EnumMonominoTileDirection direction) {
+    if (direction == EnumMonominoTileDirection.empty) return;
+    _remaining.add(direction);
+    _counts[direction] = (_counts[direction] ?? 0) + 1;
+  }
+
+  bool place(
+    int row,
+    int col,
+    int? fromRow,
+    int? fromCol,
+    EnumMonominoTileDirection? direction,
+  ) {
+    if (!_inside(row, col) ||
+        (fromRow == null) != (fromCol == null) ||
+        (fromRow == row && fromCol == col)) {
+      return false;
+    }
+    final target = level.board[row][col];
+    if (target.isObstacle || target.isFixedArrow) return false;
+    ModelGameMonominoTile? source;
+    if (fromRow != null && fromCol != null) {
+      if (!_inside(fromRow, fromCol)) return false;
+      source = level.board[fromRow][fromCol];
+      if (source.isObstacle ||
+          source.isFixedArrow ||
+          source.direction == EnumMonominoTileDirection.empty) {
+        return false;
+      }
+      direction = source.direction;
+    } else if (direction == null ||
+        direction == EnumMonominoTileDirection.empty ||
+        (_counts[direction] ?? 0) == 0) {
+      return false;
+    }
+    _returnTile(target.direction);
+    if (source == null) {
+      _remaining.remove(direction);
+      final remaining = _counts[direction]! - 1;
+      if (remaining == 0) {
+        _counts.remove(direction);
+      } else {
+        _counts[direction] = remaining;
+      }
+    } else {
+      source.direction = EnumMonominoTileDirection.empty;
+    }
+    target.direction = direction;
+    _usedSteps++;
+    return true;
   }
 }

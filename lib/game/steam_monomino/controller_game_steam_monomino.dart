@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:life_pilot/game/steam_monomino/model_game_steam_monomino.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
@@ -9,49 +8,45 @@ class ControllerGameSteamMonomino extends SafeChangeNotifier {
   final ServiceGame service;
   final String gameId;
   final int gameLevel;
-  late List<Point<int>> remainingFixed;
-
-  late ModelGameMonominoLevel level;
+  final ModelGameMonominoLevel level;
+  late final ModelMonominoSession _session;
+  late final List<Point<int>> remainingFixed = List.unmodifiable(
+    level.remainingFixed,
+  );
+  List<EnumMonominoTileDirection> get remainingTiles => _session.remainingTiles;
+  int get usedSteps => _session.usedSteps;
   int score = 0;
-  int usedSteps = 0;
-  List<EnumMonominoTileDirection> remainingTiles = [];
   bool _scoreSaved = false;
+  int _generation = 0;
+  int _revision = 0;
+  int get boardRevision => _revision;
 
   ControllerGameSteamMonomino({
     required this.userName,
     required this.service,
-    required this.gameId, // 初始化
+    required this.gameId,
     required this.gameLevel,
-  }) {
-    // 初始化 level
-    level = _generateLevel(gameLevel);
-    startLevel();
-    remainingFixed = List.from(level.remainingFixed);
+    ModelGameMonominoLevel? level,
+    Random? random,
+  }) : level =
+           level ??
+           ModelGameMonominoLevel(
+             levelNumber: gameLevel,
+             rows: gameLevel + 5,
+             cols: gameLevel + 5,
+             random: random,
+           ) {
+    _session = ModelMonominoSession(this.level);
   }
 
-  void startLevel() {
-    remainingTiles = List.from(level.tilesToPlace);
-    notifyListeners();
-  }
-
-  // 根據 gameLevel 生成不同大小/難度的 Level
-  ModelGameMonominoLevel _generateLevel(int levelNumber) {
-    // 簡單規則：等級越高，行列數增加，積木數增加
-    int baseSize = 6; // 最低關卡 4x4
-    int size =
-        baseSize + (levelNumber - 1); // e.g. level 1 -> 4x4, level 2 -> 5x5
-    return ModelGameMonominoLevel(
-      levelNumber: levelNumber,
-      rows: size,
-      cols: size,
-    );
-  }
+  void startLevel() => resetLevel();
 
   void resetLevel() {
-    level.resetBoard();
-    remainingFixed = List.from(level.remainingFixed);
-    remainingTiles = List.from(level.tilesToPlace);
-    usedSteps = 0;
+    if (notifierDisposed) return;
+    _session.reset();
+    score = 0;
+    _generation++;
+    _revision++;
     _scoreSaved = false;
     notifyListeners();
   }
@@ -63,68 +58,48 @@ class ControllerGameSteamMonomino extends SafeChangeNotifier {
     int? fromCol,
     EnumMonominoTileDirection? to,
   ) {
-    if (fromRow == row && fromCol == col) return; // 拖到自己格子直接跳過
-
-    ModelGameMonominoTile tileTarget = level.board[row][col];
-    ModelGameMonominoTile? tileFrom = fromRow != null && fromCol != null
-        ? level.board[fromRow][fromCol]
-        : null;
-
-    if (tileTarget.isObstacle || tileTarget.isFixedArrow) return;
-
-    if (tileTarget.direction != EnumMonominoTileDirection.empty) {
-      remainingTiles.add(tileTarget.direction);
+    if (notifierDisposed || !_session.place(row, col, fromRow, fromCol, to)) {
+      return;
     }
-    tileTarget.direction = tileFrom == null ? to! : tileFrom.direction;
-    if (tileFrom == null) {
-      remainingTiles.remove(to!);
-    } else {
-      tileFrom.direction = EnumMonominoTileDirection.empty;
-    }
-    usedSteps++;
+    _revision++;
     notifyListeners();
   }
 
   Future<bool> checkPath() async {
+    if (notifierDisposed) return false;
     final ok = level.checkPath(List<Point<int>>.from(remainingFixed));
-    if (ok && !_scoreSaved) {
-      _calculateScore();
-      _scoreSaved = true;
-      try {
-        await service.saveUserGameScore(
-          newUserName: userName,
-          newScore: score.toDouble(),
-          newGameId: gameId,
-          newIsPass: true,
-        );
-      } catch (_) {
-        _scoreSaved = false;
-        rethrow;
-      }
+    if (!ok || _scoreSaved) return ok;
+    final generation = _generation;
+    final revision = _revision;
+    score = _session.completionScore;
+    _scoreSaved = true;
+    try {
+      await service.saveUserGameScore(
+        newUserName: userName,
+        newScore: score.toDouble(),
+        newGameId: gameId,
+        newIsPass: true,
+      );
+    } catch (_) {
+      if (notifierDisposed || generation != _generation) return false;
+      _scoreSaved = false;
+      rethrow;
     }
-    return ok;
-  }
-
-  void _calculateScore() {
-    int correctTiles = level.tilesToPlace.length - remainingTiles.length;
-    score += (correctTiles * 10 - usedSteps * 5).clamp(1, 9999);
+    return !notifierDisposed && revision == _revision;
   }
 
   void showHint() {
+    if (notifierDisposed) return;
     level.highlightPath(level.getSolutionPath());
     notifyListeners();
   }
 
   void clearHint() {
+    if (notifierDisposed) return;
     level.clearHighlight();
     notifyListeners();
   }
 
-  Map<EnumMonominoTileDirection, int> getRemainingCount() {
-    Map<EnumMonominoTileDirection, int> counts = {};
-    for (var dir in remainingTiles) {
-      counts[dir] = (counts[dir] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<EnumMonominoTileDirection, int> getRemainingCount() =>
+      _session.remainingCounts;
 }
