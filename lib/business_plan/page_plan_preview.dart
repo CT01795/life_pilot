@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/widgets/widgets_load_error.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:life_pilot/business_plan/controller_business_plan.dart';
 import 'package:life_pilot/business_plan/model_business_plan.dart';
@@ -26,12 +27,12 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
   void initState() {
     super.initState();
 
-    final c = context.read<ControllerBusinessPlan>();
-    // 當前 plan summary 已經在 c.currentPlan
-    // 如果 sections 為空，就去抓詳細內容
-    if (c.currentPlan?.sections.isEmpty ?? true) {
-      c.loadPlanDetailIfNeeded(c.currentPlan!.id);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final c = context.read<ControllerBusinessPlan>();
+      final id = c.currentPlanId ?? c.currentPlan?.id;
+      if (id != null) c.loadPlanDetailIfNeeded(id);
+    });
   }
 
   // 1️⃣ 計算總 item 數量
@@ -67,11 +68,29 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ControllerBusinessPlan, ModelBusinessPlan?>(
-      selector: (_, c) => c.currentPlan,
-      builder: (_, plan, _) {
-        if (plan == null) return const CircularProgressIndicator();
+    return Consumer<ControllerBusinessPlan>(
+      builder: (_, controller, _) {
+        final plan = controller.currentPlan;
         final loc = AppLocalizations.of(context)!;
+        if (controller.isPlanDetailLoading ||
+            controller.planDetailError != null ||
+            plan == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(loc.businessPlan)),
+            body: controller.isPlanDetailLoading
+                ? const Center(child: CircularProgressIndicator())
+                : controller.planDetailError != null
+                ? Center(
+                    child: WidgetsLoadError(
+                      onRetry: () {
+                        final id = controller.currentPlanId;
+                        if (id != null) controller.loadPlanDetailIfNeeded(id);
+                      },
+                    ),
+                  )
+                : Center(child: Text(loc.noData)),
+          );
+        }
         return Scaffold(
           appBar: AppBar(
             title: EditablePlanTitle(
@@ -91,71 +110,83 @@ class _PagePlanPreviewState extends State<PagePlanPreview> {
                   editingTitle ? Icons.check : Icons.edit,
                   color: Colors.white,
                 ),
-                onPressed: () {
-                  final c = context.read<ControllerBusinessPlan>();
-                  // 先確保 current plan 與當前題目
-                  c.jumpToQuestion(sectionIndex: 0, questionIndex: 0);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider.value(
-                        value: context.read<ControllerBusinessPlan>(),
-                        child: const PagePlanEditor(),
-                      ),
-                    ),
-                  );
-                },
+                onPressed:
+                    !plan.sections.any(
+                      (section) => section.questions.isNotEmpty,
+                    )
+                    ? null
+                    : () {
+                        final c = context.read<ControllerBusinessPlan>();
+                        // 先確保 current plan 與當前題目
+                        c.jumpToQuestion(
+                          sectionIndex: plan.sections.indexWhere(
+                            (section) => section.questions.isNotEmpty,
+                          ),
+                          questionIndex: 0,
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChangeNotifierProvider.value(
+                              value: c,
+                              child: const PagePlanEditor(),
+                            ),
+                          ),
+                        );
+                      },
               ),
             ],
           ),
-          body: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _totalItemCount(plan),
-            itemBuilder: (_, i) {
-              final item = _itemAtIndex(plan, i);
-              if (item is PlanSectionItem) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 16,
-                  ),
-                  margin: Insets.directionalT24B12,
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    item.title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
-                    ),
-                  ),
-                );
-              }
+          body: plan.sections.isEmpty
+              ? Center(child: Text(loc.noData))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _totalItemCount(plan),
+                  itemBuilder: (_, i) {
+                    final item = _itemAtIndex(plan, i);
+                    if (item is PlanSectionItem) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        margin: Insets.directionalT24B12,
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      );
+                    }
 
-              final q = item as PlanQuestionItem;
-              // 如果 sections 尚未 load → skeleton tile
-              if (plan.sections.isEmpty) {
-                return Container(
-                  margin: Insets.directionalB12,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                );
-              }
+                    final q = item as PlanQuestionItem;
+                    // 如果 sections 尚未 load → skeleton tile
+                    if (plan.sections.isEmpty) {
+                      return Container(
+                        margin: Insets.directionalB12,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      );
+                    }
 
-              return _ExpandableQuestionTile(
-                sectionIndex: q.sectionIndex,
-                questionIndex: q.questionIndex,
-                question: q.question,
-              );
-            },
-          ),
+                    return _ExpandableQuestionTile(
+                      sectionIndex: q.sectionIndex,
+                      questionIndex: q.questionIndex,
+                      question: q.question,
+                    );
+                  },
+                ),
         );
       },
     );

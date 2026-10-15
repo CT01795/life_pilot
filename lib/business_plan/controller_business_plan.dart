@@ -17,6 +17,12 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   int _accountGeneration = 0;
   bool hasLoadedOnce = false;
   final Map<String, ModelBusinessPlan> _planCache = {};
+  final Set<String> _loadedPlanDetails = {};
+  final Map<String, Future<ModelBusinessPlan>> _detailRequests = {};
+  int _detailSelectionRevision = 0;
+  bool isPlanDetailLoading = false;
+  Object? planDetailError;
+  bool isCreatingPlan = false;
 
   ControllerBusinessPlan({
     required ServiceBusinessPlan service,
@@ -52,6 +58,12 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
     if (_accountKey == nextAccount) return;
     _accountKey = nextAccount;
     _accountGeneration++;
+    _detailSelectionRevision++;
+    _loadedPlanDetails.clear();
+    _detailRequests.clear();
+    isPlanDetailLoading = false;
+    planDetailError = null;
+    isCreatingPlan = false;
     hasLoadedOnce = false;
     currentPlanId = null;
     currentPlan = null;
@@ -71,6 +83,9 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   void setCurrentPlanSummary(ModelBusinessPlan plan) {
+    _detailSelectionRevision++;
+    isPlanDetailLoading = false;
+    planDetailError = null;
     currentPlan = plan; // 只有 id / title
     currentPlanId = plan.id;
     _answerNotifiers.clear();
@@ -305,63 +320,112 @@ class ControllerBusinessPlan extends SafeChangeNotifier {
   }
 
   Future<void> loadPlanDetailIfNeeded(String inputPlanId) async {
-    String planId = inputPlanId.trim();
-    // 🚨 如果切換 plan，一定要 reset state
+    if (notifierDisposed) return;
+    final planId = inputPlanId.trim();
+    if (planId.isEmpty) return;
+    final generation = _accountGeneration;
+    final revision = ++_detailSelectionRevision;
     if (currentPlanId != planId) {
       sectionIndex = 0;
       questionIndex = 0;
       currentPlan = null;
       currentPlanId = planId;
     }
-
-    if (_planCache.containsKey(planId) &&
-        _planCache[planId]!.sections.isNotEmpty) {
-      currentPlan = _planCache[planId]?.copyWith();
+    planDetailError = null;
+    final cached = _planCache[planId];
+    if (_loadedPlanDetails.contains(planId) && cached != null) {
+      currentPlan = cached.copyWith();
+      isPlanDetailLoading = false;
       safeNotify();
       return;
     }
+    isPlanDetailLoading = true;
     safeNotify();
-
+    final request = _detailRequests.putIfAbsent(
+      planId,
+      () => Future<ModelBusinessPlan>.sync(
+        () => _service.fetchPlanDetail(planId: planId),
+      ),
+    );
     try {
-      final plan = await _service.fetchPlanDetail(planId: planId);
-      currentPlan = plan;
-      currentPlanId = planId;
-      _answerNotifiers.clear();
-      // 🔥 建議 copy 避免 reference污染
+      final plan = await request;
+      if (notifierDisposed || generation != _accountGeneration) return;
       _planCache[planId] = plan.copyWith();
+      _loadedPlanDetails.add(planId);
+      if (revision != _detailSelectionRevision || currentPlanId != planId) {
+        return;
+      }
+      currentPlan = plan;
+      _answerNotifiers.clear();
+    } catch (error) {
+      if (!notifierDisposed &&
+          generation == _accountGeneration &&
+          revision == _detailSelectionRevision) {
+        planDetailError = error;
+      }
     } finally {
-      safeNotify();
+      if (identical(_detailRequests[planId], request)) {
+        _detailRequests.remove(planId);
+      }
+      if (!notifierDisposed &&
+          generation == _accountGeneration &&
+          revision == _detailSelectionRevision) {
+        isPlanDetailLoading = false;
+        safeNotify();
+      }
     }
   }
 
   // -------------------------
   // Create & Update
   // -------------------------
-  Future<void> createPlanFromTemplate({
+  Future<bool> createPlanFromTemplate({
     required String title,
     required String templateId,
   }) async {
+    if (notifierDisposed || isCreatingPlan) return false;
+    if (title.trim().isEmpty) throw ArgumentError('Plan title is required');
+    final generation = _accountGeneration;
+    final user = auth?.currentAccount ?? AuthConstants.guest;
     final planId = const Uuid().v4();
-    // 1️⃣ 先建立 plan + section + question
-    await _service.createPlanFromTemplate(
-      user: auth?.currentAccount ?? AuthConstants.guest,
-      planId: planId,
-      title: title,
-      templateId: templateId,
-    );
-
+    isCreatingPlan = true;
+    _detailSelectionRevision++;
+    isPlanDetailLoading = false;
+    planDetailError = null;
     safeNotify();
     try {
-      // 2️⃣ 拉剛建立的 sections（帶題目）
-      final plan = await _service.fetchPlanDetail(planId: planId); // 👈 只打 RPC
+      await _service.createPlanFromTemplate(
+        user: user,
+        planId: planId,
+        title: title.trim(),
+        templateId: templateId,
+      );
+      if (notifierDisposed || generation != _accountGeneration) return false;
+      final plan = await _service.fetchPlanDetail(planId: planId);
+      if (notifierDisposed || generation != _accountGeneration) return false;
+      _detailSelectionRevision++;
       currentPlan = plan;
+      currentPlanId = planId;
       _answerNotifiers.clear();
       _planCache[planId] = plan.copyWith();
-
-      sectionIndex = 0;
+      _loadedPlanDetails.add(planId);
+      final firstQuestionSection = plan.sections.indexWhere(
+        (section) => section.questions.isNotEmpty,
+      );
+      sectionIndex = firstQuestionSection < 0 ? 0 : firstQuestionSection;
       questionIndex = 0;
+      // Publish the new summary without another list query on return.
+      plans = [...plans, plan.copyWith(sections: [])];
+      _sortAndDeduplicatePlans();
+      return true;
+    } catch (_) {
+      if (notifierDisposed || generation != _accountGeneration) return false;
+      rethrow;
     } finally {
-      safeNotify();
+      if (!notifierDisposed && generation == _accountGeneration) {
+        isCreatingPlan = false;
+        safeNotify();
+      }
     }
   }
 

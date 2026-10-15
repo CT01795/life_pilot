@@ -1,19 +1,44 @@
 import 'package:life_pilot/stock/model_stock.dart';
+import 'package:life_pilot/stock/model_stock_search_index.dart';
 import 'package:life_pilot/stock/service_stock.dart';
 import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
-import 'package:life_pilot/utils/value_parser.dart';
 
 enum StockUpdateStatus { idle, updating, succeeded, failed }
 
 class ControllerStock extends SafeChangeNotifier {
   final ServiceStock service;
 
-  List<ModelStock> stocks = [];
+  StockSearchIndex<ModelStock> _stockSearch = StockSearchIndex(
+    rows: const [],
+    fields: _stockFields,
+  );
+  StockSearchIndex<ModelInstitutional> _buySearch = StockSearchIndex(
+    rows: const [],
+    fields: _institutionalFields,
+  );
+  StockSearchIndex<ModelInstitutional> _sellSearch = StockSearchIndex(
+    rows: const [],
+    fields: _institutionalFields,
+  );
+  static Iterable<String> _stockFields(ModelStock stock) => [
+    stock.securityCode,
+    stock.securityName,
+  ];
+  static Iterable<String> _institutionalFields(ModelInstitutional item) => [
+    '${item.stockNo} ${item.stockName}',
+  ];
+  List<ModelStock> get stocks => _stockSearch.rows;
+  set stocks(List<ModelStock> rows) =>
+      _stockSearch = StockSearchIndex(rows: rows, fields: _stockFields);
   List<ModelFuture> futures = [];
   List<ModelInstitutional> institutionals = [];
-  List<ModelInstitutional> foreignBuy = [];
-  List<ModelInstitutional> foreignSell = [];
+  List<ModelInstitutional> get foreignBuy => _buySearch.rows;
+  set foreignBuy(List<ModelInstitutional> rows) =>
+      _buySearch = StockSearchIndex(rows: rows, fields: _institutionalFields);
+  List<ModelInstitutional> get foreignSell => _sellSearch.rows;
+  set foreignSell(List<ModelInstitutional> rows) =>
+      _sellSearch = StockSearchIndex(rows: rows, fields: _institutionalFields);
   bool loading = true;
   bool loadFailed = false;
   bool dateLoading = false;
@@ -26,35 +51,11 @@ class ControllerStock extends SafeChangeNotifier {
 
   ControllerStock(this.service);
 
-  List<ModelStock> get visibleStocks {
-    final query = normalizeStringValue(searchQuery);
-    if (query.isEmpty) return stocks;
-    return stocks
-        .where(
-          (stock) =>
-              stock.securityCode.toLowerCase().contains(query) ||
-              stock.securityName.toLowerCase().contains(query),
-        )
-        .toList(growable: false);
-  }
-
+  List<ModelStock> get visibleStocks => _stockSearch.filter(searchQuery);
   List<ModelInstitutional> get visibleForeignBuy =>
-      _filterInstitutionals(foreignBuy);
+      _buySearch.filter(searchQuery);
   List<ModelInstitutional> get visibleForeignSell =>
-      _filterInstitutionals(foreignSell);
-
-  List<ModelInstitutional> _filterInstitutionals(
-    List<ModelInstitutional> items,
-  ) {
-    final query = normalizeStringValue(searchQuery);
-    if (query.isEmpty) return items;
-    return items
-        .where((item) {
-          final values = '${item.stockNo} ${item.stockName}'.toLowerCase();
-          return values.contains(query);
-        })
-        .toList(growable: false);
-  }
+      _sellSearch.filter(searchQuery);
 
   void setSearchQuery(String value) {
     if (searchQuery == value) return;
@@ -166,8 +167,9 @@ class ControllerStock extends SafeChangeNotifier {
     selectedDate = date;
     _notifyListenersIfActive();
     try {
-      stocks = await service.getSimpleStrategyForDate(date);
+      final loadedStocks = await service.getSimpleStrategyForDate(date);
       if (_isDisposed || requestId != _dataRequestId) return;
+      stocks = loadedStocks;
       await buildDashboard(date, requestId: requestId);
       if (_isDisposed || requestId != _dataRequestId) return;
       loadFailed = stocks.isEmpty;
@@ -202,34 +204,24 @@ class ControllerStock extends SafeChangeNotifier {
     // ==========
     // 外資買超
     // ==========
-    institutionals = await service.selectStockInstitutional(date);
+    final loadedInstitutionals = await service.selectStockInstitutional(date);
     if (_isDisposed || requestId != _dataRequestId) return;
-    foreignBuy = [...institutionals];
-
-    foreignBuy.sort((a, b) => b.foreignDiff.compareTo(a.foreignDiff));
-
-    foreignBuy = foreignBuy
-        .where((e) => e.foreignDiff > 0)
-        .toList(); //.take(30).toList();
-
-    // ==========
-    // 外資賣超
-    // ==========
-    foreignSell = [...institutionals];
-
-    foreignSell.sort((a, b) => a.foreignDiff.compareTo(b.foreignDiff));
-
-    foreignSell = foreignSell
-        .where((e) => e.foreignDiff < 0)
-        .toList(); //.take(30).toList();
+    institutionals = loadedInstitutionals;
+    foreignBuy =
+        loadedInstitutionals.where((row) => row.foreignDiff > 0).toList()
+          ..sort((a, b) => b.foreignDiff.compareTo(a.foreignDiff));
+    foreignSell =
+        loadedInstitutionals.where((row) => row.foreignDiff < 0).toList()
+          ..sort((a, b) => a.foreignDiff.compareTo(b.foreignDiff));
 
     // ==========
     // 期貨未平倉
     // ==========
 
     try {
-      futures = await service.selectFutures(date);
+      final loadedFutures = await service.selectFutures(date);
       if (_isDisposed || requestId != _dataRequestId) return;
+      futures = loadedFutures;
     } catch (_) {}
   }
 

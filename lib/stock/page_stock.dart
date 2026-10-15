@@ -5,6 +5,7 @@ import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/stock/controller_stock.dart';
 import 'package:life_pilot/stock/model_stock.dart';
 import 'package:life_pilot/stock/service_stock.dart';
+import 'package:life_pilot/stock/widgets_stock_search.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,7 +19,6 @@ class PageStock extends StatelessWidget {
       create: (_) => ControllerStock(ServiceStock())..load(),
       child: Consumer<ControllerStock>(
         builder: (context, controller, _) {
-          final loc = AppLocalizations.of(context)!;
           if (controller.loading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -53,22 +53,9 @@ class PageStock extends StatelessWidget {
                 children: [
                   _buildDateSelector(context, controller),
                   Gaps.h8,
-                  TextField(
+                  WidgetsStockSearch(
+                    query: controller.searchQuery,
                     onChanged: controller.setSearchQuery,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      prefixIcon: const Icon(Icons.search),
-                      labelText: loc.search,
-                      suffixIcon: controller.searchQuery.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: loc.clear,
-                              onPressed: () => controller.setSearchQuery(''),
-                              icon: const Icon(Icons.clear),
-                            ),
-                      border: const OutlineInputBorder(),
-                    ),
                   ),
                   Gaps.h8,
                   if (controller.updateStatus != StockUpdateStatus.idle) ...[

@@ -1,84 +1,100 @@
-import 'dart:async';
+import 'dart:collection';
 import 'dart:typed_data';
-import 'dart:ui';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
+import 'package:life_pilot/feedback/model_feedback_submission.dart';
 import 'package:life_pilot/feedback/service_feedback.dart';
-import 'package:life_pilot/l10n/app_localizations.dart';
-import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
+import 'package:life_pilot/feedback/service_feedback_screenshot.dart';
 import 'package:life_pilot/utils/const.dart';
+import 'package:life_pilot/utils/logger.dart';
 import 'package:life_pilot/utils/safe_change_notifier.dart';
 
 class ControllerFeedback extends SafeChangeNotifier {
+  ControllerFeedback(
+    ServiceFeedback service,
+    this.auth, {
+    ServiceFeedbackScreenshot? screenshotService,
+  }) : _service = service,
+       _screenshotService = screenshotService ?? ServiceFeedbackScreenshot();
+
   final ServiceFeedback _service;
+  final ServiceFeedbackScreenshot _screenshotService;
   final ControllerAuth auth;
-
-  ControllerFeedback(ServiceFeedback service, this.auth) : _service = service;
-
   String subject = '';
   String content = '';
   String? ccRaw;
-  List<Uint8List> screenshot = [];
-
+  final List<Uint8List> _screenshots = [];
+  List<Uint8List> get screenshot => UnmodifiableListView(_screenshots);
   bool isSending = false;
+  bool isCapturing = false;
 
-  final repaintBoundaryKey = GlobalKey();
+  String get _account => auth.currentAccount ?? AuthConstants.guest;
+  bool _isCurrentOwner(String account) =>
+      !notifierDisposed && _account == account;
 
-  Future<void> captureScreenshot() async {
-    final context = app_navigator.rootRepaintBoundaryKey.currentContext;
-    if (context == null) return;
-
-    final boundary = context.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null) return;
-
-    final image = await boundary.toImage(pixelRatio: 3.0);
-    final byteData = await image.toByteData(format: ImageByteFormat.png);
-    if (byteData != null) {
-      screenshot.add(byteData.buffer.asUint8List());
+  Future<bool?> captureScreenshot() async {
+    if (notifierDisposed || isCapturing || isSending) return null;
+    final account = _account;
+    isCapturing = true;
+    notifyListeners();
+    try {
+      final bytes = await _screenshotService.capture();
+      if (!_isCurrentOwner(account)) return null;
+      if (bytes == null) return false;
+      _screenshots.add(bytes);
+      return true;
+    } catch (error, stackTrace) {
+      if (!_isCurrentOwner(account)) return null;
+      logger.e(
+        'Capture feedback screenshot failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    } finally {
+      isCapturing = false;
       notifyListeners();
     }
   }
 
-  Future<void> submit(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    if (subject.isEmpty || content.isEmpty) {
-      _showSnack(context, loc.feedbackRequired);
-      return;
+  /// Null denotes an ignored duplicate, disposal, or account change.
+  Future<FeedbackSubmissionResult?> submit() async {
+    if (notifierDisposed || isSending || isCapturing) return null;
+    final inputSubject = subject;
+    final inputContent = content;
+    if (inputSubject.trim().isEmpty || inputContent.trim().isEmpty) {
+      return const FeedbackSubmissionResult(
+        FeedbackSubmissionStatus.requiredFields,
+      );
     }
-
+    final account = _account;
+    final ccList = ccRaw
+        ?.split(',')
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList();
+    final images = List<Uint8List>.unmodifiable(_screenshots);
     isSending = true;
     notifyListeners();
-
     try {
-      final ccList = ccRaw
-          ?.split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
       await _service.sendFeedback(
-        account: auth.currentAccount ?? AuthConstants.guest,
-        subject: subject,
-        content: content,
+        account: account,
+        subject: inputSubject,
+        content: inputContent,
         cc: ccList,
-        screenshots: screenshot,
+        screenshots: images,
       );
-      _showSnack(context, loc.feedbackSent);
-      if (context.mounted) Navigator.pop(context);
-    } catch (e) {
-      _showSnack(context, loc.feedbackSendFailed(e.toString()));
+      if (!_isCurrentOwner(account)) return null;
+      return const FeedbackSubmissionResult(FeedbackSubmissionStatus.sent);
+    } catch (error) {
+      if (!_isCurrentOwner(account)) return null;
+      return FeedbackSubmissionResult(
+        FeedbackSubmissionStatus.failed,
+        error: error,
+      );
     } finally {
       isSending = false;
       notifyListeners();
     }
   }
-}
-
-void _showSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
 }
