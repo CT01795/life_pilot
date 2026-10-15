@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:life_pilot/game/widgets_game_fruit_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/steam_scratch/controller_game_steam_scratch.dart';
 
@@ -12,21 +11,6 @@ class WidgetsGameSteamScratchGameBoard extends StatelessWidget {
     required this.game,
     required this.tileSize,
   });
-
-  // 隨機水果 icon
-  static final List<IconData> fruitIcons = [
-    Icons.apple_rounded,
-    Icons.card_giftcard_rounded,
-    Icons.favorite_rounded,
-    Icons.star_rounded,
-    Icons.diamond_rounded,
-    Icons.cake_rounded,
-  ];
-
-  static IconData getRandomFruitIconStatic() {
-    final rand = Random();
-    return fruitIcons[rand.nextInt(fruitIcons.length)];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +74,7 @@ class WidgetsGameSteamScratchGameBoard extends StatelessWidget {
             left: f.x * tileSize,
             bottom: f.y * tileSize,
             child: Icon(
-              f.collected ? Icons.circle_outlined : f.icon,
+              f.collected ? Icons.circle_outlined : gameFruitIcon(f.appearance),
               color: f.collected ? Colors.transparent : Colors.pink.shade400,
               size: tileSize,
             ),

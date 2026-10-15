@@ -1,6 +1,7 @@
 // -------------------- Game Event --------------------
-import 'package:flutter/material.dart';
-import 'package:life_pilot/game/steam_scratch_maze/widgets_game_steam_scratch_maze_game_board.dart';
+import 'package:life_pilot/game/model_game_fruit_appearance.dart';
+export 'package:life_pilot/game/model_game_fruit_appearance.dart'
+    show EnumScratchFruitAppearance;
 
 enum EnumGameEventType { none, warning, fruit, obstacle, treasure, complete }
 
@@ -52,13 +53,11 @@ class ModelGameSteamScratchMazeFruit {
   int y;
   int scoreValue;
   bool collected = false;
-  IconData icon;
+  final EnumScratchFruitAppearance appearance;
   ModelGameSteamScratchMazeFruit({
     required this.x,
     required this.y,
     this.scoreValue = 1,
-    IconData? icon,
-  }) : icon =
-           icon ??
-           WidgetsGameSteamScratchMazeGameBoard.getRandomFruitIconStatic();
+    EnumScratchFruitAppearance? appearance,
+  }) : appearance = appearance ?? randomGameFruitAppearance();
 }

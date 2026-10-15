@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/steam_scratch_maze/controller_game_steam_scratch_maze.dart';
-import 'package:life_pilot/game/steam_scratch_maze/controller_game_steam_scratch_maze_level_generator.dart';
+import 'package:life_pilot/game/steam_scratch_maze/model_scratch_maze_generator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
@@ -51,9 +51,7 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
   void initState() {
     super.initState();
 
-    final level = GameSteamScratchMazeLevelGenerator().generateLevel(
-      widget.gameLevel,
-    );
+    final level = ModelScratchMazeGenerator().generateLevel(widget.gameLevel);
     final auth = context.read<ControllerAuth>();
 
     game = ControllerGameSteamScratchMaze(
@@ -395,13 +393,19 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
                     child: PageGameSteamScratchMazeBlocklyEditor(
                       key: editorKeyMaze,
                       onCommandsReady: (cmds) async {
-                        // ✅ 每次開始前重置遊戲
-                        game.resetGame(); // 位置、分數、水果全部重置
-                        // 延遲 300ms 再回傳
-                        await Future.delayed(Duration(milliseconds: 300));
-
-                        commands = cmds;
-                        await game.executeCommands(commands);
+                        commands = List<Command>.of(cmds);
+                        try {
+                          await game.restartAndExecute(commands);
+                        } catch (_) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)!.unknownError,
+                              ),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),

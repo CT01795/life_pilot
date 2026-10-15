@@ -1,22 +1,11 @@
 import 'dart:async';
-
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:life_pilot/game/steam_scratch_maze/model_game_steam_scratch_maze_level.dart';
+import 'package:life_pilot/game/steam_scratch_maze/model_scratch_maze_session.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/utils/value_parser.dart';
-
-class GameState {
-  int x = 0;
-  int y = 0;
-  int score = 0;
-  bool treasureCollected = false;
-
-  GameState copy() => GameState()
-    ..x = x
-    ..y = y
-    ..score = score
-    ..treasureCollected = treasureCollected;
-}
+export 'package:life_pilot/game/steam_scratch_maze/model_scratch_maze_session.dart'
+    show GameState;
 
 // -------------------- Command 定義 --------------------
 abstract class Command {
@@ -61,8 +50,14 @@ class LoopCommand extends Command {
 
   @override
   Future<bool> execute(ControllerGameSteamScratchMaze game) async {
-    for (int i = 0; i < count; i++) {
-      for (var cmd in commands) {
+    final generation = game.generation;
+    final repetitions = count;
+    final snapshot = List<Command>.of(commands);
+    for (int i = 0; i < repetitions; i++) {
+      for (var cmd in snapshot) {
+        if (!game.canExecute || !game.isCurrentGeneration(generation)) {
+          return false;
+        }
         bool cont = await cmd.execute(game);
         if (!cont) return false;
       }
@@ -85,8 +80,15 @@ class IfElseCommand extends Command {
 
   @override
   Future<bool> execute(ControllerGameSteamScratchMaze game) async {
-    var list = condition(game) ? thenCommands : elseCommands;
+    final generation = game.generation;
+    if (!game.canExecute) return false;
+    final list = List<Command>.of(
+      condition(game) ? thenCommands : elseCommands,
+    );
     for (var cmd in list) {
+      if (!game.canExecute || !game.isCurrentGeneration(generation)) {
+        return false;
+      }
       bool cont = await cmd.execute(game);
       if (!cont) return false;
     }
@@ -94,21 +96,24 @@ class IfElseCommand extends Command {
   }
 }
 
-// -------------------- Game Controller --------------------
 class ControllerGameSteamScratchMaze {
   final String userName;
   final ServiceGame service;
   final String gameId;
   final ModelGameSteamScratchMazeLevel level;
+  late final ModelScratchMazeSession _session;
+  final Future<void> Function(Duration) _delay;
   bool _scoreSaved = false;
   bool _disposed = false;
   bool _isExecuting = false;
-
-  // 使用 ValueNotifier 提高效能，安全 UI 更新
-  final ValueNotifier<GameState> stateNotifier = ValueNotifier(GameState());
-  GameState get state => stateNotifier.value;
-
-  // 事件 callback
+  bool _movementActive = false;
+  int _generation = 0;
+  int get generation => _generation;
+  bool get canExecute => !_disposed && !_scoreSaved;
+  bool isCurrentGeneration(int generation) =>
+      !_disposed && generation == _generation;
+  late final ValueNotifier<GameState> stateNotifier;
+  GameState get state => _session.state;
   final StreamController<ModelGameEvent> _eventController =
       StreamController.broadcast();
   Stream<ModelGameEvent> get eventStream => _eventController.stream;
@@ -116,197 +121,104 @@ class ControllerGameSteamScratchMaze {
   ControllerGameSteamScratchMaze({
     required this.userName,
     required this.service,
-    required this.gameId, // 初始化
+    required this.gameId,
     required this.level,
-  });
+    Future<void> Function(Duration)? delay,
+  }) : _delay = delay ?? ((duration) => Future<void>.delayed(duration)) {
+    _session = ModelScratchMazeSession(level);
+    stateNotifier = ValueNotifier(state.copy());
+  }
 
   void resetGame() {
     if (_disposed) return;
-    stateNotifier.value = GameState();
-    _scoreSaved = false; // ⭐ 重新遊戲前清空
-    for (var fruit in level.fruits) {
-      fruit.collected = false;
-    }
-    // ⭐ 清空事件 Stream 避免殘留事件再跳 Dialog
-    _eventController.add(ModelGameEvent(EnumGameEventType.none, ''));
+    _generation++;
+    _isExecuting = false;
+    _movementActive = false;
+    _scoreSaved = false;
+    _session.reset();
+    stateNotifier.value = state.copy();
+    _notifyEvent(ModelGameEvent(EnumGameEventType.none, ''));
   }
 
   void _notifyEvent(ModelGameEvent event) {
-    if (_disposed || _eventController.isClosed) return;
-    _eventController.add(event);
+    if (!_disposed && !_eventController.isClosed) _eventController.add(event);
   }
 
-  // ---------------- Movement ----------------
-  Future<bool> moveForward() async {
-    int newX = state.x;
-    int newY = state.y;
-    while (await _isWalkable(newX + 1, newY)) {
-      newX += 1;
-      // ✅ 更新 ValueNotifier
-      stateNotifier.value = state.copy()
-        ..x = newX
-        ..y = newY;
-      _checkFruit();
-      await _checkTreasure();
-      if (_scoreSaved) break;
-      await Future.delayed(Duration(milliseconds: 400));
-      if (await _isWalkable(newX, newY - 1) ||
-          await _isWalkable(newX, newY + 1)) {
-        //岔路處跳出
-        break;
+  Future<bool> moveForward() => _move(1, 0);
+  Future<bool> moveBackward() => _move(-1, 0);
+  Future<bool> jumpUp() => _move(0, 1);
+  Future<bool> jumpDown() => _move(0, -1);
+
+  Future<bool> _move(int dx, int dy) async {
+    if (!canExecute || _movementActive) return false;
+    final generation = _generation;
+    _movementActive = true;
+    try {
+      while (isCurrentGeneration(generation) && !_scoreSaved) {
+        final result = _session.step(dx, dy);
+        if (result == null) return true;
+        stateNotifier.value = state.copy();
+        if (!isCurrentGeneration(generation)) return false;
+        for (final event in result.events) {
+          if (event.type != EnumGameEventType.treasure) _notifyEvent(event);
+        }
+        if (result.needsSave) {
+          final scoreToSave = state.score;
+          _scoreSaved = true;
+          try {
+            await service.saveUserGameScore(
+              newUserName: userName,
+              newScore: parseDoubleValue(scoreToSave),
+              newGameId: gameId,
+              newIsPass: true,
+            );
+          } catch (_) {
+            if (!isCurrentGeneration(generation)) return false;
+            _scoreSaved = false;
+            _session.rollbackTreasure();
+            stateNotifier.value = state.copy();
+            rethrow;
+          }
+          if (!isCurrentGeneration(generation)) return false;
+          state.score = 0;
+          stateNotifier.value = state.copy();
+          if (!isCurrentGeneration(generation)) return false;
+          for (final event in result.events) {
+            if (event.type == EnumGameEventType.treasure) _notifyEvent(event);
+          }
+          return true;
+        }
+        await _delay(const Duration(milliseconds: 400));
+        if (!isCurrentGeneration(generation)) return false;
+        if (_session.hasJunction(dx, dy)) return true;
       }
-    }
-    return true; // _afterMovement();
-  }
-
-  Future<bool> moveBackward() async {
-    int newX = state.x;
-    int newY = state.y;
-    while (await _isWalkable(newX - 1, newY)) {
-      newX -= 1;
-      // ✅ 更新 ValueNotifier
-      stateNotifier.value = state.copy()
-        ..x = newX
-        ..y = newY;
-      _checkFruit();
-      await _checkTreasure();
-      if (_scoreSaved) break;
-      await Future.delayed(Duration(milliseconds: 400));
-      if (await _isWalkable(newX, newY - 1) ||
-          await _isWalkable(newX, newY + 1)) {
-        //岔路處跳出
-        break;
-      }
-    }
-    return true; // _afterMovement();
-  }
-
-  Future<bool> jumpUp() async {
-    int newX = state.x;
-    int newY = state.y;
-    while (await _isWalkable(newX, newY + 1)) {
-      newY += 1;
-      // ✅ 更新 ValueNotifier
-      stateNotifier.value = state.copy()
-        ..x = newX
-        ..y = newY;
-      _checkFruit();
-      await _checkTreasure();
-      if (_scoreSaved) break;
-      await Future.delayed(Duration(milliseconds: 400));
-      if (await _isWalkable(newX - 1, newY) ||
-          await _isWalkable(newX + 1, newY)) {
-        //岔路處跳出
-        break;
-      }
-    }
-    return true; // _afterMovement();
-  }
-
-  Future<bool> jumpDown() async {
-    int newX = state.x;
-    int newY = state.y;
-    while (await _isWalkable(newX, newY - 1)) {
-      newY -= 1;
-      // ✅ 更新 ValueNotifier
-      stateNotifier.value = state.copy()
-        ..x = newX
-        ..y = newY;
-      _checkFruit();
-      await _checkTreasure();
-      if (_scoreSaved) break;
-      await Future.delayed(Duration(milliseconds: 400));
-      if (await _isWalkable(newX - 1, newY) ||
-          await _isWalkable(newX + 1, newY)) {
-        //岔路處跳出
-        break;
-      }
-    }
-    return true; // _afterMovement();
-  }
-
-  Future<bool> _isWalkable(int x, int y) async {
-    if (_disposed) return false;
-    // 延遲 400ms 再回傳
-    if (_scoreSaved) return false; // 已經過關 → 不要再檢查
-    if (x < 0 || y < 0 || x > level.treasure.x || y > level.treasure.y) {
       return false;
-    }
-    for (var obs in level.obstacles) {
-      if (obs.x == x && obs.y == y) return false; // 牆
-    }
-    _checkFruit();
-    return await _checkTreasure();
-  }
-
-  // ---- 檢查水果 ----
-  void _checkFruit() {
-    for (var fruit in level.fruits) {
-      if (!fruit.collected && fruit.x == state.x && fruit.y == state.y) {
-        fruit.collected = true;
-        state.score += fruit.scoreValue;
-        _notifyEvent(
-          ModelGameEvent(EnumGameEventType.fruit, "Food +${fruit.scoreValue}!"),
-        );
-      }
+    } finally {
+      if (isCurrentGeneration(generation)) _movementActive = false;
     }
   }
 
-  // ---- 檢查寶藏 ----
-  Future<bool> _checkTreasure() async {
-    if (!state.treasureCollected &&
-        state.x == level.treasure.x &&
-        state.y == level.treasure.y) {
-      state.treasureCollected = true;
-      state.score += level.treasure.scoreValue;
-      _notifyEvent(
-        ModelGameEvent(
-          EnumGameEventType.treasure,
-          "Treasure found！Score: ${state.score}",
-        ),
-      );
-      try {
-        await _saveScore(true);
-      } catch (_) {
-        state.treasureCollected = false;
-        state.score -= level.treasure.scoreValue;
-        rethrow;
-      }
-    }
-    return true;
+  Future<void> restartAndExecute(List<Command> commands) async {
+    if (_disposed) return;
+    final snapshot = List<Command>.of(commands);
+    resetGame();
+    final generation = _generation;
+    await _delay(const Duration(milliseconds: 300));
+    if (!isCurrentGeneration(generation)) return;
+    await executeCommands(snapshot);
   }
 
-  // ---- 執行 commands ----
   Future<void> executeCommands(List<Command> commands) async {
-    if (_disposed || _isExecuting) return;
+    if (!canExecute || _isExecuting) return;
+    final generation = _generation;
     _isExecuting = true;
     try {
-      for (var cmd in commands) {
-        if (_disposed) return;
-        bool ok = await cmd.execute(this);
-        if (!ok) return;
+      for (final command in List<Command>.of(commands)) {
+        if (!isCurrentGeneration(generation) || !canExecute) return;
+        if (!await command.execute(this)) return;
       }
     } finally {
-      _isExecuting = false;
-    }
-  }
-
-  Future<void> _saveScore(bool isPass) async {
-    if (_scoreSaved || state.score < level.treasure.scoreValue) {
-      return;
-    }
-    _scoreSaved = true;
-    try {
-      await service.saveUserGameScore(
-        newUserName: userName,
-        newScore: parseDoubleValue(state.score),
-        newGameId: gameId,
-        newIsPass: isPass,
-      );
-      state.score = 0;
-    } catch (_) {
-      _scoreSaved = false;
-      rethrow;
+      if (isCurrentGeneration(generation)) _isExecuting = false;
     }
   }
 
@@ -314,6 +226,6 @@ class ControllerGameSteamScratchMaze {
     if (_disposed) return;
     _disposed = true;
     stateNotifier.dispose();
-    _eventController.close();
+    unawaited(_eventController.close());
   }
 }

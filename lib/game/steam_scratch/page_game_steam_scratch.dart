@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/game/steam_scratch/controller_game_steam_scratch.dart';
-import 'package:life_pilot/game/steam_scratch/controller_game_steam_scratch_level_generator.dart';
+import 'package:life_pilot/game/steam_scratch/model_scratch_level_generator.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/widgets/widgets_adaptive_button.dart';
 import 'package:life_pilot/game/steam_scratch/model_game_steam_scratch_level.dart';
@@ -50,9 +50,7 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
   void initState() {
     super.initState();
 
-    final level = GameSteamScratchLevelGenerator().generateLevel(
-      widget.gameLevel,
-    );
+    final level = ModelScratchLevelGenerator().generateLevel(widget.gameLevel);
     final auth = context.read<ControllerAuth>();
 
     game = ControllerGameSteamScratch(
@@ -393,13 +391,19 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
                     child: PageGameSteamScratchBlocklyEditor(
                       key: editorKey,
                       onCommandsReady: (cmds) async {
-                        // ✅ 每次開始前重置遊戲
-                        game.resetGame(); // 位置、分數、水果全部重置
-                        // 延遲 300ms 再回傳
-                        await Future.delayed(Duration(milliseconds: 300));
-
-                        commands = cmds;
-                        await game.executeCommands(commands);
+                        commands = List<Command>.of(cmds);
+                        try {
+                          await game.restartAndExecute(commands);
+                        } catch (_) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)!.unknownError,
+                              ),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),
