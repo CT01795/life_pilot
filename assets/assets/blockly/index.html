@@ -12,34 +12,23 @@
   <script src="javascript_compressed.js"></script>
   <!-- 語言檔 -->
   <script src="msg/js/zh-hant.js"></script>
+  <script src="responsive_flyout.js"></script>
+  <script src="direction_icons.js"></script>
 
   <style>
     html, body {
       height: 100%;
       margin: 0;
-      /*overflow: hidden;*/
+      overflow: hidden;
     }
     #blocklyDiv {
       height: 100%;
       width: 100%;
-      overflow: auto; /* 允許滾動 */
+      overflow: hidden; /* Blockly owns its workspace and flyout scrollbars. */
+      touch-action: none;
     }
 
-    /* 讓 toolbox 往右移動 */
-    .blocklyFlyout {
-      transform: translateX(30px) !important;
-    }
-
-    /* 所有積木文字放大 */
-    .blocklyText {
-      font-size: 20px !important; /* 可調整大小 */
-      font-weight: bold;           /* 可選加粗 */
-    }
-
-    /* 如果要調整下拉選單字體 */
-    .blocklyDropdownText {
-      font-size: 20px !important;
-    }
+    /* Let Blockly calculate SVG transforms and text metrics together. */
 
   </style>
 </head>
@@ -51,19 +40,23 @@
     ////////////////////////////////////////////////////////////
     // 1️⃣ 定義自訂動作 blocks
     ////////////////////////////////////////////////////////////
-    const actionBlocks = [{name: 'forward', label: 'forward →'},
-                          {name: 'backward', label: 'backward ←'},
+    const actionBlocks = [{name: 'forward', label: 'forward', direction: 'right'},
+                          {name: 'backward', label: 'backward', direction: 'left'},
                           {name: 'turn_left', label: 'turn left \u{1F83C}'},
                           {name: 'turn_right', label: 'turn right \u{1F83D}'},
-                          {name: 'jump_up', label: 'jump up ↑'},
-                          {name: 'jump_down', label: 'jump down ↓'}
+                          {name: 'jump_up', label: 'jump up', direction: 'up'},
+                          {name: 'jump_down', label: 'jump down', direction: 'down'}
                         ];
 
     actionBlocks.forEach(block => {
       Blockly.Blocks[block.name] = {
         init: function() {
-          this.appendDummyInput()
-              .appendField(block.label);
+          const input = this.appendDummyInput().appendField(block.label);
+          if (block.direction) {
+            input.appendField(new Blockly.FieldImage(
+              LifePilotDirectionIcon(block.direction), 36, 36, block.direction
+            ));
+          }
           this.setPreviousStatement(true);
           this.setNextStatement(true);
           this.setColour(160);
@@ -161,10 +154,34 @@
     ////////////////////////////////////////////////////////////
     // 建立 Blockly workspace
     ////////////////////////////////////////////////////////////
+    const editorTheme = Blockly.Theme.defineTheme('life_pilot', {
+      base: Blockly.Themes.Classic,
+      fontStyle: { family: 'sans-serif', weight: 'bold', size: 15 },
+    });
     var workspace = Blockly.inject('blocklyDiv', {
       toolbox: toolbox,
       scrollbars: true,
+      theme: editorTheme,
+      plugins: { flyoutsVerticalToolbox: LifePilotHalfWidthFlyout },
+      zoom: {
+        startScale: document.getElementById('blocklyDiv').clientWidth < 600 ? 0.8 : 1,
+        minScale: 0.3,
+        maxScale: 1.5,
+        pinch: true,
+      },
     });
+
+    // Refit the palette after WebView rotation or parent panel resizing.
+    const resizeEditor = () => {
+      const flyout = workspace.getFlyout();
+      if (flyout) flyout.reflow();
+      Blockly.svgResize(workspace);
+    };
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(resizeEditor).observe(document.getElementById('blocklyDiv'));
+    } else {
+      window.addEventListener('resize', resizeEditor);
+    }
 
     // --- 在這裡設定動態最大積木數量 ---
     window.MAX_BLOCKS = 0; // 預設為 0，Flutter 會傳實際值
