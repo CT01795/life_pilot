@@ -13,6 +13,7 @@
   <!-- 語言檔 -->
   <script src="msg/js/zh-hant.js"></script>
   <script src="responsive_flyout.js"></script>
+  <script src="direction_icons.js"></script>
 
   <style>
     html, body {
@@ -39,19 +40,23 @@
     ////////////////////////////////////////////////////////////
     // 1️⃣ 定義自訂動作 blocks
     ////////////////////////////////////////////////////////////
-    const actionBlocks = [{name: 'forward', label: 'forward →'},
-                          {name: 'backward', label: 'backward ←'},
+    const actionBlocks = [{name: 'forward', label: 'forward', direction: 'right'},
+                          {name: 'backward', label: 'backward', direction: 'left'},
                           {name: 'turn_left', label: 'turn left \u{1F83C}'},
                           {name: 'turn_right', label: 'turn right \u{1F83D}'},
-                          {name: 'jump_up', label: 'jump up ↑'},
-                          {name: 'jump_down', label: 'jump down ↓'}
+                          {name: 'jump_up', label: 'jump up', direction: 'up'},
+                          {name: 'jump_down', label: 'jump down', direction: 'down'}
                         ];
 
     actionBlocks.forEach(block => {
       Blockly.Blocks[block.name] = {
         init: function() {
-          this.appendDummyInput()
-              .appendField(block.label);
+          const input = this.appendDummyInput().appendField(block.label);
+          if (block.direction) {
+            input.appendField(new Blockly.FieldImage(
+              LifePilotDirectionIcon(block.direction), 36, 36, block.direction
+            ));
+          }
           this.setPreviousStatement(true);
           this.setNextStatement(true);
           this.setColour(160);
