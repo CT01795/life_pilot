@@ -383,7 +383,7 @@
   "@gameInstructionsPolyomino": {"description": "Label for gameInstructionsPolyomino"},
   "gameInstructionsScratch": "편집기에서 Blockly 명령을 배치하고 시작을 눌러 장애물을 피하고 보물을 얻으세요.",
   "@gameInstructionsScratch": {"description": "Label for gameInstructionsScratch"},
-  "gameInstructionsScratchMaze": "편집기에서 Blockly 명령을 배치하고 시작을 눌러 미로를 통과해 목표에 도착하세요.",
+  "gameInstructionsScratchMaze": "편집기에서 Blockly 명령을 배치하고 시작을 눌러 미로를 통과해 목표에 도착하세요. 방향 블록 하나당 한 칸만 이동합니다. 더 멀리 이동하려면 블록을 추가하거나 반복 블록을 사용하세요.",
   "@gameInstructionsScratchMaze": {"description": "Label for game_instructions_scratch_maze"},
   "game_instructions_mario_translation": "왼쪽, 오른쪽, 점프, 발사 버튼을 사용하세요. 문제나 단어를 누르면 음성이 재생되며 올바른 단어를 모아 번역을 완성합니다.",
   "@game_instructions_mario_translation": {"description": "Label for game_instructions_mario_translation"},

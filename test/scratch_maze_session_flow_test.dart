@@ -153,7 +153,7 @@ void main() {
     );
   }
 
-  test('all four commands stop after first step at an open junction', () async {
+  test('all four commands move exactly one cell at an open junction', () async {
     final moves = <Future<bool> Function()>[
       controller.moveForward,
       controller.moveBackward,
@@ -170,30 +170,79 @@ void main() {
       expect((controller.state.x, controller.state.y), expected[i]);
     }
   });
-  test('straight corridor traverses until wall with 400ms per step', () async {
-    controller.dispose();
-    final durations = <Duration>[];
-    controller = ControllerGameSteamScratchMaze(
-      userName: 'user',
-      service: service,
-      gameId: 'game',
-      level: level(
-        x: 4,
-        y: 2,
-        walls: [for (var x = 0; x <= 4; x++) wall(x, 1), wall(3, 0)],
-      ),
-      delay: (duration) async {
-        durations.add(duration);
+  for (var direction = 0; direction < 4; direction++) {
+    test(
+      'direction $direction moves one cell even without a side junction',
+      () async {
+        controller.dispose();
+        final horizontal = direction < 2;
+        controller = ControllerGameSteamScratchMaze(
+          userName: 'user',
+          service: service,
+          gameId: 'game',
+          level: level(
+            x: 6,
+            y: 6,
+            walls: [
+              for (var i = 0; i <= 6; i++) ...[
+                if (horizontal) ...[
+                  wall(i, 1),
+                  wall(i, 3),
+                ] else ...[
+                  wall(1, i),
+                  wall(3, i),
+                ],
+              ],
+            ],
+          ),
+          delay: (_) async {},
+        );
+        controller.state
+          ..x = 2
+          ..y = 2;
+        final moves = [
+          controller.moveForward,
+          controller.moveBackward,
+          controller.jumpUp,
+          controller.jumpDown,
+        ];
+        expect(await moves[direction](), true);
+        const expected = [(3, 2), (1, 2), (2, 3), (2, 1)];
+        expect((controller.state.x, controller.state.y), expected[direction]);
       },
     );
-    expect(await controller.moveForward(), true);
-    expect((controller.state.x, controller.state.y), (2, 0));
-    expect(durations, [
-      const Duration(milliseconds: 400),
-      const Duration(milliseconds: 400),
-    ]);
-    expect(service.requests, isEmpty);
-  });
+  }
+  test(
+    'each corridor command moves one cell with one 400ms animation',
+    () async {
+      controller.dispose();
+      final durations = <Duration>[];
+      controller = ControllerGameSteamScratchMaze(
+        userName: 'user',
+        service: service,
+        gameId: 'game',
+        level: level(
+          x: 4,
+          y: 2,
+          walls: [for (var x = 0; x <= 4; x++) wall(x, 1), wall(3, 0)],
+        ),
+        delay: (duration) async {
+          durations.add(duration);
+        },
+      );
+      expect(await controller.moveForward(), true);
+      expect((controller.state.x, controller.state.y), (1, 0));
+      expect(durations, [const Duration(milliseconds: 400)]);
+      expect(await controller.moveForward(), true);
+      expect((controller.state.x, controller.state.y), (2, 0));
+      expect(durations.length, 2);
+      // A third command hits the wall rather than adding an extra step.
+      expect(await controller.moveForward(), true);
+      expect((controller.state.x, controller.state.y), (2, 0));
+      expect(durations.length, 2);
+      expect(service.requests, isEmpty);
+    },
+  );
   test(
     'reset cancels old corridor movement while awaiting animation',
     () async {

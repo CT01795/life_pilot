@@ -596,7 +596,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameInstructionsScratch => 'Arrange Blockly commands in the editor and press Start to avoid obstacles and reach the treasure.';
 
   @override
-  String get gameInstructionsScratchMaze => 'Arrange Blockly commands in the editor and press Start to guide the character through the maze.';
+  String get gameInstructionsScratchMaze => 'Arrange Blockly commands in the editor and press Start to guide the character through the maze. Each direction block moves exactly one cell. Connect more blocks or use a repeat block to move farther.';
 
   @override
   String get gameInstructionsMarioTranslation => 'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';

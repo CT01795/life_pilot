@@ -35,10 +35,28 @@ test('larger blocks shrink further instead of taking over the workspace', () => 
   assert.ok(fixture(344, 500).getFlyoutScale() < fixture(344, 150).getFlyoutScale());
 });
 
-test('wide desktop editor retains Blockly natural sizing', () => {
+test('wide desktop editor reserves half without unnecessarily shrinking blocks', () => {
   const flyout = fixture(800, 240, 1);
-  assert.equal(flyout.getWidth(), 275);
+  assert.equal(flyout.getWidth(), 400);
   assert.equal(flyout.getFlyoutScale(), 1);
+});
+
+test('wide Web layout has three equal content widths', () => {
+  for (const totalWidth of [600, 800, 1280, 1920]) {
+    const available = totalWidth - 24; // Outer padding and panel gap.
+    const boardWidth = available / 3;
+    const flyout = fixture(boardWidth * 2, 500, 1);
+    assert.ok(Math.abs(flyout.getWidth() - boardWidth) < 0.001);
+    const scale = flyout.getFlyoutScale();
+    assert.ok((500 + flyout.MARGIN * 1.5 + 16) * scale +
+      Blockly.Scrollbar.scrollbarThickness <= boardWidth + 0.001);
+  }
+});
+
+test('initial zero-width editor falls back until layout is available', () => {
+  const flyout = fixture(0);
+  assert.equal(flyout.getWidth(), 275);
+  assert.equal(flyout.getFlyoutScale(), 0.8);
 });
 
 test('orientation changes recalculate the split without changing blocks', () => {

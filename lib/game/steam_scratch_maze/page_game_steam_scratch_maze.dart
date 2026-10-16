@@ -38,11 +38,6 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
   late final ControllerGameSteamScratchMaze game;
   late List<Command> commands;
 
-  // ---- Split Panel 狀態 ----
-  double editorWidth = 600; // Editor 初始寬度
-  final double minEditorWidth = 40;
-  final double maxEditorWidth = 600;
-
   // Editor 的 Key
   final GlobalKey<PageGameSteamScratchMazeBlocklyEditorState> editorKeyMaze =
       GlobalKey<PageGameSteamScratchMazeBlocklyEditorState>();
@@ -345,7 +340,6 @@ class _PageGameSteamScratchMazeState extends State<PageGameSteamScratchMaze> {
         actions: [GameHelpButton(description: loc.gameInstructionsScratchMaze)],
       ),
       body: ScratchWorkspace(
-        editorWidth: editorWidth,
         editor:
             // -----------------------------------------------------------------
             // 左側：Blockly Editor（可收合）

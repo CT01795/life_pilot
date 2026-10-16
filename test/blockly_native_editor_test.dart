@@ -1,6 +1,7 @@
 // The fake implements the platform behind the app's existing WebView package.
 // ignore_for_file: depend_on_referenced_packages
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,19 @@ class _FakeController extends platform.PlatformWebViewController {
   Object ready = true;
   Completer<Object>? readyResult;
   bool failScript = false;
+  int? currentRequestId;
+
+  void reply(String xml, {int? requestId}) {
+    channel.onMessageReceived(
+      JavaScriptMessage(
+        message: jsonEncode({
+          'type': 'commands_ready',
+          'requestId': requestId ?? currentRequestId,
+          'json': jsonEncode({'xml': xml}),
+        }),
+      ),
+    );
+  }
 
   @override
   Future<void> setJavaScriptMode(JavaScriptMode mode) async =>
@@ -72,6 +86,10 @@ class _FakeController extends platform.PlatformWebViewController {
   Future<void> runJavaScript(String script) async {
     if (failScript) throw StateError('test script failed');
     calls.add(script);
+    final match = RegExp(
+      r'^sendCommandsToFlutter\(null, null, (\d+)\)$',
+    ).firstMatch(script);
+    if (match != null) currentRequestId = int.parse(match.group(1)!);
   }
 }
 
@@ -167,7 +185,33 @@ void main() {
     await tester.pump();
     expect(fake.controller.calls.sublist(4), [
       'setMaxBlocksFromFlutter(42)',
-      'sendCommandsToFlutter()',
+      'sendCommandsToFlutter(null, null, 1)',
+    ]);
+  });
+
+  testWidgets('late native replies cannot replace the second program', (
+    tester,
+  ) async {
+    final received = <String>[];
+    final queue = await mount(
+      tester,
+      onCommands: (json) => received.add(json['xml'] as String),
+    );
+    fake.controller.navigation.finished('asset');
+    await tester.pump();
+    queue.requestCommands();
+    await tester.pump();
+    fake.controller.reply('<xml><block type="forward"/></xml>', requestId: 1);
+    queue.requestCommands();
+    await tester.pump();
+    fake.controller.reply('<xml><block type="forward"/></xml>', requestId: 1);
+    expect(received.length, 1);
+    expect(find.byIcon(Icons.refresh), findsNothing);
+    fake.controller.reply('<xml><block type="jump_up"/></xml>', requestId: 2);
+    fake.controller.reply('<xml><block type="jump_up"/></xml>', requestId: 2);
+    expect(received, [
+      '<xml><block type="forward"/></xml>',
+      '<xml><block type="jump_up"/></xml>',
     ]);
   });
 
@@ -188,13 +232,12 @@ void main() {
     final queue = await mount(tester, onCommands: (_) => count++);
     fake.controller.navigation.finished('asset');
     await tester.pump();
-    const message = JavaScriptMessage(message: '{"xml":"<xml/>"}');
-    fake.controller.channel.onMessageReceived(message);
+    fake.controller.reply('<xml/>');
     expect(count, 0);
     queue.requestCommands();
     await tester.pump();
-    fake.controller.channel.onMessageReceived(message);
-    fake.controller.channel.onMessageReceived(message);
+    fake.controller.reply('<xml/>');
+    fake.controller.reply('<xml/>');
     expect(count, 1);
   });
 
@@ -207,14 +250,22 @@ void main() {
       fake.controller.navigation.finished('asset');
       await tester.pump();
       expect(find.byIcon(Icons.refresh), findsOneWidget);
-      expect(fake.controller.calls.contains('sendCommandsToFlutter()'), false);
+      expect(
+        fake.controller.calls.any(
+          (s) => s.startsWith('sendCommandsToFlutter('),
+        ),
+        false,
+      );
       fake.controller.ready = true;
       await tester.tap(find.byIcon(Icons.refresh));
       await tester.pump();
       fake.controller.navigation.finished('asset');
       await tester.pump();
       expect(fake.controller.calls.where((s) => s == 'channel').length, 1);
-      expect(fake.controller.calls.last, 'sendCommandsToFlutter()');
+      expect(
+        fake.controller.calls.last,
+        'sendCommandsToFlutter(null, null, 1)',
+      );
     },
   );
 
@@ -228,12 +279,13 @@ void main() {
     fake.controller.navigation.finished('asset');
     await tester.pumpWidget(const SizedBox());
     pending.complete(true);
-    fake.controller.channel.onMessageReceived(
-      const JavaScriptMessage(message: '{"xml":"<xml/>"}'),
-    );
+    fake.controller.reply('<xml/>');
     await tester.pump();
     expect(count, 0);
-    expect(fake.controller.calls.contains('sendCommandsToFlutter()'), false);
+    expect(
+      fake.controller.calls.any((s) => s.startsWith('sendCommandsToFlutter(')),
+      false,
+    );
     expect(tester.takeException(), null);
   });
 
@@ -274,11 +326,7 @@ void main() {
           await scratchKey.currentState!.requestBlocklyJson();
         }
         await tester.pump();
-        fake.controller.channel.onMessageReceived(
-          const JavaScriptMessage(
-            message: r'{"xml":"<xml><block type=\"forward\"></block></xml>"}',
-          ),
-        );
+        fake.controller.reply('<xml><block type="forward"></block></xml>');
         expect(count, 1);
       },
     );

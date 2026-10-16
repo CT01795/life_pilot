@@ -596,7 +596,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get gameInstructionsScratch => '편집기에서 Blockly 명령을 배치하고 시작을 눌러 장애물을 피하고 보물을 얻으세요.';
 
   @override
-  String get gameInstructionsScratchMaze => '편집기에서 Blockly 명령을 배치하고 시작을 눌러 미로를 통과해 목표에 도착하세요.';
+  String get gameInstructionsScratchMaze => '편집기에서 Blockly 명령을 배치하고 시작을 눌러 미로를 통과해 목표에 도착하세요. 방향 블록 하나당 한 칸만 이동합니다. 더 멀리 이동하려면 블록을 추가하거나 반복 블록을 사용하세요.';
 
   @override
   String get gameInstructionsMarioTranslation => 'Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.';

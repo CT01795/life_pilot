@@ -296,7 +296,7 @@
       
       // 監聽 Flutter 的請求 <web版必須加>
       else if (msg && msg.type === 'request_commands') {
-        sendCommandsToFlutter(msg.bridgeId, event.origin);
+        sendCommandsToFlutter(msg.bridgeId, event.origin, msg.requestId);
       }
     });
 
@@ -313,17 +313,20 @@
     ////////////////////////////////////////////////////////////
     // 送回 Flutter
     ////////////////////////////////////////////////////////////
-    window.sendCommandsToFlutter = function(bridgeId, targetOrigin) {
+    window.sendCommandsToFlutter = function(bridgeId, targetOrigin, requestId) {
       const json = getCommandsJson();
+      const response = JSON.stringify({
+        type: "commands_ready", json: json, bridgeId: bridgeId, requestId: requestId
+      });
 
       // Mobile WebView → Flutter
       if (window.BlocklyCallback) {
-        BlocklyCallback.postMessage(json);
+        BlocklyCallback.postMessage(response);
       }
 
       // Flutter Web iframe → Flutter
       window.parent.postMessage(
-        JSON.stringify({ type: "commands_ready", json: json, bridgeId: bridgeId }),
+        response,
         targetOrigin || "*"
       );
     }

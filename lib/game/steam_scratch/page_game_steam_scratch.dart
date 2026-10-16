@@ -37,11 +37,6 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
   late final ControllerGameSteamScratch game;
   late List<Command> commands;
 
-  // ---- Split Panel 狀態 ----
-  double editorWidth = 600; // Editor 初始寬度
-  final double minEditorWidth = 40;
-  final double maxEditorWidth = 600;
-
   // Editor 的 Key
   final GlobalKey<PageGameSteamScratchBlocklyEditorState> editorKey =
       GlobalKey<PageGameSteamScratchBlocklyEditorState>();
@@ -344,7 +339,6 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
         actions: [GameHelpButton(description: loc.gameInstructionsScratch)],
       ),
       body: ScratchWorkspace(
-        editorWidth: editorWidth,
         editor:
             // -----------------------------------------------------------------
             // 左側：Blockly Editor（可收合）

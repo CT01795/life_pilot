@@ -2,6 +2,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/game/model_blockly_message_queue.dart';
 
 void main() {
+  test('a delayed first reply cannot complete a second request', () {
+    final queue = ModelBlocklyMessageQueue();
+    final sent = <Map<String, dynamic>>[];
+    queue.attach(sent.add);
+    queue.markReady();
+    queue.requestCommands();
+    expect(queue.completeRequest(1), true);
+    queue.requestCommands();
+    expect(sent.last['requestId'], 2);
+    expect(queue.completeRequest(1), false);
+    expect(queue.acceptsResponse(2), true);
+    expect(queue.completeRequest(2), true);
+    expect(queue.completeRequest(2), false);
+    queue.dispose();
+  });
+  test('reloaded editor rejects the reply from its previous document', () {
+    final queue = ModelBlocklyMessageQueue();
+    queue.attach((_) {});
+    queue.markReady();
+    queue.requestCommands();
+    queue.attach((_) {});
+    queue.markReady();
+    expect(queue.completeRequest(1), false);
+    expect(queue.completeRequest(2), true);
+    queue.dispose();
+  });
   late ModelBlocklyMessageQueue queue;
   late List<Map<String, dynamic>> sent;
   setUp(() {
@@ -17,7 +43,7 @@ void main() {
     queue.markReady();
     expect(sent, [
       {'type': 'set_max_blocks', 'maxBlocks': 10},
-      {'type': 'request_commands'},
+      {'type': 'request_commands', 'requestId': 1},
     ]);
   });
   test('ready cannot be set before a frame has attached', () {
@@ -27,7 +53,7 @@ void main() {
     expect(sent, isEmpty);
     queue.markReady();
     expect(sent, [
-      {'type': 'request_commands'},
+      {'type': 'request_commands', 'requestId': 1},
     ]);
   });
   test('repeated early starts are coalesced into one request', () {
@@ -57,20 +83,20 @@ void main() {
     queue.requestCommands();
     queue.requestCommands();
     expect(sent.length, 1);
-    expect(queue.completeRequest(), true);
-    expect(queue.completeRequest(), false);
+    expect(queue.completeRequest(1), true);
+    expect(queue.completeRequest(1), false);
   });
   test('unsolicited completion is ignored', () {
-    expect(queue.completeRequest(), false);
+    expect(queue.completeRequest(1), false);
     queue.attach(sent.add);
     queue.markReady();
-    expect(queue.completeRequest(), false);
+    expect(queue.completeRequest(1), false);
   });
   test('completed request allows the next start', () {
     queue.attach(sent.add);
     queue.markReady();
     queue.requestCommands();
-    queue.completeRequest();
+    queue.completeRequest(1);
     queue.requestCommands();
     expect(sent.length, 2);
   });
@@ -86,7 +112,7 @@ void main() {
       queue.markReady();
       expect(sent.length, 1);
       expect(replacement, [
-        {'type': 'request_commands'},
+        {'type': 'request_commands', 'requestId': 2},
       ]);
     },
   );
@@ -110,7 +136,7 @@ void main() {
     queue.requestCommands();
     queue.attach(sent.add);
     expect(sent, isEmpty);
-    expect(queue.completeRequest(), false);
+    expect(queue.completeRequest(1), false);
   });
   test('block limit can change after load including zero', () {
     queue.attach(sent.add);
@@ -139,7 +165,7 @@ void main() {
     fresh.attach(freshSent.add);
     fresh.markReady();
     expect(freshSent, [
-      {'type': 'request_commands'},
+      {'type': 'request_commands', 'requestId': 1},
     ]);
     expect(sent, isEmpty);
     fresh.dispose();

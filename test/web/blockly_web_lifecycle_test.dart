@@ -39,7 +39,7 @@ Future<html.IFrameElement> _prepareFrame(WidgetTester tester) async {
     frame.srcdoc = '''<html><body><script>
       window.addEventListener('message', (event) => {
         if (event.data.type === 'request_commands') {
-          parent.postMessage(JSON.stringify({type:'commands_ready', bridgeId:event.data.bridgeId,
+          parent.postMessage(JSON.stringify({type:'commands_ready', bridgeId:event.data.bridgeId, requestId:event.data.requestId,
             json:JSON.stringify({xml:'<xml><block type="forward"></block></xml>'})}), '*');
         }
       });
@@ -55,6 +55,53 @@ Widget _host(Widget child) => Directionality(
 );
 
 void main() {
+  testWidgets('dialog blocks iframe pointers and cancel restores editing', (
+    tester,
+  ) async {
+    final queue = ModelBlocklyMessageQueue();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Leave game?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  child: const Text('Open dialog'),
+                ),
+              ),
+              Expanded(
+                child: WidgetsBlocklyWebEditor(
+                  messages: queue,
+                  onCommandsJson: (_) {},
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final frame = await _prepareFrame(tester);
+    expect(frame.style.pointerEvents, 'auto');
+    await tester.tap(find.text('Open dialog'));
+    await tester.pumpAndSettle();
+    expect(frame.style.pointerEvents, 'none');
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(frame.style.pointerEvents, 'auto');
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets('maze editor starts after three separate visits', (tester) async {
     html.IFrameElement? previous;
     for (var visit = 0; visit < 3; visit++) {

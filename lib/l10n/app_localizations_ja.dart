@@ -596,7 +596,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gameInstructionsScratch => 'エディターで Blockly 命令を並べて開始を押し、障害物を避けて宝物を取ります。';
 
   @override
-  String get gameInstructionsScratchMaze => 'エディターで Blockly 命令を並べて開始を押し、迷路を通ってゴールへ導きます。';
+  String get gameInstructionsScratchMaze => 'エディターで Blockly 命令を並べて開始を押し、迷路を通ってゴールへ導きます。方向ブロック1個につき1マス進みます。さらに進むには、ブロックを追加するか繰り返しブロックを使ってください。';
 
   @override
   String get gameInstructionsMarioTranslation => '左右移動、ジャンプ、発射を使います。問題や単語を押すと音声が再生され、正しい単語を集めて翻訳を完成します。';

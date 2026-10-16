@@ -33,6 +33,7 @@ class WidgetsBlocklyWebEditorState extends State<WidgetsBlocklyWebEditor> {
   html.IFrameElement? _frame;
   StreamSubscription<html.Event>? _loadSubscription;
   StreamSubscription<html.MessageEvent>? _messageSubscription;
+  bool _routeActive = true;
 
   @visibleForTesting
   html.IFrameElement? get frame => _frame;
@@ -41,6 +42,14 @@ class WidgetsBlocklyWebEditorState extends State<WidgetsBlocklyWebEditor> {
   void initState() {
     super.initState();
     _messageSubscription = html.window.onMessage.listen(_onMessage);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _routeActive = ModalRoute.of(context)?.isCurrent ?? true;
+    // A platform iframe can otherwise steal clicks from a Flutter dialog above it.
+    _frame?.style.pointerEvents = _routeActive ? 'auto' : 'none';
   }
 
   void _onElementCreated(Object element) {
@@ -61,6 +70,7 @@ class WidgetsBlocklyWebEditorState extends State<WidgetsBlocklyWebEditor> {
       ..style.border = 'none'
       ..style.width = '100%'
       ..style.height = '100%'
+      ..style.pointerEvents = _routeActive ? 'auto' : 'none'
       ..src = 'assets/assets/blockly/index.html';
   }
 
@@ -76,6 +86,7 @@ class WidgetsBlocklyWebEditorState extends State<WidgetsBlocklyWebEditor> {
       final message = jsonDecode(event.data as String);
       if (message is! Map || message['type'] != 'commands_ready') return;
       if (message['bridgeId'] != _bridgeId) return;
+      if (!widget.messages.acceptsResponse(message['requestId'])) return;
       final encoded = message['json'];
       if (encoded is! String) {
         throw const FormatException('Missing commands JSON');
@@ -84,7 +95,7 @@ class WidgetsBlocklyWebEditorState extends State<WidgetsBlocklyWebEditor> {
       if (commands is! Map<String, dynamic>) {
         throw const FormatException('Invalid commands JSON');
       }
-      if (!widget.messages.completeRequest()) return;
+      if (!widget.messages.completeRequest(message['requestId'])) return;
       widget.onCommandsJson(commands);
     } catch (error, stackTrace) {
       logger.e(

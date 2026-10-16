@@ -50,12 +50,12 @@ class _WidgetsBlocklyNativeEditorState
         if (!mounted || generation != _generation || _failed) return;
         final script = message['type'] == 'set_max_blocks'
             ? 'setMaxBlocksFromFlutter(${message['maxBlocks']})'
-            : 'sendCommandsToFlutter()';
+            : 'sendCommandsToFlutter(null, null, ${message['requestId']})';
         try {
           await _controller.runJavaScript(script);
         } catch (error, stackTrace) {
           if (mounted && generation == _generation) {
-            widget.messages.completeRequest();
+            widget.messages.completeRequest(message['requestId']);
             _showFailure(error, stackTrace);
           }
         }
@@ -126,15 +126,20 @@ class _WidgetsBlocklyNativeEditorState
 
   void _onCommands(JavaScriptMessage message) {
     if (!mounted || _loading || _failed) return;
+    Object? requestId;
     try {
-      final commands = jsonDecode(message.message);
+      final response = jsonDecode(message.message);
+      if (response is! Map || response['type'] != 'commands_ready') return;
+      requestId = response['requestId'];
+      if (!widget.messages.acceptsResponse(requestId)) return;
+      final commands = jsonDecode(response['json'] as String);
       if (commands is! Map<String, dynamic> || commands['xml'] is! String) {
         throw const FormatException('Invalid Blockly commands');
       }
-      if (!widget.messages.completeRequest()) return;
+      if (!widget.messages.completeRequest(requestId)) return;
       widget.onCommandsJson(commands);
     } catch (error, stackTrace) {
-      widget.messages.completeRequest();
+      widget.messages.completeRequest(requestId);
       _showFailure(error, stackTrace);
     }
   }

@@ -383,7 +383,7 @@
   "@gameInstructionsPolyomino": {"description": "Label for gameInstructionsPolyomino"},
   "gameInstructionsScratch": "Arrange Blockly commands in the editor and press Start to avoid obstacles and reach the treasure.",
   "@gameInstructionsScratch": {"description": "Label for gameInstructionsScratch"},
-  "gameInstructionsScratchMaze": "Arrange Blockly commands in the editor and press Start to guide the character through the maze.",
+  "gameInstructionsScratchMaze": "Arrange Blockly commands in the editor and press Start to guide the character through the maze. Each direction block moves exactly one cell. Connect more blocks or use a repeat block to move farther.",
   "@gameInstructionsScratchMaze": {"description": "Label for gameInstructionsScratchMaze"},
   "gameInstructionsMarioTranslation": "Use the left, right, jump, and shoot controls. Press the question or words to play audio and collect the correct words to complete the translation.",
   "@gameInstructionsMarioTranslation": {"description": "Label for gameInstructionsMarioTranslation"},

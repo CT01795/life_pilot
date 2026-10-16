@@ -596,7 +596,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gameInstructionsScratch => '在編輯區排列 Blockly 指令並按開始，讓角色避開障礙並取得寶藏。';
 
   @override
-  String get gameInstructionsScratchMaze => '在編輯區排列 Blockly 指令並按開始，引導角色通過迷宮抵達終點。';
+  String get gameInstructionsScratchMaze => '在編輯區排列 Blockly 指令並按開始，引導角色通過迷宮抵達終點。每個方向積木只移動一格；需要多走幾格時，請接上更多積木或使用重複積木。';
 
   @override
   String get gameInstructionsMarioTranslation => '使用左右、跳躍與發射按鈕。按下題目或文字可播放語音，收集正確文字完成翻譯。';

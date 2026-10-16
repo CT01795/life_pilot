@@ -4,6 +4,8 @@ class ModelBlocklyMessageQueue {
   bool _ready = false;
   bool _requested = false;
   bool _awaitingResponse = false;
+  int _nextRequestId = 0;
+  int? _pendingRequestId;
   bool _disposed = false;
   int? _maxBlocks;
 
@@ -13,6 +15,7 @@ class ModelBlocklyMessageQueue {
     _ready = false;
     _requested = _requested || _awaitingResponse;
     _awaitingResponse = false;
+    _pendingRequestId = null;
   }
 
   void markReady() {
@@ -41,12 +44,17 @@ class ModelBlocklyMessageQueue {
     }
     _requested = false;
     _awaitingResponse = true;
-    _send?.call({'type': 'request_commands'});
+    _pendingRequestId = ++_nextRequestId;
+    _send?.call({'type': 'request_commands', 'requestId': _pendingRequestId});
   }
 
-  bool completeRequest() {
-    if (_disposed || !_awaitingResponse) return false;
+  bool acceptsResponse(Object? requestId) =>
+      !_disposed && _awaitingResponse && requestId == _pendingRequestId;
+
+  bool completeRequest(Object? requestId) {
+    if (!acceptsResponse(requestId)) return false;
     _awaitingResponse = false;
+    _pendingRequestId = null;
     return true;
   }
 
@@ -56,5 +64,6 @@ class ModelBlocklyMessageQueue {
     _ready = false;
     _requested = false;
     _awaitingResponse = false;
+    _pendingRequestId = null;
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:life_pilot/game/widgets_game_scrollable_workspace.dart';
 
 /// Native WebViews must not compete with enclosing Flutter drag scroll views.
 class ScratchWorkspace extends StatelessWidget {
@@ -8,31 +7,23 @@ class ScratchWorkspace extends StatelessWidget {
     super.key,
     required this.editor,
     required this.board,
-    this.editorWidth = 600,
   });
 
   final Widget editor;
   final Widget board;
-  final double editorWidth;
+  // Half of the wide Web editor is the palette: 2:1 makes three equal regions.
+  static int editorFlexFor({required double width, required bool web}) =>
+      web && width >= 600 ? 2 : 1;
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      return GameScrollableWorkspace(
-        minWidth: 720,
-        minHeight: 520,
-        child: Row(
-          children: [
-            SizedBox(width: editorWidth, child: editor),
-            Expanded(child: board),
-          ],
-        ),
-      );
-    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final parts = [
-          Expanded(child: ClipRect(child: editor)),
+          Expanded(
+            flex: editorFlexFor(width: constraints.maxWidth, web: kIsWeb),
+            child: ClipRect(child: editor),
+          ),
           const SizedBox(width: 8, height: 8),
           Expanded(child: ClipRect(child: board)),
         ];

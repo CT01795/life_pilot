@@ -1248,7 +1248,7 @@ abstract class AppLocalizations {
   /// Label for gameInstructionsScratchMaze
   ///
   /// In en, this message translates to:
-  /// **'Arrange Blockly commands in the editor and press Start to guide the character through the maze.'**
+  /// **'Arrange Blockly commands in the editor and press Start to guide the character through the maze. Each direction block moves exactly one cell. Connect more blocks or use a repeat block to move farther.'**
   String get gameInstructionsScratchMaze;
 
   /// Label for gameInstructionsMarioTranslation

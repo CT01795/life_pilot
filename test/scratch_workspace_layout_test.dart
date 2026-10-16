@@ -1,9 +1,19 @@
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_pilot/game/widgets_scratch_workspace.dart';
 
 void main() {
+  for (final width in [320.0, 599.0, 600.0, 800.0, 1920.0]) {
+    test('Web and native layout ratios at width $width', () {
+      expect(
+        ScratchWorkspace.editorFlexFor(width: width, web: true),
+        width < 600 ? 1 : 2,
+      );
+      expect(ScratchWorkspace.editorFlexFor(width: width, web: false), 1);
+    });
+  }
   testWidgets('rotation preserves the editor state', (tester) async {
     tester.view.physicalSize = const Size(360, 740);
     tester.view.devicePixelRatio = 1;
@@ -34,7 +44,7 @@ void main() {
     const Size(1024, 768),
   ]) {
     testWidgets(
-      'native editor and board fit at $size without competing scroll views',
+      'editor and board fit at $size without competing scroll views',
       (tester) async {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1;
@@ -94,7 +104,7 @@ void main() {
           expect(editor.height, closeTo(board.height, 0.1));
         } else {
           expect(board.left, greaterThan(editor.right));
-          expect(editor.width, closeTo(board.width, 0.1));
+          expect(editor.width, closeTo(board.width * (kIsWeb ? 2 : 1), 0.1));
         }
         await tester.dragFrom(editor.center, const Offset(70, 25));
         expect(drags, greaterThan(0));

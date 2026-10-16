@@ -154,45 +154,41 @@ class ControllerGameSteamScratchMaze {
     final generation = _generation;
     _movementActive = true;
     try {
-      while (isCurrentGeneration(generation) && !_scoreSaved) {
-        final result = _session.step(dx, dy);
-        if (result == null) return true;
+      final result = _session.step(dx, dy);
+      if (result == null) return true;
+      stateNotifier.value = state.copy();
+      if (!isCurrentGeneration(generation)) return false;
+      for (final event in result.events) {
+        if (event.type != EnumGameEventType.treasure) _notifyEvent(event);
+      }
+      if (result.needsSave) {
+        final scoreToSave = state.score;
+        _scoreSaved = true;
+        try {
+          await service.saveUserGameScore(
+            newUserName: userName,
+            newScore: parseDoubleValue(scoreToSave),
+            newGameId: gameId,
+            newIsPass: true,
+          );
+        } catch (_) {
+          if (!isCurrentGeneration(generation)) return false;
+          _scoreSaved = false;
+          _session.rollbackTreasure();
+          stateNotifier.value = state.copy();
+          rethrow;
+        }
+        if (!isCurrentGeneration(generation)) return false;
+        state.score = 0;
         stateNotifier.value = state.copy();
         if (!isCurrentGeneration(generation)) return false;
         for (final event in result.events) {
-          if (event.type != EnumGameEventType.treasure) _notifyEvent(event);
+          if (event.type == EnumGameEventType.treasure) _notifyEvent(event);
         }
-        if (result.needsSave) {
-          final scoreToSave = state.score;
-          _scoreSaved = true;
-          try {
-            await service.saveUserGameScore(
-              newUserName: userName,
-              newScore: parseDoubleValue(scoreToSave),
-              newGameId: gameId,
-              newIsPass: true,
-            );
-          } catch (_) {
-            if (!isCurrentGeneration(generation)) return false;
-            _scoreSaved = false;
-            _session.rollbackTreasure();
-            stateNotifier.value = state.copy();
-            rethrow;
-          }
-          if (!isCurrentGeneration(generation)) return false;
-          state.score = 0;
-          stateNotifier.value = state.copy();
-          if (!isCurrentGeneration(generation)) return false;
-          for (final event in result.events) {
-            if (event.type == EnumGameEventType.treasure) _notifyEvent(event);
-          }
-          return true;
-        }
-        await _delay(const Duration(milliseconds: 400));
-        if (!isCurrentGeneration(generation)) return false;
-        if (_session.hasJunction(dx, dy)) return true;
+        return true;
       }
-      return false;
+      await _delay(const Duration(milliseconds: 400));
+      return isCurrentGeneration(generation);
     } finally {
       if (isCurrentGeneration(generation)) _movementActive = false;
     }
