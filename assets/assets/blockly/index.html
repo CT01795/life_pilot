@@ -143,7 +143,7 @@
               <field name="OP">EQ</field>
               <value name="A">
                 <shadow type="math_variable">
-                  <field name="VAR">→</field>
+              <field name="VAR">x</field>
                 </shadow>
               </value>
               <value name="B">
@@ -279,7 +279,7 @@
       
       // 監聽 Flutter 的請求 <web版必須加>
       else if (msg && msg.type === 'request_commands') {
-        sendCommandsToFlutter();
+        sendCommandsToFlutter(msg.bridgeId, event.origin);
       }
     });
 
@@ -296,20 +296,18 @@
     ////////////////////////////////////////////////////////////
     // 送回 Flutter
     ////////////////////////////////////////////////////////////
-    window.sendCommandsToFlutter = function() {
+    window.sendCommandsToFlutter = function(bridgeId, targetOrigin) {
       const json = getCommandsJson();
 
       // Mobile WebView → Flutter
       if (window.BlocklyCallback) {
         BlocklyCallback.postMessage(json);
-      }else{
-        console.log("BlocklyCallback not found");
       }
 
       // Flutter Web iframe → Flutter
       window.parent.postMessage(
-        JSON.stringify({ type: "commands_ready", json: json }),
-        "*"
+        JSON.stringify({ type: "commands_ready", json: json, bridgeId: bridgeId }),
+        targetOrigin || "*"
       );
     }
 
