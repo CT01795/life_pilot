@@ -116,6 +116,7 @@ class _RecommendedContentPageState extends State<RecommendedContentPage> {
             _buildSubmissionHub(context, isVendor: isVendor),
         showAddAction: false,
         autoRefreshPublicEvents: widget.kind.autoRefreshPublicEvents,
+        eventPredicateKey: (isVendor, _showOnlyMySubmissions, currentAccount),
         eventPredicate: isVendor || _showOnlyMySubmissions
             ? (event) => shouldShowSubmission(
                 isVendor: isVendor,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -10,6 +11,7 @@ import 'package:life_pilot/memory_trace/widgets_memory_sub_card.dart';
 import 'package:life_pilot/event/widgets_event_image.dart';
 import 'package:life_pilot/event/widgets_event_utils.dart';
 import 'package:life_pilot/utils/weather_localization.dart';
+import 'package:life_pilot/utils/model_event_weather.dart';
 
 class WidgetsMemoryCard extends StatelessWidget {
   final ControllerEvent controllerEvent;
@@ -45,23 +47,20 @@ class WidgetsMemoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controllerEvent,
-      builder: (_, _) => _WidgetsMemoryCardBody(
-        controllerEvent: controllerEvent,
-        eventViewModel: eventViewModel,
-        tableName: tableName,
-        onTap: onTap,
-        onDelete: onDelete,
-        onAccounting: onAccounting,
-        onPoints: onPoints,
-        onCopy: onCopy,
-        onOpenMap: onOpenMap,
-        onOpenLink: onOpenLink,
-        trailing: trailing,
-        showSubEvents: showSubEvents,
-        showFullDescription: showFullDescription,
-      ),
+    return _WidgetsMemoryCardBody(
+      controllerEvent: controllerEvent,
+      eventViewModel: eventViewModel,
+      tableName: tableName,
+      onTap: onTap,
+      onDelete: onDelete,
+      onAccounting: onAccounting,
+      onPoints: onPoints,
+      onCopy: onCopy,
+      onOpenMap: onOpenMap,
+      onOpenLink: onOpenLink,
+      trailing: trailing,
+      showSubEvents: showSubEvents,
+      showFullDescription: showFullDescription,
     );
   }
 
@@ -146,6 +145,52 @@ class _WidgetsMemoryCardBody extends StatefulWidget {
 }
 
 class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
+  List<EventWeather>? _forecast;
+  DateTime _weatherDay = DateTimeFormatter.dateOnly(DateTime.now());
+
+  void _readForecast() {
+    final forecast = widget.controllerEvent.getForecast(
+      locationDisplay: widget.eventViewModel.locationDisplay,
+    );
+    // Snapshot membership so an in-place weather-list update is detected too.
+    _forecast = forecast == null ? null : List.unmodifiable(forecast);
+    _weatherDay = DateTimeFormatter.dateOnly(DateTime.now());
+  }
+
+  void _onControllerChanged() {
+    final forecast = widget.controllerEvent.getForecast(
+      locationDisplay: widget.eventViewModel.locationDisplay,
+    );
+    if (_weatherDay == DateTimeFormatter.dateOnly(DateTime.now()) &&
+        listEquals(_forecast, forecast)) {
+      return;
+    }
+    setState(_readForecast);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _readForecast();
+    widget.controllerEvent.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _WidgetsMemoryCardBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controllerEvent, widget.controllerEvent)) {
+      oldWidget.controllerEvent.removeListener(_onControllerChanged);
+      widget.controllerEvent.addListener(_onControllerChanged);
+    }
+    _readForecast();
+  }
+
+  @override
+  void dispose() {
+    widget.controllerEvent.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -153,9 +198,7 @@ class _WidgetsMemoryCardBodyState extends State<_WidgetsMemoryCardBody> {
     final eventDate =
         widget.eventViewModel.endDate ?? widget.eventViewModel.firstEventDate;
 
-    final forecast = widget.controllerEvent.getForecast(
-      locationDisplay: widget.eventViewModel.locationDisplay,
-    );
+    final forecast = _forecast;
 
     final showWeatherIcon =
         forecast != null && forecast.isNotEmpty && !eventDate.isBefore(now);

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:life_pilot/utils/paged_row_reader.dart';
 
 import 'package:flutter/material.dart';
+import 'package:life_pilot/utils/load_timing.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
@@ -20,6 +21,29 @@ import 'package:life_pilot/utils/value_parser.dart';
 
 class ServiceEvent {
   ServiceEvent();
+
+  // Controllers already know the active storage mode. Do not open the native
+  // local database just to decide whether a cloud query should use it.
+  Future<bool> _usesLocalStorage(
+    String tableName,
+    String? owner,
+    DataStorageLocation? storageLocation,
+  ) async {
+    if ((tableName != TableNames.calendarEvents &&
+            tableName != TableNames.memoryTrace) ||
+        owner == null ||
+        owner.isEmpty) {
+      return false;
+    }
+    return (storageLocation ??
+            await LocalDataStore.instance.preferredLocation(owner)) ==
+        DataStorageLocation.local;
+  }
+
+  // The fallback preview only needs the card header. Do not download photos
+  // and sub-events twice; the normal day query supplies the complete record.
+  static const _fallbackPreviewColumns =
+      'id,name,start_date,end_date,start_time,end_time,country,city,location,account';
 
   static DateTime? _lastCleanupRequestDate;
   static Future<void>? _cleanupRequest;
@@ -115,9 +139,15 @@ class ServiceEvent {
     DateTime? dateE,
     String? id,
     String? inputUser,
+    DataStorageLocation? storageLocation,
     int? limit,
     int offset = 0,
+    void Function(List<EventItem> events)? onPartialEvents,
   }) async {
+    final timing = tableName == TableNames.memoryTrace
+        ? LoadTiming('query')
+        : null;
+    timing?.mark('start');
     final today = DateTimeFormatter.dateOnly(DateTime.now());
     if (tableName == TableNames.recommendEvents) {
       unawaited(_cleanupRecommendedEventsOncePerDay(today));
@@ -136,20 +166,18 @@ class ServiceEvent {
         (dateE ?? DateTime(today.year + 2, today.month, today.day))
             .formatDateString();
 
-    final isPersonalResource =
-        tableName == TableNames.calendarEvents ||
-        tableName == TableNames.memoryTrace;
-    final useLocal =
-        isPersonalResource &&
-        inputUser != null &&
-        inputUser.isNotEmpty &&
-        await LocalDataStore.instance.preferredLocation(inputUser) ==
-            DataStorageLocation.local;
+    final useLocal = await _usesLocalStorage(
+      tableName,
+      inputUser,
+      storageLocation,
+    );
+    timing?.mark(useLocal ? 'mode_local' : 'mode_cloud');
     if (useLocal) {
       final localRows = await LocalDataStore.instance
-          .list(owner: inputUser, resource: tableName)
+          .readOnlyRows(owner: inputUser!, resource: tableName)
           .timeout(const Duration(seconds: 15));
-      return ModelLocalEventQuery.select(
+      timing?.mark('local_rows_read', rows: localRows.length);
+      final selected = ModelLocalEventQuery.iterate(
         localRows,
         start:
             dateS ??
@@ -161,6 +189,25 @@ class ServiceEvent {
         offset: offset,
         limit: limit,
       );
+      if (onPartialEvents == null) {
+        final events = selected.toList();
+        timing?.mark('decoded', rows: events.length);
+        return events;
+      }
+      final events = <EventItem>[];
+      for (final event in selected) {
+        events.add(event);
+        if (events.length == 12) {
+          timing?.mark('first_batch_decoded', rows: events.length);
+          onPartialEvents(List<EventItem>.unmodifiable(events));
+          // Let the first cards render before decoding the remaining history.
+          await Future<void>.delayed(Duration.zero);
+        } else if (events.length % 100 == 0) {
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+      timing?.mark('decoded', rows: events.length);
+      return events;
     }
 
     try {
@@ -178,6 +225,7 @@ class ServiceEvent {
         payload['inputoffset'] = offset;
       }
       Future<List<dynamic>> fetchRows(int pageOffset, int pageLimit) async {
+        timing?.mark('rpc_start');
         final response = await supabase.rpc(
           'get_filtered_$tableName',
           params: {
@@ -188,26 +236,48 @@ class ServiceEvent {
             },
           },
         );
+        timing?.mark('rpc_returned', rows: (response as List).length);
         return response as List<dynamic>;
       }
 
+      final decoded = <EventItem>[];
+      void publishRows(List<dynamic> rows) {
+        for (final row in rows.skip(decoded.length)) {
+          decoded.add(_decodeEventRow(row as Map<String, dynamic>));
+        }
+        timing?.mark('batch_decoded', rows: decoded.length);
+        onPartialEvents?.call(List<EventItem>.unmodifiable(decoded));
+      }
+
+      if (limit == null) timing?.mark('rpc_start');
       final response = limit == null
           ? await supabase.rpc(
               'get_filtered_$tableName',
               params: {'payload': payload},
             )
-          : await readPagedRows(fetch: fetchRows, offset: offset, limit: limit);
+          : await readPagedRows(
+              fetch: fetchRows,
+              offset: offset,
+              limit: limit,
+              initialBatchSize:
+                  tableName == TableNames.memoryTrace &&
+                      onPartialEvents != null &&
+                      offset == 0
+                  ? 6
+                  : null,
+              onProgress: onPartialEvents == null ? null : publishRows,
+            );
+      if (limit == null) {
+        timing?.mark('rpc_returned', rows: (response as List).length);
+      }
 
-      final events = (response as List)
-          .map((e) => EventItem.fromJson(json: e as Map<String, dynamic>))
-          .toList()
-          .map((e) {
-            e.startDate = e.startDate?.toLocal();
-            e.endDate = e.endDate?.toLocal();
-            return e;
-          })
-          .toList();
+      final events = onPartialEvents != null && limit != null
+          ? decoded
+          : (response as List)
+                .map((row) => _decodeEventRow(row as Map<String, dynamic>))
+                .toList();
 
+      timing?.mark('complete', rows: events.length);
       return events;
     } catch (ex, st) {
       logger.e(ex, stackTrace: st);
@@ -215,17 +285,22 @@ class ServiceEvent {
     }
   }
 
+  EventItem _decodeEventRow(Map<String, dynamic> row) {
+    final event = EventItem.fromJson(json: row);
+    event.startDate = event.startDate?.toLocal();
+    event.endDate = event.endDate?.toLocal();
+    return event;
+  }
+
   Future<bool> hasEventsBefore({
     required String tableName,
     required DateTime before,
     String? inputUser,
+    DataStorageLocation? storageLocation,
   }) async {
-    if (inputUser != null &&
-        inputUser.isNotEmpty &&
-        await LocalDataStore.instance.preferredLocation(inputUser) ==
-            DataStorageLocation.local) {
-      final rows = await LocalDataStore.instance.list(
-        owner: inputUser,
+    if (await _usesLocalStorage(tableName, inputUser, storageLocation)) {
+      final rows = await LocalDataStore.instance.readOnlyRows(
+        owner: inputUser!,
         resource: tableName,
       );
       return rows.any((row) {
@@ -250,31 +325,26 @@ class ServiceEvent {
     required String tableName,
     required DateTime before,
     String? inputUser,
+    DataStorageLocation? storageLocation,
+    void Function(EventItem event)? onLatestEvent,
   }) async {
-    if (inputUser != null &&
-        inputUser.isNotEmpty &&
-        await LocalDataStore.instance.preferredLocation(inputUser) ==
-            DataStorageLocation.local) {
-      final rows = await LocalDataStore.instance.list(
-        owner: inputUser,
+    if (await _usesLocalStorage(tableName, inputUser, storageLocation)) {
+      final rows = await LocalDataStore.instance.readOnlyRows(
+        owner: inputUser!,
         resource: tableName,
       );
-      final dates =
-          rows
-              .map(
-                (row) => tryParseDateTimeValue(
-                  parseStringValue(row[EventFields.startDate]),
-                ),
-              )
-              .whereType<DateTime>()
-              .where((date) => date.isBefore(before))
-              .toList()
-            ..sort((left, right) => right.compareTo(left));
-      return dates.isEmpty ? null : dates.first;
+      final latest = ModelLocalEventQuery.latestRowBefore(rows, before);
+      if (latest == null) return null;
+      onLatestEvent?.call(_decodeEventRow(latest));
+      return tryParseDateTimeValue(latest[EventFields.startDate]);
     }
     var query = supabase
         .from(tableName)
-        .select(EventFields.startDate)
+        .select(
+          onLatestEvent == null
+              ? EventFields.startDate
+              : _fallbackPreviewColumns,
+        )
         .lt(EventFields.startDate, before.formatDateString());
     if (inputUser != null && inputUser.isNotEmpty) {
       query = query.eq(Fields.account, inputUser);
@@ -283,6 +353,7 @@ class ServiceEvent {
         .order(EventFields.startDate, ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
+    onLatestEvent?.call(_decodeEventRow(rows.first));
     return tryParseDateTimeValue(
       parseStringValue(rows.first[EventFields.startDate]),
       toLocal: true,

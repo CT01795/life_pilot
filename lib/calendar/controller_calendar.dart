@@ -104,19 +104,20 @@ class ControllerCalendar extends SafeChangeNotifier {
     _toTableName = toTableName;
     _dataScopeKey = _currentDataScopeKey(auth);
 
-    localeProvider.addListener(() async {
-      if (_lastLocale != localeProvider.locale) {
-        _lastLocale = localeProvider.locale;
-        clearAll();
-        unawaited(reloadEvents(notify: true));
-      }
-    });
+    localeProvider.addListener(_handleLocaleChange);
 
     _serviceEventTransfer = ServiceEventTransfer(
       currentAccount: auth?.currentAccount ?? '',
       serviceEvent: serviceEvent,
     );
   }
+  void _handleLocaleChange() {
+    if (notifierDisposed || _lastLocale == _localeProvider.locale) return;
+    _lastLocale = _localeProvider.locale;
+    clearAll();
+    unawaited(reloadEvents(notify: true));
+  }
+
   void updateLocalization(AppLocalizations loc) {
     closeText = loc.close;
     notifyListeners();
@@ -163,18 +164,16 @@ class ControllerCalendar extends SafeChangeNotifier {
       tableName: _tableName,
     );
 
-    if (requestGeneration != _dataGeneration ||
-        requestScope != _currentDataScopeKey(auth)) {
+    if (notifierDisposed ||
+        requestGeneration != _dataGeneration ||
+        requestScope != _currentDataScopeKey(auth) ||
+        _reloadTokensByMonth[monthKey] != myToken) {
       return;
     }
 
     // ✅ STOP UI card 不再觸發 weather
     unawaited(_warmUpWeather(result));
 
-    // ❗只允許最新請求寫入 model
-    if (_reloadTokensByMonth[monthKey] != myToken) {
-      return;
-    }
     if (result.isEmpty) {
       result = [];
     }
@@ -611,6 +610,7 @@ class ControllerCalendar extends SafeChangeNotifier {
 
   @override
   void dispose() {
+    _localeProvider.removeListener(_handleLocaleChange);
     _webNotificationTimer?.cancel();
     super.dispose();
   }
@@ -640,37 +640,7 @@ class ControllerCalendar extends SafeChangeNotifier {
   List<EventWithRow> getEventRowsForWeek({
     required DateTime month,
     required int weekIndex,
-  }) {
-    final calendarWeeks = _modelCalendar.getWeeks(month);
-    if (weekIndex < 0 || weekIndex >= calendarWeeks.length) return const [];
-
-    final week = calendarWeeks[weekIndex];
-    final weekStart = week.first;
-    final weekEnd = week.last;
-    final eventsThisWeek = _modelCalendar.eventsForMonth(month).where((event) {
-      final start = DateTimeFormatter.dateOnly(event.startDate!);
-      final end = DateTimeFormatter.dateOnly(event.endDate ?? event.startDate!);
-      return !(end.isBefore(weekStart) || start.isAfter(weekEnd));
-    });
-    final rows = <List<EventItem>>[];
-
-    for (final event in eventsThisWeek) {
-      final availableRow = rows.indexWhere(
-        (row) => !row.any((other) => isOverlapping(a: other, b: event)),
-      );
-      if (availableRow >= 0) {
-        rows[availableRow].add(event);
-      } else {
-        rows.add([event]);
-      }
-    }
-
-    return [
-      for (int rowIndex = 0; rowIndex < rows.length; rowIndex++)
-        for (final event in rows[rowIndex])
-          EventWithRow(event: event, rowIndex: rowIndex),
-    ];
-  }
+  }) => _modelCalendar.eventRowsForWeek(month, weekIndex);
 
   // 工具方法：檢查兩個事件是否跨日重疊
   bool isOverlapping({required EventItem a, required EventItem b}) {

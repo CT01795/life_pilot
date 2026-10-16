@@ -6,6 +6,7 @@ import 'package:life_pilot/auth/controller_auth.dart';
 import 'package:life_pilot/event/controller_event.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_projection.dart';
 import 'package:life_pilot/event/page_event_add.dart';
 import 'package:life_pilot/event/widgets_event_map.dart';
 import 'package:life_pilot/utils/app_navigator.dart';
@@ -46,6 +47,7 @@ class GenericEventPage extends StatefulWidget {
   final bool enableCityFilter;
   final EventHeaderBuilder? headerBuilder;
   final bool Function(EventItem event)? eventPredicate;
+  final Object? eventPredicateKey;
   final bool showAddAction;
   final bool autoRefreshPublicEvents;
 
@@ -60,6 +62,7 @@ class GenericEventPage extends StatefulWidget {
     this.enableCityFilter = false,
     this.headerBuilder,
     this.eventPredicate,
+    this.eventPredicateKey,
     this.showAddAction = true,
     this.autoRefreshPublicEvents = false,
   });
@@ -76,6 +79,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
   bool _isBackfillingCoordinates = false;
   int _coordinateBackfillOffset = 0;
   EventRegionData? _regionData;
+  final _projection = ModelEventProjection();
 
   ControllerEvent get _controller => widget.controllerEvent;
 
@@ -89,6 +93,7 @@ class _GenericEventPageState extends State<GenericEventPage> {
 
   @override
   void dispose() {
+    _appBarHandler.dispose();
     _cityScrollController.dispose();
     super.dispose();
   }
@@ -123,11 +128,9 @@ class _GenericEventPageState extends State<GenericEventPage> {
   Future<void> _safeLoadEvents() async {
     if (_hasLoaded) return;
     _hasLoaded = true;
-    await _controller.loadEvents(isGetPublicEvents: false);
-    await _controller.checkPublicEventsUpdatedToday();
-    if (widget.autoRefreshPublicEvents && _controller.canRefreshPublicEvents) {
-      await _controller.refreshPublicEvents();
-    }
+    await _controller.initializePage(
+      autoRefreshPublicEvents: widget.autoRefreshPublicEvents,
+    );
   }
 
   Future<void> _onAddPressed(BuildContext context) async {
@@ -329,11 +332,11 @@ class _GenericEventPageState extends State<GenericEventPage> {
                         ),
                         builder: (_, state, _) {
                           final filteredEvents = state.$1;
-                          final pageEvents = widget.eventPredicate == null
-                              ? filteredEvents
-                              : filteredEvents
-                                    .where(widget.eventPredicate!)
-                                    .toList(growable: false);
+                          final pageEvents = _projection.select(
+                            events: filteredEvents,
+                            predicate: widget.eventPredicate,
+                            cacheKey: widget.eventPredicateKey,
+                          );
                           final regionData = _regionsFor(pageEvents);
                           final cityCounts = regionData.counts;
                           final cities = regionData.sortedRegions;

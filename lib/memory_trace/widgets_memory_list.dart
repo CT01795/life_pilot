@@ -208,53 +208,60 @@ class WidgetsMemoryList extends StatelessWidget {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 38),
-                  child: WidgetsMemoryCard(
-                    key: ValueKey(eventViewModel.id),
-                    controllerEvent: controllerEvent,
-                    eventViewModel: eventViewModel,
-                    tableName: controllerEvent.fromTableName,
-                    onTap: () => _showEventDialog(
-                      context: context,
+                  child: Selector<ControllerEvent, bool>(
+                    selector: (_, controller) =>
+                        controller.isLoadingMemoryRecords,
+                    builder: (_, loading, child) =>
+                        IgnorePointer(ignoring: loading, child: child),
+                    child: WidgetsMemoryCard(
+                      key: ValueKey(eventViewModel.id),
+                      controllerEvent: controllerEvent,
                       eventViewModel: eventViewModel,
                       tableName: controllerEvent.fromTableName,
+                      onTap: () => _showEventDialog(
+                        context: context,
+                        eventViewModel: eventViewModel,
+                        tableName: controllerEvent.fromTableName,
+                      ),
+                      onDelete: eventViewModel.canDelete
+                          ? () async {
+                              await onDeletePressed(
+                                context: context,
+                                controller: controllerEvent,
+                                event: eventViewModel.event,
+                                loc: loc,
+                              );
+                            }
+                          : null,
+                      onAccounting: () => context
+                          .read<ControllerAccountingList>()
+                          .handleAccounting(
+                            context: context,
+                            eventId: eventViewModel.id,
+                          ),
+                      onPoints: () => context
+                          .read<ControllerPointRecordList>()
+                          .handlePointRecord(
+                            context: context,
+                            eventId: eventViewModel.id,
+                          ),
+                      onCopy: () => copyEventToAnotherPage(
+                        context: context,
+                        event: eventViewModel.event,
+                        sourceTableName: controllerEvent.fromTableName,
+                      ),
+                      onOpenLink: () =>
+                          controllerEvent.onOpenLink(eventViewModel),
+                      onOpenMap: () =>
+                          controllerEvent.onOpenMap(eventViewModel),
+                      trailing: widgetsMemoryTrailing(
+                        context: context,
+                        auth: auth,
+                        controllerEvent: controllerEvent,
+                        event: eventViewModel.event,
+                      ),
+                      showSubEvents: false,
                     ),
-                    onDelete: eventViewModel.canDelete
-                        ? () async {
-                            await onDeletePressed(
-                              context: context,
-                              controller: controllerEvent,
-                              event: eventViewModel.event,
-                              loc: loc,
-                            );
-                          }
-                        : null,
-                    onAccounting: () => context
-                        .read<ControllerAccountingList>()
-                        .handleAccounting(
-                          context: context,
-                          eventId: eventViewModel.id,
-                        ),
-                    onPoints: () => context
-                        .read<ControllerPointRecordList>()
-                        .handlePointRecord(
-                          context: context,
-                          eventId: eventViewModel.id,
-                        ),
-                    onCopy: () => copyEventToAnotherPage(
-                      context: context,
-                      event: eventViewModel.event,
-                      sourceTableName: controllerEvent.fromTableName,
-                    ),
-                    onOpenLink: () =>
-                        controllerEvent.onOpenLink(eventViewModel),
-                    onOpenMap: () => controllerEvent.onOpenMap(eventViewModel),
-                    trailing: widgetsMemoryTrailing(
-                      context: context,
-                      auth: auth,
-                      controllerEvent: controllerEvent,
-                      event: eventViewModel.event,
-                    ),
-                    showSubEvents: false,
                   ),
                 ),
               ],

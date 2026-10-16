@@ -15,6 +15,81 @@ import 'package:life_pilot/utils/provider_locale.dart';
 
 void main() {
   test(
+    'recommendations wait for settings but not slow core summaries',
+    () async {
+      final repository = _SettingsGateRepository();
+      final model = _model(repository)..switchAccount('user');
+      final core = model.refreshCore(account: 'user');
+      var ready = false;
+      final settings = model
+          .waitForSettings(account: 'user')
+          .then((_) => ready = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(ready, false);
+      repository.settings.single.complete(
+        _setting().copyWith(recommendEventCity: '台中'),
+      );
+      await settings;
+      expect(model.loading, true);
+      await model.refreshRecommendEvent(account: 'user');
+      expect(repository.eventCity, '台中');
+      expect(repository.settings.length, 1);
+      repository.finishSummaries();
+      await core;
+      model.dispose();
+    },
+  );
+
+  test(
+    'settings wait follows newer refresh instead of using older settings',
+    () async {
+      final repository = _SettingsGateRepository();
+      final model = _model(repository)..switchAccount('user');
+      final first = model.refreshCore(account: 'user');
+      var ready = false;
+      final settings = model
+          .waitForSettings(account: 'user')
+          .then((_) => ready = true);
+      final second = model.refreshCore(account: 'user');
+      repository.settings[0].complete(
+        _setting().copyWith(recommendEventCity: '舊城市'),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(ready, false);
+      repository.settings[1].complete(
+        _setting().copyWith(recommendEventCity: '新城市'),
+      );
+      await settings;
+      expect(model.setting.recommendEventCity, '新城市');
+      repository.finishSummaries();
+      await Future.wait([first, second]);
+      model.dispose();
+    },
+  );
+
+  test(
+    'late settings from an old account cannot overwrite the new account',
+    () async {
+      final repository = _SettingsGateRepository();
+      final model = _model(repository)..switchAccount('old');
+      final first = model.refreshCore(account: 'old');
+      model.switchAccount('new');
+      final second = model.refreshCore(account: 'new');
+      repository.settings[1].complete(
+        _setting().copyWith(recommendEventCity: '新城市'),
+      );
+      await model.waitForSettings(account: 'new');
+      repository.settings[0].complete(
+        _setting().copyWith(recommendEventCity: '舊城市'),
+      );
+      await first;
+      expect(model.setting.recommendEventCity, '新城市');
+      repository.finishSummaries();
+      await second;
+      model.dispose();
+    },
+  );
+  test(
     'latest recommendation request wins when an older request finishes last',
     () async {
       final repository = _RecommendationOrderRepository();
@@ -567,6 +642,29 @@ class _ProgressiveCoreRepository extends DashboardRepository {
   @override
   Future<PointDashboardSummary> loadPointSummary({required String accountId}) =>
       points.future;
+}
+
+class _SettingsGateRepository extends _ProgressiveCoreRepository {
+  final settings = <Completer<DashboardSetting>>[];
+  String? eventCity;
+  @override
+  Future<DashboardSetting> loadDashboardSetting({required String account}) {
+    final pending = Completer<DashboardSetting>();
+    settings.add(pending);
+    return pending.future;
+  }
+
+  @override
+  Future<List<RecommendedEvent>> loadRecommendEvents(String city) async {
+    eventCity = city;
+    return [];
+  }
+
+  void finishSummaries() {
+    todayEvents.complete([]);
+    accounting.complete(const AccountingDashboardSummary.empty());
+    points.complete(const PointDashboardSummary.empty());
+  }
 }
 
 class _ClearSelectionRepository extends DashboardRepository {

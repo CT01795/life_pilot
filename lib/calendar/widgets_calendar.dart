@@ -138,43 +138,47 @@ class CalendarBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Column(
-          children: [
-            WeekDayHeader(
-              isCurrentMonth: DateTimeCompare.isCurrentMonth(
-                controllerCalendar.currentMonth,
+    return Selector<ControllerCalendar, DateTime>(
+      selector: (_, _) => DateUtils.dateOnly(DateTime.now()),
+      builder: (_, _, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            children: [
+              Selector<ControllerCalendar, bool>(
+                selector: (_, controller) =>
+                    DateTimeCompare.isCurrentMonth(controller.currentMonth),
+                builder: (_, isCurrentMonth, _) =>
+                    WeekDayHeader(isCurrentMonth: isCurrentMonth),
               ),
-            ),
-            // 顯示日曆的每一行
-            Expanded(
-              child: PageView.builder(
-                controller: pageController,
-                onPageChanged: (index) async {
-                  final newMonth = controllerCalendar.pageIndexToMonth(
-                    index: index,
-                  );
-                  // ✅ 不直接觸發 UI，等資料載完再一次刷新
-                  //await controllerCalendar.loadCalendarEvents(month: newMonth);
-                  await controllerCalendar.goToMonth(month: newMonth);
-                },
-                itemBuilder: (context, index) {
-                  final monthToShow = controllerCalendar.pageIndexToMonth(
-                    index: index,
-                  );
-                  return CalendarMonthView(
-                    key: ValueKey(monthToShow.toMonthKey()), // ✅ 用顯示月份決定 key
-                    auth: auth,
-                    controllerCalendar: controllerCalendar,
-                    displayedMonth: monthToShow,
-                  );
-                },
+              // 顯示日曆的每一行
+              Expanded(
+                child: PageView.builder(
+                  controller: pageController,
+                  onPageChanged: (index) async {
+                    final newMonth = controllerCalendar.pageIndexToMonth(
+                      index: index,
+                    );
+                    // ✅ 不直接觸發 UI，等資料載完再一次刷新
+                    //await controllerCalendar.loadCalendarEvents(month: newMonth);
+                    await controllerCalendar.goToMonth(month: newMonth);
+                  },
+                  itemBuilder: (context, index) {
+                    final monthToShow = controllerCalendar.pageIndexToMonth(
+                      index: index,
+                    );
+                    return CalendarMonthView(
+                      key: ValueKey(monthToShow.toMonthKey()), // ✅ 用顯示月份決定 key
+                      auth: auth,
+                      controllerCalendar: controllerCalendar,
+                      displayedMonth: monthToShow,
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }

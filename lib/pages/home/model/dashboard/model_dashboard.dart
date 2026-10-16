@@ -21,6 +21,8 @@ class ModelDashboard extends SafeChangeNotifier {
   final ProviderLocale localeProvider;
   int _accountGeneration = 0;
   String? _activeAccount;
+  Future<DashboardSetting>? _settingsLoad;
+  int _settingsRequest = 0;
 
   ModelDashboard({required this.repository, required this.localeProvider});
 
@@ -86,6 +88,7 @@ class ModelDashboard extends SafeChangeNotifier {
   void switchAccount(String? account) {
     _accountGeneration++;
     _activeAccount = account;
+    _settingsLoad = null;
     _loading = false;
     _state = DashboardState.empty();
     _setting = DashboardSetting(
@@ -106,6 +109,43 @@ class ModelDashboard extends SafeChangeNotifier {
 
   bool _isCurrentRequest(String account, int generation) =>
       _activeAccount == account && _accountGeneration == generation;
+
+  /// Recommendations need the saved city, not every dashboard summary.
+  Future<void> waitForSettings({required String account}) async {
+    final generation = _accountGeneration;
+    while (_isCurrentRequest(account, generation)) {
+      final pending = _settingsLoad;
+      if (pending == null) return;
+      await pending;
+      if (identical(pending, _settingsLoad)) return;
+    }
+  }
+
+  Future<DashboardSetting> _loadSettings(String account, int generation) =>
+      _settingsLoad = _readSettings(account, generation, ++_settingsRequest);
+
+  Future<DashboardSetting> _readSettings(
+    String account,
+    int generation,
+    int request,
+  ) async {
+    var setting = _setting;
+    try {
+      final loaded = await repository.loadDashboardSetting(account: account);
+      setting = loaded.copyWith(language: localeProvider.locale.languageCode);
+    } catch (error, stackTrace) {
+      logger.e(
+        'Could not load dashboard settings.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    if (_isCurrentRequest(account, generation) && request == _settingsRequest) {
+      _setting = setting;
+      notifyListeners();
+    }
+    return setting;
+  }
 
   Future<void> loadEventCities(
     String account, {
@@ -216,24 +256,8 @@ class ModelDashboard extends SafeChangeNotifier {
             }
             return todayEvents;
           });
-      DashboardSetting setting = _setting;
-      try {
-        final loadedSetting = await repository.loadDashboardSetting(
-          account: account,
-        );
-        setting = loadedSetting.copyWith(
-          language: localeProvider.locale.languageCode,
-        );
-      } catch (error, stackTrace) {
-        logger.e(
-          'Could not load dashboard settings.',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
+      final setting = await _loadSettings(account, generation);
       if (!_isCurrentRequest(account, generation)) return;
-      _setting = setting;
-      notifyListeners();
 
       final recommendEventsFuture =
           _loadSection(
@@ -341,24 +365,8 @@ class ModelDashboard extends SafeChangeNotifier {
             }
             return todayEvents;
           });
-      DashboardSetting setting = _setting;
-      try {
-        final loadedSetting = await repository.loadDashboardSetting(
-          account: account,
-        );
-        setting = loadedSetting.copyWith(
-          language: localeProvider.locale.languageCode,
-        );
-      } catch (error, stackTrace) {
-        logger.e(
-          'Could not load dashboard settings.',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
+      final setting = await _loadSettings(account, generation);
       if (!_isCurrentRequest(account, generation)) return;
-      _setting = setting;
-      notifyListeners();
 
       final accountingFuture =
           _loadSection(

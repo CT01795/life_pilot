@@ -6,6 +6,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/provider_locale.dart';
 import 'package:life_pilot/calendar/service_calendar.dart';
+import 'package:life_pilot/calendar/model_calendar_week_layout.dart';
 
 import '../utils/logger.dart';
 
@@ -17,6 +18,7 @@ class ModelCalendar {
   bool _disposed = false;
   // ⭐ 新增：每個月的 flat events cache（避免重複展平）
   final Map<String, List<EventItem>> flatMonthEventsCache = {};
+  final Map<String, ModelCalendarWeekLayout> _weekLayouts = {};
   final Set<String> selectedEventIds = {};
   final Set<String> removedEventIds = {};
 
@@ -52,6 +54,18 @@ class ModelCalendar {
 
   List<EventItem> eventsForMonth(DateTime month) {
     return flatMonthEventsCache[month.toMonthKey()] ?? const <EventItem>[];
+  }
+
+  List<EventWithRow> eventRowsForWeek(DateTime month, int weekIndex) {
+    final weeks = getWeeks(month);
+    if (weekIndex < 0 || weekIndex >= weeks.length) return const [];
+    final key = month.toMonthKey();
+    final source = eventsForMonth(month);
+    var layout = _weekLayouts[key];
+    if (layout == null || !identical(layout.source, source)) {
+      layout = _weekLayouts[key] = ModelCalendarWeekLayout(source);
+    }
+    return layout.forWeek(weeks[weekIndex].first, weeks[weekIndex].last);
   }
 
   //--------------------------- 核心方法 ---------------------------
@@ -146,6 +160,7 @@ class ModelCalendar {
 
   void cacheMonthEvents(DateTime month, List<EventItem> inEvents) {
     final key = month.toMonthKey();
+    _weekLayouts.remove(key);
     final weeks = getWeeks(month);
     final tmp = groupEventsByWeekAndDay(weeks: weeks, inEvents: inEvents);
     cachedEvents[key] = tmp;
@@ -160,6 +175,13 @@ class ModelCalendar {
     required List<EventItem> inEvents,
   }) {
     final Map<int, Map<int, List<EventItem>>> result = {};
+    if (weeks.isEmpty) return result;
+    // Normalize each event once, not again for every day in the grid.
+    final ranges = inEvents.map((event) {
+      final start = DateTimeFormatter.dateOnly(event.startDate!);
+      final end = DateTimeFormatter.dateOnly(event.endDate ?? start);
+      return (event: event, start: start, end: end);
+    }).toList();
 
     for (int weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
       final week = weeks[weekIndex];
@@ -167,11 +189,11 @@ class ModelCalendar {
       for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
         final day = week[dayIndex];
         result[weekIndex] ??= {};
-        result[weekIndex]![dayIndex] = inEvents.where((event) {
-          final start = DateTimeFormatter.dateOnly(event.startDate!);
-          final end = DateTimeFormatter.dateOnly(event.endDate ?? start);
-          return !day.isBefore(start) && !day.isAfter(end);
-        }).toList();
+        result[weekIndex]![dayIndex] = [
+          for (final range in ranges)
+            if (!day.isBefore(range.start) && !day.isAfter(range.end))
+              range.event,
+        ];
       }
     }
 
@@ -243,6 +265,7 @@ class ModelCalendar {
     for (var key in keysToRemove) {
       cachedEvents.remove(key);
       flatMonthEventsCache.remove(key);
+      _weekLayouts.remove(key);
     }
   }
 
@@ -250,6 +273,7 @@ class ModelCalendar {
     _events.clear();
     cachedEvents.clear();
     flatMonthEventsCache.clear();
+    _weekLayouts.clear();
     weeksCache.clear();
   }
 

@@ -13,9 +13,7 @@ import 'package:life_pilot/utils/date_time.dart';
 import 'package:provider/provider.dart';
 
 class PageCalendar extends StatefulWidget {
-  const PageCalendar({
-    super.key,
-  });
+  const PageCalendar({super.key});
 
   @override
   State<PageCalendar> createState() => _PageCalendarState();
@@ -59,77 +57,87 @@ class _PageCalendarState extends State<PageCalendar> {
       child: Scaffold(
         body: AnimatedBuilder(
           animation: controller,
-          builder: (context, _) {
+          child: Expanded(
+            child: CalendarBody(
+              auth: auth,
+              controllerCalendar: controller,
+              pageController: pageController,
+            ),
+          ),
+          builder: (context, calendarBody) {
             final month = controller.currentMonth;
             final isCurrentMonth = DateTimeCompare.isCurrentMonth(month);
-            return Column(children: [
-              // 🔹 AppBar 只關注 month 與語言，不重建 CalendarBody
-              Builder(builder: (context) {
-                final monthLabel = locale.languageCode == Locales.zh
-                    ? DateFormat('y/M').format(month)
-                    : DateFormat.yM(locale.toString()).format(month);
-                return CalendarAppBar(
-                  monthLabel: monthLabel, //DateFormat('y / M').format(month),
-                  monthColor: isCurrentMonth ? Colors.blueAccent : Colors.black,
-                  onPrevious: () async {
-                    await controller.previousMonth();
-                    _updatePageController(controller.pageIndex);
-                  },
-                  onNext: () async {
-                    await controller.nextMonth();
-                    _updatePageController(controller.pageIndex);
-                  },
-                  onToday: () async {
-                    await controller.goToToday();
-                    _updatePageController(controller.pageIndex);
-                  },
-                  onAdd: () async {
-                    final currentMonth = controller.currentMonth;
-                    final now = DateTime.now();
+            return Column(
+              children: [
+                // 🔹 AppBar 只關注 month 與語言，不重建 CalendarBody
+                Builder(
+                  builder: (context) {
+                    final monthLabel = locale.languageCode == Locales.zh
+                        ? DateFormat('y/M').format(month)
+                        : DateFormat.yM(locale.toString()).format(month);
+                    return CalendarAppBar(
+                      monthLabel:
+                          monthLabel, //DateFormat('y / M').format(month),
+                      monthColor: isCurrentMonth
+                          ? Colors.blueAccent
+                          : Colors.black,
+                      onPrevious: () async {
+                        await controller.previousMonth();
+                        _updatePageController(controller.pageIndex);
+                      },
+                      onNext: () async {
+                        await controller.nextMonth();
+                        _updatePageController(controller.pageIndex);
+                      },
+                      onToday: () async {
+                        await controller.goToToday();
+                        _updatePageController(controller.pageIndex);
+                      },
+                      onAdd: () async {
+                        final currentMonth = controller.currentMonth;
+                        final now = DateTime.now();
 
-                    // Navigator 與 UI 都在 View 處理
-                    final newEvent = await Navigator.push<EventItem?>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PageCalendarAdd(
-                          controllerCalendar: controller,
-                          existingEvent: null,
-                          initialDate: currentMonth.month == now.month
-                              ? now
-                              : currentMonth,
+                        // Navigator 與 UI 都在 View 處理
+                        final newEvent = await Navigator.push<EventItem?>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PageCalendarAdd(
+                              controllerCalendar: controller,
+                              existingEvent: null,
+                              initialDate: currentMonth.month == now.month
+                                  ? now
+                                  : currentMonth,
+                            ),
+                          ),
+                        );
+
+                        if (newEvent != null) {
+                          await controller.addEvent(newEvent);
+                          _updatePageController(controller.pageIndex);
+                          // 把業務邏輯交給 Controller
+                        }
+                      },
+                      onSharing: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => CalendarSharingDialog(
+                          service: ServiceCalendarSharing(),
+                          visibleEvents: List<EventItem>.from(
+                            controller.events,
+                          ),
+                          onSharingChanged: () async {
+                            controller.clearAll();
+                            await controller.reloadEvents();
+                          },
                         ),
                       ),
+                      onMonthTap: () => _showMonthPicker(),
                     );
-
-                    if (newEvent != null) {
-                      await controller.addEvent(newEvent);
-                      _updatePageController(controller.pageIndex);
-                      // 把業務邏輯交給 Controller
-                    }
                   },
-                  onSharing: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => CalendarSharingDialog(
-                      service: ServiceCalendarSharing(),
-                      visibleEvents: List<EventItem>.from(controller.events),
-                      onSharingChanged: () async {
-                        controller.clearAll();
-                        await controller.reloadEvents();
-                      },
-                    ),
-                  ),
-                  onMonthTap: () => _showMonthPicker(),
-                );
-              }),
-              // 🔹 CalendarBody 完全不受語言切換與 AppBar rebuild 影響
-              Expanded(
-                child: CalendarBody(
-                  auth: auth,
-                  controllerCalendar: controller,
-                  pageController: pageController,
                 ),
-              ),
-            ]);
+                // 🔹 CalendarBody 完全不受語言切換與 AppBar rebuild 影響
+                calendarBody!,
+              ],
+            );
           },
         ),
       ),

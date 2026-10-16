@@ -172,8 +172,10 @@ class _DelayedEventService extends ServiceEvent {
     DateTime? dateE,
     String? id,
     String? inputUser,
+    DataStorageLocation? storageLocation,
     int? limit,
     int offset = 0,
+    void Function(List<EventItem> events)? onPartialEvents,
   }) => response.future;
 }
 

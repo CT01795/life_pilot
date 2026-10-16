@@ -9,6 +9,7 @@ import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/extension.dart';
 import 'package:life_pilot/utils/value_parser.dart';
 import 'package:life_pilot/utils/json_object_list_parser.dart';
+import 'package:life_pilot/utils/lazy_mapped_list.dart';
 
 final _uuid = Uuid();
 
@@ -253,54 +254,59 @@ class EventItem implements EventBase {
     final subEventsJson = parseJsonObjectList(json[EventFields.subEvents]);
 
     return EventItem(
-      id: json[Fields.id] ?? _uuid.v4(),
-      masterGraphUrl: json[EventFields.masterGraphUrl],
-      masterUrl: json[EventFields.masterUrl],
-      startDate: fromStringOrNull(json[EventFields.startDate]),
-      endDate: fromStringOrNull(json[EventFields.endDate]),
-      startTime: parseTimeOfDay(json[EventFields.startTime]),
-      endTime: parseTimeOfDay(json[EventFields.endTime]),
-      country: EventCountry.normalize(
-        parseStringValue(json[EventFields.country]),
-      ),
-      city: parseStringValue(json[EventFields.city]),
-      location: parseStringValue(json[EventFields.location]),
-      name: parseStringValue(json[EventFields.name]),
-      type: parseStringValue(json[EventFields.type]),
-      description: parseStringValue(json[EventFields.description]),
-      unit: parseStringValue(json[EventFields.unit]),
-      account: json[Fields.account],
-      repeatOptions: CalendarRepeatRuleExtension.fromKey(
-        json[EventFields.repeatOptions],
-      ),
-      reminderOptions: EventItem.parseReminderOptions(
-        jsonValue: json[EventFields.reminderOptions],
-      ),
-      isCompleted: json['is_completed'] == true,
-      isHoliday: json[EventFields.isHoliday] == true,
-      isTaiwanHoliday: json[EventFields.isTaiwanHoliday] == true,
-      isApproved: json[EventFields.isApproved] == true,
-      ageMin: json[EventFields.ageMin],
-      ageMax: json[EventFields.ageMax],
-      isFree: json[EventFields.isFree],
-      priceMin: json[EventFields.priceMin],
-      priceMax: json[EventFields.priceMax],
-      isOutdoor: json[EventFields.isOutdoor],
-      isLike: json[EventFields.isLike],
-      isDislike: json[EventFields.isDislike],
-      pageViews: json[EventFields.pageViews],
-      cardClicks: json[EventFields.cardClicks],
-      saves: json[EventFields.saves],
-      registrationClicks: json[EventFields.registrationClicks],
-      likeCounts: json[EventFields.likeCounts],
-      dislikeCounts: json[EventFields.dislikeCounts],
-      source: json[EventFields.source],
-      lat: tryParseDoubleValue(json[EventFields.lat]),
-      lng: tryParseDoubleValue(json[EventFields.lng]),
-      mapLat: tryParseDoubleValue(json[EventFields.mapLat]),
-      mapLng: tryParseDoubleValue(json[EventFields.mapLng]),
-      subEvents: subEventsJson.map((e) => EventItem.fromJson(json: e)).toList(),
-    );
+        id: json[Fields.id] ?? _uuid.v4(),
+        masterGraphUrl: json[EventFields.masterGraphUrl],
+        masterUrl: json[EventFields.masterUrl],
+        startDate: fromStringOrNull(json[EventFields.startDate]),
+        endDate: fromStringOrNull(json[EventFields.endDate]),
+        startTime: parseTimeOfDay(json[EventFields.startTime]),
+        endTime: parseTimeOfDay(json[EventFields.endTime]),
+        country: EventCountry.normalize(
+          parseStringValue(json[EventFields.country]),
+        ),
+        city: parseStringValue(json[EventFields.city]),
+        location: parseStringValue(json[EventFields.location]),
+        name: parseStringValue(json[EventFields.name]),
+        type: parseStringValue(json[EventFields.type]),
+        description: parseStringValue(json[EventFields.description]),
+        unit: parseStringValue(json[EventFields.unit]),
+        account: json[Fields.account],
+        repeatOptions: CalendarRepeatRuleExtension.fromKey(
+          json[EventFields.repeatOptions],
+        ),
+        reminderOptions: EventItem.parseReminderOptions(
+          jsonValue: json[EventFields.reminderOptions],
+        ),
+        isCompleted: json['is_completed'] == true,
+        isHoliday: json[EventFields.isHoliday] == true,
+        isTaiwanHoliday: json[EventFields.isTaiwanHoliday] == true,
+        isApproved: json[EventFields.isApproved] == true,
+        ageMin: json[EventFields.ageMin],
+        ageMax: json[EventFields.ageMax],
+        isFree: json[EventFields.isFree],
+        priceMin: json[EventFields.priceMin],
+        priceMax: json[EventFields.priceMax],
+        isOutdoor: json[EventFields.isOutdoor],
+        isLike: json[EventFields.isLike],
+        isDislike: json[EventFields.isDislike],
+        pageViews: json[EventFields.pageViews],
+        cardClicks: json[EventFields.cardClicks],
+        saves: json[EventFields.saves],
+        registrationClicks: json[EventFields.registrationClicks],
+        likeCounts: json[EventFields.likeCounts],
+        dislikeCounts: json[EventFields.dislikeCounts],
+        source: json[EventFields.source],
+        lat: tryParseDoubleValue(json[EventFields.lat]),
+        lng: tryParseDoubleValue(json[EventFields.lng]),
+        mapLat: tryParseDoubleValue(json[EventFields.mapLat]),
+        mapLng: tryParseDoubleValue(json[EventFields.mapLng]),
+      )
+      .._subEvents = DeferredList<EventItem>(
+        subEventsJson.map(
+          (row) =>
+              () => EventItem.fromJson(json: row),
+        ),
+      );
   }
 
   // -------------------- copyWith --------------------
@@ -563,18 +569,17 @@ class EventViewModel {
       description: event.description,
       businessHours: businessHours,
       subEvents: showSubEvents
-          ? event.subEvents
-                .map(
-                  (sub) => buildEventViewModel(
-                    event: sub,
-                    parentLocation: locationDisplay,
-                    canDelete: canDelete,
-                    showSubEvents: showSubEvents,
-                    loc: loc,
-                    tableName: tableName,
-                  ),
-                )
-                .toList()
+          ? LazyMappedList<EventItem, EventViewModel>(
+              event.subEvents,
+              (sub) => buildEventViewModel(
+                event: sub,
+                parentLocation: locationDisplay,
+                canDelete: canDelete,
+                showSubEvents: showSubEvents,
+                loc: loc,
+                tableName: tableName,
+              ),
+            )
           : const [],
       canDelete: canDelete,
       showSubEvents: showSubEvents,

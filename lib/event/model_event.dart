@@ -233,7 +233,8 @@ class ModelEvent {
     }
     return events.where((e) {
       if (removedEventIds.contains(e.id)) return false;
-      final searchableText = _searchableText(e, loc);
+      if (!_matchesDateRange(e, inFilter)) return false;
+      final searchableText = keywords.isEmpty ? '' : _searchableText(e, loc);
       bool matchesKeywords = keywords.every((word) {
         if (searchableText.contains(word)) return true;
         // 🔹 年齡判斷
@@ -311,29 +312,18 @@ class ModelEvent {
         });
         return matchedSubEvents;
       });
-      final startDate = e.startDate == null
-          ? null
-          : DateTimeFormatter.dateOnly(e.startDate!);
-      final endDate = e.endDate == null
-          ? startDate
-          : DateTimeFormatter.dateOnly(e.endDate!);
-      bool matchesDate = true;
-      final startDateFilter = inFilter.startDate;
-      final endDateFilter = inFilter.endDate;
-      if ((startDateFilter != null || endDateFilter != null) &&
-          (startDate == null || endDate == null)) {
-        matchesDate = false;
-      } else {
-        if (startDateFilter != null && endDate!.isBefore(startDateFilter)) {
-          matchesDate = false;
-        }
-        if (endDateFilter != null && startDate!.isAfter(endDateFilter)) {
-          matchesDate = false;
-        }
-      }
-
-      return matchesKeywords && matchesDate;
+      return matchesKeywords;
     }).toList();
+  }
+
+  bool _matchesDateRange(EventItem event, SearchFilter filter) {
+    if (filter.startDate == null && filter.endDate == null) return true;
+    final rawStart = event.startDate;
+    if (rawStart == null) return false;
+    final start = DateTimeFormatter.dateOnly(rawStart);
+    final end = DateTimeFormatter.dateOnly(event.endDate ?? rawStart);
+    return (filter.startDate == null || !end.isBefore(filter.startDate!)) &&
+        (filter.endDate == null || !start.isAfter(filter.endDate!));
   }
 
   bool _matchPrice({

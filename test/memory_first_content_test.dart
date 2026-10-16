@@ -12,12 +12,16 @@ import 'package:life_pilot/utils/service/service_weather.dart';
 
 class _Auth extends ControllerAuth {
   String account = 'one@example.com';
+  bool local = false;
   @override
   String? get currentAccount => account;
   @override
   bool get isSysAdmin => false;
   @override
-  DataStorageLocation get preferredStorage => DataStorageLocation.cloud;
+  DataStorageLocation get preferredStorage =>
+      local ? DataStorageLocation.local : DataStorageLocation.cloud;
+  @override
+  bool get storesNewDataLocally => local;
   void switchAccount() {
     account = 'two@example.com';
     notifyListeners();
@@ -32,6 +36,9 @@ class _Service extends ServiceEvent {
   final boundaries = <DateTime>[];
   int reads = 0;
   DateTime? latest;
+  Completer<List<EventItem>>? pendingRows;
+  Completer<List<EventItem>>? pendingFallback;
+  void Function(List<EventItem>)? previewCallback;
   @override
   Future<List<EventItem>?> getEvents({
     required String tableName,
@@ -39,10 +46,15 @@ class _Service extends ServiceEvent {
     DateTime? dateE,
     String? id,
     String? inputUser,
+    DataStorageLocation? storageLocation,
     int? limit,
     int offset = 0,
+    void Function(List<EventItem> events)? onPartialEvents,
   }) async {
     reads++;
+    previewCallback = onPartialEvents;
+    if (reads > 1 && pendingFallback != null) return pendingFallback!.future;
+    if (pendingRows != null) return pendingRows!.future;
     if (latest != null && reads == 1) return [];
     return rows;
   }
@@ -52,12 +64,19 @@ class _Service extends ServiceEvent {
     required String tableName,
     required DateTime before,
     String? inputUser,
-  }) async => latest;
+    DataStorageLocation? storageLocation,
+    void Function(EventItem event)? onLatestEvent,
+  }) async {
+    if (latest != null && rows.isNotEmpty) onLatestEvent?.call(rows.first);
+    return latest;
+  }
+
   @override
   Future<bool> hasEventsBefore({
     required String tableName,
     required DateTime before,
     String? inputUser,
+    DataStorageLocation? storageLocation,
   }) {
     boundaries.add(before);
     final check = Completer<bool>();
@@ -89,6 +108,98 @@ void main() {
     if (!controller.notifierDisposed) controller.dispose();
     auth.dispose();
   });
+
+  for (final local in [false, true]) {
+    test(
+      'older fallback is visible before full day query finishes local=$local',
+      () async {
+        auth.local = local;
+        auth.notifyListeners();
+        final date = DateTime.now().subtract(const Duration(days: 100));
+        service.latest = date;
+        service.rows = [EventItem(id: 'old', name: 'Old', startDate: date)];
+        service.pendingFallback = Completer<List<EventItem>>();
+        final request = controller.loadEvents(isGetPublicEvents: false);
+        await _flush();
+        expect(service.reads, 2);
+        expect(controller.getFilteredEvents(loc).single.id, 'old');
+        expect(controller.isLoadingMemoryRecords, true);
+        service.pendingFallback!.complete(service.rows);
+        await _flush();
+        service.checks.single.complete(false);
+        await request;
+        expect(controller.isLoadingMemoryRecords, false);
+      },
+    );
+  }
+
+  for (final local in [false, true]) {
+    test(
+      'first rows are visible while ${local ? 'local' : 'cloud'} load waits',
+      () async {
+        auth.local = local;
+        auth.notifyListeners();
+        final completion = service.pendingRows = Completer<List<EventItem>>();
+        final request = controller.loadEvents(isGetPublicEvents: false);
+        service.previewCallback!(service.rows);
+        expect(controller.hasLoadedEventsSuccessfully, true);
+        expect(controller.isLoadingEvents, true);
+        expect(controller.isLoadingMemoryRecords, true);
+        expect(controller.isLoadingMoreMemory, true);
+        expect(controller.getFilteredEvents(loc).single.id, 'recent');
+        completion.complete(service.rows);
+        await _flush();
+        expect(controller.isLoadingMemoryRecords, false);
+        service.checks.single.complete(false);
+        await request;
+        expect(controller.isLoadingEvents, false);
+      },
+    );
+  }
+
+  test('late preview cannot restore records after account switch', () async {
+    final completion = service.pendingRows = Completer<List<EventItem>>();
+    final request = controller.loadEvents(isGetPublicEvents: false);
+    final oldCallback = service.previewCallback!;
+    auth.switchAccount();
+    oldCallback(service.rows);
+    completion.complete(service.rows);
+    await request;
+    expect(controller.getFilteredEvents(loc), isEmpty);
+    expect(controller.hasLoadedEventsSuccessfully, false);
+  });
+
+  test('late preview after disposal is ignored', () async {
+    final completion = service.pendingRows = Completer<List<EventItem>>();
+    final request = controller.loadEvents(isGetPublicEvents: false);
+    controller.dispose();
+    service.previewCallback!(service.rows);
+    completion.complete(service.rows);
+    await request;
+    expect(controller.hasLoadedEventsSuccessfully, false);
+  });
+
+  test(
+    'later query failure retains preview and load-more retries initial load',
+    () async {
+      final completion = service.pendingRows = Completer<List<EventItem>>();
+      final request = controller.loadEvents(isGetPublicEvents: false);
+      service.previewCallback!(service.rows);
+      completion.completeError(StateError('next page failed'));
+      await request;
+      expect(controller.hasLoadEventsError, true);
+      expect(controller.getFilteredEvents(loc).single.id, 'recent');
+      expect(controller.isLoadingMoreMemory, false);
+      service.pendingRows = null;
+      final retry = controller.loadMoreMemoryEvents();
+      await _flush();
+      service.checks.single.complete(false);
+      await retry;
+      expect(service.reads, 2);
+      expect(controller.hasLoadEventsError, false);
+      expect(controller.getFilteredEvents(loc).single.id, 'recent');
+    },
+  );
 
   testWidgets('history metadata timeout does not leave loading stuck', (
     tester,

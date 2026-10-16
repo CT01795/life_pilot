@@ -28,6 +28,65 @@ class _Row extends MapBase<String, dynamic> {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final start = DateTime(2026, 10, 1), end = DateTime(2026, 10, 15);
+  test('latest fallback accepts legacy DateTime fields as well as text', () {
+    final row = _Row('legacy', null);
+    row.data['start_date'] = DateTime.utc(2026, 9, 30);
+    expect(ModelLocalEventQuery.latestRowBefore([row], start)?['id'], 'legacy');
+  });
+  test(
+    'latest fallback finds the newest older row without decoding history',
+    () {
+      final rows = [
+        ...List.generate(5000, (i) => _Row('$i', '2020-01-01')),
+        _Row('latest', '2026-09-30T23:59:00'),
+        _Row('excluded', '2026-10-01'),
+        _Row('invalid', 'bad'),
+      ];
+      final result = ModelLocalEventQuery.latestRowBefore(rows, start);
+      expect(result!['id'], 'latest');
+      expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 0);
+    },
+  );
+
+  test(
+    'latest fallback compares timezone instants and returns null if none',
+    () {
+      final rows = [
+        _Row('earlier', '2026-09-30T23:00:00Z'),
+        _Row('later', '2026-09-30T20:00:00-04:00'),
+      ];
+      expect(
+        ModelLocalEventQuery.latestRowBefore(
+          rows,
+          DateTime.utc(2026, 10, 2),
+        )!['id'],
+        'later',
+      );
+      expect(
+        ModelLocalEventQuery.latestRowBefore(rows, DateTime.utc(2020)),
+        null,
+      );
+      expect(ModelLocalEventQuery.latestRowBefore([], start), null);
+    },
+  );
+  test('local iterator decodes only the consumed preview', () {
+    final rows = List.generate(1000, (i) => _Row('$i', '2026-10-10'));
+    final iterator = ModelLocalEventQuery.iterate(
+      rows,
+      start: start,
+      end: end,
+    ).iterator;
+    for (var i = 0; i < 12; i++) {
+      expect(iterator.moveNext(), true);
+      expect(iterator.current.id, '$i');
+    }
+    expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 12);
+    var remaining = 0;
+    while (iterator.moveNext()) {
+      remaining++;
+    }
+    expect(remaining, 988);
+  });
   test('date bounds are inclusive and normalized once', () {
     final rows = [
       _Row('before', '2026-09-30'),

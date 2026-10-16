@@ -9,6 +9,10 @@ enum LocalSyncState { localOnly, movedFromCloud, modifiedLocally }
 class LocalDataStore {
   LocalDataStore._();
 
+  /// Uses an isolated, already-open database without changing the singleton.
+  LocalDataStore.withDatabase(Database database)
+    : _databaseFuture = Future<Database>.value(database);
+
   static final LocalDataStore instance = LocalDataStore._();
   static final _records = stringMapStoreFactory.store('records');
   static final _settings = stringMapStoreFactory.store('settings');
@@ -138,11 +142,20 @@ class LocalDataStore {
     required String owner,
     required String resource,
   }) async {
+    final rows = await readOnlyRows(owner: owner, resource: resource);
+    return rows.map(Map<String, dynamic>.from).toList();
+  }
+
+  /// Shares cached rows for query-only consumers. The list and row maps cannot
+  /// be modified; nested field values must also be treated as read-only.
+  Future<List<Map<String, dynamic>>> readOnlyRows({
+    required String owner,
+    required String resource,
+  }) async {
     final cacheKey = _resourceCacheKey(owner, resource);
     final request = _listCache[cacheKey] ??= _loadList(owner, resource);
     try {
-      final rows = await request;
-      return rows.map(Map<String, dynamic>.from).toList();
+      return await request;
     } catch (_) {
       if (identical(_listCache[cacheKey], request)) {
         _listCache.remove(cacheKey);
@@ -166,12 +179,12 @@ class LocalDataStore {
           ),
         )
         .timeout(const Duration(seconds: 10));
-    return snapshots
-        .map(
-          (snapshot) =>
-              Map<String, dynamic>.from(snapshot.value['data']! as Map),
-        )
-        .toList(growable: false);
+    return List<Map<String, dynamic>>.unmodifiable(
+      snapshots.map(
+        (snapshot) =>
+            Map<String, dynamic>.unmodifiable(snapshot.value['data']! as Map),
+      ),
+    );
   }
 
   Future<void> delete({
