@@ -1,9 +1,9 @@
 // 新增一個 QuestionDisplay 元件
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/controller_game_mario_translation.dart';
+import 'package:life_pilot/game/mario_translation/mario_text_component.dart';
 import 'package:life_pilot/utils/const.dart';
 
 class QuestionDisplay extends PositionComponent with TapCallbacks {
@@ -14,6 +14,7 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
   double sizeX;
   double sizeY;
   final bool isEmphasized;
+  MarioTextComponent? _label;
 
   QuestionDisplay({
     required this.text,
@@ -32,39 +33,34 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
   Future<void> onLoad() async {
     super.onLoad();
 
-    // 顯示文字
-    add(
-      TextBoxComponent(
-        text: text,
-        anchor: Anchor.topLeft,
-        boxConfig: TextBoxConfig(
-          maxWidth: sizeX, // 用你傳入的寬度當換行邊界
-          timePerChar: 0, // 0 = 不做打字機效果，直接顯示
-          growingBox: true, // 文字多的時候自動往下長
-        ),
-        textRenderer: TextPaint(
-          style: TextStyle(
-            fontSize: 32,
-            color: isEmphasized ? GameColors.ground : GameColors.textDark,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+    final label = _label = MarioTextComponent(
+      text: text,
+      anchor: Anchor.topLeft,
+      maxWidth: sizeX,
+      padding: const EdgeInsets.all(8),
+      style: TextStyle(
+        fontSize: 32,
+        color: isEmphasized ? GameColors.ground : GameColors.textDark,
+        fontWeight: FontWeight.bold,
       ),
     );
-
-    // 加碰撞盒，才能感應點擊
-    add(RectangleHitbox());
+    if (label.height > size.y) size.y = label.height;
+    add(label);
   }
 
   @override
   void onTapDown(TapDownEvent event) {
-    controller.speak(controller.currentQuestion!.question); // 點擊播放
+    final question = controller.currentQuestion;
+    if (question != null) controller.speak(question.question);
     super.onTapDown(event);
   }
 
   // 方便更新文字
   void updateText(String newText) {
-    final textComp = children.whereType<TextBoxComponent>().firstOrNull;
-    textComp?.text = newText;
+    text = newText;
+    final label = _label;
+    if (label == null) return;
+    label.text = newText;
+    size.y = label.height > sizeY ? label.height : sizeY;
   }
 }

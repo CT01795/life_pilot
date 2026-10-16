@@ -1,0 +1,113 @@
+import 'dart:collection';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:life_pilot/event/model_local_event_query.dart';
+import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/utils/date_time.dart';
+
+class _Row extends MapBase<String, dynamic> {
+  final Map<String, dynamic> data;
+  int decodes = 0;
+  _Row(String id, String? date)
+    : data = {'id': id, 'name': id, 'start_date': date};
+  @override
+  dynamic operator [](Object? key) {
+    if (key == 'sub_events') decodes++;
+    return data[key];
+  }
+
+  @override
+  void operator []=(String key, dynamic value) => data[key] = value;
+  @override
+  Iterable<String> get keys => data.keys;
+  @override
+  void clear() => data.clear();
+  @override
+  dynamic remove(Object? key) => data.remove(key);
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final start = DateTime(2026, 10, 1), end = DateTime(2026, 10, 15);
+  test('date bounds are inclusive and normalized once', () {
+    final rows = [
+      _Row('before', '2026-09-30'),
+      _Row('start', '2026-10-01'),
+      _Row('end', '2026-10-15'),
+      _Row('after', '2026-10-16'),
+    ];
+    final result = ModelLocalEventQuery.select(
+      rows,
+      start: start.add(const Duration(hours: 10)),
+      end: end,
+    );
+    expect(result.map((event) => event.id), ['start', 'end']);
+    expect(rows.map((row) => row.decodes), [0, 1, 1, 0]);
+  });
+  test('offset and limit are applied before full record decoding', () {
+    final rows = List.generate(10, (i) => _Row('$i', '2026-10-10'));
+    final result = ModelLocalEventQuery.select(
+      rows,
+      start: start,
+      end: end,
+      offset: 3,
+      limit: 2,
+    );
+    expect(result.map((event) => event.id), ['3', '4']);
+    expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 2);
+  });
+  test('id lookup ignores date window and only decodes matching record', () {
+    final rows = [_Row('old', '2020-01-01'), _Row('new', '2026-10-10')];
+    expect(
+      ModelLocalEventQuery.select(
+        rows,
+        start: start,
+        end: end,
+        id: 'old',
+      ).single.id,
+      'old',
+    );
+    expect(rows.map((row) => row.decodes), [1, 0]);
+  });
+  test('undated and malformed dates preserve existing inclusion behavior', () {
+    final rows = [_Row('null', null), _Row('bad', 'not a date')];
+    expect(ModelLocalEventQuery.select(rows, start: start, end: end).length, 2);
+  });
+  test('large old history does not decode out-of-window sub-events', () {
+    final rows = [
+      ...List.generate(5000, (i) => _Row('$i', '2020-01-01')),
+      _Row('visible', '2026-10-10'),
+    ];
+    expect(
+      ModelLocalEventQuery.select(rows, start: start, end: end).single.id,
+      'visible',
+    );
+    expect(rows.fold<int>(0, (sum, row) => sum + row.decodes), 1);
+  });
+  test(
+    'selection matches original parsed-event filtering including timezone dates',
+    () {
+      final rows = [
+        _Row('utc', '2026-10-01T00:00:00Z'),
+        _Row('offset', '2026-10-15T23:00:00-08:00'),
+        _Row('none', null),
+        _Row('old', '2020-01-01'),
+      ];
+      final expected = rows
+          .map((row) => EventItem.fromJson(json: row))
+          .where((event) {
+            if (event.startDate == null) return true;
+            final day = DateTimeFormatter.dateOnly(event.startDate!.toLocal());
+            return !day.isBefore(start) && !day.isAfter(end);
+          })
+          .map((event) => event.id);
+      expect(
+        ModelLocalEventQuery.select(
+          rows,
+          start: start,
+          end: end,
+        ).map((event) => event.id),
+        expected,
+      );
+    },
+  );
+}

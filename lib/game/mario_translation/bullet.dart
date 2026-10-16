@@ -11,6 +11,15 @@ class Bullet extends CircleComponent
     with CollisionCallbacks, HasGameRef<PageGameMarioTranslation> {
   final double speed;
   late final Vector2 velocity;
+  bool _spent = false;
+
+  bool consume() {
+    if (_spent) return false;
+    _spent = true;
+    removeFromParent();
+    return true;
+  }
+
   Bullet({
     required Vector2 position,
     required Vector2 direction,
@@ -55,11 +64,8 @@ class Bullet extends CircleComponent
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
-    if (other is WordItem) {
+    if (!_spent && other is WordItem && consume()) {
       other.hitByBullet();
-      if (isMounted) {
-        removeFromParent();
-      }
     }
   }
 }

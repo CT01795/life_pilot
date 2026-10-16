@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:life_pilot/event/event_save_exception.dart';
 import 'package:life_pilot/event/event_delete_exception.dart';
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_local_event_query.dart';
 import 'package:life_pilot/utils/api.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -148,28 +149,18 @@ class ServiceEvent {
       final localRows = await LocalDataStore.instance
           .list(owner: inputUser, resource: tableName)
           .timeout(const Duration(seconds: 15));
-      return localRows
-          .map((row) => EventItem.fromJson(json: row))
-          .where((event) {
-            if (id != null && id.isNotEmpty) return event.id == id;
-            final eventDate = event.startDate == null
-                ? null
-                : DateTimeFormatter.dateOnly(event.startDate!.toLocal());
-            if (eventDate == null) return true;
-            final start = DateTimeFormatter.dateOnly(
-              dateS ??
-                  (tableName == TableNames.memoryTrace
-                      ? today.subtract(const Duration(days: 29))
-                      : today),
-            );
-            final end = DateTimeFormatter.dateOnly(
-              dateE ?? DateTime(today.year + 2, today.month, today.day),
-            );
-            return !eventDate.isBefore(start) && !eventDate.isAfter(end);
-          })
-          .skip(offset)
-          .take(limit ?? localRows.length)
-          .toList();
+      return ModelLocalEventQuery.select(
+        localRows,
+        start:
+            dateS ??
+            (tableName == TableNames.memoryTrace
+                ? today.subtract(const Duration(days: 29))
+                : today),
+        end: dateE ?? DateTime(today.year + 2, today.month, today.day),
+        id: id,
+        offset: offset,
+        limit: limit,
+      );
     }
 
     try {

@@ -85,13 +85,7 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
           IconButton(
             icon: Icon(Icons.lightbulb_outline),
             tooltip: loc.hint,
-            onPressed: () {
-              setState(() => ctrl.highlightHint());
-              Future.delayed(const Duration(seconds: 2), () {
-                if (!mounted) return;
-                setState(() => ctrl.clearHint());
-              });
-            },
+            onPressed: ctrl.showHint,
           ),
         ],
       ),
@@ -113,7 +107,10 @@ class _PageGameSteamPolyominoState extends State<PageGameSteamPolyomino> {
               Container(
                 width: W * 0.60,
                 padding: const EdgeInsets.all(8),
-                child: _buildGridArea(cons),
+                child: ListenableBuilder(
+                  listenable: ctrl,
+                  builder: (context, child) => _buildGridArea(cons),
+                ),
               ),
             ],
           );

@@ -168,9 +168,12 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
         }
       });
     }
-    final loadState = context.select<ControllerEvent, (bool, bool)>(
-      (controller) =>
-          (controller.isLoadingEvents, controller.hasLoadEventsError),
+    final loadState = context.select<ControllerEvent, (bool, bool, bool)>(
+      (controller) => (
+        controller.isLoadingEvents,
+        controller.hasLoadEventsError,
+        controller.hasLoadedEventsSuccessfully,
+      ),
     );
 
     return Scaffold(
@@ -202,11 +205,9 @@ class _MemoryGenericEventPageState extends State<MemoryGenericEventPage> {
         onToggleMap: () => setState(() => _showMap = !_showMap),
         loc: loc,
       ),
-      body:
-          (!_hasLoaded ||
-              (loadState.$1 && !_controller.hasLoadedEventsSuccessfully))
+      body: (!_hasLoaded || (loadState.$1 && !loadState.$3))
           ? const Center(child: CircularProgressIndicator())
-          : loadState.$2 && !_controller.hasLoadedEventsSuccessfully
+          : loadState.$2 && !loadState.$3
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

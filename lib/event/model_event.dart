@@ -1,4 +1,5 @@
 import 'package:life_pilot/event/model_event_item.dart';
+import 'package:life_pilot/event/model_event_ordering.dart';
 import 'package:life_pilot/event/model_search_filter.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/utils/date_time.dart';
@@ -122,70 +123,10 @@ class ModelEvent {
     _invalidateEventData();
   }
 
-  void sortRecommendedContent({required bool isEvent}) {
-    final originalOrder = <String, int>{
-      for (var index = 0; index < _events.length; index++)
-        _events[index].id: index,
-    };
-    _events.sort((left, right) {
-      final preferenceComparison = _preferenceRank(
-        left,
-      ).compareTo(_preferenceRank(right));
-      if (preferenceComparison != 0) return preferenceComparison;
-
-      final contentComparison = isEvent
-          ? _compareRecommendedEventDate(left, right)
-          : _compareAttraction(left, right);
-      if (contentComparison != 0) return contentComparison;
-      return originalOrder[left.id]!.compareTo(originalOrder[right.id]!);
-    });
+  void sortRecommendedContent({required bool isEvent, DateTime? now}) {
+    ModelEventOrdering.sortRecommended(_events, isEvent: isEvent, now: now);
     _invalidateFilteredEvents();
   }
-
-  int _preferenceRank(EventItem event) {
-    if (event.isLike == true) return 0;
-    if (event.isDislike == true) return 2;
-    return 1;
-  }
-
-  int _compareRecommendedEventDate(EventItem left, EventItem right) {
-    final today = DateTimeFormatter.dateOnly(DateTime.now());
-    DateTime effectiveDate(EventItem event) {
-      final start = DateTimeFormatter.dateOnly(event.startDate ?? today);
-      return start.isBefore(today) ? today : start;
-    }
-
-    var comparison = effectiveDate(left).compareTo(effectiveDate(right));
-    if (comparison != 0) return comparison;
-    comparison = _timeSortValue(
-      left.startTime,
-    ).compareTo(_timeSortValue(right.startTime));
-    if (comparison != 0) return comparison;
-    comparison = _effectiveEndDateSortValue(
-      left,
-    ).compareTo(_effectiveEndDateSortValue(right));
-    if (comparison != 0) return comparison;
-    comparison = left.country.compareTo(right.country);
-    if (comparison != 0) return comparison;
-    comparison = left.city.compareTo(right.city);
-    if (comparison != 0) return comparison;
-    comparison = left.location.compareTo(right.location);
-    return comparison != 0 ? comparison : left.name.compareTo(right.name);
-  }
-
-  int _compareAttraction(EventItem left, EventItem right) {
-    var comparison = left.city.compareTo(right.city);
-    if (comparison != 0) return comparison;
-    comparison = left.location.compareTo(right.location);
-    return comparison != 0 ? comparison : left.name.compareTo(right.name);
-  }
-
-  int _timeSortValue(dynamic time) =>
-      time == null ? 24 * 60 : time.hour * 60 + time.minute;
-
-  int _effectiveEndDateSortValue(EventItem event) =>
-      (event.endDate ?? event.startDate)?.millisecondsSinceEpoch ??
-      8640000000000000;
 
   void clearAll() {
     _events.clear();
@@ -222,21 +163,7 @@ class ModelEvent {
   }
 
   void sortMemoryEvents() {
-    _events.sort((left, right) {
-      final leftDate = left.startDate ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final rightDate =
-          right.startDate ?? DateTime.fromMillisecondsSinceEpoch(0);
-      var comparison = rightDate.compareTo(leftDate);
-      if (comparison != 0) return comparison;
-      comparison = _timeSortValue(
-        right.startTime,
-      ).compareTo(_timeSortValue(left.startTime));
-      if (comparison != 0) return comparison;
-      comparison = left.city.compareTo(right.city);
-      if (comparison != 0) return comparison;
-      comparison = left.location.compareTo(right.location);
-      return comparison != 0 ? comparison : left.name.compareTo(right.name);
-    });
+    ModelEventOrdering.sortMemory(_events);
     _invalidateFilteredEvents();
   }
 

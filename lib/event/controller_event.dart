@@ -48,6 +48,7 @@ class ControllerEvent extends SafeChangeNotifier {
   DateTime? _memoryLoadedStartDate;
   DateTime? _memoryLoadedEndDate;
   bool _isLoadingMoreMemory = false;
+  bool _isCheckingMoreMemory = false;
   bool _hasMoreMemory = true;
   static const int _cloudPageSize = 50;
   int _nextCloudOffset = 0;
@@ -92,6 +93,7 @@ class ControllerEvent extends SafeChangeNotifier {
     _dataScopeGeneration++;
     _isLoadingEvents = false;
     _isLoadingMoreMemory = false;
+    _isCheckingMoreMemory = false;
     _isLoadingMoreEvents = false;
     _hasLoadedEventsSuccessfully = false;
     _loadEventsError = null;
@@ -134,7 +136,7 @@ class ControllerEvent extends SafeChangeNotifier {
   bool get hasLoadedEventsSuccessfully => _hasLoadedEventsSuccessfully;
   bool get hasLoadEventsError => _loadEventsError != null;
   int get filterRevision => _filterRevision;
-  bool get isLoadingMoreMemory => _isLoadingMoreMemory;
+  bool get isLoadingMoreMemory => _isLoadingMoreMemory || _isCheckingMoreMemory;
   bool get hasMoreMemory => _hasMoreMemory;
   bool get isLoadingMoreEvents => _isLoadingMoreEvents;
   bool get hasMoreEvents => _hasMoreEvents;
@@ -586,13 +588,35 @@ class ControllerEvent extends SafeChangeNotifier {
                 .reduce((left, right) => left.isBefore(right) ? left : right),
           );
         }
-        _hasMoreMemory =
-            (usesCloudPagination && _hasMoreEvents) ||
-            await _serviceEvent.hasEventsBefore(
-              tableName: _tableName,
-              before: _memoryLoadedStartDate ?? memoryStart,
-              inputUser: auth.currentAccount,
+        if (usesCloudPagination && _hasMoreEvents) {
+          _hasMoreMemory = true;
+        } else {
+          // The content is ready. Publish it before this optional metadata query.
+          _hasMoreMemory = true;
+          _isCheckingMoreMemory = true;
+          _invalidateViewModelCache();
+          notifyListeners();
+          if (!_isCurrentDataScope(generation)) return;
+          try {
+            final hasOlder = await _serviceEvent
+                .hasEventsBefore(
+                  tableName: _tableName,
+                  before: _memoryLoadedStartDate ?? memoryStart,
+                  inputUser: auth.currentAccount,
+                )
+                .timeout(const Duration(seconds: 10));
+            if (!_isCurrentDataScope(generation)) return;
+            _hasMoreMemory = hasOlder;
+          } catch (error, stackTrace) {
+            if (!_isCurrentDataScope(generation)) return;
+            // Keep visible records and allow an explicit load-more retry.
+            logger.w(
+              'Memory history availability check failed',
+              error: error,
+              stackTrace: stackTrace,
             );
+          }
+        }
         if (!_isCurrentDataScope(generation)) return;
       }
 
@@ -609,6 +633,7 @@ class ControllerEvent extends SafeChangeNotifier {
     } finally {
       if (_isCurrentDataScope(generation)) {
         _isLoadingEvents = false;
+        _isCheckingMoreMemory = false;
         notifyListeners();
       }
     }
@@ -659,6 +684,8 @@ class ControllerEvent extends SafeChangeNotifier {
   Future<void> loadMoreMemoryEvents() async {
     _handleAuthChange();
     if (_tableName != TableNames.memoryTrace ||
+        _isLoadingEvents ||
+        _isCheckingMoreMemory ||
         _isLoadingMoreMemory ||
         !_hasMoreMemory) {
       return;

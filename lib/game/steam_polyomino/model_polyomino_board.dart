@@ -11,6 +11,7 @@ class ModelPolyominoBoard {
       UnmodifiableListView(_placedBlocks);
   final Map<int, ModelGamePolyominoPipeBlock> _blocksById = {};
   final Map<int, List<Point<int>>> _occupiedCells = {};
+  final Set<ModelGamePolyominoTile> _hintedTiles = {};
   late final Set<int> _availableIds = levelData.availableBlocks
       .map((b) => b.id)
       .toSet();
@@ -232,9 +233,8 @@ class ModelPolyominoBoard {
     return false;
   }
 
-  void highlightHint() {
-    clearHint();
-
+  bool highlightHint() {
+    final hints = <ModelGamePolyominoTile, List<bool>>{};
     final path = levelData.path;
 
     for (int i = 1; i < path.length - 1; i++) {
@@ -243,21 +243,56 @@ class ModelPolyominoBoard {
       final next = path[i + 1];
 
       final tile = grid[cur.y][cur.x];
-      tile.highlight = true;
-      tile.hintDirs = [
+      hints[tile] = [
         prev.y == cur.y - 1 || next.y == cur.y - 1, // up
         prev.x == cur.x + 1 || next.x == cur.x + 1, // right
         prev.y == cur.y + 1 || next.y == cur.y + 1, // down
         prev.x == cur.x - 1 || next.x == cur.x - 1, // left
       ];
     }
-  }
-
-  void clearHint() {
-    for (var row in grid) {
-      for (var t in row) {
-        t.clearHint();
+    var changed = false;
+    for (final tile in _hintedTiles) {
+      if (!hints.containsKey(tile) &&
+          (tile.highlight || tile.hintDirs != null)) {
+        tile.clearHint();
+        changed = true;
       }
     }
+    for (final entry in hints.entries) {
+      final tile = entry.key;
+      final directions = entry.value;
+      final previous = tile.hintDirs;
+      var sameDirections =
+          previous != null && previous.length == directions.length;
+      if (previous != null && sameDirections) {
+        for (var i = 0; i < directions.length; i++) {
+          if (previous[i] != directions[i]) {
+            sameDirections = false;
+            break;
+          }
+        }
+      }
+      if (!tile.highlight || !sameDirections) {
+        tile.highlight = true;
+        tile.hintDirs = directions;
+        changed = true;
+      }
+    }
+    _hintedTiles
+      ..clear()
+      ..addAll(hints.keys);
+    return changed;
+  }
+
+  bool clearHint() {
+    var changed = false;
+    for (final tile in _hintedTiles) {
+      if (tile.highlight || tile.hintDirs != null) {
+        tile.clearHint();
+        changed = true;
+      }
+    }
+    _hintedTiles.clear();
+    return changed;
   }
 }

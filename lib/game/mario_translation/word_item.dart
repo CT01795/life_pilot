@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:life_pilot/game/mario_translation/controller_game_mario_translation.dart';
+import 'package:life_pilot/game/mario_translation/mario_text_component.dart';
 import 'package:life_pilot/game/mario_translation/page_game_mario_translation.dart';
 import 'package:life_pilot/game/mario_translation/player.dart';
 import 'package:life_pilot/utils/const.dart';
@@ -39,15 +40,28 @@ class WordItem extends PositionComponent
 
   bool isRemovedQ = false;
 
-  Future<void> hitByBullet() async {
-    if (isRemovedQ) return;
+  void hitByBullet() {
+    if (isRemovedQ || collected) return;
     isRemovedQ = true;
-    onHitByBullet?.call();
     removeFromParent();
+    onHitByBullet?.call();
   }
 
   @override
   Future<void> onLoad() async {
+    final label = MarioTextComponent(
+      text: word,
+      maxWidth: size.x,
+      padding: const EdgeInsets.all(8),
+      style: const TextStyle(
+        color: GameColors.textItemDark,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+      anchor: Anchor.center,
+    );
+    if (label.height > size.y) size.y = label.height;
+    label.position = size / 2;
     // 白底
     add(
       RectangleComponent(
@@ -68,27 +82,7 @@ class WordItem extends PositionComponent
       ),
     );
 
-    // 文字，自動換行
-    final textPaint = TextPaint(
-      style: const TextStyle(
-        color: GameColors.textItemDark,
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-
-    add(
-      TextBoxComponent(
-        text: word,
-        textRenderer: textPaint,
-        boxConfig: TextBoxConfig(
-          maxWidth: size.x, // 限制文字寬度
-          margins: Insets.l8, // ⭐ 左邊留 8 像素
-        ),
-        anchor: Anchor.center,
-        position: size / 2,
-      ),
-    );
+    add(label);
 
     // 碰撞
     add(RectangleHitbox());
@@ -118,10 +112,11 @@ class WordItem extends PositionComponent
 
     if (other is Player) {
       collected = true;
-      onCollect(word);
+      isRemovedQ = true;
       if (isMounted) {
         removeFromParent();
       }
+      onCollect(word);
     }
   }
 }

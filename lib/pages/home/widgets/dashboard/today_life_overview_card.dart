@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/pages/home/model/dashboard/model_dashboard.dart';
+import 'package:life_pilot/pages/home/model/dashboard/model_schedule_overview.dart';
 import 'package:life_pilot/pages/home/model/event/calendar_event.dart';
 import 'package:life_pilot/utils/const.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +36,7 @@ class TodayLifeOverviewCard extends StatelessWidget {
     final todayEvents = context.select<ModelDashboard, List<CalendarEvent>>(
       (model) => model.state.todayEvents,
     );
-    final scheduleOverview = _ScheduleOverview.from(
+    final scheduleOverview = ModelScheduleOverview.from(
       todayEvents,
       DateTime.now(),
     );
@@ -426,198 +427,6 @@ class _OverviewNumberFormats {
 
   final NumberFormat decimal;
   final NumberFormat integer;
-}
-
-class _ScheduleOverview {
-  const _ScheduleOverview({
-    required this.todayCount,
-    required this.tomorrowCount,
-    required this.overdueCount,
-    required this.todayConflictCount,
-    required this.tomorrowConflictCount,
-    required this.nextEvent,
-    required this.nextEventNeedsReview,
-    required this.nextFreeAt,
-  });
-
-  factory _ScheduleOverview.from(List<CalendarEvent> events, DateTime now) {
-    final minuteKey = now.millisecondsSinceEpoch ~/ 60000;
-    final cached = _cache[events];
-    if (cached != null &&
-        cached.minuteKey == minuteKey &&
-        cached.eventCount == events.length) {
-      return cached.overview;
-    }
-
-    final overview = _ScheduleOverview._build(events, now);
-    _cache[events] = _ScheduleOverviewCache(
-      minuteKey: minuteKey,
-      eventCount: events.length,
-      overview: overview,
-    );
-    return overview;
-  }
-
-  factory _ScheduleOverview._build(List<CalendarEvent> events, DateTime now) {
-    final today = DateUtils.dateOnly(now);
-    final tomorrow = today.add(const Duration(days: 1));
-    final activeEvents =
-        events
-            .where((event) => !event.isCompleted && event.startDate != null)
-            .toList(growable: false)
-          ..sort((a, b) => _eventStart(a).compareTo(_eventStart(b)));
-    final todayEvents = activeEvents
-        .where((event) => DateUtils.isSameDay(event.startDate, today))
-        .toList(growable: false);
-    final tomorrowEvents = activeEvents
-        .where((event) => DateUtils.isSameDay(event.startDate, tomorrow))
-        .toList(growable: false);
-    final overdueCount = todayEvents
-        .where((event) => _hasEnded(event, now))
-        .length;
-    final nextEvent = todayEvents.firstOrNull;
-
-    return _ScheduleOverview(
-      todayCount: todayEvents.length,
-      tomorrowCount: tomorrowEvents.length,
-      overdueCount: overdueCount,
-      todayConflictCount: _countConflicts(todayEvents),
-      tomorrowConflictCount: _countConflicts(tomorrowEvents),
-      nextEvent: nextEvent,
-      nextEventNeedsReview: nextEvent != null && _hasEnded(nextEvent, now),
-      nextFreeAt: _findNextFreeHour(todayEvents, now),
-    );
-  }
-
-  static final Expando<_ScheduleOverviewCache> _cache =
-      Expando<_ScheduleOverviewCache>('scheduleOverview');
-
-  final int todayCount;
-  final int tomorrowCount;
-  final int overdueCount;
-  final int todayConflictCount;
-  final int tomorrowConflictCount;
-  final CalendarEvent? nextEvent;
-  final bool nextEventNeedsReview;
-  final DateTime? nextFreeAt;
-
-  static DateTime? _findNextFreeHour(List<CalendarEvent> events, DateTime now) {
-    final today = DateUtils.dateOnly(now);
-    final dayStart = DateTime(today.year, today.month, today.day, 8);
-    final dayEnd = DateTime(today.year, today.month, today.day, 22);
-    if (!now.isBefore(dayEnd)) return null;
-    var cursor = now.isAfter(dayStart) ? now : dayStart;
-    if (cursor.minute % 15 != 0 || cursor.second != 0) {
-      cursor = DateTime(
-        cursor.year,
-        cursor.month,
-        cursor.day,
-        cursor.hour,
-        ((cursor.minute ~/ 15) + 1) * 15,
-      );
-    }
-    final intervals =
-        events
-            .map(_interval)
-            .whereType<({DateTime start, DateTime end})>()
-            .toList(growable: false)
-          ..sort((a, b) => a.start.compareTo(b.start));
-    for (final interval in intervals) {
-      if (!interval.end.isAfter(cursor)) continue;
-      if (interval.start.difference(cursor) >= const Duration(hours: 1)) {
-        return cursor;
-      }
-      if (interval.end.isAfter(cursor)) cursor = interval.end;
-    }
-    return dayEnd.difference(cursor) >= const Duration(hours: 1)
-        ? cursor
-        : null;
-  }
-
-  static int _countConflicts(List<CalendarEvent> events) {
-    final intervals = events
-        .map(_interval)
-        .whereType<({DateTime start, DateTime end})>()
-        .toList(growable: false);
-    intervals.sort((a, b) => a.start.compareTo(b.start));
-    if (intervals.length < 2) return 0;
-    final affected = <int>{};
-    var furthestEnd = intervals.first.end;
-    var furthestEndIndex = 0;
-    for (var i = 1; i < intervals.length; i++) {
-      final interval = intervals[i];
-      if (interval.start.isBefore(furthestEnd)) {
-        affected
-          ..add(furthestEndIndex)
-          ..add(i);
-      } else {
-        furthestEnd = interval.end;
-        furthestEndIndex = i;
-        continue;
-      }
-      if (interval.end.isAfter(furthestEnd)) {
-        furthestEnd = interval.end;
-        furthestEndIndex = i;
-      }
-    }
-    return affected.length;
-  }
-
-  static DateTime _eventStart(CalendarEvent event) {
-    final date = event.startDate!;
-    final time = event.startTime;
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time?.hour ?? 0,
-      time?.minute ?? 0,
-    );
-  }
-
-  static bool _hasEnded(CalendarEvent event, DateTime now) {
-    final interval = _interval(event);
-    return interval != null && !interval.end.isAfter(now);
-  }
-
-  static ({DateTime start, DateTime end})? _interval(CalendarEvent event) {
-    final startDate = event.startDate;
-    final startTime = event.startTime;
-    if (startDate == null || startTime == null) return null;
-    final endDate = event.endDate ?? startDate;
-    final start = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-      startTime.hour,
-      startTime.minute,
-    );
-    final endTime = event.endTime;
-    final end = endTime != null
-        ? DateTime(
-            endDate.year,
-            endDate.month,
-            endDate.day,
-            endTime.hour,
-            endTime.minute,
-          )
-        : DateUtils.dateOnly(endDate).isAfter(DateUtils.dateOnly(startDate))
-        ? DateUtils.dateOnly(endDate).add(const Duration(days: 1))
-        : start.add(const Duration(hours: 1));
-    return end.isAfter(start) ? (start: start, end: end) : null;
-  }
-}
-
-class _ScheduleOverviewCache {
-  const _ScheduleOverviewCache({
-    required this.minuteKey,
-    required this.eventCount,
-    required this.overview,
-  });
-
-  final int minuteKey;
-  final int eventCount;
-  final _ScheduleOverview overview;
 }
 
 class _ScheduleConflictBanner extends StatelessWidget {

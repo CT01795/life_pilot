@@ -30,10 +30,8 @@ class Enemy extends SpriteComponent
     if (isDead) return;
     // ⭐ 被子彈打中
     if (other is Bullet) {
+      if (!other.consume()) return;
       isDead = true;
-
-      // 移除子彈
-      other.removeFromParent();
       // ⭐ 效果：像被踩一樣
       onStomp();
       if (isMounted) {
