@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:life_pilot/utils/app_navigator.dart' as app_navigator;
-import 'package:life_pilot/utils/const.dart';
 
 OverlayState? get currentOverlay =>
     app_navigator.navigatorKey.currentState?.overlay;
@@ -19,8 +18,11 @@ void cancelWebReminders() {
   _activeWebReminder = null;
 }
 
-void showWebOverlay(
-    {required String title, required String body, required String tooltip}) {
+void showWebOverlay({
+  required String title,
+  required String body,
+  required String tooltip,
+}) {
   final overlay = currentOverlay;
   if (overlay == null) return;
 
@@ -32,37 +34,61 @@ void showWebOverlay(
   late OverlayEntry overlayEntry;
   overlayEntry = OverlayEntry(
     builder: (context) => PositionedDirectional(
-      end: 20,
-      child: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: Insets.all12,
-          color: Colors.white,
-          child: Stack(
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title),
-                  Gaps.h4,
-                  Text(body),
-                ],
-              ),
-              Positioned(
-                child: GestureDetector(
-                  onTap: () => overlayEntry.remove(),
-                  child: Tooltip(
-                    message: tooltip,
-                    child: Container(
-                      padding: Insets.directionalR3,
-                      child: Icon(Icons.info_rounded),
+      top: 8,
+      start: 12,
+      end: 12,
+      child: SafeArea(
+        bottom: false,
+        child: Align(
+          alignment: AlignmentDirectional.topEnd,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 440,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+            ),
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.white,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: IconButton(
+                            tooltip: tooltip,
+                            onPressed: () {
+                              if (overlayEntry.mounted) overlayEntry.remove();
+                              if (identical(_activeWebReminder, overlayEntry)) {
+                                _activeWebReminder = null;
+                              }
+                            },
+                            icon: const Icon(Icons.info_rounded),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(title)),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 56),
+                          child: Text(body),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

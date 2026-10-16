@@ -27,12 +27,8 @@ class QuestionDisplay extends PositionComponent with TapCallbacks {
   }) : super(
          position: Vector2(positionX, positionY),
          size: Vector2(sizeX, sizeY),
-       );
-
-  @override
-  Future<void> onLoad() async {
-    super.onLoad();
-
+       ) {
+    // Measure immediately so the HUD can position the next row below wrapped text.
     final label = _label = MarioTextComponent(
       text: text,
       anchor: Anchor.topLeft,

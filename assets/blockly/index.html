@@ -12,34 +12,22 @@
   <script src="javascript_compressed.js"></script>
   <!-- 語言檔 -->
   <script src="msg/js/zh-hant.js"></script>
+  <script src="responsive_flyout.js"></script>
 
   <style>
     html, body {
       height: 100%;
       margin: 0;
-      /*overflow: hidden;*/
+      overflow: hidden;
     }
     #blocklyDiv {
       height: 100%;
       width: 100%;
-      overflow: auto; /* 允許滾動 */
+      overflow: hidden; /* Blockly owns its workspace and flyout scrollbars. */
+      touch-action: none;
     }
 
-    /* 讓 toolbox 往右移動 */
-    .blocklyFlyout {
-      transform: translateX(30px) !important;
-    }
-
-    /* 所有積木文字放大 */
-    .blocklyText {
-      font-size: 20px !important; /* 可調整大小 */
-      font-weight: bold;           /* 可選加粗 */
-    }
-
-    /* 如果要調整下拉選單字體 */
-    .blocklyDropdownText {
-      font-size: 20px !important;
-    }
+    /* Let Blockly calculate SVG transforms and text metrics together. */
 
   </style>
 </head>
@@ -161,10 +149,34 @@
     ////////////////////////////////////////////////////////////
     // 建立 Blockly workspace
     ////////////////////////////////////////////////////////////
+    const editorTheme = Blockly.Theme.defineTheme('life_pilot', {
+      base: Blockly.Themes.Classic,
+      fontStyle: { family: 'sans-serif', weight: 'bold', size: 15 },
+    });
     var workspace = Blockly.inject('blocklyDiv', {
       toolbox: toolbox,
       scrollbars: true,
+      theme: editorTheme,
+      plugins: { flyoutsVerticalToolbox: LifePilotHalfWidthFlyout },
+      zoom: {
+        startScale: document.getElementById('blocklyDiv').clientWidth < 600 ? 0.8 : 1,
+        minScale: 0.3,
+        maxScale: 1.5,
+        pinch: true,
+      },
     });
+
+    // Refit the palette after WebView rotation or parent panel resizing.
+    const resizeEditor = () => {
+      const flyout = workspace.getFlyout();
+      if (flyout) flyout.reflow();
+      Blockly.svgResize(workspace);
+    };
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(resizeEditor).observe(document.getElementById('blocklyDiv'));
+    } else {
+      window.addEventListener('resize', resizeEditor);
+    }
 
     // --- 在這裡設定動態最大積木數量 ---
     window.MAX_BLOCKS = 0; // 預設為 0，Flutter 會傳實際值

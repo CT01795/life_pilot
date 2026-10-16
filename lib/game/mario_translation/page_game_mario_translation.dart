@@ -122,13 +122,19 @@ class PageGameMarioTranslation extends FlameGame
     ); 
     */
 
+    addHud();
+    layoutByScreen(); // ⭐ 初始化位置
+  }
+
+  /// Keep score/question placement consistent across game loading and tests.
+  void addHud() {
     // 分數 HUD
     scoreText = QuestionDisplay(
       text: '$scoreLabel: ${controller.score}',
       controller: controller,
-      positionX: 40,
+      positionX: 96,
       positionY: 50,
-      sizeX: max(screenW, screenH),
+      sizeX: max(80, screenW - 112),
       sizeY: sizeX,
       isEmphasized: true,
     )..priority = 100;
@@ -139,15 +145,18 @@ class PageGameMarioTranslation extends FlameGame
     final questionLabelWidth = (questionLabel.runes.length * 22 + 32)
         .clamp(100, 220)
         .toDouble();
-    final questionTextX = 40 + questionLabelWidth;
+    // Reserve the left control area; stack question text on narrow screens.
+    final stackQuestion = screenW < 600;
+    final questionTextX = stackQuestion ? 96.0 : 96 + questionLabelWidth;
+    final questionY = max(100.0, scoreText.y + scoreText.height + 8);
 
     // 題目 HUD
     questionTitle = QuestionDisplay(
       text: '$questionLabel: ',
       controller: controller,
-      positionX: 40,
-      positionY: 100,
-      sizeX: questionLabelWidth,
+      positionX: 96,
+      positionY: questionY,
+      sizeX: min(questionLabelWidth, max(80, screenW - 112)),
       sizeY: sizeX,
     )..priority = 90;
 
@@ -159,15 +168,15 @@ class PageGameMarioTranslation extends FlameGame
       text: controller.currentQuestion?.question ?? '',
       controller: controller,
       positionX: questionTextX,
-      positionY: 100,
+      positionY: stackQuestion
+          ? questionTitle.y + questionTitle.height + 8
+          : questionY,
       sizeX: max(80, screenW - questionTextX - 16),
       sizeY: sizeX,
     )..priority = 100;
 
     // ⭐ 設定為 HUD（固定在畫面上）
     add(questionText);
-
-    layoutByScreen(); // ⭐ 初始化位置
   }
 
   @override

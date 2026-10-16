@@ -57,7 +57,8 @@ class _Enemy extends Enemy {
 
 class _Game extends PageGameMarioTranslation {
   final List<String> options;
-  _Game(this.options)
+  final double hudWidth;
+  _Game(this.options, {this.hudWidth = 800})
     : super(
         gameId: 'test',
         gameLevel: 1,
@@ -68,7 +69,7 @@ class _Game extends PageGameMarioTranslation {
       );
   @override
   Future<void> onLoad() async {
-    screenW = 800;
+    screenW = hudWidth;
     screenH = 600;
     sizeX = 50;
     sizeY = 100;
@@ -84,23 +85,8 @@ class _Game extends PageGameMarioTranslation {
       size: Vector2(800, 50),
     );
     player = _Player();
-    questionText = QuestionDisplay(
-      text: 'Question',
-      controller: controller,
-      positionX: 40,
-      positionY: 100,
-      sizeX: 300,
-      sizeY: 50,
-    );
-    scoreText = QuestionDisplay(
-      text: 'Score',
-      controller: controller,
-      positionX: 40,
-      positionY: 50,
-      sizeX: 300,
-      sizeY: 50,
-    );
-    addAll([ground, player, questionText, scoreText]);
+    addAll([ground, player]);
+    addHud();
   }
 
   @override
@@ -135,6 +121,35 @@ void main() {
     picture.dispose();
   });
   tearDownAll(() => _spriteImage.dispose());
+  for (final width in [320.0, 390.0, 800.0]) {
+    testWidgets('HUD avoids left controls at width $width', (tester) async {
+      final game = _Game(['answer'], hudWidth: width);
+      await _mountGame(tester, game);
+      for (final component in [
+        game.scoreText,
+        game.questionTitle,
+        game.questionText,
+      ]) {
+        expect(component.x, greaterThanOrEqualTo(96));
+        expect(component.x + component.width, lessThanOrEqualTo(width - 16));
+      }
+      if (width < 600) {
+        expect(
+          game.questionText.y,
+          greaterThanOrEqualTo(
+            game.questionTitle.y + game.questionTitle.height,
+          ),
+        );
+      } else {
+        expect(game.questionText.y, game.questionTitle.y);
+        expect(
+          game.questionText.x,
+          greaterThanOrEqualTo(game.questionTitle.x + game.questionTitle.width),
+        );
+      }
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   const style = TextStyle(fontSize: 24);
   for (final text in [
     'This answer contains several English words that need wrapping',

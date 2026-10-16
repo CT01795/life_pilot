@@ -16,7 +16,7 @@ import 'package:life_pilot/game/steam_scratch/page_game_steam_scratch_blockly_ed
 import 'package:life_pilot/l10n/app_localizations.dart';
 import 'package:life_pilot/game/service_game.dart';
 import 'package:life_pilot/game/widgets_game_help_button.dart';
-import 'package:life_pilot/game/widgets_game_scrollable_workspace.dart';
+import 'package:life_pilot/game/widgets_scratch_workspace.dart';
 import 'package:life_pilot/game/steam_scratch/widgets_game_steam_scratch_game_board.dart';
 import 'package:provider/provider.dart';
 
@@ -343,17 +343,14 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
         title: Text(loc.scratchGameTitle),
         actions: [GameHelpButton(description: loc.gameInstructionsScratch)],
       ),
-      body: GameScrollableWorkspace(
-        minWidth: 720,
-        minHeight: 520,
-        child: Row(
-          children: [
+      body: ScratchWorkspace(
+        editorWidth: editorWidth,
+        editor:
             // -----------------------------------------------------------------
             // 左側：Blockly Editor（可收合）
             // -----------------------------------------------------------------
             AnimatedContainer(
               duration: Duration(milliseconds: 180),
-              width: editorWidth,
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(right: BorderSide(color: Colors.grey.shade300)),
@@ -411,83 +408,78 @@ class _PageGameSteamScratchState extends State<PageGameSteamScratch> {
               ),
             ),
 
-            // -----------------------------------------------------------------
-            // 右側：遊戲畫面
-            // -----------------------------------------------------------------
-            Expanded(
-              child: Container(
-                color: Colors.black,
-                child: InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 3.0,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final topOffset = 60.0; // 分數區高度
-                      final availableWidth = constraints.maxWidth;
-                      final availableHeight =
-                          constraints.maxHeight - topOffset - 10;
+        // -----------------------------------------------------------------
+        // 右側：遊戲畫面
+        // -----------------------------------------------------------------
+        board: Container(
+          color: Colors.black,
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 3.0,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final topOffset = 60.0; // 分數區高度
+                final availableWidth = constraints.maxWidth;
+                final availableHeight = constraints.maxHeight - topOffset - 10;
 
-                      // 計算整個地圖最大 x/y
-                      final maxX = game.level.treasure.x.toInt();
-                      final maxY = game.level.treasure.y.toInt();
+                // 計算整個地圖最大 x/y
+                final maxX = game.level.treasure.x.toInt();
+                final maxY = game.level.treasure.y.toInt();
 
-                      // 每格大小自動計算
-                      final tileSize = min(
-                        availableWidth / (maxX + 1),
-                        availableHeight / (maxY + 1),
-                      );
+                // 每格大小自動計算
+                final tileSize = min(
+                  availableWidth / (maxX + 1),
+                  availableHeight / (maxY + 1),
+                );
 
-                      return Stack(
-                        children: [
-                          // 分數區
-                          Positioned(
-                            top: 0,
-                            left: 16,
-                            height: topOffset,
-                            child: ValueListenableBuilder<GameState>(
-                              valueListenable: game.stateNotifier,
-                              builder: (context, state, _) {
-                                return Text(
-                                  loc.gameScoreValue(state.score),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
-                              },
+                return Stack(
+                  children: [
+                    // 分數區
+                    Positioned(
+                      top: 0,
+                      left: 16,
+                      height: topOffset,
+                      child: ValueListenableBuilder<GameState>(
+                        valueListenable: game.stateNotifier,
+                        builder: (context, state, _) {
+                          return Text(
+                            loc.gameScoreValue(state.score),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ),
+                          );
+                        },
+                      ),
+                    ),
 
-                          // 地圖區
-                          Positioned(
-                            top: topOffset,
-                            left: 0,
+                    // 地圖區
+                    Positioned(
+                      top: topOffset,
+                      left: 0,
+                      width: (maxX + 1) * tileSize,
+                      height: (maxY + 1) * tileSize,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: SizedBox(
                             width: (maxX + 1) * tileSize,
                             height: (maxY + 1) * tileSize,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.vertical,
-                                child: SizedBox(
-                                  width: (maxX + 1) * tileSize,
-                                  height: (maxY + 1) * tileSize,
-                                  child: WidgetsGameSteamScratchGameBoard(
-                                    game: game,
-                                    tileSize: tileSize, // 傳入自動計算格子大小
-                                  ),
-                                ),
-                              ),
+                            child: WidgetsGameSteamScratchGameBoard(
+                              game: game,
+                              tileSize: tileSize, // 傳入自動計算格子大小
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ],
+          ),
         ),
       ),
     );
